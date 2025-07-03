@@ -15,6 +15,8 @@ namespace QLN.Common.Infrastructure.IService.IAddonService
         Task<bool> FastSetDataAsync(AddonPaymentDto data, CancellationToken cancellationToken = default);
         Task<AddonPaymentDto?> GetDataAsync(CancellationToken cancellationToken = default);
         Task CheckAddonExpiryAsync();
+        Task StoreGlobalAddonPaymentDetailsAsync(AddonPaymentWithCurrencyDto details, CancellationToken cancellationToken = default);
+        Task<List<AddonPaymentWithCurrencyDto>> GetAllGlobalAddonPaymentDetailsAsync(CancellationToken cancellationToken = default);
         Task<bool> TriggerExpiryCheckAsync();
         Task<(bool IsActive, DateTime? EndDate, int? DaysRemaining)> GetSubscriptionStatusAsync();
         Task<bool> RescheduleExpiryChecksAsync();

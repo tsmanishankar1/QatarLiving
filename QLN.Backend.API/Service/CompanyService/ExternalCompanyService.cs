@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
@@ -77,7 +78,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     try
                     {
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        errorMessage = problem?.Detail ?? "Unknown error.";
                     }
                     catch
                     {
@@ -87,11 +88,19 @@ namespace QLN.Backend.API.Service.CompanyService
                     await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
+                }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
+
             catch (Exception ex)
             {
                 await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
@@ -201,6 +210,14 @@ namespace QLN.Backend.API.Service.CompanyService
 
                     await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
+                }
+
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
 

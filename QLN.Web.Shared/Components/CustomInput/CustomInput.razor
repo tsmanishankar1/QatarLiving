@@ -83,12 +83,16 @@ private string InternalValue
 
         _internalValue = value;
 
-        if (typeof(TItem) == typeof(int))
+        if (typeof(TItem) == typeof(int) || typeof(TItem) == typeof(int?))
         {
             if (int.TryParse(value, out var number))
             {
-                Value = (TItem)(object)number;
+                Value = (TItem)Convert.ChangeType(number, Nullable.GetUnderlyingType(typeof(TItem)) ?? typeof(TItem));
                 _internalValue = number.ToString();
+            }
+            else
+            {
+                Value = default;
             }
         }
         else
@@ -100,6 +104,7 @@ private string InternalValue
         NotifyValidation();
     }
 }
+
 
 protected override async Task OnParametersSetAsync()
 {
@@ -122,28 +127,33 @@ private async Task OnInputChanged(ChangeEventArgs e)
         input = input.Substring(0, MaxLength);
     }
 
-    if (typeof(TItem) == typeof(int))
+    if (typeof(TItem) == typeof(int) || typeof(TItem) == typeof(int?))
     {
-        // Ensure only digits
-        if (!input.All(char.IsDigit)) return;
-
-        // Remove leading zero(s)
-        input = input.TrimStart('0');
-
-        if (int.TryParse(input, out var number))
-        {
-            Value = (TItem)(object)number;
-            _internalValue = input;
-            await ValueChanged.InvokeAsync(Value);
-            NotifyValidation();
-        }
-        else
+        if (!input.All(char.IsDigit))
         {
             Value = default;
             _internalValue = string.Empty;
             await ValueChanged.InvokeAsync(Value);
             NotifyValidation();
+            return;
         }
+
+        input = input.TrimStart('0');
+
+        if (int.TryParse(input, out var number))
+        {
+            var converted = (TItem)Convert.ChangeType(number, Nullable.GetUnderlyingType(typeof(TItem)) ?? typeof(TItem));
+            Value = converted;
+            _internalValue = number.ToString();
+        }
+        else
+        {
+            Value = default;
+            _internalValue = string.Empty;
+        }
+
+        await ValueChanged.InvokeAsync(Value);
+        NotifyValidation();
     }
     else
     {
@@ -153,6 +163,7 @@ private async Task OnInputChanged(ChangeEventArgs e)
         NotifyValidation();
     }
 }
+
 
 protected override void OnInitialized()
 {

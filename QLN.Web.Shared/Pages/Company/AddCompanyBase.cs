@@ -43,18 +43,11 @@ namespace QLN.Web.Shared.Pages.Company
                 ];
 
 
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
             try
             {
-                AuthorizedPage();
-                breadcrumbItems = new()
-                {
-                    new() { Label = "Classifieds", Url = "qln/classifieds" },
-                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
-                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
-
-                };
+              
                 companyProfile = new CompanyProfileModelDto
                 {
                     BranchLocations = new List<string> { "" },
@@ -63,6 +56,14 @@ namespace QLN.Web.Shared.Pages.Company
                     NatureOfBusiness = new List<int>()
                 };
                 editContext = new EditContext(companyProfile);
+                await AuthorizedPage();
+                breadcrumbItems = new()
+                {
+                    new() { Label = "Classifieds", Url = "qln/classifieds" },
+                    new() { Label = "Dashboard", Url = "/qln/classified/dashboard/items" },
+                    new() { Label = "Create Company Profile", Url = $"/qln/dashboard/company/create",IsLast=true },
+
+                };
 
             }
             catch (Exception ex)
@@ -97,10 +98,7 @@ namespace QLN.Web.Shared.Pages.Company
                         ClearCrFile();
                         await ResetCompanyForm();
                     }
-                    else
-                    {
-                        Snackbar.Add("Failed to create company profile", Severity.Error);
-                    }
+                    
                 }
             }
             catch (Exception ex)

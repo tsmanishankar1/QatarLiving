@@ -272,9 +272,8 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
-             int? page, int? perPage, string? search, string? sortOrder,
-             DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
-     bool? freeOnly, bool? featuredFirst = true, CancellationToken cancellationToken = default)
+             int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
+        bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -303,6 +302,10 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 if (featuredFirst.HasValue)
                     queryParams.Add($"featuredFirst={featuredFirst.Value.ToString().ToLower()}");
+
+                if (categoryId.HasValue)
+                    queryParams.Add($"categoryId={categoryId.Value}");
+
                 var url = $"/api/v2/event/getpaginatedevents?{string.Join("&", queryParams)}";
 
                 return await _dapr.InvokeMethodAsync<PagedResponse<V2Events>>(

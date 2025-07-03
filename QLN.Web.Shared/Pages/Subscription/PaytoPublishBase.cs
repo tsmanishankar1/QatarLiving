@@ -104,7 +104,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/qln/classified/dashboard/items");
+            Navigation.NavigateTo("/qln/classified/dashboard/items", forceLoad: true);
         }
 
         protected void SelectPlan(PayToPublishPlan plan)

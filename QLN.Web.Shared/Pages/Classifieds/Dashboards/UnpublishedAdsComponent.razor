@@ -64,14 +64,24 @@ else if (Ads != null && Ads.Any())
                 </MudText>
 
                 <!-- Certificate + Location + Status + Expiry (Row 4) -->
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-2">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mt-2">
                     <!-- Left: Location -->
-                    <div class="d-flex align-items-center">
-                        <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
-                        <MudText Typo="Typo.caption"
-                                 Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
-                            @ad.Location
-                        </MudText>
+                    <div class="d-flex flex-column mt-1 mt-sm-0">
+                        <div>
+
+                            <MudIcon Icon="@Icons.Material.Outlined.Place" Size="Size.Small" Style="color: #646464;" />
+                            <MudText Typo="Typo.caption"
+                                     Style="margin-left:4px;font-family: 'Public Sans', sans-serif; font-weight: 500; font-size: 14px; line-height: 12px; letter-spacing: 0; color: #646464;">
+                                @ad.Location
+                            </MudText>
+                        </div>
+                        <div Class="mt-1 px-2 py-1">
+                            <MudText Typo="Typo.h6"
+                                     Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
+                                @ad.Price @ad.PriceType
+                            </MudText>
+                        </div>
+
                     </div>
 
                     <!-- Right: Status Chip + Expiry -->
@@ -93,11 +103,7 @@ else if (Ads != null && Ads.Any())
                     </div>
                 </div>
 
-                <!-- Price (Row 5) -->
-                <MudText Typo="Typo.h6"
-                         Style="font-family: 'Public Sans', sans-serif; font-weight: 600; font-size: 20px; line-height: 34px; letter-spacing: 0; color: #242424;">
-                    @ad.Price @ad.PriceType
-                </MudText>
+
 
                 <!-- Buttons (Row 6) -->
                 <div class="d-flex flex-wrap mt-2" style="gap: 8px;">
@@ -140,7 +146,7 @@ else if (Ads != null && Ads.Any())
         </MudPaper>
 
         <!-- Stats + Status -->
-        <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 py-2 mb-4"
+        <MudPaper Class="d-flex flex-column flex-sm-row align-items-sm-center px-4 px-8 py-2 mb-4"
                   Style="margin-top:10px;border-radius:0; border:none; border-bottom:1px solid #EAECF0; box-shadow:none;">
             <!-- Stats -->
             <div class="d-flex flex-wrap" style="flex: 1; gap: 16px;">

@@ -420,6 +420,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 [FromQuery] int? page,
                 [FromQuery] int? perPage,
                 [FromQuery] string? search,
+                [FromQuery] int? categoryId,
                 [FromQuery] string? sortOrder,
                 [FromQuery] DateOnly? fromDate,
                 [FromQuery] DateOnly? toDate,
@@ -433,7 +434,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    var result = await service.GetPagedEvents(page, perPage, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, featuredFirst, cancellationToken);
+                    var result = await service.GetPagedEvents(page, perPage, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, categoryId, featuredFirst, cancellationToken);
 
                     if (result == null || result.Items == null || !result.Items.Any())
                     {

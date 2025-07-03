@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 
@@ -199,16 +200,33 @@ public static class PayToPublishEndpoints
         {
             try
             {
-                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
-                                 ?? context.User.FindFirst("sub")
-                                 ?? context.User.FindFirst("userId");
+                // ✅ Extract UID from "user" claim
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                if (string.IsNullOrEmpty(userClaim))
                 {
                     return Results.Unauthorized();
                 }
 
-                var result = await service.GetPaymentsByUserIdAsync(userId, cancellationToken);
+                string uid;
+                try
+                {
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Unauthorized();
+                    }
+                }
+                catch (Exception)
+                {
+                    return Results.Unauthorized();
+                }
+
+                // Call the service with the extracted uid (string)
+                var result = await service.GetPaymentsByUserIdAsync(uid, cancellationToken);
+
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -231,16 +249,41 @@ public static class PayToPublishEndpoints
         return group;
     }
 
+
     public static RouteGroupBuilder MapGetPayToPublishPaymentsByUserIdEndpoint(this RouteGroupBuilder group)
     {
-        group.MapGet("/paytopublish/user/{userId:guid}", async (
-            Guid userId,
+        group.MapGet("/paytopublish/user/me", async (
+            HttpContext context,
             [FromServices] IPayToPublishService service,
             CancellationToken cancellationToken) =>
         {
             try
             {
-                var result = await service.GetPaymentsByUserIdAsync(userId, cancellationToken);
+                // ✅ Extract UID from "user" claim in token
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return Results.Unauthorized();
+                }
+
+                string uid;
+                try
+                {
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Unauthorized();
+                    }
+                }
+                catch (Exception)
+                {
+                    return Results.Unauthorized();
+                }
+
+                var result = await service.GetPaymentsByUserIdAsync(uid, cancellationToken);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -252,14 +295,18 @@ public static class PayToPublishEndpoints
                 );
             }
         })
-        .WithName("GetPayToPublishPaymentsByUserId")
+        .RequireAuthorization()
+        .WithName("GetPayToPublishPaymentsByCurrentUser")
         .WithTags("PayToPublish")
-        .WithSummary("Get PayToPublish payments by userId")
+        .WithSummary("Get PayToPublish payments for current user (from token)")
+        .WithDescription("Retrieves all PayToPublish payments for the current authenticated user based on UID in token.")
         .Produces<List<PaymentDto>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
+
 
     public static RouteGroupBuilder MapCreateBasicPriceEndpoints(this RouteGroupBuilder group)
     {

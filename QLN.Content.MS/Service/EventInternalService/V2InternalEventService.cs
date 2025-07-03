@@ -431,7 +431,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
                     int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
-                    string? filterType, string? location, bool? freeOnly, bool? featuredFirst = true, CancellationToken cancellationToken = default)
+                    string? filterType, string? location, bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -475,6 +475,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     allEvents = allEvents
                         .Where(e => !string.IsNullOrEmpty(e.EventTitle) &&
                                     e.EventTitle.Contains(search, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+                if (categoryId.HasValue)
+                {
+                    allEvents = allEvents
+                        .Where(e => e.CategoryId == categoryId.Value)
                         .ToList();
                 }
                 if (fromDate.HasValue || toDate.HasValue)

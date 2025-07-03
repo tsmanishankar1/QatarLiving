@@ -52,15 +52,15 @@ namespace QLN.Common.DTO_s
 
     public class V2NewsCategory
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string CategoryName { get; set; }
         public List<V2NewsSubCategory> SubCategories { get; set; }
     }
 
     public class V2NewsSubCategory
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
+        public Guid Id { get; set; }
+        public string SubCategoryName { get; set; }
     }
     public class V2NewsSlot
     {

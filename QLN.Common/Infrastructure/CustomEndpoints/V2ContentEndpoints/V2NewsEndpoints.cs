@@ -37,31 +37,6 @@ public static class V2NewsEndpoints
          .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-       group.MapGet("/getcategories", async Task<Results<
-      Ok<List<V2NewsCategory>>,
-      ProblemHttpResult>>
-      (
-          IV2NewsService service,
-          CancellationToken cancellationToken
-      ) =>
-        {
-            try
-            {
-                var getcategories = await service.GetNewsCategoriesAsync(cancellationToken);
-                return TypedResults.Ok(getcategories);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Error retrieving writer tags", ex.Message);
-            }
-        })
-      .WithName("getcategories")
-      .WithTags("News")
-      .WithSummary("Get all writer tags as key-value JSON")
-      .WithDescription("Returns writer tags in a key-value JSON object format")
-      .Produces<List<V2NewsCategory>>(StatusCodes.Status200OK)
-      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
         group.MapGet("/slots", async Task<Results<Ok<List<V2NewsSlot>>, ProblemHttpResult>> (
         IV2NewsService slotService,
         CancellationToken cancellationToken
@@ -208,30 +183,53 @@ public static class V2NewsEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
         group.MapGet("/getAllNewsArticle", async Task<Results<
-            Ok<List<V2NewsArticleDTO>>,
-            ProblemHttpResult>>
-        (
-            IV2NewsService service,
-            CancellationToken cancellationToken
+    Ok<PagedResponse<V2NewsArticleDTO>>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    [FromQuery] int? page,
+    [FromQuery] int? perPage,
+    [FromQuery] string? search,
+    IV2NewsService service,
+    CancellationToken cancellationToken
 ) =>
         {
             try
             {
-                var articles = await service.GetAllNewsArticlesAsync(cancellationToken);
-                return TypedResults.Ok(articles);
+                var result = await service.GetAllNewsArticlesAsync(page, perPage, search, cancellationToken);
+
+                if (result == null || result.Items == null || !result.Items.Any())
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No Articles Found",
+                        Detail = "No news articles match the provided search.",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                return TypedResults.Ok(result);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Error retrieving articles", ex.Message);
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Server Error",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status500InternalServerError
+                });
             }
         })
-        .WithName("GetAllNewsArticles")
-        .WithTags("News")
-        .WithSummary("Get all news articles")
-        .WithDescription("Returns all news articles stored in the system.")
-        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+.WithName("GetPaginatedNewsArticles")
+.WithTags("News")
+.WithSummary("Paginated News Articles List (title search)")
+.WithDescription("Fetches news articles with optional title search and pagination.")
+.Produces<PagedResponse<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
         group.MapGet("/byCategory/{categoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
             int categoryId,
@@ -561,6 +559,349 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapGet("/get-by-id/{id:guid}", async Task<Results<
+    Ok<V2NewsArticleDTO>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    Guid id,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var article = await service.GetArticleByIdAsync(id, cancellationToken);
+                if (article is null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No article found with ID: {id}",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                return TypedResults.Ok(article);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("GetNewsArticleById")
+.WithTags("News")
+.WithSummary("Get News Article by ID")
+.WithDescription("Returns the news article for the given ID.")
+.Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/get-by-slug/{slug}", async Task<Results<
+    Ok<V2NewsArticleDTO>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    string slug,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var article = await service.GetArticleBySlugAsync(slug, cancellationToken);
+                if (article is null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No article found with slug: {slug}",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                return TypedResults.Ok(article);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("GetNewsArticleBySlug")
+.WithTags("News")
+.WithSummary("Get News Article by Slug")
+.WithDescription("Returns the news article for the provided slug.")
+.Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/category/create", async Task<Results<
+    Ok<string>,
+    ForbidHttpResult,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    V2NewsCategory category,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (userClaim == null)
+                {
+                    return TypedResults.Forbid();
+                }
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var name = userData.GetProperty("name").GetString();
+
+                if (string.IsNullOrWhiteSpace(category.CategoryName))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "CategoryName is required."
+                    });
+                }
+
+                category.Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id;
+                category.SubCategories ??= [];
+
+                foreach (var sub in category.SubCategories)
+                {
+                    sub.Id = sub.Id == Guid.Empty ? Guid.NewGuid() : sub.Id;
+                }
+
+                // Optionally log or store `CreatedBy` metadata
+                await service.AddCategoryAsync(category, cancellationToken);
+
+                return TypedResults.Ok("News category created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to create news category", ex.Message);
+            }
+        })
+.WithName("CreateNewsCategory")
+.WithTags("News")
+.WithSummary("Create a news category (Authorized)")
+.WithDescription("Creates a category by authenticated user with subcategories")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+        group.MapPost("/category/createById", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    V2NewsCategory category,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(category.CategoryName))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "CategoryName is required."
+                    });
+                }
+
+                category.Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id;
+                category.SubCategories ??= [];
+
+                foreach (var sub in category.SubCategories)
+                {
+                    sub.Id = sub.Id == Guid.Empty ? Guid.NewGuid() : sub.Id;
+                }
+
+                await service.AddCategoryAsync(category, cancellationToken);
+
+                return TypedResults.Ok("News category created successfully.");
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to create news category", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("CreateNewsCategoryById")
+.WithTags("News")
+.WithSummary("Create a news category by explicit ID (no auth)")
+.WithDescription("Creates a category and subcategories using payload-provided data. No authorization required.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/category/get-Allcategory", async Task<Results<
+    Ok<List<V2NewsCategory>>,
+    ProblemHttpResult>>
+(
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var categories = await service.GetAllCategoriesAsync(cancellationToken);
+                return TypedResults.Ok(categories);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to retrieve categories", ex.Message);
+            }
+        })
+.WithName("GetAllCategories")
+.WithTags("News")
+.WithSummary("Get all news categories")
+.Produces<List<V2NewsCategory>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+        group.MapGet("/category/get-by-id/{id:guid}", async Task<Results<
+    Ok<V2NewsCategory>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    Guid id,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var category = await service.GetCategoryByIdAsync(id, cancellationToken);
+                return category != null
+                    ? TypedResults.Ok(category)
+                    : TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"Category with ID {id} was not found."
+                    });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error retrieving category", ex.Message);
+            }
+        })
+.WithName("GetCategoryById")
+.WithTags("News")
+.WithSummary("Get news category by ID")
+.Produces<V2NewsCategory>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPut("/category/update-subcategory", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    NotFound<ProblemDetails>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    Guid categoryId,
+    V2NewsSubCategory subcategory,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (userClaim == null)
+                {
+                    return TypedResults.Forbid();
+                }
+
+                if (categoryId == Guid.Empty || subcategory.Id == Guid.Empty || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "CategoryId, SubCategoryId, and CategoryName are required."
+                    });
+                }
+
+                var updated = await service.UpdateSubCategoryAsync(categoryId, subcategory, cancellationToken);
+
+                return updated
+                    ? TypedResults.Ok("Subcategory updated successfully.")
+                    : TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = "Subcategory not found in specified category."
+                    });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error updating subcategory", ex.Message);
+            }
+        })
+.WithName("UpdateSubCategory")
+.WithTags("News")
+.WithSummary("Update subcategory name by authorized user")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPut("/category/update-subcategory-by-id", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    Guid categoryId,
+    V2NewsSubCategory subcategory,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                if (categoryId == Guid.Empty || subcategory.Id == Guid.Empty || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "CategoryId, SubCategoryId, and CategoryName are required."
+                    });
+                }
+
+                var updated = await service.UpdateSubCategoryAsync(categoryId, subcategory, cancellationToken);
+
+                return updated
+                    ? TypedResults.Ok("Subcategory updated successfully.")
+                    : TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = "Subcategory not found in specified category."
+                    });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error updating subcategory", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("UpdateSubCategoryById")
+.WithTags("News")
+.WithSummary("Update subcategory without authorization")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
