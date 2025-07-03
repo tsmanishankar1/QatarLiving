@@ -54,13 +54,13 @@ namespace QLN.Web.Shared.Pages.Subscription
         public string Name { get; set; }
         public string Email { get; set; }
 
-
-
         protected void InitializeBreadcrumbs()
         {
             breadcrumbItems = new()
         {
             new() { Label = "Back to Dashboard", Url = "/qln/classified/dashboard/items" },
+            new() { Label = "Purchase Refresh Add-on", Url = $"/qln/PurchaseRefresh", IsLast = true }
+
         };
         }
 
@@ -112,7 +112,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/qln/classified/dashboard/items",forceLoad:true);
+            Navigation.NavigateTo("/qln/classified/dashboard/items", forceLoad: true);
         }
 
         protected void SelectPlan(PayToPublishPlan plan)
