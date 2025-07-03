@@ -1,5 +1,7 @@
 ﻿using Dapr.Actors.Runtime;
+using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
 
@@ -9,18 +11,25 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "paytopublish-payment-data";
         private const string BackupStateKey = "transaction-data";
+        private const string StoreName = "statestore";
+        private const string GlobalPaymentDetailsKey = "paytopublish-payment-details-collection";
         private const string PaymentIdsStateKey = "payment-ids-collection";
         private const string DailyTimerName = "paytopublish-daily-timer";
         private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
+        private readonly DaprClient _daprClient;
 
-        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
+        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger ,DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _daprClient = daprClient;
         }
-
+        public class GlobalP2PPaymentDetailsCollection
+        {
+            public List<UserP2PPaymentDetailsResponseDto> Details { get; set; } = new();
+        }
         public async Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -55,6 +64,45 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
+        public async Task StorePaymentDetailsAsync(UserP2PPaymentDetailsResponseDto details, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var existing = await _daprClient.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                    StoreName,
+                    GlobalPaymentDetailsKey,
+                    cancellationToken: cancellationToken);
+
+                existing ??= new GlobalP2PPaymentDetailsCollection();
+
+                // Optional: remove old entry if exists for same user
+                existing.Details.RemoveAll(x => x.UserId == details.UserId);
+
+                existing.Details.Add(details);
+
+                await _daprClient.SaveStateAsync(StoreName, GlobalPaymentDetailsKey, existing, cancellationToken: cancellationToken);
+
+                _logger.LogInformation("[Global] Stored payment detail for user {UserId}", details.UserId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing global paytopublish payment detail");
+                throw;
+            }
+        }
+        public async Task<List<UserP2PPaymentDetailsResponseDto>> GetAllPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var global = await _daprClient.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                StoreName,
+                GlobalPaymentDetailsKey,
+                cancellationToken: cancellationToken);
+
+            return global?.Details ?? new List<UserP2PPaymentDetailsResponseDto>();
+        }
+
+
+      
+
 
         public async Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {

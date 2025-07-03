@@ -1,4 +1,5 @@
 ﻿
+using Dapr.Actors;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
@@ -6,6 +7,13 @@ using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTOs
 {
+    public static class ActorIdExtensions
+    {
+        public static Guid GetGuidId(this ActorId actorId)
+        {
+            return Guid.Parse(actorId.GetId());
+        }
+    }
     public class SubscriptionDto
     {
         public Guid Id { get; set; }
@@ -31,7 +39,7 @@ namespace QLN.Common.DTOs
     }
     public class PaymentCompletedMessage
     {
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public Guid SubscriptionId { get; set; }
         public Guid PaymentTransactionId { get; set; }
         public DateTime StartDate { get; set; }
@@ -50,7 +58,7 @@ namespace QLN.Common.DTOs
         public DateTime TransactionDate { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-
+        public string UserId { get; set; }
         public string CardHolderName { get; set; }
 
         // Subscription Information
@@ -67,18 +75,19 @@ namespace QLN.Common.DTOs
         public string VerticalName { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
+        public decimal? AdsBudgetTotal { get; set; }
+        public decimal? AdsBudgetUsage { get; set; }
+        public decimal? PromoteBudgetTotal { get; set; }
+        public decimal? PromoteBudgetUsage { get; set; }
+        public decimal? RefreshBudgetTotal { get; set; }
+        public decimal? RefreshBudgetUsage { get; set; }
 
-   
-        public decimal? AdsbudBudget { get; set; }
-        public decimal? PromoteBudget { get; set; }
-        public decimal? RefreshBudget { get; set; }
 
 
-       
     }
     public class YearlySubscriptionResponseDto
     {
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public bool IsRewardsYearlySubscription { get; set; }
         public decimal? Price { get; set; }
         public string Currency { get; set; } = string.Empty;
@@ -89,7 +98,7 @@ namespace QLN.Common.DTOs
     }
     public class SubscriptionExpiryMessage
     {
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public Guid SubscriptionId { get; set; }
         public Guid PaymentTransactionId { get; set; }
         public DateTime ExpiryDate { get; set; }
@@ -191,7 +200,7 @@ namespace QLN.Common.DTOs
         public Guid SubscriptionId { get; set; }
         public int VerticalId { get; set; }
         public int CategoryId { get; set; }
-        public Guid UserId { get; set; }
+        public string UserId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string CardNumber { get; set; } = string.Empty; 

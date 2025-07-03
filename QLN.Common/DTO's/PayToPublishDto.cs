@@ -22,10 +22,9 @@ namespace QLN.Common.DTO_s
        
         BasicPrice_200 = 200,
         BasicPrice_50 = 50,
-       
+        BasicPrice_29 = 29,
+
     }
-
-
     public class PayToPublishDto
     {
         public Guid Id { get; set; }
@@ -38,6 +37,9 @@ namespace QLN.Common.DTO_s
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
         public bool IsFreeAd { get; set; }
+        public bool IsPromoteAd { get; set; }
+        public bool IsFeatureAd { get; set; }
+
         public Status StatusId { get; set; }
         public DateTime LastUpdated { get; set; }
 
@@ -55,8 +57,15 @@ namespace QLN.Common.DTO_s
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
         public BasicPrice BasicPriceId { get; set; }
+        public TimeSpan Duration { get; set; }
         public DateTime LastUpdated { get; set; }
 
+    }
+    public class PayToPublishPlansResponse
+    {
+        public int? BasicPriceId { get; set; }
+        public string Duration { get; set; }
+        public List<PayToPublishWithBasicPriceResponseDto> PlanDetails { get; set; } = new();
     }
     public class PayToPublishWithBasicPriceResponseDto
     {
@@ -65,35 +74,26 @@ namespace QLN.Common.DTO_s
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-      
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
+        public bool IsPromoteAd { get; set; }
+        public bool IsFeatureAd { get; set; }
         public int VerticalId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
         public int? BasicPriceId { get; set; }
-        public string? BasicPriceName { get; set; }
+      
     }
     public class BasicPriceRequestDto
     {
         public Vertical VerticalTypeId { get; set; }
         public SubscriptionCategory CategoryId { get; set; }
+        public TimeSpan Duration { get; set; }
         public BasicPrice BasicPriceId { get; set; }
     }
 
-    public class BasicPriceResponseDto
-    {
-        public Guid Id { get; set; }
-        public int VerticalTypeId { get; set; }
-        public string VerticalTypeName { get; set; }
-        public int CategoryId { get; set; }
-        public string CategoryName { get; set; }
-        public int BasicPriceId { get; set; }
-        public string BasicPriceName { get; set; }
-        public DateTime LastUpdated { get; set; }
-
-    }
+   
 
     public class PayToPublishRequestDto
     {
@@ -116,6 +116,8 @@ namespace QLN.Common.DTO_s
 
         public SubscriptionCategory CategoryId { get; set; }
         public bool IsFreeAd { get; set; }
+        public bool IsPromoteAd { get; set; }
+        public bool IsFeatureAd { get; set; }
         [Required]
         public Status StatusId { get; set; }
     }
@@ -129,6 +131,8 @@ namespace QLN.Common.DTO_s
         public string Description { get; set; } = string.Empty;
         public string DurationName { get; set; } = string.Empty;
         public bool IsFreeAd { get; set; } = false;
+        public bool IsPromoteAd { get; set; }
+        public bool IsFeatureAd { get; set; }
     }
 
 
@@ -142,7 +146,30 @@ namespace QLN.Common.DTO_s
         public string CategoryName { get; set; } = string.Empty;
         public List<PayToPublishResponseDto> PayToPublish { get; set; } = new();
     }
-
+    public class UserP2PPaymentDetailsResponseDto
+    {
+        public string  UserId { get; set; }
+        public Guid PaymentTransactionId { get; set; }
+        public DateTime TransactionDate { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public Guid PaytoPublishId { get; set; }
+        public string PayToPublishName { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public bool IsPromoteAd { get; set; }
+        public bool IsFeatureAd { get; set; }
+        public bool IsAdFree { get; set; }
+        public Guid AddId { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public int DurationId { get; set; }
+        public string DurationName { get; set; } = string.Empty;
+        public int VerticalTypeId { get; set; }
+        public string VerticalName { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string CardHolderName { get; set; } = string.Empty;
+    }
     public class PaymentDto
     {
         public Guid Id { get; set; }
@@ -150,7 +177,7 @@ namespace QLN.Common.DTO_s
         public int VerticalId { get; set; }
       
         public int CategoryId { get; set; }
-        public Guid UserId { get; set; }
+        public string  UserId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string CardNumber { get; set; } = string.Empty;

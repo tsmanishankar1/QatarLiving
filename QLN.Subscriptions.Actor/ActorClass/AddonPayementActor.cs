@@ -1,5 +1,6 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
+using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 
@@ -11,17 +12,64 @@ namespace QLN.Subscriptions.Actor.ActorClass
     public class AddonPaymentActor : Dapr.Actors.Runtime.Actor, IAddonPaymentActor
     {
         private const string StateKey = "addon-payment-data";
+        private const string StoreName = "statestore";
+        private const string GlobalAddonPaymentDetailsKey = "global-addon-payment-details";
         private const string BackupStateKey = "transaction-data";
         private const string DailyTimerName = "addon-daily-timer";
         private const string SpecificTimerName = "addon-specific-timer";
         private readonly ILogger<AddonPaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(15, 01, 0);
         private static readonly string TimeZoneId = "India Standard Time";
+        private readonly DaprClient _daprClient;
 
-        public AddonPaymentActor(ActorHost host, ILogger<AddonPaymentActor> logger) : base(host)
+        public AddonPaymentActor(ActorHost host, ILogger<AddonPaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _daprClient = daprClient;
         }
+        public class GlobalAddonPaymentDetailsCollection
+        {
+            public List<AddonPaymentWithCurrencyDto> Details { get; set; } = new();
+        }
+
+        public async Task StoreGlobalAddonPaymentDetailsAsync(AddonPaymentWithCurrencyDto details, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var existing = await _daprClient.GetStateAsync<GlobalAddonPaymentDetailsCollection>(
+                    StoreName,
+                    GlobalAddonPaymentDetailsKey,
+                    cancellationToken: cancellationToken);
+
+                existing ??= new GlobalAddonPaymentDetailsCollection();
+                existing.Details.RemoveAll(x =>
+                    x.UserId == details.UserId &&
+                    x.AddonId == details.AddonId);
+
+                existing.Details.Add(details);
+
+                await _daprClient.SaveStateAsync(StoreName, GlobalAddonPaymentDetailsKey, existing, cancellationToken: cancellationToken);
+
+                _logger.LogInformation("[Global] Stored addon payment detail for user {UserId}, AddonId: {AddonId}",
+                    details.UserId, details.AddonId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing global addon payment detail");
+                throw;
+            }
+        }
+
+        public async Task<List<AddonPaymentWithCurrencyDto>> GetAllGlobalAddonPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var global = await _daprClient.GetStateAsync<GlobalAddonPaymentDetailsCollection>(
+                StoreName,
+                GlobalAddonPaymentDetailsKey,
+                cancellationToken: cancellationToken);
+
+            return global?.Details ?? new List<AddonPaymentWithCurrencyDto>();
+        }
+
 
         public async Task<bool> SetDataAsync(AddonPaymentDto data, CancellationToken cancellationToken = default)
         {
@@ -31,22 +79,16 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Initialize IsExpired if null
                 data.IsExpired = false;
                 data.LastUpdated = DateTime.UtcNow;
-
-                // Store in both primary and backup state keys
                 await StoreInPrimaryStateAsync(data, cancellationToken);
                 await StoreInBackupStateAsync(data, cancellationToken);
-
-                // Schedule expiry checks only if not expired and has valid end date
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
                 {
                     await ScheduleExpiryChecksAsync(data);
                 }
                 else if (data.IsExpired)
                 {
-                    // Clean up any existing timers for expired payments
                     await CleanupTimersAsync();
                 }
 
@@ -70,18 +112,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Try to get from primary state first
                 var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
                 if (primaryStateValue != null)
                 {
                     return primaryStateValue;
                 }
 
-                // If not found in primary state, try backup state
                 var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
                 if (backupStateValue != null)
                 {
-                    // If found in backup state, also update primary state for consistency
                     await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
                     return backupStateValue;
                 }
@@ -168,13 +207,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[AddonPaymentActor {ActorId}] DeleteDataAsync called", Id);
-
-                // Delete from both state keys
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers
                 await CleanupTimersAsync();
 
                 _logger.LogInformation("[AddonPaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
@@ -195,20 +230,16 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                 var primaryData = await GetFromPrimaryStateAsync(cancellationToken);
                 var backupData = await GetFromBackupStateAsync(cancellationToken);
-
-                // If data exists in primary but not in backup, sync to backup
                 if (primaryData != null && backupData == null)
                 {
                     await StoreInBackupStateAsync(primaryData, cancellationToken);
                     _logger.LogInformation("[AddonPaymentActor {ActorId}] Synced data from primary to backup state key", Id);
                 }
-                // If data exists in backup but not in primary, sync to primary
                 else if (backupData != null && primaryData == null)
                 {
                     await StoreInPrimaryStateAsync(backupData, cancellationToken);
                     _logger.LogInformation("[AddonPaymentActor {ActorId}] Synced data from backup to primary state key", Id);
                 }
-                // If both exist, use the most recently updated one
                 else if (primaryData != null && backupData != null)
                 {
                     if (primaryData.LastUpdated > backupData.LastUpdated)
@@ -236,13 +267,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             try
             {
-                // Clean up existing timers first
                 await CleanupTimersAsync();
-
-                // Schedule daily check
                 await ScheduleDailyExpiryCheckAsync();
-
-                // Schedule specific expiry check if needed
                 await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
 
                 _logger.LogInformation("[AddonPaymentActor {ActorId}] Scheduled expiry checks for user {UserId}, EndDate: {EndDate}",
@@ -266,7 +292,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 nameof(CheckAddonExpiryAsync),
                 null,
                 dueTime,
-                TimeSpan.FromDays(1)); // Repeat daily
+                TimeSpan.FromDays(1)); 
         }
 
         private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextDailyCheckTime()
@@ -278,8 +304,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var nextCheckTime = nowIst <= todayCheckTime ? todayCheckTime : todayCheckTime.AddDays(1);
             var nextCheckTimeUtc = TimeZoneInfo.ConvertTimeToUtc(nextCheckTime, istTimeZone);
             var dueTime = nextCheckTimeUtc - DateTime.UtcNow;
-
-            // Ensure we don't have negative due time
             if (dueTime <= TimeSpan.Zero)
             {
                 nextCheckTime = nextCheckTime.AddDays(1);
@@ -303,8 +327,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await CleanupTimersAsync();
                     return;
                 }
-
-                // Skip if already marked as expired
                 if (paymentData.IsExpired == true)
                 {
                     _logger.LogInformation("[AddonPaymentActor {ActorId}] Payment already marked as expired for user {UserId}",
@@ -312,8 +334,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await CleanupTimersAsync();
                     return;
                 }
-
-                // Check if subscription has expired
                 if (paymentData.EndDate <= DateTime.UtcNow)
                 {
                     await HandleSubscriptionExpiryAsync(paymentData);
@@ -323,8 +343,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     var daysRemaining = (int)(paymentData.EndDate - DateTime.UtcNow).TotalDays;
                     _logger.LogInformation("[AddonPaymentActor {ActorId}] Addon still active for user {UserId}. EndDate: {EndDate}, Days remaining: {DaysRemaining}",
                         Id, paymentData.UserId, paymentData.EndDate, daysRemaining);
-
-                    // Reschedule specific expiry check if needed
                     await ScheduleSpecificExpiryCheckIfNeeded(paymentData);
                 }
             }
@@ -338,18 +356,12 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger.LogInformation("[AddonPaymentActor {ActorId}] Addon expired for user {UserId}. EndDate: {EndDate}",
                 Id, paymentData.UserId, paymentData.EndDate);
-
-            // Mark as expired
             paymentData.IsExpired = true;
             paymentData.LastUpdated = DateTime.UtcNow;
-
-            // Update both primary and backup states
             await StoreInPrimaryStateAsync(paymentData, default);
             await StoreInBackupStateAsync(paymentData, default);
 
             _logger.LogInformation("[AddonPaymentActor {ActorId}] Marked payment as expired for user {UserId}", Id, paymentData.UserId);
-
-            // Clean up timers
             await CleanupTimersAsync();
             _logger.LogInformation("[AddonPaymentActor {ActorId}] Cleaned up timers for expired addon", Id);
         }
@@ -358,18 +370,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             var timeUntilExpiry = paymentData.EndDate - DateTime.UtcNow;
             var (_, timeUntilNextDailyCheck) = CalculateNextDailyCheckTime();
-
-            // Schedule specific timer if expiry occurs before next daily check
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-                // Add small buffer to ensure we check after expiry
                 var bufferTime = TimeSpan.FromMinutes(2);
                 var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
                 _logger.LogInformation("[AddonPaymentActor {ActorId}] Scheduling specific expiry check in {TimeUntilExpiry} for user {UserId}",
                     Id, specificDueTime, paymentData.UserId);
-
-                // Unregister existing specific timer first
                 await UnregisterTimerSafelyAsync(SpecificTimerName);
 
                 await RegisterTimerAsync(
@@ -377,7 +384,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     nameof(CheckAddonExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); // One-time execution
+                    TimeSpan.FromMilliseconds(-1)); 
             }
         }
 
@@ -406,7 +413,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Sync state keys first
                 await SyncStateKeysAsync();
 
                 var paymentData = await GetDataAsync();
@@ -422,8 +428,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     {
                         _logger.LogInformation("[AddonPaymentActor {ActorId}] Subscription already expired or invalid. EndDate: {EndDate}, IsExpired: {IsExpired}",
                             Id, paymentData.EndDate, paymentData.IsExpired);
-
-                        // If subscription is expired but not marked, handle it
                         if (paymentData.EndDate <= DateTime.UtcNow && paymentData.IsExpired != true)
                         {
                             await HandleSubscriptionExpiryAsync(paymentData);
