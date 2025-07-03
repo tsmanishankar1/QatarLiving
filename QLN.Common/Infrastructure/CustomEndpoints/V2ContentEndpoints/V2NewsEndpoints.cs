@@ -561,6 +561,81 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapGet("/get-by-id/{id:guid}", async Task<Results<
+    Ok<V2NewsArticleDTO>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    Guid id,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var article = await service.GetArticleByIdAsync(id, cancellationToken);
+                if (article is null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No article found with ID: {id}",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                return TypedResults.Ok(article);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("GetNewsArticleById")
+.WithTags("News")
+.WithSummary("Get News Article by ID")
+.WithDescription("Returns the news article for the given ID.")
+.Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/get-by-slug/{slug}", async Task<Results<
+    Ok<V2NewsArticleDTO>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    string slug,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var article = await service.GetArticleBySlugAsync(slug, cancellationToken);
+                if (article is null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No article found with slug: {slug}",
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+
+                return TypedResults.Ok(article);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("GetNewsArticleBySlug")
+.WithTags("News")
+.WithSummary("Get News Article by Slug")
+.WithDescription("Returns the news article for the provided slug.")
+.Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }

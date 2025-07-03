@@ -3,6 +3,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -162,7 +163,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl) && !dto.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var imageName = $"{dto.Title}_{dto.Id}.png";
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
@@ -238,10 +239,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
-
-
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
 
         {
@@ -262,6 +259,50 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var url = $"/api/v2/news/get-by-id/{id}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var rawJson = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            var url = $"/api/v2/news/get-by-slug/{slug}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Return null if not found (optional: log or track)
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new Exception($"Failed to fetch article. Status: {response.StatusCode}, Body: {errorContent}");
+            }
+
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
 
     }
 }
