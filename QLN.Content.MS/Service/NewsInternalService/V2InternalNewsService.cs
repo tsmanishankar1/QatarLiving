@@ -27,65 +27,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
         "QL Exclusive",
         "Advice & Help"
     };
-        private List<V2NewsCategory> newsCateg =
-           [
-                   new()
-                    {
-                        Id = 1,
-                        CategoryName = "News",
-                        SubCategories = new List<V2NewsSubCategory>() {
-                            new() { Id = 1, CategoryName = "Qatar" },
-                            new() { Id = 2, CategoryName = "Middle East" },
-                            new() { Id = 3, CategoryName = "World" },
-                            new() { Id = 4, CategoryName = "Health & Education" },
-                            new() { Id = 5, CategoryName = "Community" },
-                            new() { Id = 6, CategoryName = "Law" },
-                        }
-                    },
-
-                    new()
-                    {
-                        Id = 2,
-                        CategoryName = "Business",
-                        SubCategories = [
-                            new() { Id = 1, CategoryName = "QatarEconomy" },
-                            new() { Id = 2, CategoryName = "MarketUpdates" },
-                            new() { Id = 3, CategoryName = "Real Estate" },
-                            new() { Id = 4, CategoryName = "Entrepreneurship" },
-                            new() { Id = 5, CategoryName = "Finance" },
-                            new() { Id = 6, CategoryName = "Jobs & Careers" }
-                        ]
-                    },
-
-                    new()
-                    {
-                        Id = 3,
-                        CategoryName = "Sports",
-                        SubCategories = [
-                            //update the ID values
-                            new() { Id = 1, CategoryName = "Qatar Sports" },
-                            new() { Id = 2, CategoryName = "FootBall" },
-                            new() { Id = 3, CategoryName = "International " },
-                            new() { Id = 4, CategoryName = "MotorSports" },
-                            new() { Id = 5, CategoryName = "Olympics" },
-                            new() { Id = 6, CategoryName = "Athelete Features" }
-                        ]
-                    },
-
-                    new()
-                    {
-                        Id = 4,
-                        CategoryName = "LifeStyle",
-                        SubCategories = [
-                            new() { Id = 1, CategoryName = "Food & Dining" },
-                            new() { Id = 2, CategoryName = "Travel & Leisure" },
-                            new() { Id = 3, CategoryName = "Arts & Culture" },
-                            new() { Id = 4, CategoryName = "Events" },
-                            new() { Id = 5, CategoryName = "Fashion & Style" },
-                            new() { Id = 6, CategoryName = "Home & Living" }
-                        ]
-                    }
-           ];
 
         public V2InternalNewsService(DaprClient dapr, ILogger<IV2NewsService> logger)
         {
@@ -106,11 +47,11 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
 
 
-        public Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("Returning static writer tags as key-value JSON");
-            return Task.FromResult(newsCateg);
-        }
+        //public Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
+        //{
+        //    _logger.LogInformation("Returning static writer tags as key-value JSON");
+        //    return Task.FromResult(newsCateg);
+        //}
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             var slots = Enum.GetValues(typeof(Slot))
@@ -563,6 +504,74 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-    }
+        //Category
 
+        private static string GetCategoryKey(Guid id) => $"category-{id}";
+
+        public async Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            var keys = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
+                       ?? new List<string>();
+
+            _logger.LogInformation("Retrieved {Count} category keys", keys.Count);
+
+            var stateItems = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
+
+            return stateItems
+                .Where(item => !string.IsNullOrWhiteSpace(item.Value))
+                .Select(item => JsonSerializer.Deserialize<V2NewsCategory>(item.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
+                .Where(cat => cat != null)
+                .ToList()!;
+        }
+
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var key = GetCategoryKey(id);
+            return await _dapr.GetStateAsync<V2NewsCategory>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
+        }
+
+        public async Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
+        {
+                category.Id = Guid.NewGuid();
+
+            category.SubCategories ??= new();
+            foreach (var sub in category.SubCategories)
+            {
+                    sub.Id = Guid.NewGuid();
+            }
+
+            var key = GetCategoryKey(category.Id);
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, category, cancellationToken: cancellationToken);
+
+            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
+                        ?? new List<string>();
+
+            if (!index.Contains(key))
+            {
+                index.Add(key);
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, V2Content.NewsIndexKey, index, cancellationToken: cancellationToken);
+            }
+
+            _logger.LogInformation("Category {Id} saved to Redis", category.Id);
+        }
+
+        public async Task<bool> UpdateSubCategoryAsync(Guid categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default)
+        {
+            var key = GetCategoryKey(categoryId);
+            var category = await _dapr.GetStateAsync<V2NewsCategory>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
+
+            if (category == null || category.SubCategories == null)
+                return false;
+
+            var existing = category.SubCategories.FirstOrDefault(s => s.Id == updatedSubCategory.Id);
+            if (existing == null)
+                return false;
+
+            existing.SubCategoryName = updatedSubCategory.SubCategoryName;
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, category, cancellationToken: cancellationToken);
+            return true;
+        }
+    }
 }
+
+
