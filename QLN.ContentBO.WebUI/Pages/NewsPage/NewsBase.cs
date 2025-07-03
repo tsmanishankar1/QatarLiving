@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
@@ -46,7 +46,11 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             Categories = await GetNewsCategories() ?? [];
             SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
 
-            ListOfNewsArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId) ?? [];
+            ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId))?
+                                                 .OrderBy(a => a.Categories
+                                                     .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)?.SlotId
+                                                 )
+                                                 .ToList() ?? [];
 
             Slots = await GetSlots();
         }
@@ -109,15 +113,44 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             Unpublished
         }
 
-        protected async void Click_MoveItemUp(Guid Id)
+        protected async void Click_MoveItemUp(Guid Id, int currentSlotId)
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+                var toSlot = currentSlotId;
+                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
+                    a.Id == Id &&
+                    a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)
+                ) ?? new();
+
+                var selectedCategory = articleToUpdate.Categories
+                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId);
+
+
+                if (currentSlotId > 1)
+                {
+                    toSlot -= 1;
+                }
+
+                articleSlotAssignment = new()
+                {
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategoryId,
+                    FromSlot = selectedCategory?.SlotId ?? 0,
+                    ToSlot = toSlot,
+                    AuthorName = articleToUpdate.authorName ?? string.Empty,
+                    UserId = articleToUpdate.UserId ?? string.Empty
+                };
 
                 var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId))?
+                                                         .OrderBy(a => a.Categories
+                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)?.SlotId
+                                                         )
+                                                         .ToList() ?? [];
+
                     Snackbar.Add("Slot Updated");
                 }
             }
@@ -127,21 +160,49 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async void Click_MoveItemDown(Guid Id)
+        protected async void Click_MoveItemDown(Guid Id, int currentSlotId)
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+                var toSlot = currentSlotId;
+                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
+                    a.Id == Id &&
+                    a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)
+                ) ?? new();
 
-                var apiResponse = await newsService.UpdateArticle(articleToUpdate);
+                var selectedCategory = articleToUpdate.Categories
+                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId);
+
+                if (currentSlotId < 13)
+                {
+                    toSlot += 1;
+                }
+
+                articleSlotAssignment = new()
+                {
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategoryId,
+                    FromSlot = selectedCategory?.SlotId ?? 0,
+                    ToSlot = toSlot,
+                    AuthorName = articleToUpdate.authorName ?? string.Empty,
+                    UserId = articleToUpdate.UserId ?? string.Empty
+                };
+
+                var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId))?
+                                                         .OrderBy(a => a.Categories
+                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)?.SlotId
+                                                         )
+                                                         .ToList() ?? [];
                     Snackbar.Add("Slot Updated");
+
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Click_MoveItemUp");
+                Logger.LogError(ex, "Click_MoveItemDown");
             }
         }
 
@@ -206,7 +267,11 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected async void LoadCategory(int categoryId, int subCategory)
         {
             SelectedSubcategoryId = subCategory;
-            ListOfNewsArticles = await GetNewsBySubCategories(categoryId, subCategory) ?? [];
+            ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId))?
+                                     .OrderBy(a => a.Categories
+                                         .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)?.SlotId
+                                     )
+                                     .ToList() ?? [];
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -228,11 +293,11 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected string GetCategoryName(int categoryId) 
+        protected string GetCategoryName(int categoryId)
         {
             return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
         }
-        
+
         protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
         {
             return Categories
@@ -240,6 +305,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
                 .CategoryName;
+        }
+
+        protected int GetCurrentSlot(NewsArticleDTO articleDTO)
+        {
+            var selectedCategory = articleDTO.Categories
+                   .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId);
+
+            return selectedCategory?.SlotId ?? 0;
         }
     }
 }

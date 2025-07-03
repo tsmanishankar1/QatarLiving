@@ -34,10 +34,10 @@
                     <span class="nav-item default-gray">News</span>
                     </TitleContent>
                     <ChildContent>
-                        <MudNavLink Href="/manage/news/category/1" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
-                            <MudNavLink Href="/manage/news/category/2" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Business</MudNavLink>
-                            <MudNavLink Href="/manage/news/category/3" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
-                            <MudNavLink Href="/manage/news/category/4" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/1", true))" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
+                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/2", true))" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Business</MudNavLink>
+                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/3", true))" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
+                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/4", true))" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
                     </ChildContent>
                 </MudNavGroup>
                  <MudNavLink Href="/manage/community" Class="nav-item">
@@ -188,7 +188,7 @@
 
 @code {
     bool _drawerOpen = true;
-    protected bool _isNewsGroupExpanded = false;
+    protected bool _isNewsGroupExpanded = true;
     protected bool _isReportGroupExpanded = false;
     private string searchText;
 
@@ -198,11 +198,6 @@
     public string Alias { get; set; } = string.Empty;
     public bool IsLoggedIn { get; set; } = false;
     public int CurrentUserId { get; set; }
-
-    @* void DrawerToggle()
-    {
-        _drawerOpen = !_drawerOpen;
-    } *@
 
     /// <summary>
     /// Default Theme MudBlazor color variables.
