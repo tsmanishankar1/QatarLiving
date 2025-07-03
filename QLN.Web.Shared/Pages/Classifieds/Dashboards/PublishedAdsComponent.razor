@@ -105,7 +105,8 @@ else if (Ads != null && Ads.Any())
                     @if (DashboardType != VerticalConstants.SubVerticalId.Deals)
                     {
                         <MudButton Variant="Variant.Text" OnClick="() => OnRefreshAd(ad.Id)"
-                        Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
+                                   Disabled="@ad.IsRefreshed"
+                                   Style="text-transform: none; background-color: #F5F6FA; border-radius: 4px; color: #242424; display: flex; align-items: center;">
                             <img src="qln-images/subscription/Refresh.svg" alt="Gucci" style="margin-right: 8px;" />
                             <div>
                                 Refresh

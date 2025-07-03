@@ -136,22 +136,22 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             var verticalId = VerticalId.Classifieds;
             var categoryId = SubVerticalId.Stores;
 
-            Navigation.NavigateTo($"/qln/dashboard/company/create/{(int)verticalId}/{(int)categoryId}");
+            Navigation.NavigateTo($"/qln/dashboard/company/create/{(int)verticalId}/{(int)categoryId}", forceLoad: true);
         }
 
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform",forceLoad:true);
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}", forceLoad: true);
         }
         protected void onPreview(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
         protected void onRemove(string adId)

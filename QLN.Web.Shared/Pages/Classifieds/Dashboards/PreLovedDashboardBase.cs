@@ -295,16 +295,16 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform" ,forceLoad:true);
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}", forceLoad: true);
         }
         protected void onPreview(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
   
@@ -314,7 +314,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToEditProfile(string id)
         {
-            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
+            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}", forceLoad: true);
         }
         protected void NavigateToCreateProfile()
         {

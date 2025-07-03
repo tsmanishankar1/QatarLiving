@@ -166,6 +166,9 @@ namespace QLN.Web.Shared.Models
             [JsonPropertyName("isPromoted")]
             public bool IsPromoted { get; set; }
 
+            [JsonPropertyName("isRefreshed")]
+            public bool IsRefreshed { get; set; }
+
             [JsonPropertyName("refreshExpiry")]
             public DateTime? RefreshExpiry { get; set; }
 
