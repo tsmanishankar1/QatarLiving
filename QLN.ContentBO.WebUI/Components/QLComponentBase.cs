@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Handlers;
 using QLN.ContentBO.WebUI.Models;
+using System.Security.Claims;
 
 namespace QLN.ContentBO.WebUI.Components
 {
@@ -13,12 +14,27 @@ namespace QLN.ContentBO.WebUI.Components
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
 
+        public string CurrentUserName { get; set; } = string.Empty;
+        public string CurrentUserEmail { get; set; } = string.Empty;
+        public string Alias { get; set; } = string.Empty;
+        public bool IsLoggedIn { get; set; } = false;
+        public int CurrentUserId { get; set; }
+
         protected async void AuthorizedPage()
         {
             var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
             var destination = SetDestination();
 
-            if (authState != null && !authState.User.Identity.IsAuthenticated)
+            var user = authState.User;
+            if (user.Identity != null && user.Identity.IsAuthenticated)
+            {
+                Name = user.FindFirst(ClaimTypes.Name)?.Value;
+                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                Alias = user.FindFirst("alias")?.Value;
+                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
+                IsLoggedIn = true;
+            }
+            else
             {
                 NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
             }

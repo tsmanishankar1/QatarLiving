@@ -26,6 +26,7 @@ namespace QLN.ContentBO.WebUI.Models
         [Required]
         public List<ArticleCategory> Categories { get; set; } = [];
 
+        public bool IsActive { get; set; } = true;
         public DateTime PublishedDate { get; set; }
 
         public string CreatedBy { get; set; }

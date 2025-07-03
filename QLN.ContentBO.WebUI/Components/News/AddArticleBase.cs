@@ -66,11 +66,13 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                article.UserId = CurrentUserId.ToString();
+                article.IsActive = true;
                 article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added");
+                    Snackbar.Add("Article Added", severity: MudBlazor.Severity.Success);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -80,10 +82,12 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
+                article = new();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
+                article = new();
             }
         }
 
