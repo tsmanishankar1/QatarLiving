@@ -145,7 +145,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
             var url = $"api/v2/news/byCategory/{categoryId}";
