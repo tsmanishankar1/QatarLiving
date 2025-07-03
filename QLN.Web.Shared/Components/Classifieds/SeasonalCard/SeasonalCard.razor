@@ -2,7 +2,7 @@
 @inherits SeasonalCardBase
 @using QLN.Web.Shared.Components.EmptyCard
 
-<div class="seasonal-card">
+<div class="seasonal-card" @onclick="() => OnClick.InvokeAsync(Item)">
     @if (ShowEmptyCard)
     {
         <div class="category-image">
@@ -31,6 +31,7 @@
     max-width: 350px;
     border-radius: 12px;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .seasonal-card .category-image {

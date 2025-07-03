@@ -46,7 +46,7 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
         if (category?.EntityId == null)
             return;
 
-        var url = $"/qln/classifieds/items?categoryId={category.EntityId}";
+        var url = $"/qln/classifieds/items?categoryIdL1={category.EntityId}";
         NavigationManager.NavigateTo(url);
     }
     }

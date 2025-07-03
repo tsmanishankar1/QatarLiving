@@ -56,6 +56,7 @@ namespace QLN.Common.DTO_s
         public string CategoryName { get; set; }
         public List<V2NewsSubCategory> SubCategories { get; set; }
     }
+
     public class V2NewsSubCategory
     {
         public int Id { get; set; }
@@ -67,6 +68,12 @@ namespace QLN.Common.DTO_s
 
         public string Name { get; set; } = string.Empty;
     }
+
+    public class WriterTagsResponse
+    {
+        public List<string> Tags { get; set; }
+    }
+
     public enum Slot
     {
         Slot1 = 1,
@@ -84,11 +91,6 @@ namespace QLN.Common.DTO_s
         Slot13 = 13,
         Published = 14,
         UnPublished = 15
-    }
-
-    public class WriterTagsResponse
-    {
-        public List<string> Tags { get; set; }
     }
 
 

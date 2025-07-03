@@ -33,7 +33,9 @@
     }
      else if (Articles != null && Articles.Any()){
      @foreach (var article in Articles.Take(5))
+
     {
+            <MudLink Href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")" class="article-content" Style="display:flex !important">
         <div class="article-item" @onclick="@(() => onclick(article))">
              @if (string.IsNullOrWhiteSpace(article.ImageUrl)){
                 <div class="image-placeholder">
@@ -53,6 +55,7 @@
              }
             <div class="article-text">@article.Title</div>
         </div>
+        </MudLink>
     }
     }
     else{

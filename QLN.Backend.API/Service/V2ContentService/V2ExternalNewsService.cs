@@ -238,5 +238,30 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+
+
+
+        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
+
+        {
+            try
+            {
+                var url = "/api/v2/news/reorderLiveSlotsByUserId";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to apply slot rearrangement via external service");
+                throw;
+            }
+        }
+
     }
 }

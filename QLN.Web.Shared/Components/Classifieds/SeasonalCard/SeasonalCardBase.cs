@@ -21,12 +21,14 @@ public class SeasonalCardBase : ComponentBase
         }
     }
 
-    protected void OnImageLoaded()
-    {
-        imageLoaded = true;
-        imageFailed = false;
-        StateHasChanged();
-    }
+       [Parameter]
+        public EventCallback<LandingBackOfficeIndex> OnClick { get; set; }
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            imageFailed = false;
+            StateHasChanged();
+        }
 
     protected void OnImageError()
     {

@@ -60,62 +60,65 @@
                     <MudItem xs="12" md="8">
                         <div class="main-article">
                             <div class="main-content">
-                                <div class="main-category" @onclick="@(() => onclick(topNewsSlot))">
-                                    @if (isLoading)
-                                    {
-                                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
-                                    }
-                                    else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
-                                    {
-                                        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
-                                    }
-                                    else
-                                    {
-                                        @if (string.IsNullOrEmpty(topNewsSlot.ImageUrl))
+                                <MudLink Href="@getLink(topNewsSlot)" Style="text-decoration: none;">
+
+                                    <div class="main-category">
+                                        @if (isLoading)
                                         {
-                                            <EmptyCard Title="No Image Available" Subtitle="" />
+                                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" Width="100%" Animation="Animation.Wave" />
+                                        }
+                                        else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
+                                        {
+                                            <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
                                         }
                                         else
                                         {
-                                            @if (!imageLoaded)
+                                            @if (string.IsNullOrEmpty(topNewsSlot.ImageUrl))
                                             {
-                                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
+                                                <EmptyCard Title="No Image Available" Subtitle="" />
                                             }
-                                            <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
-                                                 style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                                                 @onerror="OnImageError" key="@topNewsSlot.ImageUrl" />
-                                            @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"> *@
-                                        }
-                                    }
-                                    @if (isLoading)
-                                    {
-                                        <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
-                                        <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
-                                        <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
-                                    }
-                                    else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
-                                    {
-                                    }
-                                    else
-                                    {
-                                      @*
-                                           @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category))
-                                        {
-                                            <span class="category-style">@topNewsSlot?.Category</span>
-                                        }
-                                      *@ 
-                                        <h2 class="main-title-style">@topNewsSlot.Title</h2>
-                                        <div class="author-wrapper">
-                                            <div class="main-author">
-                                                @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
+                                            else
+                                            {
+                                                @if (!imageLoaded)
                                                 {
-                                                    @topNewsSlot.UserName
+                                                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" Class="main-image" />
                                                 }
-                                            </div>
+                                                <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"
+                                                     style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                                                     @onerror="OnImageError" key="@topNewsSlot.ImageUrl" />
+                                                @* <img src="@topNewsSlot.ImageUrl" alt="News Image" class="main-image"> *@
+                                            }
+                                        }
+                                        @if (isLoading)
+                                        {
+                                            <MudSkeleton Class="mb-2 mt-2" SkeletonType="SkeletonType.Text" Height="24px" Width="100px" Animation="Animation.Wave" />
+                                            <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="100%" Animation="Animation.Wave" />
+                                            <MudSkeleton Class="mb-2" SkeletonType="SkeletonType.Text" Height="30px" Width="200px" Animation="Animation.Wave" />
+                                        }
+                                        else if (topNewsSlot == null || string.IsNullOrEmpty(topNewsSlot.Title))
+                                        {
+                                        }
+                                        else
+                                        {
+                                          @*
+                                               @if (!string.IsNullOrWhiteSpace(topNewsSlot?.Category))
+                                            {
+                                                <span class="category-style">@topNewsSlot?.Category</span>
+                                            }
+                                          *@ 
+                                            <h2 class="main-title-style">@topNewsSlot.Title</h2>
+                                            <div class="author-wrapper">
+                                                <div class="main-author">
+                                                    @if (!string.IsNullOrWhiteSpace(@topNewsSlot?.UserName))
+                                                    {
+                                                        @topNewsSlot.UserName
+                                                    }
+                                                </div>
 
-                                        </div>
-                                    }
-                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </MudLink>
                             </div>
                         </div>
                     </MudItem>
@@ -146,7 +149,7 @@
                         var thirdItem = topNewsListSlot.LastOrDefault();
                         @foreach (var news in topNewsListSlot.Skip(1).Take(3))
                         {
-                            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)" />
+                            <NewsCard news="news" IsHorizontal="false" Href="@getLink(news)" />
                             @if (news != thirdItem)
                             {
                                 <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
@@ -209,7 +212,7 @@
                     {
                         @foreach (var news in articleListSlot1.Take(5))
                         {
-                            <NewsCard news="news" IsHorizontal="false" OnClick="() => onclick(news)" />
+                            <NewsCard news="news" IsHorizontal="false" Href="@getLink(news)" />
                             @if (news != articleListSlot1.Last())
                             {
                                 <div class="divider-vertical"></div>
@@ -274,7 +277,7 @@
                                 var news = articleListSlot2[i];
                                 <MudItem xs="12" sm="6" md="4">
                                     <div class="card-with-divider">
-                                        <NewsCard news="news" IsHorizontal="true" OnClick="() => onclick(news)" />
+                                        <NewsCard news="news" IsHorizontal="true" Href="@getLink(news)" />
                                         @if (!showDivider)
                                         {
                                             <MudHidden xs="true" sm="true">

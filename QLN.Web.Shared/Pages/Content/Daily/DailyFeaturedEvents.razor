@@ -34,9 +34,11 @@
 
                 <div class="swiper-wrapper @(Items.Count <= 5 ? "les5swiper-wrapper" : "")">
                     <MudVirtualize Context="item" Items="Items" T="ContentEvent">
-                        <div class="swiper-slide swiper-slide-Card">
-                            <DailyFeaturedEventCard Item="item" OnClickCallback="OnClickEvent" />
-                        </div>
+                        <MudLink Href="@($"/content/events/details/{item.Slug}")" Style="text-decoration: none;">
+                            <div class="swiper-slide swiper-slide-Card">
+                                <DailyFeaturedEventCard Item="item" />
+                            </div>
+                        </MudLink>
                     </MudVirtualize>
                 </div>
             </div>
@@ -46,6 +48,7 @@
         </div>
     }
 </div>
+
 
 <style>
     .daily-categories-wrapper {

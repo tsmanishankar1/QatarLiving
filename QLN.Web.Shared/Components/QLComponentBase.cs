@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Components
         [Inject] public IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
 
-        protected async void AuthorizedPage()
+        protected async Task AuthorizedPage()
         {
             var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
             var destination = SetDestination();

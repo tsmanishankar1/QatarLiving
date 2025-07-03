@@ -5,7 +5,6 @@
     <div>
    @foreach (var field in SelectedFields)
 {
-    if (field.Name == "Brands" || field.Name == "Brand") continue;
 
     <div class="filter-section">
         <label class="section-label">@field.Name</label>
@@ -156,7 +155,8 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
         );
 
     SearchState.ItemFieldFilters = selectedFilterMap;
-   SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    SearchState.ItemHasWarrantyCertificate = HasWarrantyCertificate;
+    SearchState.ItemSetPage(1);
     await OnFiltersChanged.InvokeAsync();
 }
 
@@ -180,9 +180,86 @@ private Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
             SearchState.ItemSubCategory = null;
             SearchState.ItemSubSubCategory = null;
             SearchState.ItemHasWarrantyCertificate = false;
+            SearchState.ItemSetPage(1);
 
-    Console.WriteLine("Filters reset.");
     await OnFiltersChanged.InvokeAsync();
 }
 
 }
+<style>
+    .model-filter-wrapper {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.model-search {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.model-subheading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.model-list-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.model-item {
+    margin-bottom: 4px;
+}
+
+    .filter-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-label {
+    font-weight: 500;
+    margin-bottom: 3px;
+    font-size: 14px;
+    color: var(--color-accent);
+    display: block;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+}
+.option-text{
+    color: var(--color-text-heading);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+.color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+}
+
+</style>
