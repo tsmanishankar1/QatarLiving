@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Components
 
         public string CurrentUserName { get; set; } = string.Empty;
         public string CurrentUserEmail { get; set; } = string.Empty;
-        public string Alias { get; set; } = string.Empty;
+        public string CurrentUserAlias { get; set; } = string.Empty;
         public bool IsLoggedIn { get; set; } = false;
         public int CurrentUserId { get; set; }
 
@@ -28,9 +28,9 @@ namespace QLN.ContentBO.WebUI.Components
             var user = authState.User;
             if (user.Identity != null && user.Identity.IsAuthenticated)
             {
-                Name = user.FindFirst(ClaimTypes.Name)?.Value;
-                Email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-                Alias = user.FindFirst("alias")?.Value;
+                CurrentUserName = user.FindFirst(ClaimTypes.Name)?.Value;
+                CurrentUserEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
+                CurrentUserAlias = user.FindFirst("alias")?.Value;
                 CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                 IsLoggedIn = true;
             }

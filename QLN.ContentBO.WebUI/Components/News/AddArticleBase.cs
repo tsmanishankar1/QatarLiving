@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
+using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
@@ -13,6 +14,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IJSRuntime JS { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
+
         protected NewsArticleDTO article { get; set; } = new();
 
         protected List<NewsCategory> Categories = [];
@@ -41,6 +44,14 @@ namespace QLN.ContentBO.WebUI.Components.News
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
+            /*
+            var optionsD = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", optionsD);
+            var result = dialog.Result;
+            article = new();
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+            */
         }
 
         protected void AddCategory()
@@ -72,7 +83,10 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added", severity: MudBlazor.Severity.Success);
+                    Snackbar.Add("Article Added", severity: Severity.Success);
+
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                    await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
