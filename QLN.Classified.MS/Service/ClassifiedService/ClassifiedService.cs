@@ -130,7 +130,7 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public Task<bool> SaveSearch(SaveSearchRequestDto dto, Guid userId, CancellationToken cancellationToken = default)
+        public Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
@@ -3149,19 +3149,6 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
                 }
-                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
-                {
-                    return new ImageInfo
-                    {
-                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
-                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
-                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                    };
-                }).ToList();
-
-                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
-             
-
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
@@ -3218,18 +3205,6 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
                 }
-
-                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
-                {
-                    return new ImageInfo
-                    {
-                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
-                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
-                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                    };
-                }).ToList();
-
-                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
 
@@ -3288,18 +3263,6 @@ namespace QLN.Classified.MS.Service
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
                 }
 
-                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
-                {
-                    return new ImageInfo
-                    {
-                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
-                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
-                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                    };
-                }).ToList();
-
-                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
-
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
@@ -3356,18 +3319,6 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
                 }
-
-                dto.ImageUrls = existingAd.GetProperty("imageUrls").EnumerateArray().Select(img =>
-                {
-                    return new ImageInfo
-                    {
-                        AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : "",
-                        Url = img.TryGetProperty("url", out var u) ? u.GetString() : "",
-                        Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
-                    };
-                }).ToList();
-
-                dto.CertificateUrl = existingAd.GetProperty("certificateUrl").GetString();
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
 

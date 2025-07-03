@@ -3,6 +3,10 @@
 
 <div class="more-filters-container">
     <button @onclick="ToggleFilter" class="@($"filter-toggle-button {(showFilters ? "active" : "")}")">
+        @if (!IsMobile && MoreText)
+    {
+        <span>More</span>
+    }
         <img src="/qln-images/classifieds/more_filter_icon.svg" alt="more filter icon" class="more-filter-icon" />
         @if (SelectedFilterCount > 0)
         {

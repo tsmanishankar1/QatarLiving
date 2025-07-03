@@ -1,7 +1,8 @@
 @using MudBlazor;
 @inherits NewsCardBase
 
-<div class="news-card @(IsHorizontal ? "horizontal" : "")" @onclick="() => OnClick.InvokeAsync(news)">
+<MudLink Href="@Href" Style="text-decoration: none;">
+    <div class="news-card @(IsHorizontal ? "horizontal" : "")">
     @if (string.IsNullOrEmpty(news.ImageUrl))
     {
         <div class="image-placeholder">
@@ -22,6 +23,7 @@
         <div class="daily-news-title @(IsHorizontal ? "isTexthorizontal" : "")">@news.Title</div>
     </div>
 </div>
+</MudLink>
 
 <style>
     .news-card {

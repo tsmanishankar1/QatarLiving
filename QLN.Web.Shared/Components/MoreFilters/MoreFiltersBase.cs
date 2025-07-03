@@ -7,6 +7,9 @@ namespace QLN.Web.Shared.Components.MoreFilters
     public class MoreFiltersBase : ComponentBase, IDisposable
     {
         [Parameter] public RenderFragment? ChildContent { get; set; }
+        [Parameter]
+        public bool MoreText { get; set; } = false;
+
         [Parameter] public EventCallback OnApply { get; set; }
             [Parameter] public EventCallback OnReset { get; set; }
             [Parameter] public Dictionary<string, Dictionary<string, bool>> SelectedOptions { get; set; } = new();

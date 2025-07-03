@@ -26,9 +26,9 @@ namespace QLN.Common.DTO_s
         public string Size { get; set; }
         public string Storage { get; set; }
         public string SizeValue { get; set; }
-        public string CertificateBase64 { get; set; }
+        public string CertificateUrl { get; set; }
         public string CertificateFileName { get; set; }
-        public List<AdImageDto> AdImagesBase64 { get; set; }
+        public List<AdImageDto> ImageUrls { get; set; }
         public string PhoneNumber { get; set; }
         public string WhatsAppNumber { get; set; }
         public string ContactEmail { get; set; }
@@ -37,8 +37,8 @@ namespace QLN.Common.DTO_s
         public string CountryOfOrigin { get; set; }
         public string Language { get; set; }
         public string Zone { get; set; }
-        public string StreetNumber { get; set; }
-        public string BuildingNumber { get; set; }
+        public int StreetNumber { get; set; }
+        public int BuildingNumber { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public List<string> Location { get; set; }

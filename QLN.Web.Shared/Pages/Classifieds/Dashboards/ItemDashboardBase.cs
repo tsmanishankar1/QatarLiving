@@ -215,7 +215,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
 
 
-        protected async Task OnPublishAd(string adId)
+        protected async Task OnPublishAd(List<string> adId)
         {
             try
             {
@@ -237,31 +237,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-        //protected async Task OnPublishSelectedAds(List<string> adIds)
-        //{
-        //    try
-        //    {
-        //        var result = await ClassfiedDashboardService.PublishBulkAdsAsync(adIds);
-        //        if (result)
-        //        {
-        //            Snackbar.Add("Ads published successfully", Severity.Success);
-        //            await LoadUnpublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
-        //            await LoadPublishedAds(CurrentPage, PageSize, searchTerm, sortOption);
-        //        }
-        //        else
-        //        {
-        //            Snackbar.Add("Failed to publish ads.", Severity.Error);
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine("Error in bulk publish: " + ex.Message);
-        //        Snackbar.Add("An error occurred during bulk publishing.", Severity.Error);
-        //    }
-        //}
-
-
-        protected async Task UnPublishAd(string adId)
+       
+        protected async Task UnPublishAd(List<string> adId)
         {
             try
             {
@@ -309,16 +286,18 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         protected void NavigateToAdPost()
         {
-            Navigation.NavigateTo("/qln/classifieds/createform");
+            Navigation.NavigateTo("/qln/classifieds/createform", forceLoad: true);
         }
 
         protected void OnEditAd(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/editform/{adId}");
+            var subVertical = "items";
+            Navigation.NavigateTo($"/qln/classifieds/editform?subVertical={subVertical}&adId={adId}", forceLoad: true);
         }
+
         protected void onPreview(string adId)
         {
-            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}");
+            Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
    
@@ -328,12 +307,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         }
         protected void NavigateToEditProfile(string id)
         {
-            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}");
+            Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}", forceLoad: true);
         }
 
         protected void NavigateToPurshaseRefresh()
         {
-            Navigation.NavigateTo("/qln/dashboard/refresh/purchase");
+            Navigation.NavigateTo("/qln/PurchaseRefresh", forceLoad: true);
         }
     
  

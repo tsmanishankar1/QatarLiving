@@ -12,44 +12,60 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         [Parameter] public bool Loading { get; set; } = false;
         [Parameter] public bool IsSearchPerformed { get; set; }
         [Parameter] public EventCallback<string> OnSearch { get; set; }
-       [Inject] NavigationManager NavigationManager { get; set; }
+        [Inject] NavigationManager NavigationManager { get; set; }
        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
-
-        protected IEnumerable<ClassifiedsIndex> PagedItems =>
-            Items.Skip((currentPage - 1) * pageSize).Take(pageSize);
-
-
+       [Parameter]
+       public int TotalCount { get; set; } = 0;
         protected List<BreadcrumbItem> breadcrumbItems = new();
         protected string selectedSort = "default";
-        protected int currentPage = 1;
-        protected int pageSize = 12;
+        protected int currentPage => SearchState.PrelovedCurrentPage;
+        protected int pageSize => SearchState.PrelovedPageSize;
 
-        protected void HandlePageChange(int newPage)
+       protected async void HandlePageChange(int newPage)
         {
-            currentPage = newPage;
-            StateHasChanged();
+            SearchState.PrelovedSetPage(newPage);
+            if (OnSearch.HasDelegate)
+                await OnSearch.InvokeAsync(SearchState.PrelovedSearchText ?? string.Empty);
         }
 
-        protected void HandlePageSizeChange(int newSize)
+        protected async void HandlePageSizeChange(int newSize)
         {
-            pageSize = newSize;
-            currentPage = 1;
-            StateHasChanged();
-        }
+            SearchState.PrelovedSetPageSize(newSize);
+            if (OnSearch.HasDelegate)
+                await OnSearch.InvokeAsync(SearchState.PrelovedSearchText ?? string.Empty);
+    }
+    protected List<object> GetPageWithAd(List<ClassifiedsIndex> items, int currentPage)
+    {
+        var result = new List<object>();
+        int adIndex = GetAdInsertIndex(currentPage);
 
-        protected bool IsFirstPage => currentPage == 1;
-        protected bool IsLastPage => currentPage * pageSize >= Items.Count;
-
-        protected void OnFilterChanged(string filterName, string? value)
+        for (int i = 0; i < items.Count; i++)
         {
-            if (filterName == nameof(selectedSort))
+            if (i == adIndex)
             {
-                selectedSort = value ?? "default";
-                currentPage = 1;
-                StateHasChanged();
-                // Sorting logic if needed
+                result.Add("ad"); // use string or special marker for ad
             }
+
+            result.Add(items[i]);
         }
+
+        // if ad wasn't inserted (e.g., adIndex > items.Count), append it
+        if (!result.Contains("ad"))
+        {
+            result.Add("ad");
+        }
+
+        // Trim if somehow more than 12 items
+        return result.Take(12).ToList();
+    }
+
+    private int GetAdInsertIndex(int page)
+    {
+        // Always start from 3, vary based on page number
+        var positions = new[] { 2, 4, 9, 5, 6 };
+        return positions[(page - 1) % positions.Length];
+    }
+
 
        protected void OnClickCardItem(ClassifiedsIndex item)
         {
@@ -88,12 +104,17 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 
         protected async Task ClearSearch()
         {
+            SearchState.PrelovedFilters.Clear();
             SearchState.PrelovedSearchText = null;
             SearchState.PrelovedCategory = null;
             SearchState.PrelovedBrand = null;
             SearchState.PrelovedMinPrice = null;
             SearchState.PrelovedMaxPrice = null;
-            SearchState.PrelovedViewMode = "grid";
+            SearchState.PrelovedViewMode ??= "grid";
+            SearchState.PrelovedSubCategory = null;
+            SearchState.PrelovedSubSubCategory = null;
+            SearchState.PrelovedHasWarrantyCertificate = false;
+            SearchState.PrelovedSetPage(1);
             if (OnSearch.HasDelegate)
             {
                 await OnSearch.InvokeAsync("");
@@ -111,8 +132,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         protected async Task OnSortChanged(string newSortId)
         {
             selectedSort = newSortId;
-            currentPage = 1;
-
+            SearchState.PrelovedSetPage(1);
             var selectedOption = sortOptions.FirstOrDefault(x => x.Id == newSortId);
             SearchState.PrelovedSortBy = selectedOption?.OrderByValue;
 

@@ -1,5 +1,6 @@
 @inherits TopEventCardBase
 @using QLN.Web.Shared.Helpers
+<MudLink Href="@($"/content/events/details/{Item.Slug}")" Style="text-decoration: none;">
 <div class="Top-event-list-card" @onclick="() => NavigateToEventDetail()">
     <div class="Top-event-image-wrapper">
         <a> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>
@@ -10,7 +11,7 @@
             </div>
         }
     </div>
-
+    
     <div class="Top-event-card-body">
         <div class="Top-event-category">Highlighted Event</div>
 
@@ -29,7 +30,9 @@
             </div>
         }
     </div>
+   
 </div>
+</MudLink>
 
 <style>
     .Top-event-list-card {

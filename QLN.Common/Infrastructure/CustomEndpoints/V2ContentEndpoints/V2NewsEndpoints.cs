@@ -13,7 +13,7 @@ public static class V2NewsEndpoints
     public static RouteGroupBuilder MapCreateNewsEndpoints(this RouteGroupBuilder group)
     {
         group.MapGet("/getWriterTags", async Task<Results<
-         Ok<Dictionary<string, string>>,
+         Ok<WriterTagsResponse>,
          ProblemHttpResult>>
          (
              IV2NewsService service,
@@ -81,8 +81,30 @@ public static class V2NewsEndpoints
         .WithTags("News")
         .WithSummary("Get All Slot Options")
         .WithDescription("Returns a list of all slot enum values and names.")
-        .Produces<List<V2Slot>>(StatusCodes.Status200OK)
+        .Produces<List<V2NewsSlot>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/filterbyArticle", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
+        [FromQuery] bool? isActive,
+        IV2NewsService service,
+        CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await service.GetAllNewsFilterArticles(isActive, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error fetching articles: " + ex.Message);
+            }
+        })
+    .WithName("GetFilteredNewsArticles")
+    .WithTags("News")
+    .WithSummary("Get filtered news articles")
+    .WithDescription("Returns active or inactive news articles based on the provided isActive flag.")
+    .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/createNewsArticle", async Task<Results<
           Ok<string>,
@@ -382,6 +404,163 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
+
+        group.MapDelete("/deleteNews/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            (
+                Guid id,
+                IV2NewsService service,
+                CancellationToken cancellationToken
+            ) =>
+        {
+            try
+            {
+                var success = await service.DeleteNews(id, cancellationToken);
+                if (success == null)
+                    throw new KeyNotFoundException($"News with ID '{id}' not found.");
+                return TypedResults.Ok(success);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+            .WithName("DeleteNews")
+            .WithTags("News")
+            .WithSummary("Delete News")
+            .WithDescription("Soft delete a news and saves it via Dapr state store.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        // EXTERNAL - Preview Slot Rearrangement (Authenticated)
+        group.MapPost("/reorderLiveSlots", async Task<Results<
+     Ok<string>,
+     ForbidHttpResult,
+     BadRequest<ProblemDetails>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult>>
+ (
+     ReorderSlotRequestDto dto,
+     IV2NewsService service,
+     HttpContext httpContext,
+     CancellationToken cancellationToken
+ ) =>
+        {
+            try
+            {
+                if (dto.FromSlot < 1 || dto.FromSlot > 13 || dto.ToSlot < 1 || dto.ToSlot > 13)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Slot values must be between 1 and 13.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var name = userData.GetProperty("name").GetString();
+
+                dto.UserId = uid;
+                dto.AuthorName = name;
+
+                var result = await service.ReorderSlotsAsync(dto, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+ .WithName("ReorderLiveSlots")
+ .WithTags("News")
+ .WithSummary("Reorder Live Slots (Authenticated)")
+ .WithDescription("Reorders live news articles using authenticated user.")
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/reorderLiveSlotsByUserId", async Task<Results<
+    Ok<string>,
+    BadRequest<ProblemDetails>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    ReorderSlotRequestDto dto,
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.UserId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "UserId must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (dto.FromSlot < 1 || dto.FromSlot > 13 || dto.ToSlot < 1 || dto.ToSlot > 13)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Slot values must be between 1 and 13.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var result = await service.ReorderSlotsAsync(dto, cancellationToken);
+                return TypedResults.Ok(result);
+            }
+            catch (InvalidDataException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("ReorderLiveSlotsByUserId")
+.WithTags("News")
+.WithSummary("Reorder Live Slots (Manual/UserId)")
+.WithDescription("Reorders live news slots using UserId from the payload.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
         return group;
     }

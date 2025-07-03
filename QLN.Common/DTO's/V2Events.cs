@@ -2,8 +2,9 @@
 
 namespace QLN.Common.DTO_s
 {
-    public class V2EventForm
+    public class V2Events
     {
+        public Guid Id { get; set; }
         [Required]
         public string EventTitle { get; set; }
         [Required]
@@ -23,6 +24,12 @@ namespace QLN.Common.DTO_s
         [Required(ErrorMessage = "Event description is required.")]
         public string EventDescription { get; set; }
         public string CoverImage { get; set; }
+        public bool IsFeatured { get; set; } = false;
+        public V2Slot FeaturedSlot { get; set; } = new();
+        public DateTime? PublishedDate { get; set; }
+        public EventStatus Status { get; set; }
+        public string Slug { get; set; }
+        public bool IsActive { get; set; } = true;
         public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
@@ -30,32 +37,30 @@ namespace QLN.Common.DTO_s
     }
     public class EventSchedule
     {
-        public DateOnly? StartDate { get; set; }
-        public DateOnly? EndDate { get; set; }
+        [Required]
+        public DateOnly StartDate { get; set; }
+        [Required]
+        public DateOnly EndDate { get; set; }
         public V2EventTimeType TimeSlotType { get; set; }
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
-        public List<TimeSlot> TimeSlots { get; set; } = [];
+        public List<TimeSlot>? TimeSlots { get; set; } = [];
     }
-
     public class TimeSlot
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
+        public string? Time { get; set; }
     }
     public class EventsCategory
     {
         public int Id { get; set; }
         public string CategoryName { get; set; }
     }
-    public class V2UpdateRequest : V2EventForm
+    public class PagedResponse<T>
     {
-        public Guid Id { get; set; }
-    }
-    public class V2EventResponse : V2EventForm
-    {
-        public Guid Id { get; set; }
-        public bool? IsActive { get; set; }
+        public List<T> Items { get; set; } = new List<T>();
+        public int TotalCount { get; set; }
+        public int? Page { get; set; }
+        public int? PerPage { get; set; }
     }
 }
