@@ -113,21 +113,22 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             Unpublished
         }
 
-        protected async void Click_MoveItemUp(Guid Id, int currentSlotId)
+        protected async void Click_MoveItemUp(Guid Id)
         {
             try
             {
-                var toSlot = currentSlotId;
                 var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
                     a.Id == Id &&
                     a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)
                 ) ?? new();
 
+                var toSlot = GetCurrentSlot(articleToUpdate);
+
                 var selectedCategory = articleToUpdate.Categories
                     .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId);
 
 
-                if (currentSlotId > 1)
+                if (toSlot > 1)
                 {
                     toSlot -= 1;
                 }
@@ -150,7 +151,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                                                              .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)?.SlotId
                                                          )
                                                          .ToList() ?? [];
-
                     Snackbar.Add("Slot Updated");
                 }
             }
@@ -160,20 +160,21 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async void Click_MoveItemDown(Guid Id, int currentSlotId)
+        protected async void Click_MoveItemDown(Guid Id)
         {
             try
             {
-                var toSlot = currentSlotId;
                 var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
                     a.Id == Id &&
                     a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId)
                 ) ?? new();
 
+                var toSlot = GetCurrentSlot(articleToUpdate);
+
                 var selectedCategory = articleToUpdate.Categories
                     .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategoryId);
 
-                if (currentSlotId < 13)
+                if (toSlot < 13)
                 {
                     toSlot += 1;
                 }

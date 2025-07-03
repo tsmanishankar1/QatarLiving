@@ -43,14 +43,14 @@
                             @if (GetCurrentSlot(context) > 1)
                             {
                                 <MudTooltip Text="Move Up">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemUp(@context.Id, GetCurrentSlot(context)))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemUp(@context.Id))" />
                                 </MudTooltip>
                             }
 
                             @if (GetCurrentSlot(context) < 13)
                             {
                                 <MudTooltip Text="Move Down">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemDown(@context.Id, GetCurrentSlot(context)))" />
+                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemDown(@context.Id))" />
                                 </MudTooltip>
                             }
                         </MudTd>
