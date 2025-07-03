@@ -307,10 +307,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                     dto.Id.ToString(),
                     updated,
                     cancellationToken: cancellationToken);
-                if (updated.IsFeatured && updated.FeaturedSlot?.Id is >= 1 and <= 6)
-                {
-                    await HandleEventSlotShift(updated.FeaturedSlot.Id, updated, cancellationToken);
-                }
 
                 return "Event updated successfully";
             }
@@ -435,7 +431,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
                     int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
-                    string? filterType, string? location, bool? freeOnly, CancellationToken cancellationToken = default)
+                    string? filterType, string? location, bool? freeOnly, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -548,14 +544,30 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (!allEvents.Any())
                     return null;
                 sortOrder = string.IsNullOrWhiteSpace(sortOrder) ? "asc" : sortOrder.ToLowerInvariant();
-                allEvents = sortOrder switch
+                if (featuredFirst == true)
                 {
-                    "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
-                    _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
-                };
-
+                    allEvents = sortOrder switch
+                    {
+                        "desc" => allEvents
+                            .OrderByDescending(e => e.IsFeatured)
+                            .ThenByDescending(e => e.CreatedAt)
+                            .ToList(),
+                        _ => allEvents
+                            .OrderByDescending(e => e.IsFeatured)
+                            .ThenBy(e => e.CreatedAt)
+                            .ToList(),
+                    };
+                }
+                else
+                {
+                    allEvents = sortOrder switch
+                    {
+                        "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
+                        _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
+                    };
+                }
                 int currentPage = Math.Max(1, page ?? 1);
-                int itemsPerPage = Math.Max(1, Math.Min(100, perPage ?? 10));
+                int itemsPerPage = Math.Max(1, Math.Min(100, perPage ?? 12));
                 int totalCount = allEvents.Count;
                 int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
 
@@ -566,13 +578,16 @@ namespace QLN.Content.MS.Service.EventInternalService
                     .Skip((currentPage - 1) * itemsPerPage)
                     .Take(itemsPerPage)
                     .ToList();
-
+                var featuredCount = allEvents.Count(e => e.IsFeatured);
+                var featuredInCurrentPage = paginated.Count(e => e.IsFeatured);
                 return new PagedResponse<V2Events>
                 {
                     Page = currentPage,
                     PerPage = itemsPerPage,
                     TotalCount = totalCount,
-                    Items = paginated
+                    Items = paginated,
+                    FeaturedCount = featuredCount,
+                    FeaturedInCurrentPage = featuredInCurrentPage
                 };
             }
             catch (Exception ex)
@@ -740,5 +755,80 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             return $"event-slot-{slotId}";
         }
+        public async Task<List<V2Events>> GetEventsByStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                if (!keys.Any())
+                {
+                    return new List<V2Events>();
+                }
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken
+                );
+
+                var events = items
+                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(e => e != null && e.Status == status && e.IsActive)
+                    .ToList();
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error occurred while retrieving events by status: {ex.Message}", ex);
+            }
+        }
+        public async Task<List<V2Events>> GetEventStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                if (!keys.Any())
+                {
+                    return new List<V2Events>();
+                }
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken
+                );
+
+                var events = items
+                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(e => e != null && e.Status == status && e.IsActive && e.IsFeatured)
+                    .ToList();
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error occurred while retrieving events by status: {ex.Message}", ex);
+            }
+        }
+
     }
 }

@@ -62,6 +62,8 @@ namespace QLN.Common.DTO_s
         public int TotalCount { get; set; }
         public int? Page { get; set; }
         public int? PerPage { get; set; }
+        public int FeaturedCount { get; set; }
+        public int FeaturedInCurrentPage { get; set; }
     }
     public class EventReorder
     {
