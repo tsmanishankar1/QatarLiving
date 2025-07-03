@@ -9,6 +9,79 @@ namespace QLN.ContentBO.WebUI.MockServices
 {
     public class EventsMockService : ServiceBase<EventsMockService>, IEventsService
     {
+        List<EventDTO> mockEvents = new List<EventDTO>
+{
+    new EventDTO
+    {
+        Id = Guid.NewGuid(),
+        EventTitle = "Doha Tech Expo 2025",
+        CategoryId = 1,
+        EventType = EventType.OpenRegistrations,
+        Price = 50,
+        Location = "Doha Exhibition Center",
+        Venue = "Hall A",
+        Longitude = "51.5310",
+        Latitude = "25.2854",
+        RedirectionLink = "https://techdoha2025.com",
+        EventSchedule = new EventScheduleModel
+        {
+            StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(5)),
+            EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
+            TimeSlotType = EventTimeType.GeneralTime,
+            StartTime = new TimeOnly(10, 0),
+            EndTime = new TimeOnly(18, 0),
+            TimeSlots = null
+        },
+        EventDescription = "An international technology expo showcasing innovation in the Gulf.",
+        CoverImage = "https://example.com/images/tech.jpg",
+        IsFeatured = true,
+        FeaturedSlot = new Slot(), // Assuming default constructor is valid
+        PublishedDate = DateTime.Now,
+        Status = EventStatus.Published,
+        Slug = "doha-tech-expo-2025",
+        IsActive = true,
+        CreatedBy = "admin",
+        CreatedAt = DateTime.Now,
+        UpdatedBy = null,
+        UpdatedAt = null
+    },
+    new EventDTO
+    {
+        Id = Guid.NewGuid(),
+        EventTitle = "Qatar Art Fair",
+        CategoryId = 2,
+        EventType = EventType.FreeAcess,
+        Price = null,
+        Location = "Katara Cultural Village",
+        Venue = "Gallery 2",
+        Longitude = "51.5382",
+        Latitude = "25.3240",
+        RedirectionLink = null,
+        EventSchedule = new EventScheduleModel
+        {
+            StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
+            EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(12)),
+            TimeSlotType = EventTimeType.PerDayTime,
+            TimeSlots = new List<TimeSlotModel>
+            {
+                new TimeSlotModel { DayOfWeek = DayOfWeek.Friday, Time = "3:00 PM - 7:00 PM" },
+                new TimeSlotModel { DayOfWeek = DayOfWeek.Saturday, Time = "1:00 PM - 6:00 PM" }
+            }
+        },
+        EventDescription = "An open exhibition featuring emerging local and international artists.",
+        CoverImage = "https://example.com/images/art.jpg",
+        IsFeatured = false,
+        FeaturedSlot = new Slot(),
+        PublishedDate = DateTime.Now,
+        Status = EventStatus.Published,
+        Slug = "qatar-art-fair",
+        IsActive = true,
+        CreatedBy = "editor",
+        CreatedAt = DateTime.Now,
+        UpdatedBy = "editor",
+        UpdatedAt = DateTime.Now
+    }
+};
         public EventsMockService(HttpClient httpClientDI, ILogger<EventsMockService> Logger)
            : base(httpClientDI, Logger)
         {
@@ -32,6 +105,24 @@ namespace QLN.ContentBO.WebUI.MockServices
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
                 // Content = new StringContent(JsonSerializer.Serialize(newsCateg), Encoding.UTF8, "application/json")
+            };
+
+            return Task.FromResult(response);
+        }
+        public Task<HttpResponseMessage> GetAllEvents()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+            };
+
+            return Task.FromResult(response);
+        }
+        public Task<HttpResponseMessage> DeleteEvent()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                // Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
             };
 
             return Task.FromResult(response);

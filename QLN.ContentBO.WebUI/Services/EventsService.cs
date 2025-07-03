@@ -43,6 +43,19 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> GetAllEvents()
+        {
+            try
+            {
+                var response = await GetAsync($"api/v2/event/getAll");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetAllEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
         public Task<HttpResponseMessage> GetAllArticles()
         {

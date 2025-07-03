@@ -29,9 +29,7 @@
                             </MudButton>
                         </div>
                     </div>
-
-
-            <MudTable Items="_posts" Hover="true" Style="padding-top: 20px;">
+            <MudTable Items="events" Hover="true" Style="padding-top: 20px;">
                 <HeaderContent>
                 <MudTh>Number</MudTh>
                 <MudTh>Title</MudTh>
@@ -42,14 +40,14 @@
                 <MudTh>Actions</MudTh>
                 </HeaderContent>
                 <RowTemplate>
-                    <MudTd DataLabel="Number">@context.Number</MudTd>
+                    <MudTd DataLabel="Number">@context.CategoryId</MudTd>
                     <MudTd DataLabel="Post Title">
-                    <MudLink Href="#">@context.PostTitle</MudLink>
+                    <MudLink Href="#">@context.EventTitle</MudLink>
             </MudTd>
-            <MudTd DataLabel="Category">@context.Category</MudTd>
-            <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Expiry Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Live for">@context.LiveFor</MudTd>
+            <MudTd DataLabel="Category">@context.CategoryId</MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Expiry Date">@context.EventSchedule.EndDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Live for">@context.CreatedAt</MudTd>
             <MudTd>
                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
                                     <MudMenuItem >
@@ -58,9 +56,9 @@
                                     <MudMenuItem >
                                     <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
                                     </MudMenuItem>
-                                    <MudMenuItem OnClick="@(() => DeletePost(context.Number))" Class="mud-error-text">
+                                    @* <MudMenuItem OnClick="@(() => DeletePost(context))" Class="mud-error-text">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                    </MudMenuItem>
+                                    </MudMenuItem> *@
                                 </MudMenu>
             </MudTd>
         </RowTemplate>

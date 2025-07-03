@@ -7,5 +7,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> CreateEvent(EventDTO events);
         Task<HttpResponseMessage> GetEventCategories();
         Task<HttpResponseMessage> GetEventLocations();
+        Task<HttpResponseMessage> GetAllEvents();
+        Task<HttpResponseMessage> DeleteEvent();
     }
 }

@@ -133,8 +133,8 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected override async Task OnInitializedAsync()
         {
-            Categories = await GetEventsCategories();
-            Locations = await GetEventsLocations();
+            // Categories = await GetEventsCategories();
+            // Locations = await GetEventsLocations();
             _editContext = new EditContext(CurrentEvent);
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
