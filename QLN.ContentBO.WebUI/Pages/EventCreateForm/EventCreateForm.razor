@@ -27,7 +27,7 @@
             }
             </MudSelect>
             <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;"/>
-            <MudRadioGroup T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
+            <MudRadioGroup Required="true" RequiredError="Event type is required." T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
                 <MudRadio T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
                 <MudRadio T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
                 <MudRadio T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
@@ -41,6 +41,10 @@
               AdornmentText="QAR" 
               Class="@PriceFieldClass" 
               Disabled="@(!IsFeesSelected)" />
+              @* @if (!string.IsNullOrEmpty(_PriceError))
+             { *@
+                <div class="mud-error-text">@_PriceError</div>
+            @* } *@
             <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
 
 
@@ -53,21 +57,25 @@
            ValueExpression="@(() => SelectedLocationId)"
            Class="my-2 custom-textfield"
            Style="background-color: #FFFFFF;">
-           
-    @if (Locations?.Any() == true)
-    {
-        @foreach (var location in Locations)
+            @if (Locations?.Any() == true)
         {
-            <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
+            @foreach (var location in Locations)
+            {
+                <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
+            }
         }
-    }
-    else
-    {
-        <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
-    }
-</MudSelect>
-           
+        else
+        {
+            <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
+        }
+        </MudSelect>
+        @* @if (!string.IsNullOrEmpty(_LocationError))
+        { *@
+            <div class="mud-error-text">@_LocationError</div>
+        @* } *@
 
+           
+  
 
 
 
@@ -92,7 +100,7 @@
                 <MudSpacer />
                 <MudIcon Icon="@Icons.Material.Filled.LocationOn"  Style="cursor: pointer; color: #FF7F38" @onclick="AddLocation" />
             </MudPaper>  *@
-            <MudTextField  Variant="Variant.Outlined" Label="Venu" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
+            <MudTextField  Variant="Variant.Outlined" Label="Venue" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
             @* Date picker *@
