@@ -124,20 +124,5 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 return [];
             }
         }
-        private async Task DeleteEvent()
-        {
-            try
-            {
-                var apiResponse = await eventsService.GetEventCategories();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEventsCategories");
-            }
-        }
     }
 }
