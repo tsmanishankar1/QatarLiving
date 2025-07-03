@@ -71,7 +71,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsCategories");
+                Logger.LogError(ex, "GetEventsLocations");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
