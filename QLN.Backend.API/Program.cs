@@ -217,6 +217,7 @@ builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
 builder.Services.CommunityConfiguration(builder.Configuration);
+builder.Services.CommunityPostConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
@@ -291,6 +292,9 @@ newsGroup.MapNewsEndpoints();
      //.RequireAuthorization(); Add this back once we have Login flow for BO.
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
+var communityPostGroup = app.MapGroup("/api/v2/community");
+communityPostGroup.MapCommunityEndpoints();
+    //.RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
