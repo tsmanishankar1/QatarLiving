@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.Constants;
 using SixLabors.ImageSharp;
 using QLN.Common.DTO_s;
 using System.Text.RegularExpressions;
+using QLN.Common.Infrastructure.CustomException;
 
 namespace QLN.Company.MS.Service
 {
@@ -36,13 +37,13 @@ namespace QLN.Company.MS.Service
                             existing.Vertical == dto.Vertical &&
                             existing.SubVertical == dto.SubVertical)
                         {
-                            throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                            throw new ConflictException("A company profile already exists for this user under the same subvertical.");
                         }
 
                         if (existing.UserId != dto.UserId &&
                             (existing.PhoneNumber == dto.PhoneNumber || existing.Email == dto.Email))
                         {
-                            throw new InvalidDataException("Phone number or email is already used by another user.");
+                            throw new ConflictException("Phone number or email is already used by another user.");
                         }
                     }
                 }
@@ -234,13 +235,13 @@ namespace QLN.Company.MS.Service
                         other.Vertical == dto.Vertical &&
                         other.SubVertical == dto.SubVertical)
                     {
-                        throw new InvalidDataException("A company profile already exists for this user under the same subvertical.");
+                        throw new ConflictException("A company profile already exists for this user under the same subvertical.");
                     }
 
                     if (other.UserId != dto.UserId &&
                         (other.PhoneNumber == dto.PhoneNumber || other.Email == dto.Email))
                     {
-                        throw new InvalidDataException("Phone number or email is already used by another user.");
+                        throw new ConflictException("Phone number or email is already used by another user.");
                     }
                 }
 

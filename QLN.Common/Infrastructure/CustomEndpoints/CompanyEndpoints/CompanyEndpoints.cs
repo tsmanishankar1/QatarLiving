@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using System.Security.Claims;
@@ -20,6 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 Ok<string>,
                 ForbidHttpResult,
                 BadRequest<ProblemDetails>,
+                Conflict<string>,
                 ProblemHttpResult>>
             (
                 CompanyProfileDto dto,
@@ -36,9 +38,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var isSubcriber = userData.GetProperty("roles").EnumerateArray()
                         .Any(r => r.GetString() == "subscription");
                     dto.UserId = uid;
-
+                    if (dto.UserId != uid)
+                        return TypedResults.Forbid();
                     var result = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Conflict",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict
+                    );
                 }
                 catch (InvalidDataException ex)
                 {
@@ -63,6 +74,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Create a company profile")
             .WithDescription("Creates a new company profile using the user ID from the access token.")
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .DisableAntiforgery();
@@ -70,6 +82,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             group.MapPost("/createByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
+                Conflict<string>,
                 ProblemHttpResult>>
             (
                 CompanyProfileDto dto,
@@ -88,6 +101,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var result = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Conflict",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict
+                    );
                 }
                 catch (InvalidDataException ex)
                 {
@@ -113,6 +134,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithDescription("Used by external services to create company profiles without requiring authorization.")
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .DisableAntiforgery();
@@ -195,6 +217,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 ForbidHttpResult,
                 NotFound<ProblemDetails>,
                 BadRequest<ProblemDetails>,
+                Conflict<string>,
                 ProblemHttpResult>>
             (
                 CompanyProfileDto dto,
@@ -230,6 +253,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var updated = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(updated);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Conflict",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict
+                    );
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -249,6 +289,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Update a company profile")
             .WithDescription("Only the company owner (based on token) can update the profile.")
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -258,6 +299,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             group.MapPut("/updateByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
+                Conflict<string>,
                 ProblemHttpResult>>
             (
                 CompanyProfileDto dto,
@@ -276,6 +318,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var result = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch(ConflictException ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Conflict",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict
+                    );
                 }
                 catch (InvalidDataException ex)
                 {
@@ -301,6 +351,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithDescription("Even internal calls must include JWT token and match company ownership.")
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
