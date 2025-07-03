@@ -126,7 +126,7 @@ namespace QLN.Web.Shared.Services
                 var response = await _httpClient.SendAsync(request);
                 if (response.StatusCode == HttpStatusCode.Conflict)
                 {
-                    _snackbar.Add("A company profile already exists for your account under this vertical.", Severity.Warning);
+                    _snackbar.Add("Company profile could not be created as a company profile already exists for your account under this vertical.", Severity.Error);
                     return false;
                 }
                 if (response.StatusCode == HttpStatusCode.BadRequest)
