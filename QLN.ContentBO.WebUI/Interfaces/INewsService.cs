@@ -16,5 +16,8 @@ namespace QLN.ContentBO.WebUI.Interfaces
 
         Task<HttpResponseMessage> GetSlots();
 
+        Task<HttpResponseMessage> GetArticlesByCategory(int categoryId);
+
+        Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId);
     }
 }

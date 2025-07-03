@@ -1,68 +1,75 @@
-@page "/manage/news/category"
+@page "/manage/news/category/{CategoryId:int}"
 @inherits NewsBase
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
-            <div class="news-header">
-            <MudText Class="news-style">Sports</MudText>
+        <div class="news-header">
+            <MudText Class="news-style">@GetSubCategoryName(CategoryId, SelectedSubcategoryId)</MudText>
             <img src="/qln-images/news_edit_icon.svg" alt="Edit" class="edit-icon-img" />
-            </div>
-            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
-                @foreach (var tab in categories)
-                {
-                     <MudTabPanel Text="@tab" />
-                }
-            </MudTabs>
+        </div>
+        <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
+            @foreach (var subCategory in SubCategories)
+            {
+                <MudTabPanel Text="@subCategory.CategoryName" OnClick="@(() => LoadCategory(CategoryId, subCategory.Id))" />
+            }
+        </MudTabs>
 
-            <MudGrid AlignItems="Center">
-                <MudItem xs="12" md="12">
-                    <div class="button-container">
-                        <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
-                            Rename
-                        </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
-                            Add Article
-                        </MudButton>
-                        <MudTextField @bind-Value="searchText"
-                        Placeholder="Search for Articles"
-                        Variant="Variant.Outlined"
-                        Adornment="Adornment.Start"
-                        AdornmentIcon="@Icons.Material.Filled.Search"
-                        Class="search-field" />
-                    </div>
-                    <MudTable Items="ListOfNewsArticles" Hover="true" Style="padding-top: 20px;">
-                <HeaderContent>
-                <MudTh>Slot</MudTh>
-                <MudTh>Title</MudTh>
-                <MudTh>Creation Date</MudTh>
-                <MudTh>Live for</MudTh>
-                <MudTh>Author</MudTh>
-                <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Number">@context.Categories.Count()</MudTd>
-                    <MudTd DataLabel="Post Title">
-                    <MudLink Href="#">@context.Title</MudLink>
-            </MudTd>
-            <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Live for">@context.PublishedDate</MudTd>
-            <MudTd DataLabel="Author">@context.authorName</MudTd>
-            <MudTd>
-                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                    <MudMenuItem >
+        <MudGrid AlignItems="Center">
+            <MudItem xs="12" md="12">
+                <div class="button-container">
+                    <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
+                        Rename
+                    </MudButton>
+                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
+                        Add Article
+                    </MudButton>
+                    <MudTextField @bind-Value="searchText"
+                                  Placeholder="Search for Articles"
+                                  Variant="Variant.Outlined"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  Class="search-field" />
+                </div>
+                <MudTable Items="ListOfNewsArticles" Hover="true" Style="padding-top: 20px;">
+                    <HeaderContent>
+                        <MudTh>Slot</MudTh>
+                        <MudTh>Title</MudTh>
+                        <MudTh>Creation Date</MudTh>
+                        <MudTh>Live for</MudTh>
+                        <MudTh>Author</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Slot">
+                            <MudTooltip Text="Move Up">
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemUp(@context.Id))" />
+                            </MudTooltip>
+                            <MudTooltip Text="Move Down">
+                                <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemDown(@context.Id))" />
+                            </MudTooltip>
+                        </MudTd>
+                        <MudTd DataLabel="Post Title">
+                            <MudLink Href="#">@context.Title</MudLink>
+                        </MudTd>
+                        <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+                        <MudTd DataLabel="Live for">@context.PublishedDate</MudTd>
+                        <MudTd DataLabel="Author">@context.authorName</MudTd>
+                        <MudTd>
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                <MudMenuItem>
                                     <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
-                                    </MudMenuItem>
-                                    <MudMenuItem >
+                                </MudMenuItem>
+                                <MudMenuItem>
                                     <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
-                                    </MudMenuItem>
-                                    <MudMenuItem OnClick="@(() => DeletePost(context.Id))" Class="mud-error-text">
+                                </MudMenuItem>
+                                <MudMenuItem OnClick="@(() => DeletePost(context.Id))" Class="mud-error-text">
                                     <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                    </MudMenuItem>
-                                </MudMenu>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-                </MudItem>
-            </MudGrid>
+                                </MudMenuItem>
+                            </MudMenu>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudItem>
+        </MudGrid>
     </MudItem>
 </MudGrid>
 
@@ -74,6 +81,7 @@
         color: #242424;
         text-transform: none;
     }
+
     .custom-tabs {
         background-color: #FAFAFA !important;
         border-bottom: 1px solid #f0f0f0;
@@ -81,52 +89,58 @@
         font-family: 'Public Sans', sans-serif;
     }
 
-    .custom-tabs .mud-tab {
-        font-weight: 600;
-        font-size: 14px;
-        color: #A1A1A1;
-        text-transform: none;
-        padding: 12px 20px;
-    }
+        .custom-tabs .mud-tab {
+            font-weight: 600;
+            font-size: 14px;
+            color: #A1A1A1;
+            text-transform: none;
+            padding: 12px 20px;
+        }
 
-    .custom-tabs .mud-tab.mud-tab-active {
-        color: #FF7F38 !important; 
-        font-weight: 600;
-        border-bottom: 3px solid #FF7F38;
-    }
+            .custom-tabs .mud-tab.mud-tab-active {
+                color: #FF7F38 !important;
+                font-weight: 600;
+                border-bottom: 3px solid #FF7F38;
+            }
 
-    .custom-tabs .mud-tabs-toolbar {
-        border-bottom: none; 
-    }
-    .custom-tabs .mud-tab {
-        transition: color 0.3s ease, border-bottom 0.3s ease;
-    }
+        .custom-tabs .mud-tabs-toolbar {
+            border-bottom: none;
+        }
+
+        .custom-tabs .mud-tab {
+            transition: color 0.3s ease, border-bottom 0.3s ease;
+        }
+
     .edit-icon-img {
         width: 24px;
         height: 24px;
         margin-left: 8px;
         cursor: pointer;
     }
+
     .news-header {
         display: flex;
         align-items: center;
-        gap: 8px; 
+        gap: 8px;
         padding-bottom: 32px;
     }
-    .search-field{
+
+    .search-field {
         background-color: #FFFFFF;
         max-width: 400px;
     }
+
     .button-container {
         display: flex;
-        gap: 16px; 
+        gap: 16px;
         align-items: center;
     }
+
     .compact-button {
         min-width: unset !important;
         width: auto !important;
-        padding: 6px 16px; 
-        white-space: nowrap; 
+        padding: 6px 16px;
+        white-space: nowrap;
         height: 44px;
     }
 </style>

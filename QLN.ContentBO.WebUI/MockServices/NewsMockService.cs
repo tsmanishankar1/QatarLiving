@@ -252,5 +252,45 @@ namespace QLN.ContentBO.WebUI.MockServices
         {
             throw new NotImplementedException();
         }
+
+        Task<HttpResponseMessage> INewsService.GetAllArticles()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.CreateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.UpdateArticle(NewsArticleDTO newsArticle)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetNewsCategories()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetWriterTags()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetSlots()
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetArticlesByCategory(int categoryId)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<HttpResponseMessage> INewsService.GetArticlesBySubCategory(int categoryId, int subCategoryId)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
