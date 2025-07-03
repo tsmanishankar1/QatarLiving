@@ -62,6 +62,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Id = 3,
                         CategoryName = "Sports",
                         SubCategories = [
+                            //update the ID values
                             new() { Id = 1, CategoryName = "Qatar Sports" },
                             new() { Id = 2, CategoryName = "FootBall" },
                             new() { Id = 3, CategoryName = "International " },
@@ -79,9 +80,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                             new() { Id = 1, CategoryName = "Food & Dining" },
                             new() { Id = 2, CategoryName = "Travel & Leisure" },
                             new() { Id = 3, CategoryName = "Arts & Culture" },
-                            new() { Id = 5, CategoryName = "Events" },
-                            new() { Id = 6, CategoryName = "Fashion & Style" },
-                            new() { Id = 7, CategoryName = "Home & Living" }
+                            new() { Id = 4, CategoryName = "Events" },
+                            new() { Id = 5, CategoryName = "Fashion & Style" },
+                            new() { Id = 6, CategoryName = "Home & Living" }
                         ]
                     }
            ];
