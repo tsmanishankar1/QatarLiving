@@ -102,20 +102,30 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default)
+
+        public async Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
+        int? page, int? perPage, string? search, CancellationToken cancellationToken = default)
         {
-            var url = "/api/v2/news/getAllNewsArticle";
-            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var rawJson = await response.Content.ReadAsStringAsync();
-
-            return JsonSerializer.Deserialize<List<V2NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            }) ?? throw new Exception("Failed to retrieve articles.");
+                var queryParams = new List<string>
+    {
+        $"page={page ?? 1}",
+        $"perPage={perPage ?? 12}",
+        $"search={Uri.EscapeDataString(search ?? "")}"
+    };
+
+                var url = $"/api/v2/news/getAllNewsArticle?{string.Join("&", queryParams)}";
+                return await _dapr.InvokeMethodAsync<PagedResponse<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)

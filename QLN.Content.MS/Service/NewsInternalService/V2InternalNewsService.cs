@@ -46,12 +46,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             return Task.FromResult(response);
         }
 
-
-        //public Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
-        //{
-        //    _logger.LogInformation("Returning static writer tags as key-value JSON");
-        //    return Task.FromResult(newsCateg);
-        //}
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             var slots = Enum.GetValues(typeof(Slot))
@@ -223,20 +217,23 @@ namespace QLN.Content.MS.Service.NewsInternalService
         private string GetStatusSlotKey(int categoryId, int subCategoryId, int slot) =>
             $"slot-article-status-{categoryId}-{subCategoryId}-slot{slot}";
 
-        public async Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default)
+        public async Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
+       int? page, int? perPage, string? search, CancellationToken cancellationToken = default)
         {
             try
             {
+                // Get all article keys
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     V2Content.ContentStoreName,
                     V2Content.NewsIndexKey,
                     cancellationToken: cancellationToken) ?? new();
 
-                _logger.LogInformation("Fetched {Count} keys from index", keys.Count);
+                if (!keys.Any())
+                    return new PagedResponse<V2NewsArticleDTO> { Page = 1, PerPage = 10, TotalCount = 0, Items = [] };
 
+                // Fetch all articles
                 var items = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
-
-                var articles = items
+                var allArticles = items
                     .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
@@ -244,16 +241,39 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     .Where(dto => dto != null)
                     .ToList();
 
-                _logger.LogInformation("Deserialized {Count} articles", articles.Count);
+                // Search (if given)
+                if (!string.IsNullOrWhiteSpace(search))
+                    allArticles = allArticles.Where(x => x.Title != null && x.Title.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-                return articles;
+                // Pagination
+                int currentPage = Math.Max(1, page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, perPage ?? 10));
+                int totalCount = allArticles.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = allArticles
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .ToList();
+
+                return new PagedResponse<V2NewsArticleDTO>
+                {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
+                    TotalCount = totalCount,
+                    Items = paginated
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving all news articles");
+                _logger.LogError(ex, "Error retrieving paged news articles");
                 throw;
             }
         }
+
         public async Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive = null, CancellationToken cancellationToken = default)
         {
             try
