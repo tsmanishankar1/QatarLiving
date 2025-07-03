@@ -1,7 +1,12 @@
+using MudBlazor.Extensions;
 using MudBlazor.Services;
 using QLN.ContentBO.WebUI.Interfaces;
+using MudExtensions.Services;
 using QLN.ContentBO.WebUI.MockServices;
 using QLN.ContentBO.WebUI.Services;
+using QLN.ContentBO.WebUI.Handlers;
+using Microsoft.AspNetCore.Components.Authorization;
+using QLN.ContentBO.WebUI.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var contentBOAPIURL = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
@@ -11,14 +16,45 @@ if (string.IsNullOrWhiteSpace(contentBOAPIURL))
 }
 
 // Add services to the container.
+
 builder.Services.AddRazorPages();
+
 builder.Services.AddServerSideBlazor();
+
 builder.Services.AddMudServices();
 
-builder.Services.AddHttpClient<INewsService, NewsMockService>(client =>
+builder.Services.AddAuthentication();
+ 
+// Add this before registering AuthenticationStateProvider
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<CookieAuthStateProvider>();
+
+builder.Services.AddScoped<AuthenticationStateProvider>(provider => provider.GetRequiredService<CookieAuthStateProvider>());
+
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddAuthorizationCore();
+ 
+builder.Services.AddTransient<JwtTokenHeaderHandler>();
+ 
+builder.Services.Configure<NavigationPath>(
+
+builder.Configuration.GetSection("NavigationPath"));
+ 
+builder.Services.AddHttpClient<INewsService, NewsService>(client =>
+
+{
+
+    client.BaseAddress = new Uri(contentBOAPIURL);
+
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+ 
+builder.Services.AddHttpClient<IEventsService, EventsService>(client =>
 {
     client.BaseAddress = new Uri(contentBOAPIURL);
-});
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 var app = builder.Build();
 
