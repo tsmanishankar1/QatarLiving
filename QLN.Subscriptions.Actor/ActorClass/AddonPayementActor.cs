@@ -1,5 +1,6 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Runtime;
+using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 
@@ -11,17 +12,66 @@ namespace QLN.Subscriptions.Actor.ActorClass
     public class AddonPaymentActor : Dapr.Actors.Runtime.Actor, IAddonPaymentActor
     {
         private const string StateKey = "addon-payment-data";
+        private const string StoreName = "statestore";
+        private const string GlobalAddonPaymentDetailsKey = "global-addon-payment-details";
         private const string BackupStateKey = "transaction-data";
         private const string DailyTimerName = "addon-daily-timer";
         private const string SpecificTimerName = "addon-specific-timer";
         private readonly ILogger<AddonPaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(15, 01, 0);
         private static readonly string TimeZoneId = "India Standard Time";
+        private readonly DaprClient _daprClient;
 
-        public AddonPaymentActor(ActorHost host, ILogger<AddonPaymentActor> logger) : base(host)
+        public AddonPaymentActor(ActorHost host, ILogger<AddonPaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _daprClient = daprClient;
         }
+        public class GlobalAddonPaymentDetailsCollection
+        {
+            public List<AddonPaymentWithCurrencyDto> Details { get; set; } = new();
+        }
+
+        public async Task StoreGlobalAddonPaymentDetailsAsync(AddonPaymentWithCurrencyDto details, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var existing = await _daprClient.GetStateAsync<GlobalAddonPaymentDetailsCollection>(
+                    StoreName,
+                    GlobalAddonPaymentDetailsKey,
+                    cancellationToken: cancellationToken);
+
+                existing ??= new GlobalAddonPaymentDetailsCollection();
+
+                // ✅ Remove existing record for same user + AddonId
+                existing.Details.RemoveAll(x =>
+                    x.UserId == details.UserId &&
+                    x.AddonId == details.AddonId);
+
+                existing.Details.Add(details);
+
+                await _daprClient.SaveStateAsync(StoreName, GlobalAddonPaymentDetailsKey, existing, cancellationToken: cancellationToken);
+
+                _logger.LogInformation("[Global] Stored addon payment detail for user {UserId}, AddonId: {AddonId}",
+                    details.UserId, details.AddonId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing global addon payment detail");
+                throw;
+            }
+        }
+
+        public async Task<List<AddonPaymentWithCurrencyDto>> GetAllGlobalAddonPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var global = await _daprClient.GetStateAsync<GlobalAddonPaymentDetailsCollection>(
+                StoreName,
+                GlobalAddonPaymentDetailsKey,
+                cancellationToken: cancellationToken);
+
+            return global?.Details ?? new List<AddonPaymentWithCurrencyDto>();
+        }
+
 
         public async Task<bool> SetDataAsync(AddonPaymentDto data, CancellationToken cancellationToken = default)
         {

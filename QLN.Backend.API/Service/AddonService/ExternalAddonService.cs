@@ -67,7 +67,7 @@ namespace QLN.Backend.API.Service.AddonService
             _logger.LogInformation("Retrieved {Count} quantities (excluding CreatedAt)", response.Count);
 
             return response;
-        }
+       }
 
         public async Task<Quantities> CreateQuantityAsync(CreateQuantityRequest request)
         {
@@ -126,6 +126,7 @@ namespace QLN.Backend.API.Service.AddonService
                 Id = Guid.NewGuid(),
                 QuantityId = request.QuantityId,
                 CurrencyId = request.CurrencyId,
+                currency=request.currency,
                 Duration = (DurationType)request.durationId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -153,6 +154,7 @@ namespace QLN.Backend.API.Service.AddonService
                     QuantityId = uc.QuantityId,
                     QuantityName = data.Quantities.FirstOrDefault(q => q.QuantitiesId == uc.QuantityId)?.QuantitiesName,
                     CurrencyId = uc.CurrencyId,
+                    Currency=uc.currency,
                     CurrencyName = data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyName,
                     durationId =  (int)uc.Duration,
                     durationName = System.Enum.GetName(typeof(DurationType), uc.Duration) ?? "Unknown"
@@ -163,17 +165,26 @@ namespace QLN.Backend.API.Service.AddonService
             return result;
         }
 
-        public async Task<Guid> CreateAddonPaymentsAsync(PaymentAddonRequestDto request,Guid userId,CancellationToken cancellationToken = default)
+        public async Task<Guid> CreateAddonPaymentsAsync(PaymentAddonRequestDto request, string userId, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
+
+            // Fetch unit currency details
             var addonData = await GetOrCreateAddonDataAsync(cancellationToken);
             var unitCurrency = addonData.QuantitiesCurrencies
-                .FirstOrDefault(x => x.Id == request.AddonId) ?? throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
-            var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
+                .FirstOrDefault(x => x.Id == request.AddonId)
+                ?? throw new Exception($"UnitCurrency not found for Addon ID: {request.AddonId}");
 
+            var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
+            var quantityName = addonData.Quantities
+    .FirstOrDefault(q => q.QuantitiesId == unitCurrency.QuantityId)?.QuantitiesName ?? "Unknown";
+
+            var currencyName = addonData.Currencies
+                .FirstOrDefault(c => c.CurrencyId == unitCurrency.CurrencyId)?.CurrencyName ?? "Unknown";
+            // Prepare payment DTO
             var dto = new AddonPaymentDto
             {
                 Id = id,
@@ -191,18 +202,50 @@ namespace QLN.Backend.API.Service.AddonService
                 IsExpired = false
             };
 
+            // Store in Actor
             var actor = GetAddonPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
 
-            if (result)
-            {
-                _addonPaymentIds.TryAdd(dto.Id, 0);
-                _logger.LogInformation("Addon payment transaction created with ID: {TransactionId}", dto.Id);
-                return dto.Id;
-            }
+            if (!result)
+                throw new Exception("Addon payment transaction creation failed.");
 
-            throw new Exception("Addon payment transaction creation failed.");
+            // Log and add to in-memory cache
+            _addonPaymentIds.TryAdd(dto.Id, 0);
+            _logger.LogInformation("Addon payment transaction created with ID: {TransactionId}", dto.Id);
+
+            // ✅ Store in global state
+            var combinedDto = new AddonPaymentWithCurrencyDto
+            {
+               
+                Id = dto.Id,
+                AddonId = dto.AddonId,
+                VerticalId = dto.VerticalId,
+                CardNumber = dto.CardNumber,
+                ExpiryMonth = dto.ExpiryMonth,
+                ExpiryYear = dto.ExpiryYear,
+                Cvv = dto.Cvv,
+                CardHolderName = dto.CardHolderName,
+                UserId = dto.UserId,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                LastUpdated = dto.LastUpdated,
+                IsExpired = dto.IsExpired,
+                UnitCurrencyId = unitCurrency.Id,
+                QuantityId = unitCurrency.QuantityId,
+                CurrencyId = unitCurrency.CurrencyId,
+                Currency=unitCurrency.currency,
+                QuantityName = quantityName,
+                CurrencyName = currencyName,
+                Duration = unitCurrency.Duration,
+                CreatedAt = unitCurrency.CreatedAt
+            };
+
+            await actor.StoreGlobalAddonPaymentDetailsAsync(combinedDto, cancellationToken);
+
+
+            return dto.Id;
         }
+
         private DateTime GetEndDateByAddonDuration(DateTime startDate, DurationType duration)
         {
             return duration switch

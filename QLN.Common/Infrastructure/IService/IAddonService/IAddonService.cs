@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.IService.IAddonService
         // UnitCurrency
         Task<UnitCurrency> CreatequantityCurrencyAsync(CreateUnitCurrencyRequest request);
         Task<IEnumerable<UnitCurrencyResponse>> GetByquantityIdAsync(Guid unitId);
-        Task<Guid> CreateAddonPaymentsAsync( PaymentAddonRequestDto request,Guid userId,CancellationToken cancellationToken = default);
+        Task<Guid> CreateAddonPaymentsAsync(PaymentAddonRequestDto request,string userId,CancellationToken cancellationToken = default);
 
 
     }
