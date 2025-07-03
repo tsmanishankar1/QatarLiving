@@ -29,6 +29,33 @@ namespace QLN.Web.Shared.Services
             }
         }
 
+         public async Task<HttpResponseMessage?> GetAllZonesAsync()
+        {
+            try
+            {
+                return await _httpClient.GetAsync("/api/v2/location/getAllZones");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetAllZonesAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAddressByDetailsAsync(int zone, int street, int building, string location)
+        {
+            try
+            {
+                var url = $"/api/v2/location/findAddress?zone={zone}&street={street}&building={building}&location={Uri.EscapeDataString(location)}";
+                return await _httpClient.GetAsync(url);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetAddressByDetailsAsync Error: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+
         public async Task<List<HttpResponseMessage>> SearchClassifiedsAsync(object searchPayload)
         {
             var responses = new List<HttpResponseMessage>();

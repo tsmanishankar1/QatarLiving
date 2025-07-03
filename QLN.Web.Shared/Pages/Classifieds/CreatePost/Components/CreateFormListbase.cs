@@ -12,8 +12,39 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
         [Inject] private IJSRuntime JS { get; set; }
         [Parameter] public AdPost adPostModel { get; set; }
         [Parameter] public EditContext EditContext { get; set; }
+        [Parameter] public bool IsLoadingMap { get; set; } = false;
+        [Parameter] public List<LocationDto.LocationZoneDto> Zones { get; set; }
+        [Parameter] public EventCallback OnAddressFieldsChanged { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
+
+    protected async Task OnAddressChanged(int? val, string propertyName)
+        {
+            switch (propertyName)
+            {
+                case nameof(adPostModel.StreetNumber):
+                    adPostModel.StreetNumber = val;
+                    break;
+                case nameof(adPostModel.BuildingNumber):
+                    adPostModel.BuildingNumber = val;
+                    break;
+            }
+
+            var fi = new FieldIdentifier(adPostModel, propertyName);
+            EditContext?.NotifyFieldChanged(fi);
+
+            await OnAddressFieldsChanged.InvokeAsync();
+        }
+
+    protected async Task OnZoneChanged(string newValue)
+    {
+        adPostModel.Zone = newValue;
+
+        var fi = FieldIdentifier.Create(() => adPostModel.Zone);
+        EditContext?.NotifyFieldChanged(fi);
+
+        await OnAddressFieldsChanged.InvokeAsync();
+    }
 
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
@@ -77,6 +108,9 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
         protected async Task OnVerticalChanged(string newValue)
         {
             adPostModel.SelectedVertical = newValue;
+            mapInitialized = false;
+            adPostModel.Latitude = null;
+            adPostModel.Longitude = null;
             await CategoryChanged.InvokeAsync(newValue);
             StateHasChanged();
         }
