@@ -526,7 +526,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         //Category
 
-        private static string GetCategoryKey(Guid id) => $"category-{id}";
 
         public async Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default)
         {
@@ -544,28 +543,31 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 .ToList()!;
         }
 
-        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var key = GetCategoryKey(id);
             return await _dapr.GetStateAsync<V2NewsCategory>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
         }
 
+        private static int _nextCategoryId = 101;
+        private static int _nextSubCategoryId = 1001;
+
+        private static string GetCategoryKey(int id) => $"category-{id}";
+
         public async Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
         {
-                category.Id = Guid.NewGuid();
-
+            category.Id = category.Id == 0 ? _nextCategoryId++ : category.Id;
             category.SubCategories ??= new();
+
             foreach (var sub in category.SubCategories)
             {
-                    sub.Id = Guid.NewGuid();
+                sub.Id = sub.Id == 0 ? _nextSubCategoryId++ : sub.Id;
             }
 
             var key = GetCategoryKey(category.Id);
             await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, category, cancellationToken: cancellationToken);
 
-            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
-                        ?? new List<string>();
-
+            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken) ?? new();
             if (!index.Contains(key))
             {
                 index.Add(key);
@@ -575,7 +577,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _logger.LogInformation("Category {Id} saved to Redis", category.Id);
         }
 
-        public async Task<bool> UpdateSubCategoryAsync(Guid categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default)
         {
             var key = GetCategoryKey(categoryId);
             var category = await _dapr.GetStateAsync<V2NewsCategory>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);

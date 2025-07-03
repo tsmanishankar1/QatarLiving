@@ -668,15 +668,15 @@ public static class V2NewsEndpoints
                     });
                 }
 
-                category.Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id;
+                category.Id = category.Id <= 0 ? 101 : category.Id;
                 category.SubCategories ??= [];
 
+                var subId = 1001;
                 foreach (var sub in category.SubCategories)
                 {
-                    sub.Id = sub.Id == Guid.Empty ? Guid.NewGuid() : sub.Id;
+                    sub.Id = sub.Id <= 0 ? subId++ : sub.Id;
                 }
 
-                // Optionally log or store `CreatedBy` metadata
                 await service.AddCategoryAsync(category, cancellationToken);
 
                 return TypedResults.Ok("News category created successfully.");
@@ -717,12 +717,13 @@ public static class V2NewsEndpoints
                     });
                 }
 
-                category.Id = category.Id == Guid.Empty ? Guid.NewGuid() : category.Id;
+                category.Id = category.Id <= 0 ? 101 : category.Id;
                 category.SubCategories ??= [];
 
+                var subId = 1001;
                 foreach (var sub in category.SubCategories)
                 {
-                    sub.Id = sub.Id == Guid.Empty ? Guid.NewGuid() : sub.Id;
+                    sub.Id = sub.Id <= 0 ? subId++ : sub.Id;
                 }
 
                 await service.AddCategoryAsync(category, cancellationToken);
@@ -768,12 +769,12 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapGet("/category/get-by-id/{id:guid}", async Task<Results<
+        group.MapGet("/category/get-by-id/{id:int}", async Task<Results<
     Ok<V2NewsCategory>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
 (
-    Guid id,
+    int id,
     IV2NewsService service,
     CancellationToken cancellationToken
 ) =>
@@ -801,6 +802,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
         group.MapPut("/category/update-subcategory", async Task<Results<
     Ok<string>,
     BadRequest<ProblemDetails>,
@@ -808,7 +810,7 @@ public static class V2NewsEndpoints
     ForbidHttpResult,
     ProblemHttpResult>>
 (
-    Guid categoryId,
+    int categoryId,
     V2NewsSubCategory subcategory,
     IV2NewsService service,
     HttpContext httpContext,
@@ -823,12 +825,12 @@ public static class V2NewsEndpoints
                     return TypedResults.Forbid();
                 }
 
-                if (categoryId == Guid.Empty || subcategory.Id == Guid.Empty || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
+                if (categoryId <= 0 || subcategory.Id <= 0 || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
-                        Detail = "CategoryId, SubCategoryId, and CategoryName are required."
+                        Detail = "CategoryId, SubCategoryId, and SubCategoryName are required."
                     });
                 }
 
@@ -856,13 +858,14 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
         group.MapPut("/category/update-subcategory-by-id", async Task<Results<
     Ok<string>,
     BadRequest<ProblemDetails>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
 (
-    Guid categoryId,
+    int categoryId,
     V2NewsSubCategory subcategory,
     IV2NewsService service,
     CancellationToken cancellationToken
@@ -870,12 +873,12 @@ public static class V2NewsEndpoints
         {
             try
             {
-                if (categoryId == Guid.Empty || subcategory.Id == Guid.Empty || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
+                if (categoryId <= 0 || subcategory.Id <= 0 || string.IsNullOrWhiteSpace(subcategory.SubCategoryName))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
-                        Detail = "CategoryId, SubCategoryId, and CategoryName are required."
+                        Detail = "CategoryId, SubCategoryId, and SubCategoryName are required."
                     });
                 }
 
