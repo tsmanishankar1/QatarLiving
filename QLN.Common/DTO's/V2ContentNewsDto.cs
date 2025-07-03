@@ -32,7 +32,7 @@ namespace QLN.Common.DTO_s
 
         public string Slug { get; set; }
 
-        public string IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
@@ -56,6 +56,7 @@ namespace QLN.Common.DTO_s
         public string CategoryName { get; set; }
         public List<V2NewsSubCategory> SubCategories { get; set; }
     }
+
     public class V2NewsSubCategory
     {
         public int Id { get; set; }
@@ -67,7 +68,13 @@ namespace QLN.Common.DTO_s
 
         public string Name { get; set; } = string.Empty;
     }
-    public enum NewsSlot
+
+    public class WriterTagsResponse
+    {
+        public List<string> Tags { get; set; }
+    }
+
+    public enum Slot
     {
         Slot1 = 1,
         Slot2 = 2,
@@ -84,11 +91,6 @@ namespace QLN.Common.DTO_s
         Slot13 = 13,
         Published = 14,
         UnPublished = 15
-    }
-
-    public class WriterTagsResponse
-    {
-        public List<string> Tags { get; set; }
     }
 
 

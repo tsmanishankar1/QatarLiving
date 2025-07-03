@@ -183,5 +183,85 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public async Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Build URL with query string
+                string queryParam = isActive.HasValue ? $"?isActive={isActive.Value.ToString().ToLower()}" : string.Empty;
+                var url = $"/api/v2/news/filterbyArticle{queryParam}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId, // Your News service's Dapr App ID
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<List<V2NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? throw new Exception("Failed to deserialize filtered articles.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling GetNewsArticlesByIsActiveAsync");
+                throw;
+            }
+        }
+
+        public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/news/deleteNews/{id}";
+
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Delete,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                );
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "News with ID {id} not found.", id);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting News with Id {id}", id);
+                throw;
+            }
+        }
+
+
+
+
+        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
+
+        {
+            try
+            {
+                var url = "/api/v2/news/reorderLiveSlotsByUserId";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to apply slot rearrangement via external service");
+                throw;
+            }
+        }
+
     }
 }
