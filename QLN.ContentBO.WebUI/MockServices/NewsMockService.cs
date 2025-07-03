@@ -292,5 +292,15 @@ namespace QLN.ContentBO.WebUI.MockServices
         {
             throw new NotImplementedException();
         }
+
+        public Task<HttpResponseMessage> GetArticleBySlug(string slug)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage> GetArticleById(Guid Id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

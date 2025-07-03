@@ -19,5 +19,9 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetArticlesByCategory(int categoryId);
 
         Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId);
+
+        Task<HttpResponseMessage> GetArticleBySlug(string slug);
+
+        Task<HttpResponseMessage> GetArticleById(Guid Id);
     }
 }

@@ -159,5 +159,39 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage> GetArticleBySlug(string slug)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{slug}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleBySlug");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticleById(Guid id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{id}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }
