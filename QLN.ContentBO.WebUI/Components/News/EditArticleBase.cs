@@ -14,9 +14,8 @@ namespace QLN.ContentBO.WebUI.Components.News
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
-        [Inject] IJSRuntime JS { get; set; }
         [Inject] IDialogService DialogService { get; set; }
-        [Parameter] public string Slug { get; set; }
+        [Parameter] public Guid ArticleId { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -36,8 +35,17 @@ namespace QLN.ContentBO.WebUI.Components.News
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
-            article = await GetArticleBySlug(Slug);
+            article = await GetArticleById(ArticleId);
             TempCategoryList = article.Categories;
+        }
+
+        protected async override Task OnParametersSetAsync()
+        {
+            if (article.Id != Guid.Empty)
+            {
+                article = await GetArticleById(ArticleId);
+                TempCategoryList = article.Categories;
+            }
         }
 
         protected void AddCategory()
@@ -190,11 +198,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .CategoryName;
         }
 
-        private async Task<NewsArticleDTO> GetArticleBySlug(string slug)
+        private async Task<NewsArticleDTO> GetArticleById(Guid articleId)
         {
             try
             {
-                var apiResponse = await newsService.GetArticleBySlug(slug);
+                var apiResponse = await newsService.GetArticleById(articleId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>() ?? new();
@@ -206,7 +214,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetArticleBySlug");
+                Logger.LogError(ex, "GetArticleById");
                 return new();
             }
         }
