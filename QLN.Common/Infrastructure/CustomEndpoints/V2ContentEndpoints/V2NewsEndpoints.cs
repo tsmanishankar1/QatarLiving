@@ -12,7 +12,7 @@ public static class V2NewsEndpoints
 {
     public static RouteGroupBuilder MapCreateNewsEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/getWriterTags", async Task<Results<
+        group.MapGet("/writertags", async Task<Results<
          Ok<WriterTagsResponse>,
          ProblemHttpResult>>
          (
@@ -59,7 +59,7 @@ public static class V2NewsEndpoints
         .Produces<List<V2NewsSlot>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/filterbyArticle", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
+        group.MapGet("/filterbystatus", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
         [FromQuery] bool? isActive,
         IV2NewsService service,
         CancellationToken cancellationToken) =>
@@ -81,7 +81,7 @@ public static class V2NewsEndpoints
     .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
     .Produces(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/createNewsArticle", async Task<Results<
+        group.MapPost("/news", async Task<Results<
           Ok<string>,
           ForbidHttpResult,
           BadRequest<ProblemDetails>,
@@ -184,7 +184,7 @@ public static class V2NewsEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapGet("/getAllNewsArticle", async Task<Results<
+        group.MapGet("/news", async Task<Results<
     Ok<PagedResponse<V2NewsArticleDTO>>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
@@ -231,7 +231,7 @@ public static class V2NewsEndpoints
 
 
 
-        group.MapGet("/byCategory/{categoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
+        group.MapGet("/categories/{categoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
             int categoryId,
             IV2NewsService service,
             CancellationToken cancellationToken
@@ -252,7 +252,7 @@ public static class V2NewsEndpoints
         .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/byCategory/{categoryId:int}/sub/{subCategoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
+        group.MapGet("/categories/{categoryId:int}/sub/{subCategoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
             int categoryId,
             int subCategoryId,
             IV2NewsService service,
@@ -275,7 +275,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-         group.MapPut("/updateNewsArticle", async Task<Results<
+         group.MapPut("/updatenews", async Task<Results<
              Ok<string>,
              ForbidHttpResult,
              BadRequest<ProblemDetails>,
@@ -403,7 +403,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
 
-        group.MapDelete("/deleteNews/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
+        group.MapDelete("/news/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
                 Guid id,
                 IV2NewsService service,
@@ -440,7 +440,7 @@ public static class V2NewsEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         // EXTERNAL - Preview Slot Rearrangement (Authenticated)
-        group.MapPost("/reorderLiveSlots", async Task<Results<
+        group.MapPost("/reorderslot", async Task<Results<
      Ok<string>,
      ForbidHttpResult,
      BadRequest<ProblemDetails>,
@@ -559,7 +559,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/get-by-id/{id:guid}", async Task<Results<
+        group.MapGet("/getbyid/{id:guid}", async Task<Results<
     Ok<V2NewsArticleDTO>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
@@ -597,7 +597,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/get-by-slug/{slug}", async Task<Results<
+        group.MapGet("/getbyslug/{slug}", async Task<Results<
     Ok<V2NewsArticleDTO>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
@@ -635,7 +635,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/category/create", async Task<Results<
+        group.MapPost("/createcategory", async Task<Results<
     Ok<string>,
     ForbidHttpResult,
     BadRequest<ProblemDetails>,
@@ -744,7 +744,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/category/get-Allcategory", async Task<Results<
+        group.MapGet("/allcategories", async Task<Results<
     Ok<List<V2NewsCategory>>,
     ProblemHttpResult>>
 (
@@ -769,7 +769,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapGet("/category/get-by-id/{id:int}", async Task<Results<
+        group.MapGet("/categorygetbyid/{id:int}", async Task<Results<
     Ok<V2NewsCategory>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
@@ -803,7 +803,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPut("/category/update-subcategory", async Task<Results<
+        group.MapPut("/category/updatesubcategory", async Task<Results<
     Ok<string>,
     BadRequest<ProblemDetails>,
     NotFound<ProblemDetails>,

@@ -32,7 +32,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/getWriterTags";
+                var path = "/api/v2/news/writertags";
 
                 return await _dapr.InvokeMethodAsync<WriterTagsResponse>(
                HttpMethod.Get,
@@ -115,7 +115,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         $"search={Uri.EscapeDataString(search ?? "")}"
     };
 
-                var url = $"/api/v2/news/getAllNewsArticle?{string.Join("&", queryParams)}";
+                var url = $"/api/v2/news/news?{string.Join("&", queryParams)}";
                 return await _dapr.InvokeMethodAsync<PagedResponse<V2NewsArticleDTO>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
@@ -130,7 +130,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
-            var url = $"api/v2/news/byCategory/{categoryId}";
+            var url = $"api/v2/news/categories/{categoryId}";
             var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
                 HttpMethod.Get,
                 V2Content.ContentServiceAppId,
@@ -142,7 +142,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
         {
-            var url = $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}";
+            var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}";
             var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
                 HttpMethod.Get,
                 V2Content.ContentServiceAppId,
@@ -183,7 +183,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 // Build URL with query string
                 string queryParam = isActive.HasValue ? $"?isActive={isActive.Value.ToString().ToLower()}" : string.Empty;
-                var url = $"/api/v2/news/filterbyArticle{queryParam}";
+                var url = $"/api/v2/news/filterbystatus{queryParam}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Get,
@@ -211,7 +211,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/news/deleteNews/{id}";
+                var url = $"/api/v2/news/news/{id}";
 
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
@@ -254,7 +254,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            var url = $"/api/v2/news/get-by-id/{id}";
+            var url = $"/api/v2/news/getbyid/{id}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -270,7 +270,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
         {
-            var url = $"/api/v2/news/get-by-slug/{slug}";
+            var url = $"/api/v2/news/getbyslug/{slug}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -308,7 +308,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default)
         {
-            var url = "/api/v2/news/category/get-Allcategory";
+            var url = "/api/v2/news/allcategories";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -318,9 +318,9 @@ namespace QLN.Backend.API.Service.V2ContentService
             return JsonSerializer.Deserialize<List<V2NewsCategory>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
         }
 
-        public async Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/news/category/get-by-id/{id}";
+            var url = $"/api/v2/news/categorygetbyid/{id}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -344,6 +344,10 @@ namespace QLN.Backend.API.Service.V2ContentService
             return true;
         }
 
+        public Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
 
     }
 }
