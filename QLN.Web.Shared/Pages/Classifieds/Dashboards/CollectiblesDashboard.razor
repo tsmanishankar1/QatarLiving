@@ -1,4 +1,4 @@
-﻿@page "/qln/classified/dashboard/Collectables"
+﻿@page "/qln/classified/dashboard/Collectibles"
 @inherits CollectiblesDashboardBase
 @using MudBlazor
 @using QLN.Web.Shared.Components.BreadCrumb
@@ -106,11 +106,9 @@
         </div>
 
         <!-- My Ads Section -->
-        <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
-
-
+        <MudPaper Class="mt-0 pt-4 pb-2 pl-4 pr-4" Style="background-color: white; box-shadow: none;padding:40px">
             <!-- Tabs + Search/Sort -->
-            <div class="d-flex flex-column flex-sm-row mb-4" style="border-bottom: 1px solid #EAECF0;">
+            <div class="d-flex flex-column flex-sm-row">
                 <!-- First Row (Tabs) -->
                 <div class="d-flex">
                     <!-- Published Tab (active style) -->
@@ -205,6 +203,9 @@
                     </MudMenu>
                 </div>
             </div>
+        </MudPaper>
+        <MudPaper Class="mt-4 p-2 rounded-md" Style="background-color: white; box-shadow: none;padding:40px">
+
             @if (_selectedAdsTab == 0)
             {
                 <PublishedAdsComponent Ads="publishedAds"
@@ -495,13 +496,14 @@
 
     .ad-image-wrapper {
         position: relative;
+        height: 100%;
     }
 
     .ad-image {
         width: 240px;
         max-width: 100%;
         height: auto;
-        max-height: 180px;
+        max-height: 170px !important;
         border-radius: 4px;
     }
 
