@@ -91,7 +91,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (!mapInitialized && mapDiv.Context != null)
+            if (!mapInitialized && mapDiv.Context != null && firstRender)
             {
                 await JS.InvokeVoidAsync("initializeMap", DotNetObjectReference.Create(this));
                 mapInitialized = true;
@@ -112,7 +112,17 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost.Components
             adPostModel.Latitude = null;
             adPostModel.Longitude = null;
             await CategoryChanged.InvokeAsync(newValue);
-            StateHasChanged();
+            await JS.InvokeVoidAsync("resetLeafletMap");
+
+            // Wait for map div to appear in DOM
+            await Task.Delay(300);
+
+            if (adPostModel.SelectedVertical != "deals")
+            {
+                await JS.InvokeVoidAsync("initializeMap", DotNetObjectReference.Create(this));
+                mapInitialized = true;
+            }
+
         }
 
         protected async Task OnCategoryChanged(string newValue)

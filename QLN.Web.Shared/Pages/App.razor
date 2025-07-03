@@ -79,6 +79,16 @@
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
     *@
 <script>
+    
+    window.resetLeafletMap = function () {
+        if (window._leafletMap) {
+            window._leafletMap.remove(); // Removes the map from the DOM
+            window._leafletMap = null;
+        }
+        if (window._leafletMarker) {
+            window._leafletMarker = null;
+        }
+    };
     window.initializeMap = function (dotnetHelper) {
         if (window._leafletMap) return;
 
