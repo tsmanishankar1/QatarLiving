@@ -37,8 +37,8 @@ namespace QLN.Common.DTO_s
         public string CountryOfOrigin { get; set; }
         public string Language { get; set; }
         public string Zone { get; set; }
-        public int StreetNumber { get; set; }
-        public int BuildingNumber { get; set; }
+        public string StreetNumber { get; set; }
+        public string BuildingNumber { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public List<string> Location { get; set; }
