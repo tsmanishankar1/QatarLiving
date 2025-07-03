@@ -21,7 +21,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/createNewsArticle")
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news")
                 {
                     Content = newsArticleJson
                 };
@@ -41,7 +41,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getAllNewsArticle");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/articles");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/categories");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -92,7 +92,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getWriterTags");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/writertags");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -110,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/updateNewsArticle")
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news")
                 {
                     Content = newsArticleJson
                 };
@@ -130,7 +130,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/articles/{categoryId}");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -147,7 +147,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/articles/{categoryId}/{subCategoryId}");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -164,7 +164,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/get-by-slug/{slug}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/article/{slug}");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -181,7 +181,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/get-by-id/{id}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/article/{id}");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -200,7 +200,7 @@ namespace QLN.ContentBO.WebUI.Services
             {
 
                 var articleReOrderJson = new StringContent(JsonSerializer.Serialize(slotAssignment), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderLiveSlots")
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderslot")
                 {
                     Content = articleReOrderJson
                 };
@@ -220,7 +220,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/news/deleteNews/{id}");
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/news/{id}");
 
                 var response = await _httpClient.SendAsync(request);
 
