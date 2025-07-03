@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using QLN.ContentBO.WebUI.Models;
-using System.ComponentModel.DataAnnotations;
  
 namespace QLN.ContentBO.WebUI.Models
 {

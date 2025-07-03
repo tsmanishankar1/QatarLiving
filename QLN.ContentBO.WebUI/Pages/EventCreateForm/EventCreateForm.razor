@@ -1,16 +1,23 @@
 @page "/content/events/create"
 @inherits EventCreateFormBase;
- <EditForm EditContext="_editContext"  OnValidSubmit="HandleValidSubmit">
+ <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
      <DataAnnotationsValidator />
+     <ValidationSummary />
 <MudGrid Style="padding-top: 0">
     <!-- Left Form Section -->
     <MudItem xs="12" md="6">
         <MudPaper Class="pa-4 main-content-style" Elevation="0">
             <MudText Class="form-title">Event Form</MudText>
-            <MudSelect Variant="Variant.Outlined" T="string" Label="Category"  @bind-Value="@Category"  Class="my-2 custom-textfield" Style=" background-color: #FFFFFF;">
+            <MudSelect T="int"
+           Label="Category"
+           Placeholder="Choose"
+           Variant="Variant.Outlined"
+           @bind-Value="CurrentEvent.CategoryId"
+           Class="my-2 custom-textfield"
+           Style="background-color: #FFFFFF;">
             @foreach (var category in Categories)
             {
-                <MudSelectItem Value="@category">@category</MudSelectItem>
+                <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
             }
             </MudSelect>
             <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;"/>
@@ -70,7 +77,8 @@
                                 ShowToolbar="false"
                                 DisplayMonths="1"
                                 Class="custom-date-range"
-                                Style="min-width: 300px;" />
+                                Style="min-width: 300px;" 
+                                 MinDate="@DateTime.Today"/>
 
                                 <!-- Start and End Summary -->
                                 <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
@@ -86,6 +94,7 @@
                                     </div>
                                 </div>
                         </div>
+                        
 
                         <!-- Actions -->
                         <div class="picker-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
@@ -99,8 +108,10 @@
                     </div>
                 </MudPopover>
             </div>
-            <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartDate)" />
-            <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndDate)" />
+           @if (!string.IsNullOrEmpty(_DateError))
+            {
+                <div class="mud-error-text">@_DateError</div>
+            }
 
 
 
@@ -143,12 +154,13 @@
                 {
                      <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-                    <MudCheckBox T="bool"
-                    @bind-Checked="entry.IsSelected"
+                   <MudCheckBox T="bool"
+                    Checked="@entry.IsSelected"
+                    CheckedChanged="(value) => OnDaySelectionChanged(entry, value)"
+                    CheckedExpression="@(() => entry.IsSelected)"
                     Label="@entry.Day"
                     Style="min-width: 120px;"
-                    Class="my-checkbox"
-                    @onchange="e => OnDaySelectionChanged(entry, e.Value)" />
+                    Class="my-checkbox" />
 
                     <MudTextField @bind-Value="entry.TimeRange"
                           Label="Time"
@@ -170,6 +182,10 @@
                                    Placeholder="Start Typing"
                                    For="@(() => CurrentEvent.EventDescription)">
             </MudExRichTextEdit>
+            @if (!string.IsNullOrEmpty(_descriptionerror))
+            {
+                <div class="mud-error-text">@_descriptionerror</div>
+            }
             <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
                 <MudButton FullWidth=true Variant="Variant.Outlined" Class="custom-close">Cancel</MudButton>
                 <MudButton FullWidth=true Variant="Variant.Filled"   Class="custom-add" ButtonType="ButtonType.Submit">Save</MudButton>

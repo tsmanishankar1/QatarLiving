@@ -7,18 +7,25 @@ using MudBlazor.Extensions;
 using MudBlazor.Extensions.Components;
 using QLN.ContentBO.WebUI.Models;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.ContentBO.WebUI.Interfaces;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EventCreateFormBase : ComponentBase
     {
+        [Inject] IEventsService eventsService { get; set; }
         [Inject]
         public IDialogService DialogService { get; set; }
+        [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
         protected EditContext _editContext;
+        private List<LocationEventDto> Locations = new();
         public EventDTO CurrentEvent { get; set; } = new EventDTO();
         public bool _isTimeDialogOpen = true;
+        protected string? _DateError;
+        protected string? _descriptionerror;
         public string? _timeRangeDisplay;
+        protected List<EventCategoryModel> Categories = [];
         public List<string> MyItems = new()
     {
         "Option 1",
@@ -46,9 +53,9 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
         protected void OnLocationChanged(string value)
-    {
-        CurrentEvent.Location = value;
-    }
+        {
+            CurrentEvent.Location = value;
+        }
 
         protected TimeSpan? EndTimeSpan
         {
@@ -103,12 +110,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
             }
         }
-        protected List<string> Categories = new()
-        {
-            "Sports",
-            "Music",
-            "Education"
-        };
         protected ElementReference _popoverDiv;
 
         protected bool _showDatePicker = false;
@@ -130,8 +131,10 @@ namespace QLN.ContentBO.WebUI.Pages
         protected DateRange _confirmedDateRange = new();
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
-        protected override void OnInitialized()
+        protected override async Task OnInitializedAsync()
         {
+            Categories = await GetEventsCategories();
+            Locations = await GetEventsLocations();
             _editContext = new EditContext(CurrentEvent);
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
@@ -178,6 +181,7 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
+            Console.Write("check box is selected");
             entry.IsSelected = (bool)value!;
             UpdateTimeSlotListFromDayTimeList();
         }
@@ -275,8 +279,8 @@ namespace QLN.ContentBO.WebUI.Pages
                     SelectedDateLabel = $"{startDate:dd-MM-yyyy} to {endDate:dd-MM-yyyy}";
                     await OnDateChanged.InvokeAsync((startDate.ToString("yyyy-MM-dd"), endDate.ToString("yyyy-MM-dd")));
                 }
-                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartDate));
-                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndDate));
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartDate));
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndDate));
                 _showDatePicker = false;
                 GenerateDayTimeList();
                 StateHasChanged();
@@ -313,17 +317,64 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected async Task HandleValidSubmit()
         {
-            // try
-            // {
-            //     article.Categories = TempCategoryList;
-            //     var response = await newsService.CreateArticle(article);
-            // }
-            // catch (Exception ex)
-            // {
-            //     Logger.LogError(ex, "HandleValidSubmit");
-            // }
-        }
+            _DateError = null;
+            if (CurrentEvent.EventSchedule.StartDate == default)
+            {
+                _DateError = "Start date is required.";
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
+            {
+                _descriptionerror = "Event description is required.";
+                StateHasChanged(); // Force re-render
+                return;
+            }
 
+            _descriptionerror = null;
+            Console.Write("the method is called !!!");
+            try
+            {
+                // var response = await eventsService.CreateEvent(CurrentEvent);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetWriterTags");
+            }
+        }
+        private async Task<List<EventCategoryModel>> GetEventsCategories()
+        {
+            try
+            {
+                // var apiResponse = await eventsService.GetEventCategories();
+                // if (apiResponse.IsSuccessStatusCode)
+                // {
+                //     return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
+                // }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventsCategories");
+                return [];
+            }
+        }
+        private async Task<List<LocationEventDto>> GetEventsLocations()
+        {
+            try
+            {
+                var apiResponse = await eventsService.GetEventLocations();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
+                    return response?.Locations ?? new List<LocationEventDto>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventsLocations");
+            }
+            return new List<LocationEventDto>();
+        }
     };
 }
 

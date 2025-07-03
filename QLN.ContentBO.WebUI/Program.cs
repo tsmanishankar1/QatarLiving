@@ -22,6 +22,10 @@ builder.Services.AddHttpClient<INewsService, NewsMockService>(client =>
 {
     client.BaseAddress = new Uri(contentBOAPIURL);
 });
+builder.Services.AddHttpClient<IEventsService, EventsMockService>(client =>
+{
+    client.BaseAddress = new Uri(contentBOAPIURL);
+});
 
 var app = builder.Build();
 
