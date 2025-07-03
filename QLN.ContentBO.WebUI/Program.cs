@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Extensions;
 using MudBlazor.Services;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudExtensions.Services;
 using QLN.ContentBO.WebUI.MockServices;
 using QLN.ContentBO.WebUI.Services;
+using QLN.ContentBO.WebUI.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 var contentBOAPIURL = builder.Configuration["ServiceUrlPaths:ContentBOAPI"];
