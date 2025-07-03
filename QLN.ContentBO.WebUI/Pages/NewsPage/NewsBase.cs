@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected int SelectedSubcategoryId { get; set; } = 1;
 
-        protected ArticleSlotAssignment articleSlotAssignment { get; set; } = 1;
+        protected ArticleSlotAssignment articleSlotAssignment { get; set; } = new();
 
         protected async override Task OnInitializedAsync()
         {
@@ -115,7 +115,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
 
-                var apiResponse = await newsService.ReOrderNews(articleToUpdate);
+                var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Slot Updated");
