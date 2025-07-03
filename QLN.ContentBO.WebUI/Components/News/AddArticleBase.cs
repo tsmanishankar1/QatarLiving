@@ -15,7 +15,6 @@ namespace QLN.ContentBO.WebUI.Components.News
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
-        [Inject] IJSRuntime JS { get; set; }
         [Inject] IDialogService DialogService { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
@@ -77,8 +76,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added", severity: Severity.Success);
-
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
                 }
@@ -90,19 +87,19 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
-                article = new();
+                ResetForm();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
-                article = new();
+                ResetForm();
             }
         }
+        
         protected void EditImage()
         {
             article.CoverImageUrl = null;
         }
-
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
@@ -122,7 +119,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
             var result = dialog.Result;
-            article = new();
+            ResetForm();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -191,6 +188,12 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
                 .CategoryName;
+        }
+
+        protected void ResetForm()
+        {
+            article = new();
+            TempCategoryList = [];
         }
     }
 }

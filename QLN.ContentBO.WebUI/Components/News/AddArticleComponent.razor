@@ -65,8 +65,7 @@
                         </MudItem>
 
                         <MudItem xs="3">
-
-                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="@(category.SubcategoryId == 0)">
+                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="true">
                                 <MudSelectItem Value="@(0)">@Slots.FirstOrDefault(s => s.Id == category.SlotId)?.Name</MudSelectItem>
                             </MudSelect>
                         </MudItem>
