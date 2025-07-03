@@ -30,6 +30,7 @@ namespace QLN.Common.Infrastructure.Utilities
                     "image/gif" => "gif",
                     "image/bmp" => "bmp",
                     "image/svg+xml" => "svg",
+                    "image/webp" => "webp",
                     "application/pdf" => "pdf",
                     _ => throw new ArgumentException($"Unsupported MIME type: {mime}")
                 };

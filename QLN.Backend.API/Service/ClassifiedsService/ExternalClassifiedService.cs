@@ -156,19 +156,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
-
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);  
+                dto.Id = Guid.NewGuid();
+                string tenDigitGuid = Guid.NewGuid().ToString("N").Substring(0, 10);
 
 
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
-                // Upload certificate
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
+                var certFileName = $"{tenDigitGuid}_certificate_{dto.UserId}_{dto.Id}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);                
@@ -179,15 +173,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 {
                     var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-                    var newGuid = new Guid();
-                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
-                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
                     var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = customName;
                     image.Url = url;
                 }
 
@@ -247,7 +237,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
@@ -349,17 +339,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
+                dto.Id = Guid.NewGuid(); 
 
-                long guidHash = Math.Abs(adId.GetHashCode());
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                string tenDigitGuid = Guid.NewGuid().ToString("N").Substring(0, 10);
 
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
+                var certFileName = $"{tenDigitGuid}_certificate_{dto.UserId}_{dto.Id}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);                
@@ -371,16 +357,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var newGuid = new Guid();
-                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
-                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
                     var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = customName;
                     image.Url = url;
                 }
 
@@ -439,7 +420,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad created successfully"
@@ -481,17 +462,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
-
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                dto.Id = Guid.NewGuid();
+                string tenDigitGuid = Guid.NewGuid().ToString("N").Substring(0, 10);
 
                 var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
 
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
+                var certFileName = $"{tenDigitGuid}_certificate_{dto.UserId}_{dto.Id}.{certExt}";
 
                 var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(certFileName);
@@ -502,16 +478,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 {
                     var image = dto.ImageUrls[i];
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var newGuid = new Guid();
-                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
-                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
                     var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var blobUrl = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = dto.ImageUrls[i].AdImageFileNames;
                     image.Url = blobUrl;
                 }
 
@@ -564,7 +535,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Collectibles Ad created successfully"
@@ -606,17 +577,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
+                dto.Id = Guid.NewGuid();
 
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                string tenDigitGuid = Guid.NewGuid().ToString("N").Substring(0, 10);
 
                 var (flyerExt, flyerBase64) = Base64ImageHelper.ParsePdfFile(dto.FlyerFile);
 
-                var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
-                    ? $"{tenDigitGuid}_{dto.FlyerName}"
-                    : $"{tenDigitGuid}_Flyer_{dto.UserId}_{adId}.{flyerExt}";
+                var flyerName = $"{tenDigitGuid}_Flyer_{dto.UserId}_{dto.Id}.{flyerExt}";
 
                 var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(flyerName);
@@ -628,16 +595,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     var image = dto.ImageUrls[i];
 
                     var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var newGuid = new Guid();
-                    long guidHash1 = Math.Abs(newGuid.GetHashCode());
-                    string tenDigitGuid1 = guidHash.ToString().Substring(0, 10);
+                    string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
                     var customName = $"Itemsad_{dto.UserId}_{tenDigitGuid1}_{i + 1}.{imgExt}";
 
                     var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
                     uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = dto.ImageUrls[i].AdImageFileNames;
                     image.Url = url;
                 }
 
@@ -674,7 +636,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Deals Ad created successfully"

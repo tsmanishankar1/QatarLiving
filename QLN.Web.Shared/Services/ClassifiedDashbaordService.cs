@@ -533,7 +533,7 @@ namespace QLN.Web.Shared.Services
             try
             {
                 var url = $"/api/classified/items/refresh/{adId}?subVertical={subVerticalId}";
-                var request = new HttpRequestMessage(HttpMethod.Delete, url);
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;

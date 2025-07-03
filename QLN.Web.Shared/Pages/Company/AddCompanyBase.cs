@@ -98,10 +98,7 @@ namespace QLN.Web.Shared.Pages.Company
                         ClearCrFile();
                         await ResetCompanyForm();
                     }
-                    else
-                    {
-                        Snackbar.Add("Failed to create company profile", Severity.Error);
-                    }
+                    
                 }
             }
             catch (Exception ex)

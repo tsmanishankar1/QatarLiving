@@ -1579,6 +1579,7 @@ namespace QLN.Classified.MS.Service
                     var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
                     dict["status"] = (int)AdStatus.Published;
+                    dict["createdAt"] = DateTime.UtcNow;  
 
                     await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
                     successCount++;
@@ -1925,6 +1926,7 @@ namespace QLN.Classified.MS.Service
                     var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
                     dict["status"] = (int)AdStatus.Published;
+                    dict["createdAt"] = DateTime.UtcNow;
 
                     await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
                     successCount++;
@@ -2298,6 +2300,7 @@ namespace QLN.Classified.MS.Service
                     var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
                     dict["status"] = (int)AdStatus.Published;
+                    dict["createdAt"] = DateTime.UtcNow;
 
                     await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
                     successCount++;
@@ -2720,6 +2723,7 @@ namespace QLN.Classified.MS.Service
                     var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key);
                     var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
                     dict["status"] = (int)AdStatus.Published;
+                    dict["createdAt"] = DateTime.UtcNow;
 
                     await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
                     successCount++;
