@@ -125,5 +125,73 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage> GetArticlesByCategory(int categoryId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticlesByCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticlesBySubCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticleBySlug(string slug)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{slug}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleBySlug");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticleById(Guid id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getNews/{id}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

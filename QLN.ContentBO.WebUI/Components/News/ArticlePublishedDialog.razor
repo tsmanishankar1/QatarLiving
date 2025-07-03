@@ -1,16 +1,18 @@
 ﻿@using MudBlazor
 
 
-<MudDialog Style="height: 400px">
+<MudDialog Style="width: 352px;">
     <DialogContent>
-        <MudPaper Class="p-6 d-flex flex-column align-items-center" Style="border: 2px dotted purple; border-radius: 12px;">
-            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" Style="font-size: 48px;" />
+        <MudPaper Elevation="0" Class="p-6 d-flex flex-column align-items-center">
+            <img src="/qln-images/success_icon.svg" 
+            alt="Success Icon" 
+            style="width: 48px; height: 48px;" />
             <MudText Typo="Typo.h6" Class="mt-2 mb-4">Article Published</MudText>
         </MudPaper>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close" Color="Color.Warning" Variant="Variant.Filled" Class="w-100">Close</MudButton>
-    </DialogActions>
+                <MudButton OnClick="Close" Style="background-color: #FF7F38; color: white;" FullWidth="true" Variant="Variant.Filled" Class="w-100 mb-3 mx-2">Close</MudButton>
+            </DialogActions>
 </MudDialog>
 
 @code {
