@@ -22,8 +22,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        protected List<string> categories = new();
-
         protected Dictionary<string, List<string>> TypeCategoryMap = new()
         {
             { "news", new List<string> {"Qatar", "Middle East", "World", "Health & Education", "Community", "Law"} },
@@ -38,38 +36,23 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected List<NewsCategory> Categories = [];
 
+        protected List<NewsSubCategory> SubCategories = [];
+
+        protected int SelectedSubcategoryId { get; set; } = 1;
+
         protected async override Task OnInitializedAsync()
         {
-            Navigation.LocationChanged += HandleLocationChanged;
+            Categories = await GetNewsCategories() ?? [];
+            SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
 
-            Categories = await GetNewsCategories();
-            ListOfNewsArticles = await GetAllArticles();
+            ListOfNewsArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId) ?? [];
 
             Slots = await GetSlots();
-            UpdateCategoriesFromQuery();
         }
 
         private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
         {
-            UpdateCategoriesFromQuery();
             InvokeAsync(StateHasChanged);
-        }
-
-        private void UpdateCategoriesFromQuery()
-        {
-            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("type", out var typeValue))
-            {
-                selectedType = typeValue!;
-                if (TypeCategoryMap.TryGetValue(selectedType, out var list))
-                {
-                    categories = list;
-                }
-                else
-                {
-                    categories = new();
-                }
-            }
         }
 
         public void Dispose()
@@ -219,9 +202,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async void LoadCategory()
+        protected async void LoadCategory(int categoryId, int subCategory)
         {
-
+            SelectedSubcategoryId = subCategory;
+            ListOfNewsArticles = await GetNewsBySubCategories(categoryId, subCategory) ?? [];
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -241,6 +225,20 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Logger.LogError(ex, "GetNewsCategories");
                 return [];
             }
+        }
+
+        protected string GetCategoryName(int categoryId) 
+        {
+            return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
+        }
+
+        protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
+        {
+            return Categories
+                .FirstOrDefault(c => c.Id == CategoryId)?
+                .SubCategories
+                .FirstOrDefault(sc => sc.Id == subCategoryId)?
+                .CategoryName;
         }
     }
 }

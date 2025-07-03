@@ -147,7 +147,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}/{subCategoryId}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}");
 
                 var response = await _httpClient.SendAsync(request);
 
