@@ -13,7 +13,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         public bool _isUnpublishedLoading { get; set; }
 
         [Parameter]
-        public EventCallback<string> OnPublish { get; set; }
+        public EventCallback<List<string>> OnPublish { get; set; }
 
 
         [Parameter]
@@ -42,6 +42,48 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             NeedsModification = 7
         }
 
+        public List<string> SelectedAdIds = new();
+        protected void OnAdToggled(AdModal ad, bool value)
+        {
+            ad.IsSelected = value;
+
+            if (value)
+            {
+                if (!SelectedAdIds.Contains(ad.Id))
+                    SelectedAdIds.Add(ad.Id);
+            }
+            else
+            {
+                SelectedAdIds.Remove(ad.Id);
+            }
+        }
+        protected void SelectAll()
+        {
+            foreach (var ad in Ads)
+            {
+                ad.IsSelected = true;
+                if (!SelectedAdIds.Contains(ad.Id))
+                    SelectedAdIds.Add(ad.Id);
+            }
+        }
+
+        protected void UnselectAll()
+        {
+            foreach (var ad in Ads)
+            {
+                ad.IsSelected = false;
+            }
+            SelectedAdIds.Clear();
+        }
+
+        protected async Task PublishAllSelected()
+        {
+            if (SelectedAdIds.Any())
+            {
+                await OnPublish.InvokeAsync(SelectedAdIds);
+                UnselectAll();
+            }
+        }
         protected string GetStatusLabel(int status)
         {
             return Enum.IsDefined(typeof(AdStatus), status) ? ((AdStatus)status).ToString() : "Unknown";

@@ -225,7 +225,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             CurrentPage = 1;
             await ReloadAdsAsync();
         }
-        protected async Task OnPublishAd(string adId)
+        protected async Task OnPublishAd(List<string> adId)
         {
             try
             {
@@ -248,7 +248,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             }
         }
 
-        protected async Task UnPublishAd(string adId)
+        protected async Task UnPublishAd(List<string> adId)
         {
             try
             {
