@@ -66,6 +66,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
                 article.Categories = TempCategoryList;
+                if (article.Categories.Count == 0)
+                {
+                    Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    return;
+                }
                 if (string.IsNullOrEmpty(article.CoverImageUrl))
                 {
                     Snackbar.Add("Image is required", severity: Severity.Error);
