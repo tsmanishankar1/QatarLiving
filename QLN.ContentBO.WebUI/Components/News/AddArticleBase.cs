@@ -28,30 +28,12 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
-        protected List<string> writerTags =
-            [
-                    "Qatar Living",
-                    "Everything Qatar",
-                    "FIFA Arab Cup",
-                    "QL Exclusive",
-                    "Advice & Help"
-            ];
-
-
         protected override async Task OnInitializedAsync()
         {
             AuthorizedPage();
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
-            /*
-            var optionsD = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", optionsD);
-            var result = dialog.Result;
-            article = new();
-            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-            await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
-            */
         }
 
         protected void AddCategory()
@@ -118,19 +100,12 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected async Task TriggerCoverUpload()
+        protected async void Cancel()
         {
-            await JS.InvokeVoidAsync("document.getElementById", "cover-upload").AsTask();
-        }
-
-        protected async Task TriggerInlineImageUpload()
-        {
-            await JS.InvokeVoidAsync("document.getElementById", "inline-upload").AsTask();
-        }
-
-        protected void Cancel()
-        {
-
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = dialog.Result;
+            article = new();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
