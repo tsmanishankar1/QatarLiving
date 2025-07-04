@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -13,9 +12,10 @@ namespace QLN.ContentBO.WebUI.Components.News
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
-        [Inject] IJSRuntime JS { get; set; }
         [Inject] IDialogService DialogService { get; set; }
-        [Parameter] public string Slug { get; set; }
+        [Parameter] public string? ArticleId { get; set; }
+
+        protected Guid ParsedArticleId { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -29,14 +29,38 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
-        protected override async Task OnInitializedAsync()
+        public int MinCategory { get; set; } = 1;
+        public int MaxCategory { get; set; } = 2;
+
+        protected async override Task OnParametersSetAsync()
         {
-            AuthorizedPage();
-            Categories = await GetNewsCategories();
-            Slots = await GetSlots();
-            WriterTags = await GetWriterTags();
-            article = await GetArticleBySlug(Slug);
-            TempCategoryList = article.Categories;
+            try
+            {
+                AuthorizedPage();
+                if (!Guid.TryParse(ArticleId, out var parsedArticleId))
+                {
+                    Snackbar.Add("Invalid article ID", Severity.Error);
+                    return;
+                }
+                ParsedArticleId = parsedArticleId;
+                Categories = await GetNewsCategories();
+                Slots = await GetSlots();
+                WriterTags = await GetWriterTags();
+                article = await GetArticleById(ParsedArticleId);
+                if (article.Id == Guid.Empty)
+                {
+                    Snackbar.Add("Invalid article ID", Severity.Error);
+                    NavManager.NavigateTo($"/", true);
+                    return;
+                }
+                TempCategoryList = article.Categories;
+
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+                throw;
+            }
         }
 
         protected void AddCategory()
@@ -45,14 +69,30 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Category.SlotId = 15; // By Default UnPublished.
             }
+            if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
+            {
+                Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+            }
+            if (TempCategoryList.Count >= MaxCategory)
+            {
+                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", severity: Severity.Normal);
+                Category = new();
+                return;
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
+            if (TempCategoryList.Count <= MinCategory)
+            {
+                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
+                return;
+            }
             if (TempCategoryList.Count > 0)
             {
+
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
@@ -62,16 +102,36 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                article.UserId = CurrentUserId.ToString();
-                article.IsActive = true;
                 article.Categories = TempCategoryList;
+                if (article.Categories.Count == 0)
+                {
+                    Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    return;
+                }
+                if (string.IsNullOrEmpty(article.CoverImageUrl))
+                {
+                    Snackbar.Add("Image is required", severity: Severity.Error);
+                    return;
+                }
+                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content))
+                {
+                    Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    return;
+                }
+
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added", severity: Severity.Success);
+                    var parameters = new DialogParameters<ArticleDialog>
+                            {
+                                { x => x.ContentText, "Article Updated" },
+                            };
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
+                    var redirectToCateg = article.Categories.First();
+                    NavManager.NavigateTo($"/manage/news/category/{redirectToCateg.CategoryId}", true);
+                    ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -81,7 +141,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
-                article = new();
             }
             catch (Exception ex)
             {
@@ -92,14 +151,21 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            var file = e.File;
-            if (file != null)
+            try
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleFilesChanged");
             }
         }
 
@@ -176,17 +242,17 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .FirstOrDefault(c => c.Id == CategoryId)?
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .CategoryName;
+                .SubCategoryName;
         }
 
-        private async Task<NewsArticleDTO> GetArticleBySlug(string slug)
+        private async Task<NewsArticleDTO> GetArticleById(Guid articleId)
         {
             try
             {
-                var apiResponse = await newsService.GetArticleBySlug(slug);
+                var apiResponse = await newsService.GetArticleById(articleId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>();
+                    var result = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>() ?? new();
 
                     return result;
                 }
@@ -195,9 +261,20 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetArticleBySlug");
+                Logger.LogError(ex, "GetArticleById");
                 return new();
             }
+        }
+
+        protected void RemoveImage()
+        {
+            article.CoverImageUrl = null;
+        }
+
+        protected void ResetForm()
+        {
+            article = new();
+            TempCategoryList = [];
         }
     }
 }
