@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomException
 {
+    public class ConflictException : Exception
+    {
+        public ConflictException(string message) : base(message) { }
+    }
+
     public class InvalidCredentialsException : Exception
     {
         public InvalidCredentialsException(string message = "Invalid credentials") : base(message) { }

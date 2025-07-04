@@ -57,7 +57,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/createByUserId", async Task<Results<
+            group.MapPost("/createbyuserid", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
@@ -109,7 +109,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetAllEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", static async Task<Results<Ok<List<V2Events>>, ProblemHttpResult>>
+            group.MapGet("/getall", static async Task<Results<Ok<List<V2Events>>, ProblemHttpResult>>
             (
                 IV2EventService service,
                 CancellationToken cancellationToken
@@ -135,7 +135,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getById/{id:guid}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>>
                 (
                     Guid id,
                     IV2EventService service,
@@ -229,7 +229,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/updateByUserId", async Task<Results<Ok<string>,
+            group.MapPut("/updatebyuserid", async Task<Results<Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
@@ -312,7 +312,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapCreateCategories(this RouteGroupBuilder group)
         {
-            group.MapPost("/createCategory", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
+            group.MapPost("/createcategory", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 EventsCategory dto,
                 IV2EventService service,
@@ -349,7 +349,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapEventCategories(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAllCategories", static async Task<Results<Ok<List<EventsCategory>>, ProblemHttpResult>> (
+            group.MapGet("/getallcategories", static async Task<Results<Ok<List<EventsCategory>>, ProblemHttpResult>> (
                 IV2EventService service,
                 CancellationToken cancellationToken = default
             ) =>
@@ -375,7 +375,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetEventCategory(this RouteGroupBuilder group)
         {
-            group.MapGet("/getCategoryById/{id:int}", async Task<Results<Ok<EventsCategory>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getcategorybyid/{id:int}", async Task<Results<Ok<EventsCategory>, NotFound<ProblemDetails>, ProblemHttpResult>>
                 (
                 int id,
                 IV2EventService service,
@@ -412,44 +412,56 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        public static RouteGroupBuilder MapGetEventCategories(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
         {
-            group.MapGet("/getPagination", async Task<Results<Ok<PagedResponse<V2Events>>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapGet("/getpaginatedevents", async Task<Results<Ok<PagedResponse<V2Events>>,
+                BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
-                IV2EventService service,
-                CancellationToken cancellationToken,
                 [FromQuery] int? page,
                 [FromQuery] int? perPage,
-                [FromQuery] string? search = null,
-                [FromQuery] int? sortBy = 1,
-                [FromQuery] string? sortOrder = "asc"
+                [FromQuery] string? search,
+                [FromQuery] int? categoryId,
+                [FromQuery] string? sortOrder,
+                [FromQuery] DateOnly? fromDate,
+                [FromQuery] DateOnly? toDate,
+                [FromQuery] string? filterType,
+                [FromQuery] string? location,
+                [FromQuery] bool? freeOnly,
+                [FromQuery] bool? featuredFirst,
+                IV2EventService service,
+                CancellationToken cancellationToken = default
             ) =>
             {
                 try
                 {
-                    var result = await service.GetPagedEventCategories(page, perPage, search, sortBy, sortOrder, cancellationToken);
+                    var result = await service.GetPagedEvents(page, perPage, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, categoryId, featuredFirst, cancellationToken);
 
-                    if (result == null || !result.Items.Any())
+                    if (result == null || result.Items == null || !result.Items.Any())
+                    {
                         return TypedResults.NotFound(new ProblemDetails
                         {
-                            Title = "Not Found",
-                            Detail = "No event categories found.",
+                            Title = "No Events Found",
+                            Detail = "No events match the provided filters.",
                             Status = StatusCodes.Status404NotFound
                         });
-
+                    }
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
-            .ExcludeFromDescription()
-            .WithName("Get Pagination")
+            .WithName("GetPaginatedEvents")
             .WithTags("Event")
-            .WithSummary("Get Pagination")
-            .WithDescription("Retrieves paginated event categories with optional filters and sorting.")
-            .Produces<PagedResponse<EventsCategory>>(StatusCodes.Status200OK)
+            .WithSummary("Paginated Events List")
+            .WithDescription("Fetches events with support for filtering, sorting, and pagination.")
+            .Produces<PagedResponse<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -459,7 +471,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         {
             group.MapGet("/slots", async Task<Results<Ok<List<V2Slot>>, ProblemHttpResult>> (
             IV2EventService service,
-            CancellationToken cancellationToken
+            CancellationToken cancellationToken = default
             ) =>
             {
                 try
@@ -482,10 +494,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapExpiredEvents(this RouteGroupBuilder group)
         {
-            group.MapGet("/getExpiredEvents", async Task<Results<Ok<IEnumerable<V2Events>>, ProblemHttpResult>>
+            group.MapGet("/getexpiredevents", async Task<Results<Ok<IEnumerable<V2Events>>, ProblemHttpResult>>
             (
                 IV2EventService service,
-                CancellationToken cancellationToken
+                CancellationToken cancellationToken = default
             ) =>
             {
                 try
@@ -509,6 +521,188 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithDescription("Returns events where EndDate is before today.")
             .Produces<IEnumerable<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapReorderEvents(this RouteGroupBuilder group)
+        {
+            group.MapPost("/reorderslots", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            EventReorder dto,
+            IV2EventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken = default
+            ) =>
+            {
+                try
+                {
+                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot values must be between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    dto.UserId = userData.GetProperty("uid").GetString();
+
+                    var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("ReorderFeaturedEventSlots")
+            .WithTags("Event")
+            .WithSummary("Reorder Featured Event Slots")
+            .WithDescription("Reorders featured event slots using authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/reorderslotsbyuserid", async Task<Results<
+            Ok<string>,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            EventReorder dto,
+            IV2EventService service,
+            CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(dto.UserId))
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot values must be between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("ReorderFeaturedEventSlotsByUserId")
+            .WithTags("Event")
+            .WithSummary("Reorder Featured Event Slots (Manual/UserId)")
+            .WithDescription("Reorders featured event slots using UserId from the payload.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetEventsByStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbystatus", async Task<Results<
+                Ok<List<V2Events>>,
+                BadRequest<ProblemDetails>>>
+            (
+                [FromQuery] EventStatus status,
+                [FromServices] IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var events = await service.GetEventsByStatus(status, cancellationToken);
+                    return TypedResults.Ok(events);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Failed to retrieve events by status",
+                        Detail = ex.Message
+                    });
+                }
+            })
+                .WithName("GetEventsByStatus")
+                .WithTags("Event")
+                .WithSummary("Get Events By Status")
+                .WithDescription("Retrieves events filtered by their status.")
+                .Produces<List<V2Events>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetByStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyfeaturedstatus", async Task<Results<
+                Ok<List<V2Events>>,
+                BadRequest<ProblemDetails>>>
+            (
+                [FromQuery] EventStatus status,
+                [FromServices] IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var events = await service.GetEventStatus(status, cancellationToken);
+                    return TypedResults.Ok(events);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Failed to retrieve events by status",
+                        Detail = ex.Message
+                    });
+                }
+            })
+                .WithName("GetFeaturedEventsByStatus")
+                .WithTags("Event")
+                .WithSummary("Get Featured Events By Status")
+                .WithDescription("Retrieves events filtered by their status.")
+                .Produces<List<V2Events>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
