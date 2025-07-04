@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
@@ -16,6 +17,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
         protected List<EventCategoryModel> Categories = [];
         protected List<EventDTO> events = [];
+        [Inject]
+        public IDialogService DialogService { get; set; }
+        protected List<EventDTO> featuredEvents = [];
+        protected List<FeaturedSlot> featuredEventSlots = [];
         protected int activeIndex = 0;
         protected int index = 0;
         protected int currentIndex = 1;
@@ -25,6 +30,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected override async Task OnInitializedAsync()
         {
             events = await GetEvents();
+            featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
             foreach (var ev in Categories)
             {
@@ -58,6 +64,28 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected void NavigateToAddEvent()
         {
             Navigation.NavigateTo("/content/events/create");
+        }
+        protected Task OpenDialogAsync()
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), "Featured Event" },
+                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
+                { nameof(MessageBoxBase.events), events },
+                { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
+            };
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+            return DialogService.ShowAsync<MessageBox>("", parameters, options);
+        }
+        private async Task HandleEventSelected(FeaturedSlot selectedEvent)
+        {
+            Console.WriteLine($"Selected event: {selectedEvent.Event.EventTitle}");
+            await Task.CompletedTask;
         }
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
         {
@@ -114,6 +142,69 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             }
             return new List<EventDTO>();
         }
+        private async Task<List<FeaturedSlot>> GetFeaturedSlotsAsync()
+        {
+            var slots = Enumerable.Range(1, 6)
+                .Select(i => new FeaturedSlot
+                {
+                    SlotNumber = i,
+                    Event = new EventDTO
+                    {
+                        EventTitle = "Feature an Event"
+                    }
+                }).ToList();
+                try
+                {
+                var apiResponse = await eventsService.GetFeaturedEvents();
+
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var events = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>() ?? new();
+                    foreach (var ev in events)
+                    {
+                        if (ev.FeaturedSlot != null && ev.FeaturedSlot.Id >= 1 && ev.FeaturedSlot.Id <= 6)
+                        {
+                            var index = ev.FeaturedSlot.Id - 1; 
+                            slots[index] = new FeaturedSlot
+                            {
+                                SlotNumber = ev.FeaturedSlot.Id,
+                                Event = ev
+                            };
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while fetching featured slots");
+            }
+            return slots;
+        }
+        private async Task<List<EventDTO>> GetFeaturedvents()
+        {
+            try
+            {
+                var apiResponse = await eventsService.GetFeaturedEvents();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
+                    return response ?? new List<EventDTO>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventsLocations");
+            }
+            return new List<EventDTO>();
+        }
+
+
+
+
+
+
+
+
         private async Task<List<EventCategoryModel>> GetEventsCategories()
         {
             try
@@ -129,6 +220,29 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             {
                 Logger.LogError(ex, "GetEventsCategories");
                 return [];
+            }
+        }
+        protected async Task DeleteEvent(string eventId)
+        {
+            try
+            {
+                var apiResponse = await eventsService.DeleteEvent(eventId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    events = await GetEvents();
+                    Snackbar.Add("Event deleted successfully", Severity.Success);
+                    index = 0;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete event", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
             }
         }
     }

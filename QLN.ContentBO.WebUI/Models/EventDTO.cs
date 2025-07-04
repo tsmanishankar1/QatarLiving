@@ -23,7 +23,7 @@ namespace QLN.ContentBO.WebUI.Models
  
       [Required(ErrorMessage = "Event description is required.")]
       public string EventDescription { get; set; }
-      public string CoverImage { get; set; }
+      public string? CoverImage { get; set; }
       public bool IsFeatured { get; set; } = false;
       public Slot FeaturedSlot { get; set; } = new();
       public DateTime? PublishedDate { get; set; }

@@ -10,6 +10,7 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Components;
 using System.Net;
+using Markdig.Syntax;
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EventCreateFormBase : QLComponentBase
@@ -23,7 +24,10 @@ namespace QLN.ContentBO.WebUI.Pages
         public EventDTO CurrentEvent { get; set; } = new EventDTO();
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
+        protected string? _PriceError;
+        protected string? _LocationError;
         protected string? _descriptionerror;
+        protected string? _coverImageError;
         public string? _timeRangeDisplay;
         protected List<EventCategoryModel> Categories = [];
         public List<string> MyItems = new()
@@ -139,6 +143,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
+            CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
             _editContext = new EditContext(CurrentEvent);
             Categories = await GetEventsCategories();
             Console.WriteLine("Categories:");
@@ -171,38 +176,43 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
+            Console.Write("hte method is called");
             var file = e.File;
             if (file != null)
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024); 
+                using var stream = file.OpenReadStream(5 * 1024 * 1024);
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
+                Console.Write("came inside method");
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
                 CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
+                Console.WriteLine("CoverImage length: " + CurrentEvent.CoverImage?.Length);
+                Console.WriteLine("Base64 Prefix: " + CurrentEvent.CoverImage?.Substring(0, 100));
+                Console.Write("came outside method");
+                _coverImageError = null;
+            }
+            else
+            {
+                Console.Write(" the file sis not present");
             }
         }
-        public void UpdateTimeSlotListFromDayTimeList()
-        {
-            CurrentEvent.EventSchedule.TimeSlots = DayTimeList
-                .Where(entry => entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
-                .Select(entry => new TimeSlotModel
-                {
-                    DayOfWeek = entry.Date.DayOfWeek,
-                    Time = entry.TimeRange
-                })
-             .ToList();
-        }
-        protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
-        {
-            entry.TimeRange = newTime ?? string.Empty;
-            UpdateTimeSlotListFromDayTimeList();
-        }
-        protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
-        {
-            Console.Write("check box is selected");
-            entry.IsSelected = (bool)value!;
-            UpdateTimeSlotListFromDayTimeList();
-        }
+        // public void UpdateTimeSlotListFromDayTimeList()
+        // {
+        //     CurrentEvent.EventSchedule.TimeSlots = DayTimeList
+        //         .Where(entry => entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
+        //         .Select(entry => new TimeSlotModel
+        //         {
+        //             DayOfWeek = entry.Date.DayOfWeek,
+        //             Time = entry.TimeRange
+        //         })
+        //      .ToList();
+        // }
+        // protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
+        // {
+        //     entry.TimeRange = newTime ?? string.Empty;
+        //     UpdateTimeSlotListFromDayTimeList();
+        // }
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
@@ -336,35 +346,62 @@ namespace QLN.ContentBO.WebUI.Pages
         protected async Task HandleValidSubmit()
         {
             _DateError = null;
+            _descriptionerror = null;
+            _PriceError = null;
+            _LocationError = null;
             if (CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
+                Console.Write("Start date is required");
+                StateHasChanged();
                 return;
             }
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
+                Console.Write("Event description is required.");
                 StateHasChanged();
                 return;
             }
             if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
+                Console.Write("Start date is required.");
+                StateHasChanged();
                 return;
             }
-
-            _descriptionerror = null;
+            if (CurrentEvent.EventType == EventType.FeePrice && CurrentEvent.Price == null)
+            {
+                _PriceError = "Price is required for Fees events.";
+                Console.Write("Price is required for Fees events.");
+                StateHasChanged();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
+            {
+                _LocationError = "Location is required.";
+                Console.Write("Location is required.");
+                StateHasChanged();
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(CurrentEvent.CoverImage))
+            {
+                _coverImageError = "Cover Image is required.";
+                StateHasChanged();
+                return;
+            }
             Console.Write("the method is called !!!");
             try
             {
                 Console.Write("the api response is");
                 Console.WriteLine("CurrentEvent:");
-                Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions { WriteIndented = true }));
+                // Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine("CoverImage on submit: " + (CurrentEvent.CoverImage?.Substring(0, 100) ?? "NULL"));
+                Console.WriteLine("CoverImage length: " + (CurrentEvent.CoverImage?.Length ?? 0));
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Events Added", severity: Severity.Success);
-
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     // await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
                 }
@@ -374,6 +411,8 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
                 else if (response.StatusCode == HttpStatusCode.InternalServerError)
                 {
+                    Console.WriteLine("respon se" + response.StatusCode);
+
                     Snackbar.Add("Internal API Error");
                 }
                 // CurrentEvent = new();
@@ -426,11 +465,10 @@ namespace QLN.ContentBO.WebUI.Pages
             return new LocationListResponseDto();
         }
         protected async Task OnLocationChanged(string locationId)
-{
-            Console.Write("this method is called");
-    SelectedLocationId = locationId;
+        {
+            SelectedLocationId = locationId;
 
-    var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
+            var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
             if (selectedLocation != null)
             {
                 CurrentEvent.Location = selectedLocation.Name;
@@ -442,6 +480,61 @@ namespace QLN.ContentBO.WebUI.Pages
                     await JS.InvokeVoidAsync("initMap", lat, lng);
                 }
                 StateHasChanged();
+            }
+        }
+        protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
+        {
+            entry.IsSelected = (bool)value!;
+
+            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
+            {
+                var existing = CurrentEvent.EventSchedule.TimeSlots
+                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
+
+                if (existing != null)
+                {
+                    existing.Time = entry.TimeRange;
+                }
+                else
+                {
+                    CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+                    {
+                        DayOfWeek = entry.Date.DayOfWeek,
+                        Time = entry.TimeRange
+                    });
+                }
+            }
+            else
+            {
+                CurrentEvent.EventSchedule.TimeSlots.RemoveAll(t => t.DayOfWeek == entry.Date.DayOfWeek);
+            }
+            foreach (var slot in CurrentEvent.EventSchedule.TimeSlots)
+{
+    Console.WriteLine($"Day: {slot.DayOfWeek}, Time: {slot.Time}");
+}
+        }
+        protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
+        {
+            Console.Write("the method is called");
+            entry.TimeRange = newTime ?? string.Empty;
+
+            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
+            {
+                var existing = CurrentEvent.EventSchedule.TimeSlots
+                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
+
+                if (existing != null)
+                {
+            existing.Time = entry.TimeRange;
+        }
+        else
+        {
+            CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+            {
+                DayOfWeek = entry.Date.DayOfWeek,
+                Time = entry.TimeRange
+            });
+        }
     }
 }
     };
