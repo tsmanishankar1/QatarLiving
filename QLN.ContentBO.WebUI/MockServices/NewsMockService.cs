@@ -312,5 +312,10 @@ namespace QLN.ContentBO.WebUI.MockServices
         {
             throw new NotImplementedException();
         }
+
+        public Task<HttpResponseMessage> UpdateSubCategory(NewsSubCategory subCategory)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
