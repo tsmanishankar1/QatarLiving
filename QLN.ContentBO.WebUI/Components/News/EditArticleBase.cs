@@ -101,6 +101,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                     Snackbar.Add("Image is required", severity: Severity.Error);
                     return;
                 }
+                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content))
+                {
+                    Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    return;
+                }
 
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
@@ -118,6 +123,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
+
                 article = new();
             }
             catch (Exception ex)
