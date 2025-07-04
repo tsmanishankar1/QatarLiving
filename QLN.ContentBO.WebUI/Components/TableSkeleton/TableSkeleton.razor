@@ -1,0 +1,37 @@
+@code {
+    [Parameter] public int Rows { get; set; } = 5;
+}
+
+<div class="table-skeleton-wrapper">
+    @for (int i = 0; i < Rows; i++)
+    {
+        <div class="skeleton-row">
+            <MudSkeleton Width="5%" Height="20px" />
+            <MudSkeleton Width="20%" Height="20px" />
+            <MudSkeleton Width="15%" Height="20px" />
+            <MudSkeleton Width="15%" Height="20px" />
+            <MudSkeleton Width="15%" Height="20px" />
+            <MudSkeleton Width="15%" Height="20px" />
+            <MudSkeleton Width="10%" Height="32px" />
+        </div>
+    }
+</div>
+
+<style>
+.table-skeleton-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.skeleton-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+</style>
