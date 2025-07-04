@@ -28,8 +28,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
-        public int MinCategory { get; set; } = 1; // Must select at least 1 Category and 1 Sub-Category
-        public int MaxCategory { get; set; } = 2; // Maximum of 2 Category and Sub-Category combinations allowed
+        public int MinCategory { get; set; } = 1;
+        public int MaxCategory { get; set; } = 2;
 
         protected override async Task OnInitializedAsync()
         {
@@ -45,14 +45,26 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Category.SlotId = 15; // By Default UnPublished.
             }
+            if (TempCategoryList.Count >= MaxCategory)
+            {
+                Snackbar.Add("Maximum of 2 Category and Sub-Category combinations are allowed", severity: Severity.Normal);
+                Category = new();
+                return;
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
+            if (TempCategoryList.Count <= MinCategory)
+            {
+                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
+                return;
+            }
             if (TempCategoryList.Count > 0)
             {
+
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
@@ -99,7 +111,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 ResetForm();
             }
         }
-        
+
         protected void EditImage()
         {
             article.CoverImageUrl = null;

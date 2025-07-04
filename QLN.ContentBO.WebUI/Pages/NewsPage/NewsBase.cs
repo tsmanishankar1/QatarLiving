@@ -298,7 +298,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 .FirstOrDefault(c => c.Id == CategoryId)?
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .CategoryName;
+                .SubCategoryName;
         }
 
         protected int GetCurrentSlot(NewsArticleDTO articleDTO)
