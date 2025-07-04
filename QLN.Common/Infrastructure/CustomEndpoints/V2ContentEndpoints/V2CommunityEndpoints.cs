@@ -4,26 +4,21 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
 using System.Text.Json;
+using Microsoft.AspNetCore.Builder;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
-    // QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     public static class V2CommunityEndpoints
     {
         public static RouteGroupBuilder MapCommunityEndpoints(this RouteGroupBuilder group)
         {
+            // External (calls external service, which Dapr invokes internal)
             group.MapPost("/createPost", async Task<Results<
-                    Ok<string>,
-                    ForbidHttpResult,
-                    BadRequest<ProblemDetails>,
-                    ProblemHttpResult>>
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
             (
                 V2CommunityPostDto dto,
                 IV2CommunityPostService service,
@@ -69,9 +64,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             // Internal for Dapr invocation:
             group.MapPost("/createPostInternal", async Task<Results<
-                    Ok<string>,
-                    BadRequest<ProblemDetails>,
-                    ProblemHttpResult>>
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
             (
                 V2CommunityPostDto dto,
                 IV2CommunityPostService service,
@@ -111,8 +106,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithName("CreateCommunityPostInternal")
             .WithTags("V2Community");
 
+            group.MapGet("/getAllPosts", async Task<Results<
+                Ok<List<V2CommunityPostDto>>,
+                ProblemHttpResult
+            >>
+            (
+                IV2CommunityPostService service,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    var posts = await service.GetAllCommunityPostsAsync(ct);
+                    return TypedResults.Ok(posts);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllCommunityPosts")
+            .WithTags("V2Community")
+            .WithSummary("Get all community posts")
+            .WithDescription("Retrieves all community posts with image URLs.")
+            .Produces<List<V2CommunityPostDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
-
 }

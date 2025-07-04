@@ -10,7 +10,7 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
     public interface IV2CommunityPostService
     {
         Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken cancellationToken = default);
-        //Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default);
+        Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default);
 
     }
 }

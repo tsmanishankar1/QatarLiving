@@ -5,6 +5,8 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -35,6 +37,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.DateCreated = DateTime.UtcNow;
                 dto.UpdatedDate = DateTime.UtcNow;
                 dto.UserName = userId;
+                dto.UpdatedBy = userId;
 
                 // Upload image if present
                 if (!string.IsNullOrWhiteSpace(dto.ImageBase64))
@@ -50,7 +53,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                 req.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
-                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var errorJson = await resp.Content.ReadAsStringAsync(ct);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch { errorMessage = errorJson; }
+                    throw new InvalidDataException(errorMessage);
+                }
 
                 var json = await resp.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<string>(json) ?? "Success";
@@ -61,6 +75,25 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-    }
 
+        public async Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                var url = "/api/v2/community/getAllPosts";
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+
+                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+                resp.EnsureSuccessStatusCode();
+
+                var json = await resp.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<V2CommunityPostDto>>(json) ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching community posts");
+                throw;
+            }
+        }
+    }
 }
