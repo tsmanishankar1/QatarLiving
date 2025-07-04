@@ -13,8 +13,12 @@
              </div>
               <div class="community-table">
              <CommunityTable TPost="CommunityPostDto" DeletingId="DeletingId" IsLoading="IsLoading" Posts="_posts" OnDelete="DeletePost" />  
+             
+            @if (!IsLoading && _posts != null && _posts.Any())
+            {
                <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
-                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />  
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+                }  
              </div> 
     </MudItem>
 </MudGrid>

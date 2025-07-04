@@ -1,10 +1,17 @@
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @typeparam TPost
 
 @if (IsLoading)
 {
     <TableSkeleton Rows="10" />
+}
+else if (Posts == null || Posts.Count == 0)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No community found" Subtitle="Please check back later or explore other categories." />
+    </div>
 }
 else
 {
