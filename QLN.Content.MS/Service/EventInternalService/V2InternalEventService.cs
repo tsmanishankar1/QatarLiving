@@ -426,13 +426,12 @@ namespace QLN.Content.MS.Service.EventInternalService
             }
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
-                    int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
+                    int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
                     string? filterType, string? location, bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allEvents = new List<V2Events>();
-
                 var eventIds = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventIndexKey,
@@ -466,6 +465,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 {
                     return EmptyResponse(page, perPage);
                 }
+
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     allEvents = allEvents
@@ -473,6 +473,25 @@ namespace QLN.Content.MS.Service.EventInternalService
                                     e.EventTitle.Contains(search, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+
+                foreach (var ev in allEvents)
+                {
+                    if (ev.EventSchedule.EndDate < today && ev.Status != EventStatus.Expired) 
+                    {
+                        ev.Status = EventStatus.Expired;
+                        await _dapr.SaveStateAsync<V2Events>(V2Content.ContentStoreName, ev.Id.ToString(), ev, cancellationToken: cancellationToken);
+                    }
+                }
+
+                if (status.HasValue)
+                {
+                    allEvents = allEvents
+                        .Where(e => e.Status == status.Value)
+                        .ToList();
+                }
+
                 if (categoryId.HasValue)
                 {
                     allEvents = allEvents
@@ -502,8 +521,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
                 if (!string.IsNullOrWhiteSpace(filterType))
                 {
-                    var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
                     switch (filterType.ToLowerInvariant())
                     {
                         case "featured":

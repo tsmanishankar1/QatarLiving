@@ -98,6 +98,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
             public const string EventCategoryIndexKey = "event-category-index";
+            public const string DailyIndexKey = "daily-index";
+            public const string DailyCategoryIndexKey = "daily-category-index";
         }
     }
 }
