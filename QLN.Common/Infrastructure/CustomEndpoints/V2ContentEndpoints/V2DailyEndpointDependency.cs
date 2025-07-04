@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapDailyEndpoints(this RouteGroupBuilder group)
         {
-            group.MapCreateDailyEndpoints();
+            group.MapDailyTopicEndpoints();
             return group;
         }
     }

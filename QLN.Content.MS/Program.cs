@@ -18,6 +18,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
+builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
 
 builder.Services.AddSwaggerGen(opts =>
 {
