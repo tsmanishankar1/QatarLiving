@@ -21,14 +21,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        protected Dictionary<string, List<string>> TypeCategoryMap = new()
-        {
-            { "news", new List<string> {"Qatar", "Middle East", "World", "Health & Education", "Community", "Law"} },
-            { "finance", new List<string> { "Qatar Economy", "Market Updates", "Real Estate", "Entrepreneurship", "Finance", "Jobs & Careers" } },
-            { "sports", new List<string> { "Qatar Sports", "Football", "International", "Motorsports", "Olympics", "Athlete Features" } },
-            { "lifestyle", new List<string> { "Food & Dining", "Travel & Leisure", "Arts & Culture", "Events", "Fashion & Style", "Home & Living" } },
-        };
-
         public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
 
         protected List<Slot> Slots = [];
@@ -63,8 +55,9 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             Navigation.NavigateTo("/manage/news/addarticle");
         }
 
-        protected void DeletePost(Guid Id)
+        protected async void DeleteArticle(Guid Id)
         {
+            await DeleteNewsArticle (Id);
             ListOfNewsArticles.RemoveAll(a => a.Id == Id);
         }
 
@@ -219,7 +212,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-
         protected async Task<List<NewsArticleDTO>> GetNewsByCategories(int categoryId)
         {
             try
@@ -307,6 +299,22 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
 
             return selectedCategory?.SlotId ?? 0;
+        }
+
+        private async Task DeleteNewsArticle(Guid Id)
+        {
+            try
+            {
+                var apiResponse = await newsService.DeleteNews(Id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteNewsArticle");
+            }
         }
     }
 }
