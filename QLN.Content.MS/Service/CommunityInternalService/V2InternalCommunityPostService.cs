@@ -34,6 +34,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.DateCreated = DateTime.UtcNow;
             dto.Slug = GenerateSlug(dto.Title);
 
+            
+
             var key = GetKey(dto.Id);
 
             try
@@ -79,24 +81,62 @@ namespace QLN.Content.MS.Service.CommunityInternalService
         }
         public async Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default)
         {
-            var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
-            if (index.Count == 0)
-                return new List<V2CommunityPostDto>();
+            _logger.LogInformation("Starting retrieval of all community posts...");
 
-            var bulkResult = await _dapr.GetBulkStateAsync(StoreName, index, parallelism: 10, cancellationToken: ct);
+            try
+            {
+                _logger.LogDebug("Fetching community post index from Dapr state store: {StoreName}, IndexKey: {IndexKey}", StoreName, IndexKey);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
 
-            var posts = bulkResult
-                .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x =>
+                _logger.LogInformation("Retrieved {Count} community post keys from index.", index.Count);
+
+                if (index.Count == 0)
                 {
-                    try { return JsonSerializer.Deserialize<V2CommunityPostDto>(x.Value!); }
-                    catch { return null; }
-                })
-                .Where(x => x != null && x.Id != Guid.Empty && !string.IsNullOrWhiteSpace(x.Title))
-                .ToList();
+                    _logger.LogWarning("No community post keys found in the index.");
+                    return new List<V2CommunityPostDto>();
+                }
 
-            return posts;
+                var posts = new List<V2CommunityPostDto>();
+
+                foreach (var key in index)
+                {
+                    try
+                    {
+                        _logger.LogDebug("Attempting to retrieve post for key: {Key}", key);
+                        var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
+
+                        if (post == null)
+                        {
+                            _logger.LogWarning("Post is null for key: {Key}", key);
+                            continue;
+                        }
+
+                        if (post.Id == Guid.Empty || string.IsNullOrWhiteSpace(post.Title))
+                        {
+                            _logger.LogWarning("Post has missing required fields. Skipping. Key: {Key}, Id: {Id}, Title: {Title}", key, post.Id, post.Title);
+                            continue;
+                        }
+
+                        _logger.LogInformation("Successfully retrieved post: {Title} (ID: {Id})", post.Title, post.Id);
+                        posts.Add(post);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error retrieving or deserializing community post for key: {Key}", key);
+                    }
+                }
+
+                _logger.LogInformation("Completed retrieval. Total valid posts: {Count}", posts.Count);
+                return posts;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve community posts.");
+                throw new InvalidOperationException("An unexpected error occurred while retrieving community posts.", ex);
+            }
         }
+
+
         private string GenerateSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
