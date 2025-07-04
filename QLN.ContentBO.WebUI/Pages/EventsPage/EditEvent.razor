@@ -1,5 +1,6 @@
-@page "/content/events/create"
-@inherits EventCreateFormBase;
+@page "/content/events/edit"
+@page "/content/events/edit/{Id:guid}"
+@inherits EditEventBase;
  <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
      <DataAnnotationsValidator />
 <MudGrid Style="padding-top: 0">
@@ -69,7 +70,10 @@
             <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
         }
         </MudSelect>
-         <ValidationMessage For="@(() => CurrentEvent.Location)" />
+        @* @if (!string.IsNullOrEmpty(_LocationError))
+        { *@
+            <div class="mud-error-text">@_LocationError</div>
+        @* } *@
 
            
   
@@ -152,11 +156,10 @@
                     </div>
                 </MudPopover>
             </div>
-           @* @if (!string.IsNullOrEmpty(_DateError))
+           @if (!string.IsNullOrEmpty(_DateError))
             {
                 <div class="mud-error-text">@_DateError</div>
-            } *@
-            <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartDate)" />
+            }
 
 
 
@@ -200,9 +203,9 @@
     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
             <input type="checkbox"
-       checked="@entry.IsSelected"
-       @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
-       style="transform: scale(1.5); margin-right: 8px;" />
+            checked="@entry.IsSelected"
+            @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value)"
+            style="transform: scale(1.5); margin-right: 8px;" />
             <label style="font-size: 1rem;">@entry.Day</label>
             <MudTextField @bind-Value="entry.TimeRange"
                           Label="Time"
@@ -219,13 +222,6 @@
     </MudPaper>
 }
             }
-            @if (!string.IsNullOrEmpty(_timeError))
-            {
-                <div class="mud-error-text">@_timeError</div>
-            }
-
-
-
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"
                                    Class="m-2"
@@ -246,60 +242,6 @@
 
     <!-- Right Cover Image Section -->
     <MudItem xs="12" md="6">
-    @* <MudPaper Class="pa-4 side-content-style" Elevation="0">
-        <MudText Class="mb-2 form-title">Cover Image</MudText>
-        <MudPaper Outlined Class="d-flex align-center justify-center cover-picker-style">
-            <div class="d-flex flex-column align-center justify-center text-center image-container-style" >
-                 @if (uploadedImage is null)
-                {
-                        <MudFileUpload T="IBrowserFile"
-                        Accept=".png,.jpg"
-                        FilesChanged="@(async f => await UploadFiles(f))"
-                        MaximumFileCount="1">
-                        <ActivatorContent>
-                        <div class="d-flex flex-column align-center">
-                        <div class="icon-circle">
-                        <img src="/qln-images/upload_icon.svg"
-                        class="file-upload-style"
-                        alt="Upload"/>
-                        </div>
-                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
-                        </div>
-                        </ActivatorContent>
-                        </MudFileUpload>
-                }
-                else
-                {
-                    <div class="uploaded-image-container">
-                    <img src="@uploadedImage"
-                    alt="Cover"
-                    class="uploaded-image-style"
-                     />
-                    </div>
-                }
-            </div>
-            <MudPaper Elevation="0" Class="image-picker-style">
-            <div class="upload-action-style">
-                <MudFileUpload T="IBrowserFile"
-                        Accept=".png,.jpg"
-                        FilesChanged="@(async f => await UploadFiles(f))"
-                        MaximumFileCount="1">
-                        <ActivatorContent>
-                        <MudButton 
-                        OnClick="@EditImage">
-                        <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
-                        </MudButton>
-                        </ActivatorContent>
-                </MudFileUpload>
-                <MudButton 
-                OnClick="@EditImage">
-                <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                </MudButton>
-            </div>
-        </MudPaper>
-        </MudPaper>
-    </MudPaper> *@
-    
                     <MudText Class="mb-2 mt-3 form-title">Cover Image</MudText>
                         <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                         <ActivatorContent>

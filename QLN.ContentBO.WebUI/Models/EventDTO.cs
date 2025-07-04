@@ -13,12 +13,12 @@ namespace QLN.ContentBO.WebUI.Models
       public int? Price { get; set; }
       [Required]
       public string Location { get; set; }
-      public string Venue { get; set; }
+        public string Venue { get; set; } = string.Empty;
       public string Longitude { get; set; }
       public string Latitude { get; set; }
- 
-      [Url(ErrorMessage = "Invalid URL format.")]
-      public string? RedirectionLink { get; set; }
+
+        [Url(ErrorMessage = "Invalid URL format.")]
+        public string? RedirectionLink { get; set; } = string.Empty;
       public EventScheduleModel EventSchedule { get; set; }
  
       [Required(ErrorMessage = "Event description is required.")]
