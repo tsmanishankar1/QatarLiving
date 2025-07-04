@@ -24,5 +24,6 @@ namespace QLN.Common.Infrastructure.IService.IContentService
             Guid topicId,
             CancellationToken cancellationToken = default
         );
+        Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
     }
 }

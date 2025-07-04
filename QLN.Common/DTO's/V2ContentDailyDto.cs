@@ -2,13 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class V2ContentDailyDto
+    public class DailyTopic
     {
-
+        public Guid Id { get; set; }
+        public string TopicName { get; set; } = string.Empty;
     }
     public enum DailySlotType
     {
@@ -30,6 +32,7 @@ namespace QLN.Common.DTO_s
     }
     public class DailyTopSectionSlot
     {
+        [JsonPropertyName("id")]
         public Guid Id { get; set; }
         public DailySlotType SlotType { get; set; } 
         public string Title { get; set; } 
@@ -63,6 +66,8 @@ namespace QLN.Common.DTO_s
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        [JsonPropertyName("topicName")]
+        public string TopicName { get; set; } = string.Empty;
     }
 
 }

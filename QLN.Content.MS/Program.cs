@@ -50,6 +50,8 @@ builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
+builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
