@@ -481,6 +481,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (ev.EventSchedule.EndDate < today && ev.Status != EventStatus.Expired) 
                     {
                         ev.Status = EventStatus.Expired;
+                        await _dapr.SaveStateAsync<V2Events>(V2Content.ContentStoreName, ev.Id.ToString(), ev, cancellationToken: cancellationToken);
                     }
                 }
 
