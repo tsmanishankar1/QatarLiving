@@ -222,6 +222,7 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
+builder.Services.DailyConfiguration(builder.Configuration);
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -288,7 +289,8 @@ app.MapGroup("/api/addon")
 
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
-     //.RequireAuthorization(); Add this back once we have Login flow for BO.
+var dailyGroup = app.MapGroup("/api/v2/daily");
+dailyGroup.MapDailyEndpoints();
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 
