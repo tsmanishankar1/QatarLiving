@@ -351,6 +351,195 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .WithTags("V2Community")
                 .ExcludeFromDescription();
 
+            group.MapPost("/addCommentByCategoryId", async Task<Results<
+    Ok<object>,
+    BadRequest<ProblemDetails>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    CommunityCommentDto dto,
+    IV2CommunityPostService service,
+    HttpContext httpContext,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    dto.UserId = userData.GetProperty("uid").GetString();
+                    dto.UserName ??= userData.GetProperty("name").GetString(); // optional
+                    dto.CommentedAt = DateTime.UtcNow;
+                    dto.CommentId = Guid.NewGuid();
+
+                    await service.AddCommentToCommunityPostAsync(dto, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        message = "Comment added successfully",
+                        dto.CommunityPostId,
+                        dto.UserId
+                    });
+                }
+                catch (JsonException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid User Claim",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to add comment.", ex.Message);
+                }
+            })
+                .WithName("AddCommentToCommunityPost")
+                .WithTags("V2Community")
+                .WithSummary("Add a comment to a Community Post")
+                .WithDescription("Adds a new comment to a community post based on user token and CommunityPostId.")
+                .Produces<object>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/addComment", async Task<Results<
+    Ok<object>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    CommunityCommentDto dto,
+    IV2CommunityPostService service,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(dto.UserId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.CommentId = Guid.NewGuid();
+                    dto.CommentedAt = DateTime.UtcNow;
+
+                    await service.AddCommentToCommunityPostAsync(dto, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        message = "Comment added successfully",
+                        dto.CommunityPostId,
+                        dto.UserId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("AddCommentToCommunityPostInternal")
+                .WithTags("V2Community")
+                .ExcludeFromDescription();
+
+            group.MapGet("/getCommentsByPostId/{postId:guid}", async Task<IResult> (
+    Guid postId,
+    IV2CommunityPostService service,
+    CancellationToken ct) =>
+            {
+                var comments = await service.GetAllCommentsByPostIdAsync(postId, ct);
+                return Results.Ok(comments);
+            })
+                .WithName("GetCommunityPostComments")
+                .WithTags("V2Community")
+                .WithSummary("Get all comments for a community post")
+                .WithDescription("Retrieves a list of comments by post ID.")
+                .Produces<List<CommunityCommentDto>>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
+    Ok<object>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    Guid commentId,
+    Guid communityPostId,
+    IV2CommunityPostService service,
+    HttpContext httpContext,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+
+                    var liked = await service.LikeCommentAsync(commentId, userId, communityPostId, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        status = liked ? "liked" : "unliked",
+                        commentId,
+                        userId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to process comment like operation.", ex.Message);
+                }
+            })
+.WithName("LikeCommentByUser")
+.WithTags("V2Community")
+.WithSummary("Like/Unlike a comment using JWT")
+.WithDescription("Extracts user ID from token and toggles comment like.");
+
+
+            group.MapPost("/likeCommentInternal/{commentId:guid}/{communityPostId:guid}/{userId}", async Task<Results<
+    Ok<object>,
+    ProblemHttpResult>>
+(
+    Guid commentId,
+    Guid communityPostId,
+    string userId,
+    IV2CommunityPostService service,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    var liked = await service.LikeCommentAsync(commentId, userId, communityPostId, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        status = liked ? "liked" : "unliked",
+                        commentId,
+                        userId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+.WithName("LikeCommentInternal")
+.WithTags("V2Community")
+.ExcludeFromDescription();
 
 
             return group;

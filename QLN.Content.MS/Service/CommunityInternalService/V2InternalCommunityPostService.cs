@@ -130,6 +130,10 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                         var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct);
                         post.LikeCount = likedUsers?.Count ?? 0;
 
+                        var commentIndexKey = $"comment-index-{post.Id}";
+                        var commentList = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey);
+                        post.CommentCount = commentList?.Count ?? 0;
+
                         filteredPosts.Add(post);
                     }
                     catch (Exception ex)
@@ -296,6 +300,96 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching community like posts");
+                throw;
+            }
+        }
+
+        public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
+        {
+            var key = $"comment-{dto.CommunityPostId}-{dto.CommentId}";
+            var indexKey = $"comment-index-{dto.CommunityPostId}";
+
+            try
+            {
+                await _dapr.SaveStateAsync(StoreName, key, dto);
+
+                // Update the index list
+                var index = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
+                index.Add(dto.CommentId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, index);
+                _logger.LogInformation("Comment added to community post {PostId}", dto.CommunityPostId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding comment to community post {PostId}", dto.CommunityPostId);
+                throw;
+            }
+        }
+
+        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
+        {
+            var indexKey = $"comment-index-{postId}";
+            try
+            {
+                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
+
+                var commentList = new List<CommunityCommentDto>();
+                foreach (var commentId in commentIds)
+                {
+                    var commentKey = $"comment-{postId}-{commentId}";
+                    var comment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey);
+                    if (comment != null)
+                    {
+                        var likeIndexKey = $"comment-like-index-{comment.CommentId}";
+                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey);
+                        comment.CommentsLikeCount = likedUsers?.Count ?? 0;
+                        commentList.Add(comment);
+                    }
+                }
+
+                return commentList.OrderByDescending(c => c.CommentedAt).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching comment list for post {PostId}", postId);
+                throw;
+            }
+        }
+
+        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+        {
+            var key = $"comment-like-{commentId}-{userId}";
+            var indexKey = $"comment-like-index-{commentId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<string>(StoreName, key);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+
+                if (!string.IsNullOrWhiteSpace(existing))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, key);
+                    index.Remove(userId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index);
+
+                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
+                    return false;
+                }
+
+                await _dapr.SaveStateAsync(StoreName, key, userId);
+
+                if (!index.Contains(userId))
+                    index.Add(userId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, index);
+
+                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, commentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing comment like for {CommentId}", commentId);
                 throw;
             }
         }
