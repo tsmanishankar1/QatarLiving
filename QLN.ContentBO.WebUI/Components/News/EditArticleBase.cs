@@ -127,11 +127,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                                 { x => x.ContentText, "Article Updated" },
                             };
 
-                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true};
-                    await DialogService.ShowAsync<ArticleDialog>("",parameters,options);
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
                     ResetForm();
                     var redirectToCateg = article.Categories.First();
-                    NavManager.NavigateTo( $"/manage/news/category/{redirectToCateg.CategoryId}", true);
+                    NavManager.NavigateTo($"/manage/news/category/{redirectToCateg.CategoryId}", true);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
