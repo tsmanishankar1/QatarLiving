@@ -2,6 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Text;
 using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
@@ -765,6 +766,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventIndexKey,
@@ -783,15 +786,54 @@ namespace QLN.Content.MS.Service.EventInternalService
                     cancellationToken: cancellationToken
                 );
 
-                var events = items
-                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }))
-                    .Where(e => e != null && e.Status == status && e.IsActive)
-                    .ToList();
+                var resultEvents = new List<V2Events>();
+                var stateChanges = new List<StateTransactionRequest>();
 
-                return events;
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrEmpty(item.Value))
+                        continue;
+
+                    try
+                    {
+                        var eventData = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (eventData == null || !eventData.IsActive)
+                            continue;
+
+                        if (eventData.EventSchedule?.EndDate < today && eventData.Status != EventStatus.Expired)
+                        {
+                            eventData.Status = EventStatus.Expired;
+
+                            var updatedValue = JsonSerializer.Serialize(eventData);
+                            stateChanges.Add(new StateTransactionRequest(
+                                item.Key,
+                                Encoding.UTF8.GetBytes(updatedValue),
+                                StateOperationType.Upsert));
+                        }
+                        if (eventData.Status == status)
+                        {
+                            resultEvents.Add(eventData);
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                    }
+                }
+
+                if (stateChanges.Any())
+                {
+                    await _dapr.ExecuteStateTransactionAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        stateChanges,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return resultEvents;
             }
             catch (Exception ex)
             {
@@ -802,6 +844,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventIndexKey,
@@ -820,15 +864,54 @@ namespace QLN.Content.MS.Service.EventInternalService
                     cancellationToken: cancellationToken
                 );
 
-                var events = items
-                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }))
-                    .Where(e => e != null && e.Status == status && e.IsActive && e.IsFeatured)
-                    .ToList();
+                var resultEvents = new List<V2Events>();
+                var stateChanges = new List<StateTransactionRequest>();
 
-                return events;
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrEmpty(item.Value))
+                        continue;
+
+                    try
+                    {
+                        var eventData = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (eventData == null || !eventData.IsActive || !eventData.IsFeatured)
+                            continue;
+
+                        if (eventData.EventSchedule?.EndDate < today && eventData.Status != EventStatus.Expired)
+                        {
+                            eventData.Status = EventStatus.Expired;
+
+                            var updatedValue = JsonSerializer.Serialize(eventData);
+                            stateChanges.Add(new StateTransactionRequest(
+                                item.Key,
+                                Encoding.UTF8.GetBytes(updatedValue),
+                                StateOperationType.Upsert));
+                        }
+                        if (eventData.Status == status)
+                        {
+                            resultEvents.Add(eventData);
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                    }
+                }
+
+                if (stateChanges.Any())
+                {
+                    await _dapr.ExecuteStateTransactionAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        stateChanges,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return resultEvents;
             }
             catch (Exception ex)
             {
