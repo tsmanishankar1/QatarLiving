@@ -20,6 +20,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             _dapr = dapr;
             _logger = logger;
         }
+       
 
         public async Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken ct = default)
         {
@@ -79,55 +80,77 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
             }
         }
-        public async Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default)
         {
             _logger.LogInformation("Starting retrieval of all community posts...");
 
             try
             {
-                _logger.LogDebug("Fetching community post index from Dapr state store: {StoreName}, IndexKey: {IndexKey}", StoreName, IndexKey);
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
+                int currentPage = page ?? 1;
+                int currentPageSize = pageSize ?? 12;
 
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
                 _logger.LogInformation("Retrieved {Count} community post keys from index.", index.Count);
 
                 if (index.Count == 0)
                 {
                     _logger.LogWarning("No community post keys found in the index.");
-                    return new List<V2CommunityPostDto>();
+                    return new PaginatedCommunityPostResponseDto();
                 }
 
-                var posts = new List<V2CommunityPostDto>();
+                var filteredPosts = new List<V2CommunityPostDto>();
 
                 foreach (var key in index)
                 {
                     try
                     {
-                        _logger.LogDebug("Attempting to retrieve post for key: {Key}", key);
                         var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
 
-                        if (post == null)
-                        {
-                            _logger.LogWarning("Post is null for key: {Key}", key);
+                        if (post == null || post.Id == Guid.Empty || string.IsNullOrWhiteSpace(post.Title))
                             continue;
+
+                        if (!post.IsActive)
+                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(categoryId) &&
+                            !string.Equals(post.CategoryId?.Trim(), categoryId.Trim(), StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(search))
+                        {
+                            var normalizedTitle = post.Title?.Trim().ToLowerInvariant() ?? "";
+                            var normalizedSearch = search.Trim().ToLowerInvariant();
+                            if (!normalizedTitle.Contains(normalizedSearch))
+                                continue;
                         }
 
-                        if (post.Id == Guid.Empty || string.IsNullOrWhiteSpace(post.Title))
-                        {
-                            _logger.LogWarning("Post has missing required fields. Skipping. Key: {Key}, Id: {Id}, Title: {Title}", key, post.Id, post.Title);
-                            continue;
-                        }
-
-                        _logger.LogInformation("Successfully retrieved post: {Title} (ID: {Id})", post.Title, post.Id);
-                        posts.Add(post);
+                        filteredPosts.Add(post);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error retrieving or deserializing community post for key: {Key}", key);
+                        _logger.LogError(ex, "Error processing community post from key: {Key}", key);
                     }
                 }
 
-                _logger.LogInformation("Completed retrieval. Total valid posts: {Count}", posts.Count);
-                return posts;
+                var sort = (sortDirection ?? "desc").Trim().ToLowerInvariant();
+                filteredPosts = sort == "asc"
+                    ? filteredPosts.OrderBy(p => p.DateCreated).ToList()
+                    : filteredPosts.OrderByDescending(p => p.DateCreated).ToList();
+
+                int total = filteredPosts.Count;
+
+                var pagedPosts = filteredPosts
+                    .Skip((currentPage - 1) * currentPageSize)
+                    .Take(currentPageSize)
+                    .ToList();
+
+                _logger.LogInformation("Completed retrieval. Total filtered posts: {Total}, Page {Page} with size {PageSize}", total, currentPage, currentPageSize);
+
+                return new PaginatedCommunityPostResponseDto
+                {
+                    Total = total,
+                    Items = pagedPosts
+                };
             }
             catch (Exception ex)
             {
@@ -136,6 +159,21 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
+
+        public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
+        {
+            try
+            {
+                var key = $"community-{id}";
+                var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
+                return (post != null && post.IsActive) ? post : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching community posts");
+                throw;
+            }
+        }
 
         private string GenerateSlug(string title)
         {

@@ -107,17 +107,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("V2Community");
 
             group.MapGet("/getAllPosts", async Task<Results<
-                Ok<List<V2CommunityPostDto>>,
+                 Ok<PaginatedCommunityPostResponseDto>,
                 ProblemHttpResult
             >>
-            (
+            (                
+
+                [FromQuery] string? categoryId,
+                [FromQuery] string? search,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                [FromQuery] string? sortDirection,
                 IV2CommunityPostService service,
                 CancellationToken ct
             ) =>
             {
                 try
                 {
-                    var posts = await service.GetAllCommunityPostsAsync(ct);
+                    var posts = await service.GetAllCommunityPostsAsync(categoryId, search, page, pageSize, sortDirection, ct);
                     return TypedResults.Ok(posts);
                 }
                 catch (Exception ex)
@@ -129,8 +135,34 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("V2Community")
             .WithSummary("Get all community posts")
             .WithDescription("Retrieves all community posts with image URLs.")
-            .Produces<List<V2CommunityPostDto>>(StatusCodes.Status200OK)
+            .Produces<PaginatedCommunityPostResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("getCommunityPostById/{id:guid}", async Task<IResult> (
+                Guid id,
+                CancellationToken ct,
+                IV2CommunityPostService service) =>
+            {
+                try
+                {
+                    var post = await service.GetCommunityPostByIdAsync(id, ct);
+                    if (post is null)
+                        return Results.NotFound();
+
+                    return Results.Ok(post);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(ex.Message);
+                }
+            })
+                .WithName("GetCommunityPostsById")
+            .WithTags("V2Community")
+            .WithSummary("Get by Id community posts")
+            .WithDescription("Retrieves community posts with image URLs.")
+            .Produces<PaginatedCommunityPostResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }

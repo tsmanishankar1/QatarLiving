@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Cryptography.X509Certificates;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -76,18 +77,45 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default)
         {
             try
             {
-                var url = "/api/v2/community/getAllPosts";
+                var queryParams = new Dictionary<string, string>();
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add("search", search);
+
+                if (!string.IsNullOrWhiteSpace(categoryId))
+                    queryParams.Add("categoryId", categoryId);
+
+                if (page.HasValue)
+                    queryParams.Add("page", page.Value.ToString());
+
+                if (pageSize.HasValue)
+                    queryParams.Add("pageSize", pageSize.Value.ToString());
+
+                if (!string.IsNullOrWhiteSpace(sortDirection))
+                    queryParams.Add("sortDirection", sortDirection);
+
+
+                var queryString = queryParams.Count > 0
+                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
+                    : string.Empty;
+
+                var url = $"/api/v2/community/getAllPosts{queryString}";
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
 
                 var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
                 resp.EnsureSuccessStatusCode();
 
                 var json = await resp.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<V2CommunityPostDto>>(json) ?? new();
+
+                var result = JsonSerializer.Deserialize<PaginatedCommunityPostResponseDto>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result ?? new PaginatedCommunityPostResponseDto();
             }
             catch (Exception ex)
             {
@@ -95,5 +123,36 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid communityId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/api/v2/community/getCommunityPostById/{communityId}";
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+
+                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to fetch community post with ID {Id}. Status: {Status}", communityId, resp.StatusCode);
+                    return null;
+                }
+
+                var json = await resp.Content.ReadAsStringAsync();
+
+                var result = JsonSerializer.Deserialize<V2CommunityPostDto>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching community post with ID {Id}", communityId);
+                throw;
+            }
+        }
+
     }
 }
