@@ -19,10 +19,20 @@
 
         @if (activeIndex == 0)
         {
-            <AllEventList Events="events"
-                       Categories="Categories"
-                       OnDelete="DeleteEvent"
-                       AddEventCallback="NavigateToAddEvent" />
+           <AllEventList
+              PaginatedData="PaginatedData"
+                IsLoading="IsLoading"
+                Events="events"
+                Categories="Categories"
+                CurrentPage="currentPage"
+                PageSize="pageSize"
+                OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnDelete="DeleteEvent"
+                AddEventCallback="NavigateToAddEvent"
+                OnSortOrderChanged="HandleSortOrderChange"
+                 OnStatusChanged="HandleStatusChange" />
+
         }
         else
         {

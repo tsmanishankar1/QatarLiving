@@ -1,20 +1,26 @@
+@using MudBlazor
+
 <div class="search-sort-container">
-    <!-- Search box -->
-     <MudButton StartIcon="@Icons.Material.Outlined.Add"
-               Style="background-color: #FF7F38; color: white; text-transform: none;"
-               Class="compact-button"
-               OnClick="AddEventCallback">
-        Add Event
-    </MudButton>
-    <div class="search-wrapper">
-        <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
-        <input type="text"
-               placeholder="Search"
-               class="search-input"
-               @oninput="OnSearchChanged" />
+    <div class="left-section">
+        <!-- Add Event Button -->
+        <MudButton StartIcon="@Icons.Material.Outlined.Add"
+                   Style="background-color: #FF7F38; color: white; text-transform: none;"
+                   Class="compact-button"
+                   OnClick="AddEventCallback">
+            Add Event
+        </MudButton>
+
+        <!-- Search box -->
+        <div class="search-wrapper">
+            <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+            <input type="text"
+                   placeholder="Search"
+                   class="search-input"
+                   @oninput="OnSearchChanged" />
+        </div>
     </div>
 
-    <!-- Sort button -->
+    <!-- Sort button (Right side) -->
     <button class="sort-button" @onclick="ToggleSort">
         <MudIcon Icon="@SortIcon" />
         Sort by
@@ -22,13 +28,12 @@
 </div>
 
 @code {
+    [Parameter] public EventCallback AddEventCallback { get; set; }
     [Parameter] public EventCallback<string> OnSearch { get; set; }
     [Parameter] public EventCallback<bool> OnSort { get; set; }
-    [Parameter] public EventCallback AddEventCallback { get; set; }
 
     private bool ascending = true;
     private string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
-
 
     private async Task OnSearchChanged(ChangeEventArgs e)
     {
@@ -44,12 +49,20 @@
         await OnSort.InvokeAsync(ascending);
     }
 }
+
 <style>
-    .search-sort-container {
+.search-sort-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.left-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .search-wrapper {
@@ -59,12 +72,12 @@
     border: 1px solid var(--color-secondary-grey-container);
     border-radius: 8px;
     padding: 10px 14px;
-    width: 400px;
+    width: 300px;
     height: 44px;
 }
 
 .search-wrapper:focus-within {
-    border-color: var( --color-accent);
+    border-color: var(--color-accent);
 }
 
 .search-icon {
@@ -98,8 +111,7 @@
 }
 
 .sort-button:hover {
-    border-color: var( --color-accent);
-    color: var( --color-accent);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
 }
-
 </style>
