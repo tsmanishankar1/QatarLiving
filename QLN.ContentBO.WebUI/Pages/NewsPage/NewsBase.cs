@@ -42,6 +42,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 SelectedSubcategory = SubCategories.First();
 
                 ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                     .Where(a => a.IsActive)
                                                      .OrderBy(a => a.Categories
                                                          .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
                                                      )
@@ -59,6 +60,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             await DeleteNewsArticle (Id);
             ListOfNewsArticles.RemoveAll(a => a.Id == Id);
+            StateHasChanged();
         }
 
         protected async Task<List<NewsArticleDTO>> GetAllArticles()
@@ -133,11 +135,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                         .Where(a => a.IsActive)
                                                          .OrderBy(a => a.Categories
                                                              .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
                                                          )
                                                          .ToList() ?? [];
                     Snackbar.Add("Slot Updated");
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
@@ -179,12 +183,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                         .Where(a => a.IsActive)
                                                          .OrderBy(a => a.Categories
                                                              .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
                                                          )
                                                          .ToList() ?? [];
                     Snackbar.Add("Slot Updated");
-
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
@@ -254,10 +259,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             SelectedSubcategory = subCategory;
             ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                     .Where(a => a.IsActive)
                                      .OrderBy(a => a.Categories
                                          .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
                                      )
                                      .ToList() ?? [];
+            StateHasChanged();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
