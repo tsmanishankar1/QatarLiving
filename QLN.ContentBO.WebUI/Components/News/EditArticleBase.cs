@@ -57,14 +57,30 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Category.SlotId = 15; // By Default UnPublished.
             }
+            if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
+            {
+                Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+            }
+            if (TempCategoryList.Count >= MaxCategory)
+            {
+                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", severity: Severity.Normal);
+                Category = new();
+                return;
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
+            if (TempCategoryList.Count <= MinCategory)
+            {
+                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
+                return;
+            }
             if (TempCategoryList.Count > 0)
             {
+
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
