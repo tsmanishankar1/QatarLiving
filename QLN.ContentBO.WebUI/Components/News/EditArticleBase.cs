@@ -15,7 +15,9 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IDialogService DialogService { get; set; }
-        [Parameter] public Guid ArticleId { get; set; }
+        [Parameter] public string? ArticleId { get; set; }
+
+        protected Guid ParsedArticleId { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -35,10 +37,16 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected override async Task OnInitializedAsync()
         {
             AuthorizedPage();
+            if (!Guid.TryParse(ArticleId,  out var parsedArticleId))
+            {
+                Snackbar.Add("Invalid article ID", Severity.Error);
+                return;
+            }
+            ParsedArticleId = parsedArticleId;
             Categories = await GetNewsCategories();
             Slots = await GetSlots();
             WriterTags = await GetWriterTags();
-            article = await GetArticleById(ArticleId);
+            article = await GetArticleById(ParsedArticleId);
             TempCategoryList = article.Categories;
         }
 
@@ -46,7 +54,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             if (article.Id != Guid.Empty)
             {
-                article = await GetArticleById(ArticleId);
+                article = await GetArticleById(ParsedArticleId);
                 TempCategoryList = article.Categories;
             }
         }
