@@ -54,7 +54,7 @@ else
             <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
             <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
             <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>
+            <MudTd Class="date-cell">
             @if (context.Event.PublishedDate != null)
             {
                 var duration = DateTime.Now - context.Event.PublishedDate.Value;
@@ -111,6 +111,9 @@ else
 .event-custom-table .number-cell {
     text-align: center;
     font-weight: bold;
+}
+.event-custom-table .date-cell {
+    text-align: center;
 }
 /* Post title styling */
 .event-custom-table .post-title {
