@@ -90,14 +90,17 @@
             <RowTemplate>
                 <MudTd DataLabel="Number">@context.Index</MudTd>
                     <MudTd DataLabel="Post Title">
-                        @if(context.FeaturedSlotViewModel.Event?.EventTitle == "Feature an Event" ){
-                            <MudLink Href="#" Style="color:#535862">
-                                @context.FeaturedSlotViewModel.Event?.EventTitle 
-                            </MudLink>
+                        @if (context.FeaturedSlotViewModel.Event?.EventTitle == "Feature an Event")
+                        {
+                            <MudText Class="placeholder-text"
+                                @onclick="() => ReplaceEventSlot(context.FeaturedSlotViewModel)">
+                                @context.FeaturedSlotViewModel.Event?.EventTitle
+                            </MudText>
                         }
-                        else{
-                            <MudLink Href="#" Style="color:#535862">
-                                @context.FeaturedSlotViewModel.Event?.EventTitle 
+                        else
+                        {
+                            <MudLink Href="#" Class="event-link">
+                            @context.FeaturedSlotViewModel.Event?.EventTitle
                             </MudLink>
                         }
                     </MudTd>
@@ -108,7 +111,9 @@
                     @context.FeaturedSlotViewModel.Event?.EventSchedule?.EndDate.ToString("dd-MM-yyyy")
                 </MudTd>
                 <MudTd>
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" />
+                    <div class="custom-delete-button">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                    </div>
                 </MudTd>
             </RowTemplate>
             </MudTable>
@@ -205,5 +210,25 @@
     .custom-tab-default {
         color: rgba(0, 0, 0, 0.6);
         font-weight: 500;
+    }
+    .placeholder-text {
+        color: #FF7F38 !important;
+        font-weight: 600 !important;
+    }
+
+    .event-link {
+        color: #535862 !important;
+        text-decoration: none !important;
+    }
+    .custom-delete-button {
+        background-color: #F44336; 
+        border-radius: 12px; 
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
     }
 </style>

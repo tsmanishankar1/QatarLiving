@@ -141,6 +141,28 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
+{
+    try
+    {
+        var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Payload being sent to UpdateFeaturedEvents:");
+        Console.WriteLine(json);
+
+        var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "UpdateFeaturedEvents");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
         public Task<HttpResponseMessage> GetSlots()
         {
             throw new NotImplementedException();
