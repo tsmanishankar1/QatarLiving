@@ -96,6 +96,23 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<List<V2Events>> GetAllIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    $"/api/v2/event/getallfeaturedevents?isFeatured={isFeatured}",
+                    cancellationToken
+                ) ?? new List<V2Events>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all events.");
+                throw;
+            }
+        }
         public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -272,7 +289,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
-             int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
+             int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
         bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
@@ -284,6 +301,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     $"search={Uri.EscapeDataString(search ?? "")}",
                     $"sortOrder={sortOrder?.ToLowerInvariant() ?? "desc"}"
                 };
+                if (status.HasValue)
+                    queryParams.Add($"status={(int)status.Value}");
 
                 if (fromDate.HasValue)
                     queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
@@ -431,6 +450,24 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving events by status: {Status}", status);
+                throw;
+            }
+        }
+        public async Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/updatefeaturedeventbyuserid";
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating featured event");
                 throw;
             }
         }
