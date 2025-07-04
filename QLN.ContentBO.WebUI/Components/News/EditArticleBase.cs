@@ -47,16 +47,14 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
                 article = await GetArticleById(ParsedArticleId);
-                TempCategoryList = article.Categories;
-
                 if (article.Id == Guid.Empty)
                 {
                     Snackbar.Add("Invalid article ID", Severity.Error);
                     NavManager.NavigateTo($"/", true);
                     return;
                 }
-                article = await GetArticleById(ParsedArticleId);
                 TempCategoryList = article.Categories;
+
             }
             catch (Exception ex)
             {

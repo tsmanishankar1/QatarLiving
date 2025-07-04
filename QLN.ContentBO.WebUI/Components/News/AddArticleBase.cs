@@ -104,6 +104,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 }
 
                 article.UserId = CurrentUserId.ToString();
+                article.authorName = CurrentUserName.ToString();
                 article.IsActive = true;
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
