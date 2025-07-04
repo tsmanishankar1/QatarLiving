@@ -33,10 +33,18 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected override async Task OnInitializedAsync()
         {
-            AuthorizedPage();
-            Categories = await GetNewsCategories();
-            Slots = await GetSlots();
-            WriterTags = await GetWriterTags();
+            try
+            {
+                AuthorizedPage();
+                Categories = await GetNewsCategories();
+                Slots = await GetSlots();
+                WriterTags = await GetWriterTags();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
         }
 
         protected void AddCategory()
@@ -78,7 +86,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-
                 article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
@@ -101,8 +108,14 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
+                    var parameters = new DialogParameters<ArticleDialog>
+                            {
+                                { x => x.ContentText, "Article Published" },
+                            };
+
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
+                    ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -112,7 +125,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
-                ResetForm();
             }
             catch (Exception ex)
             {
@@ -128,14 +140,22 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            var file = e.File;
-            if (file != null)
+            try
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleFilesChanged");
+                ResetForm();
             }
         }
 
