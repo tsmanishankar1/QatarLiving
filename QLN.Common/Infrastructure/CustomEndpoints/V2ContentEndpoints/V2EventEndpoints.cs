@@ -133,6 +133,34 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+        public static RouteGroupBuilder MapGetAllFeaturedEventEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getallfeaturedevents", static async Task<Results<Ok<List<V2Events>>, ProblemHttpResult>>
+            (
+                bool isFeatured,
+                IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var events = await service.GetAllIsFeaturedEvents(isFeatured, cancellationToken);
+                    return TypedResults.Ok(events);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllFeaturedEvents")
+            .WithTags("Event")
+            .WithSummary("Get All Events")
+            .WithDescription("Retrieves all events.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+
         public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>>
@@ -419,6 +447,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             (
                 [FromQuery] int? page,
                 [FromQuery] int? perPage,
+                [FromQuery] EventStatus ? status,
                 [FromQuery] string? search,
                 [FromQuery] int? categoryId,
                 [FromQuery] string? sortOrder,
@@ -434,7 +463,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    var result = await service.GetPagedEvents(page, perPage, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, categoryId, featuredFirst, cancellationToken);
+                    var result = await service.GetPagedEvents(page, perPage, status, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, categoryId, featuredFirst, cancellationToken);
 
                     if (result == null || result.Items == null || !result.Items.Any())
                     {
@@ -703,6 +732,114 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            return group;
+        }
+        public static RouteGroupBuilder MapUpdateFeaturedEvent(this RouteGroupBuilder group)
+        {
+            group.MapPost("/updatefeaturedevent", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            UpdateFeaturedEvent dto,
+            IV2EventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken = default
+            ) =>
+            {
+                try
+                {
+                    if (dto.EventId == Guid.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "EventId cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    dto.UpdatedBy = uid;
+                    await service.UpdateFeaturedEvent(dto, cancellationToken);
+                    return TypedResults.Ok("Featured event updated successfully.");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("UpdateFeaturedEvent")
+            .WithTags("Event")
+            .WithSummary("Update Featured Event")
+            .WithDescription("Updates the featured event slot.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/updatefeaturedeventbyuserid", async Task < Results <
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult> >
+                (
+                UpdateFeaturedEvent dto,
+                IV2EventService service,
+                CancellationToken cancellationToken = default
+                ) =>
+            {
+                try
+                {
+                    if (dto.EventId == Guid.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "EventId cannot be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    if (string.IsNullOrWhiteSpace(dto.UpdatedBy))
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UpdatedBy cannot be null.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    await service.UpdateFeaturedEvent(dto, cancellationToken);
+                    return TypedResults.Ok("Featured event updated successfully.");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("UpdateFeaturedEventByUserId")
+                .WithTags("Event")
+                .WithSummary("Update Featured Event By UserId")
+                .WithDescription("Updates the featured event slot using UserId from the payload.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }
