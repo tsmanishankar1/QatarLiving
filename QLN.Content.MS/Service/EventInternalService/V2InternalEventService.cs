@@ -79,11 +79,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                         cancellationToken: cancellationToken
                     );
                 }
-                if (dto.IsFeatured && dto.FeaturedSlot.Id >= 1 && dto.FeaturedSlot.Id <= 6)
-                {
-                    await HandleEventSlotShift(dto.FeaturedSlot.Id, entity, cancellationToken);
-                }
-
                 return "Event created successfully.";
             }
             catch (ArgumentException ex)
@@ -916,6 +911,97 @@ namespace QLN.Content.MS.Service.EventInternalService
             catch (Exception ex)
             {
                 throw new Exception($"Error occurred while retrieving events by status: {ex.Message}", ex);
+            }
+        }
+        public async Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    dto.EventId.ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (existingEvent == null)
+                {
+                    var eventIds = await _dapr.GetStateAsync<List<string>>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        cancellationToken: cancellationToken);
+
+                    if (eventIds == null || !eventIds.Contains(dto.EventId.ToString()))
+                    {
+                        throw new InvalidDataException($"Event with ID {dto.EventId} not found.");
+                    }
+
+                    existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        dto.EventId.ToString(),
+                        cancellationToken: cancellationToken);
+
+                    if (existingEvent == null)
+                    {
+                        throw new InvalidDataException($"Event with ID {dto.EventId} not found in storage.");
+                    }
+                }
+
+                existingEvent.UpdatedBy = dto.UpdatedBy;
+                existingEvent.UpdatedAt = DateTime.UtcNow;
+                existingEvent.IsFeatured = dto.IsFeatured;
+                existingEvent.FeaturedSlot = dto.IsFeatured ? dto.Slot : null;
+
+                if (dto.IsFeatured && dto.Slot != null && dto.Slot.Id >= 1 && dto.Slot.Id <= 6)
+                {
+                    await HandleEventSlotShift(dto.Slot.Id, existingEvent, cancellationToken);
+                }
+                else
+                {
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        dto.EventId.ToString(),
+                        existingEvent,
+                        cancellationToken: cancellationToken);
+                }
+            }
+            catch (InvalidDataException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error updating featured event: {ex.Message}", ex);
+            }
+        }
+        public async Task<List<V2Events>> GetAllIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken
+                );
+
+                var events = items
+                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(e => e != null && e.IsActive == true && e.IsFeatured == isFeatured)
+                    .ToList();
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error occurred while retrieving all events", ex);
             }
         }
 

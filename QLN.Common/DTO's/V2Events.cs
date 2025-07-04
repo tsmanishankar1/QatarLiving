@@ -71,4 +71,13 @@ namespace QLN.Common.DTO_s
         public int ToSlot { get; set; }
         public string? UserId { get; set; }
     }
+    public class UpdateFeaturedEvent
+    {
+        public Guid EventId { get; set; }
+        public V2Slot Slot { get; set; }
+        public bool IsFeatured { get; set; }
+        public string? UpdatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+    }
+
 }
