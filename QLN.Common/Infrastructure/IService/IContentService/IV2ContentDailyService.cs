@@ -8,10 +8,9 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2ContentDailyService
     {
-        // existing topic methods...
-        Task<string> CreateDailyTopicAsync(string userId, DailyTopSectionSlot dto, CancellationToken cancellationToken = default);
-        Task<List<DailyTopicContent>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default);
-        Task<DailyTopicContent?> GetDailyTopicByIdAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<string> CreateDailyTopicAsync(DailyTopSectionSlot dto, CancellationToken cancellationToken = default);
+        Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default);
+        Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
         Task<string> UpsertDailySlotAsync(
             string userId,

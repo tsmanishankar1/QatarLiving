@@ -30,15 +30,12 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
         public async Task<string> CreateDailyTopicAsync(
-            string userId,
             DailyTopSectionSlot dto,
             CancellationToken cancellationToken = default
         )
         {
             // stamp required fields
             dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
-            dto.CreatedBy = userId;
-            dto.UpdatedBy = userId;
             dto.CreatedAt = DateTime.UtcNow;
             dto.UpdatedAt = DateTime.UtcNow;
 
@@ -65,17 +62,17 @@ namespace QLN.Backend.API.Service.V2ContentService
             ) ?? throw new Exception("Empty response from daily-content service.");
         }
 
-        public async Task<List<DailyTopicContent>> GetAllDailyTopicsAsync(
+        public async Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(
             CancellationToken cancellationToken = default
         )
         {
             var url = $"{BaseUrl}/dailyTopics";
-            return await _dapr.InvokeMethodAsync<List<DailyTopicContent>>(
+            return await _dapr.InvokeMethodAsync<List<DailyTopSectionSlot>>(
                 HttpMethod.Get, AppId, url, cancellationToken
-            ) ?? new List<DailyTopicContent>();
+            ) ?? new List<DailyTopSectionSlot>();
         }
 
-        public async Task<DailyTopicContent?> GetDailyTopicByIdAsync(
+        public async Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default
         )
@@ -91,7 +88,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             res.EnsureSuccessStatusCode();
             var json = await res.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<DailyTopicContent>(
+            return JsonSerializer.Deserialize<DailyTopSectionSlot>(
                 json,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
             );

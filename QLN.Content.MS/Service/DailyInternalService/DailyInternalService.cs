@@ -26,7 +26,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
         }
 
         public async Task<string> CreateDailyTopicAsync(
-            string userId,
             DailyTopSectionSlot dto,
             CancellationToken cancellationToken = default
         )
@@ -54,7 +53,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
             }
         }
 
-        public async Task<List<DailyTopicContent>> GetAllDailyTopicsAsync(
+        public async Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(
            CancellationToken cancellationToken = default
         )
         {
@@ -62,19 +61,19 @@ namespace QLN.Content.MS.Service.DailyInternalService
                                ?? new List<string>();
 
             if (currentIndex.Count == 0)
-                return new List<DailyTopicContent>();
+                return new List<DailyTopSectionSlot>();
 
-            var bulk = await _dapr.GetBulkStateAsync<DailyTopicContent>(ConstantValues.V2Content.ContentStoreName, currentIndex, parallelism: 10, cancellationToken: cancellationToken);
+            var bulk = await _dapr.GetBulkStateAsync<DailyTopSectionSlot>(ConstantValues.V2Content.ContentStoreName, currentIndex, parallelism: 10, cancellationToken: cancellationToken);
             return bulk
                   .Where(item => item.Value is not null)
                   .Select(item => item.Value!)
                   .ToList();
         }
 
-        public Task<DailyTopicContent?> GetDailyTopicByIdAsync(
+        public Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default
-        ) => _dapr.GetStateAsync<DailyTopicContent>(ConstantValues.V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+        ) => _dapr.GetStateAsync<DailyTopSectionSlot>(ConstantValues.V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
 
         public async Task<string> UpsertDailySlotAsync(
             string userId,

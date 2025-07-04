@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         {
             // GET /dailyTopics
             group.MapGet("/dailyTopics", async Task<Results<
-                    Ok<List<DailyTopicContent>>,
+                    Ok<List<DailyTopSectionSlot>>,
                     ProblemHttpResult>>
             (
                 [FromServices]IV2ContentDailyService service,
@@ -46,7 +46,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             // GET /dailyTopics/{id}
             group.MapGet("/dailyTopics/{id:guid}", async Task<Results<
-                    Ok<DailyTopicContent>,
+                    Ok<DailyTopSectionSlot>,
                     NotFound<ProblemDetails>,
                     ProblemHttpResult>>
             (
@@ -93,16 +93,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             {
                 try
                 {
-                    var claimJson = httpContext.User
-                        .Claims.FirstOrDefault(c => c.Type == "user")?.Value
-                        ?? throw new InvalidDataException("User claim missing");
-
-                    var uid = JsonSerializer
-                        .Deserialize<JsonElement>(claimJson)
-                        .GetProperty("uid")
-                        .GetString()!;
-
-                    var result = await service.CreateDailyTopicAsync(uid, dto, cancellationToken);
+                    var result = await service.CreateDailyTopicAsync(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
