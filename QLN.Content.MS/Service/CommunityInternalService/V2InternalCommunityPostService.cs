@@ -4,6 +4,7 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using static QLN.Common.DTO_s.CommunityBo;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace QLN.Content.MS.Service.CommunityInternalService
 {
@@ -125,6 +126,10 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                                 continue;
                         }
 
+                        var likeIndexKey = $"like-index-{post.Id}";
+                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct);
+                        post.LikeCount = likedUsers?.Count ?? 0;
+
                         filteredPosts.Add(post);
                     }
                     catch (Exception ex)
@@ -159,7 +164,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while retrieving community posts.", ex);
             }
         }
-
 
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -235,8 +239,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
             return Task.FromResult(new ForumCategoryListDto { ForumCategories = categories });
         }
-
-    public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
+        
+        public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
         {
             var key = GetKey(postId);
             var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
@@ -252,5 +256,49 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
             return true;
         }
+
+        public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
+        {
+            var key = $"like-{dto.CommunityPostId}-{dto.UserId}";
+            var indexKey = $"like-index-{dto.CommunityPostId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<CommunityPostLikeDto>(StoreName, key, cancellationToken: ct);
+                var userIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+
+                if (existing != null)
+                {
+                    // Already liked → remove like (dislike)
+                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
+
+                    userIndex.Remove(dto.UserId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, userIndex);
+
+                    _logger.LogInformation("User {UserId} unliked post {PostId}", dto.UserId, dto.CommunityPostId);
+                    return false; // false means unliked
+                }
+
+                // Not liked → add like
+                dto.LikePostId = Guid.NewGuid();
+                dto.LikedDate = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
+
+                if (!userIndex.Contains(dto.UserId))
+                    userIndex.Add(dto.UserId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, userIndex, cancellationToken: ct);
+
+                _logger.LogInformation("User {UserId} liked post {PostId}", dto.UserId, dto.CommunityPostId);
+                return true; // true means liked
+            } 
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching community like posts");
+                throw;
+            }
+        }
+
     }
-    }
+}

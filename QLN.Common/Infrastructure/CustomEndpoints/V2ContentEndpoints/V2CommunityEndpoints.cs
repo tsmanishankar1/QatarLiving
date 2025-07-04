@@ -252,6 +252,107 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithName("DeleteCommunityPostInternal")
             .WithTags("V2Community");
 
+            group.MapPost("/likePostByCategoryId", async Task<Results<
+                Ok<object>,
+                BadRequest<ProblemDetails>,
+                ForbidHttpResult,
+                ProblemHttpResult>>
+                (
+                CommunityPostLikeDto dto,
+                IV2CommunityPostService service,HttpContext httpContext,
+                CancellationToken ct
+                ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    dto.UserId = userData.GetProperty("uid").GetString();
+                    dto.LikePostId = Guid.NewGuid();
+                    dto.LikedDate = DateTime.UtcNow;
+
+                    var liked = await service.LikePostForUser(dto, ct);
+                    return TypedResults.Ok((object)new
+                    {
+                        status = liked ? "liked" : "unliked",
+                        dto.CommunityPostId,
+                        dto.UserId
+                    });
+                }
+                catch (JsonException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid User Claim",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to process like operation.", ex.Message);
+                }
+            })
+                .WithName("LikeCommunityPost")
+                .WithTags("V2Community")
+                .WithSummary("Like/Unlike a Community Post")
+                .WithDescription("Toggles like for a community post based on user ID. Returns current like status.")
+                .Produces<object>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/likePost", async Task<Results<
+                Ok<object>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                CommunityPostLikeDto dto,
+                IV2CommunityPostService service,
+                CancellationToken ct
+                ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(dto.UserId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    dto.LikePostId = Guid.NewGuid();
+                    dto.LikedDate = DateTime.UtcNow;
+
+                    var liked = await service.LikePostForUser(dto, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        status = liked ? "liked" : "unliked",
+                        dto.CommunityPostId,
+                        dto.UserId
+                    });
+
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+.               WithName("LikeCommunityPostInternal")
+                .WithTags("V2Community")
+                .ExcludeFromDescription();
+
+
+
             return group;
         }
 

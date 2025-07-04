@@ -169,10 +169,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return false;
             }
         }
-
-
-
-
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid communityId, CancellationToken ct = default)
         {
             try
@@ -201,7 +197,35 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Error fetching community post with ID {Id}", communityId);
                 throw;
             }
-        }
+        }       
+        public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = "/api/v2/community/likePost";
 
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url, dto);
+                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+                resp.EnsureSuccessStatusCode();
+
+                var json = await resp.Content.ReadAsStringAsync();
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var jsonDoc = JsonDocument.Parse(json);
+                    if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
+                    {
+                        var status = statusElement.GetString();
+                        return status == "liked";
+                    }
+                }
+
+                return false;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error liking/unliking community post");
+                throw;
+            }
+        }
     }
 }

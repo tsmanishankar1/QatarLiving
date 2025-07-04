@@ -47,6 +47,9 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("dateCreated")]
         public DateTime? DateCreated { get; set; }
+
+        [JsonPropertyName("likeCount")]
+        public int LikeCount { get; set; } = 0;
     }
 
 }
