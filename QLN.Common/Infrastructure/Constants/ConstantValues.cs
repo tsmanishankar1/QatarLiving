@@ -95,6 +95,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
             public const string NewsIndexKey = "news-index";
+            public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
             public const string EventCategoryIndexKey = "event-category-index";
         }
