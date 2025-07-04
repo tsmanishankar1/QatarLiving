@@ -21,7 +21,6 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         private const string InternalAppId = "qln-content-ms";
         private const string BlobContainer = "community-images";
-
         public V2ExternalCommunityPostService(
             DaprClient dapr,
             ILogger<V2ExternalCommunityPostService> logger,
