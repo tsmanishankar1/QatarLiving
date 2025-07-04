@@ -238,7 +238,11 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/news/category/updatesubcategory");
+                var subCategoryToUpdate = new StringContent(JsonSerializer.Serialize(subCategory), Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/category/updatesubcategory")
+                {
+                    Content = subCategoryToUpdate
+                };
 
                 var response = await _httpClient.SendAsync(request);
 
