@@ -42,13 +42,11 @@
               AdornmentText="QAR" 
               Class="@PriceFieldClass" 
               Disabled="@(!IsFeesSelected)" />
-              @* @if (!string.IsNullOrEmpty(_PriceError))
-             { *@
+              @if (!string.IsNullOrEmpty(_PriceError))
+             { 
                 <div class="mud-error-text">@_PriceError</div>
-            @* } *@
+            } 
             <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
-
-
        <MudSelect T="string"
            Label="Location"
            Placeholder="Choose"
@@ -70,37 +68,8 @@
             <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
         }
         </MudSelect>
-        @* @if (!string.IsNullOrEmpty(_LocationError))
-        { *@
-            <div class="mud-error-text">@_LocationError</div>
-        @* } *@
 
-           
-  
-
-
-
-
-
-
-
-            @* <MudPaper Class="location-box" Elevation="0" Style="display: flex; align-items: center; padding: 8px; border: 1px solid #ccc; border-radius: 8px; flex-wrap: wrap; gap: 8px; background-color: #FFFFFF;">
-                <MudChipSet T="string" >
-               @if (!string.IsNullOrWhiteSpace(Location))
-                {
-                    <MudChip T="string" Class="custom-chip">
-                    @CurrentEvent.Location
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                       Size="Size.Small" 
-                       Edge="Edge.End"
-                       Style="margin-left: 4px; color:#242424"
-                       OnClick="@RemoveLocation" />
-                    </MudChip>
-                }
-                </MudChipSet>
-                <MudSpacer />
-                <MudIcon Icon="@Icons.Material.Filled.LocationOn"  Style="cursor: pointer; color: #FF7F38" @onclick="AddLocation" />
-            </MudPaper>  *@
+        
             <MudTextField  Variant="Variant.Outlined" Label="Venue" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 

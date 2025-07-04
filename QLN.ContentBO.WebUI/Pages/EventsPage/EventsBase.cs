@@ -34,19 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             events = await GetEvents();
             featuredEventSlots = await GetFeaturedSlotsAsync();
-            foreach (var slot in featuredEventSlots)
-            {
-                Console.WriteLine($"SlotNumber: {slot.SlotNumber}, Title: {slot.Event?.EventTitle ?? "null"}");
-            }
             Categories = await GetEventsCategories();
-            foreach (var ev in Categories)
-            {
-                Console.WriteLine($"{ev.Id}, StartDate: {ev.CategoryName}");
-            }
-            foreach (var ev in events)
-            {
-                Console.WriteLine($"Event Title: {ev.EventTitle}, CategoryId: {ev.CategoryId}, StartDate: {ev.EventSchedule.StartDate}");
-            }
         }
         protected EventDTO? draggedItem;
 
@@ -101,14 +89,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     ReplacedEvent.FeaturedSlot.Id = ReplaceSlot?.SlotNumber ?? 0;
                     ReplacedEvent.IsFeatured = true;
                     ReplaceFeaturedEvent();
-                    Console.WriteLine($"Replaced event in slot {selectedEvent.SlotNumber} with: {selectedEvent.Event.EventTitle}");
                 }
             }
             await Task.CompletedTask;
         }
         protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
         {
-            Console.WriteLine($"Selected event: {selectedEvent?.Event?.EventTitle}");
             ReplaceSlot = selectedEvent;
             OpenDialogAsync();
             await Task.CompletedTask;
@@ -128,11 +114,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected void DeletePost(int number)
         {
             _posts.RemoveAll(p => p.Number == number);
-        }
-        protected void OnPlaceholderClick(FeaturedSlot slot)
-        {
-
-            Console.WriteLine($"Slot Clicked: {slot.SlotNumber}, Title: {slot.Event?.EventTitle}");
         }
         public class PostItem
         {
@@ -190,8 +171,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     var events = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>() ?? new();
                     var rawContent = await apiResponse.Content.ReadAsStringAsync();
-                    Console.WriteLine("Raw API Response:");
-                    Console.WriteLine(rawContent);
                     foreach (var ev in events)
                     {
                         if (ev.FeaturedSlot != null && ev.FeaturedSlot.Id >= 1 && ev.FeaturedSlot.Id <= 6)
@@ -221,10 +200,9 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
                     var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
-    {
-        WriteIndented = true // optional, for pretty-printing
-    });
-    Console.WriteLine("Fetched Featured Events:\n" + json);
+                    {
+                        WriteIndented = true 
+                    });
                     return response ?? new List<EventDTO>();
                 }
             }

@@ -41,10 +41,10 @@
               AdornmentText="QAR" 
               Class="@PriceFieldClass" 
               Disabled="@(!IsFeesSelected)" />
-              @* @if (!string.IsNullOrEmpty(_PriceError))
-             { *@
+              @if (!string.IsNullOrEmpty(_PriceError))
+             { 
                 <div class="mud-error-text">@_PriceError</div>
-            @* } *@
+            } 
             <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
 
 
@@ -70,33 +70,6 @@
         }
         </MudSelect>
          <ValidationMessage For="@(() => CurrentEvent.Location)" />
-
-           
-  
-
-
-
-
-
-
-
-            @* <MudPaper Class="location-box" Elevation="0" Style="display: flex; align-items: center; padding: 8px; border: 1px solid #ccc; border-radius: 8px; flex-wrap: wrap; gap: 8px; background-color: #FFFFFF;">
-                <MudChipSet T="string" >
-               @if (!string.IsNullOrWhiteSpace(Location))
-                {
-                    <MudChip T="string" Class="custom-chip">
-                    @CurrentEvent.Location
-                    <MudIconButton Icon="@Icons.Material.Filled.Close" 
-                       Size="Size.Small" 
-                       Edge="Edge.End"
-                       Style="margin-left: 4px; color:#242424"
-                       OnClick="@RemoveLocation" />
-                    </MudChip>
-                }
-                </MudChipSet>
-                <MudSpacer />
-                <MudIcon Icon="@Icons.Material.Filled.LocationOn"  Style="cursor: pointer; color: #FF7F38" @onclick="AddLocation" />
-            </MudPaper>  *@
             <MudTextField  Variant="Variant.Outlined" Label="Venue" Class="my-2 custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
@@ -152,10 +125,6 @@
                     </div>
                 </MudPopover>
             </div>
-           @* @if (!string.IsNullOrEmpty(_DateError))
-            {
-                <div class="mud-error-text">@_DateError</div>
-            } *@
             <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartDate)" />
 
 
@@ -246,59 +215,6 @@
 
     <!-- Right Cover Image Section -->
     <MudItem xs="12" md="6">
-    @* <MudPaper Class="pa-4 side-content-style" Elevation="0">
-        <MudText Class="mb-2 form-title">Cover Image</MudText>
-        <MudPaper Outlined Class="d-flex align-center justify-center cover-picker-style">
-            <div class="d-flex flex-column align-center justify-center text-center image-container-style" >
-                 @if (uploadedImage is null)
-                {
-                        <MudFileUpload T="IBrowserFile"
-                        Accept=".png,.jpg"
-                        FilesChanged="@(async f => await UploadFiles(f))"
-                        MaximumFileCount="1">
-                        <ActivatorContent>
-                        <div class="d-flex flex-column align-center">
-                        <div class="icon-circle">
-                        <img src="/qln-images/upload_icon.svg"
-                        class="file-upload-style"
-                        alt="Upload"/>
-                        </div>
-                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
-                        </div>
-                        </ActivatorContent>
-                        </MudFileUpload>
-                }
-                else
-                {
-                    <div class="uploaded-image-container">
-                    <img src="@uploadedImage"
-                    alt="Cover"
-                    class="uploaded-image-style"
-                     />
-                    </div>
-                }
-            </div>
-            <MudPaper Elevation="0" Class="image-picker-style">
-            <div class="upload-action-style">
-                <MudFileUpload T="IBrowserFile"
-                        Accept=".png,.jpg"
-                        FilesChanged="@(async f => await UploadFiles(f))"
-                        MaximumFileCount="1">
-                        <ActivatorContent>
-                        <MudButton 
-                        OnClick="@EditImage">
-                        <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
-                        </MudButton>
-                        </ActivatorContent>
-                </MudFileUpload>
-                <MudButton 
-                OnClick="@EditImage">
-                <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                </MudButton>
-            </div>
-        </MudPaper>
-        </MudPaper>
-    </MudPaper> *@
     
                     <MudText Class="mb-2 mt-3 form-title">Cover Image</MudText>
                         <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">

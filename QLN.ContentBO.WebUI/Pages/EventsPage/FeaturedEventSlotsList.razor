@@ -1,6 +1,6 @@
 @using QLN.ContentBO.WebUI.Models
 @using MudBlazor
-
+@inherits FeaturedEventSlotsBase;
 @if (FeaturedEventSlots == null || Categories == null)
 {
     <MudProgressCircular  Color="Color.Primary" />
@@ -71,10 +71,3 @@ else
     </MudTable>
 }
 
-@code {
-    [Parameter] public List<FeaturedSlot> FeaturedEventSlots { get; set; }
-    [Parameter] public List<EventCategoryModel> Categories { get; set; }
-    [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
-    [Parameter] public EventCallback<string> OnDelete { get; set; }
-
-}

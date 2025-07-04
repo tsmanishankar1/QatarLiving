@@ -155,25 +155,18 @@ namespace QLN.ContentBO.WebUI.Pages
             SelectedLocationId = Locations
                   ?.FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
                  ?.Id;
-            //  (latitude, Longitude) = ConvertToCoordinates(CurrentEvent.Latitude, CurrentEvent.Longitude);
             if (double.TryParse(CurrentEvent.Latitude, out var lat) &&
                double.TryParse(CurrentEvent.Longitude, out var lng))
             {
-                // await JS.InvokeVoidAsync("initMap", lat, lng);
                 latitude = lat;
                 Longitude = lng;
                 }
-            Console.Write("the location is is " + SelectedLocationId);
+
             _dateRange = ConvertToDateRange(CurrentEvent?.EventSchedule?.StartDate, CurrentEvent?.EventSchedule?.EndDate);
             _shouldInitializeMap = true;
         }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            // if (firstRender)
-            // {
-            //     //  await Task.Delay(100);
-            //     await JS.InvokeVoidAsync("initMap", 25.32, 51.54);
-            // }
             if (_shouldInitializeMap)
             {
                 _shouldInitializeMap = false;
@@ -193,7 +186,6 @@ namespace QLN.ContentBO.WebUI.Pages
         [JSInvokable]
         public static Task UpdateLatLng(double lat, double lng)
         {
-            Console.WriteLine($"New location: {lat}, {lng}");
             return Task.CompletedTask;
         }
         protected Task OpenDialogAsync()
@@ -208,43 +200,18 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            Console.Write("hte method is called");
             var file = e.File;
             if (file != null)
             {
                 using var stream = file.OpenReadStream(5 * 1024 * 1024);
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
-                Console.Write("came inside method");
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
                 CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
-                Console.WriteLine("CoverImage length: " + CurrentEvent.CoverImage?.Length);
-                Console.WriteLine("Base64 Prefix: " + CurrentEvent.CoverImage?.Substring(0, 100));
-                Console.Write("came outside method");
                 _coverImageError = null;
             }
-            else
-            {
-                Console.Write(" the file sis not present");
-            }
         }
-        // public void UpdateTimeSlotListFromDayTimeList()
-        // {
-        //     CurrentEvent.EventSchedule.TimeSlots = DayTimeList
-        //         .Where(entry => entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
-        //         .Select(entry => new TimeSlotModel
-        //         {
-        //             DayOfWeek = entry.Date.DayOfWeek,
-        //             Time = entry.TimeRange
-        //         })
-        //      .ToList();
-        // }
-        // protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
-        // {
-        //     entry.TimeRange = newTime ?? string.Empty;
-        //     UpdateTimeSlotListFromDayTimeList();
-        // }
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
@@ -388,35 +355,30 @@ namespace QLN.ContentBO.WebUI.Pages
             if (CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
-                Console.Write("Start date is required");
                 StateHasChanged();
                 return;
             }
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
-                Console.Write("Event description is required.");
                 StateHasChanged();
                 return;
             }
             if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
-                Console.Write("Start date is required.");
                 StateHasChanged();
                 return;
             }
             if (CurrentEvent.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
                 _PriceError = "Price is required for Fees events.";
-                Console.Write("Price is required for Fees events.");
                 StateHasChanged();
                 return;
             }
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
-                Console.Write("Location is required.");
                 StateHasChanged();
                 return;
             }
@@ -426,18 +388,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
                 return;
             }
-            Console.Write("the method is called !!!");
             try
             {
-                Console.Write("the api response is");
-                Console.WriteLine("CurrentEvent:");
-                // Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions { WriteIndented = true }));
                 var response = await eventsService.UpdateEvents(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Events Updated Successfully", severity: Severity.Success);
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    // await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -445,11 +402,8 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
                 else if (response.StatusCode == HttpStatusCode.InternalServerError)
                 {
-                    Console.WriteLine("respon se" + response.StatusCode);
-
                     Snackbar.Add("Internal API Error");
                 }
-                // CurrentEvent = new();
             }
             catch (Exception ex)
             {
@@ -464,9 +418,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var rawContent = await apiResponse.Content.ReadAsStringAsync();
-                    Console.WriteLine(rawContent); // Log the raw JSON
-
-                    // Then deserialize
                     var result = JsonSerializer.Deserialize<List<EventCategoryModel>>(
                                 rawContent,
                                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -487,7 +438,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 var apiResponse = await eventsService.GetEventLocations();
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    Console.Write("the api response is");
                     var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
                     return response ?? new LocationListResponseDto();
                 }
@@ -505,7 +455,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 var apiResponse = await eventsService.GetEventById(Id);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    Console.Write("the api response is");
                     var response = await apiResponse.Content.ReadFromJsonAsync<EventDTO>();
                     return response ?? new EventDTO();
                 }
@@ -524,7 +473,6 @@ namespace QLN.ContentBO.WebUI.Pages
             if (selectedLocation != null)
             {
                 CurrentEvent.Location = selectedLocation.Name;
-                Console.WriteLine($"Selected location: {selectedLocation.Name}");
                 CurrentEvent.Latitude = selectedLocation.Latitude;
                 CurrentEvent.Longitude = selectedLocation.Longitude;
                 if (double.TryParse(selectedLocation.Latitude, out var lat) &&
@@ -535,25 +483,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
-//         public (double Latitude, double Longitude) ConvertToCoordinates(string latitudeStr, string longitudeStr)
-// {
-//     if (string.IsNullOrWhiteSpace(latitudeStr) || string.IsNullOrWhiteSpace(longitudeStr))
-//         throw new FormatException("Latitude or Longitude is empty or null.");
-
-//     // Use InvariantCulture to avoid issues with ',' vs '.' based on regional settings
-//     var style = System.Globalization.NumberStyles.Float;
-//     var culture = System.Globalization.CultureInfo.InvariantCulture;
-
-//     if (double.TryParse(latitudeStr, style, culture, out double latitude) &&
-//         double.TryParse(longitudeStr, style, culture, out double longitude))
-//     {
-//         return (latitude, longitude);
-//     }
-//     else
-//     {
-//         throw new FormatException("Invalid latitude or longitude format.");
-//     }
-// }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
             entry.IsSelected = (bool)value!;
@@ -580,10 +509,6 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 CurrentEvent.EventSchedule.TimeSlots.RemoveAll(t => t.DayOfWeek == entry.Date.DayOfWeek);
             }
-            foreach (var slot in CurrentEvent.EventSchedule.TimeSlots)
-            {
-                Console.WriteLine($"Day: {slot.DayOfWeek}, Time: {slot.Time}");
-            }
         }
         private void ClearForm()
         {
@@ -604,20 +529,12 @@ namespace QLN.ContentBO.WebUI.Pages
             _PriceError = string.Empty;
     _coverImageError = string.Empty;
     uploadedImage = null;
-
-    // Optional: Clear location ID if used
     SelectedLocationId = null;
-
-    // Optional: If using MudExRichTextEditor, reset manually
-    // Editor?.ClearAsync();
-
     StateHasChanged();
 }
         protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
         {
-            Console.Write("the method is called");
             entry.TimeRange = newTime ?? string.Empty;
-
             if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
             {
                 var existing = CurrentEvent.EventSchedule.TimeSlots

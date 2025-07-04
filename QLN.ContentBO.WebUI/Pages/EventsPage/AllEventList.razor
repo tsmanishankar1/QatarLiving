@@ -1,7 +1,6 @@
 @using QLN.ContentBO.WebUI.Models
 @using MudBlazor
-@inject NavigationManager Navigation
-
+@inherits AllEventsListBase;
 @if (Events == null || Categories == null)
 {
     <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
@@ -67,15 +66,4 @@ else
     </MudTable>
 }
 
-@code {
-    [Parameter] public List<EventDTO> Events { get; set; }
-    [Parameter] public List<EventCategoryModel> Categories { get; set; }
-    [Parameter] public EventCallback<string> OnDelete { get; set; }
-    [Parameter] public EventCallback AddEventCallback { get; set; }
 
-    private string SearchText { get; set; } = string.Empty;
-    private void NavigateToEditPage(Guid id)
-    {
-        Navigation.NavigateTo($"/content/events/edit/{id}");
-    }
-}
