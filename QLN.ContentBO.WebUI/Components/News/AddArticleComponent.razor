@@ -25,7 +25,7 @@
                             <MudSelectItem Value="@(0)">Choose</MudSelectItem>
                             @foreach (var item in Categories.Where(c => c.Id == Category.CategoryId)?.FirstOrDefault()?.SubCategories ?? [])
                             {
-                                <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
+                                <MudSelectItem Value="@item.Id">@item.SubCategoryName</MudSelectItem>
                             }
                         </MudSelect>
                     </MudItem>

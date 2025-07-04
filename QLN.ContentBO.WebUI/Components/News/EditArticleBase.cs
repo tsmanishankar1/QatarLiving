@@ -195,7 +195,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .FirstOrDefault(c => c.Id == CategoryId)?
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .CategoryName;
+                .SubCategoryName;
         }
 
         private async Task<NewsArticleDTO> GetArticleById(Guid articleId)

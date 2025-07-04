@@ -3,13 +3,13 @@
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
         <div class="news-header">
-            <MudText Class="news-style">@GetSubCategoryName(CategoryId, SelectedSubcategoryId)</MudText>
+            <MudText Class="news-style">@SelectedSubcategory.CategoryName</MudText>
             <img src="/qln-images/news_edit_icon.svg" alt="Edit" class="edit-icon-img" />
         </div>
         <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
             @foreach (var subCategory in SubCategories)
             {
-                <MudTabPanel Text="@subCategory.CategoryName" OnClick="@(() => LoadCategory(CategoryId, subCategory.Id))" />
+                <MudTabPanel Text="@subCategory.CategoryName" OnClick="@(() => LoadCategory(CategoryId, subCategory))" />
             }
         </MudTabs>
 
