@@ -121,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected void EditImage()
+        protected void RemoveImage()
         {
             article.CoverImageUrl = null;
         }

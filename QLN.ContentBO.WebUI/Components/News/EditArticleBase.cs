@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
@@ -36,8 +34,13 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected override async Task OnInitializedAsync()
         {
+
+        }
+
+        protected async override Task OnParametersSetAsync()
+        {
             AuthorizedPage();
-            if (!Guid.TryParse(ArticleId,  out var parsedArticleId))
+            if (!Guid.TryParse(ArticleId, out var parsedArticleId))
             {
                 Snackbar.Add("Invalid article ID", Severity.Error);
                 return;
@@ -48,10 +51,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             WriterTags = await GetWriterTags();
             article = await GetArticleById(ParsedArticleId);
             TempCategoryList = article.Categories;
-        }
 
-        protected async override Task OnParametersSetAsync()
-        {
             if (article.Id != Guid.Empty)
             {
                 article = await GetArticleById(ParsedArticleId);
@@ -249,6 +249,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Logger.LogError(ex, "GetArticleById");
                 return new();
             }
+        }
+
+        protected void RemoveImage()
+        {
+            article.CoverImageUrl = null;
         }
     }
 }

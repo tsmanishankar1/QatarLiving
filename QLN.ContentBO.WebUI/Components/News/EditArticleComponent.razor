@@ -7,7 +7,7 @@
         <MudGrid GutterSize="24px">
             <!-- Left Column -->
             <MudItem xs="12" md="7">
-                <MudText Class="mb-4 title-style">Edit Article Form</MudText>
+                <MudText Class="mb-4 title-style">Article Form</MudText>
 
                 <MudGrid GutterSize="16px" Class="mb-4">
                     <MudItem xs="4">
@@ -86,7 +86,7 @@
                     }
                 </MudSelect>
 
-                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" For="@(() => article.Title)" />
+                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
                 <MudExRichTextEdit @bind-Value="article.Content" @ref="@Editor"
@@ -95,6 +95,7 @@
                                    Placeholder="Start Typing"
                                    For="@(() => article.Content)">
                 </MudExRichTextEdit>
+                <ValidationSummary />
                 <MudStack Row Class="mt-6 justify-content-between">
                     <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" OnClick="@Cancel">Cancel</MudButton>
                     <MudButton Class="ml-2 rounded-lg action-btn" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary">Save</MudButton>
@@ -109,19 +110,41 @@
                 <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                     <ActivatorContent>
                         <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                            <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large" Color="Color.Primary" />
-                            <div class="mt-2" style="color: #ff5722;">Cover Image</div>
-                            <MudText Typo="Typo.caption" Class="mt-2">Recommended image size: 1600 x 900 pixels</MudText>
+                            @if (!string.IsNullOrEmpty(article.CoverImageUrl))
+                            {
+                                <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column align-center">
+                                    <div class="icon-circle">
+                                        <img src="/qln-images/upload_icon.svg"
+                                             class="file-upload-style"
+                                             alt="Upload" />
+                                    </div>
+                                    <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
+                                </div>
+                            }
                         </MudPaper>
-
-                        @if (!string.IsNullOrEmpty(article.CoverImageUrl))
-                        {
-                            <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
-
-                        }
-
                     </ActivatorContent>
                 </MudFileUpload>
+                @if (!string.IsNullOrEmpty(article.CoverImageUrl))
+                {
+                    <MudPaper Elevation="0" Class="image-picker-style">
+                        <div class="upload-action-style">
+                            <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
+                                <ActivatorContent>
+                                    <MudButton>
+                                        <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
+                                    </MudButton>
+                                </ActivatorContent>
+                            </MudFileUpload>
+                            <MudButton OnClick="RemoveImage">
+                                <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                            </MudButton>
+                        </div>
+                    </MudPaper>
+                }
 
             </MudItem>
         </MudGrid>
