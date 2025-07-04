@@ -21,6 +21,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         public IDialogService DialogService { get; set; }
         protected List<EventDTO> featuredEvents = [];
         protected List<FeaturedSlot> featuredEventSlots = [];
+        protected FeaturedSlot ReplaceSlot { get; set; } = new();
+        protected EventDTO ReplacedEvent { get; set; } = new();
         protected int activeIndex = 0;
         protected int index = 0;
         protected int currentIndex = 1;
@@ -82,9 +84,28 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             };
             return DialogService.ShowAsync<MessageBox>("", parameters, options);
         }
-        private async Task HandleEventSelected(FeaturedSlot selectedEvent)
+        protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
         {
-            Console.WriteLine($"Selected event: {selectedEvent.Event.EventTitle}");
+            if (ReplaceSlot?.SlotNumber > 0 && ReplaceSlot?.SlotNumber != null)
+            {
+                var targetSlot = featuredEventSlots.FirstOrDefault(s => s.SlotNumber == ReplaceSlot?.SlotNumber);
+                if (targetSlot != null)
+                {
+                    targetSlot.Event = selectedEvent.Event;
+                    ReplacedEvent = selectedEvent.Event;
+                    ReplacedEvent.FeaturedSlot.Id = ReplaceSlot?.SlotNumber ?? 0;
+                    ReplacedEvent.IsFeatured = true;
+                    ReplaceFeaturedEvent();
+                    Console.WriteLine($"Replaced event in slot {selectedEvent.SlotNumber} with: {selectedEvent.Event.EventTitle}");
+                }
+            }
+            await Task.CompletedTask;
+        }
+        protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
+        {
+            Console.WriteLine($"Selected event: {selectedEvent?.Event?.EventTitle}");
+            ReplaceSlot = selectedEvent;
+            OpenDialogAsync();
             await Task.CompletedTask;
         }
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
@@ -103,7 +124,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             _posts.RemoveAll(p => p.Number == number);
         }
+        protected void OnPlaceholderClick(FeaturedSlot slot)
+        {
 
+            Console.WriteLine($"Slot Clicked: {slot.SlotNumber}, Title: {slot.Event?.EventTitle}");
+        }
         public class PostItem
         {
             public int Number { get; set; }
@@ -153,8 +178,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                         EventTitle = "Feature an Event"
                     }
                 }).ToList();
-                try
-                {
+            try
+            {
                 var apiResponse = await eventsService.GetFeaturedEvents();
 
                 if (apiResponse.IsSuccessStatusCode)
@@ -164,7 +189,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     {
                         if (ev.FeaturedSlot != null && ev.FeaturedSlot.Id >= 1 && ev.FeaturedSlot.Id <= 6)
                         {
-                            var index = ev.FeaturedSlot.Id - 1; 
+                            var index = ev.FeaturedSlot.Id - 1;
                             slots[index] = new FeaturedSlot
                             {
                                 SlotNumber = ev.FeaturedSlot.Id,
@@ -232,6 +257,28 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     events = await GetEvents();
                     Snackbar.Add("Event deleted successfully", Severity.Success);
                     index = 0;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete event", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
+            }
+        }
+        protected async Task ReplaceFeaturedEvent()
+        {
+            try
+            {
+                var apiResponse = await eventsService.UpdateFeaturedEvents(ReplacedEvent);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    events = await GetEvents();
+                    Snackbar.Add("Event Replaced successfully", Severity.Success);
                     StateHasChanged();
                 }
                 else

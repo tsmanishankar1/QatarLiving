@@ -10,5 +10,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetAllEvents();
         Task<HttpResponseMessage> DeleteEvent(string eventId);
         Task<HttpResponseMessage> GetFeaturedEvents();
+        Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events);
     }
 }

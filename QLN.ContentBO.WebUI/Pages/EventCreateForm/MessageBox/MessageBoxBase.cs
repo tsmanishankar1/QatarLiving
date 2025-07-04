@@ -14,8 +14,11 @@ public class MessageBoxBase : ComponentBase
     protected FeaturedSlot SelectedEvent { get; set; } = new FeaturedSlot();
     protected async Task AddClicked()
     {
-        // if (OnAdd.HasDelegate)
-        //     await OnAdd.InvokeAsync(SelectedEvent);
+        if (OnAdd.HasDelegate && SelectedEvent != null)
+        {
+            await OnAdd.InvokeAsync(SelectedEvent);
+        }
+        Cancel();
     }
     protected Task<IEnumerable<EventDTO>> SearchEventTitles(string value, CancellationToken token)
     {
