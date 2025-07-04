@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static QLN.Common.DTO_s.CommunityBo;
+using static QLN.Common.DTO_s.LocationDto;
 
 namespace QLN.Common.Infrastructure.IService.V2IContent
 {
@@ -11,6 +13,8 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
     {
         Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken cancellationToken = default);
         Task<List<V2CommunityPostDto>> GetAllCommunityPostsAsync(CancellationToken ct = default);
+        Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default);
 
     }
 }

@@ -11,7 +11,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapCommunityPostEndpoints(this RouteGroupBuilder group)
         {
-            group.MapCommunityEndpoints();
+            group.MapCommunityEndpoints()
+                .MapCategoryEndpoints();
             return group;
 
         }

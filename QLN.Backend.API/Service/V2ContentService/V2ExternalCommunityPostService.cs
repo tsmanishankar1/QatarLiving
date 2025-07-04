@@ -7,6 +7,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
+using static QLN.Common.DTO_s.CommunityBo;
+
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -95,5 +97,52 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public async Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Dapr service invocation to internal MS
+                var result = await _dapr.InvokeMethodAsync<ForumCategoryListDto>(
+                    HttpMethod.Get,
+                    InternalAppId,
+                    "api/v2/community/getAllForumCategories",
+                    cancellationToken
+                );
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while invoking GetAllForumCategories from {AppId}", InternalAppId);
+                return new ForumCategoryListDto
+                {
+                    ForumCategories = new List<ForumCategoryDto>(),
+
+                };
+            }
+
+        }
+        public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/api/v2/community/deletePostInternal/{postId}";
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Delete, InternalAppId, url);
+                req.Content = new StringContent(JsonSerializer.Serialize(userId), Encoding.UTF8, "application/json");
+
+                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+                resp.EnsureSuccessStatusCode();
+
+                var json = await resp.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<bool>(json);
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
+        }
+
+
+
     }
 }
