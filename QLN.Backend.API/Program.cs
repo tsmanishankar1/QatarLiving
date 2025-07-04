@@ -293,7 +293,7 @@ newsGroup.MapNewsEndpoints();
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
-communityPostGroup.MapCommunityEndpoints();
+communityPostGroup.MapCommunityPostEndpoints();
     //.RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();

@@ -65,7 +65,7 @@ var CommunityGroup = app.MapGroup("/api/v2/location");
 CommunityGroup.MapLocationsEndpoints();
 
 var communityPostGroup = app.MapGroup("/api/v2/community");
-communityPostGroup.MapCommunityEndpoints();
+communityPostGroup.MapCommunityPostEndpoints();
 // app.MapControllers(); / disabling to trigger a build, but we dont use controllers anyhow
 app.UseHttpsRedirection();
 app.Run();
