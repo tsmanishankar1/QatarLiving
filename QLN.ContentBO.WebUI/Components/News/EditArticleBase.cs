@@ -119,6 +119,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     return;
                 }
 
+                article.UserId = CurrentUserId.ToString();
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {

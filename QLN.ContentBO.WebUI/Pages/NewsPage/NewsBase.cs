@@ -105,7 +105,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
+                var articleToUpdate = ListOfNewsArticles.Where(a => a.IsActive).FirstOrDefault(a =>
                     a.Id == Id &&
                     a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
                 ) ?? new();
@@ -134,6 +134,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = new();
                     ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
                                                          .Where(a => a.IsActive)
                                                          .OrderBy(a => a.Categories
@@ -154,7 +155,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a =>
+                var articleToUpdate = ListOfNewsArticles.Where(a => a.IsActive).FirstOrDefault(a =>
                     a.Id == Id &&
                     a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
                 ) ?? new();
@@ -182,6 +183,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = new();
                     ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
                                                          .Where(a => a.IsActive)
                                                          .OrderBy(a => a.Categories
@@ -321,6 +323,23 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             catch (Exception ex)
             {
                 Logger.LogError(ex, "DeleteNewsArticle");
+            }
+        }
+
+        public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
+        {
+            DateTime currentUtcTime = DateTime.UtcNow;
+            TimeSpan difference = currentUtcTime - givenUtcTime;
+
+            TimeSpan absDiff = difference.Duration(); // ensures it's always positive
+
+            if (absDiff.TotalHours >= 1)
+            {
+                return $"{Math.Round(absDiff.TotalHours, 2)} hours";
+            }
+            else
+            {
+                return $"{Math.Round(absDiff.TotalMinutes)} minutes";
             }
         }
     }

@@ -53,12 +53,13 @@
                                     <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemDown(@context.Id))" />
                                 </MudTooltip>
                             }
+                            @GetCurrentSlot(context)
                         </MudTd>
                         <MudTd DataLabel="Post Title">
                             <MudLink Href="#">@context.Title</MudLink>
                         </MudTd>
                         <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-                        <MudTd DataLabel="Live for">@context.PublishedDate</MudTd>
+                        <MudTd DataLabel="Live for">@GetTimeDifferenceFromNowUtc(@context.PublishedDate)</MudTd>
                         <MudTd DataLabel="Author">@context.authorName</MudTd>
                         <MudTd>
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
