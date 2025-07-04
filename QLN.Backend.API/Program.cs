@@ -216,6 +216,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.DailyBoConfiguration(builder.Configuration);
 builder.Services.CommunityConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
@@ -288,7 +289,11 @@ app.MapGroup("/api/addon")
 
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
-     //.RequireAuthorization(); Add this back once we have Login flow for BO.
+
+var dailyGroup = app.MapGroup("/api/v2/daily");
+dailyGroup.MapDailyEndpoints()
+.RequireAuthorization(); 
+
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 
