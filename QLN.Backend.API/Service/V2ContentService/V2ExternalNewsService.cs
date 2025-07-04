@@ -3,8 +3,10 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using System.Net;
 using System.Text;
 using System.Text.Json;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -30,7 +32,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/getWriterTags";
+                var path = "/api/v2/news/writertags";
 
                 return await _dapr.InvokeMethodAsync<WriterTagsResponse>(
                HttpMethod.Get,
@@ -45,26 +47,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/getcategories";
-
-                return await _dapr.InvokeMethodAsync<List<V2NewsCategory>>(
-               HttpMethod.Get,
-               appId,
-               path,
-               cancellationToken
-           ) ?? new();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving writer tags from internal service");
-                throw;
-            }
-        }
+     
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -119,25 +102,35 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default)
+
+        public async Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
+        int? page, int? perPage, string? search, CancellationToken cancellationToken = default)
         {
-            var url = "/api/v2/news/getAllNewsArticle";
-            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var rawJson = await response.Content.ReadAsStringAsync();
-
-            return JsonSerializer.Deserialize<List<V2NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            }) ?? throw new Exception("Failed to retrieve articles.");
+                var queryParams = new List<string>
+    {
+        $"page={page ?? 1}",
+        $"perPage={perPage ?? 12}",
+        $"search={Uri.EscapeDataString(search ?? "")}"
+    };
+
+                var url = $"/api/v2/news/news?{string.Join("&", queryParams)}";
+                return await _dapr.InvokeMethodAsync<PagedResponse<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
-            var url = $"api/v2/news/byCategory/{categoryId}";
+            var url = $"api/v2/news/categories/{categoryId}";
             var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
                 HttpMethod.Get,
                 V2Content.ContentServiceAppId,
@@ -149,7 +142,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
         {
-            var url = $"api/v2/news/byCategory/{categoryId}/sub/{subCategoryId}";
+            var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}";
             var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
                 HttpMethod.Get,
                 V2Content.ContentServiceAppId,
@@ -162,7 +155,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl) && !dto.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var imageName = $"{dto.Title}_{dto.Id}.png";
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
@@ -190,7 +183,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 // Build URL with query string
                 string queryParam = isActive.HasValue ? $"?isActive={isActive.Value.ToString().ToLower()}" : string.Empty;
-                var url = $"/api/v2/news/filterbyArticle{queryParam}";
+                var url = $"/api/v2/news/filterbystatus{queryParam}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Get,
@@ -218,7 +211,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/news/deleteNews/{id}";
+                var url = $"/api/v2/news/news/{id}";
 
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
@@ -238,10 +231,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
-
-
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
 
         {
@@ -261,6 +250,103 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Failed to apply slot rearrangement via external service");
                 throw;
             }
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var url = $"/api/v2/news/getbyid/{id}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var rawJson = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+        public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
+        {
+            var url = $"/api/v2/news/getbyslug/{slug}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Return null if not found (optional: log or track)
+                return null;
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new Exception($"Failed to fetch article. Status: {response.StatusCode}, Body: {errorContent}");
+            }
+
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
+
+        public async Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
+        {
+            var url = "/api/v2/news/category/createById";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+            request.Content = new StringContent(JsonSerializer.Serialize(category), Encoding.UTF8, "application/json");
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default)
+        {
+            var url = "/api/v2/news/allcategories";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<V2NewsCategory>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+        }
+
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/news/categorygetbyid/{id}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound) return null;
+
+            response.EnsureSuccessStatusCode();
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<V2NewsCategory>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+
+        public async Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/news/category/update-subcategory-by-id?categoryId={categoryId}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
+            request.Content = new StringContent(JsonSerializer.Serialize(updatedSubCategory), Encoding.UTF8, "application/json");
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.NotFound) return false;
+
+            response.EnsureSuccessStatusCode();
+            return true;
+        }
+
+        public Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
 
     }

@@ -1,22 +1,26 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+﻿using MudBlazor;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Models.QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Net;
+using Microsoft.Extensions.Logging;
 
 namespace QLN.Web.Shared.Services
 {
     public class CompanyProfileService : ServiceBase<CompanyProfileService>, ICompanyProfileService
     {
         private readonly HttpClient _httpClient;
+        private readonly ISnackbar _snackbar;
+        private readonly ILogger<CompanyProfileService> _logger;
 
 
-        public CompanyProfileService(HttpClient httpClient) : base(httpClient)
+        public CompanyProfileService(HttpClient httpClient,ISnackbar snackbar, ILogger<CompanyProfileService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
+            _snackbar = snackbar;
+            _logger = logger;
         }
      
 
@@ -42,7 +46,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetCompanyProfileAsync Exception: " + ex.Message);
+                _logger.LogError("GetCompanyProfileAsync Exception: " + ex.Message);
                 return null;
             }
         }
@@ -69,7 +73,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetCompanyProfileByIdAsync Exception: " + ex.Message);
+                _logger.LogError("GetCompanyProfileByIdAsync Exception: " + ex.Message);
                 return null;
             }
         }
@@ -81,8 +85,7 @@ namespace QLN.Web.Shared.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true
             };
-            Console.WriteLine("CreateCompanyProfileAsync called with model:");
-            Console.WriteLine(JsonSerializer.Serialize(model, options));
+          
             try
             {
                 var json = JsonSerializer.Serialize(model, options);
@@ -96,7 +99,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("UpdateCompanyProfileAsync Exception: " + ex.Message);
+                _logger.LogError("UpdateCompanyProfileAsync Exception: " + ex.Message);
                 return false;
             }
         }
@@ -111,8 +114,6 @@ namespace QLN.Web.Shared.Services
 
             };
 
-            Console.WriteLine("CreateCompanyProfileAsync called with model:");
-            Console.WriteLine(JsonSerializer.Serialize(model, options));
 
             try
             {
@@ -123,11 +124,21 @@ namespace QLN.Web.Shared.Services
                 };
 
                 var response = await _httpClient.SendAsync(request);
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    _snackbar.Add("Company profile could not be created as a company profile already exists for your account under this vertical.", Severity.Error);
+                    return false;
+                }
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    _snackbar.Add("Invalid company profile data. Please check the form and try again.", Severity.Error);
+                    return false;
+                }
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("CreateCompanyProfileAsync Exception: " + ex.Message);
+                _logger.LogError("CreateCompanyProfileAsync Exception: " + ex.Message);
                 return false;
             }
         }

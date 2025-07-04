@@ -19,17 +19,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" media="print"
           onload="this.media='all'" />
 
-    @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
-
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'" as="style">
-    @* <noscript>
-        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" as="style">
-    </noscript> *@
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8G5Y1WPNH"></script>
+    <script>window.dataLayer = window.dataLayer || [];  function gtag(){ dataLayer.push(arguments); }  gtag('js', new Date());  gtag('config', 'G-L8G5Y1WPNH');</script>
     <HeadOutlet />
     <ImportMap />
 </head>
@@ -66,13 +65,17 @@
 </HeadContent> *@
 
 <body>
+    
+    <!-- Routes -->
     <Routes @rendermode="InteractiveServer" />
+    <!-- Scripts -->
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js?v=8.6.0"]"></script>
-    @* <div id="reconnect-modal" style="display: none;"></div> *@
+    <!-- Blazor - Hide the Reconnect Modal -->
+    <div id="components-reconnect-modal" style="display: none;"></div>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-    @* <script src="js/boot.js"></script> *@
+    <!-- Swiper ? -->
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js" defer></script>
-    <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
+    <!-- CodeBeam -->
     <script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
     @* 
         Script is MIA, not needed maybe?
@@ -918,8 +921,6 @@
         }
         });
     </script>
-
-    <GBAnchor />
     <script>
         window.registerPopoverClickAway = (popoverDiv, dotNetHelper) => {
             const handler = (event) => {
@@ -934,25 +935,6 @@
                 document.addEventListener("click", handler);
             }, 100);
         };
-    </script>
-    <script>
-
-        // if (!window.__blazorStarted) {
-        //     window.__blazorStarted = true;
-        //     Blazor.start({
-        //         reconnectionOptions: {
-        //             maxRetries: 5,
-        //             retryIntervalMilliseconds: 4000
-        //         },
-        //         onConnectionDown: (options, error) => {
-        //             console.warn('Connection down:', error);
-        //             setTimeout(() => {
-        //                 location.reload();
-        //             }, 30000); reload after 30s if not reconnected
-        //         }
-        //     });
-        // }
-
     </script>
     <script>
         window.scrollToElementById = function (id) {

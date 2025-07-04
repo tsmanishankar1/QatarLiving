@@ -1,5 +1,44 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
+:root {
+  /* Brand Colors */
+  --color-primary: #00426d; /* Dark Blue */
+  --color-primary-container: #8bc6d2; /* Primary Container */
+  --color-secondary: #414042; /* Dark Grey */
+  --color-accent: #ff7f38; /* Accent */
+
+  /* Text Colors */
+  --color-text-primary: #00426d; /* For headings or strong text */
+  --color-text-secondary: #414042; /* For body or secondary text */
+  --color-text-caption: #8c8c8c; /* For smaller caption or helper text */
+  --color-text-white: #ffffff; /* For use on dark backgrounds */
+  --color-text-descripton: #646464; /* For use on descripton text */
+  --color-text-heading: #242424; /* For use on heading text */
+  --color-text-gray: #454545; /*For use on the subtitle text */
+  --color-text-green: #079455; /* For the success green text */
+  --color-category-text: #2a6ba0; /* For the category text */
+  --color-condition-text:#0071AF;
+  --color-text-heading-rgb: 18, 52, 86;
+  --color-light-gray: #d5d7da;
+  /* 
+  border-color */
+
+  --color-border: #eaecf0;
+
+  /* Backgrounds and Containers */
+  --color-background: #ffffff; /* white background */
+  --color-secondary-background: #f5f6fa;
+  --color-grey-container: #d9d9d9; /* Grey Container */
+  --color-secondary-grey-container: #e3e3e3; /* secondary Grey Container */
+  --color-background-grey: #787878; /* For the background when popup is displayed. */
+  --color-background-secondary-grey-medium: #f0f0f0; /* light grey */
+  --color-background-secondary-grey-light: #fafafa;
+  --color-header-button: #e8f2fe; /* For the icon button in header */
+  --color-captcha-box: #d0d5dd; /* For the border of the captcha box */
+  --color-whatsapp-outline: #5bd066; /* For the border of the whatsapp box */
+  --color-category-outline: #e8f2fe;
+}
+
 html, body {
     font-family: "Public Sans", sans-serif;
     font-optical-sizing: auto;

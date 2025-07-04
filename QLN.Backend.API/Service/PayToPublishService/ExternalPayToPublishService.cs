@@ -1,10 +1,11 @@
-﻿using Dapr.Actors.Client;
-using Dapr.Actors;
+﻿using Dapr.Actors;
+using Dapr.Actors.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
-using System.Collections.Concurrent;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -15,6 +16,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
         private readonly ILogger<ExternalPayToPublishService> _logger;
         private static readonly ConcurrentDictionary<string, Guid> _defaultIds = new();
         private readonly Guid _masterActorId = Guid.Parse("00000000-0000-0000-0000-000000000004");
+        private static readonly ConcurrentDictionary<Guid, int> _payToPublishTransactionIds = new();
+
         public ExternalPayToPublishService(ILogger<ExternalPayToPublishService> logger)
         {
             _logger = logger;
@@ -109,6 +112,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 VerticalTypeId = request.VerticalTypeId,
                 CategoryId = request.CategoryId,
                 BasicPriceId = request.BasicPriceId,
+                Duration = request.Duration,
                 LastUpdated = DateTime.UtcNow
             };
             var basicPriceActor = GetActorProxy(basicPrice.Id);
@@ -137,6 +141,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 CategoryId = request.CategoryId,
                 StatusId = request.StatusId,
                 IsFreeAd = request.IsFreeAd,
+                IsPromoteAd= request.IsPromoteAd,
+                IsFeatureAd= request.IsFeatureAd,
                 LastUpdated = DateTime.UtcNow
             };
             var planActor = GetActorProxy(plan.Id);
@@ -147,23 +153,22 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 plan.Id, plan.VerticalTypeId, plan.CategoryId);
         }
 
-        public async Task<List<PayToPublishWithBasicPriceResponseDto>> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
-            int verticalTypeId,
-            int categoryId,
-            CancellationToken cancellationToken = default)
+        public async Task<PayToPublishPlansResponse> GetPlansByVerticalAndCategoryWithBasicPriceAsync(
+    int verticalTypeId,
+    int categoryId,
+    CancellationToken cancellationToken = default)
         {
-            var resultList = new List<PayToPublishWithBasicPriceResponseDto>();
-
+            var response = new PayToPublishPlansResponse();
             if (!Enum.IsDefined(typeof(Vertical), verticalTypeId))
             {
                 _logger.LogWarning("Invalid VerticalTypeId: {VerticalTypeId}", verticalTypeId);
-                return resultList;
+                return response;
             }
 
             if (!Enum.IsDefined(typeof(SubscriptionCategory), categoryId))
             {
                 _logger.LogWarning("Invalid CategoryId: {CategoryId}", categoryId);
-                return resultList;
+                return response;
             }
 
             var verticalEnum = (Vertical)verticalTypeId;
@@ -171,53 +176,75 @@ namespace QLN.Backend.API.Service.PayToPublishService
 
             var data = await GetPayToPublishDataAsync(cancellationToken);
 
-            _logger.LogInformation("Searching for plans with Vertical: {Vertical} ({VerticalId}), Category: {Category} ({CategoryId}). Total plans: {TotalPlans}",
-                verticalEnum, verticalTypeId, categoryEnum, categoryId, data.Plans?.Count ?? 0);
-
             if (data.Plans == null || !data.Plans.Any())
             {
-                _logger.LogWarning("No plans found. Make sure plans are created before trying to retrieve them.");
-                return resultList;
+                _logger.LogWarning("No plans found.");
+                return response;
             }
             var basicPriceLookup = data.BasicPrices?
                 .GroupBy(bp => $"{(int)bp.VerticalTypeId}_{(int)bp.CategoryId}")
                 .ToDictionary(g => g.Key, g => g.First()) ??
                 new Dictionary<string, BasicPriceDto>();
 
+            var lookupKey = $"{verticalTypeId}_{categoryId}";
+            basicPriceLookup.TryGetValue(lookupKey, out var basicPricePlan);
+            if (basicPricePlan != null)
+            {
+                response.BasicPriceId = Enum.IsDefined(typeof(BasicPrice), basicPricePlan.BasicPriceId)
+                    ? (int)basicPricePlan.BasicPriceId
+                    : (int?)null;
+
+                var durationDays = basicPricePlan.Duration.TotalDays;
+
+                _logger.LogInformation("BasicPrice Duration (days): {DurationDays}", durationDays);
+
+                response.Duration = durationDays > 0
+                    ? ConvertToReadableFormat(basicPricePlan.Duration)
+                    : "N/A";
+            }
             var filteredPlans = data.Plans
                 .Where(plan => plan.VerticalTypeId == verticalEnum &&
-                              plan.CategoryId == categoryEnum &&
-                              plan.StatusId != Status.Expired)
+                               plan.CategoryId == categoryEnum &&
+                               plan.StatusId != Status.Expired)
                 .ToList();
 
             foreach (var plan in filteredPlans)
             {
-                var lookupKey = $"{(int)plan.VerticalTypeId}_{(int)plan.CategoryId}";
-                basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
-
-                resultList.Add(new PayToPublishWithBasicPriceResponseDto
+                response.PlanDetails.Add(new PayToPublishWithBasicPriceResponseDto
                 {
                     Id = plan.Id,
                     PlanName = plan.PlanName,
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                    DurationName = FormatDuration(plan.Duration),
-                    IsFreeAd = plan.IsFreeAd,
+                    IsFeatureAd = plan.IsFeatureAd,
+                    IsPromoteAd = plan.IsPromoteAd,
+                    DurationName = ConvertToReadableFormat(plan.Duration),
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
-                    CategoryName = GetEnumDisplayName(plan.CategoryId),
-                    BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
-                    BasicPriceName = matchingBasicPrice != null ? GetEnumDisplayName(matchingBasicPrice.BasicPriceId) : null
+                    CategoryName = GetEnumDisplayName(plan.CategoryId)
                 });
-
-                _logger.LogInformation("Added plan to results: ID={Id}, PlanName={PlanName}", plan.Id, plan.PlanName);
             }
 
-            _logger.LogInformation("Found {Count} plans matching criteria out of {TotalPlans} total plans",
-                resultList.Count, data.Plans.Count);
-            return resultList;
+            return response;
+        }
+        public static string ConvertToReadableFormat(TimeSpan duration)
+        {
+            var totalDays = (int)duration.TotalDays;
+
+            return totalDays switch
+            {
+                30 => "1 Month",
+                60 => "2 Months",
+                90 => "3 Months",
+                180 => "6 Months",
+                365 => "1 Year",
+                730 => "2 Years",
+                _ when totalDays < 30 && totalDays > 0 => $"{totalDays} Days",
+                _ when totalDays == 0 => "N/A",
+                _ => $"{(int)(totalDays / 30)} Months"
+            };
         }
         private static string FormatDuration(TimeSpan duration)
         {
@@ -281,12 +308,14 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Description = plan.Description,
                     DurationName = FormatDuration(plan.Duration),
                     IsFreeAd = plan.IsFreeAd,
+                    IsPromoteAd=plan.IsPromoteAd,
+                    IsFeatureAd=plan.IsFeatureAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
                     CategoryName = GetEnumDisplayName(plan.CategoryId),
                     BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
-                    BasicPriceName = matchingBasicPrice != null ? GetEnumDisplayName(matchingBasicPrice.BasicPriceId) : null
+                   
                 });
             }
 
@@ -314,6 +343,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
             existingPlan.CategoryId = request.CategoryId;
             existingPlan.StatusId = request.StatusId;
             existingPlan.IsFreeAd = request.IsFreeAd;
+            existingPlan.IsFeatureAd = request.IsFeatureAd;
+            existingPlan.IsPromoteAd= request.IsPromoteAd;
             existingPlan.LastUpdated = DateTime.UtcNow;
 
             await planActor.SetDataAsync(existingPlan, cancellationToken);
@@ -334,65 +365,113 @@ namespace QLN.Backend.API.Service.PayToPublishService
             await planActor.SetDataAsync(plan, cancellationToken);
             return true;
         }
-
-        public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, Guid userId, CancellationToken cancellationToken = default)
+        public async Task<Guid> CreatePaymentsAsync(PaymentRequestDto request, string userId, CancellationToken cancellationToken = default)
         {
-            if (request == null) throw new ArgumentNullException(nameof(request));
-
-            var planActor = GetActorProxy(request.PayToPublishId);
-            var payToPublishPlan = await planActor.GetDataAsync(cancellationToken);
-            if (payToPublishPlan == null)
-                throw new Exception($"PayToPublish plan not found for ID: {request.PayToPublishId}");
+            ArgumentNullException.ThrowIfNull(request);
 
             var id = Guid.NewGuid();
             var startDate = DateTime.UtcNow;
+            DateTime? existingEndDate = null;
+            var masterActor = GetMasterActorProxy();
+            var existingPaymentIds = await masterActor.GetAllPaymentIdsAsync(cancellationToken);
 
-            // ✅ Duration is TimeSpan, add directly
-            var endDate = startDate.Add(payToPublishPlan.Duration);
+            foreach (var existingId in existingPaymentIds)
+            {
+                try
+                {
+                    var existingActor = GetPaymentActorProxy(existingId);
+                    var existingPayment = await existingActor.GetDataAsync(cancellationToken);
 
+                    if (existingPayment != null &&
+                        existingPayment.UserId == userId &&
+                        !existingPayment.IsExpired &&
+                        existingPayment.EndDate > DateTime.UtcNow)
+                    {
+                        if (existingEndDate == null || existingPayment.EndDate > existingEndDate)
+                        {
+                            existingEndDate = existingPayment.EndDate;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error checking existing payment {PaymentId}", existingId);
+                }
+            }
+
+            if (existingEndDate.HasValue)
+            {
+                startDate = existingEndDate.Value;
+                _logger.LogInformation("Existing PayToPublish found for user {UserId}. New subscription starts from {StartDate}", userId, startDate);
+            }
+            var planActor = GetActorProxy(request.PayToPublishId);
+            var plan = await planActor.GetDataAsync(cancellationToken)
+                       ?? throw new InvalidOperationException($"PayToPublish plan not found for ID: {request.PayToPublishId}");
+
+            var duration = plan.Duration;
+            var endDate = startDate.Add(duration);
             var dto = new PaymentDto
             {
                 Id = id,
                 PayToPublishId = request.PayToPublishId,
                 VerticalId = request.VerticalId,
                 CategoryId = request.CategoryId,
-                CardNumber = request.CardDetails.CardNumber,
+                CardNumber = request.CardDetails.CardNumber, // Mask for security
                 ExpiryMonth = request.CardDetails.ExpiryMonth,
                 ExpiryYear = request.CardDetails.ExpiryYear,
-                UserId = userId,
                 CardHolderName = request.CardDetails.CardHolderName,
+                UserId = userId,
                 StartDate = startDate,
                 EndDate = endDate,
                 LastUpdated = DateTime.UtcNow,
-                IsExpired = false
+                IsExpired = false,
+        
             };
-
             var actor = GetPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
-
-            if (result)
+            if (!result)
+                throw new InvalidOperationException("PayToPublish payment creation failed.");
+            var durationEnum = MapTimeSpanToDurationType(duration);
+            var details = new UserP2PPaymentDetailsResponseDto
             {
-                var masterActor = GetMasterActorProxy();
-                await masterActor.AddPaymentIdAsync(dto.Id, cancellationToken);
-                _logger.LogInformation("Payment transaction created with ID: {TransactionId}", dto.Id);
-                return dto.Id;
-            }
-
-            throw new Exception("Payment transaction creation failed.");
-        }
-
-
-        private DateTime GetEndDateByDurationEnum(DateTime startDate, DurationType duration)
-        {
-            return duration switch
-            {
-                DurationType.ThreeMonths => startDate.AddMonths(3),
-                DurationType.SixMonths => startDate.AddMonths(6),
-                DurationType.OneYear => startDate.AddYears(1),
-                DurationType.TwoMinutes => startDate.AddMinutes(2),
-                _ => throw new ArgumentException($"Unsupported DurationType: {duration}")
+                UserId = userId,
+                PaymentTransactionId = dto.Id,
+                TransactionDate = DateTime.UtcNow,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                PaytoPublishId = plan.Id,
+                PayToPublishName = plan.PlanName,
+                Price = plan.Price,
+                IsPromoteAd=plan.IsPromoteAd,
+                IsFeatureAd=plan.IsFeatureAd,
+                IsAdFree=plan.IsFreeAd,
+                Currency = plan.Currency,
+                Description = plan.Description,
+                DurationId = (int)durationEnum,
+                DurationName = durationEnum.ToString(),
+                VerticalTypeId = (int)plan.VerticalTypeId,
+                VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
+                CategoryId = (int)plan.CategoryId,
+                CategoryName = GetEnumDisplayName(plan.CategoryId),
+                CardHolderName = dto.CardHolderName
             };
+
+            await actor.StorePaymentDetailsAsync(details, cancellationToken);
+            await masterActor.AddPaymentIdAsync(dto.Id, cancellationToken);
+            _payToPublishTransactionIds.TryAdd(dto.Id, 0);
+
+            
+
+            return dto.Id;
         }
+        private DurationType MapTimeSpanToDurationType(TimeSpan duration)
+        {
+            if (duration.TotalDays >= 365) return DurationType.OneYear;
+            if (duration.TotalDays >= 180) return DurationType.SixMonths;
+            return DurationType.ThreeMonths;
+        }
+
+
 
         private IPaymentActor GetPaymentActorProxy(Guid id)
         {
@@ -410,7 +489,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return await actor.GetDataAsync(cancellationToken);
         }
 
-        public async Task<List<PaymentDto>> GetActivePaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PaymentDto>> GetActivePaymentsForUserAsync(string userId, CancellationToken cancellationToken = default)
         {
             var activePayments = new List<PaymentDto>();
             var masterActor = GetMasterActorProxy();
@@ -440,7 +519,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return activePayments;
         }
 
-        public async Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PaymentDto>> GetExpiredPaymentsForUserAsync(string userId, CancellationToken cancellationToken = default)
         {
             var expiredPayments = new List<PaymentDto>();
             var masterActor = GetMasterActorProxy();
@@ -469,7 +548,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return expiredPayments;
         }
 
-        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, Guid paymentId, CancellationToken cancellationToken = default)
+        public async Task<bool> HandlePaytopyblishExpiryAsync(string userId, Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -484,7 +563,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             }
         }
 
-        public async Task<List<PaymentDto>> GetPaymentsByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<List<PaymentDto>> GetPaymentsByUserIdAsync(string userId, CancellationToken cancellationToken = default)
         {
             var userPayments = new List<PaymentDto>();
             var masterActor = GetMasterActorProxy();
@@ -511,7 +590,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             return userPayments.OrderByDescending(p => p.LastUpdated).ToList();
         }
 
-        public async Task<bool> HandlePaytopyblishExpiryAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<bool> HandlePaytopyblishExpiryAsync(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
