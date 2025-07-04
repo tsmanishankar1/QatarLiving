@@ -113,7 +113,34 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-
+        public async Task<HttpResponseMessage> DeleteEvent(string eventId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/event/delete/{eventId}");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetFeaturedEvents()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getbyfeaturedstatus?status=1");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public Task<HttpResponseMessage> GetSlots()
         {
             throw new NotImplementedException();

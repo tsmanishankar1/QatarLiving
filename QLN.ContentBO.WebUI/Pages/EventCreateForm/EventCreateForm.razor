@@ -197,19 +197,16 @@
             }
             else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
             {
-                @foreach (var entry in DayTimeList.Take(7))
-                {
-                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-                   <MudCheckBox T="bool"
-                    Checked="@entry.IsSelected"
-                    CheckedChanged="(value) => OnDaySelectionChanged(entry, value)"
-                    CheckedExpression="@(() => entry.IsSelected)"
-                    Label="@entry.Day"
-                    Style="min-width: 120px;"
-                    Class="my-checkbox" />
-
-                    <MudTextField @bind-Value="entry.TimeRange"
+               @foreach (var entry in DayTimeList.Take(7))
+{
+    <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
+            <input type="checkbox"
+            checked="@entry.IsSelected"
+            @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value)"
+            style="transform: scale(1.5); margin-right: 8px;" />
+            <label style="font-size: 1rem;">@entry.Day</label>
+            <MudTextField @bind-Value="entry.TimeRange"
                           Label="Time"
                           Placeholder="e.g. 2:00 PM to 6:00 PM"
                           Variant="Variant.Outlined"
@@ -218,10 +215,11 @@
                           Immediate="true"
                           Class="custom-timefield"
                           Style="flex-grow: 1;" 
-                          @oninput="(e) => OnTimeChanged(entry, e.Value?.ToString())" />
-                    </div>
-                    </MudPaper> 
-                }
+                          @oninput="(e) => OnTimeChanged(entry, e.Value?.ToString())"
+                          Disabled="!entry.IsSelected" />
+        </div>
+    </MudPaper>
+}
             }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"
@@ -298,7 +296,7 @@
     </MudPaper> *@
     
                     <MudText Class="mb-2 mt-3 form-title">Cover Image</MudText>
-                        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
+                        <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                         <ActivatorContent>
                         <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
                             @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
@@ -318,6 +316,10 @@
                         </MudPaper>
                         </ActivatorContent>
                          </MudFileUpload>
+                          @if (!string.IsNullOrEmpty(_coverImageError))
+                            {
+                                <div class="mud-error-text">@_coverImageError</div>
+                            }
                          @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage)){
                             <MudPaper Elevation="0" Class="image-picker-style">
                                 <div class="upload-action-style">
