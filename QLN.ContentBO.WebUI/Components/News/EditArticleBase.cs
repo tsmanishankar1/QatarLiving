@@ -71,8 +71,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                article.UserId = CurrentUserId.ToString();
-                article.IsActive = true;
                 article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
@@ -84,10 +82,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                     Snackbar.Add("Image is required", severity: Severity.Error);
                     return;
                 }
+
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added", severity: Severity.Success);
+                    Snackbar.Add("Article Updated", severity: Severity.Success);
                     article = new();
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticlePublishedDialog>("", options);

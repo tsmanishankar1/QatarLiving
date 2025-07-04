@@ -28,6 +28,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
+        public int MinCategory { get; set; } = 1; // Must select at least 1 Category and 1 Sub-Category
+        public int MaxCategory { get; set; } = 2; // Maximum of 2 Category and Sub-Category combinations allowed
 
         protected override async Task OnInitializedAsync()
         {
@@ -60,8 +62,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                article.UserId = CurrentUserId.ToString();
-                article.IsActive = true;
+
                 article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
@@ -73,6 +74,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                     Snackbar.Add("Image is required", severity: Severity.Error);
                     return;
                 }
+
+                article.UserId = CurrentUserId.ToString();
+                article.IsActive = true;
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {

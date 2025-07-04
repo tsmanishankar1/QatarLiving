@@ -43,7 +43,7 @@
 
                     <MudItem xs="1" Class="d-flex align-center">
                         <MudTooltip Text="Add">
-                            <MudIconButton OnClick="AddCategory" Icon="@Icons.Material.Filled.Add" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Disabled="@(Category.CategoryId == 0 && Category.SubcategoryId == 0)" />
+                            <MudIconButton OnClick="AddCategory" Icon="@Icons.Material.Filled.Add" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Disabled="@(Category.CategoryId == 0 && Category.SubcategoryId == 0 && TempCategoryList.Count() > MaxCategory)" />
                         </MudTooltip>
                     </MudItem>
                 </MudGrid>
@@ -72,7 +72,7 @@
 
                         <MudItem xs="1" Class="d-flex align-center">
                             <MudTooltip Text="Remove">
-                                <MudIconButton OnClick="@(() => RemoveCategory(category))" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                                <MudIconButton OnClick="@(() => RemoveCategory(category))" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Disabled="@(TempCategoryList.Count() < MinCategory)" />
                             </MudTooltip>
                         </MudItem>
                     </MudGrid>
@@ -86,7 +86,7 @@
                     }
                 </MudSelect>
 
-                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" For="@(() => article.Title)" />
+                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
                 <MudExRichTextEdit @bind-Value="article.Content" @ref="@Editor"
