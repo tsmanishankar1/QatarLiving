@@ -1,3 +1,4 @@
+@inherits SearchSortBarBase;
 <div class="search-sort-container">
     <!-- Search box -->
     <div class="search-wrapper">
@@ -15,28 +16,7 @@
     </button>
 </div>
 
-@code {
-    [Parameter] public EventCallback<string> OnSearch { get; set; }
-    [Parameter] public EventCallback<bool> OnSort { get; set; }
 
-    private bool ascending = true;
-    private string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
-
-
-    private async Task OnSearchChanged(ChangeEventArgs e)
-    {
-        if (e?.Value != null)
-        {
-            await OnSearch.InvokeAsync(e.Value.ToString());
-        }
-    }
-
-    private async Task ToggleSort()
-    {
-        ascending = !ascending;
-        await OnSort.InvokeAsync(ascending);
-    }
-}
 <style>
     .search-sort-container {
     display: flex;

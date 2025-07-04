@@ -23,12 +23,8 @@ namespace QLN.ContentBO.WebUI.Services
     {
         var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
         {
-            WriteIndented = true // makes it more readable in logs
+            WriteIndented = true 
         });
-
-        Console.WriteLine("Request Payload:");
-        Console.WriteLine(jsonPayload);
-
         var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/create")
@@ -148,8 +144,6 @@ namespace QLN.ContentBO.WebUI.Services
                 var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallfeaturedevents?isFeatured=true");
                 var response = await _httpClient.SendAsync(request);
                 var rawContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("📦 Raw API Response:");
-                Console.WriteLine(rawContent);
                 return response;
             }
             catch (Exception ex)
@@ -163,9 +157,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("Payload being sent to UpdateFeaturedEvents:");
-                Console.WriteLine(json);
-
                 var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -185,9 +176,6 @@ public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
     try
     {
         var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
-        Console.WriteLine("Payload being sent to UpdateFeaturedEvents:");
-        Console.WriteLine(json);
-
         var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
