@@ -1,123 +1,35 @@
 @page "/manage/events"
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Pages.EventsPage
 @inherits EventsBase
-@using QLN.ContentBO.WebUI.Models;
-<MudGrid Style="padding-top: 18px">
-    <MudItem xs="12" md="12">  
-            <MudText Class="events-style">Events</MudText>
-            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
-                @foreach (var tab in categories)
-                {
-                     <MudTabPanel Text="@tab" />
-                }
-            </MudTabs>
-            @if(activeIndex == 0){
-            <MudGrid AlignItems="Center" Class="padding-top:16px">
-                <MudItem xs="12" md="12">
-                    <div class="events-button-container">
-                        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
-                            Add Event
-                        </MudButton>
-                        <MudTextField @bind-Value="searchText"
-                        Placeholder="Search for Events"
-                        Variant="Variant.Outlined"
-                        Adornment="Adornment.Start"
-                        AdornmentIcon="@Icons.Material.Filled.Search"
-                        Class="search-field" />
-                        <div class="sort-by-wrapper">
-                            <MudButton StartIcon="@Icons.Material.Filled.FilterList"
-                            Variant="Variant.Outlined"
-                            Class="sort-by-style">
-                            Sort by
-                            </MudButton>
-                        </div>
-                    </div>
-            @{
-                var indexedEvents = events.Select((e, i) => new { Event = e, Index = i + 1 }).ToList();
-            }
-            <MudTable Items="indexedEvents" Hover="true" Style="padding-top: 20px; margin-top: 40px;">
-            <HeaderContent>
-                <MudTh>Number</MudTh>
-                <MudTh>Title</MudTh>
-                <MudTh>Category</MudTh>
-                <MudTh>Creation Date</MudTh>
-                <MudTh>Expiry Date</MudTh>
-                <MudTh>Live for</MudTh>
-                <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                <MudTd DataLabel="Number">@context.Index</MudTd>
-                <MudTd DataLabel="Post Title">
-                <MudLink Href="#">@context.Event.EventTitle</MudLink>
-                </MudTd>
-        <MudTd DataLabel="Category">
-            @Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName
-        </MudTd>
-        <MudTd DataLabel="Creation Date">@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd DataLabel="Expiry Date">@context.Event.EventSchedule.EndDate.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd DataLabel="Live for">@context.Event.CreatedAt</MudTd>
-        <MudTd>
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                <MudMenuItem>
-                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
-                </MudMenuItem>
-                <MudMenuItem>
-                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
-                </MudMenuItem>
-                <MudMenuItem OnClick="async () => await DeleteEvent(context.Event.Id.ToString())" Class="mud-error-text">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                </MudMenuItem>
-            </MudMenu>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
-                </MudItem>
-            </MudGrid>   
-            }
-            else{
-            
-                var indexedFeaturedEvents = featuredEventSlots
-                    .Select((e, i) => new { FeaturedSlotViewModel = e, Index = i + 1 })
-                    .ToList();
 
-            <MudTable Items="indexedFeaturedEvents" Hover="true" Style="padding-top: 20px;">
-            <HeaderContent>
-                <MudTh>Slots</MudTh>
-                <MudTh>Title</MudTh>
-                <MudTh>Category</MudTh>
-                <MudTh>End Date</MudTh>
-                <MudTh>Actions</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Number">@context.Index</MudTd>
-                    <MudTd DataLabel="Post Title">
-                        @if (context.FeaturedSlotViewModel.Event?.EventTitle == "Feature an Event")
-                        {
-                            <MudText Class="placeholder-text"
-                                @onclick="() => ReplaceEventSlot(context.FeaturedSlotViewModel)">
-                                @context.FeaturedSlotViewModel.Event?.EventTitle
-                            </MudText>
-                        }
-                        else
-                        {
-                            <MudLink Href="#" Class="event-link">
-                            @context.FeaturedSlotViewModel.Event?.EventTitle
-                            </MudLink>
-                        }
-                    </MudTd>
-                <MudTd DataLabel="Category">
-                    @Categories.FirstOrDefault(c => c.Id == context.FeaturedSlotViewModel.Event?.CategoryId)?.CategoryName
-                </MudTd>
-                <MudTd DataLabel="End Date">
-                    @context.FeaturedSlotViewModel.Event?.EventSchedule?.EndDate.ToString("dd-MM-yyyy")
-                </MudTd>
-                <MudTd>
-                    <div class="custom-delete-button">
-                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                    </div>
-                </MudTd>
-            </RowTemplate>
-            </MudTable>
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <MudText Class="events-style">Events</MudText>
+
+        <MudTabs @bind-ActivePanelIndex="@activeIndex"
+                 Rounded="false"
+                 Class="custom-tabs"
+                 DisableSlideAnimation="true">
+            @foreach (var tab in categories)
+            {
+                <MudTabPanel Text="@tab" />
             }
+        </MudTabs>
+
+        @if (activeIndex == 0)
+        {
+            <AllEventList Events="events"
+                       Categories="Categories"
+                       OnDelete="DeleteEvent"
+                       AddEventCallback="NavigateToAddEvent" />
+        }
+        else
+        {
+            <FeaturedEventSlotsList FeaturedEventSlots="featuredEventSlots"
+                                    Categories="Categories"
+                                    ReplaceSlot="ReplaceEventSlot" />
+        }
     </MudItem>
 </MudGrid>
 

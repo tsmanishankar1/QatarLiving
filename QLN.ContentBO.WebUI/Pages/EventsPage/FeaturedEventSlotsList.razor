@@ -1,0 +1,58 @@
+@using QLN.ContentBO.WebUI.Models
+@using MudBlazor
+
+@if (FeaturedEventSlots == null || Categories == null)
+{
+    <MudProgressCircular  Color="Color.Primary" />
+}
+else
+{
+    var indexedFeatured = FeaturedEventSlots
+        .Select((e, i) => new { Slot = e, Index = i + 1 })
+        .ToList();
+
+    <MudTable Items="indexedFeatured" Hover="true" Style="padding-top: 20px;">
+        <HeaderContent>
+            <MudTh>Slots</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>End Date</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Index</MudTd>
+            <MudTd>
+                @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                {
+                    <MudText Class="placeholder-text"
+                             @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))">
+                        @context.Slot.Event?.EventTitle
+                    </MudText>
+                }
+                else
+                {
+                    <MudLink Href="#" Class="event-link">
+                        @context.Slot.Event?.EventTitle
+                    </MudLink>
+                }
+            </MudTd>
+            <MudTd>
+                @Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName
+            </MudTd>
+            <MudTd>
+                @context.Slot.Event?.EventSchedule?.EndDate.ToString("dd-MM-yyyy")
+            </MudTd>
+            <MudTd>
+                <div class="custom-delete-button">
+                    <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter] public List<FeaturedSlot> FeaturedEventSlots { get; set; }
+    [Parameter] public List<EventCategoryModel> Categories { get; set; }
+    [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
+}
