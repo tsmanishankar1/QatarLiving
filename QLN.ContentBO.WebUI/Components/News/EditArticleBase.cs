@@ -52,6 +52,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (article.Id == Guid.Empty)
                 {
                     Snackbar.Add("Invalid article ID", Severity.Error);
+                    NavManager.NavigateTo($"/", true);
                     return;
                 }
                 article = await GetArticleById(ParsedArticleId);
@@ -131,8 +132,8 @@ namespace QLN.ContentBO.WebUI.Components.News
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true};
                     await DialogService.ShowAsync<ArticleDialog>("",parameters,options);
                     ResetForm();
-                    NavManager.NavigateTo("/manage/news/", true);
-
+                    var redirectToCateg = article.Categories.First();
+                    NavManager.NavigateTo( $"/manage/news/category/{redirectToCateg.CategoryId}", true);
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
