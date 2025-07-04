@@ -5,8 +5,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
 {
     public interface ICommunityService
     {
-        Task<HttpResponseMessage> GetAllCommunity();
-        Task<HttpResponseMessage> DeleteCommunity(int id);
-        Task<HttpResponseMessage> GetAllCommunitySearch(object payload);
+        Task<HttpResponseMessage> GetAllCommunityPosts(string? categoryId, string? search, int page, int pageSize, string? sortDirection);
+         Task<HttpResponseMessage> DeleteCommunity(string id);
     }
 }
