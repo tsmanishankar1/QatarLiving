@@ -11,6 +11,22 @@ namespace QLN.ContentBO.WebUI.Pages.Community
         protected List<CommunityListDto> _allPosts = new(); // To keep the unfiltered data
         protected bool IsLoading = true;
         protected bool ascending = true;
+        protected int currentPage = 1;
+        protected int pageSize = 12;
+        protected int TotalCount => _posts.Count;
+
+        protected Task HandlePageChange(int page)
+        {
+            currentPage = page;
+            return Task.CompletedTask;
+        }
+
+        protected Task HandlePageSizeChange(int size)
+        {
+            pageSize = size;
+            currentPage = 1;
+            return Task.CompletedTask;
+        }
 
         protected override async Task OnInitializedAsync()
         {

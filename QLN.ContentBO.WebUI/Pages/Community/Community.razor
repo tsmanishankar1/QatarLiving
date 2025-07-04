@@ -1,6 +1,7 @@
 @page "/manage/community"
 @inherits CommunityBase
 @namespace QLN.ContentBO.WebUI.Pages.Community
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
 @using QLN.ContentBO.WebUI.Models;
 
 <MudGrid Style="padding-top: 18px">
@@ -11,7 +12,9 @@
              <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
              </div>
               <div class="community-table">
-             <CommunityTable TPost="CommunityListDto" IsLoading="IsLoading" Posts="_posts" OnDelete="DeletePost" />    
+             <CommunityTable TPost="CommunityListDto" IsLoading="IsLoading" Posts="_posts" OnDelete="DeletePost" />  
+               <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />  
              </div> 
     </MudItem>
 </MudGrid>

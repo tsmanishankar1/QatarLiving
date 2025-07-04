@@ -1,0 +1,307 @@
+@typeparam TItem
+@using System.Linq.Expressions
+
+<div class="custom-select-wrapper @(IsDisabled ? "disabled" : "")" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+
+    <div class="select-display @(IsOpen ? "focused" : "")" @onclick="() => { if (!IsDisabled) ToggleDropdown(); }"
+        style="@($"border-radius:{BorderRadius}; border-color:{GetBorderColor()}; padding:{Padding};")">
+
+
+        <div class="select-label-column">
+            @if (!string.IsNullOrEmpty(Label))
+            {
+                <label class="select-label-custom">@Label</label>
+            }
+            @*             @if (Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected)
+
+ *@
+            @if (Items != null && Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected)
+
+            {
+                <span class="select-value-selected">@GetLabel(selected)</span>
+            }
+            else
+            {
+                <span class="select-value-placeholder">@Placeholder</span>
+            }
+
+        </div>
+        <MudIcon Icon="@(IsOpen? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+            Class="arrow-icon" />
+
+    </div>
+    @if (CascadedEditContext != null && _fieldIdentifier.FieldName != null)
+{
+    var messages = CascadedEditContext.GetValidationMessages(_fieldIdentifier);
+    if (messages.Any())
+    {
+        <div class="validation-message">@messages.First()</div>
+    }
+}
+
+
+    @if (IsOpen && !IsDisabled)
+    {
+        <div class="new-select-dropdown animate-dropdown">
+            @if (!string.IsNullOrEmpty(Placeholder))
+            {
+                <div class="dropdown-item-placeholder disabled">@Placeholder</div>
+            }
+
+            @foreach (var item in Items)
+            {
+                <div class="dropdown-item-custom" @onclick="() => SelectItem(item)" title="@GetLabel(item)">
+                    <span class="dropdown-text">@GetLabel(item)</span>
+                    @if (SelectedId == GetId(item))
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Class="check-icon" />
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Choose";
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public string BorderRadius { get; set; } = "8px";
+    [Parameter] public string FocusBorderColor { get; set; } = "#9c27b0";
+    [Parameter] public string Padding { get; set; } = "10px";
+    [Parameter] public string SelectedId { get; set; }
+    [Parameter] public EventCallback<string> SelectedIdChanged { get; set; }
+    [Parameter] public bool IsDisabled { get; set; } = false;
+    [Parameter] public Func<TItem, string> GetLabel { get; set; }
+    [Parameter] public Func<TItem, string> GetId { get; set; }
+[Parameter] public Expression<Func<string>> For { get; set; }
+[CascadingParameter] EditContext CascadedEditContext { get; set; }
+
+private FieldIdentifier _fieldIdentifier;protected override void OnInitialized()
+{
+    if (CascadedEditContext is null)
+    {
+        Console.WriteLine("⚠️ EditContext not found. NewCustomSelect should be inside an EditForm.");
+        return;
+    }
+
+    if (For != null)
+    {
+        _fieldIdentifier = FieldIdentifier.Create(For);
+    }
+}
+
+
+private string GetBorderColor()
+{
+    if (CascadedEditContext != null && _fieldIdentifier.FieldName != null)
+    {
+        var messages = CascadedEditContext.GetValidationMessages(_fieldIdentifier);
+        if (messages.Any())
+        {
+            return "red";
+        }
+    }
+    return IsOpen ? "#FF7F38" : "#D0D5DD";
+}
+    private bool IsOpen = false;
+
+    private string SelectedLabel => Items.FirstOrDefault(x => GetId(x) == SelectedId) is TItem selected
+    ? GetLabel(selected)
+    : Placeholder;
+
+
+    private void ToggleDropdown() => IsOpen = !IsOpen;
+
+    private async Task SelectItem(TItem item)
+    {
+        SelectedId = GetId(item);
+        IsOpen = false;
+        await SelectedIdChanged.InvokeAsync(SelectedId);
+    if (_fieldIdentifier.Model != null && !string.IsNullOrEmpty(_fieldIdentifier.FieldName))
+    {
+        CascadedEditContext?.NotifyFieldChanged(_fieldIdentifier);
+        CascadedEditContext?.Validate();
+    }
+
+    StateHasChanged(); // force component to re-render
+    }
+
+    private void HandleFocusOut(FocusEventArgs e) => IsOpen = false;
+
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" || e.Key == " " || e.Key == "ArrowDown")
+        {
+            IsOpen = !IsOpen;
+        }
+    }
+}
+
+
+<style>
+    .custom-select-wrapper {
+        position: relative;
+        width: 100%;
+        outline: none;
+        padding: 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+      .custom-select-wrapper.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+.validation-message {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+    .custom-select-wrapper.disabled .select-display {
+          box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
+        background-color: var(--color-background-secondary-grey-light);
+        cursor: not-allowed;
+    }
+
+    .select-label-column {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 0;
+        min-width: 0;
+    }
+
+    .select-label-custom {
+        font-size: 12px;
+        font-weight: 500;
+        color: #646464;
+        margin-bottom: 2px;
+    }
+
+    .select-display.focused .select-label-custom {
+        color: #FF7F38;
+    }
+
+    .select-display {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        background: white;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .select-display.focused {
+        border-color: #FF7F38;
+    }
+
+    .select-value-placeholder {
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+    .select-value-placeholder {
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: normal;
+    }
+
+    .dropdown-item-placeholder {
+        margin: 0;
+        padding: 0 5px;
+        width: 100%;
+        color: #A1A1A1;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .arrow-icon {
+        color: #475467;
+        margin-left: 8px;
+        display: flex;
+        align-items: flex-end;
+        /* ensure vertical alignment with text */
+    }
+
+
+    .new-select-dropdown {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-top: 4px;
+        z-index: 10000;
+        padding: 10px 5px;
+        max-height: 200px; 
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .animate-dropdown {
+        animation: slideDown 0.25s ease-out;
+    }
+
+    @@keyframes slideDown {
+        from {
+            transform: translateY(-8px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+
+    .dropdown-item-custom {
+        padding: 8px;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+ 
+    .dropdown-text {
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 1; /* show up to 2 lines */
+        -webkit-box-orient: vertical;
+        white-space: normal; /* allow wrapping */
+        word-break: break-word;
+    }
+
+    .dropdown-item-custom:hover {
+        border-radius: 10px;
+        background-color: #FAFAFA;
+    }
+
+    .dropdown-item-custom.disabled {
+        color: #aaa;
+        pointer-events: none;
+    }
+
+    .check-icon {
+        color: #242424;
+    }
+</style>
