@@ -131,8 +131,11 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getbyfeaturedstatus?status=1");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallfeaturedevents?isFeatured=true");
                 var response = await _httpClient.SendAsync(request);
+                var rawContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("📦 Raw API Response:");
+                Console.WriteLine(rawContent);
                 return response;
             }
             catch (Exception ex)

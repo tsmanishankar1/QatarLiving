@@ -6,6 +6,7 @@ using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
@@ -33,6 +34,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             events = await GetEvents();
             featuredEventSlots = await GetFeaturedSlotsAsync();
+            foreach (var slot in featuredEventSlots)
+            {
+                Console.WriteLine($"SlotNumber: {slot.SlotNumber}, Title: {slot.Event?.EventTitle ?? "null"}");
+            }
             Categories = await GetEventsCategories();
             foreach (var ev in Categories)
             {
@@ -181,10 +186,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             try
             {
                 var apiResponse = await eventsService.GetFeaturedEvents();
-
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var events = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>() ?? new();
+                    var rawContent = await apiResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine("Raw API Response:");
+                    Console.WriteLine(rawContent);
                     foreach (var ev in events)
                     {
                         if (ev.FeaturedSlot != null && ev.FeaturedSlot.Id >= 1 && ev.FeaturedSlot.Id <= 6)
@@ -213,6 +220,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
+                    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+    {
+        WriteIndented = true // optional, for pretty-printing
+    });
+    Console.WriteLine("Fetched Featured Events:\n" + json);
                     return response ?? new List<EventDTO>();
                 }
             }
