@@ -12,9 +12,6 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
-using System.Net;
-using System.Text;
-using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -26,13 +23,11 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         private const string AppId = V2Content.ContentServiceAppId;
         private const string BaseUrl = "/api/v2/daily";
-
         public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-
         public async Task<string> CreateDailyTopicAsync(
             DailyTopSectionSlot dto,
             CancellationToken cancellationToken = default
@@ -108,20 +103,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 HttpMethod.Get, AppId, url, cancellationToken
             ) ?? new List<DailyTopSectionSlot>();
         }
-        private readonly DaprClient _dapr;
-        private readonly ILogger<V2ExternalDailyService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
-
-        public V2ExternalDailyService(
-           DaprClient dapr,
-           ILogger<V2ExternalDailyService> logger,
-           IFileStorageBlobService blobStorage)
-        {
-            _dapr = dapr;
-            _logger = logger;
-            _blobStorage = blobStorage;
-        }
-
         public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
         {
             try
@@ -153,7 +134,6 @@ namespace QLN.Backend.API.Service.V2ContentService
 
 
         public async Task<string> UpsertDailySlotAsync(
-            string userId,
             Guid topicId,
             int slotNumber,
             DailyTopSectionSlot dto,
@@ -164,8 +144,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
             dto.SlotNumber = slotNumber;
             dto.SlotType = (DailySlotType)slotNumber;
-            dto.CreatedBy = userId;
-            dto.UpdatedBy = userId;
             dto.CreatedAt = DateTime.UtcNow;
             dto.UpdatedAt = DateTime.UtcNow;
 

@@ -1,15 +1,8 @@
-﻿// QLN.Content.MS/Service/DailyInternalService/DailyInternalService.cs
-
-using Dapr.Client;
+﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Constants;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.DailyInternalService
 {
@@ -76,7 +69,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
         ) => _dapr.GetStateAsync<DailyTopSectionSlot>(ConstantValues.V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
 
         public async Task<string> UpsertDailySlotAsync(
-            string userId,
             Guid topicId,
             int slotNumber,
             DailyTopSectionSlot slotDto,
@@ -100,9 +92,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
             slotDto.Id = Guid.NewGuid();
             slotDto.SlotType = slotType;
             slotDto.SlotNumber = slotNumber;
-            slotDto.CreatedBy = userId;
             slotDto.CreatedAt = DateTime.UtcNow;
-            slotDto.UpdatedBy = userId;
             slotDto.UpdatedAt = DateTime.UtcNow;
 
             // 4. save under fixed key
@@ -113,33 +103,50 @@ namespace QLN.Content.MS.Service.DailyInternalService
         }
 
         public async Task<List<DailyTopSectionSlot>> GetAllDailySlotsAsync(
-            Guid topicId,
-            CancellationToken cancellationToken = default
-        )
+              Guid topicId,
+              CancellationToken cancellationToken = default
+          )
         {
-            var tasks = Enumerable.Range(1, 9)
-                .Select(async slotNum =>
+            var slots = new List<DailyTopSectionSlot>();
+
+            for (int slotNumber = 1; slotNumber <= 9; slotNumber++)
+            {
+                var key = $"daily-topic-{topicId}-slot-{slotNumber}";
+                var slotDto = await _dapr.GetStateAsync<DailyTopSectionSlot>(
+                    Store,
+                    key,
+                    cancellationToken: cancellationToken
+                );
+
+                // If nothing is stored yet, return a blank placeholder
+                if (slotDto is null)
                 {
-                    var key = $"daily-topic-{topicId}-slot-{slotNum}";
-                    return await _dapr.GetStateAsync<DailyTopSectionSlot>(Store, key, cancellationToken: cancellationToken);
-                });
+                    slotDto = new DailyTopSectionSlot
+                    {
+                        Id = Guid.Empty,
+                        SlotNumber = slotNumber,
+                        SlotType = (DailySlotType)slotNumber,
+                        ContentType = slotNumber == (int)DailySlotType.HighlightedEvent
+                                            ? DailyContentType.Event
+                                            : DailyContentType.Article,
+                        Title = string.Empty,
+                        Category = string.Empty,
+                        Subcategory = null,
+                        RelatedContentId = Guid.Empty,
+                        PublishedDate = default,
+                        EndDate = null,
+                        CreatedBy = null,
+                        CreatedAt = default,
+                        UpdatedBy = null,
+                        UpdatedAt = null
+                    };
+                }
 
-            var results = await Task.WhenAll(tasks);
-            // skip nulls or return empty slots as you prefer
-            return results.Where(x => x is not null)!.Cast<DailyTopSectionSlot>().ToList();
+                slots.Add(slotDto);
+            }
+
+            return slots;
         }
-    public class DailyInternalService: IV2ContentDailyService
-
-    {
-        private readonly DaprClient _dapr;
-        private readonly ILogger<IV2ContentDailyService> _logger;
-
-        public DailyInternalService(DaprClient dapr, ILogger<IV2ContentDailyService> logger)
-        {
-            _dapr = dapr;
-            _logger = logger;
-        }
-     
 
         public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
         {

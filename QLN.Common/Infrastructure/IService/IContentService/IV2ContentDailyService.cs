@@ -11,19 +11,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<string> CreateDailyTopicAsync(DailyTopSectionSlot dto, CancellationToken cancellationToken = default);
         Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default);
         Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(Guid id, CancellationToken cancellationToken = default);
-
-        Task<string> UpsertDailySlotAsync(
-            string userId,
-            Guid topicId,
-            int slotNumber,
-            DailyTopSectionSlot slotDto,
-            CancellationToken cancellationToken = default
-        );
-
-        Task<List<DailyTopSectionSlot>> GetAllDailySlotsAsync(
-            Guid topicId,
-            CancellationToken cancellationToken = default
-        );
+        Task<string> UpsertDailySlotAsync(Guid topicId,int slotNumber,DailyTopSectionSlot slotDto,CancellationToken cancellationToken = default);
+        Task<List<DailyTopSectionSlot>> GetAllDailySlotsAsync(Guid topicId,CancellationToken cancellationToken = default);
         Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
     }
 }
