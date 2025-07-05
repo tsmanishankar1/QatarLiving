@@ -1,0 +1,117 @@
+@using MudBlazor
+
+<div class="search-sort-container">
+    <div class="left-section">
+        <!-- Add Event Button -->
+        <MudButton StartIcon="@Icons.Material.Outlined.Add"
+                   Style="background-color: #FF7F38; color: white; text-transform: none;"
+                   Class="compact-button"
+                   OnClick="AddEventCallback">
+            Add Event
+        </MudButton>
+
+        <!-- Search box -->
+        <div class="search-wrapper">
+            <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+            <input type="text"
+                   placeholder="Search"
+                   class="search-input"
+                   @oninput="OnSearchChanged" />
+        </div>
+    </div>
+
+    <!-- Sort button (Right side) -->
+    <button class="sort-button" @onclick="ToggleSort">
+        <MudIcon Icon="@SortIcon" />
+        Sort by
+    </button>
+</div>
+
+@code {
+    [Parameter] public EventCallback AddEventCallback { get; set; }
+    [Parameter] public EventCallback<string> OnSearch { get; set; }
+    [Parameter] public EventCallback<bool> OnSort { get; set; }
+
+    private bool ascending = true;
+    private string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
+
+    private async Task OnSearchChanged(ChangeEventArgs e)
+    {
+        if (e?.Value != null)
+        {
+            await OnSearch.InvokeAsync(e.Value.ToString());
+        }
+    }
+
+    private async Task ToggleSort()
+    {
+        ascending = !ascending;
+        await OnSort.InvokeAsync(ascending);
+    }
+}
+
+<style>
+.search-sort-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.left-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid var(--color-secondary-grey-container);
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 300px;
+    height: 44px;
+}
+
+.search-wrapper:focus-within {
+    border-color: var(--color-accent);
+}
+
+.search-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    color: #A1A1A1;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    color: #333;
+}
+
+.sort-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--color-secondary-grey-container);
+    border-radius: 8px;
+    background: #fff;
+    padding: 6px 14px;
+    height: 44px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--color-text-descripton);
+    font-weight: 500;
+}
+
+.sort-button:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+}
+</style>

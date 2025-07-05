@@ -216,7 +216,10 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.ReportsConfiguration(builder.Configuration);
+builder.Services.DailyBoConfiguration(builder.Configuration);
 builder.Services.CommunityConfiguration(builder.Configuration);
+builder.Services.CommunityPostConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
@@ -265,6 +268,8 @@ servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
+var reportsGroup = app.MapGroup("/api/v2/report");
+reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 var bannerGroup = app.MapGroup("/api/banner");
@@ -276,7 +281,6 @@ app.MapGroup("/api/subscriptions")
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
-//.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
 app.MapGroup("/api/paytofeature")
  .MapPayToFeatureEndpoints();
 app.MapGroup("/api/paytopublish")
@@ -288,9 +292,15 @@ app.MapGroup("/api/addon")
 
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
-     //.RequireAuthorization(); Add this back once we have Login flow for BO.
+
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
+dailyGroup.MapDailyEndpoints();
+
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
+var communityPostGroup = app.MapGroup("/api/v2/community");
+communityPostGroup.MapCommunityPostEndpoints();
+    //.RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();

@@ -1,14 +1,13 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.WebUtilities;
+﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.NewsPage
 {
-    public class NewsBase : QLComponentBase, IDisposable
+    public class NewsBase : QLComponentBase
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<NewsBase> Logger { get; set; }
@@ -21,14 +20,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        protected Dictionary<string, List<string>> TypeCategoryMap = new()
-        {
-            { "news", new List<string> {"Qatar", "Middle East", "World", "Health & Education", "Community", "Law"} },
-            { "finance", new List<string> { "Qatar Economy", "Market Updates", "Real Estate", "Entrepreneurship", "Finance", "Jobs & Careers" } },
-            { "sports", new List<string> { "Qatar Sports", "Football", "International", "Motorsports", "Olympics", "Athlete Features" } },
-            { "lifestyle", new List<string> { "Food & Dining", "Travel & Leisure", "Arts & Culture", "Events", "Fashion & Style", "Home & Living" } },
-        };
-
         public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
 
         protected List<Slot> Slots = [];
@@ -37,38 +28,54 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected List<NewsSubCategory> SubCategories = [];
 
-        protected int SelectedSubcategoryId { get; set; } = 1;
+        protected NewsSubCategory SelectedSubcategory { get; set; } = new();
 
         protected ArticleSlotAssignment articleSlotAssignment { get; set; } = new();
 
-        protected async override Task OnInitializedAsync()
+        protected bool IsEditingSubCategoryName { get; set; } = false;
+
+        protected NewsSubCategory EditableSubCategoryName { get; set; } = new();
+
+        protected MudTextField<string> subCategoryInputRef;
+        protected bool shouldFocusInput { get; set; } = false;
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            Categories = await GetNewsCategories() ?? [];
-            SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
-
-            ListOfNewsArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategoryId) ?? [];
-
-            Slots = await GetSlots();
+            if (shouldFocusInput && subCategoryInputRef is not null)
+            {
+                shouldFocusInput = false;
+                await subCategoryInputRef.FocusAsync();
+            }
         }
 
-        private void HandleLocationChanged(object sender, LocationChangedEventArgs e)
+        protected async override Task OnParametersSetAsync()
         {
-            InvokeAsync(StateHasChanged);
-        }
+            if (CategoryId > 0)
+            {
+                Categories = await GetNewsCategories() ?? [];
+                SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
+                SelectedSubcategory = SubCategories.First();
 
-        public void Dispose()
-        {
-            Navigation.LocationChanged -= HandleLocationChanged;
-        }
+                ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                     .Where(a => a.IsActive)
+                                                     .OrderBy(a => a.Categories
+                                                         .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
+                                                     )
+                                                     .ToList() ?? [];
 
+                Slots = await GetSlots();
+            }
+        }
         protected void NavigateToAddEvent()
         {
             Navigation.NavigateTo("/manage/news/addarticle");
         }
 
-        protected void DeletePost(Guid Id)
+        protected async void DeleteArticle(Guid Id)
         {
+            await DeleteNewsArticle(Id);
             ListOfNewsArticles.RemoveAll(a => a.Id == Id);
+            StateHasChanged();
         }
 
         protected async Task<List<NewsArticleDTO>> GetAllArticles()
@@ -113,12 +120,44 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+                var articleToUpdate = ListOfNewsArticles.Where(a => a.IsActive).FirstOrDefault(a =>
+                    a.Id == Id &&
+                    a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
+                ) ?? new();
+
+                var toSlot = GetCurrentSlot(articleToUpdate);
+
+                var selectedCategory = articleToUpdate.Categories
+                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
+
+
+                if (toSlot > 1)
+                {
+                    toSlot -= 1;
+                }
+
+                articleSlotAssignment = new()
+                {
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategory.Id,
+                    FromSlot = selectedCategory?.SlotId ?? 0,
+                    ToSlot = toSlot,
+                    AuthorName = articleToUpdate.authorName ?? string.Empty,
+                    UserId = articleToUpdate.UserId ?? string.Empty
+                };
 
                 var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = new();
+                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                         .Where(a => a.IsActive)
+                                                         .OrderBy(a => a.Categories
+                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
+                                                         )
+                                                         .ToList() ?? [];
                     Snackbar.Add("Slot Updated");
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
@@ -131,17 +170,48 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articleToUpdate = ListOfNewsArticles.FirstOrDefault(a => a.Id.Equals(Id)) ?? new();
+                var articleToUpdate = ListOfNewsArticles.Where(a => a.IsActive).FirstOrDefault(a =>
+                    a.Id == Id &&
+                    a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
+                ) ?? new();
 
-                var apiResponse = await newsService.UpdateArticle(articleToUpdate);
+                var toSlot = GetCurrentSlot(articleToUpdate);
+
+                var selectedCategory = articleToUpdate.Categories
+                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
+
+                if (toSlot < 13)
+                {
+                    toSlot += 1;
+                }
+
+                articleSlotAssignment = new()
+                {
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategory.Id,
+                    FromSlot = selectedCategory?.SlotId ?? 0,
+                    ToSlot = toSlot,
+                    AuthorName = articleToUpdate.authorName ?? string.Empty,
+                    UserId = articleToUpdate.UserId ?? string.Empty
+                };
+
+                var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
                 if (apiResponse.IsSuccessStatusCode)
                 {
+                    ListOfNewsArticles = new();
+                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                                         .Where(a => a.IsActive)
+                                                         .OrderBy(a => a.Categories
+                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
+                                                         )
+                                                         .ToList() ?? [];
                     Snackbar.Add("Slot Updated");
+                    StateHasChanged();
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Click_MoveItemUp");
+                Logger.LogError(ex, "Click_MoveItemDown");
             }
         }
 
@@ -163,7 +233,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 return [];
             }
         }
-
 
         protected async Task<List<NewsArticleDTO>> GetNewsByCategories(int categoryId)
         {
@@ -203,10 +272,16 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async void LoadCategory(int categoryId, int subCategory)
+        protected async void LoadCategory(int categoryId, NewsSubCategory subCategory)
         {
-            SelectedSubcategoryId = subCategory;
-            ListOfNewsArticles = await GetNewsBySubCategories(categoryId, subCategory) ?? [];
+            SelectedSubcategory = subCategory;
+            ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
+                                     .Where(a => a.IsActive)
+                                     .OrderBy(a => a.Categories
+                                         .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
+                                     )
+                                     .ToList() ?? [];
+            StateHasChanged();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -228,18 +303,114 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected string GetCategoryName(int categoryId) 
+        protected string GetCategoryName(int categoryId)
         {
             return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
         }
-        
+
         protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
         {
             return Categories
                 .FirstOrDefault(c => c.Id == CategoryId)?
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .CategoryName;
+                .SubCategoryName;
+        }
+
+        protected int GetCurrentSlot(NewsArticleDTO articleDTO)
+        {
+            var selectedCategory = articleDTO.Categories
+                   .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
+
+            return selectedCategory?.SlotId ?? 0;
+        }
+
+        private async Task DeleteNewsArticle(Guid Id)
+        {
+            try
+            {
+                var apiResponse = await newsService.DeleteNews(Id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteNewsArticle");
+            }
+        }
+
+        public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
+        {
+            DateTime currentUtcTime = DateTime.UtcNow;
+            TimeSpan difference = currentUtcTime - givenUtcTime;
+
+            TimeSpan absDiff = difference.Duration(); // ensures it's always positive
+
+            if (absDiff.TotalHours >= 1)
+            {
+                return $"{Math.Round(absDiff.TotalHours, 2)} hours";
+            }
+            else
+            {
+                return $"{Math.Round(absDiff.TotalMinutes)} minutes";
+            }
+        }
+
+        protected async Task UpdateSubCategory()
+        {
+            try
+            {
+                if (!IsEditingSubCategoryName)
+                {
+                    // First click: Enter edit mode
+                    if (SelectedSubcategory == null) return;
+
+                    EditableSubCategoryName = new NewsSubCategory
+                    {
+                        Id = SelectedSubcategory.Id,
+                        SubCategoryName = SelectedSubcategory.SubCategoryName
+                    };
+                    IsEditingSubCategoryName = true;
+                    shouldFocusInput = true;
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(EditableSubCategoryName.SubCategoryName) || string.IsNullOrEmpty(EditableSubCategoryName.SubCategoryName))
+                {
+                    Snackbar.Add("Subcategory Name is required", severity: Severity.Error);
+                    return;
+                }
+
+                var response = await newsService.UpdateSubCategory(EditableSubCategoryName);
+                if (response != null)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Snackbar.Add("Subcategory Name Updated", severity: Severity.Success);
+                        SelectedSubcategory.SubCategoryName = EditableSubCategoryName.SubCategoryName;
+                        var subInList = SubCategories.FirstOrDefault(x => x.Id == EditableSubCategoryName.Id);
+                        if (subInList != null)
+                        {
+                            subInList.SubCategoryName = EditableSubCategoryName.SubCategoryName;
+                        }
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Subcategory not found.", Severity.Error);
+                    }
+                }
+                IsEditingSubCategoryName = false;
+                EditableSubCategoryName = new();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateSubCategory");
+            }
         }
     }
 }

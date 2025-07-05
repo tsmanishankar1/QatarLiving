@@ -1,0 +1,73 @@
+@using QLN.ContentBO.WebUI.Models
+@using MudBlazor
+@inherits FeaturedEventSlotsBase;
+@if (FeaturedEventSlots == null || Categories == null)
+{
+    <MudProgressCircular  Color="Color.Primary" />
+}
+else
+{
+    var indexedFeatured = FeaturedEventSlots
+        .Select((e, i) => new { Slot = e, Index = i + 1 })
+        .ToList();
+
+    <MudTable Items="indexedFeatured" Hover="true" Style="padding-top: 20px;">
+        <HeaderContent>
+            <MudTh>Slots</MudTh>
+            <MudTh>Title</MudTh>
+            <MudTh>Category</MudTh>
+            <MudTh>End Date</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>@context.Index</MudTd>
+            <MudTd>
+                @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                {
+                    <MudText Class="placeholder-text"
+                             @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))">
+                        @context.Slot.Event?.EventTitle
+                    </MudText>
+                }
+                else
+                {
+                    <MudLink Href="#" Class="event-link">
+                        @context.Slot.Event?.EventTitle
+                    </MudLink>
+                }
+            </MudTd>
+            <MudTd>
+                @Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName
+            </MudTd>
+            <MudTd>
+                @context.Slot.Event?.EventSchedule?.EndDate.ToString("dd-MM-yyyy")
+            </MudTd>
+            <MudTd>
+                    @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                    {
+                        <div class="d-flex align-center gap-2">
+                        @* <div class="custom-delete-button"> *@
+                        <img src="/qln-images/replace_icon1.svg" alt="delete" class="action-icon-style" />
+                        @* </div> *@
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/delete_icon1.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center gap-2">
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/replace_icon.svg"  @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))" alt="delete" class="action-icon-style" />
+                        </div>
+                        <div class="custom-delete-button" 
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Event?.Id.ToString()))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
