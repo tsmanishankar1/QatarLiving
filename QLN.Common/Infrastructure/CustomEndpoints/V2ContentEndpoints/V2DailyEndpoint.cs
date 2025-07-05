@@ -36,6 +36,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 ) =>
                 {
                     try
+
                     {
                         var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                         if (string.IsNullOrEmpty(userClaim))
