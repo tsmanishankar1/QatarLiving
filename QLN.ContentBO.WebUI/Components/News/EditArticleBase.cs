@@ -67,7 +67,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             if (Category.SlotId == 0)
             {
-                Category.SlotId = 15; // By Default UnPublished.
+                Category.SlotId = 15; 
             }
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
@@ -119,6 +119,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     return;
                 }
 
+                article.UserId = CurrentUserId.ToString();
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {

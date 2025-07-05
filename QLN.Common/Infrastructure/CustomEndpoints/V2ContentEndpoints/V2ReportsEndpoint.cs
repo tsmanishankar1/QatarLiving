@@ -7,6 +7,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Net.Http;
 using System.Text.Json;
+using static QLN.Common.DTO_s.V2ReportCommunityPost;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
@@ -812,6 +813,101 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Deletes a report from the Dapr state store.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetReportCommunityPost(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getpostwithreports", async Task<Results<
+            Ok<CommunityPostWithReports>,
+            NotFound,
+            ProblemHttpResult
+            >> (
+            Guid postId,
+            IV2ReportsService service,
+            CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetCommunityPostWithReport(postId, ct);
+                    if (result is null)
+                        return TypedResults.NotFound();
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetPostWithReports")
+            .WithTags("Reports")
+            .WithSummary("Get community post with associated reports")
+            .WithDescription("Returns basic details of a community post along with its reports.")
+            .Produces<CommunityPostWithReports>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapGetAllCommunityPostReports(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getallcommunitypostwithreports", async Task<Results<
+                Ok<List<CommunityPostWithReports>>,
+                ProblemHttpResult
+                >> (
+                IV2ReportsService service,
+                CancellationToken ct
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllCommunityPostsWithReports(ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("GetAllCommunityPostReports")
+                .WithTags("Reports")
+                .WithSummary("Get all community posts with associated reports")
+                .WithDescription("Returns a list of community posts along with their reports.")
+                .Produces<List<CommunityPostWithReports>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapGetAllCommunityPostsWithPagination(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getallcommunitypostswithpagination", async Task<Results<
+                Ok<V2ReportCommunityPost.PaginatedCommunityPostResponse>,
+                ProblemHttpResult
+                >> (
+                IV2ReportsService service,
+                int? pageNumber,
+                int? perPage,
+                string? searchTitle = null,
+                string? sortBy = null,
+                CancellationToken ct = default
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllCommunityPostsWithPagination(pageNumber, perPage, searchTitle, sortBy, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllCommunityPostsWithPagination")
+            .WithTags("Reports")
+            .WithSummary("Get all community posts with pagination")
+            .WithDescription("Returns a paginated list of community posts along with their reports.")
+            .Produces<V2ReportCommunityPost.PaginatedCommunityPostResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

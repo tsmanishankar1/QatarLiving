@@ -43,3 +43,12 @@ function createMarker(center) {
 
     return marker;
 }
+window.resetLeafletMap = function () {
+        if (window._leafletMap) {
+            window._leafletMap.remove();
+            window._leafletMap = null;
+        }
+        if (window._leafletMarker) {
+            window._leafletMarker = null;
+        }
+    };

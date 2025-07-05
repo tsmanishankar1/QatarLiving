@@ -168,10 +168,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return false;
             }
         }
-
-
-
-
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid communityId, CancellationToken ct = default)
         {
             try
@@ -200,7 +196,111 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Error fetching community post with ID {Id}", communityId);
                 throw;
             }
+        }       
+        public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = "/api/v2/community/likePost";
+
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url, dto);
+                var resp = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+                resp.EnsureSuccessStatusCode();
+
+                var json = await resp.Content.ReadAsStringAsync();
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var jsonDoc = JsonDocument.Parse(json);
+                    if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
+                    {
+                        var status = statusElement.GetString();
+                        return status == "liked";
+                    }
+                }
+
+                return false;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error liking/unliking community post");
+                throw;
+            }
         }
+        public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = "/api/v2/community/addComment";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url, dto);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                _logger.LogInformation("Successfully invoked add comment for post {PostId} via Dapr", dto.CommunityPostId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding comment to community post {PostId} via Dapr", dto.CommunityPostId);
+                throw;
+            }
+        }
+
+        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/api/v2/community/getCommentsByPostId/{postId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                var comments = JsonSerializer.Deserialize<List<CommunityCommentDto>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return comments ?? new List<CommunityCommentDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching comments for post {PostId} via Dapr", postId);
+                throw;
+            }
+        }
+
+        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/api/v2/community/likeCommentInternal/{commentId}/{communityPostId}/{userId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var jsonDoc = JsonDocument.Parse(json);
+                    if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
+                    {
+                        return statusElement.GetString()?.ToLowerInvariant() == "liked";
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error invoking LikeCommentAsync via Dapr");
+                throw;
+            }
+        }
+
 
     }
 }

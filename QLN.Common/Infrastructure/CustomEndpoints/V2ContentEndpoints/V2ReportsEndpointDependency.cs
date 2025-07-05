@@ -13,6 +13,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .MapCreateNewsCommentEndpoints()
                 .MapGetReportEndpoints()
                 .MapUpdateReportEndpoints()
+                .MapGetReportCommunityPost()
+                .MapGetAllCommunityPostReports()
+                .MapGetAllCommunityPostsWithPagination()
                 .MapDeleteReportEndpoints();
             return group;
         }

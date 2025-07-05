@@ -102,6 +102,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ReportsCommunityIndexKey = "reportcommunitypost-category-index";
             public const string ReportsCommunityCommentsIndexKey = "reportcommunitycomments-category-index";
             public const string ReportsArticleCommentsIndexKey = "reportarticlecomments-category-index";
+            public const string DailyTopBOIndexKey = "daily-top-bo-index";
+            public const string DailyTopicIndexKey = "daily-topic-index";
         }
     }
     }

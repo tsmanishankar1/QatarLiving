@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using static QLN.Common.DTO_s.V2ReportCommunityPost;
 
 
 namespace QLN.Common.Infrastructure.IService.V2IContent
@@ -14,5 +15,13 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<string> UpdateReport(string userId, V2ContentReportArticleDto dto, CancellationToken cancellationToken = default);
         Task<string> DeleteReport(Guid id, CancellationToken cancellationToken = default);
         Task<string> CreateArticleComment(string userName, V2NewsCommunitycommentsDto dto, CancellationToken cancellationToken = default);
+        Task<CommunityPostWithReports?> GetCommunityPostWithReport(Guid postId, CancellationToken ct);
+        Task<List<CommunityPostWithReports>> GetAllCommunityPostsWithReports(CancellationToken ct);
+        Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(
+            int? pageNumber,
+            int? perPage,
+            string? searchTitle = null,
+            string? sortBy = null,
+            CancellationToken ct = default);
     }
 }

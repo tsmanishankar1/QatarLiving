@@ -80,6 +80,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 dto.UpdatedBy = userId;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
+                dto.PublishedDate = DateTime.UtcNow;
 
                 string storeName = V2Content.ContentStoreName;
                 string articleIdStr = dto.Id.ToString();
@@ -401,6 +402,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
@@ -419,43 +421,52 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new InvalidDataException($"No article found in slot {dto.FromSlot}.");
 
             var updatedSlots = new List<int>();
+            var missingSlots = new List<int>();
 
             if (dto.FromSlot < dto.ToSlot)
             {
-                // Move down: shift up articles from FromSlot+1 to ToSlot
+                // Move down: shift up articles
                 for (int i = dto.FromSlot + 1; i <= dto.ToSlot; i++)
                 {
                     var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
                     var previousKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i - 1);
                     var article = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, currentKey, cancellationToken: cancellationToken);
-                    if (article != null)
-                    {
-                        var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
-                        if (cat != null) cat.SlotId = i - 1;
 
-                        await _dapr.SaveStateAsync(storeName, previousKey, article, cancellationToken: cancellationToken);
-                        await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
-                        updatedSlots.Add(i - 1);
+                    if (article == null)
+                    {
+                        missingSlots.Add(i);
+                        continue;
                     }
+
+                    var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
+                    if (cat != null) cat.SlotId = i - 1;
+
+                    await _dapr.SaveStateAsync(storeName, previousKey, article, cancellationToken: cancellationToken);
+                    await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
+                    updatedSlots.Add(i - 1);
                 }
             }
             else
             {
-                // Move up: shift down articles from FromSlot-1 to ToSlot
+                // Move up: shift down articles
                 for (int i = dto.FromSlot - 1; i >= dto.ToSlot; i--)
                 {
                     var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
                     var nextKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i + 1);
                     var article = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, currentKey, cancellationToken: cancellationToken);
-                    if (article != null)
-                    {
-                        var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
-                        if (cat != null) cat.SlotId = i + 1;
 
-                        await _dapr.SaveStateAsync(storeName, nextKey, article, cancellationToken: cancellationToken);
-                        await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
-                        updatedSlots.Add(i + 1);
+                    if (article == null)
+                    {
+                        missingSlots.Add(i);
+                        continue;
                     }
+
+                    var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
+                    if (cat != null) cat.SlotId = i + 1;
+
+                    await _dapr.SaveStateAsync(storeName, nextKey, article, cancellationToken: cancellationToken);
+                    await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
+                    updatedSlots.Add(i + 1);
                 }
             }
 
@@ -471,7 +482,12 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             updatedSlots.Sort();
 
-            return $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}";
+            // ✅ Build detailed response
+            var result = $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}.";
+            if (missingSlots.Any())
+                result += $"Warning: Some slots were empty and skipped: {string.Join(", ", missingSlots)}.";
+
+            return result;
         }
 
 
