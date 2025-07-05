@@ -8,6 +8,8 @@
 @inherits AllEventListBase
 
 @if (IsLoading)
+@inherits AllEventsListBase;
+@if (Events == null || Categories == null)
 {
     <TableSkeleton Rows="PageSize" />
 }
@@ -71,7 +73,7 @@ else
 
             <MudTd>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                    <MudMenuItem><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
+                    <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
                     <MudMenuItem><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" /> Unpublish</MudMenuItem>
                     <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
                         <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete

@@ -1,11 +1,18 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.WebUtilities;
+using MudBlazor;
+using Microsoft.AspNetCore.Components.Routing;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components;
+using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Components.PaginationFooter;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
-    public partial class AllEventListBase : ComponentBase
+    public class AllEventsListBase : QLComponentBase
     {
         [Parameter] public List<EventDTO> Events { get; set; }
         [Parameter] public List<EventCategoryModel> Categories { get; set; }
@@ -13,6 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Parameter] public EventCallback<bool> OnSortOrderChanged { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
         [Parameter] public EventCallback AddEventCallback { get; set; }
+        [Inject] protected NavigationManager Navigation { get; set; }
         [Parameter] public int CurrentPage { get; set; }
         [Parameter] public int PageSize { get; set; }
         [Parameter]
@@ -73,7 +81,7 @@ public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send s
         protected string GetEmptyTitle()
         {
             return selectedTab switch
-            {
+        {
                 "published" => "No published events found",
                 "unpublished" => "No unpublished events found",
                 "expired" => "No expired events found",

@@ -72,16 +72,12 @@ namespace QLN.ContentBO.WebUI.Services
         public async Task<HttpResponseMessage> CreateEvent(EventDTO events)
         {
             try
-            {
-                var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
-                {
-                    WriteIndented = true // makes it more readable in logs
-                });
-
-                Console.WriteLine("Request Payload:");
-                Console.WriteLine(jsonPayload);
-
-                var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+    {
+        var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
+        {
+            WriteIndented = true 
+        });
+        var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/create")
                 {
@@ -109,6 +105,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetAllEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventById(Guid eventId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/event/getbyid/{eventId}");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventById");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -183,8 +193,9 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getbyfeaturedstatus?status=1");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallfeaturedevents?isFeatured=true");
                 var response = await _httpClient.SendAsync(request);
+                var rawContent = await response.Content.ReadAsStringAsync();
                 return response;
             }
             catch (Exception ex)
@@ -198,13 +209,29 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("Payload being sent to UpdateFeaturedEvents:");
-                Console.WriteLine(json);
-
                 var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
+
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateFeaturedEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
+{
+    try
+    {
+        var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+        var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
 
                 var response = await _httpClient.SendAsync(request);
                 return response;

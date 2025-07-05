@@ -1,6 +1,6 @@
 @using QLN.ContentBO.WebUI.Models
 @using MudBlazor
-
+@inherits FeaturedEventSlotsBase;
 @if (FeaturedEventSlots == null || Categories == null)
 {
     <MudProgressCircular  Color="Color.Primary" />
@@ -43,16 +43,31 @@ else
                 @context.Slot.Event?.EventSchedule?.EndDate.ToString("dd-MM-yyyy")
             </MudTd>
             <MudTd>
-                <div class="custom-delete-button">
-                    <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                </div>
+                    @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                    {
+                        <div class="d-flex align-center gap-2">
+                        @* <div class="custom-delete-button"> *@
+                        <img src="/qln-images/replace_icon1.svg" alt="delete" class="action-icon-style" />
+                        @* </div> *@
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/delete_icon1.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center gap-2">
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/replace_icon.svg"  @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))" alt="delete" class="action-icon-style" />
+                        </div>
+                        <div class="custom-delete-button" 
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Event?.Id.ToString()))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    }
             </MudTd>
         </RowTemplate>
     </MudTable>
 }
 
-@code {
-    [Parameter] public List<FeaturedSlot> FeaturedEventSlots { get; set; }
-    [Parameter] public List<EventCategoryModel> Categories { get; set; }
-    [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
-}

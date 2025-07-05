@@ -80,6 +80,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 dto.UpdatedBy = userId;
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
+                dto.PublishedDate = DateTime.UtcNow;
 
                 string storeName = V2Content.ContentStoreName;
                 string articleIdStr = dto.Id.ToString();

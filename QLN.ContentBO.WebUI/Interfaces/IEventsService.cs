@@ -8,6 +8,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetEventCategories();
         Task<HttpResponseMessage> GetEventLocations();
         Task<HttpResponseMessage> GetAllEvents();
+        Task<HttpResponseMessage> GetEventById(Guid eventId);
         Task<HttpResponseMessage> DeleteEvent(string eventId);
         Task<HttpResponseMessage> GetFeaturedEvents();
         Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events);
@@ -23,9 +24,10 @@ namespace QLN.ContentBO.WebUI.Interfaces
     string? location = null,
     bool? freeOnly = null,
     bool? featuredFirst = null,
-    int? status = null 
+    int? status = null
 );
 
-        
+
+        Task<HttpResponseMessage> UpdateEvents(EventDTO events);
     }
 }
