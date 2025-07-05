@@ -23,15 +23,17 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected List<FeaturedSlot> featuredEventSlots = [];
         protected FeaturedSlot ReplaceSlot { get; set; } = new();
         protected EventDTO ReplacedEvent { get; set; } = new();
+        protected EventDTO SelectedEvent { get; set; } = new();
         protected int activeIndex = 0;
         protected int index = 0;
         protected int currentIndex = 1;
         protected string searchText;
         protected string selectedType;
         protected List<string> categories = new List<string> { "All Events", "Featured Events" };
-        protected PaginatedEventResponse PaginatedData { get; set; } = new(); 
+        protected PaginatedEventResponse PaginatedData { get; set; } = new();
         protected List<EventDTO> events => PaginatedData.Items;
         protected int currentPage = 1;
+        public List<EventDTO> AllEventsList { get; set; } = new();
         protected int pageSize = 12;
         protected bool IsLoading = true;
 
@@ -65,20 +67,21 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             PaginatedData = await GetEvents(currentPage, pageSize);
             StateHasChanged();
         }
-            protected bool SortAscending = true;
+        protected bool SortAscending = true;
 
-            protected async Task HandleSortOrderChange(bool ascending)
-            {
-                SortAscending = ascending;
-                PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc");
-                StateHasChanged();
-            }
+        protected async Task HandleSortOrderChange(bool ascending)
+        {
+            SortAscending = ascending;
+            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc");
+            StateHasChanged();
+        }
 
         protected override async Task OnInitializedAsync()
         {
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
+            AllEventsList = await GetAllEvents();
         }
         protected EventDTO? draggedItem;
 
@@ -110,7 +113,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             {
                 { nameof(MessageBoxBase.Title), "Featured Event" },
                 { nameof(MessageBoxBase.Placeholder), "Article Title*" },
-                { nameof(MessageBoxBase.events), events },
+                { nameof(MessageBoxBase.events), AllEventsList },
                 { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
             };
             var options = new DialogOptions
@@ -141,6 +144,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             ReplaceSlot = selectedEvent;
             OpenDialogAsync();
+            await Task.CompletedTask;
+        }
+        protected async Task UpdateEvent(EventDTO selectedEvent)
+        {
+            SelectedEvent = selectedEvent;
+
             await Task.CompletedTask;
         }
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
@@ -180,13 +189,13 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             Published,
             Unpublished
         }
-      private async Task<PaginatedEventResponse> GetEvents(
-            int page = 1,
-            int pageSize = 12,
-            string search = "",
-            string sortOrder = "desc",
-            int? status = null
-        )
+        private async Task<PaginatedEventResponse> GetEvents(
+              int page = 1,
+              int pageSize = 12,
+              string search = "",
+              string sortOrder = "desc",
+              int? status = null
+          )
         {
             try
             {
@@ -195,11 +204,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     page: page,
                     perPage: pageSize,
                     search: search ?? "",
-                    categoryId: null, // or use your real filter logic
+                    categoryId: null, 
                     sortOrder: sortOrder,
                     fromDate: null,
                     toDate: null,
-                    filterType: "", // "Live", "Published", etc.
+                    filterType: "", 
                     status: status,
                     location: null,
                     freeOnly: false,
@@ -209,6 +218,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
+                    if (result != null)
+                    {
+                        result.Items = result.Items
+                            .Where(e => e.IsActive) 
+                            .ToList();
+                    }
                     return result ?? new PaginatedEventResponse();
                 }
             }
@@ -218,7 +233,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             }
             finally
             {
-                 IsLoading = false;
+                IsLoading = false;
             }
 
             return new PaginatedEventResponse();
@@ -272,7 +287,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
                     var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
                     {
-                        WriteIndented = true 
+                        WriteIndented = true
                     });
                     return response ?? new List<EventDTO>();
                 }
@@ -283,13 +298,27 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             }
             return new List<EventDTO>();
         }
-
-
-
-
-
-
-
+        private async Task<List<EventDTO>> GetAllEvents()
+        {
+            try
+            {
+                var apiResponse = await eventsService.GetAllEvents();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
+                    var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    });
+                    return response ?? new List<EventDTO>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEvents");
+            }
+            return new List<EventDTO>();
+        }
 
         private async Task<List<EventCategoryModel>> GetEventsCategories()
         {
@@ -315,9 +344,9 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 var apiResponse = await eventsService.DeleteEvent(eventId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                   
                     Snackbar.Add("Event deleted successfully", Severity.Success);
                     index = 0;
+                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
                     StateHasChanged();
                 }
                 else
@@ -331,6 +360,43 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
             }
         }
+        protected async Task DeleteFeatureEvent(string eventId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(eventId))
+                {
+                    Snackbar.Add("Invalid event ID.", Severity.Warning);
+                    return;
+                }
+                var slot = featuredEventSlots.FirstOrDefault(s => s.Event?.Id.ToString() == eventId);
+                if (slot == null)
+                {
+                    Snackbar.Add("No featured event found with the given ID.", Severity.Warning);
+                    return;
+                }
+                var apiResponse = await eventsService.DeleteEvent(eventId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    slot.Event = new EventDTO
+                    {
+                        EventTitle = "Feature an Event"
+                    };
+                    Snackbar.Add("Featured event deleted successfully", Severity.Success);
+                    featuredEventSlots = await GetFeaturedSlotsAsync();
+                    // StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete featured event.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteFeatureEvent");
+                Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
+            }
+        }
         protected async Task ReplaceFeaturedEvent()
         {
             try
@@ -338,8 +404,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 var apiResponse = await eventsService.UpdateFeaturedEvents(ReplacedEvent);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    
                     Snackbar.Add("Event Replaced successfully", Severity.Success);
+                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
                     StateHasChanged();
                 }
                 else
@@ -351,6 +417,50 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             {
                 Logger.LogError(ex, "DeleteEvent");
                 Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
+            }
+        }
+        protected async Task UpdateEvent()
+        {
+            try
+            {
+                var apiResponse = await eventsService.UpdateEvents(SelectedEvent);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Event  successfully", Severity.Success);
+                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete event", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
+            }
+        }
+        protected async Task UpdateEventStatusAsync((EventDTO evt, EventStatus newStatus) args)
+        {
+            var (evt, newStatus) = args;
+            evt.Status = newStatus;
+            var response = await eventsService.UpdateEvents(evt);
+            if (response.IsSuccessStatusCode)
+            {
+                if (evt.Status == EventStatus.Published)
+                {
+                    Snackbar.Add($"Event Published Successfully!", Severity.Success);
+                }
+                else if (evt.Status == EventStatus.UnPublished)
+                {
+                    Snackbar.Add($"Event UnPublished Successfully!", Severity.Success);
+                }
+                PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            }
+            else
+            {
+                Snackbar.Add($"Failed to update status to {newStatus}.", Severity.Error);
             }
         }
     }

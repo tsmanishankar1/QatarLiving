@@ -133,7 +133,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getAllCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallcategories");
 
                 var response = await _httpClient.SendAsync(request);
 
