@@ -258,14 +258,26 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(CancellationToken cancellationToken = default)
+     public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
+      string sortOrder = "desc",
+      int pageNumber = 1,
+      int pageSize = 12,
+      string? searchTerm = null,
+      CancellationToken cancellationToken = default)
         {
             try
             {
+                var queryString = $"?sortOrder={sortOrder}&pageNumber={pageNumber}&pageSize={pageSize}";
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    queryString += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
+                }
+
                 return await _dapr.InvokeMethodAsync<List<V2ContentReportArticleResponseDto>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/report/getAll",
+                    $"/api/v2/report/getAll{queryString}",
                     cancellationToken
                 ) ?? new List<V2ContentReportArticleResponseDto>();
             }
@@ -275,34 +287,9 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<V2ContentReportArticleResponseDto?> GetReportById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var url = $"/api/v2/report/getById/{id}";
-
-                return await _dapr.InvokeMethodAsync<V2ContentReportArticleResponseDto>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving report for Id : {Id}", id);
-                throw;
-            }
-        }
-
-
-
-        public async Task<string> UpdateReport(string userId, V2ContentReportArticleDto dto, CancellationToken cancellationToken = default)
-        {
+           
             try
             {
                 var url = "/api/v2/report/updateByUserId";
@@ -314,6 +301,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -328,40 +316,33 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
+
                     throw new InvalidDataException(errorMessage);
                 }
 
+                response.EnsureSuccessStatusCode();
+
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("Received empty response from content service.");
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize update response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating report");
-                throw;
-            }
-        }
-
-        public async Task<string> DeleteReport(Guid id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"/api/v2/report/delete/{id}";
-
-                return await _dapr.InvokeMethodAsync<string>(
-                    HttpMethod.Delete,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken
-                ) ?? "Report deleted successfully";
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Report with ID {id} not found.", id);
-                return "Report not found";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting report with Id {id}", id);
+                _logger.LogError(ex, "Error updating article comment status");
                 throw;
             }
         }
@@ -369,7 +350,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                // Fix: Use correct parameter name that matches the endpoint
+                
                 var url = $"/api/v2/report/getpostwithreports?postId={postId}";
                 return await _dapr.InvokeMethodAsync<CommunityPostWithReports>(
                     HttpMethod.Get,
