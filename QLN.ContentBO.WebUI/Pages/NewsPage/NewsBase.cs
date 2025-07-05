@@ -453,7 +453,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnTabChanged", newTab);
+                Logger.LogError(ex, $"OnTabChanged:{newTab}");
             }
             finally
             {
