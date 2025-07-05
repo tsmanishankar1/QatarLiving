@@ -164,8 +164,8 @@ namespace QLN.ContentBO.WebUI.Pages
             _dateRange = new DateRange(CurrentEvent?.EventSchedule?.StartDate.ToDateTime(TimeOnly.MinValue), CurrentEvent?.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue));
             var startDate = CurrentEvent?.EventSchedule?.StartDate;
             var endDate = CurrentEvent?.EventSchedule?.EndDate;
-            Console.Write("the start date is " + CurrentEvent?.EventSchedule?.StartDate);
-            Console.Write("the start date is " + CurrentEvent?.EventSchedule?.EndDate);
+            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.StartDate);
+            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.EndDate);
             if (startDate.HasValue && startDate.Value != DateOnly.MinValue &&
                 endDate.HasValue && endDate.Value != DateOnly.MinValue)
             {
