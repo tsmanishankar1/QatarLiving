@@ -1,0 +1,63 @@
+﻿@inherits GoLiveDialogBase
+
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img class="icon-circle" src="/qln-images/go_live.svg" alt="go-live Image" />
+        </div>
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
+            @Title
+        </MudText>
+        <EditForm Model="@SelectedSlot" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <MudSelect T="int" @bind-Value="SelectedSlot.Id" Class="w-100" Variant="Variant.Outlined" Placeholder="Slot Number *" Required>  
+                <MudSelectItem Value="@(0)">Slot Number *</MudSelectItem>
+                @foreach (var item in Slots)
+                {
+                    <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <div class="mt-4 d-flex flex-column gap-2">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Class="mt-4 custom-add-btn" Disabled="@(SelectedSlot.Id == 0 || IsBtnDisabled)">
+                    Save
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                    Close
+                </MudButton>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+
+    .custom-add-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+</style>

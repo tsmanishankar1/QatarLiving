@@ -1,78 +1,47 @@
 @page "/manage/events"
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Pages.EventsPage
 @inherits EventsBase
+
 <MudGrid Style="padding-top: 18px">
-    <MudItem xs="12" md="12">  
-            <MudText Class="events-style">Events</MudText>
-            <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
-                @foreach (var tab in categories)
-                {
-                     <MudTabPanel Text="@tab" />
-                }
-            </MudTabs>
-            <MudGrid AlignItems="Center" Class="padding-top:16px">
-                <MudItem xs="12" md="12">
-                    <div class="events-button-container">
-                        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
-                            Add Event
-                        </MudButton>
-                        <MudTextField @bind-Value="searchText"
-                        Placeholder="Search for Events"
-                        Variant="Variant.Outlined"
-                        Adornment="Adornment.Start"
-                        AdornmentIcon="@Icons.Material.Filled.Search"
-                        Class="search-field" />
-                        <div class="sort-by-wrapper">
-                            <MudButton StartIcon="@Icons.Material.Filled.FilterList"
-                            Variant="Variant.Outlined"
-                            Class="sort-by-style">
-                            Sort by
-                            </MudButton>
-                        </div>
-                    </div>
-            <MudTable Items="events" Hover="true" Style="padding-top: 20px;">
-                <HeaderContent>
-                <MudTh>Number</MudTh>
-                <MudTh>Title</MudTh>
-                <MudTh>Category</MudTh>
-                <MudTh>Creation Date</MudTh>
-                <MudTh>Expiry Date</MudTh>
-                <MudTh>Live for</MudTh>
-                <MudTh>Actions</MudTh>
-                </HeaderContent>
-                <RowTemplate >
-                    <MudTd DataLabel="Number">
-                    @{
-                        index = index + 1;
-                    }
-                    @(index)
-                    </MudTd>
-                    <MudTd DataLabel="Post Title">
-                    <MudLink Href="#">@context.EventTitle</MudLink>
-                    </MudTd>
-                    <MudTd DataLabel="Category">
-                    @Categories.FirstOrDefault(c => c.Id == context.CategoryId)?.CategoryName
-                    </MudTd>
-            @* <MudTd DataLabel="Category">@context.CategoryId</MudTd> *@
-            <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Expiry Date">@context.EventSchedule.EndDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd DataLabel="Live for">@context.CreatedAt</MudTd>
-            <MudTd>
-                               <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                    <MudMenuItem >
-                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
-                                    </MudMenuItem>
-                                    <MudMenuItem >
-                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
-                                    </MudMenuItem>
-                                    @* <MudMenuItem OnClick="@(() => DeletePost(context))" Class="mud-error-text">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                    </MudMenuItem>  *@
-                                </MudMenu>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
-                </MudItem>
-            </MudGrid>
+    <MudItem xs="12" md="12">
+        <MudText Class="events-style">Events</MudText>
+
+        <MudTabs @bind-ActivePanelIndex="@activeIndex"
+                 Rounded="false"
+                 Class="custom-tabs"
+                 DisableSlideAnimation="true">
+            @foreach (var tab in categories)
+            {
+                <MudTabPanel Text="@tab" />
+            }
+        </MudTabs>
+
+        @if (activeIndex == 0)
+        {
+           <AllEventList
+              PaginatedData="PaginatedData"
+                IsLoading="IsLoading"
+                Events="events"
+                Categories="Categories"
+                CurrentPage="currentPage"
+                PageSize="pageSize"
+                OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnDelete="DeleteEvent"
+                AddEventCallback="NavigateToAddEvent"
+                OnSortOrderChanged="HandleSortOrderChange"
+                OnStatusChanged="HandleStatusChange"
+                EventStatusChanged="UpdateEventStatusAsync" />
+
+        }
+        else
+        {
+            <FeaturedEventSlotsList IsLoadingEvent="IsLoadingEvent" FeaturedEventSlots="featuredEventSlots"
+                                    Categories="Categories"
+                                    ReplaceSlot="ReplaceEventSlot"
+                                    OnDelete="DeleteFeatureEvent" />
+        }
     </MudItem>
 </MudGrid>
 
@@ -128,6 +97,10 @@
         white-space: nowrap; 
         height: 44px;
     }
+    .mud-primary-text {
+        color: var(#535862) !important;
+        --mud-ripple-color: var(#535862) !important;
+    }
     .sort-by-style {
         color: #646464; 
         border-radius: 8px; 
@@ -161,5 +134,25 @@
     .custom-tab-default {
         color: rgba(0, 0, 0, 0.6);
         font-weight: 500;
+    }
+    .placeholder-text {
+        color: #FF7F38 !important;
+        font-weight: 600 !important;
+    }
+
+    .event-link {
+        color: #535862 !important;
+        text-decoration: none !important;
+    }
+    .custom-delete-button {
+        background-color: #F44336; 
+        border-radius: 12px; 
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
     }
 </style>

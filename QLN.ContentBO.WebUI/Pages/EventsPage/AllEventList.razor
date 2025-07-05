@@ -1,0 +1,146 @@
+@using QLN.ContentBO.WebUI.Models
+@using MudBlazor
+@namespace QLN.ContentBO.WebUI.Pages.EventsPage
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits AllEventsListBase
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="PageSize" />
+}
+
+else
+{
+    var filteredEvents = Events
+        .Where(e => string.IsNullOrWhiteSpace(SearchText) || e.EventTitle.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
+        .Select((e, i) => new { Event = e, Index = i + 1 })
+        .ToList();
+
+    <SearchBarWithAdd AddEventCallback="AddEventCallback"
+                      OnSearch="HandleSearch"
+                      OnSort="HandleSortToggle" />
+    <div class="custom-table-events">
+        <div class="toggle-tabs-events">
+            <ToggleTabs Options="@tabOptions"
+                        ActiveValue="@selectedTab"
+                        OnChange="@OnTabChanged" />
+        </div>
+        @if (filteredEvents.Count == 0)
+        {
+            <div>
+                <EmptyCard Title="@GetEmptyTitle()" Subtitle="Please check back later or explore other categories." />
+            </div>
+        }
+        else
+        {
+            <MudTable Items="filteredEvents" Hover="true" Class="event-custom-table">
+                <HeaderContent>
+                    <MudTh class="header-cell">Number</MudTh>
+                    <MudTh class="header-cell">Title</MudTh>
+                    <MudTh class="header-cell">Category</MudTh>
+                    <MudTh class="header-cell">Creation Date</MudTh>
+                    <MudTh class="header-cell">Expiry Date</MudTh>
+                    <MudTh class="header-cell">Live for</MudTh>
+                    <MudTh class="header-cell">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Class="number-cell">@context.Index</MudTd>
+                    <MudTd><MudLink Href="#" Class="post-title">@context.Event.EventTitle</MudLink></MudTd>
+                    <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
+                    <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd Class="date-cell">
+                        @if (context.Event.PublishedDate != null)
+                        {
+                            var duration = DateTime.Now - context.Event.PublishedDate.Value;
+                            string liveFor = duration.TotalHours < 24
+                            ? $"{Math.Floor(duration.TotalHours)} hour{(Math.Floor(duration.TotalHours) == 1 ? "" : "s")}"
+                            : $"{duration.Days} day{(duration.Days == 1 ? "" : "s")}";
+                            @liveFor
+                        }
+                        else
+                        {
+                            <span>--</span>
+                        }
+                    </MudTd>
+
+                    <MudTd>
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                            <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
+                           @if (context.Event.Status == EventStatus.Published)
+                            {                
+                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished)))">
+                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
+                                    Unpublish
+                                </MudMenuItem>
+                            }
+                            else if (context.Event.Status == EventStatus.UnPublished)
+                            {
+                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.Published)))">
+                                <MudIcon Icon="@Icons.Material.Outlined.Visibility" />
+                                    Publish
+                                </MudMenuItem>
+                            }
+
+                            <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </div>
+    @if (filteredEvents.Count > 0)
+    {
+        <PaginationFooter TotalItems="@PaginatedData.TotalCount" CurrentPage="@CurrentPage" PageSize="@PageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
+}
+
+<style>
+    .custom-table-events {
+        padding: 10px 0;
+        background-color: var(--color-background);
+    }
+
+    .toggle-tabs-events {
+        padding: 0 10px;
+    }
+
+    .event-custom-table {
+        margin-top: 10px;
+    }
+        /* Table header style */
+        .event-custom-table .header-cell {
+            background-color: #FAFAFA;
+            font-weight: 600;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        /* Centered bold number column */
+        .event-custom-table .number-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .event-custom-table .date-cell {
+            text-align: center;
+        }
+        /* Post title styling */
+        .event-custom-table .post-title {
+            color: var(--color-background-grey) !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+            .event-custom-table .post-title:hover {
+                color: #1976d2 !important; /* Material blue */
+                text-decoration: underline;
+            }
+
+</style>

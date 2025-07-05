@@ -234,12 +234,12 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> UpdateSubCategory(NewsSubCategory subCategory)
+        public async Task<HttpResponseMessage> UpdateSubCategory(int categoryId, NewsSubCategory subCategory)
         {
             try
             {
                 var subCategoryToUpdate = new StringContent(JsonSerializer.Serialize(subCategory), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/category/updatesubcategory")
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/news/category/updatesubcategory?categoryId={categoryId}")
                 {
                     Content = subCategoryToUpdate
                 };

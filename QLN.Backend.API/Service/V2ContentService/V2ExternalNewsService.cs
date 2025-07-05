@@ -318,7 +318,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             return JsonSerializer.Deserialize<List<V2NewsCategory>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
         }
 
-        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var url = $"/api/v2/news/categorygetbyid/{id}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
@@ -344,10 +344,106 @@ namespace QLN.Backend.API.Service.V2ContentService
             return true;
         }
 
-        public Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
+
+
+        public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
-            throw new NotImplementedException();
+            try
+            {
+                dto.CommentId = dto.CommentId == Guid.Empty ? Guid.NewGuid() : dto.CommentId;
+                dto.CommentedAt = dto.CommentedAt == default ? DateTime.UtcNow : dto.CommentedAt;
+
+                var url = "/comment/save"; // This should match the internal endpoint route
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<NewsCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response from internal service."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving news comment via external service");
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Failed to save news comment"
+                };
+            }
         }
+
+        public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
+        {
+            try
+            {
+                var queryParams = new List<string>();
+                if (page.HasValue) queryParams.Add($"page={page.Value}");
+                if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
+
+                var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+                var url = $"/news/comments/byArticle/{nid}{queryString}";
+
+                var response = await _dapr.InvokeMethodAsync<NewsCommentListResponse>(
+                    HttpMethod.Get,
+                    V2Content.ContentServiceAppId,
+                    url,
+                    ct);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch comments for Article ID: {Nid}", nid);
+                throw new InvalidOperationException("Error retrieving comments for article.", ex);
+            }
+        }
+
+        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/news/comments/{commentId}/like/by-user";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<bool>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to like (by user ID) for comment {CommentId}", commentId);
+                throw new InvalidOperationException("like (by user ID) failed", ex);
+            }
+        }
+
+
 
     }
 }
