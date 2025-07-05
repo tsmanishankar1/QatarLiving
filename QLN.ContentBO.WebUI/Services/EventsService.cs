@@ -23,12 +23,8 @@ namespace QLN.ContentBO.WebUI.Services
     {
         var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
         {
-            WriteIndented = true // makes it more readable in logs
+            WriteIndented = true 
         });
-
-        Console.WriteLine("Request Payload:");
-        Console.WriteLine(jsonPayload);
-
         var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
         var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/create")
@@ -57,6 +53,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetAllEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventById(Guid eventId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/event/getbyid/{eventId}");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventById");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -113,7 +123,73 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> DeleteEvent(string eventId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/event/delete/{eventId}");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetFeaturedEvents()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallfeaturedevents?isFeatured=true");
+                var response = await _httpClient.SendAsync(request);
+                var rawContent = await response.Content.ReadAsStringAsync();
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateFeaturedEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
+{
+    try
+    {
+        var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+        var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "UpdateFeaturedEvents");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
         public Task<HttpResponseMessage> GetSlots()
         {
             throw new NotImplementedException();
