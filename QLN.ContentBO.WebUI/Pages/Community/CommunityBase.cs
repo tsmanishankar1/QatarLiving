@@ -1,89 +1,146 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Community
 {
     public class CommunityBase : ComponentBase
     {
         protected string searchText = string.Empty;
-        protected List<CommunityListDto> _posts = new();
-        protected List<CommunityListDto> _allPosts = new(); // To keep the unfiltered data
+
+        [Inject] public ICommunityService communityservice { get; set; }
+        [Inject] public ILogger<CommunityBase> Logger { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+
+
+        protected List<CommunityPostDto> _posts = new();
         protected bool IsLoading = true;
+        protected string? DeletingId;
         protected bool ascending = true;
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => _posts.Count;
+        protected int totalRecords;
 
-        protected Task HandlePageChange(int page)
-        {
-            currentPage = page;
-            return Task.CompletedTask;
-        }
-
-        protected Task HandlePageSizeChange(int size)
-        {
-            pageSize = size;
-            currentPage = 1;
-            return Task.CompletedTask;
-        }
+        protected int TotalCount => totalRecords;
 
         protected override async Task OnInitializedAsync()
         {
-            IsLoading = true;
-            await Task.Delay(2000); // Simulate data fetch
-
-            // Populate data
-            _allPosts = Enumerable.Range(1, 12).Select(i => new CommunityListDto
-            {
-                Number = i,
-                PostTitle = "Family Residence Visa status stuck “Under Review”",
-                Category = i == 2 ? "Missing home" : "Advise and help",
-                Username = "Ismat Zerin",
-                CreationDate = new DateTime(2025, 4, 12).AddDays(-i),
-                LiveFor = $"{i} hours"
-            }).ToList();
-
-            _posts = _allPosts.ToList();
-            IsLoading = false;
+            await LoadPostsAsync();
         }
 
-        protected void DeletePost(int number)
+        protected async Task LoadPostsAsync()
         {
-            _posts.RemoveAll(p => p.Number == number);
-            _allPosts.RemoveAll(p => p.Number == number);
+            IsLoading = true;
+
+            try
+            {
+                var response = await communityservice.GetAllCommunityPosts(
+                    categoryId: null,
+                    search: searchText,
+                    page: currentPage,
+                    pageSize: pageSize,
+                    sortDirection: ascending ? "asc" : "desc"
+                );
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+
+                    var result = JsonSerializer.Deserialize<CommunityListResponseDto>(
+                        json,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                    if (result != null)
+                    {
+                        _posts = result.Items;
+                        totalRecords = result.Total;
+                    }
+                    else
+                    {
+                        Logger.LogWarning("API returned null result.");
+                        _posts = new();
+                        totalRecords = 0;
+                    }
+                }
+                else
+                {
+                    Logger.LogError("API call failed with status code: {StatusCode}", response.StatusCode);
+                    _posts = new();
+                    totalRecords = 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error fetching community posts");
+                _posts = new();
+                totalRecords = 0;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
-        protected Task HandleSearch(string value)
+        protected async Task HandleSearch(string value)
         {
             searchText = value?.Trim() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                _posts = _allPosts.ToList();
-            }
-            else
-            {
-                _posts = _allPosts
-                    .Where(p =>
-                        p.PostTitle.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                        p.Category.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
-                        p.Username.Contains(searchText, StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
-
-            return Task.CompletedTask;
+            currentPage = 1;
+            await LoadPostsAsync();
         }
 
-        protected Task HandleSort(bool sortAscending)
+        protected async Task HandleSort(bool sortAscending)
         {
             ascending = sortAscending;
-
-            _posts = ascending
-                ? _posts.OrderBy(p => p.CreationDate).ToList()
-                : _posts.OrderByDescending(p => p.CreationDate).ToList();
-
-            return Task.CompletedTask;
+            await LoadPostsAsync();
         }
+
+        protected async Task HandlePageChange(int page)
+        {
+            currentPage = page;
+            await LoadPostsAsync();
+        }
+
+        protected async Task HandlePageSizeChange(int size)
+        {
+            pageSize = size;
+            currentPage = 1;
+            await LoadPostsAsync();
+        }
+
+    protected async Task DeletePost(string id)
+{
+    try
+    {
+        DeletingId = id;
+
+        var response = await communityservice.DeleteCommunity(id);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _posts.RemoveAll(p => p.Id == id);
+                    Snackbar.Add("Community post deleted successfully.", Severity.Success);
+                }
+                else
+                {
+                    Logger.LogError("Delete failed with status {StatusCode}", response.StatusCode);
+                }
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "Error deleting community post");
+    }
+    finally
+    {
+        DeletingId = null;
+    }
+}
+
+
     }
 }

@@ -17,7 +17,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Inject] IEventsService eventsService { get; set; }
         [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
         protected List<EventCategoryModel> Categories = [];
-        protected List<EventDTO> events = [];
         [Inject]
         public IDialogService DialogService { get; set; }
         protected List<EventDTO> featuredEvents = [];
@@ -30,9 +29,54 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected string searchText;
         protected string selectedType;
         protected List<string> categories = new List<string> { "All Events", "Featured Events" };
+        protected PaginatedEventResponse PaginatedData { get; set; } = new(); 
+        protected List<EventDTO> events => PaginatedData.Items;
+        protected int currentPage = 1;
+        protected int pageSize = 12;
+        protected bool IsLoading = true;
+
+        protected async Task HandlePageChange(int newPage)
+        {
+            currentPage = newPage;
+            PaginatedData = await GetEvents(currentPage, pageSize);
+            StateHasChanged();
+        }
+        private async Task HandleSearch(string value)
+        {
+            searchText = value;
+            currentPage = 1;
+            PaginatedData = await GetEvents(currentPage, pageSize, searchText);
+            StateHasChanged();
+        }
+        protected int? currentStatus = 1;
+
+        protected async Task HandleStatusChange(int? status)
+        {
+            currentStatus = status;
+            currentPage = 1;
+            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            StateHasChanged();
+        }
+
+        protected async Task HandlePageSizeChange(int newPageSize)
+        {
+            pageSize = newPageSize;
+            currentPage = 1; // Reset to first page when page size changes
+            PaginatedData = await GetEvents(currentPage, pageSize);
+            StateHasChanged();
+        }
+            protected bool SortAscending = true;
+
+            protected async Task HandleSortOrderChange(bool ascending)
+            {
+                SortAscending = ascending;
+                PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc");
+                StateHasChanged();
+            }
+
         protected override async Task OnInitializedAsync()
         {
-            events = await GetEvents();
+            await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
         }
@@ -136,23 +180,50 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             Published,
             Unpublished
         }
-        private async Task<List<EventDTO>> GetEvents()
+      private async Task<PaginatedEventResponse> GetEvents(
+            int page = 1,
+            int pageSize = 12,
+            string search = "",
+            string sortOrder = "desc",
+            int? status = null
+        )
         {
             try
             {
-                var apiResponse = await eventsService.GetAllEvents();
+                IsLoading = true;
+                var apiResponse = await eventsService.GetEventsByPagination(
+                    page: page,
+                    perPage: pageSize,
+                    search: search ?? "",
+                    categoryId: null, // or use your real filter logic
+                    sortOrder: sortOrder,
+                    fromDate: null,
+                    toDate: null,
+                    filterType: "", // "Live", "Published", etc.
+                    status: status,
+                    location: null,
+                    freeOnly: false,
+                    featuredFirst: false
+                );
+
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
-                    return response ?? new List<EventDTO>();
+                    var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
+                    return result ?? new PaginatedEventResponse();
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsLocations");
+                Logger.LogError(ex, "Error fetching paginated events");
             }
-            return new List<EventDTO>();
+            finally
+            {
+                 IsLoading = false;
+            }
+
+            return new PaginatedEventResponse();
         }
+
         private async Task<List<FeaturedSlot>> GetFeaturedSlotsAsync()
         {
             var slots = Enumerable.Range(1, 6)
@@ -244,7 +315,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 var apiResponse = await eventsService.DeleteEvent(eventId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    events = await GetEvents();
+                   
                     Snackbar.Add("Event deleted successfully", Severity.Success);
                     index = 0;
                     StateHasChanged();
@@ -267,7 +338,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 var apiResponse = await eventsService.UpdateFeaturedEvents(ReplacedEvent);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    events = await GetEvents();
+                    
                     Snackbar.Add("Event Replaced successfully", Severity.Success);
                     StateHasChanged();
                 }

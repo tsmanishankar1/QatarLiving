@@ -17,53 +17,48 @@ namespace QLN.ContentBO.WebUI.Services
             _httpClient = httpClient;
         }
 
-        public async Task<HttpResponseMessage> GetAllCommunity()
+        public async Task<HttpResponseMessage> GetAllCommunityPosts(string? categoryId, string? search, int page, int pageSize, string? sortDirection)
+    {
+        try
         {
-            try
+            var query = new Dictionary<string, string?>
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getAllCommunity");
-                return await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error in GetAllCommunity");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
+                ["categoryId"] = categoryId,
+                ["search"] = search,
+                ["page"] = page.ToString(),
+                ["pageSize"] = pageSize.ToString(),
+                ["sortDirection"] = sortDirection
+            };
 
-        public async Task<HttpResponseMessage> DeleteCommunity(int id)
+            var queryString = string.Join("&", query
+                .Where(kv => !string.IsNullOrEmpty(kv.Value))
+                .Select(kv => $"{kv.Key}={Uri.EscapeDataString(kv.Value!)}"));
+
+            var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/community/getAllPosts?{queryString}");
+            return await _httpClient.SendAsync(request);
+        }
+        catch (Exception ex)
         {
-            try
-            {
-                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/event/deleteCommunity/{id}");
-                return await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error in DeleteCommunity");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
+            Logger.LogError(ex, "Error in GetAllCommunityPosts");
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         }
+    }
 
-        public async Task<HttpResponseMessage> GetAllCommunitySearch(object payload)
+
+        public async Task<HttpResponseMessage> DeleteCommunity(string id)
+    {
+        try
         {
-            try
-            {
-                var json = JsonSerializer.Serialize(payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/getAllCommunitySearch")
-                {
-                    Content = content
-                };
-
-                return await _httpClient.SendAsync(request);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error in GetAllCommunitySearch");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
+            var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/community/deletePost/{id}");
+            return await _httpClient.SendAsync(request);
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in DeleteCommunity");
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        }
+    }
+
+
     }
 }
