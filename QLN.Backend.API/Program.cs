@@ -216,6 +216,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.CompanyConfiguration(builder.Configuration);
 builder.Services.EventConfiguration(builder.Configuration);
 builder.Services.NewsConfiguration(builder.Configuration);
+builder.Services.ReportsConfiguration(builder.Configuration);
 builder.Services.DailyBoConfiguration(builder.Configuration);
 builder.Services.CommunityConfiguration(builder.Configuration);
 builder.Services.CommunityPostConfiguration(builder.Configuration);
@@ -267,6 +268,8 @@ servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
+var reportsGroup = app.MapGroup("/api/v2/report");
+reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
 var bannerGroup = app.MapGroup("/api/banner");
