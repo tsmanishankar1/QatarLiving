@@ -20,6 +20,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Parameter] public EventCallback<bool> OnSortOrderChanged { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
         [Parameter] public EventCallback AddEventCallback { get; set; }
+        [Parameter]
+        public EventCallback<(EventDTO, EventStatus)> EventStatusChanged { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
         [Parameter] public int CurrentPage { get; set; }
         [Parameter] public int PageSize { get; set; }

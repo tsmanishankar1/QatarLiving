@@ -149,20 +149,33 @@ namespace QLN.ContentBO.WebUI.Pages
             Categories = await GetEventsCategories();
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse?.Locations ?? [];
-            CurrentEvent = await GetEventById(Id);
             CurrentEvent.EventSchedule = new EventScheduleModel();
+            CurrentEvent = await GetEventById(Id);
             _editContext = new EditContext(CurrentEvent);
             SelectedLocationId = Locations
-                  ?.FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
+            ?.FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
                  ?.Id;
             if (double.TryParse(CurrentEvent.Latitude, out var lat) &&
                double.TryParse(CurrentEvent.Longitude, out var lng))
             {
                 latitude = lat;
                 Longitude = lng;
-                }
-
-            _dateRange = ConvertToDateRange(CurrentEvent?.EventSchedule?.StartDate, CurrentEvent?.EventSchedule?.EndDate);
+            }
+            _dateRange = new DateRange(CurrentEvent?.EventSchedule?.StartDate.ToDateTime(TimeOnly.MinValue), CurrentEvent?.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue));
+            var startDate = CurrentEvent?.EventSchedule?.StartDate;
+            var endDate = CurrentEvent?.EventSchedule?.EndDate;
+            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.StartDate);
+            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.EndDate);
+            if (startDate.HasValue && startDate.Value != DateOnly.MinValue &&
+                endDate.HasValue && endDate.Value != DateOnly.MinValue)
+            {
+                SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
+            }
+            else
+            {
+                SelectedDateLabel = "No valid date selected";
+            }
+            Console.WriteLine($"Start: {startDate}, End: {endDate}");
             _shouldInitializeMap = true;
         }
         protected override async Task OnAfterRenderAsync(bool firstRender)
