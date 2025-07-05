@@ -715,7 +715,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
             if (eventToMove == null)
             {
-                return $"No event found in slot {dto.FromSlot}. Nothing to reorder.";
+                throw new InvalidDataException($"No event found in slot {dto.FromSlot}. Cannot reorder.");
             }
             var eventsToShift = new List<V2Events>();
             var slotsToShift = new List<int>();
