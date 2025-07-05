@@ -11,6 +11,8 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public string TopicName { get; set; } = string.Empty;
+        public bool IsPublished { get; set; } = true;
+        public string IsActive { get; set; }
     }
     public enum DailySlotType
     {
