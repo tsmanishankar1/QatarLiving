@@ -256,6 +256,33 @@ public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
         {
             throw new NotImplementedException();
         }
-        
+        public async Task<HttpResponseMessage> ReorderFeaturedSlots(int fromSlot, int toSlot, string userId)
+{
+    try
+    {
+        var payload = new
+        {
+            fromSlot = fromSlot,
+            toSlot = toSlot,
+            userId = userId
+        };
+
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/reorderslots")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "ReorderFeaturedSlots");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
     }
 }
