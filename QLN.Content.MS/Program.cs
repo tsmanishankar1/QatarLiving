@@ -65,7 +65,7 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-var dailyGroup = app.MapGroup("/api/v2/daily");
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
 dailyGroup.MapDailyEndpoints();
 
 var CommunityGroup = app.MapGroup("/api/v2/location");
