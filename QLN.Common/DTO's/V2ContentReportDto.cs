@@ -28,8 +28,8 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Guid? ArticleId { get; set; }
         public DateTime ComentDate { get; set; }
-        public  string? CommentText{get;set;}
-        public string?AuthorName { get; set; }
+        public string? CommentText { get; set; }
+        public string? AuthorName { get; set; }
         public bool IsActive { get; set; }
     }
     public class V2ReportsCommunitycommentsDto
