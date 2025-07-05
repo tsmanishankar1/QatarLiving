@@ -277,7 +277,6 @@ app.MapGroup("/api/subscriptions")
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
-//.RequireAuthorization(); // so because you have authorize here, it means all these endpoints need authorization - I am overriding it later on by adding AllowAnonymous as an option on a per endpoint implementation
 app.MapGroup("/api/paytofeature")
  .MapPayToFeatureEndpoints();
 app.MapGroup("/api/paytopublish")
@@ -290,7 +289,7 @@ app.MapGroup("/api/addon")
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-var dailyGroup = app.MapGroup("/api/v2/daily");
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
 dailyGroup.MapDailyEndpoints();
 
 var locationGroup = app.MapGroup("/api/v2/location");

@@ -17,36 +17,42 @@ namespace QLN.Content.MS.Service.DailyInternalService
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<string> UpsertSlotAsync(DailyTopSectionSlot dto,CancellationToken cancellationToken = default)
+        public async Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto,CancellationToken cancellationToken = default)
         {
+
             if (dto.SlotNumber < 1 || dto.SlotNumber > 9)
                 throw new ArgumentOutOfRangeException(nameof(dto.SlotNumber), "Slot must be 1–9");
+            if (!Enum.IsDefined(typeof(DailySlotType), dto.SlotType))
+                throw new ArgumentOutOfRangeException(
+                    nameof(dto.SlotType),
+                    $"Invalid slot type: {dto.SlotType}");
+            if (!Enum.IsDefined(typeof(DailyContentType), dto.ContentType))
+                throw new ArgumentOutOfRangeException(
+                    nameof(dto.ContentType),
+                    $"Invalid content type: {dto.ContentType}");
 
-            var slotType = dto.SlotType;
-            if (slotType == DailySlotType.TopStory && dto.ContentType != DailyContentType.Article)
+            if (dto.SlotType == DailySlotType.TopStory && dto.ContentType != DailyContentType.Article)
                 throw new InvalidOperationException("Slot 1 (TopStory) must be an Article");
-            if (slotType == DailySlotType.HighlightedEvent && dto.ContentType != DailyContentType.Event)
+            if (dto.SlotType == DailySlotType.HighlightedEvent && dto.ContentType != DailyContentType.Event)
                 throw new InvalidOperationException("Slot 2 (HighlightedEvent) must be an Event");
             if (dto.SlotNumber >= 3 && dto.SlotNumber <= 9 && dto.ContentType != DailyContentType.Article)
                 throw new InvalidOperationException("Slots 3–9 (Articles) must be an Article");
 
             var key = $"daily-slot-{dto.SlotNumber}";
-            var existing = await _dapr.GetStateAsync<DailyTopSectionSlot>(
-                Store, key, cancellationToken: cancellationToken);
+            var existing = await _dapr.GetStateAsync<DailyTopSectionSlot>(Store, key, cancellationToken: cancellationToken);
 
             if (existing is null)
             {
                 dto.Id = Guid.NewGuid();
                 dto.CreatedAt = DateTime.UtcNow;
+                dto.CreatedBy = userId;
             }
             else
             {
                 dto.Id = existing.Id;
-                dto.CreatedBy = existing.CreatedBy;
-                dto.CreatedAt = existing.CreatedAt;
+                dto.UpdatedBy = userId;
+                dto.UpdatedAt = DateTime.UtcNow;
             }
-
-            dto.UpdatedAt = DateTime.UtcNow;
             await _dapr.SaveStateAsync(Store, key, dto, cancellationToken: cancellationToken);
 
             return existing is null
@@ -70,26 +76,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
             }
 
             return slots;
-        }
-        public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
-        {
-            topic.Id = topic.Id == Guid.Empty ? Guid.NewGuid() : topic.Id;
-            var key = $"daily-topic:{topic.Id}";
-
-            // Save topic
-            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
-
-            // Maintain index
-            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, cancellationToken: cancellationToken)
-                         ?? new List<string>();
-
-            if (!index.Contains(key))
-            {
-                index.Add(key);
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, index, cancellationToken: cancellationToken);
-            }
-
-            _logger.LogInformation("Daily topic {TopicName} with Id {Id} saved", topic.TopicName, topic.Id);
         }
     }
 }
