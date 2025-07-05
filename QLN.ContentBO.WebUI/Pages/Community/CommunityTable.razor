@@ -1,0 +1,121 @@
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@typeparam TPost
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (Posts == null || Posts.Count == 0)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No community found" Subtitle="Please check back later or explore other categories." />
+    </div>
+}
+else
+{
+    <MudTable Items="Posts" Hover="true" Class="custom-table">
+        <HeaderContent>
+            <MudTh class="header-cell">Title</MudTh>
+            <MudTh class="header-cell">Category</MudTh>
+            <MudTh class="header-cell">User Name</MudTh>
+            <MudTh class="header-cell">Date Created</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate Context="context">
+            <MudTd DataLabel="Title">
+                <MudLink Href="#" Class="post-title">@context.Title</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Category">@context.Category</MudTd>
+            <MudTd DataLabel="User Name">@context.UserName</MudTd>
+            <MudTd DataLabel="Date Created">@context.DateCreated.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>
+                <MudMenu Icon="false" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
+                        <div class="custom-delete-button">
+                            <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                    </ActivatorContent>
+                    <ChildContent>
+                    <MudMenuItem >
+                        <img src="/qln-images/Ignore_icon.svg" class="menu-icon-style" alt="Ignore" />
+                        <span class="menu-text">Cancel</span>
+                     </MudMenuItem>
+                    <MudMenuItem Class="delete-menu-item" OnClick="@(() => OnDelete.InvokeAsync(context.Id))">
+                           @if (DeletingId == context.Id)
+                            {
+                                <MudProgressCircular Indeterminate="true" Color="Color.Error" Class="spinner-margin" />
+                            }
+                            else
+                            {
+                                <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Delete" />
+                            }
+                        <span class="menu-text" style="color: #F04438;">okay</span>
+                    </MudMenuItem>       
+                    </ChildContent>
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter]
+    public List<CommunityPostDto> Posts { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+       [Parameter]
+    public string DeletingId { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnDelete { get; set; }
+}
+
+
+<style>
+    /* Table header style */
+.custom-table .header-cell {
+    background-color: #FAFAFA;
+    font-weight: 600;
+    font-family: 'Public Sans', sans-serif;
+}
+
+/* Centered bold number column */
+.custom-table .number-cell {
+    text-align: center;
+    font-weight: bold;
+}
+ .custom-delete-button {
+        background-color: #F44336; /* Material red */
+        border-radius: 12px; /* soft rounded */
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+    }
+/* Post title styling */
+.custom-table .post-title {
+    color: var(--color-background-grey) !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.custom-table .post-title:hover {
+    color: #1976d2 !important; /* Material blue */
+    text-decoration: underline;
+}
+
+/* Delete icon style */
+.action-icon-style {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+}
+
+</style>

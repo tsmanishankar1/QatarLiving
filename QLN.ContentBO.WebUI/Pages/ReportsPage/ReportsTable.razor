@@ -1,0 +1,77 @@
+@typeparam TPost
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using MudBlazor
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else
+{
+ <MudTable Items="Posts" Hover="true" Class="custom-table">
+    <HeaderContent>
+        <MudTh>Report ID</MudTh>
+        <MudTh>Post</MudTh>
+        <MudTh>Comment</MudTh>
+        <MudTh>Username</MudTh>
+        <MudTh>Comment Date</MudTh>
+        <MudTh>Reporter</MudTh>
+        <MudTh>Report Date</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+   <RowTemplate>
+        <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
+        <MudTd DataLabel="Post Title" >
+            <MudLink Href="#" Class="post-title">@context.PostTitle</MudLink>
+        </MudTd>
+        <MudTd DataLabel="Category">@context.Category</MudTd>
+        <MudTd DataLabel="Username">@context.Username</MudTd>
+        <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+        <MudTd DataLabel="Reporter">@context.Reporter</MudTd>
+        <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+        <MudTd>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                <MudMenuItem>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" /> Keep
+                </MudMenuItem>
+                <MudMenuItem OnClick="@(async () => await OnDelete.InvokeAsync(context.Number))" Class="mud-error-text">
+                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                </MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+}
+@code {
+    [Parameter] public List<ReportsListDto> Posts { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+}
+
+<style>
+     /* Table header style */
+.custom-table .header-cell {
+    background-color: #FAFAFA;
+    font-weight: 600;
+    font-family: 'Public Sans', sans-serif;
+}
+
+/* Centered bold number column */
+.custom-table .number-cell {
+    text-align: center;
+    font-weight: bold;
+}
+/* Post title styling */
+.custom-table .post-title {
+    color: var(--color-background-grey) !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.custom-table .post-title:hover {
+    color: #1976d2 !important; /* Material blue */
+    text-decoration: underline;
+}
+</style>
