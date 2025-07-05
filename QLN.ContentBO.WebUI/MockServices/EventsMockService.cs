@@ -136,7 +136,7 @@ namespace QLN.ContentBO.WebUI.MockServices
 
             return Task.FromResult(response);
         }
-        public Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
+        public Task<HttpResponseMessage> UpdateFeaturedEvents(object payload)
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {

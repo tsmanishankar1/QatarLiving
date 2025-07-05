@@ -1,24 +1,34 @@
 using Microsoft.AspNetCore.Components;
+using QLN.ContentBO.WebUI.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
+using MudBlazor;
 
 namespace QLN.ContentBO.WebUI.Pages
 {
-    public class FeaturedEventSlotsBase : ComponentBase
+    public class FeaturedEventSlotsBase : QLComponentBase
     {
         [Parameter] public List<FeaturedSlot> FeaturedEventSlots { get; set; }
         [Parameter] public List<EventCategoryModel> Categories { get; set; }
         [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
-
+        [Inject] public ISnackbar Snackbar { get; set; }
+       [Parameter]
+        public bool IsLoadingEvent { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
 
         // Replace with actual user ID retrieval logic (e.g. from auth claims)
-        private string UserId => "USER-ID-HERE";
+        private string UserId => CurrentUserId.ToString();
+
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+            AuthorizedPage(); // Ensure this is called to populate user info
+        }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -28,55 +38,52 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
-      [JSInvokable]
-public async Task OnTableReordered(List<string> newOrder)
-{
-    Logger.LogInformation("New slot order received: {Order}", string.Join(", ", newOrder));
-
-    // Build reordered list based on new slot positions
-    var reordered = new List<FeaturedSlot>();
-    foreach (var id in newOrder)
-    {
-        var slot = FeaturedEventSlots.FirstOrDefault(s => s.SlotNumber.ToString() == id);
-        if (slot != null)
-            reordered.Add(slot);
-    }
-
-    if (reordered.Any())
-    {
-        for (int newIndex = 0; newIndex < reordered.Count; newIndex++)
+        [JSInvokable]
+        public async Task OnTableReordered(List<string> newOrder)
         {
-            var slot = reordered[newIndex];
-            var oldIndex = FeaturedEventSlots.FindIndex(s => s.SlotNumber == slot.SlotNumber);
+            var newSignature = string.Join(",", newOrder);
+            Logger.LogInformation("New slot order received: {Order}", newSignature);
 
-            int fromSlot = oldIndex + 1;
-            int toSlot = newIndex + 1;
-
-            if (fromSlot != toSlot)
+            // Compare only once
+            var currentOrder = FeaturedEventSlots.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
+            if (newSignature == string.Join(",", currentOrder))
             {
-                Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
+                Logger.LogInformation("Same order as before, skipping API call.");
+                return;
+            }
 
-                var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
+            // Find the first difference (simple diff)
+            for (int i = 0; i < newOrder.Count; i++)
+            {
+                var newSlotId = int.Parse(newOrder[i]);
+                var expectedSlotId = FeaturedEventSlots[i].SlotNumber;
 
-                if (response.IsSuccessStatusCode)
+                if (newSlotId != expectedSlotId)
                 {
-                    Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
-                }
-                else
-                {
-                    var error = await response.Content.ReadAsStringAsync();
-                    Logger.LogError("Failed reorder from {From} to {To}. Status: {Status}, Error: {Error}",
-                        fromSlot, toSlot, response.StatusCode, error);
+                    int fromSlot = FeaturedEventSlots.First(s => s.SlotNumber == newSlotId).SlotNumber;
+                    int toSlot = i + 1;
+
+                    Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
+                    var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
+                        Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
+                    }
+                    else
+                    {
+                        var error = await response.Content.ReadAsStringAsync();
+                        Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
+                         Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
+                    }
+
+                    break; // Only process the first change
                 }
             }
 
-            slot.SlotNumber = toSlot; // Update slot number to reflect new order
+            // ✅ Refresh list from backend (optional but safer)
+            StateHasChanged();
         }
-
-        FeaturedEventSlots = reordered;
-        StateHasChanged();
-    }
-}
-
     }
 }

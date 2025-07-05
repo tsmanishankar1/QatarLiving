@@ -36,6 +36,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         public List<EventDTO> AllEventsList { get; set; } = new();
         protected int pageSize = 12;
         protected bool IsLoading = true;
+         protected bool IsLoadingEvent = true;
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -241,6 +242,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
         private async Task<List<FeaturedSlot>> GetFeaturedSlotsAsync()
         {
+            IsLoadingEvent = true;
             var slots = Enumerable.Range(1, 6)
                 .Select(i => new FeaturedSlot
                 {
@@ -250,6 +252,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                         EventTitle = "Feature an Event"
                     }
                 }).ToList();
+
             try
             {
                 var apiResponse = await eventsService.GetFeaturedEvents();
@@ -274,6 +277,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error while fetching featured slots");
+            }
+            finally
+            {
+                IsLoadingEvent = false;
             }
             return slots;
         }
@@ -383,7 +390,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                         EventTitle = "Feature an Event"
                     };
                     Snackbar.Add("Featured event deleted successfully", Severity.Success);
-                    featuredEventSlots = await GetFeaturedSlotsAsync();
                     // StateHasChanged();
                 }
                 else
@@ -397,28 +403,49 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
             }
         }
-        protected async Task ReplaceFeaturedEvent()
+      protected async Task ReplaceFeaturedEvent()
+{
+    try
+    {
+            var payload = new
         {
-            try
+            eventId = ReplacedEvent.Id,
+            isFeatured = true,
+            slot = new
             {
-                var apiResponse = await eventsService.UpdateFeaturedEvents(ReplacedEvent);
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Event Replaced successfully", Severity.Success);
-                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
-                    StateHasChanged();
-                }
-                else
-                {
-                    Snackbar.Add("Failed to delete event", Severity.Error);
-                }
+                id = ReplacedEvent.FeaturedSlot.Id,
+                name = ReplacedEvent.FeaturedSlot.Name
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "DeleteEvent");
-                Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
-            }
+        };
+
+        var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        Logger.LogInformation("New slot replacement payload: {Payload}", payloadJson);
+
+        var apiResponse = await eventsService.UpdateFeaturedEvents(payload);
+        if (apiResponse.IsSuccessStatusCode)
+        {
+            Snackbar.Add("Event Replaced successfully", Severity.Success);
+            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            StateHasChanged();
         }
+        else
+        {
+            var error = await apiResponse.Content.ReadAsStringAsync();
+            Logger.LogError("Failed to replace event. StatusCode: {StatusCode}, Response: {Response}", apiResponse.StatusCode, error);
+            Snackbar.Add("Failed to replace event", Severity.Error);
+        }
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "ReplaceFeaturedEvent");
+        Snackbar.Add("Something went wrong while replacing the event.", Severity.Error);
+    }
+}
+
         protected async Task UpdateEvent()
         {
             try

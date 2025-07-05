@@ -204,25 +204,27 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
-        {
-            try
-            {
-                var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
-                {
-                    Content = new StringContent(json, Encoding.UTF8, "application/json")
-                };
+       public async Task<HttpResponseMessage> UpdateFeaturedEvents(object payload)
+{
+    try
+    {
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+        Logger.LogInformation("Sending payload to update featured event: {Payload}", json);
 
-                var response = await _httpClient.SendAsync(request);
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "UpdateFeaturedEvents");
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/updatefeaturedevent")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "UpdateFeaturedEvents");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
 public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
 {
     try

@@ -1,10 +1,16 @@
 @using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @inherits FeaturedEventSlotsBase
 
-@if (FeaturedEventSlots == null || Categories == null)
+@if (IsLoadingEvent)
 {
-    <div class="d-flex justify-center mt-4">
-        <div class="spinner-border text-primary"></div>
+    <TableSkeleton Rows="10" />
+}
+else if (FeaturedEventSlots == null || Categories == null)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No Feature an Event found" Subtitle="Please check back later or explore other categories." />
     </div>
 }
 else
@@ -29,7 +35,7 @@ else
             {
                 <tr data-slot-id="@context.Slot.SlotNumber">
                     <td>
-                        <img src="/qln-images/drag_icon.svg" 
+                        <img src="/qln-images/arrow_icon.svg" 
                              class="drag-handle" 
                              style="cursor: grab; width: 24px;" 
                              alt="drag" />
@@ -52,24 +58,40 @@ else
                         }
                     </td>
                     <td>
-                        @Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName
+                         @(
+                        Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName 
+                        ?? "--"
+                    )
                     </td>
                     <td>
-                        "asdkasdk"
+                        @(context.Slot.Event?.EventSchedule != null 
+                        ? context.Slot.Event.EventSchedule.EndDate.ToString("dd-MM-yyyy") 
+                        : "--")
                     </td>
                     <td>
-                        <div class="d-flex gap-2">
-                            <img src="/qln-images/replace_icon.svg"
-                                 alt="replace"
-                                 class="action-icon-style drag-handle"
-                                 style="cursor: grab; width: 24px;"
-                                 @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))" />
-                            <img src="/qln-images/delete_icon.svg"
-                                 alt="delete"
-                                 class="action-icon-style"
-                                 style="cursor: pointer; width: 24px;"
-                                 @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Event?.Id.ToString()))" />
+                       @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                    {
+                        <div class="d-flex align-center gap-2">
+                        @* <div class="custom-delete-button"> *@
+                        <img src="/qln-images/replace_icon1.svg" alt="delete" class="action-icon-style" />
+                        @* </div> *@
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/delete_icon1.svg" alt="delete" class="action-icon-style" />
                         </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-center gap-2">
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/replace_icon.svg"  @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))" alt="delete" class="action-icon-style" />
+                        </div>
+                        <div class="custom-delete-button" 
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Event?.Id.ToString()))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    }
                     </td>
                 </tr>
             }
@@ -83,31 +105,33 @@ else
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    border: 1px solid #e0e0e0;
     border-radius: 8px;
+    border: 1px solid var(--color-background-secondary-grey-medium);
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+     font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Header styling */
 .featured-table thead th {
-    background: #f9f9f9;
-    font-weight: 600;
+    background: var(--color-background-secondary-grey-medium);
+    font-weight: 500;
     font-size: 14px;
-    padding: 12px;
+    padding:  16px;
     text-align: left;
-    color: #555;
-    border-bottom: 1px solid #e0e0e0;
+    color: var(--color-background-grey);
+    border-bottom:none;
 }
 
 /* Row styling */
 .featured-table tbody tr {
-    border-bottom: 1px solid #e0e0e0;
+    padding: 16px;
+    border-bottom: 1px solid var(var(--color-background-grey));
     transition: background 0.2s ease;
 }
 
 .featured-table tbody tr:hover {
-    background: #f5f5f5;
+    background: var(var(--color-background-grey));
 }
 
 /* Cell styling */
