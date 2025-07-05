@@ -20,6 +20,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Parameter] public EventCallback<bool> OnSortOrderChanged { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
         [Parameter] public EventCallback AddEventCallback { get; set; }
+        [Parameter]
+        public EventCallback<(EventDTO, EventStatus)> EventStatusChanged { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
         [Parameter] public int CurrentPage { get; set; }
         [Parameter] public int PageSize { get; set; }
@@ -55,11 +57,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected string selectedTab = "published";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
-    {
-        new() { Label = "Published", Value = "published" },
-        new() { Label = "Unpublished", Value = "unpublished" },
-        new() { Label = "Expired", Value = "expired" }
-    };
+        {
+            new() { Label = "Published", Value = "published" },
+            new() { Label = "Unpublished", Value = "unpublished" },
+            new() { Label = "Expired", Value = "expired" }
+        };
 
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status

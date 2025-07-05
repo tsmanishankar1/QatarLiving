@@ -94,6 +94,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
+            public const string NewsCommentPrefix = "news-comment"; // used to build individual comment key
+            public const string NewsCommentIndexPrefix = "news-comment-index-"; // + nid
             public const string NewsIndexKey = "news-index";
             public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";

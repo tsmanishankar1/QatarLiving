@@ -161,40 +161,42 @@
                         <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
                     </div>
                 </div>
-            }
-            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
-            {
-               @foreach (var entry in DayTimeList.Take(7))
-{
-    <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-            <input type="checkbox"
-       checked="@entry.IsSelected"
-       @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
-       style="transform: scale(1.5); margin-right: 8px;" />
-            <label style="font-size: 1rem;">@entry.Day</label>
-            <MudTextField @bind-Value="entry.TimeRange"
-                          Label="Time"
-                          Placeholder="e.g. 2:00 PM to 6:00 PM"
-                          Variant="Variant.Outlined"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@Icons.Material.Filled.AccessTime"
-                          Immediate="true"
-                          Class="custom-timefield"
-                          Style="flex-grow: 1;" 
-                          @oninput="(e) => OnTimeChanged(entry, e.Value?.ToString())"
-                          Disabled="!entry.IsSelected" />
-        </div>
-    </MudPaper>
-}
-            }
-            @if (!string.IsNullOrEmpty(_timeError))
+                @if (!string.IsNullOrEmpty(_timeError))
             {
                 <div class="mud-error-text">@_timeError</div>
             }
 
-
-
+            }
+            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
+            {
+               @foreach (var entry in DayTimeList.Take(7))
+                {
+                    <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
+                            <input type="checkbox"
+                            checked="@entry.IsSelected"
+                            disabled="@(!IsValidTimeFormat(entry.TimeRange))"
+                            @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
+                            style="transform: scale(1.5); margin-right: 8px;" />
+                            <label style="font-size: 1rem;">@entry.Day</label>
+                            <MudTextField @bind-Value="entry.TimeRange"
+                            Label="Time"
+                            Placeholder="e.g. 2:00 PM to 6:00 PM"
+                            Variant="Variant.Outlined"
+                            Adornment="Adornment.End"
+                            AdornmentIcon="@Icons.Material.Filled.AccessTime"
+                            Immediate="true"
+                            Class="custom-timefield"
+                            Style="flex-grow: 1;"
+                            Pattern="^([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)\s?to\s?([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$"
+                            ErrorText="Use format: 2:00 PM to 6:00 PM" />
+                        </div>
+                        @if(!IsValidTimeFormat(entry.TimeRange)){
+                                 <div class="mud-error-text">Enter Valid Time format</div>
+                        }
+                    </MudPaper>
+                }
+            }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"
                                    Class="m-2"

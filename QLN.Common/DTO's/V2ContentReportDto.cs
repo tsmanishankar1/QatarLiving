@@ -22,6 +22,7 @@ namespace QLN.Common.DTO_s
         public Guid? PostId { get; set; }
         public string? ReporterName { get; set; }
         public DateTime? ReportDate { get; set; }
+        public bool? IsActive { get; set; }
     }
     public class V2NewsCommunitycommentsDto
     {
@@ -82,7 +83,8 @@ namespace QLN.Common.DTO_s
         public DateTime ReportDate { get; set; }
         public DateTime? CommentDate { get; set; }
         public string? Title { get; set; }     
-        public string? Content { get; set; }    
+        public string? Comment { get; set; }
+        public string? UserName { get; set; } 
     }
 
     public class GetAllReportQueryParams

@@ -35,6 +35,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     dto.UserName = userData.GetProperty("name").GetString();
                     dto.UpdatedBy = uid;
                     dto.UpdatedDate = DateTime.UtcNow;
+                    dto.IsActive = true;
                     dto.DateCreated = DateTime.UtcNow;
 
                     var result = await service.CreateCommunityPostAsync(uid, dto, ct);
@@ -373,7 +374,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     dto.UserId = userData.GetProperty("uid").GetString();
-                    dto.UserName ??= userData.GetProperty("name").GetString(); // optional
+                    dto.UserName = userData.GetProperty("name").GetString(); // optional
                     dto.CommentedAt = DateTime.UtcNow;
                     dto.CommentId = Guid.NewGuid();
 

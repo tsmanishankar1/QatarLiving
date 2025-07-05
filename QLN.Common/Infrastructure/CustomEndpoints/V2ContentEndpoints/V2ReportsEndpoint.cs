@@ -814,6 +814,53 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapUpdateCommunityReportStatus(this RouteGroupBuilder group)
+        {
+            group.MapPut("/updatecommunitycommentstatus", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                V2ReportStatus dto,
+                IV2ReportsService contentService,
+                ILogger<IV2ReportsService> logger,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await contentService.UpdateCommunityPostReportStatus(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("UpdateCommunityCommentStatus")
+            .WithTags("Reports")
+            .WithSummary("Update Community or Comment Status")
+            .WithDescription("Marks reports or their associated comments as inactive based on IsKeep/IsDelete flags. " +
+                             "This action uses report and comment indexes for lookup instead of direct ReportId.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapGetAllCommunityCommentsReports(this RouteGroupBuilder group)
         {
             // ✅ Community comment reports with optional query parameters

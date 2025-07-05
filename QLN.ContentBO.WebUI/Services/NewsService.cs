@@ -234,12 +234,12 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> UpdateSubCategory(NewsSubCategory subCategory)
+        public async Task<HttpResponseMessage> UpdateSubCategory(int categoryId, NewsSubCategory subCategory)
         {
             try
             {
                 var subCategoryToUpdate = new StringContent(JsonSerializer.Serialize(subCategory), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/news/category/updatesubcategory?categoryId={subCategory.Id}")
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/news/category/updatesubcategory?categoryId={categoryId}")
                 {
                     Content = subCategoryToUpdate
                 };
@@ -251,6 +251,23 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "UpdateSubCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> SearchArticles(string searchString)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/news?search={searchString}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SearchArticles");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
