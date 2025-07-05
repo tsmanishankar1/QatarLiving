@@ -15,5 +15,7 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<List<CommunityPostWithReports>> GetAllCommunityPostsWithReports(CancellationToken ct);
         Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination( int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default);
         Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default);
+        Task<string> UpdateCommunityPostReportStatus(V2ReportStatus dto, CancellationToken cancellationToken = default);
+
     }
 }

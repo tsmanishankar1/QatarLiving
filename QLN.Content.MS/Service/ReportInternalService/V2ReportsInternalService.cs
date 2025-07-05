@@ -179,14 +179,13 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-                //ValidateReportRequest(dto);
-
                 var id = Guid.NewGuid();
                 var entity = new V2ReportCommunityPostDto
                 {
                     Id = id,
                     PostId = dto.PostId,
                     ReporterName = userName,
+                    IsActive = true,
                     ReportDate = DateTime.UtcNow
                 };
 
@@ -225,13 +224,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new Exception("Error creating report", ex);
             }
         }
-      
-  public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
-string sortOrder = "desc",
-int pageNumber = 1,
-int pageSize = 12,
-string? searchTerm = null,
-CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
+            string sortOrder = "desc",
+            int pageNumber = 1,
+            int pageSize = 12,
+            string? searchTerm = null,
+            CancellationToken cancellationToken = default)
         {
             try
             {
@@ -584,7 +582,7 @@ CancellationToken cancellationToken = default)
                     return null;
                 }
                 var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                if (post == null)
+                if (post == null || !post.IsActive)
                 {
                     return null;
                 }
@@ -601,7 +599,7 @@ CancellationToken cancellationToken = default)
 
                             if (reportElement != null)
                             {
-                                if (reportElement != null && reportElement.PostId == postId)
+                                if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
                                 {
                                     reports.Add(new CommunityPostReport
                                     {
@@ -681,7 +679,7 @@ CancellationToken cancellationToken = default)
                         continue;
                     }
                     var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                    if (post == null)
+                    if (post == null || !post.IsActive)
                     {
                         continue;
                     }
@@ -693,7 +691,7 @@ CancellationToken cancellationToken = default)
                             var reportKey = reportId.ToString();
                             var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(V2Content.ContentStoreName, reportKey, cancellationToken: ct);
 
-                            if (reportElement != null && reportElement.PostId == postId)
+                            if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
                             {
                                 reports.Add(new CommunityPostReport
                                 {
@@ -759,14 +757,15 @@ CancellationToken cancellationToken = default)
                     if (rawPostElement is null || rawPostElement.Value.ValueKind == JsonValueKind.Null) continue;
 
                     var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                    if (post is null) continue;
+                    if (post is null || !post.IsActive) 
+                        continue;
 
                     var reports = new List<CommunityPostReport>();
                     foreach (var reportId in reportIds)
                     {
                         var reportKey = reportId.ToString();
                         var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(V2Content.ContentStoreName, reportKey, cancellationToken: ct);
-                        if (reportElement != null && reportElement.PostId == postId)
+                        if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
                         {
                             reports.Add(new CommunityPostReport
                             {
@@ -828,6 +827,108 @@ CancellationToken cancellationToken = default)
             catch (Exception)
             {
                 throw;
+            }
+        }
+        public async Task<string> UpdateCommunityPostReportStatus(V2ReportStatus dto, CancellationToken cancellationToken = default)
+        {
+            string storeName = ConstantValues.V2Content.ContentStoreName;
+            string postReportIndexKey = ConstantValues.V2Content.ReportsCommunityIndexKey;
+            string communityPostIndexKey = "community-index";
+            try
+            {
+                if (dto.IsKeep && dto.IsDelete)
+                    throw new InvalidDataException("Cannot set both IsKeep and IsDelete to true simultaneously.");
+                if (!dto.IsKeep && !dto.IsDelete)
+                    throw new InvalidDataException("Either IsKeep or IsDelete must be true.");
+                var reportKeys = await _dapr.GetStateAsync<List<string>>(storeName, postReportIndexKey) ?? new List<string>();
+                var postKeys = await _dapr.GetStateAsync<List<string>>(storeName, communityPostIndexKey) ?? new List<string>();
+
+                int updatedCount = 0;
+                foreach (var reportKey in reportKeys)
+                {
+                    if (string.IsNullOrWhiteSpace(reportKey))
+                    {
+                        Console.WriteLine("Skipping null or empty report key");
+                        continue;
+                    }
+                    var report = await _dapr.GetStateAsync<V2ReportCommunityPostDto>(storeName, reportKey);
+
+                    if (report == null)
+                    {
+                        continue;
+                    }
+                    if (report.PostId != dto.PostId)
+                    {
+                        Console.WriteLine($"Skipping report for different post: {report.PostId}");
+                        continue;
+                    }
+                    if (dto.IsKeep && report.IsActive == true)
+                    {
+                        report.IsActive = false;
+
+                        try
+                        {
+                            Console.WriteLine($"Saving updated report (kept): {reportKey}");
+                            await _dapr.SaveStateAsync(storeName, reportKey, report);
+                            updatedCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"❌ Error saving report with key {reportKey}: {ex.Message}");
+                            throw new InvalidDataException($"Failed to save report state for key: {reportKey}", ex);
+                        }
+                    }
+                    if (dto.IsDelete && report.IsActive == true)
+                    {
+                        report.IsActive = false;
+
+                        try
+                        {
+                            await _dapr.SaveStateAsync(storeName, reportKey, report);
+                            updatedCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            throw new InvalidDataException($"Failed to save report state for key: {reportKey}", ex);
+                        }
+                    }
+                }
+
+                if (dto.IsDelete)
+                {
+                    var postIdStr = $"community-{dto.PostId}";
+
+                    if (postKeys.Contains(postIdStr))
+                    {
+                        var post = await _dapr.GetStateAsync<V2CommunityPostDto>(storeName, postIdStr);
+
+                        if (post != null && post.IsActive)
+                        {
+                            post.IsActive = false;
+                            try
+                            {
+                                await _dapr.SaveStateAsync(storeName, postIdStr, post);
+                                updatedCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new InvalidDataException($"Failed to save post state for key: {postIdStr}", ex);
+                            }
+                        }
+                    }
+                }
+                string actionType = dto.IsKeep ? "kept" : "deleted";
+                return updatedCount > 0
+                    ? $"Successfully {actionType} post and updated {updatedCount} entries."
+                    : $"No matching entries were found to update for post {dto.PostId}."; 
+            }
+            catch (InvalidDataException ex)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
     }
