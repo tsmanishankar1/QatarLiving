@@ -6,14 +6,14 @@
             @if (IsEditingSubCategoryName)
             {
                 <div class="d-inline-block" style="max-width: 180px;">
-                    <MudTextField Class="unstyled-input" @bind-Value="EditableSubCategoryName.SubCategoryName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                    <MudTextField Class="unstyled-input" @bind-Value="EditableSubCategoryName.SubCategoryName" Variant="Variant.Text" Margin="Margin.Dense" @ref="subCategoryInputRef"></MudTextField>
                 </div>
             }
             else
             {
                 <MudText Class="news-style">@SelectedSubcategory.SubCategoryName</MudText>
             }
-            <MudImage Src="/qln-images/news_edit_icon.svg" Alt="Edit" Class="edit-icon-img" @onclick="OnClick_Rename" />
+            <MudImage Src="/qln-images/news_edit_icon.svg" Alt="Edit" Class="edit-icon-img" />
         </div>
         <MudTabs  @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
             @foreach (var subCategory in SubCategories)
@@ -26,7 +26,7 @@
             <MudItem xs="12" md="12">
                 <div class="button-container">
                     <MudButton OnClick="UpdateSubCategory" StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
-                        Rename
+                        @(IsEditingSubCategoryName ? "Save" : "Rename")
                     </MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
                         Add Article
