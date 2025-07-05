@@ -10,7 +10,7 @@
         </MudText>
         <EditForm Model="@SelectedSlot" OnValidSubmit="HandleValidSubmit">
             <DataAnnotationsValidator />
-            <MudSelect T="int" @bind-Value="SelectedSlot.Id" Class="w-100" Variant="Variant.Filled" Placeholder="Slot Number *" Required>  
+            <MudSelect T="int" @bind-Value="SelectedSlot.Id" Class="w-100" Variant="Variant.Outlined" Placeholder="Slot Number *" Required>  
                 <MudSelectItem Value="@(0)">Slot Number *</MudSelectItem>
                 @foreach (var item in Slots)
                 {
