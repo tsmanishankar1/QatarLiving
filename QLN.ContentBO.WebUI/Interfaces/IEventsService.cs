@@ -8,5 +8,26 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetEventCategories();
         Task<HttpResponseMessage> GetEventLocations();
         Task<HttpResponseMessage> GetAllEvents();
+        Task<HttpResponseMessage> GetEventById(Guid eventId);
+        Task<HttpResponseMessage> DeleteEvent(string eventId);
+        Task<HttpResponseMessage> GetFeaturedEvents();
+        Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events);
+        Task<HttpResponseMessage> GetEventsByPagination(
+    int page,
+    int perPage,
+    string? search = null,
+    int? categoryId = null,
+    string? sortOrder = null,
+    string? fromDate = null,
+    string? toDate = null,
+    string? filterType = null,
+    string? location = null,
+    bool? freeOnly = null,
+    bool? featuredFirst = null,
+    int? status = null
+);
+
+
+        Task<HttpResponseMessage> UpdateEvents(EventDTO events);
     }
 }

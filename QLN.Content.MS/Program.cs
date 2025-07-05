@@ -20,6 +20,7 @@ builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
 
+builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
 {
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Content.MS", Version = "v1" });
@@ -65,12 +66,14 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-var dailyGroup = app.MapGroup("/api/v2/daily");
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
 dailyGroup.MapDailyEndpoints();
 
 var CommunityGroup = app.MapGroup("/api/v2/location");
 CommunityGroup.MapLocationsEndpoints();
 
+var communityPostGroup = app.MapGroup("/api/v2/community");
+communityPostGroup.MapCommunityPostEndpoints();
 // app.MapControllers(); / disabling to trigger a build, but we dont use controllers anyhow
 app.UseHttpsRedirection();
 app.Run();

@@ -333,7 +333,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/news/category/update-subcategory-by-id?categoryId={categoryId}";
+            var url = $"/api/v2/news/category/subcategorybyid?categoryId={categoryId}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
             request.Content = new StringContent(JsonSerializer.Serialize(updatedSubCategory), Encoding.UTF8, "application/json");
 
