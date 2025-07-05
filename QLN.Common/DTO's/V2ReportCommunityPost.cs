@@ -29,5 +29,11 @@ namespace QLN.Common.DTO_s
             public int? Page { get; set; }
             public int? PerPage { get; set; }
         }
+        public class V2ReportStatus
+        {
+            public Guid PostId { get; set; }
+            public bool IsKeep { get; set; }
+            public bool IsDelete { get; set; }
+        }
     }
 }

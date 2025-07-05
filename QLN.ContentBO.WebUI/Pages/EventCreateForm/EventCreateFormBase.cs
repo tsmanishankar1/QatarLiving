@@ -371,6 +371,10 @@ namespace QLN.ContentBO.WebUI.Pages
             try
             {
                 CurrentEvent.Status = EventStatus.Published;
+                Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions
+{
+    WriteIndented = true // For pretty printing
+}));
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -438,6 +442,8 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 CurrentEvent.Location = selectedLocation.Name;
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
+                CurrentEvent.Latitude = selectedLocation.Latitude;
+                CurrentEvent.Longitude = selectedLocation.Longitude;
                 if (double.TryParse(selectedLocation.Latitude, out var lat) &&
                     double.TryParse(selectedLocation.Longitude, out var lng))
                 {
