@@ -52,17 +52,17 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             SortAscending = ascending;
             await OnSortOrderChanged.InvokeAsync(ascending);
         }
-             protected string selectedTab = "published";
+        protected string selectedTab = "published";
 
-    protected List<ToggleTabs.TabOption> tabOptions = new()
+        protected List<ToggleTabs.TabOption> tabOptions = new()
     {
         new() { Label = "Published", Value = "published" },
         new() { Label = "Unpublished", Value = "unpublished" },
         new() { Label = "Expired", Value = "expired" }
     };
 
-   [Parameter]
-public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
+        [Parameter]
+        public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
 
         protected async Task OnTabChanged(string newTab)
         {
@@ -81,7 +81,7 @@ public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send s
         protected string GetEmptyTitle()
         {
             return selectedTab switch
-        {
+            {
                 "published" => "No published events found",
                 "unpublished" => "No unpublished events found",
                 "expired" => "No expired events found",
@@ -89,6 +89,10 @@ public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send s
             };
         }
 
+        protected void NavigateToEditPage(Guid id)
+        {
+            Navigation.NavigateTo($"/content/events/edit/{id}");
+        }
 
     }
 }
