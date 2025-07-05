@@ -1,35 +1,30 @@
-﻿@inherits MessageBoxBase
-@using QLN.ContentBO.WebUI.Models;
+﻿@inherits GoLiveDialogBase
+
 <MudDialog Class="pa-2 custom-dialog">
     <DialogContent>
         <div class="d-flex justify-center">
-            <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
+            <img class="icon-circle" src="/qln-images/go-live.svg" alt="go-live Image" />
         </div>
         <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
             @Title
         </MudText>
-        <MudAutocomplete T="EventDTO"
-                         Label="@Placeholder"
-                         Variant="Variant.Outlined"
-                         @bind-Value="SelectedEvent.Event"
-                         Adornment="Adornment.None"
-                         SearchFunc="SearchEventTitles"
-                         ToStringFunc="@(e => e?.EventTitle ?? string.Empty)"
-                         ResetValueOnEmptyText="true"
-                         CoerceText="true"
-                         Clearable="true">
-            <ItemTemplate Context="eventItem">
-                <MudText>@eventItem.EventTitle</MudText>
-            </ItemTemplate>
-        </MudAutocomplete>
-        <div class="mt-4 d-flex flex-column gap-2">
-            <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="AddClicked">
-                Add
-            </MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
-                Close
-            </MudButton>
-        </div>
+        <EditForm Model="@SelectedSlot" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <MudSelect T="int" @bind-Value="SelectedSlot.Id" Class="w-100" Variant="Variant.Filled" Placeholder="Slot Number *" Required>
+                @foreach (var item in Slots)
+                {
+                    <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <div class="mt-4 d-flex flex-column gap-2">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Class="mt-4 custom-add-btn" Disabled="@(SelectedSlot.Id == 0 || IsBtnDisabled)">
+                    Save
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                    Close
+                </MudButton>
+            </div>
+        </EditForm>
     </DialogContent>
 </MudDialog>
 

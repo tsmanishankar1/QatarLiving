@@ -7,7 +7,6 @@ using QLN.ContentBO.WebUI.Models;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
-using static QLN.ContentBO.WebUI.Pages.NewsPage.NewsBase;
 
 namespace QLN.ContentBO.WebUI.Pages.NewsPage
 {
@@ -148,7 +147,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
                 var selectedCategory = articleToUpdate.Categories
                     .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
-
 
                 if (toSlot > 1)
                 {
@@ -477,7 +475,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             };
 
             IsLoadingDataGrid = true;
-            ListOfNewsArticles.Clear();
             try
             {
                 if (status.HasValue)
@@ -511,8 +508,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             var parameters = new DialogParameters
             {
-                { nameof(MessageBoxBase.Title), "Go Live" },
-                { nameof(MessageBoxBase.Placeholder), "Select a Slot Title*" },
+                { nameof(GoLiveDialogBase.Title), "Go Live" },
+                { nameof(GoLiveDialogBase.Placeholder), "Slot Number" },
+                { nameof(GoLiveDialogBase.NewsArticle), newsArticle },
+                { nameof(GoLiveDialogBase.CategoryId), CategoryId },
+                { nameof(GoLiveDialogBase.SubCategoryId), SelectedSubcategory.Id },
+                { nameof(GoLiveDialogBase.Slots), Slots },
             };
             var options = new DialogOptions
             {
@@ -520,6 +521,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 FullWidth = true,
                 CloseOnEscapeKey = true
             };
+
             return DialogService.ShowAsync<GoLiveDialog>("", parameters, options);
         }
 
