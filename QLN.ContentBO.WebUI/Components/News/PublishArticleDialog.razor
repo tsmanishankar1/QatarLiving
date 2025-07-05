@@ -8,15 +8,33 @@
         <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
             @Title
         </MudText>
-      
-            <div class="mt-4 d-flex flex-column gap-2">
-                <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" Disabled="@(IsBtnDisabled)">
+        <MudText Align="Align.Center">
+            @if (SelectedTab == 3)
+            {
+                @("Are you sure you want to publish this article?")
+            }
+            else
+            {
+                @("Are you sure you want to unpublish this article?")
+            }
+        </MudText>
+        <div class="mt-4 d-flex flex-column gap-2">
+            @if (SelectedTab == 3)
+            {
+                <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="OnClickPublish" Disabled="@(IsBtnDisabled)">
                     Publish
                 </MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
-                    Cancel
+            }
+            else
+            {
+                <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="OnClickUnPublish" Disabled="@(IsBtnDisabled)">
+                    UnPublish
                 </MudButton>
-            </div>
+            }
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                Cancel
+            </MudButton>
+        </div>
     </DialogContent>
 </MudDialog>
 

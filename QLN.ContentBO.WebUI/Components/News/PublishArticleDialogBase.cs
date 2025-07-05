@@ -10,7 +10,7 @@ namespace QLN.ContentBO.WebUI.Components.News
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<PublishArticleDialogBase> Logger { get; set; }
-        [Parameter] public string Title { get; set; } = "Publish Article";
+        [Parameter] public string Title { get; set; } = "Article Action";
 
         [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -30,7 +30,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         public int PublishSlotId { get; set; } = new();
 
         [Parameter]
-        public string SelectedTab { get; set; } = string.Empty;
+        public int SelectedTab { get; set; }
 
         public bool IsBtnDisabled { get; set; } = false;
 
@@ -87,7 +87,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                 if (targetCategory != null)
                 {
-                    targetCategory.SlotId = PublishSlotId;
+                    targetCategory.SlotId = UnPublishSlotId;
                 }
                 else
                 {

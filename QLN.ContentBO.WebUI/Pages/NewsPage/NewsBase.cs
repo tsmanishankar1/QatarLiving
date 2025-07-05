@@ -545,15 +545,26 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                int? status = selectedTab switch
+                {
+                    "live" => 1,
+                    "published" => 2,
+                    "unpublished" => 3,
+                    _ => null
+                };
+
+                var title = status == 3 ? "Publish Article" : "UnPublish Article";
+                var successMessage = status == 3 ? "Article Published" : "Article UnPublished";
+
                 var parameters = new DialogParameters
                 {
-                    { nameof(PublishArticleDialogBase.Title), "Go Live" },
+                    { nameof(PublishArticleDialogBase.Title), title },
                     { nameof(PublishArticleDialogBase.NewsArticle), newsArticle },
                     { nameof(PublishArticleDialogBase.CategoryId), CategoryId },
                     { nameof(PublishArticleDialogBase.SubCategoryId), SelectedSubcategory.Id },
-                    { nameof(PublishArticleDialogBase.UnPublishSlotId), Slots },
-                    { nameof(PublishArticleDialogBase.PublishSlotId), Slots },
-                    {nameof(PublishArticleDialogBase.SelectedTab), selectedTab }
+                    { nameof(PublishArticleDialogBase.UnPublishSlotId), Slots.FirstOrDefault(s => s.Id == 15)?.Id ?? 15 },
+                    { nameof(PublishArticleDialogBase.PublishSlotId),Slots.FirstOrDefault(s => s.Id == 14)?.Id ?? 14 },
+                    {nameof(PublishArticleDialogBase.SelectedTab), status }
                 };
                 var options = new DialogOptions
                 {
@@ -568,7 +579,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (!result.Canceled)
                 {
                     await OnTabChanged(selectedTab);
-                    Snackbar.Add("Go Live Slot Updated", Severity.Success);
+                    Snackbar.Add($"{successMessage}", Severity.Success);
                 }
 
                 StateHasChanged();
