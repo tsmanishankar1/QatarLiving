@@ -256,14 +256,26 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(CancellationToken cancellationToken = default)
+     public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
+      string sortOrder = "desc",
+      int pageNumber = 1,
+      int pageSize = 12,
+      string? searchTerm = null,
+      CancellationToken cancellationToken = default)
         {
             try
             {
+                var queryString = $"?sortOrder={sortOrder}&pageNumber={pageNumber}&pageSize={pageSize}";
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    queryString += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
+                }
+
                 return await _dapr.InvokeMethodAsync<List<V2ContentReportArticleResponseDto>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/report/getAll",
+                    $"/api/v2/report/getAll{queryString}",
                     cancellationToken
                 ) ?? new List<V2ContentReportArticleResponseDto>();
             }
@@ -273,5 +285,65 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/report/updatearticlecommentstatus";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("Received empty response from content service.");
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize update response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating article comment status");
+                throw;
+            }
+        }
+
+
     }
 }

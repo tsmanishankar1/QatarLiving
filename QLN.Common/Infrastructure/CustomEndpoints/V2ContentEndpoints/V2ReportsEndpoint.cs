@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
@@ -23,11 +24,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      V2NewsCommunitycommentsDto dto,
      IV2ReportsService service,
      HttpContext context,
+     ILogger<IV2ReportsService> logger,
      CancellationToken cancellationToken
  ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateArticleComments called");
+
                     var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("name").GetString();
@@ -35,6 +39,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     if (string.IsNullOrEmpty(userClaim))
                     {
+                        logger.LogWarning("User claim not found in token");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -44,10 +49,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     try
                     {
-
-
                         if (string.IsNullOrEmpty(uid))
                         {
+                            logger.LogWarning("UID is missing in user claim");
                             return TypedResults.BadRequest(new ProblemDetails
                             {
                                 Title = "Authentication Error",
@@ -58,6 +62,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     catch (Exception ex)
                     {
+                        logger.LogError(ex, "Failed to parse user claim or extract UID");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -67,10 +72,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateArticleComment(uid, dto, cancellationToken);
+                    logger.LogInformation("Article comment created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating article comment");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -80,6 +87,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateArticleComments endpoint");
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -95,6 +103,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/createarticlecommentByUserId", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -104,15 +113,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             V2NewsCommunitycommentsDto dto,
             IV2ReportsService service,
             HttpContext httpContext,
+            ILogger<IV2ReportsService> logger,
             CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateArticleCommentByUserId called for user: {AuthorName}", dto.AuthorName);
+
                     if (string.IsNullOrEmpty(dto.AuthorName))
-
-
                     {
+                        logger.LogWarning("AuthorName is null or empty");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Data",
@@ -122,10 +133,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateArticleComment(dto.AuthorName, dto, cancellationToken);
+                    logger.LogInformation("Article comment created successfully by user ID: {AuthorName}", dto.AuthorName);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating article comment by user ID");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -135,6 +148,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateArticleCommentByUserId endpoint");
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -149,9 +163,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+
         public static RouteGroupBuilder MapCreateReportEndpoints(this RouteGroupBuilder group)
         {
-                        group.MapPost("/create", async Task<Results<
+            group.MapPost("/create", async Task<Results<
                  Ok<string>,
                  ForbidHttpResult,
                  BadRequest<ProblemDetails>,
@@ -160,11 +175,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                  V2ContentReportArticleDto dto,
                  IV2ReportsService service,
                  HttpContext context,
+                 ILogger<IV2ReportsService> logger,
                  CancellationToken cancellationToken
              ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateReport called");
+
                     var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("name").GetString();
@@ -172,6 +190,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     if (string.IsNullOrEmpty(userClaim))
                     {
+                        logger.LogWarning("User claim not found in token");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -181,10 +200,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     try
                     {
-                        
-
                         if (string.IsNullOrEmpty(uid))
                         {
+                            logger.LogWarning("UID is missing in user claim");
                             return TypedResults.BadRequest(new ProblemDetails
                             {
                                 Title = "Authentication Error",
@@ -195,6 +213,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     catch (Exception ex)
                     {
+                        logger.LogError(ex, "Failed to parse user claim or extract UID");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -204,10 +223,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateReport(uid, dto, cancellationToken);
+                    logger.LogInformation("Report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating report");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -217,6 +238,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateReport endpoint");
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -232,6 +254,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
          .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/createByUserId", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -241,15 +264,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             V2ContentReportArticleDto dto,
             IV2ReportsService service,
             HttpContext httpContext,
+            ILogger<IV2ReportsService> logger,
             CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateReportByUserId called for user: {ReporterName}", dto.ReporterName);
+
                     if (string.IsNullOrEmpty(dto.ReporterName))
-
-
                     {
+                        logger.LogWarning("ReporterName is null or empty");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Data",
@@ -259,10 +284,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateReport(dto.ReporterName, dto, cancellationToken);
+                    logger.LogInformation("Report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating report by user ID");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -272,6 +299,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateReportByUserId endpoint");
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -286,6 +314,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+
         public static RouteGroupBuilder MapCreateCommunityCommentsEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcommunitycomments", async Task<Results<
@@ -297,11 +326,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      V2ReportsCommunitycommentsDto dto,
      IV2ReportsService service,
      HttpContext context,
+     ILogger<IV2ReportsService> logger,
      CancellationToken cancellationToken
  ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateCommunityComments called");
+
                     var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("name").GetString();
@@ -309,6 +341,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     if (string.IsNullOrEmpty(userClaim))
                     {
+                        logger.LogWarning("User claim not found in token");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -318,10 +351,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     try
                     {
-
-
                         if (string.IsNullOrEmpty(uid))
                         {
+                            logger.LogWarning("UID is missing in user claim");
                             return TypedResults.BadRequest(new ProblemDetails
                             {
                                 Title = "Authentication Error",
@@ -332,6 +364,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     catch (Exception ex)
                     {
+                        logger.LogError(ex, "Failed to parse user claim or extract UID");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -341,10 +374,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateCommunityCommentReport(uid, dto, cancellationToken);
+                    logger.LogInformation("Community comment report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating community comment report");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -354,6 +389,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateCommunityComments endpoint");
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -369,6 +405,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/createcommunitycommentsByUserId", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -378,15 +415,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             V2ReportsCommunitycommentsDto dto,
             IV2ReportsService service,
             HttpContext httpContext,
+            ILogger<IV2ReportsService> logger,
             CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateCommunityCommentsByUserId called for user: {ReporterName}", dto.ReporterName);
+
                     if (string.IsNullOrEmpty(dto.ReporterName))
-
-
                     {
+                        logger.LogWarning("ReporterName is null or empty");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Data",
@@ -396,10 +435,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateCommunityCommentReport(dto.ReporterName, dto, cancellationToken);
+                    logger.LogInformation("Community comment report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating community comment report by user ID");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -409,6 +450,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateCommunityCommentsByUserId endpoint");
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -423,6 +465,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+
         public static RouteGroupBuilder MapCreateCommunityPostReportEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcommunitypost", async Task<Results<
@@ -434,11 +477,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      V2ReportCommunityPostDto dto,
      IV2ReportsService service,
      HttpContext context,
+     ILogger<IV2ReportsService> logger,
      CancellationToken cancellationToken
  ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateCommunityPost called");
+
                     var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("name").GetString();
@@ -446,6 +492,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     if (string.IsNullOrEmpty(userClaim))
                     {
+                        logger.LogWarning("User claim not found in token");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -455,10 +502,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     try
                     {
-
-
                         if (string.IsNullOrEmpty(uid))
                         {
+                            logger.LogWarning("UID is missing in user claim");
                             return TypedResults.BadRequest(new ProblemDetails
                             {
                                 Title = "Authentication Error",
@@ -469,6 +515,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                     catch (Exception ex)
                     {
+                        logger.LogError(ex, "Failed to parse user claim or extract UID");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Authentication Error",
@@ -478,10 +525,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateCommunityReport(uid, dto, cancellationToken);
+                    logger.LogInformation("Community post report created successfully for user: {UserId}", uid);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating community post report");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -491,6 +540,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateCommunityPost endpoint");
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -506,6 +556,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/createcommunitypostByUserId", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -515,15 +566,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             V2ReportCommunityPostDto dto,
             IV2ReportsService service,
             HttpContext httpContext,
+            ILogger<IV2ReportsService> logger,
             CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
+                    logger.LogInformation("CreateCommunityPostByUserId called for user: {ReporterName}", dto.ReporterName);
+
                     if (string.IsNullOrEmpty(dto.ReporterName))
-
-
                     {
+                        logger.LogWarning("ReporterName is null or empty");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Data",
@@ -533,10 +586,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
 
                     var result = await service.CreateCommunityReport(dto.ReporterName, dto, cancellationToken);
+                    logger.LogInformation("Community post report created successfully by user ID: {ReporterName}", dto.ReporterName);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    logger.LogError(ex, "Invalid data provided for creating community post report by user ID");
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -546,6 +601,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
+                    logger.LogError(ex, "Error in CreateCommunityPostByUserId endpoint");
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -560,32 +616,106 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+
         public static RouteGroupBuilder MapGetAllReportsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", static async Task<Results<Ok<List<V2ContentReportArticleResponseDto>>, ProblemHttpResult>>
-            (
+            group.MapGet("/getAll", async Task<Results<Ok<List<V2ContentReportArticleResponseDto>>, ProblemHttpResult>> (
                 IV2ReportsService service,
-                CancellationToken cancellationToken
+                ILogger<IV2ReportsService> logger,
+                string sortOrder = "desc",
+                int pageNumber = 1,
+                int pageSize = 12,
+                string? searchTerm = null,
+                CancellationToken cancellationToken = default
             ) =>
             {
                 try
                 {
-                    var reports = await service.GetAllReports(cancellationToken);
+                    logger.LogInformation("GetAllReports called with sortOrder: {SortOrder}, pageNumber: {PageNumber}, pageSize: {PageSize}, searchTerm: {SearchTerm}",
+                        sortOrder, pageNumber, pageSize, searchTerm);
+
+                    var reports = await service.GetAllReports(sortOrder, pageNumber, pageSize, searchTerm, cancellationToken);
+
+                    logger.LogInformation("Retrieved {Count} reports", reports.Count);
+
                     return TypedResults.Ok(reports);
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    logger.LogError(ex, "Error in GetAllReports endpoint");
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
             .WithName("GetAllReports")
             .WithTags("Reports")
-            .WithSummary("Get All Reports")
-            .WithDescription("Retrieves all reports.")
+            .WithSummary("Get All Reports with Pagination and Search")
+            .WithDescription("Retrieves a paginated list of reports sorted by report date. Supports 'sortOrder', 'pageNumber', 'pageSize', and 'searchTerm'.")
             .Produces<List<V2ContentReportArticleResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
+
+
+
+        public static RouteGroupBuilder MapUpdateArticleCommentStatusEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPut("/updatearticlecommentstatus", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                V2UpdateReportStatusDto dto,
+                IV2ReportsService contentService,
+                ILogger<IV2ReportsService> logger,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    logger.LogInformation("➡️ Received update request with IsKeep: {IsKeep}, IsDelete: {IsDelete}", dto.IsKeep, dto.IsDelete);
+
+                    var result = await contentService.UpdateReportStatus(dto, cancellationToken);
+
+                    logger.LogInformation("✅ Article comment/report status update completed successfully.");
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    logger.LogError(ex, "❌ Invalid data error while updating article comment/report status: {Message}", ex.Message);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "❌ Unexpected error while updating article comment/report status: {Message}", ex.Message);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("UpdateArticleCommentStatus")
+            .WithTags("Content")
+            .WithSummary("Update Article or Comment Status")
+            .WithDescription("Marks reports or their associated comments as inactive based on IsKeep/IsDelete flags. " +
+                             "This action uses report and comment indexes for lookup instead of direct ReportId.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
     }
+
 }
