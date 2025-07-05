@@ -289,10 +289,9 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default)
         {
-           
             try
             {
-                var url = "/api/v2/report/updateByUserId";
+                var url = "/api/v2/report/updatearticlecommentstatus";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
