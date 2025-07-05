@@ -532,7 +532,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     await OnTabChanged(selectedTab);
                     Snackbar.Add("Go Live Slot Updated", Severity.Success);
                 }
-               
+
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -541,20 +541,42 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected Task ShowPublishActionDialog(NewsArticleDTO newsArticle)
+        protected async Task ShowPublishActionDialog(NewsArticleDTO newsArticle)
         {
-            var parameters = new DialogParameters
+            try
             {
-                { nameof(MessageBoxBase.Title), "Publish Article" },
-                { nameof(MessageBoxBase.Placeholder), "Article Title*" }
-            };
-            var options = new DialogOptions
+                var parameters = new DialogParameters
+                {
+                    { nameof(PublishArticleDialogBase.Title), "Go Live" },
+                    { nameof(PublishArticleDialogBase.NewsArticle), newsArticle },
+                    { nameof(PublishArticleDialogBase.CategoryId), CategoryId },
+                    { nameof(PublishArticleDialogBase.SubCategoryId), SelectedSubcategory.Id },
+                    { nameof(PublishArticleDialogBase.UnPublishSlotId), Slots },
+                    { nameof(PublishArticleDialogBase.PublishSlotId), Slots },
+                    {nameof(PublishArticleDialogBase.SelectedTab), selectedTab }
+                };
+                var options = new DialogOptions
+                {
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    CloseOnEscapeKey = true
+                };
+
+                var dialog = await DialogService.ShowAsync<PublishArticleDialog>("", parameters, options);
+                var result = await dialog.Result;
+
+                if (!result.Canceled)
+                {
+                    await OnTabChanged(selectedTab);
+                    Snackbar.Add("Go Live Slot Updated", Severity.Success);
+                }
+
+                StateHasChanged();
+            }
+            catch (Exception ex)
             {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                CloseOnEscapeKey = true
-            };
-            return DialogService.ShowAsync<PublishArticleDialog>("", parameters, options);
+                Logger.LogError(ex, "ShowPublishActionDialog");
+            }
         }
 
         protected async Task<List<IndexedArticle>> GetLiveArticlesAsync()
