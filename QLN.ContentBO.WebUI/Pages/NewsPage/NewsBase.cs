@@ -504,28 +504,44 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected Task ShowGoLiveDialog(object newsArticle)
+        protected async Task ShowGoLiveDialog(NewsArticleDTO newsArticle)
         {
-            var parameters = new DialogParameters
+            try
             {
-                { nameof(GoLiveDialogBase.Title), "Go Live" },
-                { nameof(GoLiveDialogBase.Placeholder), "Slot Number" },
-                { nameof(GoLiveDialogBase.NewsArticle), newsArticle },
-                { nameof(GoLiveDialogBase.CategoryId), CategoryId },
-                { nameof(GoLiveDialogBase.SubCategoryId), SelectedSubcategory.Id },
-                { nameof(GoLiveDialogBase.Slots), Slots },
-            };
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                CloseOnEscapeKey = true
-            };
+                var parameters = new DialogParameters
+                {
+                    { nameof(GoLiveDialogBase.Title), "Go Live" },
+                    { nameof(GoLiveDialogBase.Placeholder), "Slot Number" },
+                    { nameof(GoLiveDialogBase.NewsArticle), newsArticle },
+                    { nameof(GoLiveDialogBase.CategoryId), CategoryId },
+                    { nameof(GoLiveDialogBase.SubCategoryId), SelectedSubcategory.Id },
+                    { nameof(GoLiveDialogBase.Slots), Slots },
+                };
+                var options = new DialogOptions
+                {
+                    MaxWidth = MaxWidth.Small,
+                    FullWidth = true,
+                    CloseOnEscapeKey = true
+                };
 
-            return DialogService.ShowAsync<GoLiveDialog>("", parameters, options);
+                var dialog = await DialogService.ShowAsync<GoLiveDialog>("", parameters, options);
+                var result = await dialog.Result;
+
+                if (!result.Canceled)
+                {
+                    await OnTabChanged(selectedTab);
+                    Snackbar.Add("Go Live Slot Updated", Severity.Success);
+                }
+               
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ShowGoLiveDialog");
+            }
         }
 
-        protected Task ShowPublishActionDialog(object newsArticle)
+        protected Task ShowPublishActionDialog(NewsArticleDTO newsArticle)
         {
             var parameters = new DialogParameters
             {
@@ -634,6 +650,5 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 category.SlotId = newSlotId;
             }
         }
-
     }
 }

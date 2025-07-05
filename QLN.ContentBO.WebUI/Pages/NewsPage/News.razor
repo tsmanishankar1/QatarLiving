@@ -107,11 +107,11 @@
                                             <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Item.Id}", true))">
                                                 <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                             </MudMenuItem>
-                                            <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context))">
+                                            <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Item))">
                                                 <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
                                                 <span>Go live</span>
                                             </MudMenuItem>
-                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context))">
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Item))">
                                                 @if (selectedTab == "published")
                                                 {
                                                     <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />

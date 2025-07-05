@@ -61,7 +61,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var response = await newsService.UpdateArticle(NewsArticle);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Go Live Slot Updated");
+                    MudDialog.Close();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
