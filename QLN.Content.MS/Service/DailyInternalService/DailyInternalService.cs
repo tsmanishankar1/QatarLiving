@@ -113,7 +113,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             var topics = stateItems
                 .Select(s => JsonSerializer.Deserialize<DailyTopic>(s.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
-                .Where(t => t != null && t.IsActive?.ToLowerInvariant() != "false")
+                .Where(t => t != null && t.IsPublished)
                 .ToList();
 
             return topics!;
@@ -160,20 +160,21 @@ namespace QLN.Content.MS.Service.DailyInternalService
             return true;
         }
 
-        public async Task<bool> SoftDeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var key = $"daily-topic:{id}";
             var topic = await _dapr.GetStateAsync<DailyTopic>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
             if (topic == null)
                 return false;
 
-            topic.IsActive = "false";
+            topic.IsPublished = false;
 
             await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
-            _logger.LogInformation("Daily topic with ID {Id} was soft-deleted.", id);
+            _logger.LogInformation("Daily topic with ID {Id} was soft-deleted (marked as unpublished).", id);
 
             return true;
         }
+
 
 
     }
