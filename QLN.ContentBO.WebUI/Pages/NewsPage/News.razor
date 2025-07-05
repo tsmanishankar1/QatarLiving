@@ -55,33 +55,17 @@
                                      SortMode="SortMode.Single"
                                      Filterable="true"
                                      Dense="false"
-                                     RowHeight="52px"
-                                     Class="mt-4">
+                                     Class="mt-4"
+                                     Height="50%"
+                                     Virtualize="true"
+                                     Loading="IsLoadingDataGrid">
+                                     
                             <Columns>
 
                                 <!-- Slot Controls -->
                                 <TemplateColumn Title="Slot" Width="150px">
                                     <CellTemplate>
                                         <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
-                                            @if (GetCurrentSlot(context.Item) > 1)
-                                            {
-                                                <MudTooltip Text="Move Up">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
-                                                                   Color="Color.Secondary"
-                                                                   Size="Size.Small"
-                                                                   OnClick="@(() => Click_MoveItemUp(context.Item.Id))" />
-                                                </MudTooltip>
-                                            }
-
-                                            @if (GetCurrentSlot(context.Item) < 13)
-                                            {
-                                                <MudTooltip Text="Move Down">
-                                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
-                                                                   Color="Color.Secondary"
-                                                                   Size="Size.Small"
-                                                                   OnClick="@(() => Click_MoveItemDown(context.Item.Id))" />
-                                                </MudTooltip>
-                                            }
 
                                             <MudText Typo="Typo.body2">@GetCurrentSlot(context.Item)</MudText>
                                         </MudStack>

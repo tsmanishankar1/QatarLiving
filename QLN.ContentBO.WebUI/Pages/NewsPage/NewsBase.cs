@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
-using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.EventsPage;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
@@ -61,6 +58,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             public NewsArticleDTO? Article { get; set; }
         }
 
+        protected bool IsLoadingDataGrid { get; set; } = false;
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (shouldFocusInput && subCategoryInputRef is not null)
@@ -88,80 +87,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                                                      .ToList() ?? [];
 
                 Slots = await GetSlots();
-            }
-        }
-
-        protected async Task<List<IndexedArticle>> GetLiveArticlesAsync()
-        {
-            try
-            {
-                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id) ?? [];
-
-                var indexed = Enumerable.Range(1, 13)
-                    .Select(slotNumber => new IndexedArticle
-                    {
-                        SlotNumber = slotNumber,
-                        Article = liveArticles.FirstOrDefault(article =>
-                            article.IsActive &&
-                            article.Categories.Any(c =>
-                                c.CategoryId == CategoryId &&
-                                c.SubcategoryId == SelectedSubcategory.Id &&
-                                c.SlotId == slotNumber))
-                    })
-                    .ToList();
-
-                return indexed;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetLiveArticlesAsync");
-                return [];
-            }
-        }
-
-        protected async Task<List<NewsArticleDTO>> GetPublishedArticles()
-        {
-            try
-            {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
-
-                return articles?
-                    .Where(a => a.IsActive &&
-                                a.Categories.Any(c => c.CategoryId == CategoryId &&
-                                                      c.SubcategoryId == SelectedSubcategory.Id &&
-                                                      c.SlotId == 14))
-                    .OrderBy(a => a.Categories
-                        .FirstOrDefault(c => c.CategoryId == CategoryId &&
-                                             c.SubcategoryId == SelectedSubcategory.Id)?.SlotId)
-                    .ToList() ?? [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetPublishedArticles");
-                return [];
-            }
-        }
-
-        protected async Task<List<NewsArticleDTO>> GetUnpublishedArticles()
-        {
-            try
-            {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
-
-                return articles?
-                    .Where(a => a.IsActive &&
-                                a.Categories.Any(c => c.CategoryId == CategoryId &&
-                                                      c.SubcategoryId == SelectedSubcategory.Id &&
-                                                      c.SlotId == 15))
-                    .OrderBy(a => a.Categories
-                        .FirstOrDefault(c => c.CategoryId == CategoryId &&
-                                             c.SubcategoryId == SelectedSubcategory.Id)?.SlotId)
-                    .ToList() ?? [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetUnpublishedArticles");
-                return [];
             }
         }
 
@@ -426,7 +351,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             DateTime currentUtcTime = DateTime.UtcNow;
             TimeSpan difference = currentUtcTime - givenUtcTime;
 
-            TimeSpan absDiff = difference.Duration(); // ensures it's always positive
+            TimeSpan absDiff = difference.Duration();
 
             if (absDiff.TotalHours >= 1)
             {
@@ -505,7 +430,110 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 _ => null
             };
 
-            await OnStatusChanged.InvokeAsync(status);
+            IsLoadingDataGrid = true;
+            ListOfNewsArticles.Clear();
+            try
+            {
+                if (status.HasValue)
+                {
+                    switch (status.Value)
+                    {
+                        case 1:
+                            IndexedLiveArticles.Clear();
+                            IndexedLiveArticles = await GetLiveArticlesAsync();
+                            break;
+                        case 2:
+                            ListOfNewsArticles = await GetPublishedArticlesAsync();
+                            break;
+                        case 3:
+                            ListOfNewsArticles = await GetUnpublishedArticlesAsync();
+                            break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnTabChanged", newTab);
+            }
+            finally
+            {
+                IsLoadingDataGrid = false;
+            }
+        }
+
+
+        protected async Task<List<IndexedArticle>> GetLiveArticlesAsync()
+        {
+            try
+            {
+                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id) ?? [];
+
+                var indexed = Enumerable.Range(1, 13)
+                    .Select(slotNumber => new IndexedArticle
+                    {
+                        SlotNumber = slotNumber,
+                        Article = liveArticles.FirstOrDefault(article =>
+                            article.IsActive &&
+                            article.Categories.Any(c =>
+                                c.CategoryId == CategoryId &&
+                                c.SubcategoryId == SelectedSubcategory.Id &&
+                                c.SlotId == slotNumber))
+                    })
+                    .ToList();
+
+                return indexed;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetLiveArticlesAsync");
+                return [];
+            }
+        }
+
+        protected async Task<List<NewsArticleDTO>> GetPublishedArticlesAsync()
+        {
+            try
+            {
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
+
+                return articles?
+                    .Where(a => a.IsActive &&
+                                a.Categories.Any(c => c.CategoryId == CategoryId &&
+                                                      c.SubcategoryId == SelectedSubcategory.Id &&
+                                                      c.SlotId == 14))
+                    .OrderBy(a => a.Categories
+                        .FirstOrDefault(c => c.CategoryId == CategoryId &&
+                                             c.SubcategoryId == SelectedSubcategory.Id)?.SlotId)
+                    .ToList() ?? [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetPublishedArticlesAsync");
+                return [];
+            }
+        }
+
+        protected async Task<List<NewsArticleDTO>> GetUnpublishedArticlesAsync()
+        {
+            try
+            {
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
+
+                return articles?
+                    .Where(a => a.IsActive &&
+                                a.Categories.Any(c => c.CategoryId == CategoryId &&
+                                                      c.SubcategoryId == SelectedSubcategory.Id &&
+                                                      c.SlotId == 15))
+                    .OrderBy(a => a.Categories
+                        .FirstOrDefault(c => c.CategoryId == CategoryId &&
+                                             c.SubcategoryId == SelectedSubcategory.Id)?.SlotId)
+                    .ToList() ?? [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetUnpublishedArticlesAsync");
+                return [];
+            }
         }
     }
 }
