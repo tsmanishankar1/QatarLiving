@@ -664,7 +664,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapUpdateArticleCommentStatusEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/updatearticlecommentstatus", async Task<Results<
-                Ok<string>,
+           Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
@@ -680,12 +680,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     var result = await contentService.UpdateReportStatus(dto, cancellationToken);
 
-                    logger.LogInformation("✅ Article comment/report status update completed successfully.");
+                    logger.LogInformation("Article comment/report status update completed successfully.");
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
-                    logger.LogError(ex, "❌ Invalid data error while updating article comment/report status: {Message}", ex.Message);
+                    logger.LogError(ex, " Invalid data error while updating article comment/report status: {Message}", ex.Message);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -776,6 +776,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .WithDescription("Returns a list of community posts along with their reports.")
                 .Produces<List<CommunityPostWithReports>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+           
+
             return group;
         }
         public static RouteGroupBuilder MapGetAllCommunityPostsWithPagination(this RouteGroupBuilder group)
@@ -811,5 +814,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetAllCommunityCommentsReports(this RouteGroupBuilder group)
+        {
+            // ✅ Community comment reports with optional query parameters
+            group.MapGet("/getAllCommunityCommentReports", async Task<Results<
+                Ok<List<V2ContentReportCommunityCommentResponseDto>>,
+                ProblemHttpResult>>
+            (
+                [FromQuery] string? sortOrder,
+                [FromQuery] int? pageNumber,
+                [FromQuery] int? pageSize,
+                [FromQuery] string? searchTerm,
+                IV2ReportsService service,
+                ILogger<IV2ReportsService> logger,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    logger.LogInformation("Minimal API: GetAllCommunityCommentReports called");
+
+                    // Apply defaults if not provided
+                    string sort = string.IsNullOrWhiteSpace(sortOrder) ? "desc" : sortOrder;
+                    int page = pageNumber.GetValueOrDefault(1);
+                    int size = pageSize.GetValueOrDefault(12);
+
+                    var result = await service.GetAllCommunityCommentReports(sort, page, size, searchTerm, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Error in Minimal API - GetAllCommunityCommentReports");
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllCommunityCommentReports")
+            .WithTags("Reports")
+            .WithSummary("Get All Community Comment Reports")
+            .WithDescription("Fetches all community comment reports with optional pagination, sorting, and search.")
+            .Produces<List<V2ContentReportCommunityCommentResponseDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+
     }
 }

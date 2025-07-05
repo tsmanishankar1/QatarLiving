@@ -258,12 +258,12 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-     public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
-      string sortOrder = "desc",
-      int pageNumber = 1,
-      int pageSize = 12,
-      string? searchTerm = null,
-      CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
+         string sortOrder = "desc",
+         int pageNumber = 1,
+         int pageSize = 12,
+         string? searchTerm = null,
+         CancellationToken cancellationToken = default)
         {
             try
             {
@@ -349,7 +349,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                
+
                 var url = $"/api/v2/report/getpostwithreports?postId={postId}";
                 return await _dapr.InvokeMethodAsync<CommunityPostWithReports>(
                     HttpMethod.Get,
@@ -419,5 +419,37 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
+    string sortOrder = "desc",
+    int pageNumber = 1,
+    int pageSize = 12,
+    string? searchTerm = null,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var query = $"?sortOrder={sortOrder}&pageNumber={pageNumber}&pageSize={pageSize}";
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                    query += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
+
+                return await _dapr.InvokeMethodAsync<List<V2ContentReportCommunityCommentResponseDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    $"/api/v2/report/getAllCommunityCommentReports{query}",
+                    cancellationToken
+                ) ?? new List<V2ContentReportCommunityCommentResponseDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching community comment reports from internal service");
+                throw;
+            }
+        }
+
+
+
+
     }
 }

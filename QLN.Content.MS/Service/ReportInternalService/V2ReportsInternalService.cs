@@ -128,17 +128,25 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-                //ValidateReportRequest(dto);
+                if (dto == null)
+                    throw new ArgumentNullException(nameof(dto));
+
+                if (dto.PostId == Guid.Empty || dto.CommentId == Guid.Empty)
+                    throw new ArgumentException("PostId and CommentId are required.");
 
                 var id = Guid.NewGuid();
+
                 var entity = new V2ReportsCommunitycommentsDto
                 {
                     Id = id,
                     PostId = dto.PostId,
                     CommentId = dto.CommentId,
-                    ReporterName =userName,
+                    ReporterName = userName,
                     ReportDate = DateTime.UtcNow
                 };
+
+                _logger.LogInformation("Saving report: ID={Id}, PostId={PostId}, CommentId={CommentId}, Reporter={Reporter}",
+                    entity.Id, entity.PostId, entity.CommentId, entity.ReporterName);
 
                 await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
@@ -166,15 +174,14 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 return "Report created successfully.";
             }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
             catch (Exception ex)
             {
-                throw new Exception("Error creating report", ex);
+                _logger.LogError(ex, "Error creating community comment report");
+                throw;
             }
         }
+
+
         public async Task<string> CreateCommunityReport(string userName, V2ReportCommunityPostDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -225,13 +232,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new Exception("Error creating report", ex);
             }
         }
-      
-  public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
-string sortOrder = "desc",
-int pageNumber = 1,
-int pageSize = 12,
-string? searchTerm = null,
-CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -434,8 +435,6 @@ CancellationToken cancellationToken = default)
                 throw;
             }
         }
-
-        // Helper method for state retrieval with fallback
         private async Task<T> GetStateWithFallback<T>(string key, T fallback, CancellationToken cancellationToken)
         {
             try
@@ -719,12 +718,7 @@ CancellationToken cancellationToken = default)
                 throw;
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(
-            int? pageNumber,
-            int? perPage,
-            string? searchTitle = null,
-            string? sortBy = null,
-            CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber,int? perPage,string? searchTitle = null,string? sortBy = null,CancellationToken ct = default)
         {
             try
             {
@@ -830,5 +824,164 @@ CancellationToken cancellationToken = default)
                 throw;
             }
         }
+
+        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
+       string sortOrder = "desc",
+       int pageNumber = 1,
+       int pageSize = 12,
+       string? searchTerm = null,
+       CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Starting GetAllCommunityCommentReports with sortOrder={SortOrder}, pageNumber={PageNumber}, pageSize={PageSize}, searchTerm={SearchTerm}",
+                    sortOrder, pageNumber, pageSize, searchTerm);
+
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 12;
+                if (pageSize > 100) pageSize = 100;
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsCommunityCommentsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                _logger.LogInformation("Found {Count} comment report keys", keys.Count);
+
+                var reportTasks = keys.Select(key => _dapr.GetStateAsync<V2ReportsCommunitycommentsDto>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    key,
+                    cancellationToken: cancellationToken
+                ));
+
+                var reportEntities = await Task.WhenAll(reportTasks);
+
+                var reports = reportEntities
+                    .Where(e => e != null)
+                    .ToList();
+
+                var responseDtos = new List<V2ContentReportCommunityCommentResponseDto>();
+
+                foreach (var report in reports)
+                {
+                    string? commentContent = null;
+                    string? postTitle = null;
+                    DateTime? commentedAt = null;
+
+                    Console.WriteLine($"🟡 Report: Id={report.Id}, PostId={report.PostId}, CommentId={report.CommentId}");
+
+                    // ===== Fetch Post Title =====
+                    var postKey = $"communitypost-{report.PostId}";
+                    Console.WriteLine($"🔍 Fetching post using key: {postKey}");
+
+                    var post = await _dapr.GetStateAsync<V2CommunityPostDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        postKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (post != null)
+                    {
+                        postTitle = post.Title;
+                        Console.WriteLine($"✅ Post title: {postTitle}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"❌ Post not found for key: {postKey}");
+                    }
+
+                    // ===== Fetch Comment Content and Date =====
+                    var commentKey = $"comment-{report.PostId}-{report.CommentId}";
+                    Console.WriteLine($"🔍 Fetching comment using key: {commentKey}");
+
+                    var comment = await _dapr.GetStateAsync<CommunityCommentDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        commentKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (comment != null)
+                    {
+                        commentContent = comment.Content;
+                        commentedAt = comment.CommentedAt; // Fetch the commentedAt date
+                        Console.WriteLine($"✅ Comment content: {commentContent}");
+                        Console.WriteLine($"✅ Comment date: {commentedAt}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"❌ Comment not found for key: {commentKey}");
+
+                        // Try alternative comment key format using just commentId
+                        var altCommentKey = $"comment-{report.CommentId}";
+                        Console.WriteLine($"🔍 Trying alternative comment key: {altCommentKey}");
+
+                        var altComment = await _dapr.GetStateAsync<CommunityCommentDto>(
+                            ConstantValues.V2Content.ContentStoreName,
+                            altCommentKey,
+                            cancellationToken: cancellationToken
+                        );
+
+                        if (altComment != null)
+                        {
+                            commentContent = altComment.Content;
+                            commentedAt = altComment.CommentedAt;
+                            Console.WriteLine($"✅ Comment found with alternative key - content: {commentContent}");
+                            Console.WriteLine($"✅ Comment date: {commentedAt}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"❌ Comment not found with alternative key: {altCommentKey}");
+                        }
+                    }
+
+                    responseDtos.Add(new V2ContentReportCommunityCommentResponseDto
+                    {
+                        Id = report.Id,
+                        PostId = report.PostId,
+                        CommentId = report.CommentId,
+                        ReporterName = report.ReporterName,
+                        ReportDate = report.ReportDate,
+                        Title = postTitle,
+                        Content = commentContent,
+                        CommentDate= commentedAt // Add the comment date to the response
+                    });
+                }
+
+                // Filter
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    string search = searchTerm.ToLower();
+                    responseDtos = responseDtos.Where(r =>
+                        (!string.IsNullOrEmpty(r.ReporterName) && r.ReporterName.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(r.Title) && r.Title.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(r.Content) && r.Content.ToLower().Contains(search))
+                    ).ToList();
+                }
+
+                // Sort
+                responseDtos = sortOrder.ToLower() switch
+                {
+                    "asc" => responseDtos.OrderBy(r => r.ReportDate).ToList(),
+                    _ => responseDtos.OrderByDescending(r => r.ReportDate).ToList()
+                };
+
+                // Paginate
+                responseDtos = responseDtos
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                _logger.LogInformation("✅ Returning {Count} enriched community comment reports", responseDtos.Count);
+
+                return responseDtos;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error in GetAllCommunityCommentReports with post/comment enrichment");
+                throw;
+            }
+        }
+
     }
 }

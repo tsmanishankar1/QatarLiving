@@ -35,11 +35,12 @@ namespace QLN.Common.DTO_s
     public class V2ReportsCommunitycommentsDto
     {
         public Guid Id { get; set; }
-        public Guid? PostId { get; set; }
-        public Guid? CommentId { get; set; }
-        public string? ReporterName { get; set; }
-        public DateTime? ReportDate { get; set; }
+        public Guid PostId { get; set; }
+        public Guid CommentId { get; set; }
+        public string ReporterName { get; set; }
+        public DateTime ReportDate { get; set; }
     }
+
 
     public class V2ContentReportArticleResponseDto
     {
@@ -72,5 +73,26 @@ namespace QLN.Common.DTO_s
         public bool HasNextPage { get; set; }
         public bool HasPreviousPage { get; set; }
     }
+    public class V2ContentReportCommunityCommentResponseDto
+    {
+        public Guid Id { get; set; }
+        public Guid PostId { get; set; }
+        public Guid CommentId { get; set; }
+        public string ReporterName { get; set; } = string.Empty;
+        public DateTime ReportDate { get; set; }
+        public DateTime? CommentDate { get; set; }
+        public string? Title { get; set; }     
+        public string? Content { get; set; }    
+    }
+
+    public class GetAllReportQueryParams
+    {
+        public string SortOrder { get; set; } = "desc";
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+        public string? SearchTerm { get; set; }
+    }
+
+
 
 }
