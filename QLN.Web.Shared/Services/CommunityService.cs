@@ -1,8 +1,12 @@
-﻿using QLN.Web.Shared.Contracts;
+﻿using Nextended.Core.Extensions;
+using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Services
 {
@@ -123,6 +127,74 @@ namespace QLN.Web.Shared.Services
             public List<ForumCategory> Forum_Categories { get; set; }
         }
 
+        public async Task<(List<CommunityPostModel> Posts, int TotalCount)> GetCommunityPostList(int? categoryId, string? search, int? page, int? pageSize, string? sortDirection)
+        {
+            try
+            {
+                var url = $"api/v2/community/getAllPosts?categoryId={categoryId}&search={search}&page={page}&pageSize={pageSize}&sortDirection={sortDirection}";
+
+                var result = await _httpClient.GetFromJsonAsync<CommunityPostListResponse>(url);
+
+                return (result?.Items ?? new List<CommunityPostModel>(), result?.Total ?? 0);
+
+            }
+            catch (Exception)
+            {
+                return (new List<CommunityPostModel>(), 0);
+            }
+        }
+
+
+
+        public async Task<CommunityPostModel> GetCommunityPostDetail(string id)
+        {
+            try
+            {
+                var url = $"api/v2/community/getCommunityPostById/{id}";
+                var response = await _httpClient.GetFromJsonAsync<CommunityPostModel>(url);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<CommunityCategoryModel>> GetCommunityCategoriesAsync()
+        {
+            try
+            {
+                var result = await _httpClient.GetFromJsonAsync<CommunityCategoryResponse>("api/v2/community/getAllForumCategories");
+                return result?.ForumCategories ?? new List<CommunityCategoryModel>();
+            }
+            catch
+            {
+                return new List<CommunityCategoryModel>();
+            }
+        }
+        public async Task<bool> CreateCommunityPostAsync(CreateCommunityPostDto dto)
+        {
+            try
+            {
+                var url = "api/v2/community/createPost";
+
+                var json = JsonSerializer.Serialize(dto);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
     }
 }
