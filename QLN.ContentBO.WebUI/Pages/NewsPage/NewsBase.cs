@@ -343,20 +343,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected string GetCategoryName(int categoryId)
-        {
-            return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
-        }
-
-        protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
-        {
-            return Categories
-                .FirstOrDefault(c => c.Id == CategoryId)?
-                .SubCategories
-                .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .SubCategoryName;
-        }
-
         protected int GetCurrentSlot(NewsArticleDTO articleDTO)
         {
             var selectedCategory = articleDTO.Categories
@@ -696,6 +682,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             IsSearchEnabled = true;
             IsLoadingDataGrid = true;
+            selectedTab = string.Empty;
             SearchListOfNewsArticles = await SearchArticlesAsync();
             IsLoadingDataGrid = false;
         }
@@ -704,10 +691,24 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var apiResponse = await newsService.SearchArticles(SearchString);
-                if (apiResponse.IsSuccessStatusCode)
+                var response = await newsService.SearchArticles(SearchString);
+                if (response != null)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return await response.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    }
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Search Error", Severity.Error);
+                    }
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Internal Server Error", Severity.Error);
+                    }
                 }
 
                 return [];
