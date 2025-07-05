@@ -22,6 +22,7 @@ namespace QLN.Common.DTO_s
         public Guid? PostId { get; set; }
         public string? ReporterName { get; set; }
         public DateTime? ReportDate { get; set; }
+        public bool? IsActive { get; set; }
     }
     public class V2NewsCommunitycommentsDto
     {
