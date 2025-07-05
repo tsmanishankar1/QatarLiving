@@ -10,5 +10,11 @@ namespace QLN.Common.Infrastructure.IService.IContentService
     {
         Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
         Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
+        Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
+        Task<List<DailyTopic>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default);
+        Task<bool> SoftDeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default);
+        Task<bool> UpdateDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
+        Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default);
+
     }
 }
