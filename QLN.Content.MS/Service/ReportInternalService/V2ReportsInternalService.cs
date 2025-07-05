@@ -221,34 +221,92 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-                // Step 1: Get all reports
-                var reports = await _dapr.InvokeMethodAsync<List<V2ContentReportArticleDto>>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/report/getAll",
-                    cancellationToken
-                ) ?? new List<V2ContentReportArticleDto>();
-                var comments = await _dapr.InvokeMethodAsync<List<V2NewsCommunitycommentsDto>>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/comments/getAll", 
-                    cancellationToken
-                ) ?? new List<V2NewsCommunitycommentsDto>();
+                var reportKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
-                // Step 3: Merge data
+                var commentKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsArticleCommentsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                var reportTasks = reportKeys.Select(async key =>
+                {
+                    var report = await _dapr.GetStateAsync<V2ContentReportArticleDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+                    return report;
+                });
+
+                var reportResults = await Task.WhenAll(reportTasks);
+                var reports = reportResults.Where(r => r != null).ToList();
+
+                var commentTasks = commentKeys.Select(async key =>
+                {
+                    var comment = await _dapr.GetStateAsync<V2NewsCommunitycommentsDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+                    return comment;
+                });
+
+                var commentResults = await Task.WhenAll(commentTasks);
+                var comments = commentResults.Where(c => c != null).ToList();
+
+                // Fetch articles using the same pattern as GetAllNewsArticlesAsync
+                var articleKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                var articleItems = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    articleKeys,
+                    null,
+                    cancellationToken: cancellationToken
+                );
+
+                var articles = articleItems
+                    .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(dto => dto != null)
+                    .ToList();
+
+                // Create lookup dictionaries
+                var commentLookup = comments.ToDictionary(c => c.Id, c => c);
+                var articleLookup = articles.ToDictionary(a => a.Id, a => a);
+
                 var result = reports.Select(report =>
                 {
-                    var comment = comments.FirstOrDefault(c => c.ArticleId == report.PostId);
+                    commentLookup.TryGetValue(report.CommentId ?? Guid.Empty, out var comment);
+
+                    string postTitle = null;
+                    if (comment?.ArticleId != null)
+                    {
+                        // Match PostId (ArticleId from comment) with article Id to fetch title
+                        articleLookup.TryGetValue((Guid)comment.ArticleId, out var article);
+                        postTitle = article?.Title;
+                    }
 
                     return new V2ContentReportArticleResponseDto
                     {
                         Id = report.Id,
-                        PostId = report.PostId,
-                        CommentId = comment.CommentId,
-                        ReporterName = report.ReporterName,
+                        PostId = comment?.ArticleId,
+                        Post = postTitle, 
+                        CommentId= report.CommentId,
+                        Reporter = report.ReporterName,
                         ReportDate = report.ReportDate,
-                        CommentText = comment?.CommentText,
-                        AuthorName = comment?.AuthorName,
+                        Comment = comment?.CommentText,
+                        UserName = comment?.AuthorName,
                         CommentDate = comment?.ComentDate
                     };
                 }).ToList();
@@ -257,119 +315,8 @@ namespace QLN.Content.MS.Service.ReportInternalService
             }
             catch (Exception ex)
             {
-               
+                // _logger.LogError(ex, "Error occurred while getting all reports from state store");
                 throw;
-            }
-        }
-
-
-        public async Task<V2ContentReportArticleResponseDto?> GetReportById(Guid id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.GetStateAsync<V2ContentReportArticleDto>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
-
-                if (result == null)
-                    throw new KeyNotFoundException($"Report with id '{id}' was not found.");
-
-                return new V2ContentReportArticleResponseDto
-                {
-                    Id = result.Id,
-                    PostId = result.PostId,
-                  //  UserName = result.UserName,
-                    ReporterName = result.ReporterName,
-                    ReportDate = result.ReportDate
-                };
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving report with ID: {id}", ex);
-            }
-        }
-
-     
-        public async Task<string> UpdateReport(string userId, V2ContentReportArticleDto dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (dto.Id == Guid.Empty)
-                    throw new ArgumentException("Report ID is required for update.");
-
-                var existing = await _dapr.GetStateAsync<V2ContentReportArticleDto>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    dto.Id.ToString(),
-                    cancellationToken: cancellationToken);
-
-                if (existing == null)
-                    throw new KeyNotFoundException($"Report with ID {dto.Id} not found.");
-
-                var updated = new V2ContentReportArticleDto
-                {
-                    Id = dto.Id,
-                    PostId = dto.PostId,
-                  //  UserName = dto.UserName,
-                    ReporterName = dto.ReporterName,
-                    ReportDate = existing.ReportDate 
-                };
-
-                await _dapr.SaveStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    dto.Id.ToString(),
-                    updated,
-                    cancellationToken: cancellationToken);
-
-                return "Report updated successfully";
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error updating report", ex);
-            }
-        }
-
-        public async Task<string> DeleteReport(Guid id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var existing = await _dapr.GetStateAsync<V2ContentReportArticleDto>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
-
-                if (existing == null)
-                    throw new KeyNotFoundException($"Report with ID '{id}' not found.");
-                await _dapr.DeleteStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.ReportsIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (keys.Contains(id.ToString()))
-                {
-                    keys.Remove(id.ToString());
-                    await _dapr.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.ReportsIndexKey,
-                        keys,
-                        cancellationToken: cancellationToken
-                    );
-                }
-
-                return "Report deleted successfully";
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error deleting report with ID: {id}", ex);
             }
         }
     }

@@ -43,13 +43,14 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public Guid? PostId { get; set; }
+        public string Post { get; set; }
         public Guid? CommentId { get; set; }
-        public string? ReporterName { get; set; }
+        public string? Reporter { get; set; }
         public DateTime? ReportDate { get; set; }
 
       
-        public string? CommentText { get; set; }
-        public string? AuthorName { get; set; }
+        public string? Comment { get; set; }
+        public string? UserName { get; set; }
         public DateTime? CommentDate { get; set; }
     }
 
