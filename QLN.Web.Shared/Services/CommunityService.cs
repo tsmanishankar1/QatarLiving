@@ -179,19 +179,27 @@ namespace QLN.Web.Shared.Services
             {
                 var url = "api/v2/community/createPost";
 
-                var json = JsonSerializer.Serialize(dto);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(dto, options);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = content
                 };
+              
 
                 var response = await _httpClient.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
-            catch
+            catch(Exception ex)
             {
+                
                 return false;
             }
         }

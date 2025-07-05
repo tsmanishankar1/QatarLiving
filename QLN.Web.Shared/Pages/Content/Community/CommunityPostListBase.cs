@@ -197,7 +197,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 "desc" => "desc",
                 "asc" => "asc",
-                _ => "desc" // default to descending for this one is actually newest items first
+                _ => "desc" 
             };
         }
 
