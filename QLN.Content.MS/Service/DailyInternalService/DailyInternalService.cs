@@ -17,46 +17,36 @@ namespace QLN.Content.MS.Service.DailyInternalService
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<string> UpsertSlotAsync( int slotNumber,DailyTopSectionSlot dto,CancellationToken cancellationToken = default)
+        public async Task<string> UpsertSlotAsync(DailyTopSectionSlot dto,CancellationToken cancellationToken = default)
         {
-            // 1) enforce 1–9
-            if (slotNumber < 1 || slotNumber > 9)
-                throw new ArgumentOutOfRangeException(nameof(slotNumber), "Slot must be 1–9");
+            if (dto.SlotNumber < 1 || dto.SlotNumber > 9)
+                throw new ArgumentOutOfRangeException(nameof(dto.SlotNumber), "Slot must be 1–9");
 
-            // 2) enforce content‐type
-            var slotType = (DailySlotType)slotNumber;
+            var slotType = dto.SlotType;
             if (slotType == DailySlotType.TopStory && dto.ContentType != DailyContentType.Article)
                 throw new InvalidOperationException("Slot 1 (TopStory) must be an Article");
             if (slotType == DailySlotType.HighlightedEvent && dto.ContentType != DailyContentType.Event)
                 throw new InvalidOperationException("Slot 2 (HighlightedEvent) must be an Event");
-            if (slotNumber >= 3 && slotNumber <= 9 && dto.ContentType != DailyContentType.Article)
+            if (dto.SlotNumber >= 3 && dto.SlotNumber <= 9 && dto.ContentType != DailyContentType.Article)
                 throw new InvalidOperationException("Slots 3–9 (Articles) must be an Article");
 
-            // 3) load existing
-            var key = $"daily-slot-{slotNumber}";
+            var key = $"daily-slot-{dto.SlotNumber}";
             var existing = await _dapr.GetStateAsync<DailyTopSectionSlot>(
                 Store, key, cancellationToken: cancellationToken);
 
             if (existing is null)
             {
-                // new slot
                 dto.Id = Guid.NewGuid();
                 dto.CreatedAt = DateTime.UtcNow;
             }
             else
             {
-                // update existing: preserve creation data
                 dto.Id = existing.Id;
                 dto.CreatedBy = existing.CreatedBy;
                 dto.CreatedAt = existing.CreatedAt;
             }
 
-            // 4) stamp metadata
-            dto.SlotType = slotType;
-            dto.SlotNumber = slotNumber;
             dto.UpdatedAt = DateTime.UtcNow;
-
-            // 5) save
             await _dapr.SaveStateAsync(Store, key, dto, cancellationToken: cancellationToken);
 
             return existing is null
@@ -67,7 +57,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
         {
             var slots = new List<DailyTopSectionSlot>();
 
-            // Try each of the 9 keys; only add if present
             for (int slotNumber = 1; slotNumber <= 9; slotNumber++)
             {
                 var key = $"daily-slot-{slotNumber}";

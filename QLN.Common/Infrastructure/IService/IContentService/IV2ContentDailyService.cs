@@ -8,7 +8,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2ContentDailyService
     {
-        Task<string> UpsertSlotAsync(int slotNumber,DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
+        Task<string> UpsertSlotAsync(DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
         Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
         Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
     }

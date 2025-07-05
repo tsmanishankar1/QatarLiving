@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         {
             // POST /dailyTopics
             group.MapPost(
-                       "/dailySlots/{slotNumber:int}",
+                       "/dailySlots",
                        async Task<Results<
                            Created<string>,
                            BadRequest<ProblemDetails>,
