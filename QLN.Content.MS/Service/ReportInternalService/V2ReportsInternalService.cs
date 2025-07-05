@@ -272,7 +272,9 @@ CancellationToken cancellationToken = default)
                 });
 
                 var reportResults = await Task.WhenAll(reportTasks);
-                var reports = reportResults.Where(r => r != null).ToList();
+                var reports = reportResults
+                    .Where(r => r != null && r.IsActive) 
+                    .ToList();
 
                 // Fetch comments in parallel
                 var commentTasks = commentKeys.Select(async key =>
