@@ -33,7 +33,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _dapr = dapr;
             _logger = logger;
         }
-
+         
         public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
