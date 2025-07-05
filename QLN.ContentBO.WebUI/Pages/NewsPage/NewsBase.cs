@@ -4,7 +4,6 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.EventsPage;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
@@ -349,18 +348,35 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
         {
-            DateTime currentUtcTime = DateTime.UtcNow;
-            TimeSpan difference = currentUtcTime - givenUtcTime;
-
-            TimeSpan absDiff = difference.Duration();
-
-            if (absDiff.TotalHours >= 1)
+            try
             {
-                return $"{Math.Round(absDiff.TotalHours, 2)} hours";
+                var now = DateTime.UtcNow;
+                var diff = now - givenUtcTime;
+
+                // Check if the given time is in the future
+                var isFuture = diff.TotalSeconds < 0;
+                var absDiff = diff.Duration();
+
+                if (absDiff.TotalHours >= 24)
+                {
+                    var days = (int)absDiff.TotalDays;
+                    return isFuture ? $"in {days} day(s)" : $"{days} day(s) ago";
+                }
+                else if (absDiff.TotalHours >= 1)
+                {
+                    var hours = Math.Round(absDiff.TotalHours, 1);
+                    return isFuture ? $"in {hours} hour(s)" : $"{hours} hour(s) ago";
+                }
+                else
+                {
+                    var minutes = (int)Math.Round(absDiff.TotalMinutes);
+                    return isFuture ? $"in {minutes} minute(s)" : $"{minutes} minute(s) ago";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return $"{Math.Round(absDiff.TotalMinutes)} minutes";
+                Logger.LogError(ex, "GetTimeDifferenceFromNowUtc");
+                return "N/A";
             }
         }
 
