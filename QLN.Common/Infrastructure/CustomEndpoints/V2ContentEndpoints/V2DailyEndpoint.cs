@@ -168,7 +168,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<List<DailyTopSectionSlot>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/create-daily-topic", async Task<Results<
+            group.MapPost("/createdailytopic", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
@@ -279,7 +279,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .Produces<List<DailyTopic>>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/update-daily-topic", async Task<Results<
+            group.MapPut("/updatedailytopic", async Task<Results<
     Ok<string>,
     ForbidHttpResult,
     BadRequest<ProblemDetails>,
@@ -342,7 +342,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/dailytopic/update", async Task<Results<
+            group.MapPut("/dailytopicupdateid", async Task<Results<
     Ok<string>,
     NotFound<ProblemDetails>,
     BadRequest<ProblemDetails>,
@@ -394,17 +394,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
 
             group.MapPut("/publishstatus", async Task<Results<
-        Ok<string>,
-        ForbidHttpResult,
-        NotFound<ProblemDetails>,
-        BadRequest<ProblemDetails>,
-        ProblemHttpResult>>
-    (
-        DailyTopic dto,
-        HttpContext httpContext,
-        [FromServices] IV2ContentDailyService service,
-        CancellationToken cancellationToken
-    ) =>
+          Ok<string>,
+          ForbidHttpResult,
+          NotFound<ProblemDetails>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+      (
+          DailyTopic dto,
+          HttpContext httpContext,
+          [FromServices] IV2ContentDailyService service,
+          CancellationToken cancellationToken
+      ) =>
             {
                 try
                 {
@@ -444,16 +444,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Failed to update publish status", ex.Message);
                 }
             })
-    .RequireAuthorization()
-    .WithName("UpdateDailyTopicPublishStatusWithAuth")
-    .WithTags("DailyTopic")
-    .WithSummary("Update publish/unpublish status of a topic (With Auth)")
-    .WithDescription("Requires authentication and updates the IsPublished field. Tracks the user who made the change.")
-    .Produces<string>(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+      .RequireAuthorization()
+      .WithName("UpdateDailyTopicPublishStatusWithAuth")
+      .WithTags("DailyTopic")
+      .WithSummary("Update publish/unpublish status of a topic (With Auth)")
+      .WithDescription("Requires authentication and updates the IsPublished field. Tracks the user who made the change.")
+      .Produces<string>(StatusCodes.Status200OK)
+      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+      .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+      .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/publishstatusbyid", async Task<Results<
     Ok<string>,
@@ -503,7 +503,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
 
             group.MapDelete("/dailytopic/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
     Guid id,
