@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
+using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
 namespace QLN.ContentBO.WebUI.Pages.NewsPage
 {
@@ -39,6 +41,17 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected MudTextField<string> subCategoryInputRef;
         protected bool shouldFocusInput { get; set; } = false;
 
+        protected List<TabOption> tabOptions = new()
+        {
+            new() { Label = "Live", Value = "live" },
+            new() { Label = "Published", Value = "published" },
+            new() { Label = "Unpublished", Value = "unpublished" }
+        };
+
+        protected string selectedTab = "live";
+
+        [Parameter] public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (shouldFocusInput && subCategoryInputRef is not null)
@@ -66,6 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Slots = await GetSlots();
             }
         }
+
         protected void NavigateToAddEvent()
         {
             Navigation.NavigateTo("/manage/news/addarticle");
@@ -95,25 +109,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Logger.LogError(ex, "GetAllArticles");
                 return [];
             }
-        }
-
-        public class PostItem
-        {
-            public int Number { get; set; }
-            public string PostTitle { get; set; } = "";
-            public DateTime CreationDate { get; set; }
-            public string Username { get; set; } = "";
-            public string LiveFor { get; set; } = "";
-        }
-        protected Status status = Status.Live;
-
-        protected Color GetButtonColor(Status s) => s == status ? Color.Warning : Color.Default;
-
-        protected enum Status
-        {
-            Live,
-            Published,
-            Unpublished
         }
 
         protected async void Click_MoveItemUp(Guid Id)
@@ -411,6 +406,21 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Logger.LogError(ex, "UpdateSubCategory");
             }
+        }
+
+        protected async Task OnTabChanged(string newTab)
+        {
+            selectedTab = newTab;
+
+            int? status = newTab switch
+            {
+                "live" => 1,
+                "published" => 2,
+                "unpublished" => 3,
+                _ => null
+            };
+
+            await OnStatusChanged.InvokeAsync(status); 
         }
     }
 }
