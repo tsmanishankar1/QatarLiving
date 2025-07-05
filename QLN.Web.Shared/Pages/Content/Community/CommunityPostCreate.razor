@@ -1,0 +1,266 @@
+﻿@page "/qln/community/post/create"
+@inherits CommunityPostCreateBase
+@using QLN.Web.Shared.Components.BreadCrumb
+@using MudExRichTextEditor
+
+
+<MudContainer MaxWidth="MaxWidth.False" Class="px-4 px-md-12 py-6" Style="background-color: #F5F6FA;">
+
+    <Breadcrumb Items="breadcrumbItems" />
+
+    <div class="form-wrapper mx-auto">
+        <MudText Typo="Typo.h5" Class="mb-4 heading-style ">Post Details</MudText>
+
+        <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudSelect @bind-Value="PostModel.CategoryId"
+                               Label="Category"
+                               For="@(() => PostModel.CategoryId)"
+                               Required="true"
+                               Class="community-select-input no-underline"
+                               Style="background-color:white;"
+                               Immediate="true">
+                        @if (Categories?.Any() == true)
+                        {
+                            @foreach (var category in Categories)
+                            {
+                                <MudSelectItem Value="@category.Id">@category.Name</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                    <ValidationMessage For="@(() => PostModel.CategoryId)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="PostModel.Title"
+                                  Label="Title"
+                                  For="@(() => PostModel.Title)"
+                                  Required="true"
+                                  Class="community-form-input no-underline"
+                                  Style="background-color:white;"
+                                  Immediate="true" />
+                    <ValidationMessage For="@(() => PostModel.Title)" />
+
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudText Typo="Typo.subtitle1" Class="mb-2">Description*</MudText>
+                    <MudExRichTextEdit Value="@PostModel.Description"
+                                       ValueChanged="OnDescriptionChanged"
+                                       Height="300"
+                                       Class="description-input no-underline"
+                                       Placeholder="Description..."
+                                       Style="background-color:white;"
+                                       Immediate="true" />
+                    <ValidationMessage For="@(() => PostModel.Description)" />
+                </MudItem>
+
+                                <MudItem xs="12" Class="mt-2">
+
+                <MudText Typo="Typo.h6" Class=" heading-style">Upload a Photo</MudText>
+                                </MudItem >
+
+                <MudItem xs="12" Class="mt-2 ">
+                        <div style="background-color:white; max-width:470px; width:100%; margin: 0 auto;">
+
+                    <div class="d-flex align-items-start p-2 gap-2 mt-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Default" Size="Size.Small" />
+                        <MudText Typo="Typo.body2" Class="text-muted">
+                            Use landscape orientation (horizontal) for optimal photo display.
+                        </MudText>
+                    </div>
+
+                 
+                    <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
+                        <ActivatorContent>
+                                            <div style="display: flex; justify-content: center; margin-top: 10px;margin-bottom: 10px;">
+
+                            <MudPaper Elevation="0"
+                                      Class="d-flex flex-column align-center justify-center mt-4 p-2"
+                                              Style="height: 240px; width:380px;cursor: pointer;background-color: #F5F6FA;  border: 2px dashed #ccc;">
+                                @if (!string.IsNullOrEmpty(ImagePreviewUrl))
+                                {
+                                    <img src="@ImagePreviewUrl"
+                                         alt="Post "
+                                         style="max-height: 100%; max-width: 100%; object-fit: contain;" />
+                                   
+                                }
+                                else
+                                {
+                                    <div style="width: 64px; height: 64px;  border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Size="Size.Medium" />
+                                    </div>
+                                    <MudText style="margin-top: 8px; color: black; font-size: 14px; font-weight: 500;">Upload</MudText>
+                                }
+
+                            </MudPaper>
+                            </div>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    </div>
+                </MudItem>
+
+                <MudItem xs="12">
+                 <MudCheckBox T="bool"
+             @bind-Checked="AgreedToTerms"
+             Required="true"
+             Color="Color.Primary"
+             Class="checkbox-label">
+    <LabelContent>
+        I agree to the <span class="terms-highlight">Terms of Use</span> of community posts on Qatar Living.
+    </LabelContent>
+</MudCheckBox>
+
+                </MudItem>
+
+                <MudItem xs="12" class="mt-4">
+                    <MudGrid Class="d-flex" GutterSize="0">
+                        <MudItem xs="6">
+                            <MudButton Variant="Variant.Outlined"
+                                       OnClick="Cancel"
+                                       FullWidth="true">
+                                Close
+                            </MudButton>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudButton Class="ml-0"
+                                       Variant="Variant.Filled"
+                                       Disabled="!AgreedToTerms || IsLoading"
+                                       Color="Color.Primary"
+                                       ButtonType="ButtonType.Submit"
+                                       Loading="@IsLoading"
+                                       FullWidth="true">
+                                @if (IsLoading)
+                                {
+                                    <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Class="mr-2" />
+                                }
+                                Publish
+                            </MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+
+            </MudGrid>
+        </EditForm>
+    </div>
+
+</MudContainer>
+
+
+<style>
+
+    .form-wrapper {
+        max-width: 470px;
+        width: 100%;
+        padding: 24px;
+        border-radius: 8px;
+    }
+
+    .community-select-input {
+        width: 100%;
+        height: 56px;
+        margin-top: 14px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        padding: 10px;
+        background-color: white;
+    }
+
+        .community-form-input {
+        width: 100%;
+        height: 56px;
+        margin-top: 14px;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        background-color: white;
+        padding-left:10px;
+        }
+
+        .community-form-input input {
+            background-color: white !important;
+            padding: 10px; 
+        }
+
+
+
+    .upload-box-wrapper {
+        border: 1.5px dashed #C4C4C4;
+        border-radius: 6px;
+        background-color: #F8F8FB;
+        height: 180px;
+        cursor: pointer;
+        width: 100%;
+        position: relative;
+    }
+
+    .upload-box {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+
+
+  
+
+    .upload-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+    }
+
+    .upload-text {
+        font-size: 16px;
+        color: #6B7280;
+    }
+
+    .upload-icon {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+    }
+
+    .upload-image-preview {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
+        margin: auto;
+    }
+
+    .heading-style {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        color: #00426D;
+    }
+
+    .checkbox-label {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-style: normal;
+        font-size: 14px;
+        line-height: 28px;
+    }
+
+    .terms-highlight {
+        color: #FF7F38;
+        font-weight: 500;
+    }
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+
+</style>
