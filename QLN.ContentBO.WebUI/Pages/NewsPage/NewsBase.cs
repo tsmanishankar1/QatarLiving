@@ -4,6 +4,7 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
@@ -151,18 +152,26 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     UserId = articleToUpdate.UserId ?? string.Empty
                 };
 
-                var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
-                if (apiResponse.IsSuccessStatusCode)
+                var response = await newsService.ReOrderNews(articleSlotAssignment);
+                if (response != null)
                 {
-                    ListOfNewsArticles = new();
-                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
-                                                         .Where(a => a.IsActive)
-                                                         .OrderBy(a => a.Categories
-                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
-                                                         )
-                                                         .ToList() ?? [];
-                    Snackbar.Add("Slot Updated");
-                    StateHasChanged();
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+
+                        Snackbar.Add("Slot Updated");
+                        StateHasChanged();
+                    }
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
+                    }
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
+                    }
                 }
             }
             catch (Exception ex)
@@ -200,18 +209,25 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     UserId = articleToUpdate.UserId ?? string.Empty
                 };
 
-                var apiResponse = await newsService.ReOrderNews(articleSlotAssignment);
-                if (apiResponse.IsSuccessStatusCode)
+                var response = await newsService.ReOrderNews(articleSlotAssignment);
+                if (response != null)
                 {
-                    ListOfNewsArticles = new();
-                    ListOfNewsArticles = (await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id))?
-                                                         .Where(a => a.IsActive)
-                                                         .OrderBy(a => a.Categories
-                                                             .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)?.SlotId
-                                                         )
-                                                         .ToList() ?? [];
-                    Snackbar.Add("Slot Updated");
-                    StateHasChanged();
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        Snackbar.Add("Slot Updated");
+                        StateHasChanged();
+                    }
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
+                    }
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
+                    }
                 }
             }
             catch (Exception ex)
@@ -419,7 +435,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                             subInList.SubCategoryName = EditableSubCategoryName.SubCategoryName;
                         }
                     }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    else if (response.StatusCode == HttpStatusCode.NotFound)
                     {
                         APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         Snackbar.Add(error?.Detail ?? "Subcategory not found.", Severity.Error);
