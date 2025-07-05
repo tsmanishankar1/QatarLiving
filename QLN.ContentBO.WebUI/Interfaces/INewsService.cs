@@ -29,5 +29,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> DeleteNews(Guid Id);
 
         Task<HttpResponseMessage> UpdateSubCategory(int categoryId, NewsSubCategory subCategory);
+
+        Task<HttpResponseMessage> SearchArticles(string searchString);
     }
 }

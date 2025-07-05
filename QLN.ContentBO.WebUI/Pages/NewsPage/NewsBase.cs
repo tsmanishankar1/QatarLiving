@@ -20,8 +20,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected int activeIndex = 0;
 
-        protected string searchText;
-
         protected string selectedType;
 
         public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
@@ -61,6 +59,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected bool IsLoadingDataGrid { get; set; } = false;
 
+        protected bool IsSearchEnabled { get; set; } = false;
+
+        protected string SearchString { get; set; } = string.Empty;
+
+        public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (shouldFocusInput && subCategoryInputRef is not null)
@@ -76,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Categories = await GetNewsCategories() ?? [];
                 SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
-                SelectedSubcategory = SubCategories.First();
+                SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
                 Slots = await GetSlots();
 
                 IndexedLiveArticles = await GetLiveArticlesAsync();
@@ -101,6 +105,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 else
                 {
                     ListOfNewsArticles.RemoveAll(a => a.Id == id);
+                    if(SearchListOfNewsArticles.Count > 0)
+                    {
+                        SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                    }
                 }
 
                 StateHasChanged();
@@ -681,6 +689,33 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             if (category != null)
             {
                 category.SlotId = newSlotId;
+            }
+        }
+
+        protected async Task SearchArticles()
+        {
+            IsSearchEnabled = true;
+            IsLoadingDataGrid = true;
+            SearchListOfNewsArticles = await SearchArticlesAsync();
+            IsLoadingDataGrid = false;
+        }
+
+        private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
+        {
+            try
+            {
+                var apiResponse = await newsService.SearchArticles(SearchString);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SearchArticles");
+                return [];
             }
         }
     }
