@@ -405,7 +405,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     return;
                 }
 
-                var response = await newsService.UpdateSubCategory(EditableSubCategoryName);
+                var response = await newsService.UpdateSubCategory(CategoryId,EditableSubCategoryName);
                 if (response != null)
                 {
                     var content = await response.Content.ReadAsStringAsync();
