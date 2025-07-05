@@ -661,8 +661,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             return group;
         }
 
-
-
         public static RouteGroupBuilder MapUpdateArticleCommentStatusEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/updatearticlecommentstatus", async Task<Results<
@@ -717,7 +715,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             return group;
         }
 
-    
 
         public static RouteGroupBuilder MapGetReportCommunityPost(this RouteGroupBuilder group)
         {
