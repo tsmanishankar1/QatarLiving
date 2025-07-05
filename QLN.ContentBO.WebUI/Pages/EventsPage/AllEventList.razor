@@ -7,7 +7,7 @@
 @using QLN.ContentBO.WebUI.Components.EmptyCard
 @inherits AllEventsListBase
 
-@if (Events == null || Categories == null)
+@if (IsLoading)
 {
     <TableSkeleton Rows="PageSize" />
 }
