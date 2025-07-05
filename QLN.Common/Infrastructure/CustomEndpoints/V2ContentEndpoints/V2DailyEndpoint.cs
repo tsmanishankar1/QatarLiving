@@ -511,7 +511,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             {
                 try
                 {
-                    var success = await service.SoftDeleteDailyTopicAsync(id, cancellationToken);
+                    var success = await service.DeleteDailyTopicAsync(id, cancellationToken);
                     if (!success)
                     {
                         return TypedResults.NotFound(new ProblemDetails
