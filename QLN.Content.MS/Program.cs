@@ -10,6 +10,7 @@ using QLN.Content.MS.Service.EventInternalService;
 using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service.CommunityInternalService;
 using QLN.Content.MS.Service.DailyInternalService;
+using QLN.Content.MS.Service.ReportInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -18,6 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
+builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
 
 builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
@@ -62,6 +64,8 @@ if (app.Environment.IsDevelopment())
 }
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
+var reportgroup = app.MapGroup("/api/v2/report");
+reportgroup.MapReportsEndpoints();
 
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
