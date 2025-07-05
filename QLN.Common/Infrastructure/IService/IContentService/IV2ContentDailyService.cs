@@ -8,11 +8,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2ContentDailyService
     {
-        Task<string> CreateDailyTopicAsync(DailyTopSectionSlot dto, CancellationToken cancellationToken = default);
-        Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default);
-        Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<string> UpsertDailySlotAsync(Guid topicId,int slotNumber,DailyTopSectionSlot slotDto,CancellationToken cancellationToken = default);
-        Task<List<DailyTopSectionSlot>> GetAllDailySlotsAsync(Guid topicId,CancellationToken cancellationToken = default);
+        Task<string> UpsertSlotAsync(int slotNumber,DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
+        Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
         Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
     }
 }

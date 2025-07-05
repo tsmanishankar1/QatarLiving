@@ -22,86 +22,26 @@ namespace QLN.Backend.API.Service.V2ContentService
         private readonly ILogger<V2ExternalDailyService> _logger;
 
         private const string AppId = V2Content.ContentServiceAppId;
-        private const string BaseUrl = "/api/v2/daily";
+        private const string BaseUrl = "/api/v2/daily/dailyslots";
         public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<string> CreateDailyTopicAsync(
-            DailyTopSectionSlot dto,
-            CancellationToken cancellationToken = default
-        )
+
+        public async Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(
+                    CancellationToken cancellationToken = default
+                )
         {
-            // stamp required fields
-            dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
-            dto.CreatedAt = DateTime.UtcNow;
-            dto.UpdatedAt = DateTime.UtcNow;
+            var url = BaseUrl;
+            _logger.LogDebug("GET {Url}", url);
 
-            var url = $"{BaseUrl}/dailyTopics";
-            var json = JsonSerializer.Serialize(dto);
-            _logger.LogDebug("POST {Url} Payload: {Json}", url, json);
-
-            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
-            req.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
-            var body = await res.Content.ReadAsStringAsync(cancellationToken);
-
-            if (!res.IsSuccessStatusCode)
-            {
-                _logger.LogError("CreateDailyTopicAsync → {StatusCode} {Reason}\nResponse: {Body}",
-                    (int)res.StatusCode, res.ReasonPhrase, body);
-                throw new HttpRequestException($"Bad response ({(int)res.StatusCode}): {body}");
-            }
-
-            return JsonSerializer.Deserialize<string>(
-                body,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            ) ?? throw new Exception("Empty response from daily-content service.");
-        }
-
-        public async Task<List<DailyTopSectionSlot>> GetAllDailyTopicsAsync(
-            CancellationToken cancellationToken = default
-        )
-        {
-            var url = $"{BaseUrl}/dailyTopics";
-            return await _dapr.InvokeMethodAsync<List<DailyTopSectionSlot>>(
+            // GET /dailySlots
+            var result = await _dapr.InvokeMethodAsync<List<DailyTopSectionSlot>>(
                 HttpMethod.Get, AppId, url, cancellationToken
-            ) ?? new List<DailyTopSectionSlot>();
-        }
-
-        public async Task<DailyTopSectionSlot?> GetDailyTopicByIdAsync(
-            Guid id,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var url = $"{BaseUrl}/dailyTopics/{id}";
-            var res = await _dapr.InvokeMethodWithResponseAsync(
-                _dapr.CreateInvokeMethodRequest(HttpMethod.Get, AppId, url),
-                cancellationToken
             );
 
-            if (res.StatusCode == HttpStatusCode.NotFound)
-                return null;
-
-            res.EnsureSuccessStatusCode();
-            var json = await res.Content.ReadAsStringAsync(cancellationToken);
-            return JsonSerializer.Deserialize<DailyTopSectionSlot>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            );
-        }
-
-        public async Task<List<DailyTopSectionSlot>> GetAllDailySlotsAsync(
-            Guid topicId,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var url = $"{BaseUrl}/dailyTopics/{topicId}/slots";
-            return await _dapr.InvokeMethodAsync<List<DailyTopSectionSlot>>(
-                HttpMethod.Get, AppId, url, cancellationToken
-            ) ?? new List<DailyTopSectionSlot>();
+            return result ?? new List<DailyTopSectionSlot>();
         }
         public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
         {
@@ -129,29 +69,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
-
-
-        public async Task<string> UpsertDailySlotAsync(
-            Guid topicId,
-            int slotNumber,
-            DailyTopSectionSlot dto,
-            CancellationToken cancellationToken = default
-        )
+        public async Task<string> UpsertSlotAsync(
+                  DailyTopSectionSlot dto,
+                  CancellationToken cancellationToken = default
+              )
         {
-            // stamp metadata
-            dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
-            dto.SlotNumber = slotNumber;
-            dto.SlotType = (DailySlotType)slotNumber;
-            dto.CreatedAt = DateTime.UtcNow;
-            dto.UpdatedAt = DateTime.UtcNow;
-
-            var url = $"{BaseUrl}/dailyTopics/{topicId}/slots/{slotNumber}";
+            var url = BaseUrl;
             var json = JsonSerializer.Serialize(dto);
-            _logger.LogDebug("PUT {Url} Payload: {Json}", url, json);
 
-            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, AppId, url);
+            _logger.LogDebug("POST {Url} Payload: {Json}", url, json);
+
+            // POST /dailySlots/{slotNumber}
+            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
             req.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
             using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
@@ -159,15 +88,18 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             if (!res.IsSuccessStatusCode)
             {
-                _logger.LogError("UpsertDailySlotAsync → {StatusCode} {Reason}\nResponse: {Body}",
-                    (int)res.StatusCode, res.ReasonPhrase, body);
+                _logger.LogError(
+                    "UpsertSlotAsync → {StatusCode} {Reason}\nResponse: {Body}",
+                    (int)res.StatusCode, res.ReasonPhrase, body
+                );
                 throw new HttpRequestException($"Bad response ({(int)res.StatusCode}): {body}");
             }
 
             return JsonSerializer.Deserialize<string>(
                 body,
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-            ) ?? throw new Exception("Empty response from daily-slot upsert service.");
+            ) ?? throw new Exception("Empty response from upsert-slot service.");
         }
+
     }
 }

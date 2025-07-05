@@ -291,8 +291,7 @@ var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
 var dailyGroup = app.MapGroup("/api/v2/daily");
-dailyGroup.MapDailyEndpoints()
-.RequireAuthorization(); 
+dailyGroup.MapDailyEndpoints();
 
 var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
