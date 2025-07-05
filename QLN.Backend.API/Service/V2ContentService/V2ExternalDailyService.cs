@@ -148,7 +148,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<bool> SoftDeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
