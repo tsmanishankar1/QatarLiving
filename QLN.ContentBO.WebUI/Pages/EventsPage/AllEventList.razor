@@ -70,7 +70,21 @@ else
                     <MudTd>
                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
                             <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
-                            <MudMenuItem><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" /> Unpublish</MudMenuItem>
+                           @if (context.Event.Status == EventStatus.Published)
+                            {                
+                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished)))">
+                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
+                                    Unpublish
+                                </MudMenuItem>
+                            }
+                            else if (context.Event.Status == EventStatus.UnPublished)
+                            {
+                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.Published)))">
+                                <MudIcon Icon="@Icons.Material.Outlined.Visibility" />
+                                    Publish
+                                </MudMenuItem>
+                            }
+
                             <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
                                 <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete
                             </MudMenuItem>

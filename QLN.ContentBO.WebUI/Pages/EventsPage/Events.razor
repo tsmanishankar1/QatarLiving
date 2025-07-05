@@ -31,7 +31,8 @@
                 OnDelete="DeleteEvent"
                 AddEventCallback="NavigateToAddEvent"
                 OnSortOrderChanged="HandleSortOrderChange"
-                 OnStatusChanged="HandleStatusChange" />
+                OnStatusChanged="HandleStatusChange"
+                EventStatusChanged="UpdateEventStatusAsync" />
 
         }
         else
@@ -39,7 +40,7 @@
             <FeaturedEventSlotsList FeaturedEventSlots="featuredEventSlots"
                                     Categories="Categories"
                                     ReplaceSlot="ReplaceEventSlot"
-                                    OnDelete="DeleteEvent" />
+                                    OnDelete="DeleteFeatureEvent" />
         }
     </MudItem>
 </MudGrid>
