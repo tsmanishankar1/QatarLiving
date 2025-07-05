@@ -3,10 +3,19 @@
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
         <div class="news-header">
-            <MudText Class="news-style">@SelectedSubcategory.SubCategoryName</MudText>
-            <img src="/qln-images/news_edit_icon.svg" alt="Edit" class="edit-icon-img" />
+            @if (IsEditingSubCategoryName)
+            {
+                <div class="d-inline-block" style="max-width: 180px;">
+                    <MudTextField Class="unstyled-input" @bind-Value="EditableSubCategoryName.SubCategoryName" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+                </div>
+            }
+            else
+            {
+                <MudText Class="news-style">@SelectedSubcategory.SubCategoryName</MudText>
+            }
+            <MudImage Src="/qln-images/news_edit_icon.svg" Alt="Edit" Class="edit-icon-img" @onclick="OnClick_Rename" />
         </div>
-        <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
+        <MudTabs  @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
             @foreach (var subCategory in SubCategories)
             {
                 <MudTabPanel Text="@subCategory.SubCategoryName" OnClick="@(() => LoadCategory(CategoryId, subCategory))" />
@@ -16,7 +25,7 @@
         <MudGrid AlignItems="Center">
             <MudItem xs="12" md="12">
                 <div class="button-container">
-                    <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
+                    <MudButton OnClick="UpdateSubCategory" StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
                         Rename
                     </MudButton>
                     <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
@@ -151,4 +160,17 @@
         white-space: nowrap;
         height: 44px;
     }
+
+    .unstyled-input input {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        font-size: 25px !important;
+        font-weight: 600 !important;
+        font-family: inherit;
+        padding: 0;
+        margin: 0;
+        outline: none;
+    }
+
 </style>

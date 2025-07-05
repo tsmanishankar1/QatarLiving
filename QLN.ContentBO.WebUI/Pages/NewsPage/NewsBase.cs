@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Dapr;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.NewsPage
 {
@@ -13,6 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
+        [Inject] IDialogService DialogService { get; set; }
         [Parameter] public int CategoryId { get; set; }
 
         protected int activeIndex = 0;
@@ -32,6 +36,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected NewsSubCategory SelectedSubcategory { get; set; } = new();
 
         protected ArticleSlotAssignment articleSlotAssignment { get; set; } = new();
+
+        protected bool IsEditingSubCategoryName { get; set; } = false;
+
+        protected NewsSubCategory EditableSubCategoryName { get; set; } = new();
 
         protected async override Task OnParametersSetAsync()
         {
@@ -58,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async void DeleteArticle(Guid Id)
         {
-            await DeleteNewsArticle (Id);
+            await DeleteNewsArticle(Id);
             ListOfNewsArticles.RemoveAll(a => a.Id == Id);
             StateHasChanged();
         }
@@ -340,6 +348,70 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             else
             {
                 return $"{Math.Round(absDiff.TotalMinutes)} minutes";
+            }
+        }
+
+        protected void OnClick_Rename()
+        {
+            IsEditingSubCategoryName = !IsEditingSubCategoryName;
+
+            if (IsEditingSubCategoryName && SelectedSubcategory != null)
+            {
+                EditableSubCategoryName = new NewsSubCategory
+                {
+                    Id = SelectedSubcategory.Id,
+                    SubCategoryName = SelectedSubcategory.SubCategoryName
+                };
+            }
+            else
+            {
+                EditableSubCategoryName = new();
+            }
+        }
+
+        protected async Task UpdateSubCategory()
+        {
+            try
+            {
+                if (IsEditingSubCategoryName)
+                {
+                    if (string.IsNullOrWhiteSpace(EditableSubCategoryName.SubCategoryName) || string.IsNullOrEmpty(EditableSubCategoryName.SubCategoryName))
+                    {
+                        Snackbar.Add("Subcategory Name is required", severity: Severity.Error);
+                        return;
+                    }
+
+                    var response = await newsService.UpdateSubCategory(EditableSubCategoryName);
+                    if (response != null)
+                    {
+                        var content = await response.Content.ReadAsStringAsync();
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add("Subcategory Name Updated", severity: Severity.Success);
+                            IsEditingSubCategoryName = false;
+                            SelectedSubcategory.SubCategoryName = EditableSubCategoryName.SubCategoryName;
+                            var subInList = SubCategories.FirstOrDefault(x => x.Id == EditableSubCategoryName.Id);
+                            if (subInList != null)
+                            {
+                                subInList.SubCategoryName = EditableSubCategoryName.SubCategoryName;
+                            }
+                            IsEditingSubCategoryName = false;
+                        }
+                        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        {
+                            APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                            Snackbar.Add(error?.Detail ?? "Subcategory not found.", Severity.Error);
+                        }
+
+                    }
+                    IsEditingSubCategoryName = false;
+                    EditableSubCategoryName = new();
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateSubCategory");
             }
         }
     }

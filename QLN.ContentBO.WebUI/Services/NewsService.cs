@@ -239,7 +239,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var subCategoryToUpdate = new StringContent(JsonSerializer.Serialize(subCategory), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/category/updatesubcategory")
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/news/category/updatesubcategory?categoryId={subCategory.Id}")
                 {
                     Content = subCategoryToUpdate
                 };
