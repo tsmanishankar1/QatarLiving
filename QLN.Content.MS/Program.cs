@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Content.MS.Service.EventInternalService;
 using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service.CommunityInternalService;
+using QLN.Content.MS.Service.DailyInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -17,6 +18,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
+builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
+
 builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
 {
@@ -48,6 +51,8 @@ builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
+builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -61,7 +66,7 @@ eventGroup.MapEventEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
 
-var dailyGroup = app.MapGroup("/api/v2/daily");
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
 dailyGroup.MapDailyEndpoints();
 
 var CommunityGroup = app.MapGroup("/api/v2/location");

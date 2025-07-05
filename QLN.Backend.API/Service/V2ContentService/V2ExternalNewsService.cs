@@ -318,7 +318,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             return JsonSerializer.Deserialize<List<V2NewsCategory>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
         }
 
-        public async Task<V2NewsCategory?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
         {
             var url = $"/api/v2/news/categorygetbyid/{id}";
             var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
@@ -344,10 +344,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             return true;
         }
 
-        public Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
+
 
     }
 }
