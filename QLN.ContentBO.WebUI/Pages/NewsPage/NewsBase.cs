@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Pages.EventsPage;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
 
@@ -10,9 +12,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 {
     public class NewsBase : QLComponentBase
     {
-        [Inject] INewsService newsService { get; set; }
-        [Inject] ILogger<NewsBase> Logger { get; set; }
+        [Inject] protected INewsService newsService { get; set; }
+        [Inject] protected ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; }
         [Parameter] public int CategoryId { get; set; }
 
         protected int activeIndex = 0;
@@ -48,8 +51,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         };
 
         protected string selectedTab = "live";
-
-        [Parameter] public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
 
         public List<IndexedArticle> IndexedLiveArticles { get; set; } = [];
         public class IndexedArticle
@@ -461,6 +462,38 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
+        protected Task ShowGoLiveDialog(object newsArticle)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), "Go Live" },
+                { nameof(MessageBoxBase.Placeholder), "Select a Slot Title*" },
+            };
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+            return DialogService.ShowAsync<GoLiveDialog>("", parameters, options);
+        }
+
+
+        protected Task ShowPublishActionDialog(object newsArticle)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), "Publish Article" },
+                { nameof(MessageBoxBase.Placeholder), "Article Title*" }
+            };
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+            return DialogService.ShowAsync<PublishArticleDialog>("", parameters, options);
+        }
 
         protected async Task<List<IndexedArticle>> GetLiveArticlesAsync()
         {

@@ -107,9 +107,23 @@
                                             <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Item.Id}", true))">
                                                 <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                             </MudMenuItem>
-                                            <MudMenuItem>
-                                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                            <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context))">
+                                                <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
+                                                <span>Go live</span>
                                             </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context))">
+                                                @if (selectedTab == "published")
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                    <span>Unpublish</span>
+                                                }
+                                                else
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Visibility" Class="me-2" />
+                                                    <span>Publish</span>
+                                                }
+                                            </MudMenuItem>
+
                                             <MudMenuItem OnClick="@(() => DeleteArticle(context.Item.Id))" Class="mud-error-text">
                                                 <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                             </MudMenuItem>
