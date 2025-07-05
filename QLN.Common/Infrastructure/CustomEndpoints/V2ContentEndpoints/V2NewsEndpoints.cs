@@ -859,7 +859,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPut("/category/update-subcategory-by-id", async Task<Results<
+        group.MapPut("/category/subcategorybyid", async Task<Results<
     Ok<string>,
     BadRequest<ProblemDetails>,
     NotFound<ProblemDetails>,

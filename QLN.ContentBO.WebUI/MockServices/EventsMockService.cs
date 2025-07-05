@@ -118,7 +118,7 @@ namespace QLN.ContentBO.WebUI.MockServices
 
             return Task.FromResult(response);
         }
-        public Task<HttpResponseMessage> DeleteEvent()
+        public Task<HttpResponseMessage> DeleteEvent(string eventId)
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -127,7 +127,42 @@ namespace QLN.ContentBO.WebUI.MockServices
 
             return Task.FromResult(response);
         }
+        public Task<HttpResponseMessage> GetFeaturedEvents()
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                // Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+            };
 
+            return Task.FromResult(response);
+        }
+        public Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                // Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+            };
+
+            return Task.FromResult(response);
+        }
+        public Task<HttpResponseMessage> GetEventById(Guid eventId)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                // Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+            };
+
+            return Task.FromResult(response);
+        }
+        public Task<HttpResponseMessage> UpdateEvents(EventDTO events)
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                // Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+            };
+
+            return Task.FromResult(response);
+        }
         
     }
 }

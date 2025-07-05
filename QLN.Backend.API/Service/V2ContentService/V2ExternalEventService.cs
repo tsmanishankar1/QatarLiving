@@ -289,7 +289,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
-             int? page, int? perPage, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
+             int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
         bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
@@ -301,6 +301,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     $"search={Uri.EscapeDataString(search ?? "")}",
                     $"sortOrder={sortOrder?.ToLowerInvariant() ?? "desc"}"
                 };
+                if (status.HasValue)
+                    queryParams.Add($"status={(int)status.Value}");
 
                 if (fromDate.HasValue)
                     queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
