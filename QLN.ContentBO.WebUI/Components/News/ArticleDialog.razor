@@ -1,0 +1,21 @@
+﻿<MudDialog Style="width: 352px;">
+    <DialogContent>
+        <MudPaper Elevation="0" Class="p-6 d-flex flex-column align-items-center">
+            <img src="/qln-images/success_icon.svg" 
+            alt="Success Icon" 
+            style="width: 48px; height: 48px;" />
+            <MudText Typo="Typo.h6" Class="mt-2 mb-4">@ContentText</MudText>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+                <MudButton OnClick="Close" Style="background-color: #FF7F38; color: white;" FullWidth="true" Variant="Variant.Filled" Class="w-100 mb-3 mx-2">Close</MudButton>
+            </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]
+    public string ContentText { get; set; } = "Article Action Completed";
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+}
+

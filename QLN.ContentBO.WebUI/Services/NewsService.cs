@@ -21,7 +21,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/createNewsArticle")
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/news")
                 {
                     Content = newsArticleJson
                 };
@@ -41,7 +41,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getAllNewsArticle");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/articles");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getCategories");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/allcategories");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -92,7 +92,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/getWriterTags");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/news/writertags");
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -110,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var newsArticleJson = new StringContent(JsonSerializer.Serialize(newsArticle), Encoding.UTF8, "application/json");
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/updateNewsArticle")
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/news/updatenews")
                 {
                     Content = newsArticleJson
                 };
@@ -122,6 +122,135 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "UpdateArticle");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticlesByCategory(int categoryId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, 
+                    $"api/v2/news/categories/{categoryId}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticlesByCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticlesBySubCategory");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticleBySlug(string slug)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getbyslug/{slug}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleBySlug");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> GetArticleById(Guid id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/getbyid/{id}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetArticleById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment)
+        {
+            try
+            {
+
+                var articleReOrderJson = new StringContent(JsonSerializer.Serialize(slotAssignment), Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderslot")
+                {
+                    Content = articleReOrderJson
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ReOrderNews");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> DeleteNews(Guid id)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete, $"api/v2/news/news/{id}");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteNews");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> UpdateSubCategory(NewsSubCategory subCategory)
+        {
+            try
+            {
+                var subCategoryToUpdate = new StringContent(JsonSerializer.Serialize(subCategory), Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/news/category/updatesubcategory?categoryId={subCategory.Id}")
+                {
+                    Content = subCategoryToUpdate
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateSubCategory");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

@@ -95,12 +95,15 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
             public const string NewsIndexKey = "news-index";
+            public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
             public const string EventCategoryIndexKey = "event-category-index";
             public const string ReportsIndexKey = "report-category-index";
             public const string ReportsCommunityIndexKey = "reportcommunitypost-category-index";
             public const string ReportsCommunityCommentsIndexKey = "reportcommunitycomments-category-index";
             public const string ReportsArticleCommentsIndexKey = "reportarticlecomments-category-index";
+            public const string DailyTopBOIndexKey = "daily-top-bo-index";
+            public const string DailyTopicIndexKey = "daily-topic-index";
         }
     }
     }

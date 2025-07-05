@@ -8,8 +8,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
     {
         Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default);
         Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
-        Task<List<V2NewsArticleDTO>> GetAllNewsArticlesAsync(CancellationToken cancellationToken = default);
-        Task<List<V2NewsCategory>> GetNewsCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
+           int? page, int? perPage, string? search, CancellationToken cancellationToken = default);
         Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
         Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken);
         Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken);
@@ -19,7 +19,14 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive = null, CancellationToken cancellationToken = default);
         Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default);
         Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken);
+        Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken);
+        Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken);
+        //category
+        Task<List<V2NewsCategory>> GetAllCategoriesAsync(CancellationToken cancellationToken = default);
+        Task<V2NewsCategory?> GetCategoryByIdAsync(int id, CancellationToken cancellationToken = default);
+        Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default);
+        Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default);
 
-     }
+    }
 
 }

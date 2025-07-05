@@ -16,5 +16,18 @@ namespace QLN.ContentBO.WebUI.Interfaces
 
         Task<HttpResponseMessage> GetSlots();
 
+        Task<HttpResponseMessage> GetArticlesByCategory(int categoryId);
+
+        Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId);
+
+        Task<HttpResponseMessage> GetArticleBySlug(string slug);
+
+        Task<HttpResponseMessage> GetArticleById(Guid Id);
+        
+        Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment);
+
+        Task<HttpResponseMessage> DeleteNews(Guid Id);
+
+        Task<HttpResponseMessage> UpdateSubCategory(NewsSubCategory subCategory);
     }
 }

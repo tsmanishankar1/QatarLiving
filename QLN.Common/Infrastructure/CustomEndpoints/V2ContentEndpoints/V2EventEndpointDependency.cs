@@ -9,13 +9,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             group.MapCreateEventEndpoints()
                 .MapGetEventEndpoints()
                 .MapGetAllEventEndpoints()
+                .MapGetAllFeaturedEventEndpoints()
                 .MapUpdateEventEndpoints()
                 .MapEventCategories()
+                .MapUpdateFeaturedEvent()
                 .MapCreateCategories()
                 .MapGetEventCategory()
-                .MapGetEventCategories()
+                .MapGetPaginatedEvents()
                 .MapGetAllEventSlot()
                 .MapExpiredEvents()
+                .MapReorderEvents()
+                .MapGetEventsByStatus()
+                .MapGetByStatus()
                 .MapDeleteEventEndpoints();
             return group;
         }

@@ -5,6 +5,8 @@ using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System;
+using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
@@ -13,7 +15,6 @@ namespace QLN.ContentBO.WebUI.Components.News
     {
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
-        [Inject] IJSRuntime JS { get; set; }
         [Inject] IDialogService DialogService { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
@@ -27,38 +28,40 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
-
-        protected List<string> writerTags =
-            [
-                    "Qatar Living",
-                    "Everything Qatar",
-                    "FIFA Arab Cup",
-                    "QL Exclusive",
-                    "Advice & Help"
-            ];
-
+        public int MinCategory { get; set; } = 1;
+        public int MaxCategory { get; set; } = 2;
 
         protected override async Task OnInitializedAsync()
         {
-            AuthorizedPage();
-            Categories = await GetNewsCategories();
-            Slots = await GetSlots();
-            WriterTags = await GetWriterTags();
-            /*
-            var optionsD = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", optionsD);
-            var result = dialog.Result;
-            article = new();
-            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-            await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
-            */
+            try
+            {
+                AuthorizedPage();
+                Categories = await GetNewsCategories();
+                Slots = await GetSlots();
+                WriterTags = await GetWriterTags();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
         }
 
         protected void AddCategory()
         {
-            if (Category.SlotId == 0) 
+            if (Category.SlotId == 0)
             {
                 Category.SlotId = 15; // By Default UnPublished.
+            }
+            if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
+            {
+                Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+            }
+            if (TempCategoryList.Count >= MaxCategory)
+            {
+                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", severity: Severity.Normal);
+                Category = new();
+                return;
             }
             TempCategoryList.Add(Category);
             Category = new();
@@ -66,8 +69,14 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
+            if (TempCategoryList.Count <= MinCategory)
+            {
+                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
+                return;
+            }
             if (TempCategoryList.Count > 0)
             {
+
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
@@ -77,16 +86,36 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                article.Categories = TempCategoryList;
+                if (article.Categories.Count == 0)
+                {
+                    Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    return;
+                }
+                if (string.IsNullOrEmpty(article.CoverImageUrl))
+                {
+                    Snackbar.Add("Image is required", severity: Severity.Error);
+                    return;
+                }
+                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content))
+                {
+                    Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    return;
+                }
+
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
-                article.Categories = TempCategoryList;
                 var response = await newsService.CreateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Article Added", severity: Severity.Success);
+                    var parameters = new DialogParameters<ArticleDialog>
+                            {
+                                { x => x.ContentText, "Article Published" },
+                            };
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    await DialogService.ShowAsync<ArticlePublishedDialog>("", options);
+                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
+                    ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -96,41 +125,46 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
-                article = new();
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
-                article = new();
+                ResetForm();
             }
+        }
+
+        protected void RemoveImage()
+        {
+            article.CoverImageUrl = null;
         }
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            var file = e.File;
-            if (file != null)
+            try
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleFilesChanged");
+                ResetForm();
             }
         }
 
-        protected async Task TriggerCoverUpload()
+        protected async void Cancel()
         {
-            await JS.InvokeVoidAsync("document.getElementById", "cover-upload").AsTask();
-        }
-
-        protected async Task TriggerInlineImageUpload()
-        {
-            await JS.InvokeVoidAsync("document.getElementById", "inline-upload").AsTask();
-        }
-
-        protected void Cancel()
-        {
-
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = dialog.Result;
+            ResetForm();
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -198,7 +232,13 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .FirstOrDefault(c => c.Id == CategoryId)?
                 .SubCategories
                 .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .CategoryName;
+                .SubCategoryName;
+        }
+
+        protected void ResetForm()
+        {
+            article = new();
+            TempCategoryList = [];
         }
     }
 }
