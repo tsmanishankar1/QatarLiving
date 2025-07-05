@@ -136,7 +136,7 @@ namespace QLN.ContentBO.WebUI.MockServices
 
             return Task.FromResult(response);
         }
-        public Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events)
+        public Task<HttpResponseMessage> UpdateFeaturedEvents(object payload)
         {
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -219,6 +219,38 @@ namespace QLN.ContentBO.WebUI.MockServices
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+public async Task<HttpResponseMessage> ReorderFeaturedSlots(int fromSlot, int toSlot, string userId)
+{
+    try
+    {
+        var payload = new
+        {
+            fromSlot = fromSlot,
+            toSlot = toSlot,
+            userId = userId
+        };
+
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/reorderslots")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+      
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(mockEvents), Encoding.UTF8, "application/json")
+                };
+
+                return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "ReorderFeaturedSlots");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
 
     }
 

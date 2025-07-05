@@ -1,12 +1,9 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System;
-using System.ComponentModel.DataAnnotations;
 using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.News
