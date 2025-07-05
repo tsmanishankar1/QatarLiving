@@ -1,69 +1,132 @@
 @using QLN.ContentBO.WebUI.Models
 @using MudBlazor
-@inherits AllEventsListBase;
+@namespace QLN.ContentBO.WebUI.Pages.EventsPage
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits AllEventsListBase
+
 @if (Events == null || Categories == null)
 {
-    <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    <TableSkeleton Rows="PageSize" />
 }
+
 else
 {
-    var indexedEvents = Events
+    var filteredEvents = Events
         .Where(e => string.IsNullOrWhiteSpace(SearchText) || e.EventTitle.Contains(SearchText, StringComparison.OrdinalIgnoreCase))
         .Select((e, i) => new { Event = e, Index = i + 1 })
         .ToList();
 
-    <div class="events-button-container">
-        <MudButton StartIcon="@Icons.Material.Outlined.Add"
-                   Style="background-color: #FF7F38; color: white; text-transform: none;"
-                   Class="compact-button"
-                   OnClick="AddEventCallback">
-            Add Event
-        </MudButton>
-
-        <MudTextField @bind-Value="SearchText"
-                      Placeholder="Search for Events"
-                      Variant="Variant.Outlined"
-                      Adornment="Adornment.Start"
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      Class="search-field" />
-
-        <div class="sort-by-wrapper">
-            <MudButton StartIcon="@Icons.Material.Filled.FilterList"
-                       Variant="Variant.Outlined"
-                       Class="sort-by-style">
-                Sort by
-            </MudButton>
+    <SearchBarWithAdd AddEventCallback="AddEventCallback"
+                      OnSearch="HandleSearch"
+                      OnSort="HandleSortToggle" />
+    <div class="custom-table-events">
+        <div class="toggle-tabs-events">
+            <ToggleTabs Options="@tabOptions"
+                        ActiveValue="@selectedTab"
+                        OnChange="@OnTabChanged" />
         </div>
-    </div>
+        @if (filteredEvents.Count == 0)
+        {
+            <div>
+                <EmptyCard Title="@GetEmptyTitle()" Subtitle="Please check back later or explore other categories." />
+            </div>
+        }
+        else
+        {
+            <MudTable Items="filteredEvents" Hover="true" Class="event-custom-table">
+                <HeaderContent>
+                    <MudTh class="header-cell">Number</MudTh>
+                    <MudTh class="header-cell">Title</MudTh>
+                    <MudTh class="header-cell">Category</MudTh>
+                    <MudTh class="header-cell">Creation Date</MudTh>
+                    <MudTh class="header-cell">Expiry Date</MudTh>
+                    <MudTh class="header-cell">Live for</MudTh>
+                    <MudTh class="header-cell">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd Class="number-cell">@context.Index</MudTd>
+                    <MudTd><MudLink Href="#" Class="post-title">@context.Event.EventTitle</MudLink></MudTd>
+                    <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
+                    <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd Class="date-cell">
+                        @if (context.Event.PublishedDate != null)
+                        {
+                            var duration = DateTime.Now - context.Event.PublishedDate.Value;
+                            string liveFor = duration.TotalHours < 24
+                            ? $"{Math.Floor(duration.TotalHours)} hour{(Math.Floor(duration.TotalHours) == 1 ? "" : "s")}"
+                            : $"{duration.Days} day{(duration.Days == 1 ? "" : "s")}";
+                            @liveFor
+                        }
+                        else
+                        {
+                            <span>--</span>
+                        }
+                    </MudTd>
 
-    <MudTable Items="indexedEvents" Hover="true" Style="padding-top: 20px; margin-top: 40px;">
-        <HeaderContent>
-            <MudTh>Number</MudTh>
-            <MudTh>Title</MudTh>
-            <MudTh>Category</MudTh>
-            <MudTh>Creation Date</MudTh>
-            <MudTh>Expiry Date</MudTh>
-            <MudTh>Live for</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>@context.Index</MudTd>
-            <MudTd><MudLink Href="#">@context.Event.EventTitle</MudLink></MudTd>
-            <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
-            <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@(DateTime.Now - context.Event.CreatedAt).Days + " days"</MudTd>
-            <MudTd>
-                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                    <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
-                    <MudMenuItem><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" /> Unpublish</MudMenuItem>
-                    <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
-                        <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete
-                    </MudMenuItem>
-                </MudMenu>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+                    <MudTd>
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                            <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
+                            <MudMenuItem><MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" /> Unpublish</MudMenuItem>
+                            <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </div>
+    @if (filteredEvents.Count > 0)
+    {
+        <PaginationFooter TotalItems="@PaginatedData.TotalCount" CurrentPage="@CurrentPage" PageSize="@PageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
 }
 
+<style>
+    .custom-table-events {
+        padding: 10px 0;
+        background-color: var(--color-background);
+    }
 
+    .toggle-tabs-events {
+        padding: 0 10px;
+    }
+
+    .event-custom-table {
+        margin-top: 10px;
+    }
+        /* Table header style */
+        .event-custom-table .header-cell {
+            background-color: #FAFAFA;
+            font-weight: 600;
+            font-family: 'Public Sans', sans-serif;
+        }
+
+        /* Centered bold number column */
+        .event-custom-table .number-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .event-custom-table .date-cell {
+            text-align: center;
+        }
+        /* Post title styling */
+        .event-custom-table .post-title {
+            color: var(--color-background-grey) !important;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+            .event-custom-table .post-title:hover {
+                color: #1976d2 !important; /* Material blue */
+                text-decoration: underline;
+            }
+
+</style>
