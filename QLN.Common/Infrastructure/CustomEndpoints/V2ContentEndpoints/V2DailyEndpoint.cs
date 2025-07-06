@@ -93,8 +93,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 })
                 .WithName("CreateOrUpdateSlotByToken")
                 .WithTags("DailyLivingBO")
-                .WithSummary("Create or update a daily slot using token")
-                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info.");
+                .WithSummary("Create or update a daily living top section using jwt token")
+                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record");
 
             group.MapPost(
                 "/topsection/{userId}",
@@ -165,7 +165,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             )
             .WithName("GetAllDailySlots")
             .WithTags("DailyLivingBO")
-            .WithSummary("Fetch all 9 daily slots (placeholders for empty ones)")
+            .WithSummary("Fetch all 9 daily slots of Daily Living Top section")
             .Produces<List<DailyTopSectionSlot>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -365,7 +365,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 })
                 .WithName("GetDailyTopicContentByTopic")
                 .WithTags("DailyLivingBO")
-                .WithSummary("Fetch all filled slots for a given topic (TopicId in header)")
+                .WithSummary("Fetch all filled slots for a given daily living topic (TopicId in header)")
                 .Produces<List<DailyTopicContent>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
