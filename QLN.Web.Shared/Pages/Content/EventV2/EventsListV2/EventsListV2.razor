@@ -8,13 +8,13 @@
 <div class="header-event-list">
     <div class="event-header">
         <h1 class="event-title">Events in Qatar (@TotalItems results)</h1>
-        @* <div class="sort-section">
+        <div class="sort-section">
             <label class="sort-label">Sort by:</label>
             <div class="sort-dropdown">
                 <PriceSelect Label="" Placeholder="Default" Items="SortOptions" SelectedId="@SelectedSort"
-                    SelectedIdChanged="OnSortChanged" GetId="option => option.Id" GetLabel="option => option.Label" />
+                     SelectedIdChanged="@((string newVal) => SelectedSort = newVal)" GetId="option => option.Id" GetLabel="option => option.Label" />
             </div>
-        </div> *@
+        </div>
     </div>
 
     <MudGrid GutterSize="3">

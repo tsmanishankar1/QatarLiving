@@ -34,7 +34,7 @@
 
 
         <div class="card-body">
-            @* <div class="category">@Item.EventCategory</div> *@
+            <div class="category">@Item.CategoryName</div>
 
             <h3 class="title">@Item.EventTitle</h3>
             <p class="description" style="text-overflow:ellipsis">@HtmlHelper.StripHTML(Item.EventDescription)</p>
@@ -53,7 +53,7 @@
                     @switch (Item.EventType)
                     {
                         case EventType.FreeAcess:
-                            <span class="price-amount">FREE</span>
+                            <span class="price-amount">Free Access</span>
                             break;
                         case EventType.OpenRegistrations:
                             <span class="price-amount">Open Registration</span>

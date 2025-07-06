@@ -7,6 +7,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public Guid Id { get; set; }
         public string EventTitle { get; set; } = string.Empty;
         public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
         public EventType EventType { get; set; }
         public int? Price { get; set; }
         public string Location { get; set; } = string.Empty;

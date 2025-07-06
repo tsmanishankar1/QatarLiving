@@ -37,20 +37,7 @@
         Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id);
         Task<HttpResponseMessage> GetEventLocations();
         Task<HttpResponseMessage> GetEventCategoriesV2();
-        Task<HttpResponseMessage> GetEventsByPagination(
-    int page,
-    int perPage,
-    string? search = null,
-    int? categoryId = null,
-    string? sortOrder = null,
-    string? fromDate = null,
-    string? toDate = null,
-    string? filterType = null,
-    List<int>? locationId = null,
-    bool? freeOnly = null,
-    bool? featuredFirst = null,
-    int? status = null
-);
+        Task<HttpResponseMessage> GetEventsByPagination(object payload);
 
 
         

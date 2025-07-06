@@ -7,9 +7,26 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
     public class EventListBaseV2 : ComponentBase
     {
         [Parameter] public List<EventDTOV2> Items { get; set; } = [];
+
+        [Parameter] public bool Loading { get; set; } = false;
+
+        private string _selectedSort = "default";
+
         [Parameter]
-        public bool Loading { get; set; } = false;
-        protected string SelectedSort { get; set; } = "default";
+        public string SelectedSort
+        {
+            get => _selectedSort;
+            set
+            {
+                if (_selectedSort != value)
+                {
+                    _selectedSort = value;
+                    _ = OnSortChanged.InvokeAsync(value); // Fire event when changed
+                }
+            }
+        }
+
+        [Parameter] public EventCallback<string> OnSortChanged { get; set; }
 
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
@@ -36,17 +53,15 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
         }
 
         protected List<SortOption> SortOptions = new()
-    {
-        new SortOption { Id = "default", Label = "Default" },
-        new SortOption { Id = "high_to_low", Label = "Price: High to Low" },
-        new SortOption { Id = "low_to_high", Label = "Price: Low to High" }
-    };
- 
+        {
+            new SortOption { Id = "default", Label = "Default" },
+            new SortOption { Id = "high_to_low", Label = "Price: High to Low" },
+            new SortOption { Id = "low_to_high", Label = "Price: Low to High" }
+        };
 
         protected void HandleCardClick(EventDTOV2 item)
         {
-          Navigation.NavigateTo($"/content/eventsV2/details/{item.Id}");
+            Navigation.NavigateTo($"/content/eventsV2/details/{item.Id}");
         }
-    
     }
 }

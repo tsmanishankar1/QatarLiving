@@ -12,6 +12,10 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
     public class SearchSectionBaseV2 : ComponentBase, IDisposable
 
     {
+        protected bool ShowFreeOnly { get; set; } = false;
+       [Parameter] public EventCallback<bool> OnFreeToggleChanged { get; set; }
+        [Parameter] public EventCallback<string> OnSearchChanged { get; set; }
+
         [Inject] protected IJSRuntime JSRuntime { get; set; }
         [Inject] protected ILogger<SearchSectionBaseV2> Logger { get; set; }
         [Inject] protected NavigationManager NavigationManager { get; set; }
@@ -30,10 +34,13 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         private string _toDate;
         protected LocationSelect<LocationDto.AreaDto> _locationSelectRef;
 
-        protected bool ShouldShowClearAll =>
+       protected bool ShouldShowClearAll =>
             !string.IsNullOrEmpty(SelectedPropertyTypeId)
             || SelectedAreas.Any()
-            || !string.IsNullOrEmpty(SelectedDateLabel);
+            || !string.IsNullOrEmpty(SelectedDateLabel)
+            || ShowFreeOnly
+            || !string.IsNullOrWhiteSpace(SearchInputValue);
+
 
         protected List<string> SelectedLocationIds { get; set; } = new();
 
@@ -57,6 +64,11 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected MudDateRangePicker _pickerRef;
         protected DateRange _dateRange = new();
 
+            protected async Task HandleFreeToggleChange(ChangeEventArgs e)
+            {
+                ShowFreeOnly = (bool)e.Value;
+                await OnFreeToggleChanged.InvokeAsync(ShowFreeOnly);
+            }
 
         protected void ToggleDatePicker()
         {
@@ -68,6 +80,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
         }
+        protected string SearchInputValue { get; set; } = string.Empty;
 
 
         protected MudDatePicker _datePickerRef;
@@ -107,7 +120,7 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             StateHasChanged();
         }
 
-        protected async Task ClearAllFilters()
+     protected async Task ClearAllFilters()
         {
             SelectedPropertyTypeId = null;
             SelectedLocationIds.Clear();
@@ -115,6 +128,9 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             FilteredAreas = Areas;
             _selectedDate = null;
             SelectedDateLabel = string.Empty;
+            SearchInputValue = string.Empty; // Reset search
+            ShowFreeOnly = false;
+
             if (_locationSelectRef != null)
             {
                 await _locationSelectRef.ClearSelection();
@@ -123,9 +139,16 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
             await OnCategoryChanged.InvokeAsync(null);
             await OnLocationChanged.InvokeAsync(null);
             await OnDateChanged.InvokeAsync((null, null));
+            await OnSearchChanged.InvokeAsync(string.Empty);
 
             StateHasChanged();
         }
+
+     protected async Task HandleSearchChange(ChangeEventArgs e)
+    {
+        SearchInputValue = e.Value?.ToString() ?? string.Empty;
+        await OnSearchChanged.InvokeAsync(SearchInputValue);
+    }
 
        protected async Task HandleLocationSelectionChanged(List<LocationDto.AreaDto> selected)
         {

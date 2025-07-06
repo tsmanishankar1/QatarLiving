@@ -10,8 +10,8 @@
 
             <!-- Search Field: Icon Left, Input Right -->
             <div class="search-field search-input">
-                <MudIcon Icon="@Icons.Material.Filled.Search" class="left-icon" />
-                <input type="text" id="event-search-input" placeholder="Search" class="text-input" />
+                <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon" height="23" width="23"  />
+                <input type="text" id="event-search-input" placeholder="Search"  @oninput="HandleSearchChange"  class="text-input" />
             </div>
             <div class="select-field" style="@(IsMobile? "height: auto;" : "")">
                 <LocationSelect 
@@ -82,7 +82,7 @@
         <div class="toggle-row">
             <div class="left-toggle">
                 <label class="toggle-wrapper">
-                    <input type="checkbox" checked />
+                    <input type="checkbox" checked="@ShowFreeOnly" @onchange="HandleFreeToggleChange" />
                     <span class="switch"></span>
                     <span class="toggle-label">Show Free Events Only</span>
                 </label>
@@ -161,7 +161,7 @@
     .search-input {
         border-top-left-radius: 6px;
         border-bottom-left-radius: 6px;
-        border: 1px solid transparent;
+        border: 1px solid #D0D5DD ;
         transition: border 0.3s ease;
         font-size: 20px;
         color: #888;
@@ -331,7 +331,7 @@
         width: 100%;
         margin-top: 12px;
         display: flex;
-        justify-content: flex-end;
+        justify-content: space-between;
         align-items: center;
     }
 

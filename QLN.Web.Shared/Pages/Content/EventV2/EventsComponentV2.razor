@@ -50,13 +50,13 @@
             else if (EventCategories?.Any() == true)
             {
                 <SearchSectionV2 Categories="EventCategories" Areas="Areas" OnCategoryChanged="HandleCategoryChanged"
-                    OnLocationChanged="HandleLocationChanged" OnDateChanged="HandleDateChanged" />
+                    OnLocationChanged="HandleLocationChanged" OnDateChanged="HandleDateChanged"  OnFreeToggleChanged="HandleFreeToggleChanged"OnSearchChanged="HandleSearchChanged"/>
             }
 
 
             <EventsListV2 Items="PaginatedData.Items" Loading="isLoadingEvents" OnPageChange="HandlePageChange"
                 OnPageSizeChange="HandlePageSizeChange" CurrentPage="@CurrentPage" PageSize="@PageSize"
-                TotalItems="@PaginatedData.TotalCount" />
+                TotalItems="@PaginatedData.TotalCount"  OnSortChanged="@OnSortChanged"  />
         </div>
     </div>
 </div>

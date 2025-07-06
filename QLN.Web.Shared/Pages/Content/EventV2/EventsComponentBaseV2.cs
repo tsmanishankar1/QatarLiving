@@ -13,6 +13,37 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
     {
         [Inject] private IEventService _eventService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
+        protected bool ShowFreeOnly { get; set; } = false;
+        protected async Task HandleFreeToggleChanged(bool isFree)
+        {
+            ShowFreeOnly = isFree;
+            await GetEvents();
+        }
+        protected string SearchKeyword;
+
+        protected async Task HandleSearchChanged(string keyword)
+        {
+            SearchKeyword = keyword;
+            CurrentPage = 1;
+            await GetEvents();
+        }
+
+
+        protected string SelectedSort { get; set; } = "default";
+
+            private string GetSortOrder() => SelectedSort switch
+            {
+                "high_to_low" => "desc",
+                "low_to_high" => "asc",
+                _ => "desc" // default maps to desc
+            };
+
+            protected async Task OnSortChanged(string newSort)
+            {
+                SelectedSort = newSort;
+                CurrentPage = 1;
+                await GetEvents();
+            }
 
         [Inject] private ILogger<EventsComponentBaseV2> Logger { get; set; }
          protected PaginatedEventResponse PaginatedData { get; set; } = new();
@@ -226,11 +257,9 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
             }
         }
 
-     private async Task GetEvents(
+    private async Task GetEvents(
     int page = 1,
-    int pageSize = 12,
-    string search = "",
-    string sortOrder = "desc"
+    int pageSize = 12
 )
 {
     try
@@ -239,34 +268,51 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
 
         int? categoryId = int.TryParse(SelectedPropertyTypeId, out var parsedId) ? parsedId : null;
 
-        var apiResponse = await _eventService.GetEventsByPagination(
-            page: page,
-            perPage: pageSize,
-            search: search ?? "",
-            categoryId: categoryId,
-            sortOrder: sortOrder,
-            fromDate: _fromDate,
-            toDate: _toDate,
-            filterType: "",
-            locationId: SelectedLocationIds?
-                .Where(id => int.TryParse(id, out _)) // filter out non-integer strings
+        var parsedLocationIds = SelectedLocationIds != null
+            ? SelectedLocationIds
+                .Where(id => int.TryParse(id, out _))
                 .Select(int.Parse)
-                .ToList(),
-            freeOnly: false,
-            featuredFirst: false
-        );
+                .ToList()
+            : null;
+
+        var payload = new Dictionary<string, object>
+        {
+            ["page"] = page,
+            ["perPage"] = pageSize
+        };
+
+        if (!string.IsNullOrWhiteSpace(SearchKeyword))
+            payload["search"] = SearchKeyword;
+
+        if (categoryId.HasValue)
+            payload["categoryId"] = categoryId;
+
+         string sortOrder = GetSortOrder();
+
+        if (!string.IsNullOrWhiteSpace(sortOrder))
+            payload["sortOrder"] = sortOrder;
+
+
+        if (!string.IsNullOrWhiteSpace(_fromDate))
+            payload["fromDate"] = _fromDate;
+
+        if (!string.IsNullOrWhiteSpace(_toDate))
+            payload["toDate"] = _toDate;
+
+        if (parsedLocationIds != null && parsedLocationIds.Any())
+            payload["locationId"] = parsedLocationIds;
+
+        payload["freeOnly"] = ShowFreeOnly;
+
+
+        var apiResponse = await _eventService.GetEventsByPagination(payload);
 
         if (apiResponse.IsSuccessStatusCode)
         {
             var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
-
             if (result != null)
             {
-                result.Items = result.Items
-                    .Where(e => e.IsActive)
-                    .ToList();
-
-                // Logger.LogInformation("GetEvents response: {Response}", JsonSerializer.Serialize(result));
+                result.Items = result.Items.Where(e => e.IsActive).ToList();
             }
 
             PaginatedData = result ?? new PaginatedEventResponse();
@@ -288,24 +334,5 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
         StateHasChanged();
     }
 }
-
-
-        private async Task<BannerResponse?> FetchBannerData()
-        {
-            try
-            {
-                var response = await _eventService.GetBannerAsync();
-                if (response.IsSuccessStatusCode && response.Content != null)
-                {
-                    return await response.Content.ReadFromJsonAsync<BannerResponse>();
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "FetchBannerData error.");
-                return null;
-            }
-        }
     }
 }

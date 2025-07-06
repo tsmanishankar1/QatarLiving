@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using QLN.Common.Infrastructure.Constants;
+using System.Text.Json.Serialization;
 using QLN.Web.Shared.Services.Interface;
 using System.Net;
 using System.Text.Json;
@@ -163,55 +164,24 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-       public async Task<HttpResponseMessage> GetEventsByPagination(
-    int page,
-    int perPage,
-    string? search = null,
-    int? categoryId = null,
-    string? sortOrder = null,
-    string? fromDate = null,
-    string? toDate = null,
-    string? filterType = null,
-    List<int>? locationId = null,
-    bool? freeOnly = null,
-    bool? featuredFirst = null,
-    int? status = null
-)
-{
-    try
-    {
-        var requestBody = new
+        public async Task<HttpResponseMessage> GetEventsByPagination(object payload)
         {
-            page = page,
-            perPage = perPage,
-            status = status ?? 1,
-            search = search ?? "",
-            categoryId = categoryId ?? 0,
-            sortOrder = sortOrder ?? "desc",
-            fromDate = fromDate,
-            toDate = toDate,
-            filterType = filterType ?? "",
-            locationId = locationId ?? new List<int>(),
-            freeOnly = freeOnly ?? false,
-            featuredFirst = featuredFirst ?? false
-        };
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
 
-        var content = new StringContent(
-            JsonSerializer.Serialize(requestBody),
-            Encoding.UTF8,
-            "application/json"
-        );
-
-        var response = await _httpClient.PostAsync("/api/v2/event/getpaginatedevents", content);
-        return response;
-    }
-    catch (Exception ex)
-    {
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
-
-
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("/api/v2/event/getpaginatedevents", content);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }
