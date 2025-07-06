@@ -23,6 +23,7 @@
     }
     else
     {
+        var orderedFeaturedEvents = GetSlotOrderedEvents(FeaturedEvent);
         <div class="swiper-categories-container">
             <div class="swiper-categories swiper">
                 <!-- Navigation arrows -->
@@ -33,8 +34,8 @@
                     <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
                 </div>
 
-                <div class="swiper-wrapper @(FeaturedEvent.Count <= 5 ? "les5swiper-wrapper" : "")">
-                      <MudVirtualize Context="item" Items="FeaturedEvent">
+                <div class="swiper-wrapper @(orderedFeaturedEvents.Count <= 5 ? "les5swiper-wrapper" : "")">
+                      <MudVirtualize Context="item" Items="orderedFeaturedEvents">
                         <div class="swiper-slide swiper-slide-Card">
                             <FeaturedEventCardV2 Item="item" OnClick="HandleCategoryClick" />
                         </div>
@@ -74,6 +75,22 @@
     {
         Navigation.NavigateTo($"/content/eventsV2/details/{clickedItem.Id}");
         // Handle click logic here or raise EventCallback if needed
+    }
+        private List<EventDTOV2> GetSlotOrderedEvents(List<EventDTOV2> events)
+    {
+        const int maxSlots = 100;
+        var slotEvents = new EventDTOV2[maxSlots];
+
+        foreach (var ev in events)
+        {
+            if (ev.IsFeatured && ev.FeaturedSlot != null && ev.FeaturedSlot.Id > 0 && ev.FeaturedSlot.Id <= maxSlots)
+            {
+                int index = ev.FeaturedSlot.Id - 1;
+                slotEvents[index] = ev;
+            }
+        }
+
+        return slotEvents.Where(e => e != null).ToList();
     }
 }
 
