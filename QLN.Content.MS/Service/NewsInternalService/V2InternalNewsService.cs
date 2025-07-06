@@ -612,20 +612,40 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
+            _logger.LogInformation("Starting to save news comment for Article ID: {Nid}", dto.Nid);
             try
             {
                 var commentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.CommentId}";
                 var indexKey = $"{V2Content.NewsCommentIndexPrefix}{dto.Nid}";
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
+                _logger.LogInformation("Generated comment key: {CommentKey}", commentKey);
+                _logger.LogInformation("Generated index key: {IndexKey}", indexKey);
 
+                _logger.LogInformation("Saving comment state to Dapr store...");
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
+                _logger.LogInformation("Comment saved to key: {CommentKey}", commentKey);
+
+                _logger.LogInformation("Retrieving existing index list from Dapr...");
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
+                _logger.LogInformation("Retrieved {Count} comment IDs from index.", index.Count);
+
+
                 if (!index.Contains(dto.CommentId))
+                {
+                    _logger.LogInformation("Comment ID {CommentId} not found in index. Adding...", dto.CommentId);
                     index.Add(dto.CommentId);
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    _logger.LogInformation("Saving updated index back to Dapr...");
+                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    _logger.LogInformation("Index saved with {Count} total comment IDs.", index.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping update.", dto.CommentId);
+                }
 
                 _logger.LogInformation("News comment saved successfully for Article {Nid}", dto.Nid);
+
 
                 return new NewsCommentApiResponse
                 {
