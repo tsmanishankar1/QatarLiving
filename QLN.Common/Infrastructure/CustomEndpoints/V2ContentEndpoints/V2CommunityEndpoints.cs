@@ -189,7 +189,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                             Status = StatusCodes.Status404NotFound
                         });
                     }
-                    return TypedResults.Ok("Community post soft-deleted (IsActive=false) successfully.");
+                    return TypedResults.Ok("Community post deleted successfully.");
                 }
                 catch (KeyNotFoundException ex)
                 {
@@ -538,10 +538,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.WithName("LikeCommentInternal")
-.WithTags("V2Community")
-.ExcludeFromDescription();
+            .WithName("LikeCommentInternal")
+            .WithTags("V2Community")
+            .ExcludeFromDescription();
 
+            group.MapGet("/getBySlug/{slug}", async Task<Results<
+            Ok<V2CommunityPostDto>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            string slug,
+            IV2CommunityPostService service,
+            CancellationToken cancellationToken
+        ) =>
+            {
+                try
+                {
+                    var post = await service.GetCommunityPostBySlugAsync(slug, cancellationToken);
+                    if (post is null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"No community post found with slug: {slug}",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(post);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+        .WithName("GetCommunityPostBySlug")
+        .WithTags("V2Community")
+        .WithSummary("Get Community Post by Slug")
+        .WithDescription("Returns the community post for the provided slug.")
+        .Produces<V2CommunityPostDto>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
