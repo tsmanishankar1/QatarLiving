@@ -37,11 +37,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Id = id,
                     Slug = slug,
                     CategoryId = dto.CategoryId,
+                    CategoryName = dto.CategoryName ?? string.Empty,
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
-                    Location = dto.Location,
+                    LocationId = dto.LocationId,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
@@ -276,11 +277,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Id = dto.Id,
                     Slug = dto.Slug,
                     CategoryId = dto.CategoryId,
+                    CategoryName = dto.CategoryName,
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
-                    Location = dto.Location,
+                    LocationId = dto.LocationId,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
@@ -427,7 +429,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
                     int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
-                    string? filterType, string? location, bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
+                    string? filterType, List<int>? locationId, bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -546,11 +548,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                             break;
                     }
                 }
-                if (!string.IsNullOrWhiteSpace(location))
+                if (locationId is { Count: > 0 })
                 {
                     allEvents = allEvents
-                        .Where(e => !string.IsNullOrEmpty(e.Location) &&
-                                    e.Location.Contains(location, StringComparison.OrdinalIgnoreCase))
+                        .Where(e => e.LocationId != null && locationId.Contains(e.LocationId))
                         .ToList();
                 }
                 if (freeOnly == true)

@@ -442,28 +442,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
         {
-            group.MapGet("/getpaginatedevents", async Task<Results<Ok<PagedResponse<V2Events>>,
+            group.MapPost("/getpaginatedevents", async Task<Results<Ok<PagedResponse<V2Events>>,
                 BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
                 [FromQuery] int? page,
                 [FromQuery] int? perPage,
-                [FromQuery] EventStatus ? status,
+                [FromQuery] EventStatus? status,
                 [FromQuery] string? search,
                 [FromQuery] int? categoryId,
                 [FromQuery] string? sortOrder,
                 [FromQuery] DateOnly? fromDate,
                 [FromQuery] DateOnly? toDate,
                 [FromQuery] string? filterType,
-                [FromQuery] string? location,
+                [FromBody] List<int>? locationId,
                 [FromQuery] bool? freeOnly,
                 [FromQuery] bool? featuredFirst,
                 IV2EventService service,
+                HttpContext httpContext,
                 CancellationToken cancellationToken = default
             ) =>
             {
                 try
                 {
-                    var result = await service.GetPagedEvents(page, perPage, status, search, sortOrder, fromDate, toDate, filterType, location, freeOnly, categoryId, featuredFirst, cancellationToken);
+                    var result = await service.GetPagedEvents(page, perPage, status, search, sortOrder, fromDate, toDate, filterType, locationId, freeOnly, categoryId, featuredFirst, cancellationToken);
 
                     if (result == null || result.Items == null || !result.Items.Any())
                     {

@@ -9,10 +9,11 @@ namespace QLN.Common.DTO_s
         public string EventTitle { get; set; }
         [Required]
         public int CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public V2EventType EventType { get; set; }
         public int? Price { get; set; }
         [Required]
-        public string Location { get; set; }
+        public int LocationId { get; set; }
         public string Venue { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
@@ -49,7 +50,8 @@ namespace QLN.Common.DTO_s
     public class TimeSlot
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public string? Time { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
     }
     public class EventsCategory
     {
