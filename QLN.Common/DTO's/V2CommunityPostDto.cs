@@ -15,6 +15,10 @@ namespace QLN.Common.DTO_s
         [JsonPropertyName("userName")]
         public string? UserName { get; set; }
 
+        [JsonPropertyName("UserId")]
+        public string? UserId { get; set; }
+
+
         [JsonPropertyName("title")]
         public string? Title { get; set; }
 
