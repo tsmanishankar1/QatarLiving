@@ -164,9 +164,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<List<DailyTopicContent>> GetSlotsByTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/dailyliving/topic/content";
+            var url = $"/api/v2/dailyliving/topic/content?topicId={topicId}";
             var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, AppId, url);
-            req.Headers.Add("TopicId", topicId.ToString());
 
             _logger.LogDebug("GET {Url} with TopicId={TopicId}", url, topicId);
 
