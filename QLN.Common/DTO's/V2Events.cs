@@ -14,7 +14,8 @@ namespace QLN.Common.DTO_s
         public V2EventType EventType { get; set; }
         public int? Price { get; set; }
         [Required]
-        public int LocationId { get; set; }
+        public string Location { get; set; }
+        public int? LocationId { get; set; }
         public string Venue { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
