@@ -8,7 +8,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
     public class SearchSortBarBase : ComponentBase
     {
          [Parameter] public EventCallback<string> OnSearch { get; set; }
-        [Parameter] public EventCallback<bool> OnSort { get; set; }
+    [Parameter] public EventCallback<bool> OnSort { get; set; }
 
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;

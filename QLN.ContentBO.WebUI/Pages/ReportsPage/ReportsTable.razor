@@ -1,5 +1,5 @@
 @typeparam TPost
-@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using MudBlazor
 
@@ -9,45 +9,52 @@
 }
 else
 {
- <MudTable Items="Posts" Hover="true" Class="custom-table">
-    <HeaderContent>
-        <MudTh>Report ID</MudTh>
-        <MudTh>Post</MudTh>
-        <MudTh>Comment</MudTh>
-        <MudTh>Username</MudTh>
-        <MudTh>Comment Date</MudTh>
-        <MudTh>Reporter</MudTh>
-        <MudTh>Report Date</MudTh>
-        <MudTh>Actions</MudTh>
-    </HeaderContent>
-   <RowTemplate>
-        <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
-        <MudTd DataLabel="Post Title" >
-            <MudLink Href="#" Class="post-title">@context.PostTitle</MudLink>
-        </MudTd>
-        <MudTd DataLabel="Category">@context.Category</MudTd>
-        <MudTd DataLabel="Username">@context.Username</MudTd>
-        <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd DataLabel="Reporter">@context.Reporter</MudTd>
-        <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd>
+    <MudTable Items="Posts" Hover="true" Class="custom-table">
+        <HeaderContent>
+            <MudTh class="header-cell">Number</MudTh>
+            <MudTh class="header-cell">Post</MudTh>
+            <MudTh class="header-cell">Comment</MudTh>
+            <MudTh class="header-cell">Username</MudTh>
+            <MudTh class="header-cell">Comment Date</MudTh>
+            <MudTh class="header-cell">Reporter</MudTh>
+            <MudTh class="header-cell">Report Date</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
+            <MudTd DataLabel="Post">
+                <MudLink Href="#" Class="post-title">@context.Post</MudLink>
+            </MudTd>
+            <MudTd DataLabel="Comment">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "--")</MudTd>
+            <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "--")</MudTd>
+            <MudTd DataLabel="Comment Date">@((context.CommentDate.HasValue) ? context.CommentDate.Value.ToString("dd-MM-yyyy") : "--")</MudTd>
+            <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "--")</MudTd>
+            <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+
+            <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                <MudMenuItem>
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" /> Keep
-                </MudMenuItem>
-                <MudMenuItem OnClick="@(async () => await OnDelete.InvokeAsync(context.Number))" Class="mud-error-text">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                </MudMenuItem>
-            </MudMenu>
-        </MudTd>
-    </RowTemplate>
-</MudTable>
+                   <MudMenuItem OnClick="@(async () => await OnIgnore.InvokeAsync(context.Id))">
+                <img src="/qln-images/Ignore_icon.svg" class="menu-icon-style" alt="Ignore" />
+                <span class="menu-text">Ignore</span>
+            </MudMenuItem>
+            <MudMenuItem OnClick="@(async () => await OnDelete.InvokeAsync(context.Id))" Class="mud-error-text">
+                <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Delete" />
+                <span class="menu-text" style="color: #F04438;">Delete</span>
+            </MudMenuItem>
+
+                </MudMenu>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
 }
+
 @code {
-    [Parameter] public List<ReportsListDto> Posts { get; set; }
-    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public List<ReportDto> Posts { get; set; } = new();
+    [Parameter] public EventCallback<Guid> OnIgnore { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
     [Parameter] public bool IsLoading { get; set; }
 }
+
 
 <style>
      /* Table header style */

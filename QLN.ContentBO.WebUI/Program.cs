@@ -61,6 +61,12 @@ builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
     client.BaseAddress = new Uri(contentBOAPIURL);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
+builder.Services.AddHttpClient<IReportService, ReportService>(client =>
+{
+    client.BaseAddress = new Uri(contentBOAPIURL);
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+
 
 var app = builder.Build();
 
