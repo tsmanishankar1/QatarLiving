@@ -2,6 +2,9 @@
 using QLN.Common.Infrastructure.Constants;
 using QLN.Web.Shared.Services.Interface;
 using System.Net;
+using System.Text.Json;
+using System.Text;
+
 
 namespace QLN.Web.Shared.Services
 {
@@ -101,6 +104,114 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetAllEventsV2Async(bool? isFeatured = true)
+{
+    try
+    {
+        var isFeaturedValue = isFeatured ?? true;
+
+        var url = $"api/v2/event/getallfeaturedevents?isFeatured={isFeaturedValue.ToString().ToLower()}";
+
+        var response = await _httpClient.GetAsync(url);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("GetAllEventsV2Async: " + ex);
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
+        public async Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/v2/event/getbyid/{id}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetEventByIdV2Async: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventLocations()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/location/getAllCategoriesLocations");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventCategoriesV2()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallcategories");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+       public async Task<HttpResponseMessage> GetEventsByPagination(
+    int page,
+    int perPage,
+    string? search = null,
+    int? categoryId = null,
+    string? sortOrder = null,
+    string? fromDate = null,
+    string? toDate = null,
+    string? filterType = null,
+    List<int>? locationId = null,
+    bool? freeOnly = null,
+    bool? featuredFirst = null,
+    int? status = null
+)
+{
+    try
+    {
+        var requestBody = new
+        {
+            page = page,
+            perPage = perPage,
+            status = status ?? 1,
+            search = search ?? "",
+            categoryId = categoryId ?? 0,
+            sortOrder = sortOrder ?? "desc",
+            fromDate = fromDate,
+            toDate = toDate,
+            filterType = filterType ?? "",
+            locationId = locationId ?? new List<int>(),
+            freeOnly = freeOnly ?? false,
+            featuredFirst = featuredFirst ?? false
+        };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(requestBody),
+            Encoding.UTF8,
+            "application/json"
+        );
+
+        var response = await _httpClient.PostAsync("/api/v2/event/getpaginatedevents", content);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
+
 
     }
 }
