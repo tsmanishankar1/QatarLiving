@@ -1,5 +1,8 @@
 @page "/manage/news/category/{CategoryId:int}"
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Models;
 @inherits NewsBase
+
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
         <div class="news-header">
@@ -15,7 +18,7 @@
             }
             <MudImage Src="/qln-images/news_edit_icon.svg" Alt="Edit" Class="edit-icon-img" />
         </div>
-        <MudTabs  @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
+        <MudTabs @bind-ActivePanelIndex="@activeIndex" Rounded="false" Centered="false" Class="custom-tabs" Style="background-color: #FAFAFA;" DisableSlideAnimation="true">
             @foreach (var subCategory in SubCategories)
             {
                 <MudTabPanel Text="@subCategory.SubCategoryName" OnClick="@(() => LoadCategory(CategoryId, subCategory))" />
@@ -31,61 +34,310 @@
                     <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
                         Add Article
                     </MudButton>
-                    <MudTextField @bind-Value="searchText"
+                    <MudTextField @bind-Value="SearchString"
                                   Placeholder="Search for Articles"
                                   Variant="Variant.Outlined"
                                   Adornment="Adornment.Start"
                                   AdornmentIcon="@Icons.Material.Filled.Search"
-                                  Class="search-field" />
+                                  Class="search-field"
+                                  OnAdornmentClick="@(() => SearchArticles())" />
                 </div>
-                <MudTable Items="ListOfNewsArticles" Hover="true" Style="padding-top: 20px;">
-                    <HeaderContent>
-                        <MudTh>Slot</MudTh>
-                        <MudTh>Title</MudTh>
-                        <MudTh>Creation Date</MudTh>
-                        <MudTh>Live for</MudTh>
-                        <MudTh>Author</MudTh>
-                        <MudTh>Actions</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd DataLabel="Slot">
-                            @if (GetCurrentSlot(context) > 1)
-                            {
-                                <MudTooltip Text="Move Up">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemUp(@context.Id))" />
-                                </MudTooltip>
-                            }
+                <div class="custom-table">
+                    <div class="toggle-tabs">
+                        <ToggleTabs Options="@tabOptions"
+                                    ActiveValue="@selectedTab"
+                                    OnChange="@OnTabChanged" />
+                    </div>
 
-                            @if (GetCurrentSlot(context) < 13)
-                            {
-                                <MudTooltip Text="Move Down">
-                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Secondary" Size="Size.Small" @onclick="@(() => Click_MoveItemDown(@context.Id))" />
-                                </MudTooltip>
-                            }
-                            @GetCurrentSlot(context)
-                        </MudTd>
-                        <MudTd DataLabel="Post Title">
-                            <MudLink Href="#">@context.Title</MudLink>
-                        </MudTd>
-                        <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
-                        <MudTd DataLabel="Live for">@GetTimeDifferenceFromNowUtc(@context.PublishedDate)</MudTd>
-                        <MudTd DataLabel="Author">@context.authorName</MudTd>
-                        <MudTd>
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Id}", true))">
-                                    <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
-                                </MudMenuItem>
-                                <MudMenuItem>
-                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
-                                </MudMenuItem>
-                                <MudMenuItem OnClick="@(() => DeleteArticle(context.Id))" Class="mud-error-text">
-                                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                </MudMenuItem>
-                            </MudMenu>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
+
+                    @if (IsSearchEnabled)
+                    {
+                        <MudDataGrid T="NewsArticleDTO" Items="SearchListOfNewsArticles"
+                                     Hover="true"
+                                     SortMode="SortMode.Single"
+                                     Filterable="true"
+                                     Dense="false"
+                                     Class="mt-4"
+                                     Height="50%"
+                                     Virtualize="true"
+                                     Loading="IsLoadingDataGrid"
+                                     LoadingProgressColor="Color.Primary">
+                            <NoRecordsContent>
+                                <MudText Class="pa-6" Color="Color.Dark" Typo="Typo.subtitle1">
+                                    No articles found with this search.
+                                </MudText>
+                            </NoRecordsContent>
+                            <Columns>
+
+                                <!-- Slot Controls -->
+                                <TemplateColumn Title="Slot" Width="150px">
+                                    <CellTemplate>
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+
+                                            <MudText Typo="Typo.body2">@GetCurrentSlot(context.Item)</MudText>
+                                        </MudStack>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Title Column -->
+                                <TemplateColumn Title="Title" Width="auto">
+                                    <CellTemplate>
+                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Creation Date -->
+                                <PropertyColumn Title="Creation Date"
+                                                Property="x => x.CreatedAt"
+                                                Format="dd-MM-yyyy"
+                                                Width="150px" />
+
+                                <!-- Live for -->
+                                <TemplateColumn Title="Live for" Width="120px">
+                                    <CellTemplate>
+                                        @GetTimeDifferenceFromNowUtc(context.Item.PublishedDate)
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Author -->
+                                <PropertyColumn Title="Author" Property="x => x.authorName" Width="150px" />
+
+                                <!-- Actions -->
+                                <TemplateColumn Title="Actions" Width="90px">
+                                    <CellTemplate>
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                            <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Item.Id}", true))">
+                                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Item))">
+                                                <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
+                                                <span>Go live</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Item))">
+                                                @if (selectedTab == "published")
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                    <span>Unpublish</span>
+                                                }
+                                                else
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Visibility" Class="me-2" />
+                                                    <span>Publish</span>
+                                                }
+                                            </MudMenuItem>
+
+                                            <MudMenuItem OnClick="@(() => DeleteArticle(context.Item.Id))" Class="mud-error-text">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                            </MudMenuItem>
+                                        </MudMenu>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                            </Columns>
+
+
+                            <PagerContent>
+                                <MudDataGridPager T="NewsArticleDTO" />
+                            </PagerContent>
+
+                        </MudDataGrid>
+                    }
+                    else if (selectedTab != "live")
+                    {
+                        <MudDataGrid T="NewsArticleDTO" Items="ListOfNewsArticles"
+                                     Hover="true"
+                                     SortMode="SortMode.Single"
+                                     Filterable="true"
+                                     Dense="false"
+                                     Class="mt-4"
+                                     Height="50%"
+                                     Virtualize="true"
+                                     Loading="IsLoadingDataGrid"
+                                     LoadingProgressColor="Color.Primary">
+                            <NoRecordsContent>
+                                <MudText Class="pa-6" Color="Color.Dark" Typo="Typo.subtitle1">
+                                    No articles found in this tab.
+                                </MudText>
+                            </NoRecordsContent>
+                            <Columns>
+
+                                <!-- Slot Controls -->
+                                <TemplateColumn Title="Slot" Width="150px">
+                                    <CellTemplate>
+                                        <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
+
+                                            <MudText Typo="Typo.body2">@GetCurrentSlot(context.Item)</MudText>
+                                        </MudStack>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Title Column -->
+                                <TemplateColumn Title="Title" Width="auto">
+                                    <CellTemplate>
+                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Creation Date -->
+                                <PropertyColumn Title="Creation Date"
+                                                Property="x => x.CreatedAt"
+                                                Format="dd-MM-yyyy"
+                                                Width="150px" />
+
+                                <!-- Live for -->
+                                <TemplateColumn Title="Live for" Width="120px">
+                                    <CellTemplate>
+                                        @GetTimeDifferenceFromNowUtc(context.Item.PublishedDate)
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                                <!-- Author -->
+                                <PropertyColumn Title="Author" Property="x => x.authorName" Width="150px" />
+
+                                <!-- Actions -->
+                                <TemplateColumn Title="Actions" Width="90px">
+                                    <CellTemplate>
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                            <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Item.Id}", true))">
+                                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Item))">
+                                                <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
+                                                <span>Go live</span>
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Item))">
+                                                @if (selectedTab == "published")
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                    <span>Unpublish</span>
+                                                }
+                                                else
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Visibility" Class="me-2" />
+                                                    <span>Publish</span>
+                                                }
+                                            </MudMenuItem>
+
+                                            <MudMenuItem OnClick="@(() => DeleteArticle(context.Item.Id))" Class="mud-error-text">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                            </MudMenuItem>
+                                        </MudMenu>
+                                    </CellTemplate>
+                                </TemplateColumn>
+
+                            </Columns>
+
+
+                            <PagerContent>
+                                <MudDataGridPager T="NewsArticleDTO" />
+                            </PagerContent>
+
+                        </MudDataGrid>
+                    }
+                    else
+                    {
+                        <MudTable Items="IndexedLiveArticles" Hover="true" Style="padding-top: 20px;">
+                            <HeaderContent>
+                                <MudTh>Slot</MudTh>
+                                <MudTh>Title</MudTh>
+                                <MudTh>Creation Date</MudTh>
+                                <MudTh>Live for</MudTh>
+                                <MudTh>Author</MudTh>
+                                <MudTh>Actions</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Slot">
+                                    @if (context.SlotNumber > 1 && context.Article is not null)
+                                    {
+                                        <MudTooltip Text="Move Up">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                                                           Color="Color.Secondary"
+                                                           Size="Size.Small"
+                                                           @onclick="@(() => Click_MoveItemUp(context.Article.Id))" />
+                                        </MudTooltip>
+                                    }
+
+                                    @if (context.SlotNumber < 13 && context.Article is not null)
+                                    {
+                                        <MudTooltip Text="Move Down">
+                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
+                                                           Color="Color.Secondary"
+                                                           Size="Size.Small"
+                                                           @onclick="@(() => Click_MoveItemDown(context.Article.Id))" />
+                                        </MudTooltip>
+                                    }
+
+                                    @context.SlotNumber
+                                </MudTd>
+
+                                <MudTd DataLabel="Article Title">
+                                    @if (context?.Article?.Title is not null)
+                                    {
+                                        <MudLink Href="#">@context.Article.Title</MudLink>
+                                    }
+                                    else
+                                    {
+                                        @("-")
+                                    }
+                                </MudTd>
+
+                                <MudTd DataLabel="Creation Date">
+                                    @if (context.Article?.CreatedAt is not null)
+                                    {
+                                        @context.Article?.CreatedAt.ToString("dd-MM-yyyy")
+                                    }
+                                    else
+                                    {
+                                        @("-")
+                                    }
+                                </MudTd>
+                                <MudTd DataLabel="Live for">
+                                    @if (context.Article?.PublishedDate is not null)
+                                    {
+                                        @GetTimeDifferenceFromNowUtc(context.Article?.PublishedDate ?? new())
+                                    }
+                                    else
+                                    {
+                                        @("-")
+                                    }
+
+                                </MudTd>
+                                <MudTd DataLabel="Author">
+                                    @if (context.Article?.authorName is not null)
+                                    {
+                                        @context.Article?.authorName
+                                    }
+                                    else
+                                    {
+                                        @("-")
+                                    }
+                                </MudTd>
+                                <MudTd>
+                                    @if (context.Article is not null)
+                                    {
+                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                            <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
+                                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                            </MudMenuItem>
+                                            <MudMenuItem>
+                                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                            </MudMenuItem>
+                                            <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
+                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                            </MudMenuItem>
+                                        </MudMenu>
+                                    }
+                                    else
+                                    {
+                                        <MudText Color="Color.Secondary">@("-")</MudText>
+                                    }
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    }
+                </div>
             </MudItem>
+
         </MudGrid>
     </MudItem>
 </MudGrid>
@@ -171,6 +423,15 @@
         padding: 0;
         margin: 0;
         outline: none;
+    }
+
+    .custom-table {
+        padding: 10px 0;
+        background-color: var(--color-background);
+    }
+
+    .toggle-tabs {
+        padding: 0 10px;
     }
 
 </style>

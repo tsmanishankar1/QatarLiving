@@ -64,7 +64,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // Reset to first page when page size changes
+            currentPage = 1; 
             PaginatedData = await GetEvents(currentPage, pageSize);
             StateHasChanged();
         }
@@ -390,7 +390,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                         EventTitle = "Feature an Event"
                     };
                     Snackbar.Add("Featured event deleted successfully", Severity.Success);
-                    // StateHasChanged();
+                    featuredEventSlots = await GetFeaturedSlotsAsync();
                 }
                 else
                 {

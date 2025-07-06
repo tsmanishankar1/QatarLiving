@@ -57,11 +57,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected string selectedTab = "published";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
-    {
-        new() { Label = "Published", Value = "published" },
-        new() { Label = "Unpublished", Value = "unpublished" },
-        new() { Label = "Expired", Value = "expired" }
-    };
+        {
+            new() { Label = "Published", Value = "published" },
+            new() { Label = "Unpublished", Value = "unpublished" },
+            new() { Label = "Expired", Value = "expired" }
+        };
 
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
