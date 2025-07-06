@@ -146,12 +146,13 @@ namespace QLN.Web.Shared.Services
 
 
 
-        public async Task<CommunityPostModel> GetCommunityPostDetail(string id)
+        public async Task<CommunityPostModel> GetCommunityPostDetail(string slug)
         {
             try
             {
-                var url = $"api/v2/community/getCommunityPostById/{id}";
+                var url = $"api/v2/community/getBySlug/{slug}";
                 var response = await _httpClient.GetFromJsonAsync<CommunityPostModel>(url);
+                
                 return response;
             }
             catch (Exception ex)
