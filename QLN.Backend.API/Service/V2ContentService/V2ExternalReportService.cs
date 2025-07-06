@@ -338,46 +338,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<CommunityPostWithReports?> GetCommunityPostWithReport(Guid postId, CancellationToken ct)
-        {
-            try
-            {
-
-                var url = $"/api/v2/report/getpostwithreports?postId={postId}";
-                return await _dapr.InvokeMethodAsync<CommunityPostWithReports>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    ct);
-            }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving community post with reports for PostId : {PostId}", postId);
-                throw;
-            }
-        }
-        public async Task<List<CommunityPostWithReports>> GetAllCommunityPostsWithReports(CancellationToken ct)
-        {
-            try
-            {
-                var url = $"/api/v2/report/getallcommunitypostwithreports";
-                return await _dapr.InvokeMethodAsync<List<CommunityPostWithReports>>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving all community posts with reports.");
-                throw;
-            }
-        }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(  int? pageNumber,    int? perPage,    string? searchTitle = null,    string? sortBy = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
         {
             try
             {
