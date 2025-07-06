@@ -1,10 +1,7 @@
 ﻿using Dapr.Client;
-using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.V2IContent;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -24,7 +21,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-                //ValidateReportRequest(dto);
 
                 var id = Guid.NewGuid();
                 var entity = new V2NewsCommunitycommentsDto
@@ -77,7 +73,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-                //ValidateReportRequest(dto);
 
                 var id = Guid.NewGuid();
                 var entity = new V2ContentReportArticleDto
@@ -183,7 +178,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
             }
         }
 
-
         public async Task<string> CreateCommunityReport(string userName, V2ReportCommunityPostDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -240,13 +234,11 @@ namespace QLN.Content.MS.Service.ReportInternalService
             {
                 _logger.LogInformation("Starting GetAllReports with params: sortOrder={SortOrder}, pageNumber={PageNumber}, pageSize={PageSize}, searchTerm={SearchTerm}",
                     sortOrder, pageNumber, pageSize, searchTerm);
-
-                // Validate parameters
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1) pageSize = 12;
-                if (pageSize > 100) pageSize = 100; // Limit maximum page size
+                if (pageSize > 100) pageSize = 100; 
 
-                // Fetch keys with error handling
+            
                 var reportKeys = await GetStateWithFallback<List<string>>(
                     ConstantValues.V2Content.ReportsIndexKey,
                     new List<string>(),
@@ -260,7 +252,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 _logger.LogInformation("Retrieved {ReportKeysCount} report keys and {CommentKeysCount} comment keys",
                     reportKeys.Count, commentKeys.Count);
 
-                // Fetch reports in parallel
                 var reportTasks = reportKeys.Select(async key =>
                 {
                     try
@@ -283,7 +274,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     .Where(r => r != null && r.IsActive) 
                     .ToList();
 
-                // Fetch comments in parallel
+              
                 var commentTasks = commentKeys.Select(async key =>
                 {
                     try
@@ -304,7 +295,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 var commentResults = await Task.WhenAll(commentTasks);
                 var comments = commentResults.Where(c => c != null).ToList();
 
-                // Fetch articles directly from the news index
+               
                 var newsKeys = await GetStateWithFallback<List<string>>(
                     ConstantValues.V2Content.NewsIndexKey,
                     new List<string>(),
@@ -312,10 +303,10 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 _logger.LogInformation("Fetched {Count} news keys from index", newsKeys.Count);
 
-                // Initialize articles list
+               
                 var articles = new List<V2NewsArticleDTO>();
 
-                // Only fetch articles if there are keys to fetch
+               
                 if (newsKeys != null && newsKeys.Any())
                 {
                     var newsItems = await _dapr.GetBulkStateAsync(
@@ -346,21 +337,21 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 _logger.LogInformation("Deserialized {Count} news articles", articles.Count);
 
-                // Create lookup dictionaries
+               
                 var commentLookup = comments.ToDictionary(c => c.Id, c => c);
                 var articleLookup = articles.ToDictionary(a => a.Id, a => a);
 
                 _logger.LogInformation("Processing {ReportsCount} reports with {CommentsCount} comments and {ArticlesCount} articles",
                     reports.Count, comments.Count, articles.Count);
 
-                // Map to response DTOs with proper post title resolution
+               
                 var result = reports.Select(report =>
                 {
                     commentLookup.TryGetValue(report.CommentId ?? Guid.Empty, out var comment);
                     string postTitle = null;
                     Guid? postId = null;
 
-                    // Primary method: Use PostId from report to fetch article title
+                   
                     if (report.PostId != null)
                     {
                         postId = report.PostId;
@@ -370,7 +361,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         }
                     }
 
-                    // Secondary method: If no PostId in report, try to get from comment's ArticleId
+                   
                     if (string.IsNullOrEmpty(postTitle) && comment?.ArticleId != null)
                     {
                         postId = comment.ArticleId;
@@ -380,7 +371,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         }
                     }
 
-                    // Log when post title is still null for debugging
+                  
                     if (string.IsNullOrEmpty(postTitle))
                     {
                         _logger.LogWarning("Could not find post title for report {ReportId} with PostId {PostId} and CommentId {CommentId}",
@@ -401,7 +392,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     };
                 }).ToList();
 
-                // Apply search filter
+               
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string lowerSearch = searchTerm.ToLower();
@@ -413,7 +404,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     ).ToList();
                 }
 
-                // Sort
+               
                 var sortedResult = sortOrder?.ToLower() switch
                 {
                     "asc" => result.OrderBy(r => r.ReportDate),
@@ -421,7 +412,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     _ => result.OrderByDescending(r => r.ReportDate)
                 };
 
-                // Apply pagination
+              
                 var pagedResult = sortedResult
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -495,7 +486,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                     Console.WriteLine($"Report found: ID={report.Id}, IsActive={report.IsActive}, CommentId={report.CommentId}");
 
-                    // === KEEP ===
+                   
                     if (dto.IsKeep && report.IsActive)
                     {
                         report.IsActive = false;
@@ -512,11 +503,9 @@ namespace QLN.Content.MS.Service.ReportInternalService
                             throw new InvalidDataException($"Failed to save report state for key: {reportKey}", ex);
                         }
                     }
-
-                    // === DELETE ===
                     if (dto.IsDelete)
                     {
-                        // 1. Deactivate report if active
+                       
                         if (report.IsActive)
                         {
                             report.IsActive = false;
@@ -533,8 +522,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
                                 throw new InvalidDataException($"Failed to save report state for key: {reportKey}", ex);
                             }
                         }
-
-                        // 2. Deactivate comment if exists
                         if (report.CommentId.HasValue)
                         {
                             var commentIdStr = report.CommentId.Value.ToString();
@@ -580,7 +567,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     }
                 }
 
-                Console.WriteLine($"✅ UpdateReportStatus finished. Updated entries: {updatedCount}");
+                Console.WriteLine("UpdateReportStatus finished. Updated entries: {updatedCount}");
 
                 return updatedCount > 0
                     ? $"Successfully updated {updatedCount} entries."
@@ -588,12 +575,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
             }
             catch (InvalidDataException ex)
             {
-                Console.WriteLine($"❌ InvalidDataException: {ex.Message}");
+                Console.WriteLine("❌ InvalidDataException: {ex.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Unexpected error: {ex.Message}");
+                Console.WriteLine(" Unexpected error: {ex.Message}");
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
@@ -1052,8 +1039,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         UserName = userName
                     });
                 }
-
-                // Filter
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string search = searchTerm.ToLower();
@@ -1064,27 +1049,25 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         (!string.IsNullOrEmpty(r.UserName) && r.UserName.ToLower().Contains(search))
                     ).ToList();
                 }
-
-                // Sort
                 responseDtos = sortOrder.ToLower() switch
                 {
                     "asc" => responseDtos.OrderBy(r => r.ReportDate).ToList(),
                     _ => responseDtos.OrderByDescending(r => r.ReportDate).ToList()
                 };
 
-                // Paginate
+          
                 responseDtos = responseDtos
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
 
-                _logger.LogInformation("✅ Returning {Count} enriched community comment reports", responseDtos.Count);
+                _logger.LogInformation("Returning {Count} enriched community comment reports", responseDtos.Count);
 
                 return responseDtos;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Error in GetAllCommunityCommentReports with post/comment enrichment");
+                _logger.LogError(ex, "Error in GetAllCommunityCommentReports with post/comment enrichment");
                 throw;
             }
         }
@@ -1096,8 +1079,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
             {
                 Console.WriteLine("==> Begin UpdateCommunityCommentReportStatus");
                 Console.WriteLine($"ReportId: {dto.ReportId}, IsKeep: {dto.IsKeep}, IsDelete: {dto.IsDelete}");
-
-                // Validate inputs
                 if (dto.ReportId == Guid.Empty)
                     throw new InvalidDataException("ReportId is required.");
 
@@ -1107,7 +1088,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 if (!dto.IsKeep && !dto.IsDelete)
                     throw new InvalidDataException("Either IsKeep or IsDelete must be true.");
 
-                // Fetch report from Dapr
                 var reportKey = dto.ReportId.ToString();
                 Console.WriteLine($"Fetching community comment report with ID: {reportKey} from store: {storeName}");
 
@@ -1159,7 +1139,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         throw new InvalidDataException($"Comment not found for key: {commentKey}");
                     }
 
-                    Console.WriteLine($"✅ Comment found. ID={comment.CommentId}, IsActive={comment.IsActive}");
+                    Console.WriteLine("Comment found. ID={comment.CommentId}, IsActive={comment.IsActive}");
 
                     if (comment.IsActive)
                     {
@@ -1168,11 +1148,11 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         {
                             await _dapr.SaveStateAsync(storeName, commentKey, comment, cancellationToken: cancellationToken);
                             updatedCount++;
-                            Console.WriteLine($"✅ Comment {comment.CommentId} marked as inactive.");
+                            Console.WriteLine(" Comment {comment.CommentId} marked as inactive.");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"❌ Error saving comment with key {commentKey}: {ex.Message}");
+                            Console.WriteLine(" Error saving comment with key {commentKey}: {ex.Message}");
                             throw new InvalidDataException($"Failed to save comment with key {commentKey}", ex);
                         }
                     }
@@ -1184,17 +1164,17 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         {
                             await _dapr.SaveStateAsync(storeName, reportKey, report, cancellationToken: cancellationToken);
                             updatedCount++;
-                            Console.WriteLine($"✅ Report {dto.ReportId} marked as inactive (deleted).");
+                            Console.WriteLine(" Report {dto.ReportId} marked as inactive (deleted).");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"❌ Error saving report with ID {dto.ReportId}: {ex.Message}");
+                            Console.WriteLine(" Error saving report with ID {dto.ReportId}: {ex.Message}");
                             throw new InvalidDataException($"Failed to update report with ID {dto.ReportId}", ex);
                         }
                     }
                 }
 
-                Console.WriteLine($"✅ Update complete. Total updated entries: {updatedCount}");
+                Console.WriteLine("Update complete. Total updated entries: {updatedCount}");
 
                 return updatedCount > 0
                     ? $"Successfully updated {updatedCount} entries for report ID {dto.ReportId}."
@@ -1202,12 +1182,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
             }
             catch (InvalidDataException ex)
             {
-                Console.WriteLine($"❌ InvalidDataException: {ex.Message}");
+                Console.WriteLine(" InvalidDataException: {ex.Message}");
                 throw;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Unexpected error: {ex.Message}");
+                Console.WriteLine(" Unexpected error: {ex.Message}");
                 throw new InvalidDataException($"Unexpected error occurred while updating report ID {dto.ReportId}: {ex.Message}", ex);
             }
         }

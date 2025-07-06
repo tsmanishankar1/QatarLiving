@@ -518,11 +518,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                     }
                     catch (JsonException jsonEx)
                     {
-                        _logger.LogWarning(jsonEx, "⚠️ Failed to deserialize ProblemDetails. Raw: {ErrorJson}", errorJson);
+                        _logger.LogWarning(jsonEx, "Failed to deserialize ProblemDetails. Raw: {ErrorJson}", errorJson);
                         errorMessage = errorJson;
                     }
 
-                    _logger.LogError("❌ Error from internal service for ReportId: {ReportId}. StatusCode: {StatusCode}, Error: {ErrorMessage}",
+                    _logger.LogError(" Error from internal service for ReportId: {ReportId}. StatusCode: {StatusCode}, Error: {ErrorMessage}",
                         dto.ReportId, response.StatusCode, errorMessage);
 
                     throw new InvalidDataException(errorMessage);
@@ -533,30 +533,30 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 if (string.IsNullOrWhiteSpace(rawJson))
                 {
-                    _logger.LogWarning("⚠️ Empty response from content service for ReportId: {ReportId}", dto.ReportId);
+                    _logger.LogWarning(" Empty response from content service for ReportId: {ReportId}", dto.ReportId);
                     return "Empty response from content service";
                 }
 
                 try
                 {
                     var message = JsonSerializer.Deserialize<string>(rawJson);
-                    _logger.LogInformation("✅ Successfully updated report status. ReportId: {ReportId}, Message: {Message}", dto.ReportId, message);
+                    _logger.LogInformation("Successfully updated report status. ReportId: {ReportId}, Message: {Message}", dto.ReportId, message);
                     return message ?? "Unknown response from content service.";
                 }
                 catch (JsonException jsonEx)
                 {
-                    _logger.LogError(jsonEx, "❌ Failed to deserialize success response. Raw JSON: {RawJson}", rawJson);
+                    _logger.LogError(jsonEx, "Failed to deserialize success response. Raw JSON: {RawJson}", rawJson);
                     return $"Unexpected response format: {rawJson}";
                 }
             }
             catch (InvalidDataException ex)
             {
-                _logger.LogError(ex, "❌ Invalid data error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
+                _logger.LogError(ex, " Invalid data error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Unexpected error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
+                _logger.LogError(ex, "Unexpected error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
