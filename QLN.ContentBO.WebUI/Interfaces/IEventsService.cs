@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Interfaces
@@ -11,7 +12,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetEventById(Guid eventId);
         Task<HttpResponseMessage> DeleteEvent(string eventId);
         Task<HttpResponseMessage> GetFeaturedEvents();
-        Task<HttpResponseMessage> UpdateFeaturedEvents(EventDTO events);
+        Task<HttpResponseMessage> UpdateFeaturedEvents(object payload);
         Task<HttpResponseMessage> GetEventsByPagination(
     int page,
     int perPage,
@@ -29,5 +30,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
 
 
         Task<HttpResponseMessage> UpdateEvents(EventDTO events);
+        Task<HttpResponseMessage> ReorderFeaturedSlots(int fromSlot, int toSlot, string userId);
+
     }
 }

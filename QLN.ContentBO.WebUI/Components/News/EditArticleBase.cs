@@ -120,6 +120,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 }
 
                 article.UserId = CurrentUserId.ToString();
+                article.authorName = CurrentUserName;
                 var response = await newsService.UpdateArticle(article);
                 if (response != null && response.IsSuccessStatusCode)
                 {

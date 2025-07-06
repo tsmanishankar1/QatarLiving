@@ -140,6 +140,7 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
+        private bool _shouldInitializeMap = true;
         protected override async Task OnInitializedAsync()
         {
             CurrentEvent ??= new EventDTO();
@@ -152,9 +153,10 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+             if (_shouldInitializeMap)
             {
-                await JS.InvokeVoidAsync("initMap", 25.32, 51.54);
+                _shouldInitializeMap = false;
+                 await JS.InvokeVoidAsync("initMap", 25.32, 51.54);
             }
         }
         [JSInvokable]
@@ -368,6 +370,11 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             try
             {
+                CurrentEvent.Status = EventStatus.Published;
+                Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions
+{
+    WriteIndented = true // For pretty printing
+}));
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -435,6 +442,8 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 CurrentEvent.Location = selectedLocation.Name;
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
+                CurrentEvent.Latitude = selectedLocation.Latitude;
+                CurrentEvent.Longitude = selectedLocation.Longitude;
                 if (double.TryParse(selectedLocation.Latitude, out var lat) &&
                     double.TryParse(selectedLocation.Longitude, out var lng))
                 {
@@ -445,29 +454,20 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
-            entry.IsSelected = (bool)value!;
+            var existingSlot = CurrentEvent.EventSchedule.TimeSlots
+                 .FirstOrDefault(ts => ts.DayOfWeek == entry.Date.DayOfWeek);
 
-            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
+            if (existingSlot != null)
             {
-                var existing = CurrentEvent.EventSchedule.TimeSlots
-                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
-
-                if (existing != null)
-                {
-                    existing.Time = entry.TimeRange;
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
-                    {
-                        DayOfWeek = entry.Date.DayOfWeek,
-                        Time = entry.TimeRange
-                    });
-                }
+                CurrentEvent.EventSchedule.TimeSlots.Remove(existingSlot);
             }
             else
             {
-                CurrentEvent.EventSchedule.TimeSlots.RemoveAll(t => t.DayOfWeek == entry.Date.DayOfWeek);
+                CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+                {
+                    DayOfWeek = entry.Date.DayOfWeek,
+                    Time = entry.TimeRange
+                });
             }
         }
         protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
@@ -493,29 +493,37 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
             }
         }
+        protected bool IsValidTimeFormat(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            return false;
+            var pattern = @"^([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)\s?to\s?([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$";
+            return System.Text.RegularExpressions.Regex.IsMatch(input, pattern);
+        }            
         private void ClearForm()
-{
-    CurrentEvent = new EventDTO
-    {
-        EventSchedule = new EventScheduleModel(),
-        FeaturedSlot = new Slot(),
-        IsActive = true,
-        IsFeatured = false
-    };
+        {
+            CurrentEvent = new EventDTO
+            {
+                EventSchedule = new EventScheduleModel(),
+                FeaturedSlot = new Slot(),
+                IsActive = true,
+                IsFeatured = false
+            };
 
-    SelectedDateLabel = string.Empty;
-    StartTimeSpan = null;
-    EndTimeSpan = null;
-    _dateRange = null;
-    DayTimeList.Clear();
-    _timeError = string.Empty;
-    _descriptionerror = string.Empty;
-    _PriceError = string.Empty;
-    _coverImageError = string.Empty;
-    uploadedImage = null;
-    SelectedLocationId = null;
-    StateHasChanged();
-}
+            SelectedDateLabel = string.Empty;
+            StartTimeSpan = null;
+            EndTimeSpan = null;
+            _dateRange = null;
+            DayTimeList.Clear();
+            _timeError = string.Empty;
+            _descriptionerror = string.Empty;
+            _PriceError = string.Empty;
+            _coverImageError = string.Empty;
+            uploadedImage = null;
+            SelectedLocationId = null;
+        
+            StateHasChanged();
+        }
     };
 }
 

@@ -3,6 +3,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Constants;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
+using System.Text.Json;
 
 namespace QLN.Content.MS.Service.DailyInternalService
 {
@@ -77,5 +78,104 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             return slots;
         }
+        public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
+        {
+            topic.Id = Guid.NewGuid();
+            var key = $"daily-topic:{topic.Id}";
+
+            // Save topic
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
+
+            // Maintain index
+            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, cancellationToken: cancellationToken)
+                         ?? new List<string>();
+
+            if (!index.Contains(key))
+            {
+                index.Add(key);
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, index, cancellationToken: cancellationToken);
+            }
+
+            _logger.LogInformation("Daily topic {TopicName} with Id {Id} saved", topic.TopicName, topic.Id);
+        }
+
+        public async Task<List<DailyTopic>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default)
+        {
+            var keys = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, cancellationToken: cancellationToken)
+                        ?? new List<string>();
+
+            var stateItems = await _dapr.GetBulkStateAsync(
+                V2Content.ContentStoreName,
+                keys,
+                parallelism: null,
+                metadata: null,
+                cancellationToken: cancellationToken);
+
+            var topics = stateItems
+                .Select(s => JsonSerializer.Deserialize<DailyTopic>(s.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
+                .Where(t => t != null && t.IsPublished)
+                .ToList();
+
+            return topics!;
+        }
+        public async Task<bool> UpdateDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
+        {
+            var key = $"daily-topic:{topic.Id}";
+
+            // Check if topic exists
+            var existing = await _dapr.GetStateAsync<DailyTopic>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
+            if (existing == null)
+                return false;
+
+            // Overwrite with new data
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
+
+            // Update index only if missing
+            var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, cancellationToken: cancellationToken)
+                ?? new List<string>();
+
+            if (!index.Contains(key))
+            {
+                index.Add(key);
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, V2Content.DailyTopicIndexKey, index, cancellationToken: cancellationToken);
+            }
+
+            _logger.LogInformation("Daily topic {TopicName} with Id {Id} updated", topic.TopicName, topic.Id);
+            return true;
+        }
+
+        public async Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default)
+        {
+            var key = $"daily-topic:{id}";
+
+            var topic = await _dapr.GetStateAsync<DailyTopic>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
+            if (topic == null)
+                return false;
+
+            topic.IsPublished = isPublished;
+
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
+
+            _logger.LogInformation("DailyTopic {Id} publish status updated to {Status}", id, isPublished);
+            return true;
+        }
+
+        public async Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var key = $"daily-topic:{id}";
+            var topic = await _dapr.GetStateAsync<DailyTopic>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
+            if (topic == null)
+                return false;
+
+            topic.IsPublished = false;
+
+            await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, topic, cancellationToken: cancellationToken);
+            _logger.LogInformation("Daily topic with ID {Id} was soft-deleted (marked as unpublished).", id);
+
+            return true;
+        }
+
+
+
     }
 }

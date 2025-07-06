@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
 {
@@ -80,6 +81,23 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
+    }
+    public class GetPagedEventsRequest
+    {
+        public int? Page { get; set; }
+        public int? PerPage { get; set; }
+        public EventStatus? Status { get; set; }
+        public string? Search { get; set; }
+        public int? CategoryId { get; set; }
+        public string? SortOrder { get; set; }
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
+        public string? FilterType { get; set; }
+
+        [FromQuery(Name = "locationId")]
+        public List<int>? LocationId { get; set; }
+        public bool? FreeOnly { get; set; }
+        public bool? FeaturedFirst { get; set; }
     }
 
 }
