@@ -1,8 +1,9 @@
 @page "/dashboard"
 @inherits DailyLivingBase
 @using QLN.ContentBO.WebUI.Components.EmptyCard
-
+@using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable;
+@using QLN.ContentBO.WebUI.Pages.EventsPage;
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
@@ -46,17 +47,39 @@
         }
         @if (isLoading)
         {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-3" />
+            <MudPaper Class="p-4">
+                @for (int i = 0; i < 5; i++)
+                {
+                    <MudSkeleton Height="30px" Width="100%" Animation="Animation.Pulse" Class="mb-2" />
+                }
+            </MudPaper>
+      }
+        else if (SelectedTab == DailyLivingTab.FeaturedEvents)
+        {
+            if (featuredEventSlots is null || !featuredEventSlots.Any())
+            {
+                <EmptyCard Title="No Featured Events Found"
+                           Subtitle="Please check back later." />
+            }
+            else
+            {
+                <FeaturedEventSlotsList IsLoadingEvent="IsLoadingEvent"
+                                        FeaturedEventSlots="featuredEventSlots"
+                                        Categories="Categories"
+                                        ReplaceSlot="ReplaceEventSlot"
+                                        OnDelete="DeleteFeatureEvent" />
+            }
         }
         else if (articles is null || !articles.Any())
         {
             <EmptyCard Title="No Content Found"
-                            Subtitle="Please Check back later." />
+                       Subtitle="Please check back later." />
         }
         else
         {
             <MudArticleTable Articles="articles" />
         }
+
 
 
     </MudItem>
