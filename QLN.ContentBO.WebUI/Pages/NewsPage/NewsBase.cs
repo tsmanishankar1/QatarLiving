@@ -20,8 +20,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected int activeIndex = 0;
 
-        protected string searchText;
-
         protected string selectedType;
 
         public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
@@ -61,6 +59,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected bool IsLoadingDataGrid { get; set; } = false;
 
+        protected bool IsSearchEnabled { get; set; } = false;
+
+        protected string SearchString { get; set; } = string.Empty;
+
+        public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (shouldFocusInput && subCategoryInputRef is not null)
@@ -76,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Categories = await GetNewsCategories() ?? [];
                 SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
-                SelectedSubcategory = SubCategories.First();
+                SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
                 Slots = await GetSlots();
 
                 IndexedLiveArticles = await GetLiveArticlesAsync();
@@ -101,6 +105,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 else
                 {
                     ListOfNewsArticles.RemoveAll(a => a.Id == id);
+                    if(SearchListOfNewsArticles.Count > 0)
+                    {
+                        SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                    }
                 }
 
                 StateHasChanged();
@@ -333,20 +341,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Logger.LogError(ex, "GetNewsCategories");
                 return [];
             }
-        }
-
-        protected string GetCategoryName(int categoryId)
-        {
-            return Categories.FirstOrDefault(c => c.Id == categoryId)?.CategoryName ?? "Qatar";
-        }
-
-        protected string? GetSubCategoryName(int CategoryId, int subCategoryId)
-        {
-            return Categories
-                .FirstOrDefault(c => c.Id == CategoryId)?
-                .SubCategories
-                .FirstOrDefault(sc => sc.Id == subCategoryId)?
-                .SubCategoryName;
         }
 
         protected int GetCurrentSlot(NewsArticleDTO articleDTO)
@@ -681,6 +675,48 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             if (category != null)
             {
                 category.SlotId = newSlotId;
+            }
+        }
+
+        protected async Task SearchArticles()
+        {
+            IsSearchEnabled = true;
+            IsLoadingDataGrid = true;
+            selectedTab = string.Empty;
+            SearchListOfNewsArticles = await SearchArticlesAsync();
+            IsLoadingDataGrid = false;
+        }
+
+        private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
+        {
+            try
+            {
+                var response = await newsService.SearchArticles(SearchString);
+                if (response != null)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return await response.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    }
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Search Error", Severity.Error);
+                    }
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                        Snackbar.Add(error?.Detail ?? "Internal Server Error", Severity.Error);
+                    }
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SearchArticles");
+                return [];
             }
         }
     }
