@@ -906,6 +906,208 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapPost("/comments", async Task<Results<
+    Ok<NewsCommentApiResponse>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    V2NewsCommentDto dto,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken ct
+) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                    return TypedResults.Forbid();
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                dto.Uid = userData.GetProperty("uid").GetString();
+                dto.CommentedAt = DateTime.UtcNow;
+                dto.CommentId = Guid.NewGuid();
+
+                var response = await service.SaveNewsCommentAsync(dto, ct);
+                return TypedResults.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to post news comment.", ex.Message);
+            }
+        })
+.WithName("PostNewsComment")
+.WithTags("News")
+.WithSummary("Post comment for a news article (JWT based)")
+.WithDescription("Takes the user ID from JWT token and posts a comment for the given article ID.")
+.Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status403Forbidden)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+        group.MapPost("/commentsSavebyid", async Task<Results<
+    Ok<NewsCommentApiResponse>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    V2NewsCommentDto dto,
+    IV2NewsService service,
+    CancellationToken ct
+) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Uid))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User ID",
+                        Detail = "User ID (Uid) is required in the payload.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                dto.CommentedAt = DateTime.UtcNow;
+                dto.CommentId = Guid.NewGuid();
+
+                var response = await service.SaveNewsCommentAsync(dto, ct);
+                return TypedResults.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to post news comment (by user ID).", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("PostNewsCommentByUserId")
+.WithTags("News")
+.WithSummary("Post comment with explicit user ID")
+.WithDescription("Used when the client/service sends the User ID directly in the request payload.")
+.Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+        group.MapGet("/comments/byArticle/{nid}", async Task<Results<
+    Ok<NewsCommentListResponse>,
+    NotFound<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    string nid,
+    int? page,
+    int? perPage,
+    IV2NewsService service,
+    CancellationToken ct
+) =>
+        {
+            try
+            {
+                var response = await service.GetCommentsByArticleIdAsync(nid, page, perPage, ct);
+
+                if (response.Comments == null || !response.Comments.Any())
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No Comments Found",
+                        Detail = $"No comments found for Article ID: {nid}"
+                    });
+                }
+
+                return TypedResults.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Error retrieving comments", ex.Message);
+            }
+        })
+.WithName("GetCommentsByArticleId")
+.WithTags("News")
+.WithSummary("Get all comments for a specific news article")
+.WithDescription("Returns a paginated list of comments for the provided article ID. Pagination is optional.")
+.Produces<NewsCommentListResponse>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/comments/{commentId}/like", async Task<Results<
+    Ok<bool>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    string commentId,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken ct
+) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                    return TypedResults.Forbid();
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
+
+                var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle like for news comment.", ex.Message);
+            }
+        })
+.WithName("LikeNewsCommentJWT")
+.WithTags("News")
+.WithSummary("Toggle like on a comment (JWT-based)")
+.WithDescription("Toggles like/unlike for a news comment by reading user ID from JWT token.")
+.Produces<bool>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status403Forbidden)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/comments/{commentId}/like/by-user", async Task<Results<
+    Ok<bool>,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    string commentId,
+    [FromQuery] string userId,
+    IV2NewsService service,
+    CancellationToken ct
+) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User ID",
+                        Detail = "The 'userId' query parameter is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle like (by user ID).", ex.Message);
+            }
+        })
+.ExcludeFromDescription()
+.WithName("LikeNewsCommentByUserId")
+.WithTags("News")
+.WithSummary("Toggle like with explicit user ID")
+.WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
+.Produces<bool>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
         return group;
     }
 }

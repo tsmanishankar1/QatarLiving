@@ -35,6 +35,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     dto.UserName = userData.GetProperty("name").GetString();
                     dto.UpdatedBy = uid;
                     dto.UpdatedDate = DateTime.UtcNow;
+                    dto.IsActive = true;
                     dto.DateCreated = DateTime.UtcNow;
 
                     var result = await service.CreateCommunityPostAsync(uid, dto, ct);
