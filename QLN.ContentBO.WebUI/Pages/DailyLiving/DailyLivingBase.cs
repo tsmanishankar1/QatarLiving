@@ -1,144 +1,89 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
-using MudExRichTextEditor;
-using QLN.Common.Infrastructure.DTO_s;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.EventsPage;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components.RadioAutoCompleteDialog;
-namespace QLN.ContentBO.WebUI.Pages
+
+public class DailyLivingBase : ComponentBase
 {
-    public class DailyLivingBase : QLComponentBase
+    protected int activeIndex = 0;
+    protected List<DailyLivingArticleDto> articles = new();
+    protected bool isLoading = false;
+    protected DailyLivingTab SelectedTab => (DailyLivingTab)activeIndex;
+
+    [Inject] public IDailyLivingService DailyService { get; set; }
+    [Inject] public IDialogService DialogService { get; set; }
+    [Inject] public ILogger<DailyLivingBase> Logger { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        protected int activeIndex = 0;
-        [Inject]
-        public IDialogService DialogService { get; set; }
-        [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
-        [Inject] IEventsService eventsService { get; set; }
-        protected bool IsLoadingEvent = true;
-        protected List<EventCategoryModel> Categories = [];
-        protected List<FeaturedSlot> featuredEventSlots = [];
-        protected FeaturedSlot ReplaceSlot { get; set; } = new();
-        protected override async Task OnInitializedAsync()
-        {
-            featuredEventSlots = await GetFeaturedSlotsAsync();
-            Categories = await GetEventsCategories();
-        }
-        protected Task OpenDialogAsync()
-        {
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                CloseOnEscapeKey = true
-            };
-            return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
-        }
-        protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
-        {
-            ReplaceSlot = selectedEvent;
-            OpenDialogAsync();
-            await Task.CompletedTask;
-        }
-        private async Task<List<EventCategoryModel>> GetEventsCategories()
-        {
-            try
-            {
-                var apiResponse = await eventsService.GetEventCategories();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
-                }
-                return [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEventsCategories");
-                return [];
-            }
-        }
-        private async Task<List<FeaturedSlot>> GetFeaturedSlotsAsync()
-        {
-            IsLoadingEvent = true;
-            var slots = Enumerable.Range(1, 6)
-                .Select(i => new FeaturedSlot
-                {
-                    SlotNumber = i,
-                    Event = new EventDTO
-                    {
-                        EventTitle = "Feature an Event"
-                    }
-                }).ToList();
+        await LoadArticlesAsync();
+    }
 
-            try
-            {
-                var apiResponse = await eventsService.GetFeaturedEvents();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    var events = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>() ?? new();
-                    var rawContent = await apiResponse.Content.ReadAsStringAsync();
-                    foreach (var ev in events)
-                    {
-                        if (ev.FeaturedSlot != null && ev.FeaturedSlot.Id >= 1 && ev.FeaturedSlot.Id <= 6)
-                        {
-                            var index = ev.FeaturedSlot.Id - 1;
-                            slots[index] = new FeaturedSlot
-                            {
-                                SlotNumber = ev.FeaturedSlot.Id,
-                                Event = ev
-                            };
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error while fetching featured slots");
-            }
-            finally
-            {
-                IsLoadingEvent = false;
-            }
-            return slots;
-        }
-        protected async Task DeleteFeatureEvent(string eventId)
+    protected async Task OnTabChanged(int newIndex)
+    {
+        if (newIndex == activeIndex)
+            return;
+
+        activeIndex = newIndex;
+        await LoadArticlesAsync();
+    }
+
+
+    private async Task LoadArticlesAsync()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
         {
-            try
+            switch (SelectedTab)
             {
-                if (string.IsNullOrWhiteSpace(eventId))
-                {
-                    Snackbar.Add("Invalid event ID.", Severity.Warning);
-                    return;
-                }
-                var slot = featuredEventSlots.FirstOrDefault(s => s.Event?.Id.ToString() == eventId);
-                if (slot == null)
-                {
-                    Snackbar.Add("No featured event found with the given ID.", Severity.Warning);
-                    return;
-                }
-                var apiResponse = await eventsService.DeleteEvent(eventId);
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    slot.Event = new EventDTO
-                    {
-                        EventTitle = "Feature an Event"
-                    };
-                    Snackbar.Add("Featured event deleted successfully", Severity.Success);
-                    featuredEventSlots = await GetFeaturedSlotsAsync();
-                }
-                else
-                {
-                    Snackbar.Add("Failed to delete featured event.", Severity.Error);
-                }
+                case DailyLivingTab.TopSection:
+                    articles = await DailyService.GetTopSectionAsync();
+                    break;
+                case DailyLivingTab.FeaturedEvents:
+                    articles = await DailyService.GetFeaturedEventsAsync();
+                    break;
+                case DailyLivingTab.EverythingQatar:
+                    articles = await DailyService.GetContentByTopicIdAsync("5da6688e-6018-48bb-8c17-d4b0219adc8c");
+                    break;
+                case DailyLivingTab.Lifestyle:
+                    articles = await DailyService.GetContentByTopicIdAsync("3072ea6f-35b2-460a-b45c-796b942d0bad");
+                    break;
+                case DailyLivingTab.SportsNews:
+                    articles = await DailyService.GetContentByTopicIdAsync("83a18b49-7ad7-4148-b5a0-5dc71e75a537");
+                    break;
+                case DailyLivingTab.QLExclusive:
+                    articles = await DailyService.GetContentByTopicIdAsync("31e36a07-acb0-4a32-9d4e-ca55a68f9f8f");
+                    break;
+                case DailyLivingTab.AdviceHelp:
+                    articles = await DailyService.GetContentByTopicIdAsync("4c1e7ed7-9424-413b-b846-81454183e87b");
+                    break;
+                default:
+                    articles = new();
+                    break;
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "DeleteFeatureEvent");
-                Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
-            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load articles for tab {Tab}", SelectedTab);
+            articles = new();
         }
 
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    protected Task OpenDialogAsync()
+    {
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
     }
 }

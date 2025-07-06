@@ -5,7 +5,7 @@
 
 <MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
-        <div class="post-tag">@Post.Category</div>
+    <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
         @if (!IsDetailView)
         {
 

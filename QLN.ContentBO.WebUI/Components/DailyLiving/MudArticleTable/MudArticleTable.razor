@@ -1,6 +1,6 @@
 @using MudBlazor
 @inherits MudArticleTableBase
-<MudTable Items="@articles" Elevation="0" Bordered="true" Hover="true">
+<MudTable Items="@Articles" Elevation="0" Bordered="true" Hover="true">
     <HeaderContent>
         <MudTh>Slot</MudTh>
         <MudTh>Title</MudTh>
@@ -10,11 +10,11 @@
         <MudTh>Replace</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Slot">@context.Slot</MudTd>
+        <MudTd DataLabel="Slot">@context.SlotNumber</MudTd>
         <MudTd DataLabel="Title">
-            @if (!string.IsNullOrEmpty(context.Link))
+            @if (!string.IsNullOrEmpty(context.ContentURL))
             {
-                <MudLink Href="@context.Link" Target="_blank">@context.Title</MudLink>
+                <MudLink Href="@context.ContentURL" Target="_blank">@context.Title</MudLink>
             }
             else
             {
@@ -23,7 +23,7 @@
         </MudTd>
         <MudTd DataLabel="Category">@context.Category</MudTd>
         <MudTd DataLabel="Subcategory">@context.Subcategory</MudTd>
-        <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+        <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
         <MudTd>
             <MudIconButton Icon="@Icons.Material.Filled.FindReplace" Color="Color.Primary" />
         </MudTd>
