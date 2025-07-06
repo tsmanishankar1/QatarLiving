@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,9 +29,12 @@ namespace QLN.Common.DTO_s
         }
         public class V2ReportStatus
         {
-            public Guid PostId { get; set; }
-            public bool IsKeep { get; set; }
-            public bool IsDelete { get; set; }
+            public Guid ReportId { get; set; }
+            [DefaultValue(false)]
+            public bool IsKeep { get; set; } = false;
+
+            [DefaultValue(false)]
+            public bool IsDelete { get; set; } = false;
         }
     }
 }
