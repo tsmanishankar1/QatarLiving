@@ -72,6 +72,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
                 Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+                return;
             }
             if (TempCategoryList.Count >= MaxCategory)
             {
