@@ -906,7 +906,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/news/comments", async Task<Results<
+        group.MapPost("/comments", async Task<Results<
     Ok<NewsCommentApiResponse>,
     ForbidHttpResult,
     ProblemHttpResult>>
@@ -945,7 +945,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPost("/news/comments/Save", async Task<Results<
+        group.MapPost("/comments/Save", async Task<Results<
     Ok<NewsCommentApiResponse>,
     BadRequest<ProblemDetails>,
     ProblemHttpResult>>
@@ -1028,7 +1028,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/news/comments/{commentId}/like", async Task<Results<
+        group.MapPost("/comments/{commentId}/like", async Task<Results<
     Ok<bool>,
     ForbidHttpResult,
     ProblemHttpResult>>
@@ -1067,7 +1067,7 @@ public static class V2NewsEndpoints
 .Produces(StatusCodes.Status403Forbidden)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/news/comments/{commentId}/like/by-user", async Task<Results<
+        group.MapPost("/comments/{commentId}/like/by-user", async Task<Results<
     Ok<bool>,
     BadRequest<ProblemDetails>,
     ProblemHttpResult>>
