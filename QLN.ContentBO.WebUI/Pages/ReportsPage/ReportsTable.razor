@@ -1,11 +1,18 @@
 @typeparam TPost
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @using MudBlazor
 
 @if (IsLoading)
 {
     <TableSkeleton Rows="10" />
+}
+else if (Posts == null || Posts.Count == 0)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No Reports found" Subtitle="Please check back later or explore other categories." />
+    </div>
 }
 else
 {
