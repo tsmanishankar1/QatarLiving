@@ -21,5 +21,7 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default);
         Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default);
         Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default);
+        Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default);
+
     }
 }

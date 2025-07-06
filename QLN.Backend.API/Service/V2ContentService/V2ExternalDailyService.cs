@@ -147,6 +147,73 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<string> CreateContentAsync(string userId, DailyTopicContent dto, CancellationToken ct = default)
+        {
+            var url = $"/api/v2/dailyliving/topic/contentbyid/{userId}";
+            dto.CreatedBy = userId;
+            dto.UpdatedBy = userId;
+            var payload = JsonSerializer.Serialize(dto);
+            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
+            req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            using var res = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+            var body = await res.Content.ReadAsStringAsync(ct);
+            if (!res.IsSuccessStatusCode)
+                throw new DaprServiceException((int)res.StatusCode, body);
+            return JsonSerializer.Deserialize<string>(body)!;
+        }
+        public async Task<List<DailyTopicContent>> GetSlotsByTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/dailyliving/topic/content?topicId={topicId}";
+            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, AppId, url);
+
+            _logger.LogDebug("GET {Url} with TopicId={TopicId}", url, topicId);
+
+            using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+            var body = await res.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!res.IsSuccessStatusCode)
+            {
+                _logger.LogError(
+                    "GetSlotsByTopicAsync → {StatusCode} {ReasonPhrase}\n{Body}",
+                    (int)res.StatusCode, res.ReasonPhrase, body
+                );
+                throw new DaprServiceException((int)res.StatusCode, body);
+            }
+
+            var list = JsonSerializer.Deserialize<List<DailyTopicContent>>(body, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            return list ?? new List<DailyTopicContent>();
+        }
+        public async Task<string> ReorderSlotsAsync(string userId, ReorderDailyTopicContentDto dto, CancellationToken ct)
+        {
+            var url = $"/api/v2/dailyliving/topic/content/reorderbyid/{userId}";
+            var payload = JsonSerializer.Serialize(dto);
+            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, AppId, url);
+            req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            using var res = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+            var body = await res.Content.ReadAsStringAsync(ct);
+            if (!res.IsSuccessStatusCode)
+                throw new DaprServiceException((int)res.StatusCode, body);
+            return JsonSerializer.Deserialize<string>(body)!;
+        }
+
+        public async Task<string> DeleteContentAsync(Guid contentId, CancellationToken ct)
+        {
+            var url = $"/api/v2/dailyliving/topic/content/{contentId}";
+            var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Delete, AppId, url);
+
+            using var res = await _dapr.InvokeMethodWithResponseAsync(req, ct);
+            var body = await res.Content.ReadAsStringAsync(ct);
+            if (!res.IsSuccessStatusCode)
+                throw new DaprServiceException((int)res.StatusCode, body);
+            return JsonSerializer.Deserialize<string>(body)!;
+        }
+
 
         public async Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
         {

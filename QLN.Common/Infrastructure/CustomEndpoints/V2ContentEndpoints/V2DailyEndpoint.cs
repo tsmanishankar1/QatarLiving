@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using FirebaseAdmin.Auth;
 using QLN.Common.Infrastructure.CustomException;
+using System.Net.Http;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -20,7 +21,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapDailyTopicEndpoints(this RouteGroupBuilder group)
         {
-            // POST /dailyTopics
             group.MapPost(
                 "/topsection",
                 async Task<Results<
@@ -36,6 +36,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 ) =>
                 {
                     try
+
                     {
                         var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                         if (string.IsNullOrEmpty(userClaim))
@@ -44,7 +45,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         }
                         var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                         var userId = userData.GetProperty("uid").GetString();
-                        if(userId == null)
+                        if (userId == null)
                         {
                             return TypedResults.Forbid();
                         }
@@ -91,9 +92,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                 })
                 .WithName("CreateOrUpdateSlotByToken")
-                .WithTags("DailySlots")
-                .WithSummary("Create or update a daily slot using token")
-                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info.");
+                .WithTags("DailyLivingBO")
+                .WithSummary("Create or update a daily living top section using jwt token")
+                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record");
 
             group.MapPost(
                 "/topsection/{userId}",
@@ -137,10 +138,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     }
                 })
                 .WithName("CreateOrUpdateSlotInternal")
-                .WithTags("DailySlots")
+                .WithTags("DailyLivingBO")
                 .ExcludeFromDescription();
 
-            // GET /dailySlots
+
             group.MapGet(
                 "/topsection",
                 async Task<Results<
@@ -163,9 +164,359 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
             )
             .WithName("GetAllDailySlots")
-            .WithTags("DailySlots")
-            .WithSummary("Fetch all 9 daily slots (placeholders for empty ones)")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Fetch all 9 daily slots of Daily Living Top section")
             .Produces<List<DailyTopSectionSlot>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/topic/content",
+               async Task<Results<
+                   Created<string>,
+                   ForbidHttpResult,
+                   BadRequest<ProblemDetails>,
+                   ProblemHttpResult>>
+               (
+                   [FromBody] DailyTopicContent dto,
+                   [FromServices] IV2ContentDailyService service,
+                   HttpContext httpContext,
+                   CancellationToken ct
+               ) =>
+               {
+                   try
+                   {
+                       var userClaim = httpContext.User.Claims
+                                       .FirstOrDefault(c => c.Type == "user")?.Value;
+                       if (string.IsNullOrEmpty(userClaim))
+                           return TypedResults.Forbid();
+
+                       var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                       var userId = userData.GetProperty("uid").GetString()!;
+
+                       dto.CreatedBy = userId;
+                       dto.UpdatedBy = userId;
+                       dto.CreatedAt = DateTime.UtcNow;
+                       dto.UpdatedAt = DateTime.UtcNow;
+                       dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
+
+                       var result = await service.CreateContentAsync(userId, dto, ct);
+
+                       return TypedResults.Created($"/topic/content/{userId}", result);
+                   }
+                   catch (ArgumentOutOfRangeException ex)
+                   {
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Slot Out of Range",
+                           Detail = ex.Message,
+                           Status = StatusCodes.Status400BadRequest
+                       });
+                   }
+                   catch (InvalidOperationException ex)
+                   {
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Validation Error",
+                           Detail = ex.Message,
+                           Status = StatusCodes.Status400BadRequest
+                       });
+                   }
+                   catch (InvalidDataException ex)
+                   {
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Invalid Data",
+                           Detail = ex.Message,
+                           Status = StatusCodes.Status400BadRequest
+                       });
+                   }
+                   catch (DaprServiceException ex)
+                   {
+                       var pd = new ProblemDetails
+                       {
+                           Title = $"Upstream service error ({ex.StatusCode})",
+                           Detail = ex.ResponseBody,
+                           Status = ex.StatusCode
+                       };
+                       return TypedResults.Problem(
+                           title: pd.Title,
+                           detail: pd.Detail,
+                           statusCode: pd.Status,
+                           instance: httpContext.Request.Path
+                       );
+                   }
+                   catch (Exception ex)
+                   {
+                       return TypedResults.Problem(
+                           title: "Internal Server Error",
+                           detail: ex.Message
+                       );
+                   }
+               })
+               .WithName("CreateDailyTopicContentByToken")
+               .WithTags("DailyLivingBO")
+               .WithSummary("Create or update content in a topic slot (uses JWT to extract userId)")
+               .RequireAuthorization();
+
+
+            group.MapPost(
+                "/topic/contentbyid/{userId}",
+                async Task<Results<
+                    Created<string>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromRoute] string userId,
+                    [FromBody] DailyTopicContent dto,
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    try
+                    {
+                        dto.CreatedAt = DateTime.UtcNow;
+                        dto.UpdatedAt = DateTime.UtcNow;
+                        dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
+
+                        var result = await service.CreateContentAsync(userId, dto, ct);
+                        return TypedResults.Created($"/topic/content/{userId}", result);
+                    }
+                    catch (ArgumentOutOfRangeException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Slot Out of Range",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (InvalidDataException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    catch (DaprServiceException ex)
+                    {
+                        var pd = new ProblemDetails
+                        {
+                            Title = $"Upstream service error ({ex.StatusCode})",
+                            Detail = ex.ResponseBody,
+                            Status = ex.StatusCode
+                        };
+                        return TypedResults.Problem(
+                            title: pd.Title,
+                            detail: pd.Detail,
+                            statusCode: pd.Status
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message
+                        );
+                    }
+                })
+            .WithName("CreateDailyTopicContentInternal")
+            .WithTags("DailyLivingBO")
+            .ExcludeFromDescription();
+
+            group.MapGet(
+                "/topic/content",
+                async Task<Results<
+                    Ok<List<DailyTopicContent>>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromQuery] Guid topicId,
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    if (topicId == Guid.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Missing Header",
+                            Detail = "TopicId header is required",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+
+                    try
+                    {
+                        var list = await service.GetSlotsByTopicAsync(topicId, ct);
+                        return TypedResults.Ok(list);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Error retrieving topic slots", ex.Message);
+                    }
+                })
+                .WithName("GetDailyTopicContentByTopic")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Fetch all filled slots for a given daily living topic")
+                .Produces<List<DailyTopicContent>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/topic/content/reorder", async Task<Results<
+                    Ok<string>,
+                    ForbidHttpResult,
+                    BadRequest<ProblemDetails>,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromBody] ReorderDailyTopicContentDto dto,
+                    [FromServices] IV2ContentDailyService svc,
+                    HttpContext ctx,
+                    CancellationToken ct
+                ) =>
+            {
+                try
+                {
+                    if (dto.FromSlot < 1 || dto.FromSlot > 9 || dto.ToSlot < 1 || dto.ToSlot > 9)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slots must be between 1 and 9.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var userClaim = ctx.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (userClaim is null) return TypedResults.Forbid();
+
+                    var ud = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    dto.UserId = ud.GetProperty("uid").GetString()!;
+                    dto.AuthorName = ud.GetProperty("name").GetString();
+
+                    var result = await svc.ReorderSlotsAsync(dto.UserId, dto, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("ReorderDailyTopicSlots")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Shift a piece of content from one slot to another, reordering intervening items")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/topic/content/reorderbyid/{userId}", async Task<Results<
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [FromBody] ReorderDailyTopicContentDto dto,
+                [FromRoute] string userId,
+                [FromServices] IV2ContentDailyService svc,
+                HttpContext ctx,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    if (dto.FromSlot < 1 || dto.FromSlot > 9 || dto.ToSlot < 1 || dto.ToSlot > 9)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slots must be between 1 and 9.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    dto.UserId = userId;
+
+                    var result = await svc.ReorderSlotsAsync(userId, dto, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("ReorderDailyTopicSlotsbyid")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Shift a piece of content from one slot to another, reordering intervening items")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .ExcludeFromDescription();
+
+            group.MapDelete("/topic/content/{contentId:guid}", async Task<Results<
+                    Ok<string>,
+                    ForbidHttpResult,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromRoute] Guid contentId,
+                    [FromServices] IV2ContentDailyService svc,
+                    HttpContext ctx,
+                    CancellationToken ct
+                ) =>
+            {
+                try
+                {
+                    var result = await svc.DeleteContentAsync(contentId, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("DeleteDailyTopicContent")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Delete a daily topic content item and shift remaining slots up")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/createdailytopic", async Task<Results<
@@ -212,7 +563,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
             })
         .WithName("CreateDailyTopic")
-        .WithTags("DailyTopic")
+        .WithTags("DailyLivingBO")
         .WithSummary("Create a daily topic (Authorized)")
         .WithDescription("Creates a daily topic with user authentication")
         .Produces<string>(StatusCodes.Status200OK)
@@ -252,7 +603,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             })
             .ExcludeFromDescription()
             .WithName("CreateDailyTopicById")
-            .WithTags("DailyTopic")
+            .WithTags("DailyLivingBO")
             .WithSummary("Create a daily topic by explicit ID (no auth)")
             .WithDescription("Creates a daily topic using payload-provided ID and name without requiring authorization.")
             .Produces<string>(StatusCodes.Status200OK)
@@ -260,280 +611,280 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/dailytopics", async Task<Results<Ok<List<DailyTopic>>, ProblemHttpResult>> (
-    [FromServices] IV2ContentDailyService service,
-    CancellationToken cancellationToken) =>
-            {
-                try
-                {
-                    var topics = await service.GetAllDailyTopicsAsync(cancellationToken);
-                    return TypedResults.Ok(topics);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to get daily topics", ex.Message);
-                }
-            })
-.WithName("GetAllDailyTopics")
-.WithTags("DailyTopic")
-.WithSummary("Get all active daily topics")
-.Produces<List<DailyTopic>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                [FromServices] IV2ContentDailyService service,
+                CancellationToken cancellationToken) =>
+                        {
+                            try
+                            {
+                                var topics = await service.GetAllDailyTopicsAsync(cancellationToken);
+                                return TypedResults.Ok(topics);
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem("Failed to get daily topics", ex.Message);
+                            }
+                        })
+            .WithName("GetAllDailyTopics")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Get all active daily topics")
+            .Produces<List<DailyTopic>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/updatedailytopic", async Task<Results<
-    Ok<string>,
-    ForbidHttpResult,
-    BadRequest<ProblemDetails>,
-    NotFound<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    DailyTopic topic,
-    [FromServices] IV2ContentDailyService service,
-    HttpContext httpContext,
-    CancellationToken cancellationToken
-) =>
-            {
-                try
-                {
-                    // Validate user claim
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (userClaim == null)
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var name = userData.GetProperty("name").GetString();
-
-                    // Validate input
-                    if (topic.Id == Guid.Empty || string.IsNullOrWhiteSpace(topic.TopicName))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                DailyTopic topic,
+                [FromServices] IV2ContentDailyService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
                         {
-                            Title = "Validation Error",
-                            Detail = "TopicName and valid Id are required."
-                        });
-                    }
+                            try
+                            {
+                                // Validate user claim
+                                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                                if (userClaim == null)
+                                {
+                                    return TypedResults.Forbid();
+                                }
 
-                    var updated = await service.UpdateDailyTopicAsync(topic, cancellationToken);
-                    if (!updated)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No topic found with ID {topic.Id}"
-                        });
-                    }
+                                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                                var uid = userData.GetProperty("uid").GetString();
+                                var name = userData.GetProperty("name").GetString();
 
-                    return TypedResults.Ok($"Daily topic updated successfully ");
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to update daily topic", ex.Message);
-                }
-            })
-.WithName("UpdateDailyTopic")
-.WithTags("DailyTopic")
-.WithSummary("Update a daily topic (Authorized)")
-.WithDescription("Updates a daily topic using authenticated user claims (Drupal or AAD)")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                                // Validate input
+                                if (topic.Id == Guid.Empty || string.IsNullOrWhiteSpace(topic.TopicName))
+                                {
+                                    return TypedResults.BadRequest(new ProblemDetails
+                                    {
+                                        Title = "Validation Error",
+                                        Detail = "TopicName and valid Id are required."
+                                    });
+                                }
+
+                                var updated = await service.UpdateDailyTopicAsync(topic, cancellationToken);
+                                if (!updated)
+                                {
+                                    return TypedResults.NotFound(new ProblemDetails
+                                    {
+                                        Title = "Not Found",
+                                        Detail = $"No topic found with ID {topic.Id}"
+                                    });
+                                }
+
+                                return TypedResults.Ok($"Daily topic updated successfully ");
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem("Failed to update daily topic", ex.Message);
+                            }
+                        })
+            .WithName("UpdateDailyTopic")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Update a daily topic (Authorized)")
+            .WithDescription("Updates a daily topic using authenticated user claims (Drupal or AAD)")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/dailytopicupdateid", async Task<Results<
-    Ok<string>,
-    NotFound<ProblemDetails>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    DailyTopic topic,
-    [FromServices] IV2ContentDailyService service,
-    CancellationToken cancellationToken
-) =>
-            {
-                try
-                {
-                    if (topic.Id == Guid.Empty || string.IsNullOrWhiteSpace(topic.TopicName))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
+                Ok<string>,
+                NotFound<ProblemDetails>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                DailyTopic topic,
+                [FromServices] IV2ContentDailyService service,
+                CancellationToken cancellationToken
+            ) =>
                         {
-                            Title = "Validation Error",
-                            Detail = "TopicName and valid Id are required."
-                        });
-                    }
+                            try
+                            {
+                                if (topic.Id == Guid.Empty || string.IsNullOrWhiteSpace(topic.TopicName))
+                                {
+                                    return TypedResults.BadRequest(new ProblemDetails
+                                    {
+                                        Title = "Validation Error",
+                                        Detail = "TopicName and valid Id are required."
+                                    });
+                                }
 
-                    var updated = await service.UpdateDailyTopicAsync(topic, cancellationToken);
-                    if (!updated)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No topic found with ID {topic.Id}"
-                        });
-                    }
+                                var updated = await service.UpdateDailyTopicAsync(topic, cancellationToken);
+                                if (!updated)
+                                {
+                                    return TypedResults.NotFound(new ProblemDetails
+                                    {
+                                        Title = "Not Found",
+                                        Detail = $"No topic found with ID {topic.Id}"
+                                    });
+                                }
 
-                    return TypedResults.Ok("Daily topic updated successfully (no auth).");
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to update daily topic", ex.Message);
-                }
-            })
-.ExcludeFromDescription()
-.WithName("UpdateDailyTopicById")
-.WithTags("DailyTopic")
-.WithSummary("Update a daily topic (no auth)")
-.WithDescription("Updates a daily topic without requiring authorization. Typically used for internal service calls.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                                return TypedResults.Ok("Daily topic updated successfully (no auth).");
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem("Failed to update daily topic", ex.Message);
+                            }
+                        })
+            .ExcludeFromDescription()
+            .WithName("UpdateDailyTopicById")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Update a daily topic (no auth)")
+            .WithDescription("Updates a daily topic without requiring authorization. Typically used for internal service calls.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
             group.MapPut("/publishstatus", async Task<Results<
-          Ok<string>,
-          ForbidHttpResult,
-          NotFound<ProblemDetails>,
-          BadRequest<ProblemDetails>,
-          ProblemHttpResult>>
-      (
-          DailyTopic dto,
-          HttpContext httpContext,
-          [FromServices] IV2ContentDailyService service,
-          CancellationToken cancellationToken
-      ) =>
-            {
-                try
+              Ok<string>,
+              ForbidHttpResult,
+              NotFound<ProblemDetails>,
+              BadRequest<ProblemDetails>,
+              ProblemHttpResult>>
+          (
+              DailyTopic dto,
+              HttpContext httpContext,
+              [FromServices] IV2ContentDailyService service,
+              CancellationToken cancellationToken
+          ) =>
                 {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (userClaim == null)
+                    try
                     {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var name = userData.GetProperty("name").GetString();
-
-                    if (dto.Id == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
+                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                        if (userClaim == null)
                         {
-                            Title = "Validation Error",
-                            Detail = "A valid non-empty Id is required."
-                        });
-                    }
+                            return TypedResults.Forbid();
+                        }
 
-                    var success = await service.UpdatePublishStatusAsync(dto.Id, dto.IsPublished, cancellationToken);
-                    if (!success)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        var uid = userData.GetProperty("uid").GetString();
+                        var name = userData.GetProperty("name").GetString();
+
+                        if (dto.Id == Guid.Empty)
                         {
-                            Title = "Not Found",
-                            Detail = $"No topic found with ID {dto.Id}"
-                        });
-                    }
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = "A valid non-empty Id is required."
+                            });
+                        }
 
-                    return TypedResults.Ok($"Topic {(dto.IsPublished ? "published" : "unpublished")}.");
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to update publish status", ex.Message);
-                }
-            })
-      .RequireAuthorization()
-      .WithName("UpdateDailyTopicPublishStatusWithAuth")
-      .WithTags("DailyTopic")
-      .WithSummary("Update publish/unpublish status of a topic (With Auth)")
-      .WithDescription("Requires authentication and updates the IsPublished field. Tracks the user who made the change.")
-      .Produces<string>(StatusCodes.Status200OK)
-      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-      .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-      .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                        var success = await service.UpdatePublishStatusAsync(dto.Id, dto.IsPublished, cancellationToken);
+                        if (!success)
+                        {
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = $"No topic found with ID {dto.Id}"
+                            });
+                        }
+
+                        return TypedResults.Ok($"Topic {(dto.IsPublished ? "published" : "unpublished")}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Failed to update publish status", ex.Message);
+                    }
+                })
+          .RequireAuthorization()
+          .WithName("UpdateDailyTopicPublishStatusWithAuth")
+          .WithTags("DailyLivingBO")
+          .WithSummary("Update publish/unpublish status of a topic (With Auth)")
+          .WithDescription("Requires authentication and updates the IsPublished field. Tracks the user who made the change.")
+          .Produces<string>(StatusCodes.Status200OK)
+          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+          .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+          .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/publishstatusbyid", async Task<Results<
-    Ok<string>,
-    NotFound<ProblemDetails>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    DailyTopic dto,
-    [FromServices] IV2ContentDailyService service,
-    CancellationToken cancellationToken
-) =>
-            {
-                try
-                {
-                    if (dto.Id == Guid.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
+                Ok<string>,
+                NotFound<ProblemDetails>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                DailyTopic dto,
+                [FromServices] IV2ContentDailyService service,
+                CancellationToken cancellationToken
+            ) =>
                         {
-                            Title = "Validation Error",
-                            Detail = "A valid non-empty Id is required."
-                        });
-                    }
+                            try
+                            {
+                                if (dto.Id == Guid.Empty)
+                                {
+                                    return TypedResults.BadRequest(new ProblemDetails
+                                    {
+                                        Title = "Validation Error",
+                                        Detail = "A valid non-empty Id is required."
+                                    });
+                                }
 
-                    var success = await service.UpdatePublishStatusAsync(dto.Id, dto.IsPublished, cancellationToken);
-                    if (!success)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No topic found with ID {dto.Id}"
-                        });
-                    }
+                                var success = await service.UpdatePublishStatusAsync(dto.Id, dto.IsPublished, cancellationToken);
+                                if (!success)
+                                {
+                                    return TypedResults.NotFound(new ProblemDetails
+                                    {
+                                        Title = "Not Found",
+                                        Detail = $"No topic found with ID {dto.Id}"
+                                    });
+                                }
 
-                    return TypedResults.Ok($"Topic {(dto.IsPublished ? "published" : "unpublished")} successfully.");
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to update publish status", ex.Message);
-                }
-            })
-.ExcludeFromDescription()
-.WithName("UpdateDailyTopicPublishStatusPublic")
-.WithTags("DailyTopic")
-.WithSummary("Update publish/unpublish status of a topic (No Auth)")
-.WithDescription("Used internally to toggle the IsPublished field without requiring authentication.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                                return TypedResults.Ok($"Topic {(dto.IsPublished ? "published" : "unpublished")} successfully.");
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem("Failed to update publish status", ex.Message);
+                            }
+                        })
+            .ExcludeFromDescription()
+            .WithName("UpdateDailyTopicPublishStatusPublic")
+            .WithTags("DailyTopic")
+            .WithSummary("Update publish/unpublish status of a topic (No Auth)")
+            .WithDescription("Used internally to toggle the IsPublished field without requiring authentication.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapDelete("/dailytopic/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
-    Guid id,
-    [FromServices] IV2ContentDailyService service,
-    CancellationToken cancellationToken) =>
-            {
-                try
-                {
-                    var success = await service.DeleteDailyTopicAsync(id, cancellationToken);
-                    if (!success)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
+                Guid id,
+                [FromServices] IV2ContentDailyService service,
+                CancellationToken cancellationToken) =>
                         {
-                            Title = "Not Found",
-                            Detail = $"Daily topic with ID {id} not found."
-                        });
-                    }
+                            try
+                            {
+                                var success = await service.DeleteDailyTopicAsync(id, cancellationToken);
+                                if (!success)
+                                {
+                                    return TypedResults.NotFound(new ProblemDetails
+                                    {
+                                        Title = "Not Found",
+                                        Detail = $"Daily topic with ID {id} not found."
+                                    });
+                                }
 
-                    return TypedResults.Ok("Daily topic soft-deleted successfully.");
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Failed to soft-delete daily topic", ex.Message);
-                }
-            })
-.WithName("SoftDeleteDailyTopic")
-.WithTags("DailyTopic")
-.WithSummary("Soft delete a daily topic by ID")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                                return TypedResults.Ok("Daily topic soft-deleted successfully.");
+                            }
+                            catch (Exception ex)
+                            {
+                                return TypedResults.Problem("Failed to soft-delete daily topic", ex.Message);
+                            }
+                        })
+            .WithName("SoftDeleteDailyTopic")
+            .WithTags("DailyLivingBO")
+            .WithSummary("Soft delete a daily topic by ID")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

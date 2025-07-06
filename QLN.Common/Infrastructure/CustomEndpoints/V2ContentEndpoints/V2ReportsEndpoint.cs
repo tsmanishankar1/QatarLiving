@@ -709,69 +709,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapGetReportCommunityPost(this RouteGroupBuilder group)
-        {
-            group.MapGet("/getpostwithreports", async Task<Results<
-            Ok<CommunityPostWithReports>,
-            NotFound,
-            ProblemHttpResult
-            >> (
-            Guid postId,
-            IV2ReportsService service,
-            CancellationToken ct
-            ) =>
-            {
-                try
-                {
-                    var result = await service.GetCommunityPostWithReport(postId, ct);
-                    if (result is null)
-                        return TypedResults.NotFound();
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("GetPostWithReports")
-            .WithTags("Reports")
-            .WithSummary("Get community post with associated reports")
-            .WithDescription("Returns basic details of a community post along with its reports.")
-            .Produces<CommunityPostWithReports>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            return group;
-        }
-        public static RouteGroupBuilder MapGetAllCommunityPostReports(this RouteGroupBuilder group)
-        {
-            group.MapGet("/getallcommunitypostwithreports", async Task<Results<
-                Ok<List<CommunityPostWithReports>>,
-                ProblemHttpResult
-                >> (
-                IV2ReportsService service,
-                CancellationToken ct
-                ) =>
-            {
-                try
-                {
-                    var result = await service.GetAllCommunityPostsWithReports(ct);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .WithName("GetAllCommunityPostReports")
-                .WithTags("Reports")
-                .WithSummary("Get all community posts with associated reports")
-                .WithDescription("Returns a list of community posts along with their reports.")
-                .Produces<List<CommunityPostWithReports>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            return group;
-        }
         public static RouteGroupBuilder MapGetAllCommunityPostsWithPagination(this RouteGroupBuilder group)
         {
             group.MapGet("/getallcommunitypostswithpagination", async Task<Results<

@@ -73,7 +73,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
-
                 var id = Guid.NewGuid();
                 var entity = new V2ContentReportArticleDto
                 {
@@ -179,7 +178,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw;
             }
         }
-
         public async Task<string> CreateCommunityReport(string userName, V2ReportCommunityPostDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -189,6 +187,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 {
                     Id = id,
                     PostId = dto.PostId,
+                    Router = dto.Router,
                     ReporterName = userName,
                     IsActive = true,
                     ReportDate = DateTime.UtcNow
@@ -218,7 +217,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     );
                 }
 
-                return "Community Report created successfully.";
+                return "Community Post Report created successfully.";
             }
             catch (ArgumentException ex)
             {
@@ -581,161 +580,20 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-
-        public async Task<CommunityPostWithReports?> GetCommunityPostWithReport(Guid postId, CancellationToken ct)
-        {
-            try
-            {
-                var postKey = $"community-{postId}";
-
-                var rawPostElement = await _dapr.GetStateAsync<JsonElement?>(V2Content.ContentStoreName, postKey, cancellationToken: ct);
-                var rawReportsElement = await _dapr.GetStateAsync<JsonElement?>(V2Content.ContentStoreName, V2Content.ReportsCommunityIndexKey, cancellationToken: ct);
-                if (rawPostElement == null || rawPostElement.Value.ValueKind == JsonValueKind.Null)
-                {
-                    return null;
-                }
-                var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                if (post == null || !post.IsActive)
-                {
-                    return null;
-                }
-                List<CommunityPostReport> reports = new();
-                if (rawReportsElement != null && rawReportsElement.Value.ValueKind != JsonValueKind.Null)
-                {
-                    var reportIds = JsonSerializer.Deserialize<List<Guid>>(rawReportsElement.Value.GetRawText());
-                    if (reportIds != null)
-                    {
-                        foreach (var reportId in reportIds)
-                        {
-                            var reportKey = reportId.ToString();
-                            var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(V2Content.ContentStoreName, reportKey, cancellationToken: ct);
-
-                            if (reportElement != null)
-                            {
-                                if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
-                                {
-                                    reports.Add(new CommunityPostReport
-                                    {
-                                        ReporterName = reportElement.ReporterName,
-                                        ReportDate = reportElement.ReportDate
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                return new CommunityPostWithReports
-                {
-                    Id = post.Id,
-                    Title = post.Title,
-                    UserName = post.UserName,
-                    DateCreated = post.DateCreated,
-                    Reports = reports
-                };
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        public async Task<List<CommunityPostWithReports>> GetAllCommunityPostsWithReports(CancellationToken ct)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(
+        int? pageNumber,
+        int? perPage,
+        string? searchTitle = null,
+        string? sortBy = null,
+        CancellationToken ct = default)
         {
             try
             {
                 var allPosts = new List<CommunityPostWithReports>();
-                var allPostsElement = await _dapr.GetStateAsync<JsonElement?>(V2Content.ContentStoreName, "community-index", cancellationToken: ct);
-
-                if (allPostsElement == null || allPostsElement.Value.ValueKind == JsonValueKind.Null)
-                {
-                    return allPosts;
-                }
-                List<Guid> postIds = new();
-                var postKeys = JsonSerializer.Deserialize<List<string>>(allPostsElement.Value.GetRawText());
-                if (postKeys != null)
-                {
-                    foreach (var key in postKeys)
-                    {
-                        if (key.StartsWith("community-"))
-                        {
-                            var guidPart = key.Substring("community-".Length);
-                            if (Guid.TryParse(guidPart, out var guid))
-                            {
-                                postIds.Add(guid);
-                            }
-                        }
-                    }
-                }
-
-                if (!postIds.Any())
-                {
-                    return allPosts;
-                }
-                var rawReportsElement = await _dapr.GetStateAsync<JsonElement?>("contentstatestore", V2Content.ReportsCommunityIndexKey, cancellationToken: ct);
-                List<Guid> reportIds = new();
-
-                if (rawReportsElement != null && rawReportsElement.Value.ValueKind != JsonValueKind.Null)
-                {
-                        var deserializedReportIds = JsonSerializer.Deserialize<List<Guid>>(rawReportsElement.Value.GetRawText());
-                        if (deserializedReportIds != null)
-                        {
-                            reportIds = deserializedReportIds;
-                        }
-                }
-
-                foreach (var postId in postIds)
-                {
-                    var postKey = $"community-{postId}";
-                    var rawPostElement = await _dapr.GetStateAsync<JsonElement?>("contentstatestore", postKey, cancellationToken: ct);
-
-                    if (rawPostElement == null || rawPostElement.Value.ValueKind == JsonValueKind.Null)
-                    {
-                        continue;
-                    }
-                    var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                    if (post == null || !post.IsActive)
-                    {
-                        continue;
-                    }
-                    List<CommunityPostReport> reports = new();
-                    if (reportIds.Any())
-                    {
-                        foreach (var reportId in reportIds)
-                        {
-                            var reportKey = reportId.ToString();
-                            var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(V2Content.ContentStoreName, reportKey, cancellationToken: ct);
-
-                            if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
-                            {
-                                reports.Add(new CommunityPostReport
-                                {
-                                    ReporterName = reportElement.ReporterName,
-                                    ReportDate = reportElement.ReportDate
-                                });
-                            }
-                        }
-                    }
-                    allPosts.Add(new CommunityPostWithReports
-                    {
-                        Id = post.Id,
-                        Title = post.Title,
-                        UserName = post.UserName,
-                        DateCreated = post.DateCreated,
-                        Reports = reports
-                    });
-                }
-                return allPosts;
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber,int? perPage,string? searchTitle = null,string? sortBy = null,CancellationToken ct = default)
-        {
-            try
-            {
-                var allPosts = new List<CommunityPostWithReports>();
-                var allPostsElement = await _dapr.GetStateAsync<JsonElement?>(V2Content.ContentStoreName, "community-index", cancellationToken: ct);
+                var allPostsElement = await _dapr.GetStateAsync<JsonElement?>(
+                    V2Content.ContentStoreName,
+                    "community-index",
+                    cancellationToken: ct);
 
                 if (allPostsElement == null || allPostsElement.Value.ValueKind == JsonValueKind.Null)
                 {
@@ -753,7 +611,11 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     return new PaginatedCommunityPostResponse();
                 }
 
-                var rawReportsElement = await _dapr.GetStateAsync<JsonElement?>("contentstatestore", V2Content.ReportsCommunityIndexKey, cancellationToken: ct);
+                var rawReportsElement = await _dapr.GetStateAsync<JsonElement?>(
+                    "contentstatestore",
+                    V2Content.ReportsCommunityIndexKey,
+                    cancellationToken: ct);
+
                 var reportIds = rawReportsElement?.ValueKind != JsonValueKind.Null
                     ? JsonSerializer.Deserialize<List<Guid>>(rawReportsElement.Value.GetRawText()) ?? new List<Guid>()
                     : new List<Guid>();
@@ -762,58 +624,60 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 {
                     var postKey = $"community-{postId}";
                     var rawPostElement = await _dapr.GetStateAsync<JsonElement?>("contentstatestore", postKey, cancellationToken: ct);
-                    if (rawPostElement is null || rawPostElement.Value.ValueKind == JsonValueKind.Null) continue;
 
-                    var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
-                    if (post is null || !post.IsActive) 
+                    if (rawPostElement is null || rawPostElement.Value.ValueKind == JsonValueKind.Null)
                         continue;
 
-                    var reports = new List<CommunityPostReport>();
+                    var post = JsonSerializer.Deserialize<V2CommunityPostDto>(rawPostElement.Value.GetRawText());
+
+                    if (post is null || !post.IsActive)
+                        continue;
+
                     foreach (var reportId in reportIds)
                     {
                         var reportKey = reportId.ToString();
-                        var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(V2Content.ContentStoreName, reportKey, cancellationToken: ct);
-                        if (reportElement != null && reportElement.PostId == postId && reportElement.IsActive == true)
+                        var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(
+                            V2Content.ContentStoreName,
+                            reportKey,
+                            cancellationToken: ct);
+
+                        if (reportElement != null &&
+                            reportElement.PostId == postId &&
+                            reportElement.IsActive == true)
                         {
-                            reports.Add(new CommunityPostReport
+                            allPosts.Add(new CommunityPostWithReports
                             {
-                                ReporterName = reportElement.ReporterName,
-                                ReportDate = reportElement.ReportDate
+                                Id = reportId,
+                                PostId = post.Id,
+                                Post = post.Title,
+                                UserName = post.UserName,
+                                PostDate = post.DateCreated,
+                                Reporter = reportElement.ReporterName,
+                                ReportDate = reportElement.ReportDate,
+                                Router = reportElement.Router
                             });
                         }
                     }
-
-                    allPosts.Add(new CommunityPostWithReports
-                    {
-                        Id = post.Id,
-                        Title = post.Title,
-                        UserName = post.UserName,
-                        DateCreated = post.DateCreated,
-                        Reports = reports
-                    });
                 }
-
                 if (!string.IsNullOrWhiteSpace(searchTitle))
                 {
                     allPosts = allPosts
-                        .Where(p => p.Title.Contains(searchTitle, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => p.Post != null && p.Post.Contains(searchTitle, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
 
                 var sortKey = sortBy?.ToLowerInvariant();
                 allPosts = sortKey switch
                 {
-                    "title" => allPosts.OrderBy(p => p.Title).ToList(),
-                    "title_desc" => allPosts.OrderByDescending(p => p.Title).ToList(),
+                    "title" => allPosts.OrderBy(p => p.Post).ToList(),
+                    "title_desc" => allPosts.OrderByDescending(p => p.Post).ToList(),
                     "username" => allPosts.OrderBy(p => p.UserName).ToList(),
                     "username_desc" => allPosts.OrderByDescending(p => p.UserName).ToList(),
-                    "date" => allPosts.OrderBy(p => p.DateCreated).ToList(),
-                    "date_desc" => allPosts.OrderByDescending(p => p.DateCreated).ToList(),
-                    "reports" => allPosts.OrderBy(p => p.Reports.Count).ToList(),
-                    "reports_desc" => allPosts.OrderByDescending(p => p.Reports.Count).ToList(),
-                    "asc" => allPosts.OrderBy(p => p.Reports.Any() ? p.Reports.Max(r => r.ReportDate) : DateTime.MinValue).ToList(),
-                    "desc" => allPosts.OrderByDescending(p => p.Reports.Any() ? p.Reports.Max(r => r.ReportDate) : DateTime.MinValue).ToList(),
-                    _ => allPosts.OrderByDescending(p => p.DateCreated).ToList()
+                    "date" => allPosts.OrderBy(p => p.PostDate).ToList(),
+                    "date_desc" => allPosts.OrderByDescending(p => p.PostDate).ToList(),
+                    "reportdate" => allPosts.OrderBy(p => p.ReportDate).ToList(),
+                    "reportdate_desc" => allPosts.OrderByDescending(p => p.ReportDate).ToList(),
+                    _ => allPosts.OrderByDescending(p => p.PostDate).ToList()
                 };
 
                 var totalCount = allPosts.Count;
@@ -829,7 +693,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     Posts = paginatedPosts,
                     TotalCount = totalCount,
                     Page = currentPage,
-                    PerPage = pageSize,
+                    PerPage = pageSize
                 };
             }
             catch (Exception)
