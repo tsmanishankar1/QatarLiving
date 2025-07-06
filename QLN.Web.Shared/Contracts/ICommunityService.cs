@@ -16,6 +16,8 @@ namespace QLN.Web.Shared.Contracts
         Task<CommunityPostModel> GetCommunityPostDetail(string slug);
         Task<List<CommunityCategoryModel>> GetCommunityCategoriesAsync();
         Task<bool> CreateCommunityPostAsync(CreateCommunityPostDto dto);
+        Task<bool> PostCommentAsyncV2(CommentPostRequestDto dto);
+        Task<PaginatedCommentResponse> GetCommentsByPostIdAsyncV2(int nid, int page, int pageSize);
 
     }
 }

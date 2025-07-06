@@ -204,6 +204,50 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<bool> PostCommentAsyncV2(CommentPostRequestDto dto)
+        {
+            try
+            {
+                var url = "api/v2/community/addCommentByCategoryId";
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(dto, options);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+
+                return false;
+            }
+        }
+        public async Task<PaginatedCommentResponse> GetCommentsByPostIdAsyncV2(int nid, int page, int pageSize)
+        {
+            try
+            {
+                var url = $"api/v2/community/getCommentsByPostId/{nid}";
+                var response = await _httpClient.GetFromJsonAsync<PaginatedCommentResponse>(url);
+                return response ?? new PaginatedCommentResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"API Error: {ex.Message}");
+                return new PaginatedCommentResponse();
+            }
+        }
 
     }
 }
