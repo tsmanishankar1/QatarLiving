@@ -74,34 +74,57 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             try
             {
-                var slug = GenerateNewsSlug(dto.Title);
-                dto.Slug = slug;
-                dto.Id = Guid.NewGuid();
-                dto.CreatedBy = userId;
-                dto.UpdatedBy = userId;
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-                dto.PublishedDate = DateTime.UtcNow;
-
-                string storeName = V2Content.ContentStoreName;
-                string articleIdStr = dto.Id.ToString();
-
-                await _dapr.SaveStateAsync(storeName, articleIdStr, dto, cancellationToken: cancellationToken);
-
-                var indexKey = V2Content.NewsIndexKey;
-                var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
-                                  ?? new List<string>();
-
-                if (!currentIndex.Contains(articleIdStr))
-                {
-                    currentIndex.Add(articleIdStr);
-                    await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
-                }
+                var slugBase = GenerateNewsSlug(dto.Title);
+                int articleCount = 0;
 
                 foreach (var cat in dto.Categories)
                 {
-                    int slotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId;
+                    var singleDto = new V2NewsArticleDTO
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = dto.Title,
+                        Content = dto.Content,
+                        WriterTag = dto.WriterTag,
+                        Slug = $"{slugBase}-{cat.CategoryId}-{cat.SubcategoryId}",
+                        IsActive = true,
+                        Categories = new List<V2ArticleCategory>
+                {
+                    new V2ArticleCategory
+                    {
+                        CategoryId = cat.CategoryId,
+                        SubcategoryId = cat.SubcategoryId,
+                        SlotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId
+                    }
+                },
+                        PublishedDate = DateTime.UtcNow,
+                        CreatedBy = userId,
+                        UpdatedBy = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        authorName = dto.authorName,
+                        CoverImageUrl = dto.CoverImageUrl,
+                        UserId = dto.UserId
+                    };
 
+
+                    string storeName = V2Content.ContentStoreName;
+                    string articleIdStr = singleDto.Id.ToString();
+
+                    // Save the article
+                    await _dapr.SaveStateAsync(storeName, articleIdStr, singleDto, cancellationToken: cancellationToken);
+
+                    // Update index
+                    var indexKey = V2Content.NewsIndexKey;
+                    var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
+                                       ?? new List<string>();
+
+                    if (!currentIndex.Contains(articleIdStr))
+                    {
+                        currentIndex.Add(articleIdStr);
+                        await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                    }
+
+                    int slotId = singleDto.Categories[0].SlotId;
                     if (slotId == (int)Slot.Published || slotId == (int)Slot.UnPublished)
                     {
                         string key = GetStatusSlotKey(cat.CategoryId, cat.SubcategoryId, slotId);
@@ -109,15 +132,17 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     }
                     else if (slotId >= 1 && slotId <= 13)
                     {
-                        await HandleSlotShiftAsync(cat.CategoryId, cat.SubcategoryId, slotId, dto, cancellationToken);
+                        await HandleSlotShiftAsync(cat.CategoryId, cat.SubcategoryId, slotId, singleDto, cancellationToken);
                     }
                     else
                     {
                         throw new InvalidDataException($"Invalid SlotId: {slotId} for category {cat.CategoryId}-{cat.SubcategoryId}");
                     }
+
+                    articleCount++;
                 }
 
-                return "News article created successfully";
+                return $"{articleCount} news article(s) created successfully";
             }
             catch (InvalidDataException)
             {
@@ -125,10 +150,11 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create article");
+                _logger.LogError(ex, "Failed to create article(s)");
                 throw new Exception("Unexpected error during article creation", ex);
             }
         }
+
 
 
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
@@ -428,6 +454,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+        // ✅ New Reorder Method with Validation to prevent shared-category articles
         public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
@@ -439,18 +466,22 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 return $"No changes needed. Article is already in slot {dto.ToSlot}.";
 
             string storeName = V2Content.ContentStoreName;
-
             var fromKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, dto.FromSlot);
             var fromArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, fromKey, cancellationToken: cancellationToken);
+
             if (fromArticle == null)
                 throw new InvalidDataException($"No article found in slot {dto.FromSlot}.");
+
+            // 🚨 Ensure the article is assigned to exactly one category
+            if (fromArticle.Categories.Count != 1)
+                throw new InvalidOperationException("Reorder requires article to belong to a single category-subcategory pair.");
 
             var updatedSlots = new List<int>();
             var missingSlots = new List<int>();
 
             if (dto.FromSlot < dto.ToSlot)
             {
-                // Move down: shift up articles
+                // Shift up: Move articles from FromSlot+1 to ToSlot up by 1 slot
                 for (int i = dto.FromSlot + 1; i <= dto.ToSlot; i++)
                 {
                     var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
@@ -473,7 +504,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
             else
             {
-                // Move up: shift down articles
+                // Shift down: Move articles from FromSlot-1 to ToSlot down by 1 slot
                 for (int i = dto.FromSlot - 1; i >= dto.ToSlot; i--)
                 {
                     var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
@@ -495,7 +526,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
             }
 
-            // Place original article in new slot
+            // ✅ Move original article to new slot
             var toKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, dto.ToSlot);
             var fromCat = fromArticle.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
             if (fromCat != null) fromCat.SlotId = dto.ToSlot;
@@ -506,11 +537,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
             updatedSlots.Add(dto.ToSlot);
 
             updatedSlots.Sort();
-
-            // ✅ Build detailed response
             var result = $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}.";
             if (missingSlots.Any())
-                result += $"Warning: Some slots were empty and skipped: {string.Join(", ", missingSlots)}.";
+                result += $" Warning: Empty slots skipped: {string.Join(", ", missingSlots)}.";
 
             return result;
         }
