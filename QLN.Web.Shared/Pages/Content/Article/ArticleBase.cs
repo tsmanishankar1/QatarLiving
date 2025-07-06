@@ -1,12 +1,12 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
-using QLN.Web.Shared.Model;
-using QLN.Web.Shared.Components.ViewToggleButtons;
-using System.Globalization;
-using QLN.Web.Shared.Models;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components.ViewToggleButtons;
+using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
+using System.Globalization;
 using System.Net.Http.Json;
 
 public class ArticleBase : ComponentBase
@@ -253,24 +253,24 @@ public class ArticleBase : ComponentBase
             isLoadingBanners = false;
         }
     }
-        protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
+    protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
+    {
+        try
         {
-            try
+            var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
+            if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
             {
-                var apiResponse = await _newsService.GetNewsAsync(tab) ?? new HttpResponseMessage();
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<T>();
-                    return response ?? new T();
-                }
-                return new T();
+                var response = await apiResponse.Content.ReadFromJsonAsync<T>();
+                return response ?? new T();
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"GetNewsAsync<{typeof(T).Name}> failed for tab: {tab}");
-                return new T();
-            }
+            return new T();
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"GetNewsAsync<{typeof(T).Name}> failed for tab: {tab}");
+            return new T();
+        }
+    }
     //    private async Task<BannerResponse?> FetchBannerData()
     //{
     //try

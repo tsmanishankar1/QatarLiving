@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Models;
-using System.Text.Json;
 using QLN.Common.DTO_s;
 
 namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
@@ -70,18 +68,18 @@ namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
         protected string? currentImageUrl;
 
         protected override void OnParametersSet()
-{
-    if (Item?.Images != null && Item.Images.Count > 0)
-    {
-        var newUrl = Item.Images[activeIndex].Url;
-        if (currentImageUrl != newUrl)
         {
-            currentImageUrl = newUrl;
-            imageLoaded = false;
-            imageFailed = false;
+            if (Item?.Images != null && Item.Images.Count > 0)
+            {
+                var newUrl = Item.Images[activeIndex].Url;
+                if (currentImageUrl != newUrl)
+                {
+                    currentImageUrl = newUrl;
+                    imageLoaded = false;
+                    imageFailed = false;
+                }
+            }
         }
-    }
-}
 
         protected void OnImageLoaded()
         {
@@ -97,10 +95,10 @@ namespace QLN.Web.Shared.Components.Classifieds.PromotedItemCards
             StateHasChanged();
         }
 
-       protected bool ShowEmptyCard =>
-    Item?.Images == null || Item.Images.Count == 0 || imageFailed;
-    
+        protected bool ShowEmptyCard =>
+     Item?.Images == null || Item.Images.Count == 0 || imageFailed;
+
 
     }
-    
+
 }

@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
-    public partial class AddSubscriptionBase :ComponentBase
+    public partial class AddSubscriptionBase : ComponentBase
     {
         [Inject] protected IJSRuntime _jsRuntime { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
@@ -66,7 +66,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                         _subscriptionModel.Duration,
                         _subscriptionModel.VerticalType,
                         _subscriptionModel.SubCategory,
-                       _subscriptionModel.Description
+                        _subscriptionModel.Description
                     };
                     Console.WriteLine(JsonSerializer.Serialize(payload));
                     var success = await SubscriptionService.AddSubscriptionAsync(_subscriptionModel);
@@ -80,7 +80,7 @@ namespace QLN.Web.Shared.Pages.Subscription
                 {
                     _isLoading = false;
                 }
-             
+
             }
             else
             {

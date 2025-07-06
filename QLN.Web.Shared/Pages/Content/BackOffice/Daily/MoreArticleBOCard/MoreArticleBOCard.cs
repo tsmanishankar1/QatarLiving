@@ -6,7 +6,7 @@ public class MoreArticleBOCardBase : ComponentBase
     [Parameter]
     public List<ContentEvent> Items { get; set; } = [];
 
-  [Parameter]
+    [Parameter]
     public bool isLoading { get; set; } = false;
 
     protected void NavigatetoArticle()

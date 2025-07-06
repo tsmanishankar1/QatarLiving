@@ -1,9 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text;
 using System.Text.Json;
@@ -256,7 +254,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(  string sortOrder = "desc",  int pageNumber = 1,  int pageSize = 12,  string? searchTerm = null,  CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(string sortOrder = "desc", int pageNumber = 1, int pageSize = 12, string? searchTerm = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -377,7 +375,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(  int? pageNumber,    int? perPage,    string? searchTitle = null,    string? sortBy = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
         {
             try
             {
@@ -464,7 +462,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc", int pageNumber = 1, int pageSize = 12, string? searchTerm = null, CancellationToken cancellationToken = default)
         {
             try
             {

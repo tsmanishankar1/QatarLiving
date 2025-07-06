@@ -1,14 +1,9 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services;
-using Microsoft.JSInterop;
-using QLN.Web.Shared.Services.Interface;
-using System.Runtime.CompilerServices;
-using System.Web;
 
 public class VideoDisplayCardsBase : ComponentBase
 {
@@ -20,7 +15,7 @@ public class VideoDisplayCardsBase : ComponentBase
     [Inject] YouTubeApiService YouTubeService { get; set; }
     [Parameter] public List<ContentVideo> Items { get; set; }
 
-   [Parameter] public ContentVideo SelectedVideo { get; set; }
+    [Parameter] public ContentVideo SelectedVideo { get; set; }
     protected NavigationPath NavigationPath => Options.Value;
 
     protected bool IsVisiblePlayButton { get; set; } = true;
@@ -61,7 +56,7 @@ public class VideoDisplayCardsBase : ComponentBase
         SelectedVideo = video;
         YTVideoEmbedURL = string.Empty;
         IsVisiblePlayButton = false;
-       await LoadVideoDetailsAsync(SelectedVideo.VideoUrl);
+        await LoadVideoDetailsAsync(SelectedVideo.VideoUrl);
         YTVideoEmbedURL = ConvertToEmbedUrl(SelectedVideo.VideoUrl);
         if (SelectedVideoChanged.HasDelegate)
         {
@@ -69,20 +64,20 @@ public class VideoDisplayCardsBase : ComponentBase
         }
     }
     private async Task LoadVideoDetailsAsync(string videoUrl)
-{
-    var result = await YouTubeService.GetVideoDetailsFromUrlAsync(videoUrl);
-    
-    if (result != null)
     {
-        mainVideoViewCount = result.Statistics?.ViewCount?.ToString() ?? "0";
-        publishedDate = result.Snippet?.PublishedAt?.ToString("yyyy-MM-dd") ?? string.Empty;
+        var result = await YouTubeService.GetVideoDetailsFromUrlAsync(videoUrl);
+
+        if (result != null)
+        {
+            mainVideoViewCount = result.Statistics?.ViewCount?.ToString() ?? "0";
+            publishedDate = result.Snippet?.PublishedAt?.ToString("yyyy-MM-dd") ?? string.Empty;
+        }
+        else
+        {
+            mainVideoViewCount = "N/A";
+            publishedDate = string.Empty;
+        }
     }
-    else
-    {
-        mainVideoViewCount = "N/A";
-        publishedDate = string.Empty;
-    }
-}
 
     /// <summary>
     /// Converts Youtube Shorts or Video as a Embed URL.

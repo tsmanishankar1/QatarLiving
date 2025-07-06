@@ -3,6 +3,6 @@
     public interface IServiceBase
     {
         string BaseAddress { get; }
-       
+
     }
 }

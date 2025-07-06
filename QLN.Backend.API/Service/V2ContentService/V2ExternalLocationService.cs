@@ -1,10 +1,6 @@
 ﻿using Dapr.Client;
 using Newtonsoft.Json;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.V2IContent;
-using System.Net.Http;
-using static QLN.Common.DTO_s.CommunityBo;
 using static QLN.Common.DTO_s.LocationDto;
 
 namespace QLN.Backend.API.Service.V2ContentService

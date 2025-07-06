@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 using System.Text.Json;
-using MudBlazor;
 public class PrelovedComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
@@ -151,21 +151,21 @@ public class PrelovedComponentBase : ComponentBase
         IsLoadingSaveSearch = true;
         try
         {
-           if (string.IsNullOrWhiteSpace(SearchState.PrelovedSearchText))
+            if (string.IsNullOrWhiteSpace(SearchState.PrelovedSearchText))
             {
                 Snackbar.Add("Search text is required before saving.", Severity.Warning);
                 return;
             }
             var searchQuery = BuildSearchPayload();
             bool hasAppliedAnything = false;
-             if (searchQuery.TryGetValue("text", out var textVal) &&
-            textVal is string text && !string.IsNullOrWhiteSpace(text))
-        {
-            hasAppliedAnything = true;
-        }
-    
-        if (searchQuery.TryGetValue("filters", out var filtersObj) &&
-                filtersObj is Dictionary<string, object> filters)
+            if (searchQuery.TryGetValue("text", out var textVal) &&
+           textVal is string text && !string.IsNullOrWhiteSpace(text))
+            {
+                hasAppliedAnything = true;
+            }
+
+            if (searchQuery.TryGetValue("filters", out var filtersObj) &&
+                    filtersObj is Dictionary<string, object> filters)
             {
                 // Count filters that are not just "SubVertical"
                 var nonDefaultFilters = filters
@@ -178,11 +178,11 @@ public class PrelovedComponentBase : ComponentBase
                 }
             }
 
-        if (!hasAppliedAnything)
-        {
-            Snackbar.Add("Please apply a filter or enter search text before saving the search.", Severity.Warning);
-            return;
-        }
+            if (!hasAppliedAnything)
+            {
+                Snackbar.Add("Please apply a filter or enter search text before saving the search.", Severity.Warning);
+                return;
+            }
 
             var savePayload = new Dictionary<string, object>
             {
@@ -250,8 +250,8 @@ public class PrelovedComponentBase : ComponentBase
                 filters[fieldFilter.Key] = fieldFilter.Value;
             }
         }
-        var safeText = string.IsNullOrWhiteSpace(searchText) 
-                ? (string.IsNullOrWhiteSpace(SearchState.PrelovedSearchText) ? "" : SearchState.PrelovedSearchText) 
+        var safeText = string.IsNullOrWhiteSpace(searchText)
+                ? (string.IsNullOrWhiteSpace(SearchState.PrelovedSearchText) ? "" : SearchState.PrelovedSearchText)
                 : searchText;
         return new Dictionary<string, object>
         {

@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop; 
-using System;
- 
+using Microsoft.JSInterop;
+
 namespace QLN.Web.Shared.Helpers
 {
     public static class SocialShareHelper

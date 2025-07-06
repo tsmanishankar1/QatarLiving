@@ -6,8 +6,8 @@ namespace QLN.Web.Shared.Services.Interface
     {
         Task<ItemDashboardResponse?> GetItemDashboard();
         Task<PreLovedDashboardResponse?> GetPreLovedDashboard();
-        Task<List<AdModal>?> GetPublishedAds( int page, int pageSize, string search, int sortOption);
-        Task<List<AdModal>?> GetUnpublishedAds( int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetUnpublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetPreLovedPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetPreLovedUnPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetCollectiblesPublishedAds(int page, int pageSize, string search, int sortOption);
