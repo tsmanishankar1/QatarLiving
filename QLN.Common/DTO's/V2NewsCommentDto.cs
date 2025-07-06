@@ -2,17 +2,29 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
     public class V2NewsCommentDto
     {
-        public string Nid { get; set; }             // Article ID
-        public string Uid { get; set; }             // User ID
-        public string? UserName { get; set; }    // User Name
-        public string Comment { get; set; } = "";
+        [JsonPropertyName("nid")]
+        public string Nid { get; set; }
+
+        [JsonPropertyName("uid")]
+        public string Uid { get; set; }
+
+        [JsonPropertyName("userName")]
+        public string? UserName { get; set; }
+
+        [JsonPropertyName("comment")]
+        public string Comment { get; set; }
+
+        [JsonPropertyName("commentId")]
         public Guid CommentId { get; set; } = Guid.NewGuid();
+
+        [JsonPropertyName("commentedAt")]
         public DateTime CommentedAt { get; set; } = DateTime.UtcNow;
     }
 

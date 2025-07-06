@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
 using static QLN.Common.DTO_s.CommunityBo;
 using System.Security.Cryptography.X509Certificates;
+using System.Net;
 
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -20,7 +21,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         private readonly ILogger<V2ExternalCommunityPostService> _logger;
 
         private const string InternalAppId = "qln-content-ms";
-        private const string BlobContainer = "community-images";
+        private const string BlobContainer = "content-images";
         public V2ExternalCommunityPostService(
             DaprClient dapr,
             ILogger<V2ExternalCommunityPostService> logger,
@@ -38,7 +39,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
                 dto.DateCreated = DateTime.UtcNow;
                 dto.UpdatedDate = DateTime.UtcNow;
-                dto.UserName = userId;
+                dto.UserId = userId;
                 dto.UpdatedBy = userId;
 
                 // Upload image if present
@@ -168,6 +169,30 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return false;
             }
         }
+        public async Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/community/getBySlug/{slug}";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+                return null;
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new Exception($"Failed to fetch community post. Status: {response.StatusCode}, Body: {errorContent}");
+            }
+
+            var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            return JsonSerializer.Deserialize<V2CommunityPostDto>(rawJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid communityId, CancellationToken ct = default)
         {
             try
