@@ -1,6 +1,7 @@
 @page "/dashboard"
 @inherits DailyLivingBase
 @using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable;
+@using QLN.ContentBO.WebUI.Pages.EventsPage;
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
@@ -40,7 +41,11 @@
                     </MudItem>
                 </MudGrid>
             }
-            <MudArticleTable />
+            @* <MudArticleTable /> *@
+             <FeaturedEventSlotsList IsLoadingEvent="IsLoadingEvent" FeaturedEventSlots="featuredEventSlots"
+                                    Categories="Categories"
+                                    ReplaceSlot="ReplaceEventSlot"
+                                    OnDelete="DeleteFeatureEvent" />
 
     </MudItem>
 </MudGrid>

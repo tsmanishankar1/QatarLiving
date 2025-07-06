@@ -9,11 +9,12 @@ namespace QLN.ContentBO.WebUI.Models
       public string EventTitle { get; set; }
       [Required]
       public int CategoryId { get; set; }
+      public string? CategoryName { get; set; }
       public EventType EventType { get; set; }
       public int? Price { get; set; }
       [Required]
       public string Location { get; set; }
-        public string Venue { get; set; } = string.Empty;
+      public string Venue { get; set; } = string.Empty;
       public string Longitude { get; set; }
       public string Latitude { get; set; }
 

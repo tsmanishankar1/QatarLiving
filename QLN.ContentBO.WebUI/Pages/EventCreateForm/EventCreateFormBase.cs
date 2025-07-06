@@ -22,6 +22,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected EditContext _editContext;
         protected List<LocationEventDto> Locations = new();
         public EventDTO CurrentEvent { get; set; } = new EventDTO();
+        public string selectedLocation { get; set; } = string.Empty;
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
         protected string? _timeError;
@@ -92,7 +93,8 @@ namespace QLN.ContentBO.WebUI.Pages
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public string TimeRange { get; set; }
+            public TimeSpan? StartTime { get; set; } 
+            public TimeSpan? EndTime { get; set; } 
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -314,7 +316,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     Date = date,
                     IsSelected = false,
-                    TimeRange = ""
                 });
             }
         }
@@ -371,14 +372,11 @@ namespace QLN.ContentBO.WebUI.Pages
             try
             {
                 CurrentEvent.Status = EventStatus.Published;
-                Console.WriteLine(JsonSerializer.Serialize(CurrentEvent, new JsonSerializerOptions
-{
-    WriteIndented = true // For pretty printing
-}));
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Events Added", severity: Severity.Success);
+                    ClearForm();
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -466,40 +464,17 @@ namespace QLN.ContentBO.WebUI.Pages
                 CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
                 {
                     DayOfWeek = entry.Date.DayOfWeek,
-                    Time = entry.TimeRange
+                    StartTime = entry.StartTime.HasValue ? TimeOnly.FromTimeSpan(entry.StartTime.Value) : null,
+                    EndTime = entry.EndTime.HasValue ? TimeOnly.FromTimeSpan(entry.EndTime.Value) : null
                 });
             }
         }
-        protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
+        protected bool IsValidTimeFormat(TimeSpan? start, TimeSpan? end)
         {
-            entry.TimeRange = newTime ?? string.Empty;
-
-            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
-            {
-                var existing = CurrentEvent.EventSchedule.TimeSlots
-                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
-
-                if (existing != null)
-                {
-                    existing.Time = entry.TimeRange;
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
-                    {
-                        DayOfWeek = entry.Date.DayOfWeek,
-                        Time = entry.TimeRange
-                    });
-                }
-            }
-        }
-        protected bool IsValidTimeFormat(string? input)
-        {
-            if (string.IsNullOrWhiteSpace(input))
-            return false;
-            var pattern = @"^([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)\s?to\s?([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$";
-            return System.Text.RegularExpressions.Regex.IsMatch(input, pattern);
-        }            
+            if (!start.HasValue || !end.HasValue)
+                return false;
+            return end > start;
+        }       
         private void ClearForm()
         {
             CurrentEvent = new EventDTO
@@ -521,7 +496,7 @@ namespace QLN.ContentBO.WebUI.Pages
             _coverImageError = string.Empty;
             uploadedImage = null;
             SelectedLocationId = null;
-        
+
             StateHasChanged();
         }
     };
