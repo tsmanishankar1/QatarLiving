@@ -2,6 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -43,6 +44,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
                     LocationId = dto.LocationId,
+                    Location = dto.Location,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
@@ -282,6 +284,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     EventType = dto.EventType,
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
+                    Location = dto.Location,
                     LocationId = dto.LocationId,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
@@ -549,7 +552,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (request.LocationId is { Count: > 0 })
                 {
                     allEvents = allEvents
-                        .Where(e => e.LocationId != null && request.LocationId.Contains(e.LocationId))
+                        .Where(e => e.LocationId != null && request.LocationId.Contains(e.LocationId.Value))
                         .ToList();
                 }
                 if (request.FreeOnly == true)
