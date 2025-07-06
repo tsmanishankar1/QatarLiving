@@ -48,26 +48,22 @@ namespace QLN.Common.DTO_s
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
-    public class DailyTopicContent
+    public class DailyTopicContent : DailyTopSectionSlot
     {
-        public Guid Id { get; set; }
-        public string Title { get; set; }
         public Guid TopicId { get; set; }
-        public DailyContentType ContentType { get; set; }
-        public Guid? RelatedContentId { get; set; }
-        public string Category { get; set; }
-        public string? Subcategory { get; set; }
-        public DateTime PublishedDate { get; set; }
-        public DateTime? EndDate { get; set; }
 
-        public bool IsPublished { get; set; }
-        public bool IsExpired { get; set; }
-        public string CreatedBy { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string? UpdatedBy { get; set; }
-        public DateTime? UpdatedAt { get; set; }
         [JsonPropertyName("topicName")]
         public string TopicName { get; set; } = string.Empty;
+        public string? ContentUrl { get; set; }
+
+    }
+    public class ReorderDailyTopicContentDto
+    {
+        public Guid TopicId { get; set; }
+        public int FromSlot { get; set; }
+        public int ToSlot { get; set; }
+        public string UserId { get; set; } = "";
+        public string? AuthorName { get; set; }
     }
 
 }
