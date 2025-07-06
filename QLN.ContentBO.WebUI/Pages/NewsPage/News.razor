@@ -319,9 +319,14 @@
                                             <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
                                                 <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                             </MudMenuItem>
-                                            <MudMenuItem>
-                                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Article))">
+                                                @if (selectedTab == "live")
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                    <span>Unpublish</span>
+                                                }
                                             </MudMenuItem>
+
                                             <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
                                                 <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                             </MudMenuItem>

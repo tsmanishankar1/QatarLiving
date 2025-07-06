@@ -8,10 +8,12 @@ namespace QLN.Common.DTO_s
     {
         [Required]
         public int CategoryId { get; set; }
-        public string CategoryName { get; set; } = string.Empty;
+        //public string CategoryName { get; set; }
+
         [Required]
         public int SubcategoryId { get; set; }
-        public string SubcategoryName { get; set; } = string.Empty;
+        //public string SubCategoryName { get; set; }
+
         public int SlotId { get; set; }
     }
     public class V2NewsArticleDTO

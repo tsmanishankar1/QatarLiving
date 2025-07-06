@@ -511,7 +511,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         UserName = article.authorName,
                         Title = article.Title,
                         Slug = article.Slug,
-                        Category = article.Categories?.FirstOrDefault()?.CategoryName ?? string.Empty
+                        Category = article.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
                     });
                     _logger.LogInformation("Top Story loaded: {Title}", article.Title);
                 }
@@ -546,7 +546,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = art.authorName,
                     Title = art.Title,
                     Slug = art.Slug,
-                    Category = art.Categories?.FirstOrDefault()?.CategoryName ?? string.Empty
+                    Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
                 });
             }
             _logger.LogInformation("Top Stories loaded: {Count} items", topStoriesItems.Count);
@@ -648,7 +648,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = art.authorName,
                     Title = art.Title,
                     Slug = art.Slug,
-                    Category = art.Categories?.FirstOrDefault()?.CategoryName ?? string.Empty
+                    Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
                 });
             }
             _logger.LogInformation("More Articles loaded: {Count}", moreArticlesItems.Count);
@@ -679,7 +679,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                                     PageName = DrupalContentConstants.QlnContentsDaily,
                                     Nid = a.Id.ToString(),
                                     Title = a.Title,
-                                    Category = a.Categories?.FirstOrDefault()?.CategoryName ?? string.Empty,
+                                    Category = a.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
                                     DateCreated = a.CreatedAt.ToString("o"),
                                     ImageUrl = a.CoverImageUrl,
                                     Slug = a.Slug,
