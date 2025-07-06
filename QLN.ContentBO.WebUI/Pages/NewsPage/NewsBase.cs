@@ -67,23 +67,39 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (shouldFocusInput && subCategoryInputRef is not null)
+            try
             {
-                shouldFocusInput = false;
-                await subCategoryInputRef.FocusAsync();
+                if (shouldFocusInput && subCategoryInputRef is not null)
+                {
+                    shouldFocusInput = false;
+                    await subCategoryInputRef.FocusAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+                throw;
             }
         }
 
         protected async override Task OnParametersSetAsync()
         {
-            if (CategoryId > 0)
+            try
             {
-                Categories = await GetNewsCategories() ?? [];
-                SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
-                SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
-                Slots = await GetSlots();
+                if (CategoryId > 0)
+                {
+                    Categories = await GetNewsCategories() ?? [];
+                    SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
+                    SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
+                    Slots = await GetSlots();
 
-                IndexedLiveArticles = await GetLiveArticlesAsync();
+                    IndexedLiveArticles = await GetLiveArticlesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+                throw;
             }
         }
 
@@ -105,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 else
                 {
                     ListOfNewsArticles.RemoveAll(a => a.Id == id);
-                    if(SearchListOfNewsArticles.Count > 0)
+                    if (SearchListOfNewsArticles.Count > 0)
                     {
                         SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
                     }
