@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -19,6 +20,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default);
         Task<bool> UpdateDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
         Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default);
+        Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct);
 
     }
 }

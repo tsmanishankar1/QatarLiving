@@ -23,7 +23,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 
 using QLN.Common.Infrastructure.CustomException;
-
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -332,6 +332,17 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Failed to create DailyTopic");
                 throw;
             }
+        }
+        public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
+        {
+            var path = "/api/v2/dailyliving/landing";
+            var appId = V2Content.ContentServiceAppId;
+            return await _dapr.InvokeMethodAsync<ContentsDailyPageResponse>(
+                HttpMethod.Get,
+                appId,
+                path,
+                cancellationToken: ct
+            );
         }
     }
 
