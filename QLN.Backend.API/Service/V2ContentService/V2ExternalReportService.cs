@@ -256,7 +256,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(  string sortOrder = "desc",  int pageNumber = 1,  int pageSize = 12,  string? searchTerm = null,  CancellationToken cancellationToken = default)
+        public async Task<PagedResult<V2ContentReportArticleResponseDto>> GetAllReports( string sortOrder = "desc", int pageNumber = 1, int pageSize = 12, string? searchTerm = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -267,12 +267,20 @@ namespace QLN.Backend.API.Service.V2ContentService
                     queryString += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
                 }
 
-                return await _dapr.InvokeMethodAsync<List<V2ContentReportArticleResponseDto>>(
+                var result = await _dapr.InvokeMethodAsync<PagedResult<V2ContentReportArticleResponseDto>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     $"/api/v2/report/getAll{queryString}",
                     cancellationToken
-                ) ?? new List<V2ContentReportArticleResponseDto>();
+                );
+
+                return result ?? new PagedResult<V2ContentReportArticleResponseDto>
+                {
+                    TotalCount = 0,
+                    PageSize = pageSize,
+                    PageNumber = pageNumber,
+                    Items = new List<V2ContentReportArticleResponseDto>()
+                };
             }
             catch (Exception ex)
             {
@@ -280,6 +288,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         public async Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -411,7 +420,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = "/api/v2/report/updatecommunitycommentstatus";
+                var url = "/api/v2/report/updatecommunitypoststatus";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
@@ -464,7 +473,12 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
+        public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
+     string sortOrder = "desc",
+     int pageNumber = 1,
+     int pageSize = 12,
+     string? searchTerm = null,
+     CancellationToken cancellationToken = default)
         {
             try
             {
@@ -473,12 +487,20 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                     query += $"&searchTerm={Uri.EscapeDataString(searchTerm)}";
 
-                return await _dapr.InvokeMethodAsync<List<V2ContentReportCommunityCommentResponseDto>>(
+                var result = await _dapr.InvokeMethodAsync<PagedResult<V2ContentReportCommunityCommentResponseDto>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     $"/api/v2/report/getAllCommunityCommentReports{query}",
                     cancellationToken
-                ) ?? new List<V2ContentReportCommunityCommentResponseDto>();
+                );
+
+                return result ?? new PagedResult<V2ContentReportCommunityCommentResponseDto>
+                {
+                    TotalCount = 0,
+                    PageSize = pageSize,
+                    PageNumber = pageNumber,
+                    Items = new List<V2ContentReportCommunityCommentResponseDto>()
+                };
             }
             catch (Exception ex)
             {
@@ -486,6 +508,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         public async Task<string> UpdateCommunityCommentReportStatus(V2UpdateCommunityCommentReportDto dto, CancellationToken cancellationToken = default)
         {
             try

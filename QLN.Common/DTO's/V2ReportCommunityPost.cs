@@ -31,7 +31,7 @@ namespace QLN.Common.DTO_s
         }
         public class V2ReportStatus
         {
-            public Guid PostId { get; set; }
+            public Guid ReportId { get; set; }
             public bool IsKeep { get; set; }
             public bool IsDelete { get; set; }
         }

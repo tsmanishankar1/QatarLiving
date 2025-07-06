@@ -616,7 +616,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         }
         public static RouteGroupBuilder MapGetAllReportsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", async Task<Results<Ok<List<V2ContentReportArticleResponseDto>>, ProblemHttpResult>> (
+            group.MapGet("/getAll", async Task<Results<Ok<PagedResult<V2ContentReportArticleResponseDto>>, ProblemHttpResult>> (
                 IV2ReportsService service,
                 ILogger<IV2ReportsService> logger,
                 string sortOrder = "desc",
@@ -633,7 +633,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     var reports = await service.GetAllReports(sortOrder, pageNumber, pageSize, searchTerm, cancellationToken);
 
-                    logger.LogInformation("Retrieved {Count} reports", reports.Count);
+                    logger.LogInformation("Retrieved {Count} reports", reports.Items.Count);
 
                     return TypedResults.Ok(reports);
                 }
@@ -651,7 +651,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("Reports")
             .WithSummary("Get All Reports with Pagination and Search")
             .WithDescription("Retrieves a paginated list of reports sorted by report date. Supports 'sortOrder', 'pageNumber', 'pageSize', and 'searchTerm'.")
-            .Produces<List<V2ContentReportArticleResponseDto>>(StatusCodes.Status200OK)
+            .Produces<PagedResult<V2ContentReportArticleResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -841,22 +841,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     );
                 }
             })
-            .WithName("UpdateCommunityCommentStatus")
+            .WithName("UpdateCommunityPostStatus")
             .WithTags("Reports")
-            .WithSummary("Update Community or Comment Status")
-            .WithDescription("Marks reports or their associated comments as inactive based on IsKeep/IsDelete flags. " +
-                             "This action uses report and comment indexes for lookup instead of direct ReportId.")
+            .WithSummary("Update Community Report Status by ReportId")
+            .WithDescription("Marks a specific report as inactive based on ReportId and IsKeep/IsDelete flags. " +
+                             "If IsKeep is true, only the report is deactivated. " +
+                             "If IsDelete is true, both the report and its associated community post are deactivated.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             return group;
         }
         public static RouteGroupBuilder MapGetAllCommunityCommentsReports(this RouteGroupBuilder group)
         {
-            // ✅ Community comment reports with optional query parameters
+           
             group.MapGet("/getAllCommunityCommentReports", async Task<Results<
-                Ok<List<V2ContentReportCommunityCommentResponseDto>>,
+                Ok<PagedResult<V2ContentReportCommunityCommentResponseDto>>,
                 ProblemHttpResult>>
             (
                 [FromQuery] string? sortOrder,
@@ -872,7 +872,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 {
                     logger.LogInformation("Minimal API: GetAllCommunityCommentReports called");
 
-                    // Apply defaults if not provided
+                    // Apply default values if not provided
                     string sort = string.IsNullOrWhiteSpace(sortOrder) ? "desc" : sortOrder;
                     int page = pageNumber.GetValueOrDefault(1);
                     int size = pageSize.GetValueOrDefault(12);
@@ -883,14 +883,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 catch (Exception ex)
                 {
                     logger.LogError(ex, "Error in Minimal API - GetAllCommunityCommentReports");
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
             .WithName("GetAllCommunityCommentReports")
             .WithTags("Reports")
             .WithSummary("Get All Community Comment Reports")
             .WithDescription("Fetches all community comment reports with optional pagination, sorting, and search.")
-            .Produces<List<V2ContentReportCommunityCommentResponseDto>>(StatusCodes.Status200OK)
+            .Produces<PagedResult<V2ContentReportCommunityCommentResponseDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
