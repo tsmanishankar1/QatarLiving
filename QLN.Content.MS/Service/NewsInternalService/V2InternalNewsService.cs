@@ -665,7 +665,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
-
         public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
@@ -738,7 +737,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new InvalidOperationException("Error fetching comments");
             }
         }
-
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
             var key = $"news-comment-like-{commentId}-{userId}";
@@ -775,8 +773,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
-
-
 
     }
 }

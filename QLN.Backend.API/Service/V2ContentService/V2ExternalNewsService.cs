@@ -420,7 +420,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
-            try
+            try 
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
                 var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
