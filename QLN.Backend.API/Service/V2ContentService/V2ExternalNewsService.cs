@@ -343,7 +343,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             response.EnsureSuccessStatusCode();
             return true;
         }
-
+        //comments
 
 
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
@@ -353,7 +353,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.CommentId = dto.CommentId == Guid.Empty ? Guid.NewGuid() : dto.CommentId;
                 dto.CommentedAt = dto.CommentedAt == default ? DateTime.UtcNow : dto.CommentedAt;
 
-                var url = "/api/v2/news/comment/save"; // This should match the internal endpoint route
+                var url = "/api/v2/news/commentsavebyid"; // This should match the internal endpoint route
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     V2Content.ContentServiceAppId,
@@ -401,7 +401,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
 
                 var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-                var url = $"/api/v2/news/comments/byArticle/{nid}{queryString}";
+                var url = $"/api/v2/news/commentsbyArticleid/{nid}{queryString}";
 
                 var response = await _dapr.InvokeMethodAsync<NewsCommentListResponse>(
                     HttpMethod.Get,
@@ -422,7 +422,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/news/comments/{commentId}/like/by-user";
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -438,8 +439,8 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to like (by user ID) for comment {CommentId}", commentId);
-                throw new InvalidOperationException("like (by user ID) failed", ex);
+                _logger.LogError(ex, "Failed to like comment {CommentId} by user {UserId}", commentId, userId);
+                throw new InvalidOperationException("Like (by user ID) failed", ex);
             }
         }
 
