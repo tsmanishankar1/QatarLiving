@@ -186,18 +186,10 @@ namespace QLN.ContentBO.WebUI.Pages
         SelectedDateLabel = "No valid date selected";
     }
      var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
-        foreach (var slot in timeSlots)
-        {
-            Console.WriteLine($"Slot DayOfWeek: {slot.DayOfWeek}, StartTime: {slot.StartTime}, EndTime: {slot.EndTime}");
-        }
-
-    // Generate per-day list if needed
             if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
             {
                 GeneratePerDayTimeList();
             }
-
-    // Set flag to render map
     _shouldInitializeMap = true;
 }
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -258,11 +250,6 @@ namespace QLN.ContentBO.WebUI.Pages
         var end = _dateRange.End.Value.Date;
 
         var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
-        foreach (var slot in timeSlots)
-{
-    Console.WriteLine($"Slot DayOfWeek: {slot.DayOfWeek}, StartTime: {slot.StartTime}, EndTime: {slot.EndTime}");
-}
-
         for (var date = start; date <= end; date = date.AddDays(1))
             {
                 var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);

@@ -155,23 +155,6 @@ public class DailyLivingBase : QLComponentBase
             return [];
         }
     }
-    // private async Task<List<EventCategoryModel>> GetEventsCategories()
-    // {
-    //     try
-    //     {
-    //         var apiResponse = await eventsService.GetEventCategories();
-    //         if (apiResponse.IsSuccessStatusCode)
-    //         {
-    //             return await apiResponse.Content.ReadFromJsonAsync<List<EventCategoryModel>>() ?? [];
-    //         }
-    //         return [];
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Logger.LogError(ex, "GetEventsCategories");
-    //         return [];
-    //     }
-    // }
     protected async Task ReplaceFeaturedEvent()
     {
         try
