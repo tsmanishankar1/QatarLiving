@@ -353,7 +353,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.CommentId = dto.CommentId == Guid.Empty ? Guid.NewGuid() : dto.CommentId;
                 dto.CommentedAt = dto.CommentedAt == default ? DateTime.UtcNow : dto.CommentedAt;
 
-                var url = "/comment/save"; // This should match the internal endpoint route
+                var url = "/api/v2/news/commentsSavebyid"; // This should match the internal endpoint route
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     V2Content.ContentServiceAppId,
@@ -401,7 +401,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
 
                 var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-                var url = $"/news/comments/byArticle/{nid}{queryString}";
+                var url = $"/api/v2/news/comments/byArticle/{nid}{queryString}";
 
                 var response = await _dapr.InvokeMethodAsync<NewsCommentListResponse>(
                     HttpMethod.Get,
@@ -422,7 +422,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/news/comments/{commentId}/like/by-user";
+                var url = $"/api/v2/news/comments/{commentId}/like/by-user";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
