@@ -15,5 +15,6 @@ namespace QLN.Common.DTO_s
         public string Content { get; set; } = default!;
         public int? CommentsLikeCount { get; set; } = 0;
         public DateTime? CommentedAt { get; set; } = DateTime.UtcNow;
+        public bool IsActive { get; set; }
     }
 }
