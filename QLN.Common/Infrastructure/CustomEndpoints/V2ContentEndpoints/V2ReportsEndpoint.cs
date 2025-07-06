@@ -164,7 +164,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapCreateReportEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<
@@ -315,7 +314,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapCreateCommunityCommentsEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcommunitycomments", async Task<Results<
@@ -466,7 +464,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapCreateCommunityPostReportEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcommunitypost", async Task<Results<
@@ -617,7 +614,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapGetAllReportsEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getAll", async Task<Results<Ok<List<V2ContentReportArticleResponseDto>>, ProblemHttpResult>> (
@@ -660,7 +656,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
         public static RouteGroupBuilder MapUpdateArticleCommentStatusEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/updatearticlecommentstatus", async Task<Results<
@@ -714,8 +709,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
-
         public static RouteGroupBuilder MapGetReportCommunityPost(this RouteGroupBuilder group)
         {
             group.MapGet("/getpostwithreports", async Task<Results<
@@ -777,8 +770,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .Produces<List<CommunityPostWithReports>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-           
-
             return group;
         }
         public static RouteGroupBuilder MapGetAllCommunityPostsWithPagination(this RouteGroupBuilder group)
@@ -816,7 +807,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         }
         public static RouteGroupBuilder MapUpdateCommunityReportStatus(this RouteGroupBuilder group)
         {
-            group.MapPut("/updatecommunitycommentstatus", async Task<Results<
+            group.MapPut("/updatecommunitypoststatus", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -904,6 +895,63 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapUpdateCommunityCommentStatusEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPut("/updatecommunitycommentreportstatus", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                V2UpdateCommunityCommentReportDto dto,
+                IV2ReportsService contentService,
+                ILogger<IV2ReportsService> logger,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                logger.LogInformation("➡️ Received update request for ReportId: {ReportId}, IsKeep: {IsKeep}, IsDelete: {IsDelete}",
+                    dto.ReportId, dto.IsKeep, dto.IsDelete);
+
+                try
+                {
+                    var result = await contentService.UpdateCommunityCommentReportStatus(dto, cancellationToken);
+
+                    logger.LogInformation("✅ Successfully updated community comment/report status for ReportId: {ReportId}", dto.ReportId);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    logger.LogWarning(ex, "⚠️ Validation failed for ReportId: {ReportId}. Reason: {Message}", dto.ReportId, ex.Message);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/updatecommunitycommentreportstatus"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "❌ Unhandled exception for ReportId: {ReportId}. Error: {Message}", dto.ReportId, ex.Message);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while updating the community comment/report status.",
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/updatecommunitycommentreportstatus"
+                    );
+                }
+            })
+            .WithName("UpdateCommunityCommentReportStatus")
+            .WithTags("Reports")
+            .WithSummary("Update Community Comment or Report Status by ReportId")
+            .WithDescription("Updates a community comment report's or its associated comment's status (IsKeep or IsDelete). " +
+                             "Also deactivates the comment using the key pattern comment-{PostId}-{CommentId}.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
 
 
     }

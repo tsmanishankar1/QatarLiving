@@ -16,12 +16,7 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination( int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default);
         Task<string> UpdateReportStatus(V2UpdateReportStatusDto dto, CancellationToken cancellationToken = default);
         Task<string> UpdateCommunityPostReportStatus(V2ReportStatus dto, CancellationToken cancellationToken = default);
-
-        Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
-      string sortOrder = "desc",
-      int pageNumber = 1,
-      int pageSize = 12,
-      string? searchTerm = null,
-      CancellationToken cancellationToken = default);
+    Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports( string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default);
+        Task<string> UpdateCommunityCommentReportStatus(V2UpdateCommunityCommentReportDto dto, CancellationToken cancellationToken = default);
     }
 }

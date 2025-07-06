@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.V2IContent;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
@@ -142,7 +143,8 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     PostId = dto.PostId,
                     CommentId = dto.CommentId,
                     ReporterName = userName,
-                    ReportDate = DateTime.UtcNow
+                    ReportDate = DateTime.UtcNow,
+                    IsActive=true,
                 };
 
                 _logger.LogInformation("Saving report: ID={Id}, PostId={PostId}, CommentId={CommentId}, Reporter={Reporter}",
@@ -493,6 +495,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                     Console.WriteLine($"Report found: ID={report.Id}, IsActive={report.IsActive}, CommentId={report.CommentId}");
 
+                    // === KEEP ===
                     if (dto.IsKeep && report.IsActive)
                     {
                         report.IsActive = false;
@@ -510,45 +513,69 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         }
                     }
 
-                    if (dto.IsDelete && report.CommentId.HasValue)
+                    // === DELETE ===
+                    if (dto.IsDelete)
                     {
-                        var commentIdStr = report.CommentId.Value.ToString();
-
-                        if (!commentKeys.Contains(commentIdStr))
+                        // 1. Deactivate report if active
+                        if (report.IsActive)
                         {
-                            Console.WriteLine($"Comment ID {commentIdStr} not found in comment index");
-                            continue;
+                            report.IsActive = false;
+
+                            try
+                            {
+                                Console.WriteLine($"Saving updated report (inactive - delete): {reportKey}");
+                                await _dapr.SaveStateAsync(storeName, reportKey, report);
+                                updatedCount++;
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"❌ Error saving report with key {reportKey}: {ex.Message}");
+                                throw new InvalidDataException($"Failed to save report state for key: {reportKey}", ex);
+                            }
                         }
 
-                        Console.WriteLine($"Fetching comment with ID: {commentIdStr}");
-                        var comment = await _dapr.GetStateAsync<V2NewsCommunitycommentsDto>(storeName, commentIdStr);
-
-                        if (comment == null)
+                        // 2. Deactivate comment if exists
+                        if (report.CommentId.HasValue)
                         {
-                            Console.WriteLine($"Comment not found: {commentIdStr}");
-                            continue;
-                        }
+                            var commentIdStr = report.CommentId.Value.ToString();
 
-                        Console.WriteLine($"Comment found: ID={comment.Id}, IsActive={comment.IsActive}");
+                            if (!commentKeys.Contains(commentIdStr))
+                            {
+                                Console.WriteLine($"Comment ID {commentIdStr} not found in comment index");
+                                continue;
+                            }
 
-                        if (!comment.IsActive)
-                        {
-                            Console.WriteLine($"Comment {comment.Id} is already inactive");
-                            continue;
-                        }
+                            Console.WriteLine($"Fetching comment with ID: {commentIdStr}");
+                            var comment = await _dapr.GetStateAsync<V2NewsCommunitycommentsDto>(storeName, commentIdStr);
 
-                        comment.IsActive = false;
+                            if (comment == null)
+                            {
+                                Console.WriteLine($"Comment not found: {commentIdStr}");
+                                continue;
+                            }
 
-                        try
-                        {
-                            Console.WriteLine($"Saving updated comment (inactive): {commentIdStr}");
-                            await _dapr.SaveStateAsync(storeName, commentIdStr, comment);
-                            updatedCount++;
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"❌ Error saving comment with key {commentIdStr}: {ex.Message}");
-                            throw new InvalidDataException($"Failed to save comment state for key: {commentIdStr}", ex);
+                            Console.WriteLine($"Comment found: ID={comment.Id}, IsActive={comment.IsActive}");
+
+                            if (comment.IsActive)
+                            {
+                                comment.IsActive = false;
+
+                                try
+                                {
+                                    Console.WriteLine($"Saving updated comment (inactive): {commentIdStr}");
+                                    await _dapr.SaveStateAsync(storeName, commentIdStr, comment);
+                                    updatedCount++;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"❌ Error saving comment with key {commentIdStr}: {ex.Message}");
+                                    throw new InvalidDataException($"Failed to save comment state for key: {commentIdStr}", ex);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Comment {comment.Id} is already inactive");
+                            }
                         }
                     }
                 }
@@ -570,6 +597,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
+
         public async Task<CommunityPostWithReports?> GetCommunityPostWithReport(Guid postId, CancellationToken ct)
         {
             try
@@ -928,12 +956,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
             }
         }
 
-        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
-     string sortOrder = "desc",
-     int pageNumber = 1,
-     int pageSize = 12,
-     string? searchTerm = null,
-     CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -959,7 +982,11 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 ));
 
                 var reportEntities = await Task.WhenAll(reportTasks);
-                var reports = reportEntities.Where(e => e != null).ToList();
+
+               
+                var reports = reportEntities
+                    .Where(e => e != null && e.IsActive)
+                    .ToList();
 
                 var responseDtos = new List<V2ContentReportCommunityCommentResponseDto>();
 
@@ -1022,7 +1049,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         Title = postTitle,
                         Comment = commentContent,
                         CommentDate = commentedAt,
-                        UserName = userName // ✅ Set UserName from comment
+                        UserName = userName
                     });
                 }
 
@@ -1061,7 +1088,129 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw;
             }
         }
+        public async Task<string> UpdateCommunityCommentReportStatus(V2UpdateCommunityCommentReportDto dto, CancellationToken cancellationToken = default)
+        {
+            string storeName = ConstantValues.V2Content.ContentStoreName;
 
+            try
+            {
+                Console.WriteLine("==> Begin UpdateCommunityCommentReportStatus");
+                Console.WriteLine($"ReportId: {dto.ReportId}, IsKeep: {dto.IsKeep}, IsDelete: {dto.IsDelete}");
+
+                // Validate inputs
+                if (dto.ReportId == Guid.Empty)
+                    throw new InvalidDataException("ReportId is required.");
+
+                if (dto.IsKeep && dto.IsDelete)
+                    throw new InvalidDataException("Cannot set both IsKeep and IsDelete to true simultaneously.");
+
+                if (!dto.IsKeep && !dto.IsDelete)
+                    throw new InvalidDataException("Either IsKeep or IsDelete must be true.");
+
+                // Fetch report from Dapr
+                var reportKey = dto.ReportId.ToString();
+                Console.WriteLine($"Fetching community comment report with ID: {reportKey} from store: {storeName}");
+
+                var report = await _dapr.GetStateAsync<V2ReportsCommunitycommentsDto>(storeName, reportKey, cancellationToken: cancellationToken);
+
+                if (report == null)
+                {
+                    Console.WriteLine($"❌ Report not found in state store. Key: {reportKey}");
+                    throw new InvalidDataException($"Report with ID {dto.ReportId} not found.");
+                }
+
+                Console.WriteLine($"✅ Report found. ID={report.Id}, IsActive={report.IsActive}, CommentId={report.CommentId}, PostId={report.PostId}");
+
+                int updatedCount = 0;
+
+                if (dto.IsKeep && report.IsActive)
+                {
+                    report.IsActive = false;
+
+                    try
+                    {
+                        await _dapr.SaveStateAsync(storeName, reportKey, report, cancellationToken: cancellationToken);
+                        updatedCount++;
+                        Console.WriteLine($"✅ Report {dto.ReportId} marked as inactive (kept).");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"❌ Error saving report with ID {dto.ReportId}: {ex.Message}");
+                        throw new InvalidDataException($"Failed to save report with ID {dto.ReportId}", ex);
+                    }
+                }
+
+                if (dto.IsDelete)
+                {
+                    if (report.CommentId == Guid.Empty || report.PostId == Guid.Empty)
+                    {
+                        Console.WriteLine($"❌ Invalid CommentId or PostId in report {dto.ReportId}");
+                        throw new InvalidDataException($"Invalid CommentId or PostId in report {dto.ReportId}");
+                    }
+
+                    var commentKey = $"comment-{report.PostId}-{report.CommentId}";
+                    Console.WriteLine($"Fetching community comment with key: {commentKey}");
+
+                    var comment = await _dapr.GetStateAsync<CommunityCommentDto>(storeName, commentKey, cancellationToken: cancellationToken);
+
+                    if (comment == null)
+                    {
+                        Console.WriteLine($"❌ Comment not found in state store. Key: {commentKey}");
+                        throw new InvalidDataException($"Comment not found for key: {commentKey}");
+                    }
+
+                    Console.WriteLine($"✅ Comment found. ID={comment.CommentId}, IsActive={comment.IsActive}");
+
+                    if (comment.IsActive)
+                    {
+                        comment.IsActive = false;
+                        try
+                        {
+                            await _dapr.SaveStateAsync(storeName, commentKey, comment, cancellationToken: cancellationToken);
+                            updatedCount++;
+                            Console.WriteLine($"✅ Comment {comment.CommentId} marked as inactive.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"❌ Error saving comment with key {commentKey}: {ex.Message}");
+                            throw new InvalidDataException($"Failed to save comment with key {commentKey}", ex);
+                        }
+                    }
+
+                    if (report.IsActive)
+                    {
+                        report.IsActive = false;
+                        try
+                        {
+                            await _dapr.SaveStateAsync(storeName, reportKey, report, cancellationToken: cancellationToken);
+                            updatedCount++;
+                            Console.WriteLine($"✅ Report {dto.ReportId} marked as inactive (deleted).");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"❌ Error saving report with ID {dto.ReportId}: {ex.Message}");
+                            throw new InvalidDataException($"Failed to update report with ID {dto.ReportId}", ex);
+                        }
+                    }
+                }
+
+                Console.WriteLine($"✅ Update complete. Total updated entries: {updatedCount}");
+
+                return updatedCount > 0
+                    ? $"Successfully updated {updatedCount} entries for report ID {dto.ReportId}."
+                    : $"No updates needed for report ID {dto.ReportId}.";
+            }
+            catch (InvalidDataException ex)
+            {
+                Console.WriteLine($"❌ InvalidDataException: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Unexpected error: {ex.Message}");
+                throw new InvalidDataException($"Unexpected error occurred while updating report ID {dto.ReportId}: {ex.Message}", ex);
+            }
+        }
 
     }
 }

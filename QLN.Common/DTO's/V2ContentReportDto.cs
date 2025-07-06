@@ -40,6 +40,7 @@ namespace QLN.Common.DTO_s
         public Guid CommentId { get; set; }
         public string ReporterName { get; set; }
         public DateTime ReportDate { get; set; }
+        public bool IsActive { get; set; }
     }
 
 
@@ -94,7 +95,12 @@ namespace QLN.Common.DTO_s
         public int PageSize { get; set; } = 12;
         public string? SearchTerm { get; set; }
     }
-
+    public class V2UpdateCommunityCommentReportDto
+    {
+        public Guid ReportId { get; set; }
+        public bool IsKeep { get; set; } = false;
+        public bool IsDelete { get; set; } = false;
+    }
 
 
 }

@@ -256,14 +256,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
-        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(
-         string sortOrder = "desc",
-         int pageNumber = 1,
-         int pageSize = 12,
-         string? searchTerm = null,
-         CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportArticleResponseDto>> GetAllReports(  string sortOrder = "desc",  int pageNumber = 1,  int pageSize = 12,  string? searchTerm = null,  CancellationToken cancellationToken = default)
         {
             try
             {
@@ -384,12 +377,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(
-            int? pageNumber,
-            int? perPage,
-            string? searchTitle = null,
-            string? sortBy = null,
-            CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(  int? pageNumber,    int? perPage,    string? searchTitle = null,    string? sortBy = null, CancellationToken ct = default)
         {
             try
             {
@@ -476,12 +464,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
-    string sortOrder = "desc",
-    int pageNumber = 1,
-    int pageSize = 12,
-    string? searchTerm = null,
-    CancellationToken cancellationToken = default)
+        public async Task<List<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -501,6 +484,80 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 _logger.LogError(ex, "Error fetching community comment reports from internal service");
                 throw;
+            }
+        }
+        public async Task<string> UpdateCommunityCommentReportStatus(V2UpdateCommunityCommentReportDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/report/updatecommunitycommentreportstatus";
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Put,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url);
+
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
+
+                _logger.LogInformation("🔄 Sending request to update community comment report status. ReportId: {ReportId}, IsKeep: {IsKeep}, IsDelete: {IsDelete}",
+                    dto.ReportId, dto.IsKeep, dto.IsDelete);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        _logger.LogWarning(jsonEx, "⚠️ Failed to deserialize ProblemDetails. Raw: {ErrorJson}", errorJson);
+                        errorMessage = errorJson;
+                    }
+
+                    _logger.LogError("❌ Error from internal service for ReportId: {ReportId}. StatusCode: {StatusCode}, Error: {ErrorMessage}",
+                        dto.ReportId, response.StatusCode, errorMessage);
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                // Parse success response
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("⚠️ Empty response from content service for ReportId: {ReportId}", dto.ReportId);
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    var message = JsonSerializer.Deserialize<string>(rawJson);
+                    _logger.LogInformation("✅ Successfully updated report status. ReportId: {ReportId}, Message: {Message}", dto.ReportId, message);
+                    return message ?? "Unknown response from content service.";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "❌ Failed to deserialize success response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
+            }
+            catch (InvalidDataException ex)
+            {
+                _logger.LogError(ex, "❌ Invalid data error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Unexpected error while updating community comment report status. ReportId: {ReportId}", dto.ReportId);
+                throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
 
