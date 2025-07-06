@@ -340,7 +340,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     BadRequest<ProblemDetails>,
                     ProblemHttpResult>>
                 (
-                    [FromHeader(Name = "TopicId")] Guid topicId,
+                    [FromQuery] Guid topicId,
                     [FromServices] IV2ContentDailyService service,
                     CancellationToken ct
                 ) =>
@@ -365,7 +365,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 })
                 .WithName("GetDailyTopicContentByTopic")
                 .WithTags("DailyLivingBO")
-                .WithSummary("Fetch all filled slots for a given daily living topic (TopicId in header)")
+                .WithSummary("Fetch all filled slots for a given daily living topic")
                 .Produces<List<DailyTopicContent>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

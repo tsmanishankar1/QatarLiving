@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Guid? PostId { get; set; }
         public Guid? CommentId { get; set; }
-       
+       public string? Router { get; set; }
         public string? ReporterName { get; set; }
         public DateTime? ReportDate { get; set; }
         public bool IsActive { get; set; }
@@ -20,6 +21,7 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public Guid? PostId { get; set; }
+        public string? Router { get; set; }
         public string? ReporterName { get; set; }
         public DateTime? ReportDate { get; set; }
         public bool? IsActive { get; set; }
@@ -39,10 +41,18 @@ namespace QLN.Common.DTO_s
         public Guid PostId { get; set; }
         public Guid CommentId { get; set; }
         public string ReporterName { get; set; }
+        public string? Router { get; set; }
         public DateTime ReportDate { get; set; }
         public bool IsActive { get; set; }
     }
 
+    public class PagedResult<T>
+    {
+        public int TotalCount { get; set; }
+        public int PageSize { get; set; }
+        public int PageNumber { get; set; }
+        public List<T> Items { get; set; } = new List<T>();
+    }
 
     public class V2ContentReportArticleResponseDto
     {
@@ -52,17 +62,18 @@ namespace QLN.Common.DTO_s
         public Guid? CommentId { get; set; }
         public string? Reporter { get; set; }
         public DateTime? ReportDate { get; set; }
-
-      
         public string? Comment { get; set; }
         public string? UserName { get; set; }
         public DateTime? CommentDate { get; set; }
+        public string? Router { get; set; }
     }
 
     public class V2UpdateReportStatusDto
     {
         public Guid ReportId { get; set; }
+        [DefaultValue(false)]
         public bool IsKeep { get; set; }
+        [DefaultValue(false)]
         public bool IsDelete { get; set; }
     }
     public class PaginatedReportsResponse
@@ -86,6 +97,7 @@ namespace QLN.Common.DTO_s
         public string? Title { get; set; }     
         public string? Comment { get; set; }
         public string? UserName { get; set; } 
+        public string? Router { get; set; }
     }
 
     public class GetAllReportQueryParams
@@ -98,7 +110,11 @@ namespace QLN.Common.DTO_s
     public class V2UpdateCommunityCommentReportDto
     {
         public Guid ReportId { get; set; }
+
+        [DefaultValue(false)]
         public bool IsKeep { get; set; } = false;
+
+        [DefaultValue(false)]
         public bool IsDelete { get; set; } = false;
     }
 

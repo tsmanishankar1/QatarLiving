@@ -945,7 +945,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPost("/commentsSavebyid", async Task<Results<
+        group.MapPost("/commentsavebyid", async Task<Results<
     Ok<NewsCommentApiResponse>,
     BadRequest<ProblemDetails>,
     ProblemHttpResult>>
@@ -988,7 +988,7 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapGet("/comments/byArticle/{nid}", async Task<Results<
+        group.MapGet("/commentsbyArticleid/{nid}", async Task<Results<
     Ok<NewsCommentListResponse>,
     NotFound<ProblemDetails>,
     ProblemHttpResult>>
@@ -1028,55 +1028,56 @@ public static class V2NewsEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/comments/{commentId}/like", async Task<Results<
-    Ok<bool>,
-    ForbidHttpResult,
-    ProblemHttpResult>>
-(
-    string commentId,
-    IV2NewsService service,
-    HttpContext httpContext,
-    CancellationToken ct
-) =>
-        {
-            try
+        group.MapPost("/commentslike/{commentId}", async Task<Results<
+         Ok<bool>,
+         ForbidHttpResult,
+         ProblemHttpResult>>
+     (
+         string commentId,
+         IV2NewsService service,
+         HttpContext httpContext,
+         CancellationToken ct
+     ) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                    return TypedResults.Forbid();
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
 
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
 
-                if (string.IsNullOrWhiteSpace(userId))
-                    return TypedResults.Forbid();
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
 
-                var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
-                return TypedResults.Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Failed to toggle like for news comment.", ex.Message);
-            }
-        })
-.WithName("LikeNewsCommentJWT")
-.WithTags("News")
-.WithSummary("Toggle like on a comment (JWT-based)")
-.WithDescription("Toggles like/unlike for a news comment by reading user ID from JWT token.")
-.Produces<bool>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status403Forbidden)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                    var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to toggle like for news comment.", ex.Message);
+                }
+            })
+     .WithName("LikeNewsCommentJWT")
+     .WithTags("News")
+     .WithSummary("Toggle like on a comment (JWT-based)")
+     .WithDescription("Toggles like/unlike for a news comment by reading user ID from JWT token.")
+     .Produces<bool>(StatusCodes.Status200OK)
+     .Produces(StatusCodes.Status403Forbidden)
+     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/comments/{commentId}/like/by-user", async Task<Results<
-    Ok<bool>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    string commentId,
-    [FromQuery] string userId,
-    IV2NewsService service,
-    CancellationToken ct
-) =>
+        // ----- Optional endpoint without JWT (e.g. backend system)
+        group.MapPost("/commentsbyid/{commentId}", async Task<Results<
+            Ok<bool>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            string commentId,
+            [FromQuery] string userId,
+            IV2NewsService service,
+            CancellationToken ct
+        ) =>
         {
             try
             {
@@ -1098,15 +1099,14 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Failed to toggle like (by user ID).", ex.Message);
             }
         })
-.ExcludeFromDescription()
-.WithName("LikeNewsCommentByUserId")
-.WithTags("News")
-.WithSummary("Toggle like with explicit user ID")
-.WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
-.Produces<bool>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+        .ExcludeFromDescription()
+        .WithName("LikeNewsCommentByUserId")
+        .WithTags("News")
+        .WithSummary("Toggle like with explicit user ID")
+        .WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
+        .Produces<bool>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         return group;
     }
