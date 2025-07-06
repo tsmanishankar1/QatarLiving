@@ -316,26 +316,50 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
+            var key = id.ToString();
+
+            // Fetch existing article
             var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
                 ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
+                key,
                 cancellationToken: cancellationToken);
 
             if (existing == null)
                 throw new KeyNotFoundException($"News with ID '{id}' not found.");
 
+            // Mark as inactive (soft delete)
             existing.IsActive = false;
             existing.UpdatedAt = DateTime.UtcNow;
 
+            // Save back to store
             await _dapr.SaveStateAsync(
                 ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
+                key,
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
 
+            // --- 🔥 Remove ID from News Index ---
+            var index = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.V2Content.ContentStoreName,
+                ConstantValues.V2Content.NewsIndexKey,
+                cancellationToken: cancellationToken) ?? new();
+
+            if (index.Contains(key))
+            {
+                index.Remove(key);
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.NewsIndexKey,
+                    index,
+                    cancellationToken: cancellationToken);
+
+                _logger.LogInformation("Removed article ID {NewsId} from index after soft delete", id);
+            }
+
             return "News Soft Deleted Successfully";
         }
+
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
             try
@@ -704,7 +728,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         PropertyNameCaseInsensitive = true
                     });
 
-                    if (comment == null)
+                    if (comment == null || !comment.IsActive)
                         continue;
 
                     var likeIndexKey = $"news-comment-like-index-{comment.CommentId}";
@@ -722,10 +746,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     });
                 }
 
-
                 return new NewsCommentListResponse
                 {
-                    TotalComments = total,
+                    TotalComments = comments.Count,
                     PerPage = itemsPerPage,
                     CurrentPage = currentPage,
                     Comments = comments
@@ -737,6 +760,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new InvalidOperationException("Error fetching comments");
             }
         }
+
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
             var key = $"news-comment-like-{commentId}-{userId}";
