@@ -89,11 +89,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                if (firstRender)
-                {
-                    await JS.InvokeVoidAsync("initializeArticleSortable", "live-article-table", DotNetObjectReference.Create(this));
-                }
-
+                await JS.InvokeVoidAsync("initializeArticleSortable", "live-article-table", DotNetObjectReference.Create(this));
 
                 if (shouldFocusInput && subCategoryInputRef is not null)
                 {
@@ -669,19 +665,34 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     .Where(x => x.Article != null)
                     .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
 
-                List<ArticleSlotAssignment> slotAssignments = reorderedSlotNumbers
-                    .Select((originalSlot, newIndex) =>
+                int totalSlots = 13;
+
+                var slotAssignments = Enumerable.Range(1, totalSlots)
+                    .Select(slotNum =>
                     {
-                        var articleId = articleSlotMap.TryGetValue(originalSlot, out var id) ? id : (Guid?)null;
+                        int newIndex = reorderedSlotNumbers.IndexOf(slotNum);
+                        var newSlotPosition = newIndex >= 0 ? newIndex + 1 : slotNum;
+
+                        var articleId = articleSlotMap.TryGetValue(slotNum, out var id) ? id : (Guid?)null;
 
                         return new ArticleSlotAssignment
                         {
-                            SlotNumber = newIndex + 1,
+                            SlotNumber = newSlotPosition,
                             ArticleId = articleId
                         };
-                    }).ToList();
+                    })
+                    .ToList();
 
-                var response = await newsService.ReOrderNews(slotAssignments, CurrentUserId.ToString());
+                var request = new ReorderRequest
+                {
+                    SlotAssignments = slotAssignments,
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategory.Id,
+                    UserId = CurrentUserId.ToString()
+                };
+
+                var response = await newsService.ReOrderNews(request, CurrentUserId.ToString());
+                var content = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Slots Reordered Successfully", Severity.Success);
