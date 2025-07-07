@@ -11,7 +11,7 @@ using System.Net.Http.Json;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
-    public class PostDetailBase : ComponentBase
+    public class PostDetailBaseV2 : ComponentBase
     {
 
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
@@ -54,12 +54,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 Label = "Not Found",
                 //Url = "/content/community",
-                Url = $"/content/community"
+                Url = $"/content/v2/community"
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
-                new() { Label = "Community", Url = "/content/community" },
+                new() { Label = "Community", Url = "/content/v2/community" },
                postBreadcrumbCategory,
                 postBreadcrumbItem
             };
@@ -67,6 +67,70 @@ namespace QLN.Web.Shared.Pages.Content.Community
             await LoadPostAsync();
         }
 
+        //private async Task LoadPostAsync()
+        //{
+        //    try
+        //    {
+        //        SelectedPost = null;
+        //        IsLoading = true;
+        //        HasError = false;
+        //        StateHasChanged();
+
+        //        var fetched = await CommunityService.GetPostBySlugAsync(slug);
+
+        //        if (fetched != null)
+        //        {
+        //            SelectedPost = new PostModel
+        //            {
+        //                Id = fetched.nid,
+        //                Category = fetched.category,
+        //                CategoryId = fetched.forum_id.ToString(),
+        //                Title = fetched.title,
+        //                BodyPreview = fetched.description,
+        //                Author = fetched.user_name ?? "Unknown User",
+        //                Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
+        //                LikeCount = 0,
+        //                CommentCount = fetched.comments?.Count ?? 0,
+        //                ImageUrl = fetched.image_url,
+        //                Slug = fetched.slug,
+        //                Comments = fetched.comments?.Select(c => new CommentModel
+        //                {
+        //                    Id = c.nid,
+        //                    CreatedBy = c.user_name ?? "Unknown User",
+        //                    CreatedAt = c.created_date,      
+        //                    Description = c.subject ?? "No content to display",
+        //                    LikeCount = 0,
+        //                    UnlikeCount = 0,
+        //                    Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
+        //                        ? c.profile_picture
+        //                        : "/qln-images/content/Sample.svg"
+        //                }).ToList() ?? new List<CommentModel>()
+        //            };
+
+        //            if (postBreadcrumbItem is not null)
+        //            {
+        //                postBreadcrumbItem.Label = SelectedPost.Title;
+        //                StateHasChanged();
+        //            }
+        //            if (postBreadcrumbCategory is not null)
+        //            {
+        //                postBreadcrumbCategory.Label = SelectedPost.Category;
+        //                postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
+        //                StateHasChanged();
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Logger.LogError(ex, "Failed to load post with slug: {Slug}", slug);
+        //        HasError = true;
+        //    }
+        //    finally
+        //    {
+        //        IsLoading = false;
+        //        StateHasChanged();
+        //    }
+        //}
         private async Task LoadPostAsync()
         {
             try
@@ -76,35 +140,24 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 HasError = false;
                 StateHasChanged();
 
-                var fetched = await CommunityService.GetPostBySlugAsync(slug);
+                var fetched = await CommunityService.GetCommunityPostDetail(slug);
 
                 if (fetched != null)
                 {
                     SelectedPost = new PostModel
                     {
-                        Id = fetched.nid,
-                        Category = fetched.category,
-                        CategoryId = fetched.forum_id.ToString(),
-                        Title = fetched.title,
-                        BodyPreview = fetched.description,
-                        Author = fetched.user_name ?? "Unknown User",
-                        Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
-                        LikeCount = 0,
-                        CommentCount = fetched.comments?.Count ?? 0,
-                        ImageUrl = fetched.image_url,
-                        Slug = fetched.slug,
-                        Comments = fetched.comments?.Select(c => new CommentModel
-                        {
-                            Id = c.nid,
-                            CreatedBy = c.user_name ?? "Unknown User",
-                            CreatedAt = c.created_date,
-                            Description = c.subject ?? "No content to display",
-                            LikeCount = 0,
-                            UnlikeCount = 0,
-                            Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
-                                ? c.profile_picture
-                                : "/qln-images/content/Sample.svg"
-                        }).ToList() ?? new List<CommentModel>()
+                        Id = fetched.Id.ToString(),
+                        Category = fetched.Category,
+                        CategoryId = fetched.CategoryId,
+                        Title = fetched.Title,
+                        BodyPreview = fetched.Description,
+                        Author = fetched.UserName ?? "Unknown User",
+                        Time = fetched.DateCreated,
+                        LikeCount = fetched.LikeCount,
+                        CommentCount = fetched.CommentCount,
+                        ImageUrl = fetched.ImageUrl,
+                        Slug = fetched.Slug,
+                        
                     };
 
                     if (postBreadcrumbItem is not null)
@@ -115,7 +168,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     if (postBreadcrumbCategory is not null)
                     {
                         postBreadcrumbCategory.Label = SelectedPost.Category;
-                        postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
+                        postBreadcrumbCategory.Url = $"/content/v2/community?categoryId={SelectedPost.CategoryId}";
                         StateHasChanged();
                     }
                 }
@@ -131,7 +184,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
-
         protected async Task LoadBanners()
         {
             isLoadingBanners = true;
