@@ -34,10 +34,36 @@
                             <span class="nav-item default-gray">News</span>
                         </TitleContent>
                         <ChildContent>
-                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/101", true))"  Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">News</MudNavLink>
-                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/102", true))"  Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Business</MudNavLink>
-                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/103", true))"  Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">Sports</MudNavLink>
-                            <MudNavLink OnClick="@(() => NavManager.NavigateTo("/manage/news/category/104", true))"  Match="NavLinkMatch.Prefix" Icon="fas fa-user-shield" IconColor="Color.Info">LifeStyle</MudNavLink>
+                            <MudNavLink 
+                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/101", true))"
+                                Match="NavLinkMatch.All"
+                                Class="@GetActiveClass("/manage/news/category/101")"
+                            >
+                                News
+                            </MudNavLink>
+                            <MudNavLink 
+                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/102", true))"
+                                Match="NavLinkMatch.All"
+                                Class="@GetActiveClass("/manage/news/category/102")"
+                            >
+                                Business
+                            </MudNavLink>
+
+                            <MudNavLink 
+                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/103", true))"
+                                Match="NavLinkMatch.All"
+                                Class="@GetActiveClass("/manage/news/category/103")"
+                            >
+                                Sports
+                            </MudNavLink>
+
+                            <MudNavLink 
+                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/104", true))"
+                                Match="NavLinkMatch.All"
+                                Class="@GetActiveClass("/manage/news/category/104")"
+                            >
+                                Lifestyle
+                            </MudNavLink>
                         </ChildContent>
                     </MudNavGroup>
                     <MudNavLink Href="/manage/community" Class="nav-item">
@@ -56,9 +82,9 @@
                             <span class="nav-item default-gray">Report</span>
                         </TitleContent>
                         <ChildContent>
-                            <MudNavLink Href="/manage/reports?type=article-comments" Class="nav-item" Match="NavLinkMatch.Prefix" Icon="fas fa-users" IconColor="Color.Secondary">Article Comments</MudNavLink>
-                            <MudNavLink Href="/manage/reports?type=community-posts" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Community Posts</MudNavLink>
-                            <MudNavLink Href="/manage/reports?type=community-comments" Class="nav-item" Icon="fas fa-user-shield" IconColor="Color.Info">Community Comments</MudNavLink>
+                            <MudNavLink Href="/manage/reports?type=article-comments"  Match="NavLinkMatch.Prefix" Class="@GetActiveClass("/manage/reports?type=article-comments")" >Article Comments</MudNavLink>
+                            <MudNavLink Href="/manage/reports?type=community-posts"   Class="@GetActiveClass("/manage/reports?type=community-posts")">Community Posts</MudNavLink>
+                            <MudNavLink Href="/manage/reports?type=community-comments" Class="@GetActiveClass("/manage/reports?type=community-comments")">Community Comments</MudNavLink>
                         </ChildContent>
                     </MudNavGroup>
                 </MudNavMenu>
@@ -179,6 +205,17 @@
     .drawer-style {
         padding-top: 30px;
     }
+     .active-news-link {
+            background-color: #FF7F38;
+            color: white !important;
+            font-weight: 600;
+            border-radius: 6px;
+        }
+
+        .inactive-news-link {
+            color: #646464;
+        }
+
 
     .nav-icon-style {
         width: 24px;
@@ -238,6 +275,10 @@
         }
     };
 
+    private string GetActiveClass(string path)
+    {
+        return NavManager.Uri.Contains(path) ? "active-news-link" : "inactive-news-link";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -262,6 +303,10 @@
     protected void OnNewsGroupExpanded(bool expanded)
     {
         _isNewsGroupExpanded = expanded;
+         if (expanded)
+        {
+            NavManager.NavigateTo("/manage/news/category/101");
+        }
     }
     protected void OnReportsGroupExpanded(bool expanded)
     {
