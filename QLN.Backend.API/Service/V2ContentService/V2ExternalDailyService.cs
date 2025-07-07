@@ -1,33 +1,11 @@
-﻿using System;
-
-using System.Collections.Generic;
-
-using System.Net;
-
-using System.Net.Http;
-
-using System.Text;
-
-using System.Text.Json;
-
-using System.Threading;
-
-using System.Threading.Tasks;
-
-using Dapr.Client;
-
-using Microsoft.Extensions.Logging;
-
+﻿using Dapr.Client;
 using QLN.Common.DTO_s;
-
 using QLN.Common.Infrastructure.Constants;
-
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-
-using QLN.Common.Infrastructure.IService.IFileStorage;
-
+using System.Text;
+using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService

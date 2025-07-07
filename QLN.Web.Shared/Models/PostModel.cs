@@ -4,7 +4,7 @@ namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
-        public string Id { get; set; } 
+        public string Id { get; set; }
         public string Category { get; set; }
         public string CategoryId { get; set; }
         public string Title { get; set; }
@@ -16,7 +16,7 @@ namespace QLN.Web.Shared.Model
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
         public bool isCommented { get; set; }
-        public string Slug { get; set; } 
+        public string Slug { get; set; }
         public int TotalCount { get; set; }
         public List<CommentModel> Comments { get; set; } = new();
     }
@@ -94,7 +94,7 @@ namespace QLN.Web.Shared.Model
     }
     public class CommentDto
     {
-        public string nid { get; set; } 
+        public string nid { get; set; }
         public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;

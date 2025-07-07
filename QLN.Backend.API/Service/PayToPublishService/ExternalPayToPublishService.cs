@@ -1,7 +1,6 @@
 ﻿using Dapr.Actors;
 using Dapr.Actors.Client;
 using QLN.Common.DTO_s;
-using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IPayToPublicActor;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -39,7 +38,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
         {
             var actor = GetActorProxy(data.Id);
 
-          
+
             if (data.Plans != null)
             {
                 foreach (var plan in data.Plans)
@@ -50,7 +49,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 }
             }
 
-            
+
             if (data.BasicPrices != null)
             {
                 foreach (var basicPrice in data.BasicPrices)
@@ -141,8 +140,8 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 CategoryId = request.CategoryId,
                 StatusId = request.StatusId,
                 IsFreeAd = request.IsFreeAd,
-                IsPromoteAd= request.IsPromoteAd,
-                IsFeatureAd= request.IsFeatureAd,
+                IsPromoteAd = request.IsPromoteAd,
+                IsFeatureAd = request.IsFeatureAd,
                 LastUpdated = DateTime.UtcNow
             };
             var planActor = GetActorProxy(plan.Id);
@@ -308,14 +307,14 @@ namespace QLN.Backend.API.Service.PayToPublishService
                     Description = plan.Description,
                     DurationName = FormatDuration(plan.Duration),
                     IsFreeAd = plan.IsFreeAd,
-                    IsPromoteAd=plan.IsPromoteAd,
-                    IsFeatureAd=plan.IsFeatureAd,
+                    IsPromoteAd = plan.IsPromoteAd,
+                    IsFeatureAd = plan.IsFeatureAd,
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                     CategoryId = (int)plan.CategoryId,
                     CategoryName = GetEnumDisplayName(plan.CategoryId),
                     BasicPriceId = matchingBasicPrice != null ? (int)matchingBasicPrice.BasicPriceId : (int?)null,
-                   
+
                 });
             }
 
@@ -344,7 +343,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             existingPlan.StatusId = request.StatusId;
             existingPlan.IsFreeAd = request.IsFreeAd;
             existingPlan.IsFeatureAd = request.IsFeatureAd;
-            existingPlan.IsPromoteAd= request.IsPromoteAd;
+            existingPlan.IsPromoteAd = request.IsPromoteAd;
             existingPlan.LastUpdated = DateTime.UtcNow;
 
             await planActor.SetDataAsync(existingPlan, cancellationToken);
@@ -425,7 +424,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 EndDate = endDate,
                 LastUpdated = DateTime.UtcNow,
                 IsExpired = false,
-        
+
             };
             var actor = GetPaymentActorProxy(dto.Id);
             var result = await actor.FastSetDataAsync(dto, cancellationToken);
@@ -442,9 +441,9 @@ namespace QLN.Backend.API.Service.PayToPublishService
                 PaytoPublishId = plan.Id,
                 PayToPublishName = plan.PlanName,
                 Price = plan.Price,
-                IsPromoteAd=plan.IsPromoteAd,
-                IsFeatureAd=plan.IsFeatureAd,
-                IsAdFree=plan.IsFreeAd,
+                IsPromoteAd = plan.IsPromoteAd,
+                IsFeatureAd = plan.IsFeatureAd,
+                IsAdFree = plan.IsFreeAd,
                 Currency = plan.Currency,
                 Description = plan.Description,
                 DurationId = (int)durationEnum,
@@ -460,7 +459,7 @@ namespace QLN.Backend.API.Service.PayToPublishService
             await masterActor.AddPaymentIdAsync(dto.Id, cancellationToken);
             _payToPublishTransactionIds.TryAdd(dto.Id, 0);
 
-            
+
 
             return dto.Id;
         }

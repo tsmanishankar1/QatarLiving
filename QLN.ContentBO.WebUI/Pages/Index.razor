@@ -1,5 +1,5 @@
 ﻿@page "/"
-
+@inject NavigationManager Nav
 <PageTitle>Qatar Living Content Back Office</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -37,3 +37,9 @@
         </MudItem>
     </MudGrid>
 </MudContainer>
+@code {
+    protected override void OnInitialized()
+    {
+        Nav.NavigateTo("/dashboard", true);
+    }
+}

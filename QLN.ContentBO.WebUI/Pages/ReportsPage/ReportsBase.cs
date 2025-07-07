@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.WebUtilities;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 {
-    public class ReportsBase : ComponentBase
+    public class ReportsBase : QLComponentBase
     {
         [Inject]
         protected NavigationManager Navigation { get; set; }
@@ -33,6 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("type", out var param))
             {

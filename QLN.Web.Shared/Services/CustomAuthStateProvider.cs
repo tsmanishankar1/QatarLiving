@@ -1,10 +1,10 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using QLN.Web.Shared.Services;
+using Microsoft.JSInterop;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Models;
-using Microsoft.JSInterop;
+using QLN.Web.Shared.Services;
+using System.Security.Claims;
 
 
 public class CustomAuthStateProvider : AuthenticationStateProvider
@@ -34,7 +34,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         _user = new ClaimsPrincipal(new ClaimsIdentity());
         var payload = new { usernameOrEmailOrPhone = Username, password = password };
         var response = await Api.PostAsync<object, LoginResponse>("auth/login", payload);
-        Console.WriteLine("Login Response",response);
+        Console.WriteLine("Login Response", response);
         if (response == null)
         {
             NavigationManager.NavigateTo("/login");
