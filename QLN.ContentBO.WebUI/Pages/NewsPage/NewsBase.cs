@@ -1,13 +1,10 @@
-﻿using Grpc.Core;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
@@ -73,6 +70,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string articleDetailBaseURL { get; set; }
 
+        public class NewsArticleSearchResponse
+        {
+            public List<NewsArticleDTO> Items { get; set; } = [];
+        }
+
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -132,7 +135,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected void NavigateToAddArticle()
         {
-            Navigation.NavigateTo($"/manage/news/addarticle/category/{CategoryId}/subcategory/{SelectedSubcategory.Id}",true);
+            Navigation.NavigateTo($"/manage/news/addarticle/category/{CategoryId}/subcategory/{SelectedSubcategory.Id}", true);
         }
 
         protected async Task DeleteArticle(Guid id)
@@ -520,12 +523,15 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     {
                         case 1:
                             IndexedLiveArticles.Clear();
+                            ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
                             break;
                         case 2:
+                            ResetSearch();
                             ListOfNewsArticles = await GetPublishedArticlesAsync();
                             break;
                         case 3:
+                            ResetSearch();
                             ListOfNewsArticles = await GetUnpublishedArticlesAsync();
                             break;
                     }
@@ -723,11 +729,19 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async Task SearchArticles()
         {
-            IsSearchEnabled = true;
-            IsLoadingDataGrid = true;
-            selectedTab = string.Empty;
-            SearchListOfNewsArticles = await SearchArticlesAsync();
-            IsLoadingDataGrid = false;
+            try
+            {
+                IsSearchEnabled = true;
+                IsLoadingDataGrid = true;
+                selectedTab = string.Empty;
+                SearchListOfNewsArticles = await SearchArticlesAsync();
+                IsLoadingDataGrid = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SearchArticles");
+                IsLoadingDataGrid = false;
+            }
         }
 
         private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
@@ -740,7 +754,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     var content = await response.Content.ReadAsStringAsync();
                     if (response.IsSuccessStatusCode)
                     {
-                        return await response.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                        var result = JsonSerializer.Deserialize<NewsArticleSearchResponse>(content, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        return result?.Items ?? new List<NewsArticleDTO>();
                     }
                     else if (response.StatusCode == HttpStatusCode.BadRequest)
                     {
@@ -766,49 +785,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
-            //var newSignature = string.Join(",", newOrder);
-            //Logger.LogInformation("New slot order received: {Order}", newSignature);
 
-            //// Compare only once
-            //var currentOrder = FeaturedEventSlots.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
-            //if (newSignature == string.Join(",", currentOrder))
-            //{
-            //    Logger.LogInformation("Same order as before, skipping API call.");
-            //    return;
-            //}
+        }
 
-            //// Find the first difference (simple diff)
-            //for (int i = 0; i < newOrder.Count; i++)
-            //{
-            //    var newSlotId = int.Parse(newOrder[i]);
-            //    var expectedSlotId = FeaturedEventSlots[i].SlotNumber;
-
-            //    if (newSlotId != expectedSlotId)
-            //    {
-            //        int fromSlot = FeaturedEventSlots.First(s => s.SlotNumber == newSlotId).SlotNumber;
-            //        int toSlot = i + 1;
-
-            //        Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
-            //        var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
-
-            //        if (response.IsSuccessStatusCode)
-            //        {
-            //            Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
-            //            Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
-            //        }
-            //        else
-            //        {
-            //            var error = await response.Content.ReadAsStringAsync();
-            //            Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
-            //            Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
-            //        }
-
-            //        break; // Only process the first change
-            //    }
-            //}
-
-            //// ✅ Refresh list from backend (optional but safer)
-            StateHasChanged();
+        protected void ResetSearch()
+        {
+            IsSearchEnabled = false;
+            SearchString = string.Empty;
         }
     }
 }
