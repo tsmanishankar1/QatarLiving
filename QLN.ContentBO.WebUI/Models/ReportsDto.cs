@@ -14,9 +14,9 @@ public class ReportDto
     public Guid CommentId { get; set; }
     public string Reporter { get; set; }
     public DateTime ReportDate { get; set; }
-    public string? Comment { get; set; }     // Also nullable in your JSON
-    public string? UserName { get; set; }    // Also nullable in your JSON
-    public DateTime? CommentDate { get; set; }  // ✅ Make nullable
+    public string? Comment { get; set; }
+    public string? UserName { get; set; } 
+    public DateTime? CommentDate { get; set; } 
 
     public int Number { get; set; }
     public string Category => "N/A";
