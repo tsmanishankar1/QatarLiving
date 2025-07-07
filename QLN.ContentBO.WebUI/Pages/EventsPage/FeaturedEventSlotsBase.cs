@@ -21,13 +21,12 @@ namespace QLN.ContentBO.WebUI.Pages
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
 
-        // Replace with actual user ID retrieval logic (e.g. from auth claims)
         private string UserId => CurrentUserId.ToString();
 
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            AuthorizedPage(); // Ensure this is called to populate user info
+            AuthorizedPage(); 
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -40,18 +39,15 @@ namespace QLN.ContentBO.WebUI.Pages
       [JSInvokable]
     public async Task OnTableReordered(List<string> newOrder)
     {
-        // Convert slot numbers to int
         var newSlotOrder = newOrder.Select(int.Parse).ToList();
 
-        // Build a map from slotNumber to eventId from the current state
         var eventMap = FeaturedEventSlots
             .Where(s => s.Event != null)
             .ToDictionary(s => s.SlotNumber, s => s.Event.Id);
 
-        // Prepare new assignments by mapping each new slot number
         var slotAssignments = newSlotOrder.Select((slotNumber, index) => new
         {
-            slotNumber = index + 1, // visual/ordered slot position
+            slotNumber = index + 1,
             eventId = eventMap.TryGetValue(slotNumber, out var eventId) && eventId != Guid.Empty 
             ? (Guid?)eventId 
             : null

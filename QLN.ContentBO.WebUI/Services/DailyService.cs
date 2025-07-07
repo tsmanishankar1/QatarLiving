@@ -3,6 +3,9 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
+using System.Net;
+using System.Text;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -72,5 +75,37 @@ namespace QLN.ContentBO.WebUI.Services
                 return new List<DailyTopic>();
             }
         }
+        public async Task<HttpResponseMessage> UpdateTopicAsync(DailyTopic topic)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(topic, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/dailyliving/publishstatus")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateTopic");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> DeleteArticleAsync(string id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/v2/dailyliving/topic/content/{id}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error deleting article with ID {Id}", id);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
     }
 }

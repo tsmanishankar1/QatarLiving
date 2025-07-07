@@ -21,12 +21,27 @@ else
                         <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" OnClick="OnAddItemClicked" Class="daily-compact-button">
                             Add Item
                         </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="daily-compact-button">
+                        <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" OnClick="RenameTopicaOnClick" Class="daily-compact-button">
                             Rename Topic
                         </MudButton>
-                        <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff" Style="background-color: #F04438; color: white; text-transform: none;" Class="daily-compact-button" >
+                        @if (selectedTopic.isPublished)
+                        {
+                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff"
+                            Style="background-color: #F04438; color: white; text-transform: none;"
+                            Class="daily-compact-button"
+                            @onclick="UpdateEventOnClick">
                             Unpublish
-                        </MudButton>
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton StartIcon="@Icons.Material.Outlined.Visibility"
+                            Style="background-color: #FF7F38; color: white; text-transform: none;"
+                            Class="daily-compact-button"
+                            @onclick="UpdateEventOnClick">
+                            Publish
+                            </MudButton>
+                        }
                     </div>
                 </MudItem>
             </MudGrid>
@@ -104,7 +119,7 @@ else
                         <img src="/qln-images/replace_icon.svg"   alt="delete" class="action-icon-style" />
                         </div>
                         <div class="custom-delete-button" 
-                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Id.ToString()))">
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Id))">
                         <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
                         </div>
                         </div>

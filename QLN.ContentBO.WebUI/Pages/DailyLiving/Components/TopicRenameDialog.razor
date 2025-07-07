@@ -1,0 +1,25 @@
+@inherits TopicRenameDialogBase
+
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
+            @Title
+        </MudText>
+            <MudTextField @bind-Value="TopicName"
+              Label="Topic Name"
+              Class="mt-3"
+              Variant="Variant.Outlined"
+              Immediate="true"
+              Error="@(!string.IsNullOrWhiteSpace(_errorText))"
+              ErrorText="@_errorText" />
+        <div class="mt-4 d-flex flex-column gap-2">
+            <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="Confirm">
+                    @ButtonTitle
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                Cancel
+            </MudButton>
+        </div>
+    </DialogContent>
+</MudDialog>
+
