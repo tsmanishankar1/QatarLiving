@@ -55,11 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected string selectedTab = "live";
 
         public List<IndexedArticle> IndexedLiveArticles { get; set; } = [];
-        public class IndexedArticle
-        {
-            public int SlotNumber { get; set; }
-            public NewsArticleDTO? Article { get; set; }
-        }
 
         protected bool IsLoadingDataGrid { get; set; } = false;
 
@@ -75,7 +70,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             public List<NewsArticleDTO> Items { get; set; } = [];
         }
-
 
         protected override async Task OnInitializedAsync()
         {
@@ -182,128 +176,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Logger.LogError(ex, "GetAllArticles");
                 return [];
-            }
-        }
-
-        protected async void Click_MoveItemUp(Guid Id)
-        {
-            try
-            {
-                var articleToUpdate = IndexedLiveArticles
-                                        .Where(x => x.Article?.IsActive == true)
-                                        .Select(x => x.Article)
-                                        .FirstOrDefault(a =>
-                                            a != null &&
-                                            a.Id == Id &&
-                                            a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
-                                        ) ?? new NewsArticleDTO();
-
-                var toSlot = GetCurrentSlot(articleToUpdate);
-
-                var selectedCategory = articleToUpdate.Categories
-                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
-
-                if (toSlot > 1)
-                {
-                    toSlot -= 1;
-                }
-
-                articleSlotAssignment = new()
-                {
-                    CategoryId = CategoryId,
-                    SubCategoryId = SelectedSubcategory.Id,
-                    FromSlot = selectedCategory?.SlotId ?? 0,
-                    ToSlot = toSlot,
-                    AuthorName = articleToUpdate.authorName ?? string.Empty,
-                    UserId = articleToUpdate.UserId ?? string.Empty
-                };
-
-                var response = await newsService.ReOrderNews(articleSlotAssignment);
-                if (response != null)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        UpdateArticleSlot(IndexedLiveArticles, articleToUpdate.Id, articleSlotAssignment.ToSlot);
-                        Snackbar.Add("Slot Updated");
-                        StateHasChanged();
-                    }
-                    else if (response.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Click_MoveItemUp");
-            }
-        }
-
-        protected async void Click_MoveItemDown(Guid Id)
-        {
-            try
-            {
-                var articleToUpdate = IndexedLiveArticles
-                                        .Where(x => x.Article?.IsActive == true)
-                                        .Select(x => x.Article)
-                                        .FirstOrDefault(a =>
-                                            a != null &&
-                                            a.Id == Id &&
-                                            a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
-                                        ) ?? new NewsArticleDTO();
-
-                var toSlot = GetCurrentSlot(articleToUpdate);
-
-                var selectedCategory = articleToUpdate.Categories
-                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
-
-                if (toSlot < 13)
-                {
-                    toSlot += 1;
-                }
-
-                articleSlotAssignment = new()
-                {
-                    CategoryId = CategoryId,
-                    SubCategoryId = SelectedSubcategory.Id,
-                    FromSlot = selectedCategory?.SlotId ?? 0,
-                    ToSlot = toSlot,
-                    AuthorName = articleToUpdate.authorName ?? string.Empty,
-                    UserId = articleToUpdate.UserId ?? string.Empty
-                };
-
-                var response = await newsService.ReOrderNews(articleSlotAssignment);
-                if (response != null)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        UpdateArticleSlot(IndexedLiveArticles, articleToUpdate.Id, articleSlotAssignment.ToSlot);
-                        Snackbar.Add("Slot Updated");
-                        StateHasChanged();
-                    }
-                    else if (response.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Click_MoveItemDown");
             }
         }
 
@@ -788,21 +660,37 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var newSlotOrder = newOrder.Select(int.Parse).ToList();
 
-                var liveSlotMap = Slots
-                    .Where(s => s.Event != null)
-                    .ToDictionary(s => s.SlotNumber, s => s.Event.Id);
+                List<ArticleSlotAssignment> slotAssignments = IndexedLiveArticles
+                    .Select(x => new ArticleSlotAssignment
+                    {
+                        SlotNumber = x.SlotNumber,
+                        ArticleId = x.Article?.Id
+                    })
+                    .ToList();
 
-                var slotAssignments = newSlotOrder.Select((slotNumber, index) => new
+
+
+                var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
+
+                // Map existing slot numbers to article IDs
+                var articleSlotMap = IndexedLiveArticles
+                    .Where(x => x.Article != null)
+                    .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
+
+                // Build the reordered list using the correct API class
+                var slotAssignments = reorderedSlotNumbers.Select((originalSlot, newIndex) =>
                 {
-                    slotNumber = index + 1,
-                    eventId = liveSlotMap.TryGetValue(slotNumber, out var eventId) && eventId != Guid.Empty
-                    ? (Guid?)eventId
-                    : null
+                    var articleId = articleSlotMap.TryGetValue(originalSlot, out var id) ? id : (Guid?)null;
+
+                    return new ArticleSlotAssignment
+                    {
+                        SlotNumber = newIndex + 1,  // New position
+                        ArticleId = articleId
+                    };
                 }).ToList();
 
-                var response = await newsService.ReOrderNews(slotAssignments, CurrentUserId);
+                var response = await newsService.ReOrderNews(slotAssignments, CurrentUserId.ToString());
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Slots Reordered Successfully", Severity.Success);

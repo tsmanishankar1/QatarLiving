@@ -130,7 +130,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, 
+                var request = new HttpRequestMessage(HttpMethod.Get,
                     $"api/v2/news/categories/{categoryId}");
 
                 var response = await _httpClient.SendAsync(request);
@@ -195,7 +195,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment, int UserId)
+        public async Task<HttpResponseMessage> ReOrderNews(List<ArticleSlotAssignment> slotAssignment, string UserId)
         {
             try
             {

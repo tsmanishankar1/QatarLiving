@@ -258,7 +258,6 @@
                     {
                         <MudTable Items="IndexedLiveArticles" Class="live-slots" Hover="true" Style="padding-top: 20px;">
                             <HeaderContent>
-                                <MudTh>Slot</MudTh>
                                 <MudTh>Title</MudTh>
                                 <MudTh>Creation Date</MudTh>
                                 <MudTh>Live for</MudTh>
@@ -266,30 +265,6 @@
                                 <MudTh>Actions</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="Slot">
-                                    @if (context.SlotNumber > 1 && context.Article is not null)
-                                    {
-                                        <MudTooltip Text="Move Up">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
-                                                           Color="Color.Secondary"
-                                                           Size="Size.Small"
-                                                           @onclick="@(() => Click_MoveItemUp(context.Article.Id))" />
-                                        </MudTooltip>
-                                    }
-
-                                    @if (context.SlotNumber < 13 && context.Article is not null)
-                                    {
-                                        <MudTooltip Text="Move Down">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
-                                                           Color="Color.Secondary"
-                                                           Size="Size.Small"
-                                                           @onclick="@(() => Click_MoveItemDown(context.Article.Id))" />
-                                        </MudTooltip>
-                                    }
-
-                                    @context.SlotNumber
-                                </MudTd>
-
                                 <MudTd DataLabel="Article Title">
                                     @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
                                     {
@@ -383,6 +358,31 @@
                                 @foreach (var context in IndexedLiveArticles)
                                 {
                                     <tr data-slot-id="@context.Article">
+
+                                        <td>
+                                            @if (context.SlotNumber > 1 && context.Article is not null)
+                                            {
+                                                <MudTooltip Text="Move Up">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
+                                                                   Color="Color.Secondary"
+                                                                   Size="Size.Small"
+                                                                    />
+                                                </MudTooltip>
+                                            }
+
+                                            @if (context.SlotNumber < 13 && context.Article is not null)
+                                            {
+                                                <MudTooltip Text="Move Down">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
+                                                                   Color="Color.Secondary"
+                                                                   Size="Size.Small"
+                                                                    />
+                                                </MudTooltip>
+                                            }
+
+                                            @context.SlotNumber
+                                        </td>
+
                                         <td>
                                             <img src="/qln-images/arrow_icon.svg"
                                                  class="@(context.Article is not null ? "" : "drag-handle")"
