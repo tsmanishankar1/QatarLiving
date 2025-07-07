@@ -91,14 +91,16 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 if (firstRender)
                 {
-                    await JS.InvokeVoidAsync("initializeLiveSortable", "mud-table-root", DotNetObjectReference.Create(this));
+                    await JS.InvokeVoidAsync("initializeArticleSortable", "live-article-table", DotNetObjectReference.Create(this));
                 }
+
 
                 if (shouldFocusInput && subCategoryInputRef is not null)
                 {
                     shouldFocusInput = false;
                     await subCategoryInputRef.FocusAsync();
                 }
+
             }
             catch (Exception ex)
             {
