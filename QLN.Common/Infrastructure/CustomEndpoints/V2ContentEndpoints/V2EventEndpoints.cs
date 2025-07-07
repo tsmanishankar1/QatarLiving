@@ -453,15 +453,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var result = await service.GetPagedEvents(request, cancellationToken);
-                    if (result == null || result.Items == null || !result.Items.Any())
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "No Events Found",
-                            Detail = "No events match the provided filters.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -479,7 +470,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithSummary("Paginated Events List")
             .WithDescription("Fetches events with support for filtering, sorting, and pagination.")
             .Produces<PagedResponse<V2Events>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

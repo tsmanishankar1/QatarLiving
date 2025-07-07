@@ -302,10 +302,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                     request,
                     cancellationToken);
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving paged event categories.");
