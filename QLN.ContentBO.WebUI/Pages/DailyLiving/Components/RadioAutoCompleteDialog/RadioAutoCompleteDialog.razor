@@ -4,9 +4,6 @@
          <div class="d-flex justify-center">
         <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
         </div>
-        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
-            @Title
-        </MudText>
         <MudRadioGroup T="string" @bind-Value="@TopicType" Class="custom-radio-group">
             <MudRadio T="string" Value="@("Article")">Article</MudRadio>
             <MudRadio T="string" Value="@("Video")">Video</MudRadio>
