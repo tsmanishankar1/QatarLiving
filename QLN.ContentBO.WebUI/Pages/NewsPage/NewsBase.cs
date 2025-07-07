@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -70,13 +71,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
 
-
+        protected string articleDetailBaseURL { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
             try
             {
                 AuthorizedPage();
+                articleDetailBaseURL = $"{NavigationPath.Value.ContentWeb.TrimEnd('/')}/content/article";
             }
             catch (Exception ex)
             {

@@ -82,7 +82,13 @@
                                 <!-- Title Column -->
                                 <TemplateColumn Title="Title" Width="auto">
                                     <CellTemplate>
-                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                        @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
+                                        {
+                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                                     Target="_blank">
+                                                @context.Item.Title
+                                            </MudLink>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
 
