@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,14 +10,13 @@ using MudBlazor;
 
 namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 {
-    public class ReportsBase : ComponentBase, IDisposable
+    public class ReportsBase : QLComponentBase, IDisposable
     {
         [Inject]
         protected NavigationManager Navigation { get; set; }
 
         [Inject] protected ISnackbar Snackbar { get; set; }
-[Inject] protected ILogger<ReportsBase> _logger { get; set; }
-
+       [Inject] protected ILogger<ReportsBase> _logger { get; set; }
 
         [Inject]
         protected IReportService _reportService { get; set; }
@@ -35,6 +35,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             Navigation.LocationChanged += OnLocationChanged;
             await SetTypeAndLoadReportsAsync();
         }
