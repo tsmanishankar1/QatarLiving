@@ -1,5 +1,5 @@
 ﻿@using QLN.Web.Shared.Pages.Content.Community.Components.PaginationFooter
-@inherits CommentSectionBase
+@inherits CommentSectionBaseV2
 
 @if (IsLoading)
 {
@@ -53,8 +53,7 @@ else
 
                     <MudTextField T="string"
                                   Value="@newComment"
-                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
-                                  Immediate="true"
+                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })" Immediate="true"
                                   Placeholder="Add a comment"
                                   Variant="Variant.Text"
                                   Underline="false"
@@ -87,8 +86,7 @@ else
                 <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
                     <MudTextField T="string"
                                   Value="@newComment"
-                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
-                                  Immediate="true"
+                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })" Immediate="true"
                                   Placeholder="Add a comment"
                                   Variant="Variant.Text"
                                   Underline="false"
@@ -112,8 +110,8 @@ else
                         <div class="comment-content">
                             <div class="comment-header">
                                 <div class="comment-meta">
-                                    <span class="created-by">@c.CreatedBy</span>  •
-                                    <span class="created-at">@c.CreatedAt.ToString("MMMM d, yyyy - HH:mm")</span>
+                                    <span class="created-by">@c.UserName</span>  •
+                                    <span class="created-at">@c.CommentedAt.ToString("MMMM d, yyyy - HH:mm")</span>
                                 </div>
 
                                 <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
@@ -127,12 +125,12 @@ else
                                     </ActivatorContent>
 
                                     <ChildContent>
-                                        <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => OnReport(Comment.Id, c.CommentId))">Report</MudMenuItem>
                                     </ChildContent>
                                 </MudMenu>
 
                             </div>
-                            <div class="comment-description">@c.Description</div>
+                            <div class="comment-description">@c.Content</div>
 
 
                         </div>

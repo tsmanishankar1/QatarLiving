@@ -1,0 +1,86 @@
+﻿@inherits ReportDialogBase
+
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img class="report-icon-circle" src= "/qln-images/warning.svg" alt="Warning Image" />
+        </div>
+        <MudText Align="Align.Center" Class="mt-2  report-title">
+            Report Comment
+        </MudText>
+        <MudText Align="Align.Center" Class="mt-2 report-description">
+            @GetReportConfirmationText()
+        </MudText>
+        <div class="mt-2 d-flex justify-between gap-2">
+            <MudButton Variant="Variant.Outlined"
+                       OnClick="Cancel"
+                       Class="custom-close-btn flex-equal">
+                Cancel
+            </MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Class="custom-add-btn flex-equal"
+                       OnClick="OnClickReport"
+                       Disabled="@(IsBtnDisabled)">
+                Report
+            </MudButton>
+        </div>
+
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .report-icon-circle {
+        width: 70px;
+        height: 70px;
+    }
+
+    .custom-add-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+
+    .flex-equal {
+        flex: 1 1 0;
+        width: 100%;
+    }
+
+    .report-title {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+        line-height: 26px;
+        text-align: center;
+        color: #242424;
+    }
+
+    .report-description {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 22px;
+        text-align: center;
+        color: #646464;
+    }
+
+</style>
