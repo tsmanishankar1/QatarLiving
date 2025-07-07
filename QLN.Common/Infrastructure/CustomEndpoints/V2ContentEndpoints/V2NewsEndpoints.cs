@@ -924,7 +924,9 @@ public static class V2NewsEndpoints
                     return TypedResults.Forbid();
 
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+
                 dto.Uid = userData.GetProperty("uid").GetString();
+                dto.UserName =  userData.GetProperty("name").GetString();
                 dto.CommentedAt = DateTime.UtcNow;
                 dto.CommentId = Guid.NewGuid();
 
@@ -1047,7 +1049,6 @@ public static class V2NewsEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
-
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
