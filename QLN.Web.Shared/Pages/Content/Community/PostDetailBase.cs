@@ -97,7 +97,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         {
                             Id = c.nid,
                             CreatedBy = c.user_name ?? "Unknown User",
-                            CreatedAt = c.created_date,      
+                            CreatedAt = c.created_date,
                             Description = c.subject ?? "No content to display",
                             LikeCount = 0,
                             UnlikeCount = 0,
@@ -131,6 +131,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
+
         protected async Task LoadBanners()
         {
             isLoadingBanners = true;

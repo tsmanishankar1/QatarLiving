@@ -1,6 +1,4 @@
-﻿using QLN.Backend.API.Service.CompanyService;
-using QLN.Backend.API.Service.PayToPublishService;
-using QLN.Common.Infrastructure.IService.ICompanyService;
+﻿using QLN.Backend.API.Service.PayToPublishService;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
 
 namespace QLN.Backend.API.ServiceConfiguration

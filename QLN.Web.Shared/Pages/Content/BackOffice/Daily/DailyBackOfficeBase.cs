@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Common.Infrastructure.DTO_s;
 using MudBlazor;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Pages.Content.BackOffice.Daily.SelectionDialog;
 using QLN.Web.Shared.Services.Interface;
 
@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         protected ContentsDailyPageResponse LandingContent { get; set; } = new ContentsDailyPageResponse();
         protected ContentPost TopStoryItem { get; set; } = new ContentPost();
-         protected ContentPost  SelectedItem { get; set; } = new ContentPost();
+        protected ContentPost SelectedItem { get; set; } = new ContentPost();
         protected ContentEvent HighlightedEvent { get; set; } = new ContentEvent();
         protected List<ContentEvent> vMoreArticles { get; set; } = [];
         protected List<ContentPost> TopStories { get; set; } = [];
@@ -30,7 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice
         protected string TopicQueue3Label { get; set; } = string.Empty;
         protected string TopicQueue4Label { get; set; } = string.Empty;
         protected string TopicQueue5Label { get; set; } = string.Empty;
-          
+
 
         public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected async override Task OnInitializedAsync()
@@ -106,19 +106,19 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice
         Category = "Event"
     },
     };
-       protected Task OpenDialogAsync()
-{
-    var options = new DialogOptions
-    {
-        MaxWidth = MaxWidth.Small,
-        FullWidth = true,
-        CloseOnEscapeKey = true
+        protected Task OpenDialogAsync()
+        {
+            var options = new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true
+            };
+
+            return DialogService.ShowAsync<SelectionDialog>(string.Empty, options);
+        }
     };
 
-    return DialogService.ShowAsync<SelectionDialog>(string.Empty, options);
-}
-    };
-    
 
-    
+
 }

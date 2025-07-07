@@ -143,6 +143,7 @@ namespace QLN.ContentBO.WebUI.Pages
         private bool _shouldInitializeMap = true;
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             CurrentEvent ??= new EventDTO();
             CurrentEvent.EventSchedule ??= new EventScheduleModel();
             CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();

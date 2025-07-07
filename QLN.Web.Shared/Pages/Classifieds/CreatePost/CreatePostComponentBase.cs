@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
@@ -426,7 +426,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
                 // Logger?.LogWarning("Address fields are incomplete, skipping coordinates lookup.");
                 return;
             }
-             IsLoadingMap = true;
+            IsLoadingMap = true;
             try
             {
                 var zone = int.TryParse(adPostModel.Zone, out var zoneInt) ? zoneInt : 0;
@@ -467,7 +467,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.CreatePost
             }
             finally
             {
-                IsLoadingMap = false ;
+                IsLoadingMap = false;
             }
         }
 

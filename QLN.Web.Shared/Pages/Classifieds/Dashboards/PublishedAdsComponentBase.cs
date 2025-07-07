@@ -2,7 +2,6 @@
 using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.Collections.Generic;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
@@ -17,7 +16,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         //[Parameter]
         //public string DashboardType { get; set; }
-        [Parameter] 
+        [Parameter]
         public VerticalConstants.SubVerticalId DashboardType { get; set; }
 
 
@@ -43,8 +42,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
 
         protected bool isChecked { get; set; }
-       
-       
+
+
         public enum AdStatus
         {
             Draft = 0,
@@ -112,7 +111,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             if (SelectedAdIds.Any())
             {
                 await OnPublish.InvokeAsync(SelectedAdIds);
-                UnselectAll(); 
+                UnselectAll();
             }
         }
         protected void NavigateToFeaturePage()

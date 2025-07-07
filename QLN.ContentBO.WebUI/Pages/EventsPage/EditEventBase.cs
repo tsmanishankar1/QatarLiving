@@ -145,57 +145,71 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
         protected override async Task OnParametersSetAsync()
-{
-    Categories = await GetEventsCategories();
-    var locationsResponse = await GetEventsLocations();
-    Locations = locationsResponse?.Locations ?? [];
+        {
+            Categories = await GetEventsCategories();
+            var locationsResponse = await GetEventsLocations();
+            Locations = locationsResponse?.Locations ?? [];
 
-    // Fetch event first
-    CurrentEvent = await GetEventById(Id);
-    _editContext = new EditContext(CurrentEvent);
+            // Fetch event first
+            CurrentEvent = await GetEventById(Id);
+            _editContext = new EditContext(CurrentEvent);
 
-    // Location mapping
-    SelectedLocationId = Locations?
-        .FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
-        ?.Id;
+            // Location mapping
+            SelectedLocationId = Locations?
+                .FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
+                ?.Id;
 
-    // Set coordinates if valid
-    if (double.TryParse(CurrentEvent?.Latitude, out var lat) &&
-        double.TryParse(CurrentEvent?.Longitude, out var lng))
-    {
-        latitude = lat;
-        Longitude = lng;
-    }
+            // Set coordinates if valid
+            if (double.TryParse(CurrentEvent?.Latitude, out var lat) &&
+                double.TryParse(CurrentEvent?.Longitude, out var lng))
+            {
+                latitude = lat;
+                Longitude = lng;
+            }
 
-    // Date range
-    var startDate = CurrentEvent?.EventSchedule?.StartDate;
-    var endDate = CurrentEvent?.EventSchedule?.EndDate;
+            // Date range
+            var startDate = CurrentEvent?.EventSchedule?.StartDate;
+            var endDate = CurrentEvent?.EventSchedule?.EndDate;
 
-    if (startDate.HasValue && endDate.HasValue &&
-        startDate.Value != DateOnly.MinValue && endDate.Value != DateOnly.MinValue)
-    {
-        _dateRange = new DateRange(
-            startDate.Value.ToDateTime(TimeOnly.MinValue),
-            endDate.Value.ToDateTime(TimeOnly.MinValue)
-        );
-        SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
-    }
-    else
-    {
-        _dateRange = null;
-        SelectedDateLabel = "No valid date selected";
-    }
+            if (startDate.HasValue && endDate.HasValue &&
+                startDate.Value != DateOnly.MinValue && endDate.Value != DateOnly.MinValue)
+            {
+                _dateRange = new DateRange(
+                    startDate.Value.ToDateTime(TimeOnly.MinValue),
+                    endDate.Value.ToDateTime(TimeOnly.MinValue)
+                );
+                SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
+            }
+            else
+            {
+                _dateRange = null;
+                SelectedDateLabel = "No valid date selected";
+            }
 
-    // Generate per-day list if needed
-    if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
-    {
-        GeneratePerDayTimeList();
-    }
+            // Generate per-day list if needed
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
+            {
+                GeneratePerDayTimeList();
+            }
 
-    // Set flag to render map
-    _shouldInitializeMap = true;
-}
+            // Set flag to render map
+            _shouldInitializeMap = true;
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (_shouldInitializeMap)
@@ -213,7 +227,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 startDate.Value.ToDateTime(TimeOnly.MinValue),
                 endDate.Value.ToDateTime(TimeOnly.MinValue)
     );
-}
+        }
         [JSInvokable]
         public static Task UpdateLatLng(double lat, double lng)
         {
@@ -244,29 +258,29 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
         protected void GeneratePerDayTimeList()
-    {
-        DayTimeList.Clear();
-
-         if (_dateRange?.Start == null || _dateRange?.End == null)
-            return;
-
-        var start = _dateRange.Start.Value.Date;
-        var end = _dateRange.End.Value.Date;
-
-        var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
-
-        for (var date = start; date <= end; date = date.AddDays(1))
         {
-            var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);
+            DayTimeList.Clear();
 
-            DayTimeList.Add(new DayTimeEntry
+            if (_dateRange?.Start == null || _dateRange?.End == null)
+                return;
+
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date;
+
+            var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
+
+            for (var date = start; date <= end; date = date.AddDays(1))
             {
-                Date = date,
-                IsSelected = matchingSlot != null,
-                TimeRange = matchingSlot?.Time ?? string.Empty
-            });
+                var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);
+
+                DayTimeList.Add(new DayTimeEntry
+                {
+                    Date = date,
+                    IsSelected = matchingSlot != null,
+                    TimeRange = matchingSlot?.Time ?? string.Empty
+                });
+            }
         }
-    }
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
@@ -346,7 +360,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             if (_dateRange?.Start != null)
             {
-                 if (CurrentEvent?.EventSchedule == null)
+                if (CurrentEvent?.EventSchedule == null)
                 {
                     CurrentEvent.EventSchedule = new EventScheduleModel();
                 }
@@ -404,10 +418,10 @@ namespace QLN.ContentBO.WebUI.Pages
         protected bool IsValidTimeFormat(string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
-            return false;
+                return false;
             var pattern = @"^([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)\s?to\s?([1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$";
             return System.Text.RegularExpressions.Regex.IsMatch(input, pattern);
-        }    
+        }
         protected async Task HandleValidSubmit()
         {
             _DateError = null;
@@ -589,12 +603,12 @@ namespace QLN.ContentBO.WebUI.Pages
             DayTimeList.Clear();
             _descriptionerror = string.Empty;
             _PriceError = string.Empty;
-    _coverImageError = string.Empty;
-    uploadedImage = null;
-    SelectedLocationId = null;
-    _shouldInitializeMap = true;
-    StateHasChanged();
-}
+            _coverImageError = string.Empty;
+            uploadedImage = null;
+            SelectedLocationId = null;
+            _shouldInitializeMap = true;
+            StateHasChanged();
+        }
         protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
         {
             entry.TimeRange = newTime ?? string.Empty;

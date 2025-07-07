@@ -1,5 +1,4 @@
-﻿using Dapr.Actors;
-using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
@@ -11,7 +10,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string StateKey = "payment-transaction-data";
 
         private const string StateStoreName = "statestore";
-        private const string GlobalPaymentDetailsKey = "payment-details-collection"; 
+        private const string GlobalPaymentDetailsKey = "payment-details-collection";
         private const string PaymentDetailsStateKey = "payment-details-collection";
         private const string TimerName = "subscription-expiry-timer";
         private const string ReminderName = "subscription-expiry-reminder";
@@ -30,7 +29,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             public List<UserPaymentDetailsResponseDto> Details { get; set; } = new();
         }
-       
+
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(data);
@@ -39,7 +38,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+
                 data.LastUpdated = DateTime.UtcNow;
 
                 await StoreTransactionDataAsync(data, cancellationToken);

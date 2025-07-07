@@ -1,9 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text;
 using System.Text.Json;
