@@ -563,7 +563,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 if (!allEvents.Any())
-                    return null;
+                    return EmptyResponse(request.Page, request.PerPage);
+
                 request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
                 if (request.FeaturedFirst == true)
                 {
@@ -619,7 +620,7 @@ namespace QLN.Content.MS.Service.EventInternalService
         private static PagedResponse<V2Events> EmptyResponse(int? page, int? perPage) => new()
         {
             Page = page ?? 1,
-            PerPage = perPage ?? 10,
+            PerPage = perPage ?? 12,
             TotalCount = 0,
             Items = new List<V2Events>()
         };
