@@ -265,8 +265,7 @@ classifiedGroup.MapClassifiedsEndpoints();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
-eventGroup.MapEventEndpoints()
-    .RequireAuthorization();
+eventGroup.MapEventEndpoints();
 var foEventGroup = app.MapGroup("/api/v2/fo/event");
 foEventGroup.MapFOEventEndpoints();
 var reportsGroup = app.MapGroup("/api/v2/report");
