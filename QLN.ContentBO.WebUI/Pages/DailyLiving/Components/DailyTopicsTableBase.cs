@@ -1,0 +1,99 @@
+using Microsoft.AspNetCore.Components;
+using QLN.ContentBO.WebUI.Components;
+using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Interfaces;
+using MudBlazor;
+
+namespace QLN.ContentBO.WebUI.Pages
+{
+    public class DailyTopicsTableBase : QLComponentBase
+    {
+        [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
+        [Parameter] public EventCallback<DailyLivingArticleDto> AddItem { get; set; }
+        [Parameter] public EventCallback RenameTopic { get; set; }
+        [Parameter] public EventCallback UpdateEvent { get; set; }
+        [Parameter] public EventCallback<string> OnDelete { get; set; }
+        public List<TopicSlot> ReplaceTopicsSlot { get; set; }
+        [Parameter]
+        public DailyTopic selectedTopic { get; set; }
+        public DailyLivingArticleDto selectedItem { get; set; }
+        [Parameter]
+        public List<EventCategoryModel> Categories { get; set; } = [];
+        [Parameter] public List<DailyLivingArticleDto> articles { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+        [Parameter]
+        public bool IsLoadingEvent { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+        [Inject] public IDailyLivingService DailyService { get; set; }
+        [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
+        private string UserId => CurrentUserId.ToString();
+
+        protected override async Task OnInitializedAsync()
+        {
+            await base.OnInitializedAsync();
+            AuthorizedPage();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
+            }
+        }
+        protected async Task OnAddItemClicked()
+        {
+            await AddItem.InvokeAsync(selectedItem);
+        }
+        protected async Task RenameTopicaOnClick()
+        {
+            await RenameTopic.InvokeAsync();
+        }
+        protected async Task UpdateEventOnClick()
+        {
+            await UpdateEvent.InvokeAsync();
+        }
+        [JSInvokable]
+            public async Task OnTableReordered(List<string> newOrder)
+            {
+                var newSlotOrder = newOrder.Select(int.Parse).ToList();
+                var eventMap = ReplaceTopicsSlot
+                    .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
+                    .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
+
+                var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
+                {
+                 Guid? resolvedEventId = null;
+
+        if (eventMap.TryGetValue(slotNumber, out var stringId) &&
+            Guid.TryParse(stringId, out var parsedGuid) &&
+            parsedGuid != Guid.Empty)
+        {
+            resolvedEventId = parsedGuid;
+        }
+
+        return new
+        {
+            slotNumber = index + 1,
+            eventId = resolvedEventId
+        };
+    }).ToList();
+
+    var response = await DailyService.ReorderFeaturedSlots(slotAssignments, UserId);
+
+    if (response.IsSuccessStatusCode)
+    {
+        Snackbar.Add("Slots reordered successfully.", Severity.Success);
+    }
+    else
+    {
+        Snackbar.Add("Failed to reorder slots", Severity.Error);
+        Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+    }
+}
+
+
+    }
+}
