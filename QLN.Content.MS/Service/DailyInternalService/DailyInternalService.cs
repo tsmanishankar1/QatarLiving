@@ -408,7 +408,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             var topics = stateItems
                 .Select(s => JsonSerializer.Deserialize<DailyTopic>(s.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
-                .Where(t => t != null && t.IsPublished)
                 .ToList();
 
             return topics!;

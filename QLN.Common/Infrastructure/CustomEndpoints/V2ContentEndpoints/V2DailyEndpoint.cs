@@ -629,7 +629,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         })
             .WithName("GetAllDailyTopics")
             .WithTags("DailyLivingBO")
-            .WithSummary("Get all active daily topics")
+            .WithSummary("Get all daily topics")
             .Produces<List<DailyTopic>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
