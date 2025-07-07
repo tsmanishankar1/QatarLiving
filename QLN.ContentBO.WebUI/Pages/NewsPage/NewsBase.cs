@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Grpc.Core;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -68,6 +69,21 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected string SearchString { get; set; } = string.Empty;
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
+
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
