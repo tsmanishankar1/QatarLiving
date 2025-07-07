@@ -230,8 +230,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
-
+        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
         {
             try
             {
@@ -250,7 +249,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var url = $"/api/v2/news/getbyid/{id}";
