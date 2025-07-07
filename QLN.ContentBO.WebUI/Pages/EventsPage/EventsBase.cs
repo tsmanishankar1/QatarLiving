@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;

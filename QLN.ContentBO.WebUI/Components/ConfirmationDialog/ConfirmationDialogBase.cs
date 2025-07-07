@@ -5,7 +5,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net;
 
-namespace QLN.ContentBO.WebUI.Pages.DailyLiving.Components
+namespace QLN.ContentBO.WebUI.Components.ConfirmationDialog
 {
     public class ConfirmationeDialogBase : QLComponentBase
     {
