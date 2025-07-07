@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
-        public int MinCategory { get; set; } = 1;
+
         public int MaxCategory { get; set; } = 2;
 
         protected override async Task OnInitializedAsync()
