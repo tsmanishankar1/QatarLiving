@@ -16,6 +16,7 @@ namespace QLN.Common.DTO_s
             public string? Post { get; set; }
             public string? UserName { get; set; }
             public DateTime? PostDate { get; set; }
+            public string Slug { get; set; }
             public string? Reporter { get; set; }
             public DateTime? ReportDate { get; set; }
             public string? Router { get; set; }
