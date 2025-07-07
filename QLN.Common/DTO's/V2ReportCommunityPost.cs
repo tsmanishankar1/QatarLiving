@@ -22,7 +22,7 @@ namespace QLN.Common.DTO_s
         }
         public class PaginatedCommunityPostResponse
         {
-            public List<CommunityPostWithReports> Posts { get; set; } = new();
+            public List<CommunityPostWithReports> Items { get; set; } = new();
             public int TotalCount { get; set; }
             public int? Page { get; set; }
             public int? PerPage { get; set; }
