@@ -298,7 +298,7 @@
                                             @context.Article.Title
                                         </MudLink>
                                     }
-                                    else
+                                    else if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Title))
                                     {
                                         <MudLink Href="#">@context.Article.Title</MudLink>
                                     }
