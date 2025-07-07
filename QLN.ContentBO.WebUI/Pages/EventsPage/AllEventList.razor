@@ -72,21 +72,22 @@ else
                             <MudMenuItem OnClick="() => NavigateToEditPage(context.Event.Id)"><MudIcon Icon="@Icons.Material.Outlined.Edit" /> Edit</MudMenuItem>
                            @if (context.Event.Status == EventStatus.Published)
                             {                
-                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished)))">
-                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" />
-                                    Unpublish
+                                <MudMenuItem OnClick="@(() => ShowConfirmation("Unpublish this event?", "Are you sure you want to unpublish this event?", "Unpublish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished))))">
+                                    <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Unpublish</span>
                                 </MudMenuItem>
                             }
                             else if (context.Event.Status == EventStatus.UnPublished)
                             {
-                                <MudMenuItem OnClick="@(() => EventStatusChanged.InvokeAsync((context.Event, EventStatus.Published)))">
-                                <MudIcon Icon="@Icons.Material.Outlined.Visibility" />
-                                    Publish
+                                <MudMenuItem OnClick="@(() => ShowConfirmation("Unpublish this event?", "Are you sure you want to unpublish this event?", "Unpublish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished))))">
+                                    <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Publish</span>
                                 </MudMenuItem>
                             }
 
-                            <MudMenuItem OnClick="() => OnDelete.InvokeAsync(context.Event.Id.ToString())" Class="mud-error-text">
-                                <MudIcon Icon="@Icons.Material.Filled.Delete" /> Delete
+                            <MudMenuItem OnClick="@(() => ShowConfirmation("Delete this event?", "Do you want to delete this event permanently?", "Delete", () => OnDelete.InvokeAsync(context.Event.Id.ToString())))" Class="mud-error-text">
+                                 <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                    <span class="menu-text">Delete</span>
                             </MudMenuItem>
                         </MudMenu>
                     </MudTd>

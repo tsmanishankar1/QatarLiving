@@ -506,7 +506,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
-            { "Descrption", "Do you want to delete this Article?" },
+            { "Descrption", "Do you want to delete this Event?" },
             { "ButtonTitle", "Delete" },
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent(id))}
         };
