@@ -190,6 +190,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                                        .FirstOrDefault(c => c.Type == "user")?.Value;
                        if (string.IsNullOrEmpty(userClaim))
                            return TypedResults.Forbid();
+                       if(dto.TopicId == Guid.Empty)
+                           return TypedResults.BadRequest(new ProblemDetails
+                           {
+                               Title = "Topic Id is mandatory",
+                               Status = StatusCodes.Status400BadRequest
+                           });
 
                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                        var userId = userData.GetProperty("uid").GetString()!;
