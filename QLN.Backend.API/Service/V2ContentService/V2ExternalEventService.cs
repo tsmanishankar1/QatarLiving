@@ -346,7 +346,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> ReorderEventSlotsAsync(EventReorder dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {

@@ -16,6 +16,9 @@ using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 using QLN.Common.Infrastructure.DbContext;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
@@ -23,11 +26,6 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.IService.IContentService;
-using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -53,7 +51,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpClient("DaprClient")
     .ConfigureHttpClient(client =>
     {
-        client.Timeout = TimeSpan.FromMinutes(5); 
+        client.Timeout = TimeSpan.FromMinutes(5);
     });
 
 #endregion
@@ -234,7 +232,7 @@ app.MapSubscribeHandler();
 
 #endregion
 
-app.UseResponseCaching();                
+app.UseResponseCaching();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -300,7 +298,7 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-    //.RequireAuthorization();
+//.RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();
@@ -314,7 +312,7 @@ app.MapGet("/testauth", (HttpContext context) =>
     }
     var claims = user.Claims.Select(c => new { c.Type, c.Value }).ToList();
     return Results.Ok(new { Message = "Authenticated", Claims = claims });
-    })
+})
     .WithName("TestAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")

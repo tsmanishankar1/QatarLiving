@@ -1,9 +1,8 @@
-﻿using QLN.Web.Shared.Contracts;
-using QLN.Web.Shared.Model;
+﻿using QLN.Web.Shared.Model;
 
 namespace QLN.Web.Shared.MockServices
 {
-    public class CommunityMockService 
+    public class CommunityMockService
     {
         private List<PostModel> posts = new()
         {
@@ -54,6 +53,6 @@ namespace QLN.Web.Shared.MockServices
             throw new NotImplementedException();
         }
 
-       
+
     }
 }

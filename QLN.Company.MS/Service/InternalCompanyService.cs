@@ -1,12 +1,12 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.IService.ICompanyService;
-using System.Text.Json;
-using Dapr.Client;
-using QLN.Common.Infrastructure.Constants;
-using SixLabors.ImageSharp;
+﻿using Dapr.Client;
 using QLN.Common.DTO_s;
-using System.Text.RegularExpressions;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.IService.ICompanyService;
+using SixLabors.ImageSharp;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
 {
@@ -30,7 +30,7 @@ namespace QLN.Company.MS.Service
                 var keys = await GetIndex();
                 foreach (var key in keys)
                 {
-                    var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken : cancellationToken);
+                    var existing = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, key, cancellationToken: cancellationToken);
                     if (existing != null)
                     {
                         if (existing.UserId == dto.UserId &&
@@ -169,7 +169,7 @@ namespace QLN.Company.MS.Service
             try
             {
                 var result = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
-                if(result == null)
+                if (result == null)
                     throw new KeyNotFoundException($"Company with id '{id}' was not found.");
                 if (!result.IsActive)
                     return null;
@@ -211,7 +211,7 @@ namespace QLN.Company.MS.Service
                 var existing = await _dapr.GetStateAsync<CompanyProfileDto>(
                     ConstantValues.CompanyStoreName,
                     dto.Id.ToString(),
-                    cancellationToken : cancellationToken);
+                    cancellationToken: cancellationToken);
 
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
@@ -222,12 +222,12 @@ namespace QLN.Company.MS.Service
                 var keys = await GetIndex();
                 foreach (var key in keys)
                 {
-                    if (key == dto.Id.ToString()) continue; 
+                    if (key == dto.Id.ToString()) continue;
 
                     var other = await _dapr.GetStateAsync<CompanyProfileDto>(
                         ConstantValues.CompanyStoreName,
                         key,
-                        cancellationToken : cancellationToken);
+                        cancellationToken: cancellationToken);
 
                     if (other == null) continue;
 
@@ -519,7 +519,7 @@ namespace QLN.Company.MS.Service
                     .Where(c => c.UserId == userId && c.IsActive)
                     .ToList();
             }
-            catch(Exception)
+            catch (Exception)
             {
                 throw;
             }
@@ -553,7 +553,7 @@ namespace QLN.Company.MS.Service
                         UserId = c.UserId,
                         BusinessName = c.BusinessName,
                         Vertical = c.Vertical,
-                        SubVertical = c.SubVertical ?? SubVertical.Items,   
+                        SubVertical = c.SubVertical ?? SubVertical.Items,
                         IsActive = c.IsActive
                     })
                     .ToList();

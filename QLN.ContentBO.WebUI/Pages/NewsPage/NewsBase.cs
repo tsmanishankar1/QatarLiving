@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Grpc.Core;
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
@@ -16,6 +19,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [Inject] protected ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+
         [Parameter] public int CategoryId { get; set; }
 
         protected int activeIndex = 0;
@@ -65,10 +70,30 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
 
+
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try
             {
+                if (firstRender)
+                {
+                    await JS.InvokeVoidAsync("initializeLiveSortable", "mud-table-root", DotNetObjectReference.Create(this));
+                }
+
                 if (shouldFocusInput && subCategoryInputRef is not null)
                 {
                     shouldFocusInput = false;
@@ -103,9 +128,9 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected void NavigateToAddEvent()
+        protected void NavigateToAddArticle()
         {
-            Navigation.NavigateTo("/manage/news/addarticle");
+            Navigation.NavigateTo($"/manage/news/addarticle/category/{CategoryId}/subcategory/{SelectedSubcategory.Id}",true);
         }
 
         protected async Task DeleteArticle(Guid id)
@@ -734,6 +759,54 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Logger.LogError(ex, "SearchArticles");
                 return [];
             }
+        }
+
+        [JSInvokable]
+        public async Task OnTableReordered(List<string> newOrder)
+        {
+            //var newSignature = string.Join(",", newOrder);
+            //Logger.LogInformation("New slot order received: {Order}", newSignature);
+
+            //// Compare only once
+            //var currentOrder = FeaturedEventSlots.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
+            //if (newSignature == string.Join(",", currentOrder))
+            //{
+            //    Logger.LogInformation("Same order as before, skipping API call.");
+            //    return;
+            //}
+
+            //// Find the first difference (simple diff)
+            //for (int i = 0; i < newOrder.Count; i++)
+            //{
+            //    var newSlotId = int.Parse(newOrder[i]);
+            //    var expectedSlotId = FeaturedEventSlots[i].SlotNumber;
+
+            //    if (newSlotId != expectedSlotId)
+            //    {
+            //        int fromSlot = FeaturedEventSlots.First(s => s.SlotNumber == newSlotId).SlotNumber;
+            //        int toSlot = i + 1;
+
+            //        Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
+            //        var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
+
+            //        if (response.IsSuccessStatusCode)
+            //        {
+            //            Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
+            //            Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
+            //        }
+            //        else
+            //        {
+            //            var error = await response.Content.ReadAsStringAsync();
+            //            Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
+            //            Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
+            //        }
+
+            //        break; // Only process the first change
+            //    }
+            //}
+
+            //// ✅ Refresh list from backend (optional but safer)
+            StateHasChanged();
         }
     }
 }

@@ -22,37 +22,37 @@ namespace QLN.Web.Shared.Components
             UpdateActiveTab(e.Location);
             InvokeAsync(StateHasChanged);
         }
-     protected void UpdateActiveTab(string currentUri)
-{
-    var currentPath = new Uri(currentUri).AbsolutePath.TrimEnd('/').ToLower();
-
-    foreach (var item in Tabs)
-    {
-        item.IsActive = false;
-    }
-
-    TabItem? activeTab = null;
-
-    foreach (var tab in Tabs)
-    {
-        bool match = tab.ActiveRoutePaths.Any(path =>
+        protected void UpdateActiveTab(string currentUri)
         {
-            var normalized = path.TrimEnd('/').ToLower();
-            // Check if currentPath contains normalized path anywhere
-            return currentPath.Contains(normalized);
-        });
+            var currentPath = new Uri(currentUri).AbsolutePath.TrimEnd('/').ToLower();
 
-        if (match)
-        {
-            activeTab = tab; // last matching tab wins
+            foreach (var item in Tabs)
+            {
+                item.IsActive = false;
+            }
+
+            TabItem? activeTab = null;
+
+            foreach (var tab in Tabs)
+            {
+                bool match = tab.ActiveRoutePaths.Any(path =>
+                {
+                    var normalized = path.TrimEnd('/').ToLower();
+                    // Check if currentPath contains normalized path anywhere
+                    return currentPath.Contains(normalized);
+                });
+
+                if (match)
+                {
+                    activeTab = tab; // last matching tab wins
+                }
+            }
+
+            if (activeTab != null)
+            {
+                activeTab.IsActive = true;
+            }
         }
-    }
-
-    if (activeTab != null)
-    {
-        activeTab.IsActive = true;
-    }
-}
 
 
         protected async Task OnTabSelected(TabItem selected)

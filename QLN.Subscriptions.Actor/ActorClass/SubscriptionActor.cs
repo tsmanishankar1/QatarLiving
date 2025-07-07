@@ -13,8 +13,8 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private static readonly ConcurrentDictionary<string, SubscriptionDto> _memoryCache = new ConcurrentDictionary<string, SubscriptionDto>();
         private static volatile bool _stateStoreUnstable = false;
         private static DateTime _lastStateStoreFailure = DateTime.MinValue;
-        private static readonly TimeSpan _circuitBreakDuration = TimeSpan.FromMinutes(1); 
-        private static readonly SemaphoreSlim _stateStoreThrottle = new SemaphoreSlim(5, 5); 
+        private static readonly TimeSpan _circuitBreakDuration = TimeSpan.FromMinutes(1);
+        private static readonly SemaphoreSlim _stateStoreThrottle = new SemaphoreSlim(5, 5);
 
         public SubscriptionActor(ActorHost host, ILogger<SubscriptionActor> logger) : base(host)
         {
@@ -47,11 +47,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     try
                     {
 
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); 
+                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
                         await StateManager.SetStateAsync(StateKey, data, linkedCts.Token);
-                        await StateManager.SaveStateAsync(linkedCts.Token); 
+                        await StateManager.SaveStateAsync(linkedCts.Token);
 
 
                         _stateStoreUnstable = false;
@@ -61,7 +61,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                         ex is SocketException ||
                         ex.InnerException is SocketException)
                     {
-                       
+
                         _stateStoreUnstable = true;
                         _lastStateStoreFailure = DateTime.UtcNow;
                         _logger.LogWarning(ex, "[Actor {ActorId}] State store operation failed, activating circuit breaker, data preserved in memory", actorKey);
@@ -97,7 +97,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> SetDataAsync(SubscriptionDto data, CancellationToken cancellationToken = default)
         {
-           
+
             return await FastSetDataAsync(data, cancellationToken);
         }
 
@@ -110,7 +110,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogInformation("[Actor {ActorId}] GetDataAsync started", actorKey);
 
-              
+
                 if (_memoryCache.TryGetValue(actorKey, out var cachedData))
                 {
                     var cacheDuration = DateTime.UtcNow - start;
@@ -119,23 +119,23 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     return cachedData;
                 }
 
-               
+
                 if (_stateStoreUnstable && DateTime.UtcNow - _lastStateStoreFailure < _circuitBreakDuration)
                 {
                     _logger.LogWarning("[Actor {ActorId}] GetDataAsync - State store circuit breaker active and no data in memory cache", actorKey);
                     return null;
                 }
 
-               
+
                 if (await _stateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
                 {
                     try
                     {
-                       
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1)); 
+
+                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(1));
                         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
 
-                       
+
                         var conditionalValue = await StateManager.TryGetStateAsync<SubscriptionDto>(StateKey, linkedCts.Token);
 
                         if (!conditionalValue.HasValue)
@@ -146,13 +146,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                         var data = conditionalValue.Value;
 
-                        
+
                         if (data != null)
                         {
                             _memoryCache[actorKey] = data;
                         }
 
-                       
+
                         _stateStoreUnstable = false;
 
                         var duration = DateTime.UtcNow - start;
@@ -166,7 +166,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                         ex is SocketException ||
                         ex.InnerException is SocketException)
                     {
-                       
+
                         _stateStoreUnstable = true;
                         _lastStateStoreFailure = DateTime.UtcNow;
                         _logger.LogWarning(ex, "[Actor {ActorId}] State store operation failed in GetDataAsync, activating circuit breaker", actorKey);

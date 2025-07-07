@@ -1,8 +1,5 @@
-﻿using Dapr.Actors;
-using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Runtime;
 using Dapr.Client;
-using Microsoft.Extensions.Logging;
-using QLN.Common.DTO_s;
 
 using QLN.Common.Infrastructure.IService.IAddonService;
 using static QLN.Common.DTO_s.AddonDto;
@@ -292,7 +289,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 nameof(CheckAddonExpiryAsync),
                 null,
                 dueTime,
-                TimeSpan.FromDays(1)); 
+                TimeSpan.FromDays(1));
         }
 
         private (DateTime nextCheckTime, TimeSpan dueTime) CalculateNextDailyCheckTime()
@@ -384,7 +381,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     nameof(CheckAddonExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); 
+                    TimeSpan.FromMilliseconds(-1));
             }
         }
 

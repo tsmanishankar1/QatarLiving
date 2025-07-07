@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
@@ -29,7 +28,7 @@ public class LandingComponentBase : ComponentBase
     protected IEnumerable<LandingBackOfficeIndex>? SocialPostDetailList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
     protected IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
-    protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; }  = new List<LandingBackOfficeIndex>();
+    protected IEnumerable<LandingBackOfficeIndex> FaqItemsList { get; set; } = new List<LandingBackOfficeIndex>();
     protected IEnumerable<PopularSearchDto> PopularSearchesList { get; set; } = new List<PopularSearchDto>();
     protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
     protected bool IsLoadingCategories { get; set; } = true;

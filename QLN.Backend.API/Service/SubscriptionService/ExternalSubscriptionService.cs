@@ -390,7 +390,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
         if (!existingEndDate.HasValue)
         {
-           // await AssignSubscriberRoleAsync(userId);
+            // await AssignSubscriberRoleAsync(userId);
             _logger.LogInformation("Assigned subscriber role immediately for user {UserId} as this is their first subscription", userId);
         }
         else
@@ -619,7 +619,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-   
+
     public async Task HandleSubscriptionExpiryAsync(SubscriptionExpiryMessage message, CancellationToken cancellationToken = default)
     {
         try
@@ -721,7 +721,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
         }
     }
 
-   
+
     public async Task ProcessExpiredSubscriptionsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -741,7 +741,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                     {
                         expiredPaymentIds.Add(paymentId);
 
-                       
+
                         var expiryMessage = new SubscriptionExpiryMessage
                         {
                             UserId = paymentData.UserId,
@@ -811,7 +811,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             _logger.LogInformation("Found {Count} payment IDs to check for user {UserId}", paymentIds.Count, userId);
 
-           
+
             var userPaymentTasks = paymentIds.Select(async paymentId =>
             {
                 try
@@ -838,7 +838,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
             _logger.LogInformation("Found {Count} payments for user {UserId}", userPayments.Count, userId);
 
-            
+
             foreach (var payment in userPayments)
             {
                 try
@@ -898,7 +898,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                             TransactionDate = payment.TransactionDate,
                             StartDate = payment.StartDate,
                             EndDate = payment.EndDate,
-                          
+
                             CardHolderName = payment.CardHolderName,
                             SubscriptionId = payment.SubscriptionId,
                             SubscriptionName = "Subscription Not Found",
@@ -914,7 +914,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 }
             }
 
-           
+
             userPaymentDetails = userPaymentDetails
                 .OrderByDescending(p => p.TransactionDate)
                 .ToList();
@@ -947,7 +947,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 return null;
             }
 
-           
+
             var userPaymentTasks = paymentIds.Select(async paymentId =>
             {
                 try
@@ -957,7 +957,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
 
                     if (paymentData != null &&
                         paymentData.UserId == userId &&
-                        paymentData.EndDate > DateTime.UtcNow) 
+                        paymentData.EndDate > DateTime.UtcNow)
                     {
                         return paymentData;
                     }
@@ -974,18 +974,18 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 .Where(p => p != null)
                 .ToList();
 
-           
+
             foreach (var payment in userActivePayments)
             {
                 try
                 {
-                   
+
                     var subscriptionDuration = payment.EndDate - payment.StartDate;
                     bool isYearlySubscription = subscriptionDuration.TotalDays >= 360 && subscriptionDuration.TotalDays <= 370; // Allow some tolerance
 
                     if (isYearlySubscription)
                     {
-                        
+
                         var subscriptionActor = GetActorProxy(payment.SubscriptionId);
                         var subscriptionData = await subscriptionActor.GetDataAsync(cancellationToken);
 
@@ -1010,7 +1010,7 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
                 }
             }
 
-            
+
             return new YearlySubscriptionResponseDto
             {
                 UserId = userId,

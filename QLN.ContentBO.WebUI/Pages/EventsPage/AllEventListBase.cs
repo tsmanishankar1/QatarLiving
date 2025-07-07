@@ -9,6 +9,7 @@ using QLN.ContentBO.WebUI.Components;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Components.PaginationFooter;
+using Microsoft.JSInterop;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
@@ -29,6 +30,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         public bool IsLoading { get; set; }
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+
+        [Inject] protected ILogger<AllEventsListBase> Logger { get; set; }
 
         protected string SearchText { get; set; } = string.Empty;
         protected bool SortAscending { get; set; } = true;
@@ -65,6 +68,19 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
 
         protected async Task OnTabChanged(string newTab)
         {

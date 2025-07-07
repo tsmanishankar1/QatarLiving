@@ -31,7 +31,7 @@
                     <MudButton OnClick="UpdateSubCategory" StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
                         @(IsEditingSubCategoryName ? "Save" : "Rename")
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
+                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddArticle">
                         Add Article
                     </MudButton>
                     <MudTextField @bind-Value="SearchString"
@@ -236,7 +236,7 @@
                     }
                     else
                     {
-                        <MudTable Items="IndexedLiveArticles" Hover="true" Style="padding-top: 20px;">
+                        <MudTable Items="IndexedLiveArticles" Class="live-slots" Hover="true" Style="padding-top: 20px;">
                             <HeaderContent>
                                 <MudTh>Slot</MudTh>
                                 <MudTh>Title</MudTh>

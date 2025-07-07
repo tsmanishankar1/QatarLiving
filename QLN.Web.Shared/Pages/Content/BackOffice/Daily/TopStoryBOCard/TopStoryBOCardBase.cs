@@ -8,7 +8,7 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice.Daily.TopStoryBOCard
 
         [Parameter]
         public bool IsMiniCard { get; set; }
-         [Parameter]
+        [Parameter]
         public ContentPost Item { get; set; } = new();
     }
 }

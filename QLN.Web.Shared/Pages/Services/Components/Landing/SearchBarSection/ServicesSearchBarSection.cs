@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
-using static QLN.Web.Shared.Helpers.HttpErrorHelper;
 
 public class ServicesSearchBarSectionBase : ComponentBase
 {
@@ -15,6 +13,6 @@ public class ServicesSearchBarSectionBase : ComponentBase
 
     protected async Task ServicesPerformSearch()
     {
-    
+
     }
 }

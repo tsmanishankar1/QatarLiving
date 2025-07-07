@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using System.Collections.Generic;
 using QLN.Web.Shared.Components.Classifieds.DealsCard;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Deals.Components
@@ -10,12 +9,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Deals.Components
         protected int currentPage = 1;
         protected int pageSize = 12;
 
-         public class SortOption
-    {
-        public string Id { get; set; }
-        public string Label { get; set; }
-        public string? OrderByValue { get; set; } 
-    }
+        public class SortOption
+        {
+            public string Id { get; set; }
+            public string Label { get; set; }
+            public string? OrderByValue { get; set; }
+        }
 
         protected List<SortOption> sortOptions = new()
         {
@@ -24,13 +23,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Deals.Components
             new() { Id = "priceHigh", Label = "Price: High to Low", OrderByValue = "price desc" }
         };
 
-[Inject]
-protected NavigationManager Navigation { get; set; } = default!;
+        [Inject]
+        protected NavigationManager Navigation { get; set; } = default!;
 
-protected void OnDealClick()
-{
-    Navigation.NavigateTo("/qln/classifieds/deals/details/preview");
-}
+        protected void OnDealClick()
+        {
+            Navigation.NavigateTo("/qln/classifieds/deals/details/preview");
+        }
 
         protected List<DealsCard.DealModel> Deals = new()
         {
@@ -88,7 +87,7 @@ protected void OnDealClick()
                 }
             // Add additional deals as needed...
         };
- protected void OnFilterChanged(string filterName, string? value)
+        protected void OnFilterChanged(string filterName, string? value)
         {
             if (filterName == nameof(selectedSort))
             {
@@ -105,7 +104,7 @@ protected void OnDealClick()
             currentPage = 1;
 
             var selectedOption = sortOptions.FirstOrDefault(x => x.Id == newSortId);
-          
+
         }
         protected void HandlePageChange(int newPage)
         {
