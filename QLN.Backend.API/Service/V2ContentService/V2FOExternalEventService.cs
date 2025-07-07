@@ -1,0 +1,78 @@
+﻿using Dapr.Client;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+
+namespace QLN.Backend.API.Service.V2ContentService
+{
+    public class V2FOExternalEventService : IV2FOEventService
+    {
+        private readonly DaprClient _dapr;
+        private readonly ILogger<V2ExternalEventService> _logger;
+        private readonly IFileStorageBlobService _blobStorage;
+        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, IFileStorageBlobService blobStorage)
+        {
+            _dapr = dapr;
+            _logger = logger;
+            _blobStorage = blobStorage;
+        }
+        public async Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    $"/api/v2/fo/event/getallfofeaturedevents?isFeatured={isFeatured}",
+                    cancellationToken
+                ) ?? new List<V2Events>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all events.");
+                throw;
+            }
+        }
+        public async Task<V2Events?> GetFOEventById(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/fo/event/getfobyid/{id}";
+
+                return await _dapr.InvokeMethodAsync<V2Events>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving event for Id : {Id}", id);
+                throw;
+            }
+        }
+        public async Task<PagedResponse<V2Events>> GetFOPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/fo/event/getfopaginatedevents";
+                return await _dapr.InvokeMethodAsync<GetPagedEventsRequest, PagedResponse<V2Events>>(
+                    HttpMethod.Post,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    request,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving paged event categories.");
+                throw;
+            }
+        }
+    }
+}
