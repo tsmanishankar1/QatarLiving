@@ -4,7 +4,7 @@ using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 
-public class CommunitySearchBarSectionBase : ComponentBase
+public class CommunitySearchBarSectionBaseV2 : ComponentBase
 {
 
     [Inject] protected ISnackbar Snackbar { get; set; }
@@ -32,9 +32,16 @@ public class CommunitySearchBarSectionBase : ComponentBase
 
         try
         {
-            CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
+            //Commented Drupal Category Service by jaswanth
+            //CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
 
-          
+            CategorySelectOptions = (await CommunityService.GetCommunityCategoriesAsync())
+     .Select(c => new SelectOption
+     {
+         Id = c.Id,
+         Label = c.Name
+     }).ToList();
+
 
             if (!string.IsNullOrEmpty(InitialCategoryId))
             {
@@ -50,13 +57,19 @@ public class CommunitySearchBarSectionBase : ComponentBase
         }
     }
 
+    //Commented Drupal navigation
+    //protected async Task OnCategoryChange(string newId)
+    //{
+    //    SelectedCategoryId = newId;
+    //    await OnCategoryChanged.InvokeAsync(newId);
+    //    NavigationManager.NavigateTo($"content/community?categoryId={newId}", forceLoad: false);
+    //}
     protected async Task OnCategoryChange(string newId)
     {
         SelectedCategoryId = newId;
         await OnCategoryChanged.InvokeAsync(newId);
-        NavigationManager.NavigateTo($"content/community?categoryId={newId}", forceLoad: false);
+        NavigationManager.NavigateTo($"content/community/v2?categoryId={newId}", forceLoad: false);
     }
-  
 
     protected override void OnParametersSet()
     {
