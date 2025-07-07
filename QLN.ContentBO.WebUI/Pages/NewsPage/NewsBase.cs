@@ -658,30 +658,38 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-
+                // Convert to integers: newOrder contains original SlotNumbers in new order
                 var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
 
+                // Map of original slot numbers to their article IDs
                 var articleSlotMap = IndexedLiveArticles
                     .Where(x => x.Article != null)
                     .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
 
-                int totalSlots = 13;
+                // Prepare 13-slot list (1 to 13)
+                var totalSlots = Enumerable.Range(1, 13).ToList();
 
-                var slotAssignments = Enumerable.Range(1, totalSlots)
-                    .Select(slotNum =>
+                // Create ArticleSlotAssignments based on reordering
+                var slotAssignments = totalSlots.Select(slotNumber =>
+                {
+                    // Find the index of this slot in the reordered list
+                    var newIndex = reorderedSlotNumbers.IndexOf(slotNumber);
+
+                    // If this slot was part of the newOrder list, use its new index + 1
+                    var newSlotNumber = newIndex >= 0 ? newIndex + 1 : slotNumber;
+
+                    // Lookup the articleId for this original slot number
+                    var articleId = articleSlotMap.TryGetValue(slotNumber, out var id) ? (Guid?)id : null;
+
+                    return new ArticleSlotAssignment
                     {
-                        int newIndex = reorderedSlotNumbers.IndexOf(slotNum);
-                        var newSlotPosition = newIndex >= 0 ? newIndex + 1 : slotNum;
+                        SlotNumber = newSlotNumber,
+                        ArticleId = articleId
+                    };
+                })
+                .OrderBy(x => x.SlotNumber) // optional: keep the output ordered
+                .ToList();
 
-                        var articleId = articleSlotMap.TryGetValue(slotNum, out var id) ? id : (Guid?)null;
-
-                        return new ArticleSlotAssignment
-                        {
-                            SlotNumber = newSlotPosition,
-                            ArticleId = articleId
-                        };
-                    })
-                    .ToList();
 
                 var request = new ReorderRequest
                 {
