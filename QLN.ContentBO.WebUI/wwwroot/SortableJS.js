@@ -4,6 +4,15 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
 
     let dragStarted = false;
 
+    const updateSlotNumbers = () => {
+        tbody.querySelectorAll("tr").forEach((tr, index) => {
+            const slotCell = tr.querySelector(".slot-position");
+            if (slotCell) {
+                slotCell.textContent = index + 1;
+            }
+        });
+    };
+
     new Sortable(tbody, {
         animation: 150,
         handle: '.drag-handle',
@@ -15,6 +24,8 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
             tbody.querySelectorAll("tr").forEach(tr => {
                 newOrder.push(tr.getAttribute("data-slot-id"));
             });
+
+            updateSlotNumbers(); // Update the visible row numbers after drag
 
             dotNetHelper.invokeMethodAsync('OnTableReordered', newOrder);
             setTimeout(() => dragStarted = false, 0);
@@ -28,6 +39,8 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
             return false;
         }
     }, true);
+
+    updateSlotNumbers(); // Set initial numbers on load
 };
 
 

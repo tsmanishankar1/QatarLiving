@@ -1,0 +1,149 @@
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits DailyTopicsTableBase
+
+@if (IsLoadingEvent)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (articles == null || Categories == null)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No Feature an Event found" Subtitle="Please check back later or explore other categories." />
+    </div>
+}
+else
+{
+     <MudGrid AlignItems="Center" Class="py-3">
+                <MudItem xs="12" md="12">
+                    <div class="daily-button-container">
+                        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" OnClick="OnAddItemClicked" Class="daily-compact-button">
+                            Add Item
+                        </MudButton>
+                        <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" OnClick="RenameTopicaOnClick" Class="daily-compact-button">
+                            Rename Topic
+                        </MudButton>
+                        @if (selectedTopic.isPublished)
+                        {
+                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff"
+                            Style="background-color: #F04438; color: white; text-transform: none;"
+                            Class="daily-compact-button"
+                            @onclick="UpdateEventOnClick">
+                            Unpublish
+                            </MudButton>
+                        }
+                        else
+                        {
+                            <MudButton StartIcon="@Icons.Material.Outlined.Visibility"
+                            Style="background-color: #FF7F38; color: white; text-transform: none;"
+                            Class="daily-compact-button"
+                            @onclick="UpdateEventOnClick">
+                            Publish
+                            </MudButton>
+                        }
+                    </div>
+                </MudItem>
+            </MudGrid>
+    var indexedFeatured = articles
+        .Select((e, i) => new { Slot = e, Index = i + 1 })
+        .ToList();
+
+    <table class="table table-hover featured-table" style="width: 100%;">
+        <thead>
+            <tr>
+                <th style="width: 40px;"></th> 
+                <th style="width: 60px;">Slot</th>
+                 <th>Type</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Subcategory</th>
+                <th>CreationDate</th>
+                <th style="width: 120px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var context in indexedFeatured)
+            {
+                <tr data-slot-id="@context.Slot.SlotNumber">
+                    <td>
+                        <img src="/qln-images/arrow_icon.svg" 
+                             class="@(context.Slot.Title == "Feature an Event" ? "" : "drag-handle")" 
+                             style="cursor: grab; width: 24px;" 
+                             alt="drag" />
+                    </td>
+                    <td>@context.Index</td>
+                    <td>
+                        @* @if (context.Slot.Event?.EventTitle == "Feature an Event")
+                        {
+                            <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;"
+                                  @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))">
+                                @context.Slot.Event?.EventTitle
+                            </span>
+                        }
+                        else
+                        { *@
+                            <a href="#" class="event-link" style="text-decoration: none; color: #787878;">
+                                @context.Slot.Title
+                            </a>
+                        @* } *@
+                    </td>
+                    <td>
+                         <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;">
+                                  Event
+                            </span>
+                    
+                    </td>
+                    <td>
+                         <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;">
+                                @context.Slot.Category
+                            </span>
+                    </td>
+                     <td>
+                         <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;">
+                                @context.Slot.Subcategory
+                            </span>
+                    </td>
+                    <td>
+                        @(context.Slot.CreatedAt != null 
+                        ? context.Slot.CreatedAt.ToString("dd-MM-yyyy") 
+                        : "--")
+                    </td>
+                    <td>
+                        <div class="d-flex align-center gap-2">
+                        <div class="custom-delete-button">
+                        <img src="/qln-images/replace_icon.svg"   alt="delete" class="action-icon-style" />
+                        </div>
+                        <div class="custom-delete-button" 
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Id))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                        </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
