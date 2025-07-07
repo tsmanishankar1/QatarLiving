@@ -24,7 +24,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
 
         Task<HttpResponseMessage> GetArticleById(Guid Id);
         
-        Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment);
+        Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment,int UserId);
 
         Task<HttpResponseMessage> DeleteNews(Guid Id);
 

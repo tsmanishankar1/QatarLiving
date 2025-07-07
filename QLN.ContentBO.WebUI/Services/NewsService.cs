@@ -195,19 +195,23 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment)
+        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment, int UserId)
         {
             try
             {
+                var payload = new
+                {
+                    slotAssignments = slotAssignment,
+                    userId = UserId
+                };
+                var articleReOrderJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
 
-                var articleReOrderJson = new StringContent(JsonSerializer.Serialize(slotAssignment), Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderslot")
                 {
-                    Content = articleReOrderJson
+                    Content = new StringContent(articleReOrderJson, Encoding.UTF8, "application/json")
                 };
 
                 var response = await _httpClient.SendAsync(request);
-
                 return response;
             }
             catch (Exception ex)
