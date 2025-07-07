@@ -15,31 +15,31 @@ namespace QLN.Web.Shared.Components.EventListCard
 
         protected string? currentImageUrl;
 
-       protected bool imageFailed = false;
+        protected bool imageFailed = false;
 
-protected override void OnParametersSet()
-{
-    if (currentImageUrl != Item.ImageUrl)
-    {
-        currentImageUrl = Item.ImageUrl;
-        imageLoaded = false;
-        imageFailed = false;
-    }
-}
+        protected override void OnParametersSet()
+        {
+            if (currentImageUrl != Item.ImageUrl)
+            {
+                currentImageUrl = Item.ImageUrl;
+                imageLoaded = false;
+                imageFailed = false;
+            }
+        }
 
-protected void OnImageLoaded()
-{
-    imageLoaded = true;
-    imageFailed = false;
-    StateHasChanged();
-}
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            imageFailed = false;
+            StateHasChanged();
+        }
 
-protected void OnImageError()
-{
-    imageLoaded = true; // stop skeleton
-    imageFailed = true; // show fallback UI
-    StateHasChanged();
-}
+        protected void OnImageError()
+        {
+            imageLoaded = true; // stop skeleton
+            imageFailed = true; // show fallback UI
+            StateHasChanged();
+        }
 
         public class EventItem
         {

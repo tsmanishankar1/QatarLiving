@@ -7,7 +7,7 @@ namespace QLN.Web.Shared.Pages.Content.BackOffice.Daily.HighlightsBOCard
     {
         [Inject] NavigationManager NavigationManager { get; set; }
         [Parameter]
-        public string QueueLabel {  get; set; }
+        public string QueueLabel { get; set; }
 
         [Parameter]
         public List<ContentEvent> ListOfItems { get; set; }

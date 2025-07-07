@@ -3,11 +3,7 @@ using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Pages.Content.Events.FeaturedEvents;
-using QLN.Web.Shared.Pages.Content.News.MoreArticle;
 using QLN.Web.Shared.Services.Interface;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Content.Daily.Topics
 

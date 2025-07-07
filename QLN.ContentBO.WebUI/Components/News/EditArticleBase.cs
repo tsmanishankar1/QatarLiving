@@ -29,7 +29,6 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
-        public int MinCategory { get; set; } = 1;
         public int MaxCategory { get; set; } = 2;
 
         protected async override Task OnParametersSetAsync()
@@ -86,14 +85,8 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if (TempCategoryList.Count <= MinCategory)
-            {
-                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
-                return;
-            }
             if (TempCategoryList.Count > 0)
             {
-
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }

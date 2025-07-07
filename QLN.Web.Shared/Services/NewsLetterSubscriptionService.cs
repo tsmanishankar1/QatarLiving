@@ -18,7 +18,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-             
+
                 var response = await _httpClient.PostAsJsonAsync("subscribe/post?u=3ab0436d22c64716e67a03f64&id=94198fac96", new { EMAIL = model.Email });
                 var responseBody = await response.Content.ReadAsStringAsync();
                 return response.IsSuccessStatusCode;

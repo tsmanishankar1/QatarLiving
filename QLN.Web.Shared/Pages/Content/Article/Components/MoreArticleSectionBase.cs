@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
-using System.Collections.Generic;
 
 public class MoreArticleSectionBase : ComponentBase
 {

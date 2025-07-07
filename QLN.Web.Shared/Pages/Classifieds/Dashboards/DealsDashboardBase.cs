@@ -316,7 +316,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         protected void NavigateToEditProfile(string id)
         {
             Navigation.NavigateTo($"/qln/dashboard/company/edit/{id}", forceLoad: true);
-        }   
+        }
         protected void NavigateToCreateProfile()
         {
             var verticalId = VerticalId.Classifieds;

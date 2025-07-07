@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
-using System.Linq;
 
 namespace QLN.Web.Shared.Components.MoreFilters
 {
@@ -11,20 +10,20 @@ namespace QLN.Web.Shared.Components.MoreFilters
         public bool MoreText { get; set; } = false;
 
         [Parameter] public EventCallback OnApply { get; set; }
-            [Parameter] public EventCallback OnReset { get; set; }
-            [Parameter] public Dictionary<string, Dictionary<string, bool>> SelectedOptions { get; set; } = new();
+        [Parameter] public EventCallback OnReset { get; set; }
+        [Parameter] public Dictionary<string, Dictionary<string, bool>> SelectedOptions { get; set; } = new();
 
-            [Parameter]
-            public Dictionary<string, Dictionary<string, bool>> ConfirmedOptions { get; set; } = new();
+        [Parameter]
+        public Dictionary<string, Dictionary<string, bool>> ConfirmedOptions { get; set; } = new();
 
-            [Parameter]
-         public bool HasWarrantyCertificate { get; set; }
+        [Parameter]
+        public bool HasWarrantyCertificate { get; set; }
 
         protected bool showFilters = false;
-     protected int SelectedFilterCount => ConfirmedOptions
-    .SelectMany(field => field.Value.Values)
-    .Count(isSelected => isSelected)
-    + (HasWarrantyCertificate ? 1 : 0);
+        protected int SelectedFilterCount => ConfirmedOptions
+       .SelectMany(field => field.Value.Values)
+       .Count(isSelected => isSelected)
+       + (HasWarrantyCertificate ? 1 : 0);
 
         protected bool IsMobile = false;
         protected int windowWidth;
@@ -54,47 +53,47 @@ namespace QLN.Web.Shared.Components.MoreFilters
                 StateHasChanged();
             }
         }
-      protected async void ToggleFilter()
-{
-    bool wasOpen = showFilters;
-    showFilters = !showFilters;
-
-    if (showFilters && !wasOpen)
-    {
-        // Copy ConfirmedOptions to SelectedOptions
-        SelectedOptions = ConfirmedOptions
-            .ToDictionary(
-                kv => kv.Key,
-                kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
-            );
-
-        int openingCount = SelectedOptions
-            .SelectMany(field => field.Value.Values)
-            .Count(v => v);
-
-        Console.WriteLine($"📂 [OpenFilters] Selected options on open: {openingCount}");
-    }
-
-    if (_jsInitialized)
-    {
-        await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
-
-        if (showFilters && !IsMobile && !wasOpen)
+        protected async void ToggleFilter()
         {
-            if (outsideClickHandler == null)
+            bool wasOpen = showFilters;
+            showFilters = !showFilters;
+
+            if (showFilters && !wasOpen)
             {
-                outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
-                    "registerOutsideClickHandlerOut", ".filter-panel", dotNetRef);
-            }
-        }
-        else if (!showFilters)
-        {
-            await DisposeOutsideClickHandler();
-        }
-    }
+                // Copy ConfirmedOptions to SelectedOptions
+                SelectedOptions = ConfirmedOptions
+                    .ToDictionary(
+                        kv => kv.Key,
+                        kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
+                    );
 
-    StateHasChanged();
-}
+                int openingCount = SelectedOptions
+                    .SelectMany(field => field.Value.Values)
+                    .Count(v => v);
+
+                Console.WriteLine($"📂 [OpenFilters] Selected options on open: {openingCount}");
+            }
+
+            if (_jsInitialized)
+            {
+                await JS.InvokeVoidAsync("toggleBodyScroll", showFilters && IsMobile);
+
+                if (showFilters && !IsMobile && !wasOpen)
+                {
+                    if (outsideClickHandler == null)
+                    {
+                        outsideClickHandler = await JS.InvokeAsync<IJSObjectReference>(
+                            "registerOutsideClickHandlerOut", ".filter-panel", dotNetRef);
+                    }
+                }
+                else if (!showFilters)
+                {
+                    await DisposeOutsideClickHandler();
+                }
+            }
+
+            StateHasChanged();
+        }
 
 
         private async Task DisposeOutsideClickHandler()
@@ -105,66 +104,66 @@ namespace QLN.Web.Shared.Components.MoreFilters
                 outsideClickHandler = null;
             }
         }
-protected async Task ApplyFilters()
-{
-    ConfirmedOptions = SelectedOptions
-        .ToDictionary(
-            kv => kv.Key,
-            kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
-        );
-
-    int appliedCount = ConfirmedOptions
-        .SelectMany(field => field.Value.Values)
-        .Count(v => v);
-
-    Console.WriteLine($"✅ [ApplyFilters] Applied selected count: {appliedCount}");
-
-    showFilters = false;
-    await JS.InvokeVoidAsync("toggleBodyScroll", false);
-    await DisposeOutsideClickHandler();
-    await OnApply.InvokeAsync();
-}
-
-
-   [JSInvokable]
-public async Task CloseFilters()
-{
-  
-    showFilters = false;
-
-    if (IsMobile)
-    {
-        await JS.InvokeVoidAsync("toggleBodyScroll", false);
-    }
-
-    await DisposeOutsideClickHandler();
-    StateHasChanged();
-}
-    protected async Task ResetFilters()
-{
-    foreach (var group in SelectedOptions)
-    {
-        foreach (var key in group.Value.Keys.ToList())
+        protected async Task ApplyFilters()
         {
-            SelectedOptions[group.Key][key] = false;
-        }
-    }
+            ConfirmedOptions = SelectedOptions
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => kv.Value.ToDictionary(entry => entry.Key, entry => entry.Value)
+                );
 
-    foreach (var group in ConfirmedOptions)
-    {
-        foreach (var key in group.Value.Keys.ToList())
+            int appliedCount = ConfirmedOptions
+                .SelectMany(field => field.Value.Values)
+                .Count(v => v);
+
+            Console.WriteLine($"✅ [ApplyFilters] Applied selected count: {appliedCount}");
+
+            showFilters = false;
+            await JS.InvokeVoidAsync("toggleBodyScroll", false);
+            await DisposeOutsideClickHandler();
+            await OnApply.InvokeAsync();
+        }
+
+
+        [JSInvokable]
+        public async Task CloseFilters()
         {
-            ConfirmedOptions[group.Key][key] = false;
+
+            showFilters = false;
+
+            if (IsMobile)
+            {
+                await JS.InvokeVoidAsync("toggleBodyScroll", false);
+            }
+
+            await DisposeOutsideClickHandler();
+            StateHasChanged();
         }
-    }
+        protected async Task ResetFilters()
+        {
+            foreach (var group in SelectedOptions)
+            {
+                foreach (var key in group.Value.Keys.ToList())
+                {
+                    SelectedOptions[group.Key][key] = false;
+                }
+            }
 
-    showFilters = false;
+            foreach (var group in ConfirmedOptions)
+            {
+                foreach (var key in group.Value.Keys.ToList())
+                {
+                    ConfirmedOptions[group.Key][key] = false;
+                }
+            }
+
+            showFilters = false;
 
 
-    await OnReset.InvokeAsync();
+            await OnReset.InvokeAsync();
 
-    StateHasChanged(); // Important: this makes sure the UI reflects 0 badge
-}
+            StateHasChanged(); // Important: this makes sure the UI reflects 0 badge
+        }
 
 
         [JSInvokable]

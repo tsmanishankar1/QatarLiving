@@ -16,7 +16,7 @@ namespace QLN.Web.Shared.Services
             _httpClient = httpClient;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-         private readonly Dictionary<string, string> _tabEndpointMap = new()
+        private readonly Dictionary<string, string> _tabEndpointMap = new()
         {
             { "Qatar", "qln_news_news_qatar" },
             { "Community", "qln_news_news_community" },
@@ -144,14 +144,14 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                  if (_tabEndpointMap.TryGetValue(tab, out var slug))
+                if (_tabEndpointMap.TryGetValue(tab, out var slug))
                 {
                     var response = await _httpClient.GetAsync($"/api/content/{slug}/landing");
                     Console.WriteLine("response is" + response);
                     return response;
                 }
                 else
-                { 
+                {
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
             }
