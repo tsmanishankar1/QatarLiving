@@ -35,7 +35,6 @@ public class DailyLivingBase : QLComponentBase
 
     protected async Task ReplaceSlotHandler(FeaturedSlot slot)
     {
-        // your logic
     }
 
     protected async Task DeleteSlotHandler(string id)
@@ -66,7 +65,6 @@ public class DailyLivingBase : QLComponentBase
 
     protected async Task AddItemtHandler(DailyLivingArticleDto item)
     {
-        // await OpenDialogAsync();
         OpenRadioAutoCompleteDialog();
     }
     protected async Task ReplaceItem(DailyLivingArticleDto item)
@@ -185,7 +183,6 @@ public class DailyLivingBase : QLComponentBase
         var topicArticles = await DailyService.GetContentByTopicIdAsync(topicId);
         if (topicArticles?.Any() == true)
         {
-            Console.WriteLine($"Articles for Topic ID: {topicId}");
             return topicArticles;
         }
 
@@ -220,23 +217,6 @@ public class DailyLivingBase : QLComponentBase
         OpenDReplaceDialogAsync();
         await Task.CompletedTask;
     }
-    // protected Task OpenDReplaceDialogAsync()
-    // {
-    //     var parameters = new DialogParameters
-    //         {
-    //             { nameof(MessageBoxBase.Title), "Featured Event" },
-    //             { nameof(MessageBoxBase.Placeholder), "Article Title*" },
-    //             { nameof(MessageBoxBase.events), AllEventsList },
-    //             { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
-    //         };
-    //     var options = new DialogOptions
-    //     {
-    //         MaxWidth = MaxWidth.Small,
-    //         FullWidth = true,
-    //         CloseOnEscapeKey = true
-    //     };
-    //     return DialogService.ShowAsync<MessageBox>("", parameters, options);
-    // }
     protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
     {
         if (ReplaceSlot?.SlotNumber > 0 && ReplaceSlot?.SlotNumber != null)
@@ -495,7 +475,6 @@ public class DailyLivingBase : QLComponentBase
             {
                 selectedTopic.isPublished = true;
             }
-            Console.WriteLine($"Selected Topic: ID = {selectedTopic.Id}, Name = {selectedTopic.topicName}, IsPublished = {selectedTopic.isPublished}");
             var apiResponse = await DailyService.UpdateTopicAsync(selectedTopic);
             if (apiResponse.IsSuccessStatusCode)
             {
@@ -518,7 +497,6 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-            Console.Write("the selected articel id is" + id);
             var apiResponse = await DailyService.DeleteArticleAsync(id);
             if (apiResponse.IsSuccessStatusCode)
             {
@@ -565,7 +543,6 @@ public class DailyLivingBase : QLComponentBase
             }
             else
             {
-                Console.WriteLine($"Failed to add article. Status Code: {topics.StatusCode}");
                 Snackbar.Add("Failed to add article", Severity.Error);
             }
         }

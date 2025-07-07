@@ -107,21 +107,12 @@ namespace QLN.ContentBO.WebUI.Pages
     })
     .Where(sa => sa != null)
     .ToList()!;
-
-    // Print the payload for debugging
-    foreach (var assignment in slotAssignments)
-    {
-        Console.WriteLine($"SlotNumber: {assignment.SlotNumber}, DailyId: {assignment.DailyId}");
-    }
-
     var request = new DailySlotAssignmentRequest
     {
         TopicId = selectedTopic != null ? Guid.Parse(selectedTopic.Id) : Guid.Empty,
         SlotAssignments = slotAssignments,
         UserId = UserId
     };
-    Console.WriteLine("Payload being sent:");
-Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(request, new JsonSerializerOptions { WriteIndented = true }));
     var response = await DailyService.ReorderFeaturedSlots(request);
 
     if (response.IsSuccessStatusCode)
