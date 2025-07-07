@@ -1,13 +1,7 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Dapr;
+﻿using Dapr;
 using Dapr.Client;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
-using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 
 namespace QLN.Backend.API.Service.AnalyticsService

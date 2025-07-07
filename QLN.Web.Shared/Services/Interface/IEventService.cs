@@ -6,7 +6,7 @@
         /// Gets Content Events Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
-        Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null,  string? from = null,string? to = null,int? page = 1, int? page_size = 20, string? order = "desc");
+        Task<HttpResponseMessage?> GetAllEventsAsync(string? category_id = null, string? location_id = null, string? from = null, string? to = null, int? page = 1, int? page_size = 20, string? order = "desc");
 
         /// <summary>
         /// Gets Content Event by slug.
@@ -32,6 +32,14 @@
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetBannerAsync();
+
+        Task<HttpResponseMessage?> GetAllEventsV2Async(bool? isFeatured = null);
+        Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id);
+        Task<HttpResponseMessage> GetEventLocations();
+        Task<HttpResponseMessage> GetEventCategoriesV2();
+        Task<HttpResponseMessage> GetEventsByPagination(object payload);
+
+
         
     }
 }

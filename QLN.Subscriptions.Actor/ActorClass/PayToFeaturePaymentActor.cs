@@ -2,7 +2,6 @@
 using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToFeatureService;
-using static QLN.Subscriptions.Actor.ActorClass.PayToPublishPaymentActor;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -19,7 +18,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
         private readonly DaprClient _daprClient;
-        public PayToFeaturePaymentActor(ActorHost host, ILogger<PayToFeaturePaymentActor> logger,DaprClient daprClient) : base(host)
+        public PayToFeaturePaymentActor(ActorHost host, ILogger<PayToFeaturePaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _daprClient = daprClient;
@@ -69,14 +68,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-               
+
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-               
+
                 await StoreInPrimaryStateAsync(data, cancellationToken);
                 await StoreInBackupStateAsync(data, cancellationToken);
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
@@ -109,18 +108,18 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+
                 var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
                 if (primaryStateValue != null)
                 {
                     return primaryStateValue;
                 }
 
-               
+
                 var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
                 if (backupStateValue != null)
                 {
-                    
+
                     await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
                     return backupStateValue;
                 }
@@ -249,7 +248,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
 
-                
+
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
@@ -457,7 +456,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-               
+
                 await SyncStateKeysAsync();
 
                 var paymentData = await GetDataAsync();

@@ -1,4 +1,3 @@
-using QLN.Web.Shared.Models;
 using QLN.Common.DTO_s;
 public class SearchStateService
 {
@@ -120,7 +119,7 @@ public class SearchStateService
     !string.IsNullOrWhiteSpace(PrelovedBrand) ||
     PrelovedMinPrice.HasValue ||
     PrelovedMaxPrice.HasValue;
-    
+
     public int PrelovedCurrentPage { get; set; } = 1;
     public int PrelovedPageSize { get; set; } = 12;
     public event Action? PrelovedOnPaginationChanged;

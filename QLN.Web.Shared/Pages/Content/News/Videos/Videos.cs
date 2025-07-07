@@ -1,10 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Models;
+using Microsoft.JSInterop;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
-using Microsoft.JSInterop;
-using QLN.Web.Shared.Components.ViewToggleButtons;
-using QLN.Web.Shared.Model;
 public class VideosBase : ComponentBase
 {
     protected bool isLoadingBanners = true;
@@ -102,5 +99,5 @@ public class VideosBase : ComponentBase
         StateHasChanged();
         await JSRuntime.InvokeVoidAsync("scrollToElementById", "video-cards-section");
     }
-    
+
 }

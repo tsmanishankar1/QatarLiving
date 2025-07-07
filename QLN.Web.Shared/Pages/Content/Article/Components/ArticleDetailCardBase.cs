@@ -1,13 +1,9 @@
-using System;
-using System.Globalization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop; 
+using Microsoft.JSInterop;
+using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Helpers;
-using System.Collections.Generic;
-using QLN.Web.Shared.Model;
-using QLN.Web.Shared.Models;
-using MudBlazor;
+using System.Globalization;
 public class ArticleDetailCardBase : ComponentBase
 {
     [Parameter]
@@ -91,7 +87,7 @@ public class ArticleDetailCardBase : ComponentBase
     protected MarkupString ParsedDescription => new MarkupString(DescriptionHtml);
     protected override void OnParametersSet()
     {
-        imageLoaded = false; 
+        imageLoaded = false;
         if (Post != null)
         {
             DescriptionHtml = Post.Description;
@@ -112,15 +108,15 @@ public class ArticleDetailCardBase : ComponentBase
         }
         return inputDate;
     }
-        protected void OnImageLoaded()
-        {
-            imageLoaded = true;
-            StateHasChanged();
-        }
- 
-        protected void OnImageError()
-        {
-            imageLoaded = true; 
-            StateHasChanged();
-        }
+    protected void OnImageLoaded()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
+
+    protected void OnImageError()
+    {
+        imageLoaded = true;
+        StateHasChanged();
+    }
 }

@@ -1,14 +1,8 @@
-﻿using System;
-using System.Linq;
-using System.Net.Http;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-using Dapr.Client;
-using Microsoft.Extensions.Logging;
+﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IBackOfficeService;
+using System.Text.Json;
 
 namespace QLN.Backend.API.Service.BackOffice
 {

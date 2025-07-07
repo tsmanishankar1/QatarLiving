@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
-using QLN.Web.Shared.Services.Interface;
 using QLN.Common.DTO_s;
+using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Preloved
@@ -14,7 +14,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved
         [Parameter] public string Id { get; set; }
 
         protected string viewAllUrl => $"/classifieds";
-        protected bool IsLoading { get; set; } = true;  
+        protected bool IsLoading { get; set; } = true;
         protected ClassifiedsIndex? PrelovedsDetails { get; set; } = null;
         protected List<ClassifiedsIndex> PrelovedsDetailsSimler { get; set; } = new();
         protected List<string> carouselImages = new()

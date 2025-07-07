@@ -1,7 +1,4 @@
-﻿using QLN.Backend.API.Service.CompanyService;
-using QLN.Common.Infrastructure.IService.ICompanyService;
-
-namespace QLN.Backend.API.ServiceConfiguration
+﻿namespace QLN.Backend.API.ServiceConfiguration
 {
     public static class SubscriptionDependencyInjection
     {

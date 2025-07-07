@@ -1,7 +1,4 @@
 using System.Text.Json;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 public class CountryService
 {
     private readonly HttpClient _httpClient;
@@ -17,7 +14,7 @@ public class CountryService
 
         try
         {
-            var json = await _httpClient.GetStringAsync("/data/countries.json"); 
+            var json = await _httpClient.GetStringAsync("/data/countries.json");
             var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
 
             foreach (var country in countriesJson)

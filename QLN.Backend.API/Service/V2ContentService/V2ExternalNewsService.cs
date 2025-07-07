@@ -6,7 +6,6 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -47,7 +46,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-     
+
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -161,7 +160,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
                     dto.CoverImageUrl = blobUrl;
                 }
-                var url = "/api/v2/news/updateNewsarticleByUserId"; 
+                var url = "/api/v2/news/updateNewsarticleByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -418,7 +417,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
-            try 
+            try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
                 var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";

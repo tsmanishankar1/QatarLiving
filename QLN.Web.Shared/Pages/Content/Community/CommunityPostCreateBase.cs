@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Contracts;
+using QLN.Web.Shared.Components;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
-    public class CommunityPostCreateBase : ComponentBase
+    public class CommunityPostCreateBase : QLComponentBase
     {
         [Inject] protected ICommunityService CommunityService { get; set; }
         [Inject] protected NavigationManager NavigationManager { get; set; }
@@ -25,12 +26,13 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected override async Task OnInitializedAsync()
         {
             editContext = new EditContext(PostModel);
+            await AuthorizedPage();
 
             Categories = await CommunityService.GetCommunityCategoriesAsync();
 
             breadcrumbItems = new()
             {
-                new() { Label = "Community", Url = "/content/v2/community" },
+                new() { Label = "Community", Url = "/content/community/v2" },
                 new() { Label = "Create a Post", Url = "/qln/community/post/create", IsLast = true }
             };
         }

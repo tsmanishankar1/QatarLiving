@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
-using QLN.Web.Shared.Pages.Classifieds.Dashboards;
+﻿using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Services.Interface;
 using System.Text;
 using System.Text.Json;
@@ -14,10 +12,10 @@ namespace QLN.Web.Shared.Services
 
         private readonly ILogger<ClassfiedDashboardService> _logger;
 
-        public ClassfiedDashboardService(HttpClient httpClient , ILogger<ClassfiedDashboardService> logger) : base(httpClient)
+        public ClassfiedDashboardService(HttpClient httpClient, ILogger<ClassfiedDashboardService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
-             _logger = logger;
+            _logger = logger;
 
         }
         /// <summary>
@@ -105,7 +103,7 @@ namespace QLN.Web.Shared.Services
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, "api/classified/prelovedAd-dashboard");
-                
+
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -327,7 +325,7 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-       
+
 
         public async Task<bool> UnPublishAdAsync(List<string> adId)
         {
@@ -544,6 +542,6 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-       
+
     }
 }

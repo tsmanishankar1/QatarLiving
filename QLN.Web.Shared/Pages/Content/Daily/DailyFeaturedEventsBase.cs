@@ -15,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-             if (!_categoriesSwiperInitialized && !Loading && Items?.Any() == true)
+            if (!_categoriesSwiperInitialized && !Loading && Items?.Any() == true)
             {
                 _categoriesSwiperInitialized = true;
                 await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
