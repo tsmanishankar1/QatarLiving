@@ -68,11 +68,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             PaginatedData = await GetEvents(currentPage, pageSize);
             StateHasChanged();
         }
-        protected async Task HandleReorderComplete()
-        {
-            await GetFeaturedSlotsAsync();
-            StateHasChanged();
-        }
 
         protected bool SortAscending = true;
 
