@@ -5,6 +5,7 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
@@ -785,7 +786,38 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
+            try
+            {
+                var newSlotOrder = newOrder.Select(int.Parse).ToList();
 
+                var liveSlotMap = Slots
+                    .Where(s => s.Event != null)
+                    .ToDictionary(s => s.SlotNumber, s => s.Event.Id);
+
+                var slotAssignments = newSlotOrder.Select((slotNumber, index) => new
+                {
+                    slotNumber = index + 1,
+                    eventId = liveSlotMap.TryGetValue(slotNumber, out var eventId) && eventId != Guid.Empty
+                    ? (Guid?)eventId
+                    : null
+                }).ToList();
+
+                var response = await newsService.ReOrderNews(slotAssignments, CurrentUserId);
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Slots Reordered Successfully", Severity.Success);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Failed to Reorder slots", Severity.Error);
+                    Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnTableReordered");
+            }
         }
 
         protected void ResetSearch()

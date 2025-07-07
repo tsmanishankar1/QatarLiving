@@ -366,6 +366,61 @@
                                 </MudTd>
                             </RowTemplate>
                         </MudTable>
+
+                        <table class="table table-hover featured-table" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th> <!-- drag handle -->
+                                    <th style="width: 60px;">Slot</th>
+                                    <th>Title</th>
+                                    <th>Creation Date</th>
+                                    <th>Live for</th>
+                                    <th>Author</th>
+                                    <th style="width: 120px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var context in IndexedLiveArticles)
+                                {
+                                    <tr data-slot-id="@context.Article">
+                                        <td>
+                                            <img src="/qln-images/arrow_icon.svg"
+                                                 class="@(context.Article is not null ? "" : "drag-handle")"
+                                                 style="cursor: @(context.Article is not null ? "default" : "grab"); width: 24px;"
+                                                 alt="drag" />
+                                        </td>
+                                        <td><span class="slot-position"></span></td>
+                                        <td>
+                                            @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
+                                            {
+                                                <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                         Target="_blank">
+                                                    @context.Article.Title
+                                                </MudLink>
+                                            }
+                                            else if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Title))
+                                            {
+                                                <MudLink Href="#">@context.Article.Title</MudLink>
+                                            }
+                                            else
+                                            {
+                                                <MudLink OnClick="NavigateToAddArticle">Add Article</MudLink>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (context.Article?.PublishedDate is not null)
+                                            {
+                                                @GetTimeDifferenceFromNowUtc(context.Article?.PublishedDate ?? new())
+                                            }
+                                            else
+                                            {
+                                                @("-")
+                                            }
+                                    </td>      
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     }
                 </div>
             </MudItem>
