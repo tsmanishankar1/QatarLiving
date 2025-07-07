@@ -393,6 +393,40 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
+        public async Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey) ?? new();
+
+                // Bulk fetch for all post keys
+                var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: null, cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var post = JsonSerializer.Deserialize<V2CommunityPostDto>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (post != null && string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase) && post.IsActive)
+                    {
+                        return post;
+                    }
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving community post by slug: {Slug}", slug);
+                throw;
+            }
+        }
+
 
     }
 }

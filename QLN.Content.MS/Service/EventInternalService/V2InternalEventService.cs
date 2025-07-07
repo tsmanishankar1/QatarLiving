@@ -2,6 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -37,10 +38,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Id = id,
                     Slug = slug,
                     CategoryId = dto.CategoryId,
+                    CategoryName = dto.CategoryName ?? string.Empty,
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
+                    LocationId = dto.LocationId,
                     Location = dto.Location,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
@@ -276,11 +279,13 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Id = dto.Id,
                     Slug = dto.Slug,
                     CategoryId = dto.CategoryId,
+                    CategoryName = dto.CategoryName,
                     EventTitle = dto.EventTitle,
                     EventType = dto.EventType,
                     Price = dto.Price,
                     EventSchedule = dto.EventSchedule,
                     Location = dto.Location,
+                    LocationId = dto.LocationId,
                     Venue = dto.Venue,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
@@ -425,9 +430,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception($"Error retrieving event with ID: {id}", ex);
             }
         }
-        public async Task<PagedResponse<V2Events>> GetPagedEvents(
-                    int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate,
-                    string? filterType, string? location, bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
+        public async Task<PagedResponse<V2Events>> GetPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -439,7 +442,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 if (eventIds == null || !eventIds.Any())
                 {
-                    return EmptyResponse(page, perPage);
+                    return EmptyResponse(request.Page, request.PerPage);
                 }
 
                 var fetchTasks = eventIds.Select(async eventId =>
@@ -463,14 +466,14 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 if (!allEvents.Any())
                 {
-                    return EmptyResponse(page, perPage);
+                    return EmptyResponse(request.Page, request.PerPage);
                 }
 
-                if (!string.IsNullOrWhiteSpace(search))
+                if (!string.IsNullOrWhiteSpace(request.Search))
                 {
                     allEvents = allEvents
                         .Where(e => !string.IsNullOrEmpty(e.EventTitle) &&
-                                    e.EventTitle.Contains(search, StringComparison.OrdinalIgnoreCase))
+                                    e.EventTitle.Contains(request.Search, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
 
@@ -485,20 +488,20 @@ namespace QLN.Content.MS.Service.EventInternalService
                     }
                 }
 
-                if (status.HasValue)
+                if (request.Status.HasValue)
                 {
                     allEvents = allEvents
-                        .Where(e => e.Status == status.Value)
+                        .Where(e => e.Status == request.Status.Value)
                         .ToList();
                 }
 
-                if (categoryId.HasValue)
+                if (request.CategoryId.HasValue)
                 {
                     allEvents = allEvents
-                        .Where(e => e.CategoryId == categoryId.Value)
+                        .Where(e => e.CategoryId == request.CategoryId.Value)
                         .ToList();
                 }
-                if (fromDate.HasValue || toDate.HasValue)
+                if (request.FromDate.HasValue || request.ToDate.HasValue)
                 {
                     allEvents = allEvents
                         .Where(e =>
@@ -506,22 +509,22 @@ namespace QLN.Content.MS.Service.EventInternalService
                             var eventStart = e.EventSchedule.StartDate;
                             var eventEnd = e.EventSchedule.EndDate;
 
-                            if (fromDate.HasValue && toDate.HasValue)
-                                return eventStart >= fromDate && eventEnd <= toDate;
+                            if (request.FromDate.HasValue && request.ToDate.HasValue)
+                                return eventStart >= request.FromDate && eventEnd <= request.ToDate;
 
-                            if (fromDate.HasValue)
-                                return eventEnd >= fromDate;
+                            if (request.FromDate.HasValue)
+                                return eventEnd >= request.FromDate;
 
-                            if (toDate.HasValue)
-                                return eventStart <= toDate;
+                            if (request.ToDate.HasValue)
+                                return eventStart <= request.ToDate;
 
                             return true;
                         })
                         .ToList();
                 }
-                if (!string.IsNullOrWhiteSpace(filterType))
+                if (!string.IsNullOrWhiteSpace(request.FilterType))
                 {
-                    switch (filterType.ToLowerInvariant())
+                    switch (request.FilterType.ToLowerInvariant())
                     {
                         case "featured":
                             allEvents = allEvents
@@ -546,14 +549,13 @@ namespace QLN.Content.MS.Service.EventInternalService
                             break;
                     }
                 }
-                if (!string.IsNullOrWhiteSpace(location))
+                if (request.LocationId is { Count: > 0 })
                 {
                     allEvents = allEvents
-                        .Where(e => !string.IsNullOrEmpty(e.Location) &&
-                                    e.Location.Contains(location, StringComparison.OrdinalIgnoreCase))
+                        .Where(e => e.LocationId != null && request.LocationId.Contains(e.LocationId.Value))
                         .ToList();
                 }
-                if (freeOnly == true)
+                if (request.FreeOnly == true)
                 {
                     allEvents = allEvents
                         .Where(e => e.EventType == V2EventType.FreeAcess || e.EventType == V2EventType.OpenRegistrations)
@@ -562,10 +564,10 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 if (!allEvents.Any())
                     return null;
-                sortOrder = string.IsNullOrWhiteSpace(sortOrder) ? "asc" : sortOrder.ToLowerInvariant();
-                if (featuredFirst == true)
+                request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
+                if (request.FeaturedFirst == true)
                 {
-                    allEvents = sortOrder switch
+                    allEvents = request.SortOrder switch
                     {
                         "desc" => allEvents
                             .OrderByDescending(e => e.IsFeatured)
@@ -579,14 +581,14 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
                 else
                 {
-                    allEvents = sortOrder switch
+                    allEvents = request.SortOrder switch
                     {
                         "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
                         _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
                     };
                 }
-                int currentPage = Math.Max(1, page ?? 1);
-                int itemsPerPage = Math.Max(1, Math.Min(100, perPage ?? 12));
+                int currentPage = Math.Max(1, request.Page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, request.PerPage ?? 12));
                 int totalCount = allEvents.Count;
                 int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
 
@@ -619,7 +621,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             Page = page ?? 1,
             PerPage = perPage ?? 10,
             TotalCount = 0,
-            Items = []
+            Items = new List<V2Events>()
         };
         public async Task<List<V2Slot>> GetAllEventSlot(CancellationToken cancellationToken = default)
         {
@@ -715,7 +717,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
             if (eventToMove == null)
             {
-                return $"No event found in slot {dto.FromSlot}. Nothing to reorder.";
+                throw new InvalidDataException($"No event found in slot {dto.FromSlot}. Cannot reorder.");
             }
             var eventsToShift = new List<V2Events>();
             var slotsToShift = new List<int>();

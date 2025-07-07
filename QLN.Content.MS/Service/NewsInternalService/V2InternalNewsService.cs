@@ -19,6 +19,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<IV2NewsService> _logger;
+        private const string StoreName = V2Content.ContentStoreName;
         private static readonly List<string> writerTags = new()
     {
         "Qatar Living",
@@ -33,7 +34,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _dapr = dapr;
             _logger = logger;
         }
-
+         
         public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
@@ -609,6 +610,170 @@ namespace QLN.Content.MS.Service.NewsInternalService
             await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, category, cancellationToken: cancellationToken);
             return true;
         }
+
+        public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
+        {
+            _logger.LogInformation("Starting to save news comment for Article ID: {Nid}", dto.Nid);
+            try
+            {
+                var commentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.CommentId}";
+                var indexKey = $"{V2Content.NewsCommentIndexPrefix}{dto.Nid}";
+
+                _logger.LogInformation("Generated comment key: {CommentKey}", commentKey);
+                _logger.LogInformation("Generated index key: {IndexKey}", indexKey);
+
+                _logger.LogInformation("Saving comment state to Dapr store...");
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
+                _logger.LogInformation("Comment saved to key: {CommentKey}", commentKey);
+
+                _logger.LogInformation("Retrieving existing index list from Dapr...");
+                var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
+                _logger.LogInformation("Retrieved {Count} comment IDs from index.", index.Count);
+
+
+                if (!index.Contains(dto.CommentId))
+                {
+                    _logger.LogInformation("Comment ID {CommentId} not found in index. Adding...", dto.CommentId);
+                    index.Add(dto.CommentId);
+
+                    _logger.LogInformation("Saving updated index back to Dapr...");
+                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    _logger.LogInformation("Index saved with {Count} total comment IDs.", index.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping update.", dto.CommentId);
+                }
+
+                _logger.LogInformation("News comment saved successfully for Article {Nid}", dto.Nid);
+
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "success",
+                    Message = "Comment saved successfully."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save news comment for Article {Nid}", dto.Nid);
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Comment could not be saved"
+                };
+            }
+        }
+        public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
+        {
+            try
+            {
+                var indexKey = $"{V2Content.NewsCommentIndexPrefix}{nid}";
+                var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct)
+                             ?? new List<Guid>();
+
+                int total = index.Count;
+                int currentPage = page ?? 1;
+                int itemsPerPage = perPage ?? 10;
+                int skip = (currentPage - 1) * itemsPerPage;
+
+                var pagedCommentIds = index
+                    .Skip(skip)
+                    .Take(itemsPerPage)
+                    .ToList();
+
+                var commentKeys = pagedCommentIds
+                    .Select(id => $"{V2Content.NewsCommentPrefix}-{nid}-{id}")
+                    .ToList();
+
+                var commentStates = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    commentKeys,
+                    null);
+
+                var comments = new List<NewsCommentListItem>();
+
+                foreach (var state in commentStates)
+                {
+                    if (string.IsNullOrWhiteSpace(state.Value))
+                        continue;
+
+                    var comment = JsonSerializer.Deserialize<V2NewsCommentDto>(state.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (comment == null)
+                        continue;
+
+                    var likeIndexKey = $"news-comment-like-index-{comment.CommentId}";
+                    var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct)
+                                ?? new List<string>();
+
+                    comments.Add(new NewsCommentListItem
+                    {
+                        CommentId = comment.CommentId,
+                        UserId = comment.Uid ?? string.Empty,
+                        UserName = comment.UserName ?? string.Empty,
+                        Subject = comment.Comment,
+                        DateCreated = comment.CommentedAt,
+                        LikeCount = likes.Count
+                    });
+                }
+
+
+                return new NewsCommentListResponse
+                {
+                    TotalComments = total,
+                    PerPage = itemsPerPage,
+                    CurrentPage = currentPage,
+                    Comments = comments
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get comments for article {Nid}", nid);
+                throw new InvalidOperationException("Error fetching comments");
+            }
+        }
+        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            var key = $"news-comment-like-{commentId}-{userId}";
+            var indexKey = $"news-comment-like-index-{commentId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+
+                if (!string.IsNullOrWhiteSpace(existing))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
+                    index.Remove(userId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
+                    return false;
+                }
+
+                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
+
+                if (!index.Contains(userId))
+                    index.Add(userId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, commentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling like for comment {CommentId}", commentId);
+                throw;
+            }
+        }
+
     }
 }
 

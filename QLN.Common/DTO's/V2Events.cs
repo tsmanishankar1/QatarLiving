@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
 {
@@ -9,10 +10,12 @@ namespace QLN.Common.DTO_s
         public string EventTitle { get; set; }
         [Required]
         public int CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public V2EventType EventType { get; set; }
         public int? Price { get; set; }
         [Required]
         public string Location { get; set; }
+        public int? LocationId { get; set; }
         public string Venue { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
@@ -49,7 +52,8 @@ namespace QLN.Common.DTO_s
     public class TimeSlot
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public string? Time { get; set; }
+        public TimeOnly? StartTime { get; set; }
+        public TimeOnly? EndTime { get; set; }
     }
     public class EventsCategory
     {
@@ -78,6 +82,23 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
+    }
+    public class GetPagedEventsRequest
+    {
+        public int? Page { get; set; }
+        public int? PerPage { get; set; }
+        public EventStatus? Status { get; set; }
+        public string? Search { get; set; }
+        public int? CategoryId { get; set; }
+        public string? SortOrder { get; set; }
+        public DateOnly? FromDate { get; set; }
+        public DateOnly? ToDate { get; set; }
+        public string? FilterType { get; set; }
+
+        [FromQuery(Name = "locationId")]
+        public List<int>? LocationId { get; set; }
+        public bool? FreeOnly { get; set; }
+        public bool? FeaturedFirst { get; set; }
     }
 
 }

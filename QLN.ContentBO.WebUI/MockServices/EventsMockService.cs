@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.MockServices
         EventDescription = "An international technology expo showcasing innovation in the Gulf.",
         CoverImage = "https://example.com/images/tech.jpg",
         IsFeatured = true,
-        FeaturedSlot = new Slot(), // Assuming default constructor is valid
+        FeaturedSlot = new Slot(), 
         PublishedDate = DateTime.Now,
         Status = EventStatus.Published,
         Slug = "doha-tech-expo-2025",
@@ -62,11 +62,7 @@ namespace QLN.ContentBO.WebUI.MockServices
             StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(10)),
             EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(12)),
             TimeSlotType = EventTimeType.PerDayTime,
-            TimeSlots = new List<TimeSlotModel>
-            {
-                new TimeSlotModel { DayOfWeek = DayOfWeek.Friday, Time = "3:00 PM - 7:00 PM" },
-                new TimeSlotModel { DayOfWeek = DayOfWeek.Saturday, Time = "1:00 PM - 6:00 PM" }
-            }
+            TimeSlots = null
         },
         EventDescription = "An open exhibition featuring emerging local and international artists.",
         CoverImage = "https://example.com/images/art.jpg",

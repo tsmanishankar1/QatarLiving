@@ -28,6 +28,7 @@ namespace QLN.ContentBO.WebUI.Pages
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
         protected string? _PriceError;
+        protected string? _timeError;
         protected string? _LocationError;
         protected string? _descriptionerror;
         protected string? _coverImageError;
@@ -65,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             get => CurrentEvent.EventSchedule.EndTime.HasValue
                 ? CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()
-                : (TimeSpan?)null;
+                    : (TimeSpan?)null;
             set
             {
                 if (value.HasValue)
@@ -76,10 +77,8 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     CurrentEvent.EventSchedule.EndTime = null;
                 }
-
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndTime));
             }
-
         }
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
@@ -94,7 +93,8 @@ namespace QLN.ContentBO.WebUI.Pages
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public string TimeRange { get; set; }
+            public TimeSpan? StartTime { get; set; } 
+            public TimeSpan? EndTime { get; set; } 
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -149,34 +149,39 @@ namespace QLN.ContentBO.WebUI.Pages
             Categories = await GetEventsCategories();
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse?.Locations ?? [];
-            CurrentEvent.EventSchedule = new EventScheduleModel();
             CurrentEvent = await GetEventById(Id);
-            _editContext = new EditContext(CurrentEvent);
-            SelectedLocationId = Locations
-            ?.FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
-                 ?.Id;
-            if (double.TryParse(CurrentEvent.Latitude, out var lat) &&
-               double.TryParse(CurrentEvent.Longitude, out var lng))
-            {
-                latitude = lat;
-                Longitude = lng;
-            }
-            _dateRange = new DateRange(CurrentEvent?.EventSchedule?.StartDate.ToDateTime(TimeOnly.MinValue), CurrentEvent?.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue));
-            var startDate = CurrentEvent?.EventSchedule?.StartDate;
-            var endDate = CurrentEvent?.EventSchedule?.EndDate;
-            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.StartDate);
-            // Console.Write("the start date is " + CurrentEvent?.EventSchedule?.EndDate);
-            if (startDate.HasValue && startDate.Value != DateOnly.MinValue &&
-                endDate.HasValue && endDate.Value != DateOnly.MinValue)
-            {
-                SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
-            }
-            else
-            {
-                SelectedDateLabel = "No valid date selected";
-            }
-            Console.WriteLine($"Start: {startDate}, End: {endDate}");
-            _shouldInitializeMap = true;
+            _editContext = new EditContext(CurrentEvent);   
+            SelectedLocationId = Locations?
+                .FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
+                    ?.Id;
+            if (double.TryParse(CurrentEvent?.Latitude, out var lat) &&
+                double.TryParse(CurrentEvent?.Longitude, out var lng))
+                {
+                    latitude = lat;
+                    Longitude = lng;
+                }
+                var startDate = CurrentEvent?.EventSchedule?.StartDate;
+                var endDate = CurrentEvent?.EventSchedule?.EndDate;
+            if (startDate.HasValue && endDate.HasValue &&
+                startDate.Value != DateOnly.MinValue && endDate.Value != DateOnly.MinValue)
+                {
+                    _dateRange = new DateRange(
+                        startDate.Value.ToDateTime(TimeOnly.MinValue),
+                        endDate.Value.ToDateTime(TimeOnly.MinValue)
+                        );
+                    SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
+                }
+                else
+                {
+                     _dateRange = null;
+                     SelectedDateLabel = "No valid date selected";
+                }
+                var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
+                if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
+                {
+                    GeneratePerDayTimeList();
+                }
+                _shouldInitializeMap = true;
         }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -225,6 +230,30 @@ namespace QLN.ContentBO.WebUI.Pages
                 _coverImageError = null;
             }
         }
+        protected void GeneratePerDayTimeList()
+    {
+        DayTimeList.Clear();
+
+         if (_dateRange?.Start == null || _dateRange?.End == null)
+            return;
+
+        var start = _dateRange.Start.Value.Date;
+        var end = _dateRange.End.Value.Date;
+
+        var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
+        for (var date = start; date <= end; date = date.AddDays(1))
+            {
+                var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);
+
+                DayTimeList.Add(new DayTimeEntry
+                {
+                    Date = date,
+                    IsSelected = matchingSlot != null,
+                    StartTime = matchingSlot?.StartTime?.ToTimeSpan(),
+                    EndTime = matchingSlot?.EndTime?.ToTimeSpan()
+                });
+            }
+    }
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
@@ -355,49 +384,70 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     Date = date,
                     IsSelected = false,
-                    TimeRange = ""
                 });
             }
         }
+        protected bool IsValidTimeFormat(TimeSpan? start, TimeSpan? end)
+        {
+            if (!start.HasValue || !end.HasValue)
+                return false;
+            return end > start;
+        }  
         protected async Task HandleValidSubmit()
         {
             _DateError = null;
             _descriptionerror = null;
             _PriceError = null;
             _LocationError = null;
-            if (CurrentEvent.EventSchedule.StartDate == default)
-            {
-                _DateError = "Start date is required.";
-                StateHasChanged();
-                return;
-            }
-            if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
-            {
-                _descriptionerror = "Event description is required.";
-                StateHasChanged();
-                return;
-            }
-            if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
-            {
-                _DateError = "Start date is required.";
-                StateHasChanged();
-                return;
-            }
+            _coverImageError = null;
+            _timeError = null;
+            bool hasError = false;
             if (CurrentEvent.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
                 _PriceError = "Price is required for Fees events.";
-                StateHasChanged();
-                return;
+                hasError = true;
             }
+
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
-                StateHasChanged();
-                return;
+                hasError = true;
             }
+
+            if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
+            {
+                _DateError = "Start date is required.";
+                hasError = true;
+            }
+            else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime &&
+             (CurrentEvent.EventSchedule.StartTime == null || CurrentEvent.EventSchedule.EndTime == null))
+            {
+                _timeError = "Start Time and End Time are required.";
+                hasError = true;
+            }
+
+            if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
+            {
+                _descriptionerror = "Event description is required.";
+                hasError = true;
+            }
+
             if (string.IsNullOrWhiteSpace(CurrentEvent.CoverImage))
             {
                 _coverImageError = "Cover Image is required.";
+                hasError = true;
+            }
+             if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
+            {
+                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
+                {
+                    _timeError = "Please enter a valid start and end time.";
+                    hasError = true;
+                }
+            }
+
+            if (hasError)
+            {
                 StateHasChanged();
                 return;
             }
@@ -407,6 +457,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Events Updated Successfully", severity: Severity.Success);
+                    ClearForm();
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -498,29 +549,21 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
-            entry.IsSelected = (bool)value!;
+            var existingSlot = CurrentEvent.EventSchedule.TimeSlots
+                 .FirstOrDefault(ts => ts.DayOfWeek == entry.Date.DayOfWeek);
 
-            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
+            if (existingSlot != null)
             {
-                var existing = CurrentEvent.EventSchedule.TimeSlots
-                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
-
-                if (existing != null)
-                {
-                    existing.Time = entry.TimeRange;
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
-                    {
-                        DayOfWeek = entry.Date.DayOfWeek,
-                        Time = entry.TimeRange
-                    });
-                }
+                CurrentEvent.EventSchedule.TimeSlots.Remove(existingSlot);
             }
             else
             {
-                CurrentEvent.EventSchedule.TimeSlots.RemoveAll(t => t.DayOfWeek == entry.Date.DayOfWeek);
+                CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+                {
+                    DayOfWeek = entry.Date.DayOfWeek,
+                    StartTime = entry.StartTime.HasValue ? TimeOnly.FromTimeSpan(entry.StartTime.Value) : null,
+                    EndTime = entry.EndTime.HasValue ? TimeOnly.FromTimeSpan(entry.EndTime.Value) : null
+                });
             }
         }
         private void ClearForm()
@@ -543,30 +586,10 @@ namespace QLN.ContentBO.WebUI.Pages
     _coverImageError = string.Empty;
     uploadedImage = null;
     SelectedLocationId = null;
+    _shouldInitializeMap = true;
     StateHasChanged();
 }
-        protected void OnTimeChanged(DayTimeEntry entry, string? newTime)
-        {
-            entry.TimeRange = newTime ?? string.Empty;
-            if (entry.IsSelected && !string.IsNullOrWhiteSpace(entry.TimeRange))
-            {
-                var existing = CurrentEvent.EventSchedule.TimeSlots
-                    .FirstOrDefault(t => t.DayOfWeek == entry.Date.DayOfWeek);
-
-                if (existing != null)
-                {
-                    existing.Time = entry.TimeRange;
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
-                    {
-                        DayOfWeek = entry.Date.DayOfWeek,
-                        Time = entry.TimeRange
-                    });
-                }
-            }
-        }
+        
     };
 }
 

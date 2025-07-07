@@ -289,48 +289,17 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(
-             int? page, int? perPage, EventStatus? status, string? search, string? sortOrder, DateOnly? fromDate, DateOnly? toDate, string? filterType, string? location,
-        bool? freeOnly, int? categoryId, bool? featuredFirst = true, CancellationToken cancellationToken = default)
+           GetPagedEventsRequest request,
+           CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = new List<string>
-                {
-                    $"page={page ?? 1}",
-                    $"perPage={perPage ?? 12}",
-                    $"search={Uri.EscapeDataString(search ?? "")}",
-                    $"sortOrder={sortOrder?.ToLowerInvariant() ?? "desc"}"
-                };
-                if (status.HasValue)
-                    queryParams.Add($"status={(int)status.Value}");
-
-                if (fromDate.HasValue)
-                    queryParams.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
-
-                if (toDate.HasValue)
-                    queryParams.Add($"toDate={toDate.Value:yyyy-MM-dd}");
-
-                if (!string.IsNullOrWhiteSpace(filterType))
-                    queryParams.Add($"filterType={filterType}");
-
-                if (!string.IsNullOrWhiteSpace(location))
-                    queryParams.Add($"location={Uri.EscapeDataString(location)}");
-
-                if (freeOnly == true)
-                    queryParams.Add("freeOnly=true");
-
-                if (featuredFirst.HasValue)
-                    queryParams.Add($"featuredFirst={featuredFirst.Value.ToString().ToLower()}");
-
-                if (categoryId.HasValue)
-                    queryParams.Add($"categoryId={categoryId.Value}");
-
-                var url = $"/api/v2/event/getpaginatedevents?{string.Join("&", queryParams)}";
-
-                return await _dapr.InvokeMethodAsync<PagedResponse<V2Events>>(
-                    HttpMethod.Get,
+                var url = "/api/v2/event/getpaginatedevents";
+                return await _dapr.InvokeMethodAsync<GetPagedEventsRequest, PagedResponse<V2Events>>(
+                    HttpMethod.Post,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
+                    request,
                     cancellationToken);
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
