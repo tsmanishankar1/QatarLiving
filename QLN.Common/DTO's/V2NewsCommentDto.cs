@@ -16,7 +16,7 @@ namespace QLN.Common.DTO_s
         public string Uid { get; set; }
 
         [JsonPropertyName("userName")]
-        public string? UserName { get; set; }
+        public string UserName { get; set; }
 
         [JsonPropertyName("comment")]
         public string Comment { get; set; }
@@ -26,6 +26,9 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("commentedAt")]
         public DateTime CommentedAt { get; set; } = DateTime.UtcNow;
+
+        [JsonPropertyName("isActive")]
+        public bool IsActive { get; set; } = true;
     }
 
     public class NewsCommentApiResponse
