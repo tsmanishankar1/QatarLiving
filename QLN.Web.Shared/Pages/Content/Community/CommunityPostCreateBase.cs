@@ -32,7 +32,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             breadcrumbItems = new()
             {
-                new() { Label = "Community", Url = "/content/v2/community" },
+                new() { Label = "Community", Url = "/content/community/v2" },
                 new() { Label = "Create a Post", Url = "/qln/community/post/create", IsLast = true }
             };
         }

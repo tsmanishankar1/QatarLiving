@@ -54,12 +54,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 Label = "Not Found",
                 //Url = "/content/community",
-                Url = $"/content/v2/community"
+                Url = $"/content/community/v2"
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
-                new() { Label = "Community", Url = "/content/v2/community" },
+                new() { Label = "Community", Url = "/content/community/v2" },
                postBreadcrumbCategory,
                 postBreadcrumbItem
             };
@@ -168,7 +168,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     if (postBreadcrumbCategory is not null)
                     {
                         postBreadcrumbCategory.Label = SelectedPost.Category;
-                        postBreadcrumbCategory.Url = $"/content/v2/community?categoryId={SelectedPost.CategoryId}";
+                        postBreadcrumbCategory.Url = $"/content/community/v2?categoryId={SelectedPost.CategoryId}";
                         StateHasChanged();
                     }
                 }
