@@ -661,34 +661,23 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             try
             {
 
-                List<ArticleSlotAssignment> slotAssignments = IndexedLiveArticles
-                    .Select(x => new ArticleSlotAssignment
-                    {
-                        SlotNumber = x.SlotNumber,
-                        ArticleId = x.Article?.Id
-                    })
-                    .ToList();
-
-
-
                 var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
 
-                // Map existing slot numbers to article IDs
                 var articleSlotMap = IndexedLiveArticles
                     .Where(x => x.Article != null)
                     .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
 
-                // Build the reordered list using the correct API class
-                var slotAssignments = reorderedSlotNumbers.Select((originalSlot, newIndex) =>
-                {
-                    var articleId = articleSlotMap.TryGetValue(originalSlot, out var id) ? id : (Guid?)null;
-
-                    return new ArticleSlotAssignment
+                List<ArticleSlotAssignment> slotAssignments = reorderedSlotNumbers
+                    .Select((originalSlot, newIndex) =>
                     {
-                        SlotNumber = newIndex + 1,  // New position
-                        ArticleId = articleId
-                    };
-                }).ToList();
+                        var articleId = articleSlotMap.TryGetValue(originalSlot, out var id) ? id : (Guid?)null;
+
+                        return new ArticleSlotAssignment
+                        {
+                            SlotNumber = newIndex + 1,
+                            ArticleId = articleId
+                        };
+                    }).ToList();
 
                 var response = await newsService.ReOrderNews(slotAssignments, CurrentUserId.ToString());
                 if (response.IsSuccessStatusCode)
