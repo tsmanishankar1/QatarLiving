@@ -628,7 +628,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 return new PaginatedCommunityPostResponse
                 {
-                    Posts = paginatedPosts,
+                    Items = paginatedPosts,
                     TotalCount = totalCount,
                     Page = currentPage,
                     PerPage = pageSize

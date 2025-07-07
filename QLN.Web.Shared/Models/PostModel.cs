@@ -48,7 +48,17 @@ namespace QLN.Web.Shared.Model
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
     }
-
+    public class CommentModelV2
+    {
+        public string CommentId { get; set; }
+        public string Avatar { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public DateTime CommentedAt { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public int CommentsLikeCount { get; set; }
+        public int UnlikeCount { get; set; }
+        public bool IsByCurrentUser { get; set; }
+    }
 
     public class PostListDto
     {

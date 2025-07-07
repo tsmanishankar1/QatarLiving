@@ -166,7 +166,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             return list ?? new List<DailyTopicContent>();
         }
-        public async Task<string> ReorderSlotsAsync(string userId, ReorderDailyTopicContentDto dto, CancellationToken ct)
+        public async Task<string> ReorderSlotsBatchAsync(string userId, DailyTopicSlotReorderRequest dto, CancellationToken ct)
         {
             var url = $"/api/v2/dailyliving/topic/content/reorderbyid/{userId}";
             var payload = JsonSerializer.Serialize(dto);
@@ -309,6 +309,27 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 _logger.LogError(ex, "Failed to create DailyTopic");
                 throw;
+            }
+        }
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(
+            Guid topicId,
+            CancellationToken cancellationToken = default)
+        {
+            var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles";
+
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    AppId,
+                    path,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
             }
         }
         public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
