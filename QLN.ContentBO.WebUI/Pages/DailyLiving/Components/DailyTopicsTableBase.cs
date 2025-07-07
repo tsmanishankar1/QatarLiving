@@ -15,33 +15,25 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback RenameTopic { get; set; }
         [Parameter] public EventCallback UpdateEvent { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
-        [Parameter] 
+        public List<TopicSlot> ReplaceTopicsSlot { get; set; }
+        [Parameter]
         public DailyTopic selectedTopic { get; set; }
         public DailyLivingArticleDto selectedItem { get; set; }
-        [Parameter] 
+        [Parameter]
         public List<EventCategoryModel> Categories { get; set; } = [];
         [Parameter] public List<DailyLivingArticleDto> articles { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; }
-       [Parameter]
+        [Parameter]
         public bool IsLoadingEvent { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
-        [Inject] protected IEventsService EventsService { get; set; }
+        [Inject] public IDailyLivingService DailyService { get; set; }
         [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
         private string UserId => CurrentUserId.ToString();
 
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            AuthorizedPage(); 
-            foreach (var article in articles)
-            {
-                Console.WriteLine($"ID: {article.Id}");
-                Console.WriteLine($"SlotType: {(DailySlotType)article.SlotType}");
-                Console.WriteLine($"Title: {article.Title}");
-                Console.WriteLine($"Category: {article.Category}");
-                Console.WriteLine($"PublishedDate: {article.PublishedDate:yyyy-MM-dd}");
-                Console.WriteLine("------------");
-            }
+            AuthorizedPage();
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -53,60 +45,55 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected async Task OnAddItemClicked()
         {
-                await AddItem.InvokeAsync(selectedItem);
+            await AddItem.InvokeAsync(selectedItem);
         }
         protected async Task RenameTopicaOnClick()
         {
-                await RenameTopic.InvokeAsync();
+            await RenameTopic.InvokeAsync();
         }
         protected async Task UpdateEventOnClick()
         {
             await UpdateEvent.InvokeAsync();
         }
         [JSInvokable]
-        public async Task OnTableReordered(List<string> newOrder)
-        {
-            var newSignature = string.Join(",", newOrder);
-            Logger.LogInformation("New slot order received: {Order}", newSignature);
-
-            // Compare only once
-            var currentOrder = articles.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
-            if (newSignature == string.Join(",", currentOrder))
+            public async Task OnTableReordered(List<string> newOrder)
             {
-                Logger.LogInformation("Same order as before, skipping API call.");
-                return;
-            }
-            for (int i = 0; i < newOrder.Count; i++)
-            {
-                var newSlotId = int.Parse(newOrder[i]);
-                var expectedSlotId = articles[i].SlotNumber;
+                var newSlotOrder = newOrder.Select(int.Parse).ToList();
+                var eventMap = ReplaceTopicsSlot
+                    .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
+                    .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
 
-                if (newSlotId != expectedSlotId)
+                var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
                 {
-                    int fromSlot = articles.First(s => s.SlotNumber == newSlotId).SlotNumber;
-                    int toSlot = i + 1;
+                 Guid? resolvedEventId = null;
 
-                    // Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
-                    // var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
-
-                    // if (response.IsSuccessStatusCode)
-                    // {
-                    //     Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
-                    //     Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
-                    // }
-                    // else
-                    // {
-                    //     var error = await response.Content.ReadAsStringAsync();
-                    //     Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
-                    //      Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
-                    // }
-
-                    break; // Only process the first change
-                }
-            }
-
-            // ✅ Refresh list from backend (optional but safer)
-            StateHasChanged();
+        if (eventMap.TryGetValue(slotNumber, out var stringId) &&
+            Guid.TryParse(stringId, out var parsedGuid) &&
+            parsedGuid != Guid.Empty)
+        {
+            resolvedEventId = parsedGuid;
         }
+
+        return new
+        {
+            slotNumber = index + 1,
+            eventId = resolvedEventId
+        };
+    }).ToList();
+
+    var response = await DailyService.ReorderFeaturedSlots(slotAssignments, UserId);
+
+    if (response.IsSuccessStatusCode)
+    {
+        Snackbar.Add("Slots reordered successfully.", Severity.Success);
+    }
+    else
+    {
+        Snackbar.Add("Failed to reorder slots", Severity.Error);
+        Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+    }
+}
+
+
     }
 }

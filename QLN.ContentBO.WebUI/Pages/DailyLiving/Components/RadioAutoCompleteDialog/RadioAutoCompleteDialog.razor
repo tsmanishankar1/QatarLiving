@@ -32,10 +32,74 @@
         <MudButton Variant="Variant.Filled"  Class="mt-4 custom-add-btn" OnClick="AddClicked">
             Add
         </MudButton>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+        <MudButton Variant="Variant.Outlined" Class="mt-2 custom-close-btn">
             Close
         </MudButton>
         </div>
     </DialogContent>
 </MudDialog>
 
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+    .custom-add-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 600;
+        color: white;
+        text-transform: none;
+    }
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        color: #242424;
+        text-transform: none;
+    }
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+    .custom-radio-group {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start; 
+    gap: 24px;
+    margin-top: 16px;
+    margin-left: 12px;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #242424;
+}
+
+.mud-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 18px;
+    color: #212121;
+}
+
+/* Outer circle */
+.mud-radio-input input[type="radio"] + .mud-radio-icon {
+    border: 2px solid #D0D5DD;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+/* Selected inner circle fill */
+.mud-radio-input input[type="radio"]:checked + .mud-radio-icon {
+    border: 8px solid #FF7F38; /* outer ring orange */
+    background-color: white;
+}
+</style>
