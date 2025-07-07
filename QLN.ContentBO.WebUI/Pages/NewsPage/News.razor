@@ -89,6 +89,10 @@
                                                 @context.Item.Title
                                             </MudLink>
                                         }
+                                        else
+                                        {
+                                            <MudLink Href="#">@context.Item.Title</MudLink>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
 
@@ -180,7 +184,17 @@
                                 <!-- Title Column -->
                                 <TemplateColumn Title="Title" Width="auto">
                                     <CellTemplate>
-                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                        @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
+                                        {
+                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                                     Target="_blank">
+                                                @context.Item.Title
+                                            </MudLink>
+                                        }
+                                        else
+                                        {
+                                            <MudLink Href="#">@context.Item.Title</MudLink>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
 
@@ -277,13 +291,20 @@
                                 </MudTd>
 
                                 <MudTd DataLabel="Article Title">
-                                    @if (context?.Article?.Title is not null)
+                                    @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
+                                    {
+                                        <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                 Target="_blank">
+                                            @context.Article.Title
+                                        </MudLink>
+                                    }
+                                    else
                                     {
                                         <MudLink Href="#">@context.Article.Title</MudLink>
                                     }
                                     else
                                     {
-                                        @("-")
+                                        <MudLink OnClick="NavigateToAddArticle">Add Article</MudLink>
                                     }
                                 </MudTd>
 
