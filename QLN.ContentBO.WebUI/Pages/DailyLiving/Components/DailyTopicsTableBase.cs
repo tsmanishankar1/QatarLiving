@@ -86,20 +86,20 @@ namespace QLN.ContentBO.WebUI.Pages
                     int fromSlot = articles.First(s => s.SlotNumber == newSlotId).SlotNumber;
                     int toSlot = i + 1;
 
-                    Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
-                    var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
+                    // Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
+                    // var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
-                        Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
-                    }
-                    else
-                    {
-                        var error = await response.Content.ReadAsStringAsync();
-                        Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
-                         Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
-                    }
+                    // if (response.IsSuccessStatusCode)
+                    // {
+                    //     Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
+                    //     Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
+                    // }
+                    // else
+                    // {
+                    //     var error = await response.Content.ReadAsStringAsync();
+                    //     Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
+                    //      Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
+                    // }
 
                     break; // Only process the first change
                 }
