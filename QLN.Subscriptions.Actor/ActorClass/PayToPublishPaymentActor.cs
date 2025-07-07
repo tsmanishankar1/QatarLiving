@@ -1,9 +1,7 @@
 ﻿using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTO_s;
-using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
-using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -21,7 +19,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private static readonly string TimeZoneId = "India Standard Time";
         private readonly DaprClient _daprClient;
 
-        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger ,DaprClient daprClient) : base(host)
+        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _daprClient = daprClient;
@@ -38,14 +36,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-                
+
                 await StoreInPrimaryStateAsync(data, cancellationToken);
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
                 {
@@ -101,7 +99,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         }
 
 
-      
+
 
 
         public async Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
@@ -281,7 +279,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await StoreInPrimaryStateAsync(backupData, cancellationToken);
                     _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
                 }
-   
+
                 else if (primaryData != null && backupData != null)
                 {
                     if (primaryData.LastUpdated > backupData.LastUpdated)
@@ -418,7 +416,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-  
+
                 var bufferTime = TimeSpan.FromMinutes(2);
                 var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
@@ -432,7 +430,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     nameof(CheckPaytopublishExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); 
+                    TimeSpan.FromMilliseconds(-1));
             }
         }
 

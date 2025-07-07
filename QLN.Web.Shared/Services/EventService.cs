@@ -1,7 +1,11 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using QLN.Common.Infrastructure.Constants;
+using System.Text.Json.Serialization;
 using QLN.Web.Shared.Services.Interface;
 using System.Net;
+using System.Text.Json;
+using System.Text;
+
 
 namespace QLN.Web.Shared.Services
 {
@@ -98,6 +102,83 @@ namespace QLN.Web.Shared.Services
             catch (Exception ex)
             {
                 Console.WriteLine("GetBannerAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllEventsV2Async(bool? isFeatured = true)
+{
+    try
+    {
+        var isFeaturedValue = isFeatured ?? true;
+
+        var url = $"api/v2/event/getallfeaturedevents?isFeatured={isFeaturedValue.ToString().ToLower()}";
+
+        var response = await _httpClient.GetAsync(url);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("GetAllEventsV2Async: " + ex);
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
+        public async Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/v2/event/getbyid/{id}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetEventByIdV2Async: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventLocations()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/location/getAllCategoriesLocations");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventCategoriesV2()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getallcategories");
+
+                var response = await _httpClient.SendAsync(request);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetEventsByPagination(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _httpClient.PostAsync("/api/v2/event/getpaginatedevents", content);
+                return response;
+            }
+            catch (Exception ex)
+            {
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

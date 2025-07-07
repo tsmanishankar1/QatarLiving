@@ -31,7 +31,7 @@
                     <MudButton OnClick="UpdateSubCategory" StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
                         @(IsEditingSubCategoryName ? "Save" : "Rename")
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
+                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddArticle">
                         Add Article
                     </MudButton>
                     <MudTextField @bind-Value="SearchString"
@@ -236,7 +236,7 @@
                     }
                     else
                     {
-                        <MudTable Items="IndexedLiveArticles" Hover="true" Style="padding-top: 20px;">
+                        <MudTable Items="IndexedLiveArticles" Class="live-slots" Hover="true" Style="padding-top: 20px;">
                             <HeaderContent>
                                 <MudTh>Slot</MudTh>
                                 <MudTh>Title</MudTh>
@@ -319,9 +319,14 @@
                                             <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
                                                 <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                             </MudMenuItem>
-                                            <MudMenuItem>
-                                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
+                                            <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Article))">
+                                                @if (selectedTab == "live")
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                    <span>Unpublish</span>
+                                                }
                                             </MudMenuItem>
+
                                             <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
                                                 <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
                                             </MudMenuItem>

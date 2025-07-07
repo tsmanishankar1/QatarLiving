@@ -57,7 +57,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 Console.WriteLine($"Current User: {CurrentUserId}");
                 IsLoggedIn = true;
             }
-            
+
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -136,7 +136,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 int nid = int.TryParse(Comment?.Id?.ToString(), out var parsedNid) ? parsedNid : 0;
                 var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
-                 TotalCount = response.total_comments;
+                TotalCount = response.total_comments;
                 if (response?.comments != null && response.comments.Any())
                 {
                     Comments = response.comments.Select(c => new CommentModel
@@ -154,7 +154,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 }
                 else
                 {
-                    Comments.Clear(); 
+                    Comments.Clear();
                 }
             }
             catch (Exception ex)
@@ -182,8 +182,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
             CurrentPage = newPage;
             Console.WriteLine("current page", CurrentPage);
 
-             await GetCommentAsync();
-        
+            await GetCommentAsync();
+
             //StateHasChanged();
         }
         protected async Task ToggleLikeAsync()

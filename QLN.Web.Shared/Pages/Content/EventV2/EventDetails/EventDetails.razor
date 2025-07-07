@@ -1,0 +1,92 @@
+@page "/content/eventsV2/details/{*Id}"
+@using QLN.Web.Shared.Components.Carousel
+@using MudBlazor
+@using QLN.Web.Shared.Pages.Content.EventV2.EventDetails
+@using QLN.Web.Shared.Pages.Content.EventV2
+@layout ContentLayout
+@using QLN.Web.Shared.Components.BreadCrumb
+@using QLN.Web.Shared.Components.EmptyCard
+@using QLN.Web.Shared.Components.BannerHero
+@inherits EventDetailsBaseV2
+
+@if (!isLoading && eventDetails != null)
+{
+    <PageTitle>@eventDetails.EventTitle | Qatar Living Events</PageTitle>
+}
+else
+{
+    <PageTitle>Event Details | Qatar Living Events</PageTitle>
+}
+
+
+<div style="width: 100%; background-color: var(--color-secondary-background);">
+    <div class="banner-responsive-container">
+        @if (isLoadingEventBanners)
+        {
+            <BannerSkleton />
+        }
+        else if (DailyHeroBanners?.Any() == true)
+        {
+             <BannerHero BannerItems="DailyHeroBanners" Loading="isLoadingEventBanners" />
+        }
+        else
+        {
+            <EmptyCard Title="No event banners found." Subtitle="Please check back later for updates." />
+        }
+        </div>
+
+       <div class="responsive-container">
+
+        <Breadcrumb Items="breadcrumbItems" />
+
+        @if (isLoading)
+        {
+            <EventdetailsSkeletons />
+        }
+        else if (eventDetails != null)
+        {
+            <EventDetailsSection Item="eventDetails" EventSideBanners="EventSideBanners" />
+        }
+        else
+        {
+            <EmptyCard Title="Featured event details not found."
+                Subtitle="Please try again later or explore other available events." />
+        }
+    </div>
+</div>
+
+<style>
+    .responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+     .banner-responsive-container {
+        width: 100%;
+        padding: 0 40px;
+        box-sizing: border-box;
+        max-width: 1170px;
+        margin: 0 auto;
+    }
+
+    @@media (max-width: 768px) {
+        .responsive-container {
+            padding: 0 16px;
+        }
+        .banner-responsive-container{
+             padding: 0;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .responsive-container {
+            padding: 0 5px;
+        }
+        .banner-responsive-container{
+             padding: 0;
+        }
+    }
+</style>

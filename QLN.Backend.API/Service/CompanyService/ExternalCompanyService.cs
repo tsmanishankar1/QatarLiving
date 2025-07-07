@@ -21,7 +21,7 @@ namespace QLN.Backend.API.Service.CompanyService
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
         private readonly IFileStorageBlobService _blobStorage;
         private readonly UserManager<ApplicationUser> _userManager;
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger, 
+        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger,
             IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr;
@@ -414,7 +414,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyprofile/getByUserId?userId={userId}"; 
+                var url = $"/api/companyprofile/getByUserId?userId={userId}";
 
                 return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
                     HttpMethod.Get,

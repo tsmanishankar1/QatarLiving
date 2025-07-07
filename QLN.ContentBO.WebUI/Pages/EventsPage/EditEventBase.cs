@@ -144,6 +144,20 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
         protected override async Task OnParametersSetAsync()
         {
             Categories = await GetEventsCategories();
@@ -200,7 +214,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 startDate.Value.ToDateTime(TimeOnly.MinValue),
                 endDate.Value.ToDateTime(TimeOnly.MinValue)
     );
-}
+        }
         [JSInvokable]
         public static Task UpdateLatLng(double lat, double lng)
         {
@@ -231,15 +245,20 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
         protected void GeneratePerDayTimeList()
-    {
-        DayTimeList.Clear();
+        {
+            DayTimeList.Clear();
 
-         if (_dateRange?.Start == null || _dateRange?.End == null)
-            return;
+            if (_dateRange?.Start == null || _dateRange?.End == null)
+                return;
 
-        var start = _dateRange.Start.Value.Date;
-        var end = _dateRange.End.Value.Date;
+            var start = _dateRange.Start.Value.Date;
+            var end = _dateRange.End.Value.Date;
 
+            var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
+
+            for (var date = start; date <= end; date = date.AddDays(1))
+            {
+                var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);
         var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
         for (var date = start; date <= end; date = date.AddDays(1))
             {
@@ -333,7 +352,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             if (_dateRange?.Start != null)
             {
-                 if (CurrentEvent?.EventSchedule == null)
+                if (CurrentEvent?.EventSchedule == null)
                 {
                     CurrentEvent.EventSchedule = new EventScheduleModel();
                 }

@@ -47,7 +47,7 @@ namespace QLN.Web.Shared.Pages.Company
         {
             try
             {
-              
+
                 companyProfile = new CompanyProfileModelDto
                 {
                     BranchLocations = new List<string> { "" },
@@ -98,7 +98,7 @@ namespace QLN.Web.Shared.Pages.Company
                         ClearCrFile();
                         await ResetCompanyForm();
                     }
-                    
+
                 }
             }
             catch (Exception ex)
@@ -188,7 +188,7 @@ namespace QLN.Web.Shared.Pages.Company
         }
         private async Task ResetCompanyForm()
         {
-            
+
             companyProfile = new CompanyProfileModelDto
             {
                 Vertical = VerticalId,
@@ -225,10 +225,10 @@ namespace QLN.Web.Shared.Pages.Company
                 CompanySize = 0,
                 NatureOfBusiness = new List<int>(),
 
-               
+
 
                 CreatedBy = string.Empty,
-                CreatedUtc = DateTime.UtcNow, 
+                CreatedUtc = DateTime.UtcNow,
 
                 Id = string.Empty
             };

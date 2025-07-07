@@ -38,8 +38,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
                 await JS.InvokeVoidAsync("initSeasonalSwiper");
             }
         }
-         protected void HandleCategoryClick(LandingBackOfficeIndex category)
-         {
+        protected void HandleCategoryClick(LandingBackOfficeIndex category)
+        {
             if (category?.EntityId == null)
                 return;
 

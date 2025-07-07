@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Components;
 using QLN.Web.Shared.Contracts;
-using QLN.Web.Shared.Services;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
-    public class PostListBase :ComponentBase
+    public class PostListBase : ComponentBase
     {
         [Inject] public ICommunityService CommunityService { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
@@ -34,6 +33,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
 
 
-       
+
     }
 }

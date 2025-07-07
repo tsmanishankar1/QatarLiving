@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.DTO_s;
-using System.Collections.Generic;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
 {

@@ -3,7 +3,7 @@
 namespace QLN.Web.Shared.Model
 {
     public class ApplicationUser : IdentityUser<Guid>
-    {        
+    {
         public string? MobileOperator { get; set; }
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;

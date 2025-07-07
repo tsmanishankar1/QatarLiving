@@ -18,7 +18,7 @@ public class CategoryAdSectionBase : ComponentBase
     [Parameter]
     public bool Loading { get; set; }
 
-   protected void HandleClick(LandingBackOfficeIndex item)
+    protected void HandleClick(LandingBackOfficeIndex item)
     {
         if (item?.EntityId == null)
             return;
@@ -28,25 +28,25 @@ public class CategoryAdSectionBase : ComponentBase
     }
 
 
-  protected override void OnParametersSet()
-{
-    base.OnParametersSet();
-
-    if (Categories == null || !Categories.Any())
+    protected override void OnParametersSet()
     {
-        Logger.LogWarning("CategoryAdSectionBase: Categories list is empty or null.");
-    }
-    else
-    {
-        Logger.LogInformation("CategoryAdSectionBase: Loaded {Count} categories.", Categories.Count);
+        base.OnParametersSet();
 
-        // Optional: Log first item info
-        var first = Categories.FirstOrDefault();
-        if (first != null)
+        if (Categories == null || !Categories.Any())
         {
-            Logger.LogDebug("First category - Title: {Title}, ImageUrl: {ImageUrl}", first.Title, first.ImageUrl);
+            Logger.LogWarning("CategoryAdSectionBase: Categories list is empty or null.");
+        }
+        else
+        {
+            Logger.LogInformation("CategoryAdSectionBase: Loaded {Count} categories.", Categories.Count);
+
+            // Optional: Log first item info
+            var first = Categories.FirstOrDefault();
+            if (first != null)
+            {
+                Logger.LogDebug("First category - Title: {Title}, ImageUrl: {ImageUrl}", first.Title, first.ImageUrl);
+            }
         }
     }
-}
 
 }

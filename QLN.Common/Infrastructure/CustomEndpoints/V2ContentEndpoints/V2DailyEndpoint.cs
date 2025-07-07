@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using FirebaseAdmin.Auth;
 using QLN.Common.Infrastructure.CustomException;
 using System.Net.Http;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -94,7 +95,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .WithName("CreateOrUpdateSlotByToken")
                 .WithTags("DailyLivingBO")
                 .WithSummary("Create or update a daily living top section using jwt token")
-                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record");
+                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record")
+                .RequireAuthorization();
 
             group.MapPost(
                 "/topsection/{userId}",
@@ -377,7 +379,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     NotFound<ProblemDetails>,
                     ProblemHttpResult>>
                 (
-                    [FromBody] ReorderDailyTopicContentDto dto,
+                    [FromBody] DailyTopicSlotReorderRequest req,
                     [FromServices] IV2ContentDailyService svc,
                     HttpContext ctx,
                     CancellationToken ct
@@ -385,24 +387,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             {
                 try
                 {
-                    if (dto.FromSlot < 1 || dto.FromSlot > 9 || dto.ToSlot < 1 || dto.ToSlot > 9)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Slots must be between 1 and 9.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
                     var userClaim = ctx.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (userClaim is null) return TypedResults.Forbid();
 
                     var ud = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    dto.UserId = ud.GetProperty("uid").GetString()!;
-                    dto.AuthorName = ud.GetProperty("name").GetString();
+                    req.UserId = ud.GetProperty("uid").GetString()!;
 
-                    var result = await svc.ReorderSlotsAsync(dto.UserId, dto, ct);
+                    var result = await svc.ReorderSlotsBatchAsync(req.UserId, req, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -425,7 +416,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             group.MapPost("/topic/content/reorderbyid/{userId}", async Task<Results<
                 Ok<string>,
@@ -434,7 +426,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                [FromBody] ReorderDailyTopicContentDto dto,
+                [FromBody] DailyTopicSlotReorderRequest req,
                 [FromRoute] string userId,
                 [FromServices] IV2ContentDailyService svc,
                 HttpContext ctx,
@@ -443,18 +435,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             {
                 try
                 {
-                    if (dto.FromSlot < 1 || dto.FromSlot > 9 || dto.ToSlot < 1 || dto.ToSlot > 9)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Slots must be between 1 and 9.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    dto.UserId = userId;
+                    req.UserId = userId;
 
-                    var result = await svc.ReorderSlotsAsync(userId, dto, ct);
+                    var result = await svc.ReorderSlotsBatchAsync(userId, req, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -626,7 +609,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         })
             .WithName("GetAllDailyTopics")
             .WithTags("DailyLivingBO")
-            .WithSummary("Get all active daily topics")
+            .WithSummary("Get all daily topics")
             .Produces<List<DailyTopic>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -795,7 +778,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         return TypedResults.Problem("Failed to update publish status", ex.Message);
                     }
                 })
-          .RequireAuthorization()
           .WithName("UpdateDailyTopicPublishStatusWithAuth")
           .WithTags("DailyLivingBO")
           .WithSummary("Update publish/unpublish status of a topic (With Auth)")
@@ -885,6 +867,103 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet(
+                "/topic/{topicId}/unusedarticles",
+                async Task<Results<
+                    Ok<List<V2NewsArticleDTO>>,
+                    BadRequest<ProblemDetails>,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromRoute] Guid topicId,
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    if (topicId == Guid.Empty)
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid TopicId",
+                            Detail = "TopicId cannot be empty."
+                        });
+
+                    try
+                    {
+                        var list = await service.GetUnusedNewsArticlesForTopicAsync(topicId, ct);
+
+                        if (list == null || !list.Any())
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "No Articles Found",
+                                Detail = $"No unused articles for topic {topicId}."
+                            });
+
+                        return TypedResults.Ok(list);
+                    }
+                    catch (ArgumentOutOfRangeException ex)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message
+                        });
+                    }
+                    catch (DaprServiceException ex)
+                    {
+                        return TypedResults.Problem(
+                            title: $"Upstream error ({ex.StatusCode})",
+                            detail: ex.ResponseBody,
+                            statusCode: ex.StatusCode,
+                            instance: $"/topic/{topicId}/unusedarticles"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message
+                        );
+                    }
+                })
+                .WithName("GetUnusedNewsArticlesForTopic")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Fetch news articles not yet used in a Daily Topic")
+                .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapGet(
+                "/landing",
+                async Task<Results<
+                    Ok<ContentsDailyPageResponse>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    try
+                    {
+                        var response = await service.GetDailyLivingLandingAsync(ct);
+                        return TypedResults.Ok(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Failed to build landing page",
+                            detail: ex.Message
+                        );
+                    }
+                })
+                .WithName("GetDailyLivingLanding")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Builds the daily-living landing payload")
+                .Produces<ContentsDailyPageResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

@@ -119,7 +119,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        
+
         public async Task<bool> AddPlanIdAsync(Guid planId, CancellationToken cancellationToken = default)
         {
             try
@@ -168,7 +168,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-       
+
         public async Task<bool> AddBasicPriceIdAsync(Guid basicPriceId, CancellationToken cancellationToken = default)
         {
             try

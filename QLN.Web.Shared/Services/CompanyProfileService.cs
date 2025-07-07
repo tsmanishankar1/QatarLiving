@@ -1,11 +1,11 @@
-﻿using MudBlazor;
+﻿using Microsoft.Extensions.Logging;
+using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Net;
-using Microsoft.Extensions.Logging;
 
 namespace QLN.Web.Shared.Services
 {
@@ -16,13 +16,13 @@ namespace QLN.Web.Shared.Services
         private readonly ILogger<CompanyProfileService> _logger;
 
 
-        public CompanyProfileService(HttpClient httpClient,ISnackbar snackbar, ILogger<CompanyProfileService> logger) : base(httpClient)
+        public CompanyProfileService(HttpClient httpClient, ISnackbar snackbar, ILogger<CompanyProfileService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
             _snackbar = snackbar;
             _logger = logger;
         }
-     
+
 
         public async Task<CompanyProfileModel?> GetCompanyProfileAsync()
         {
@@ -85,7 +85,7 @@ namespace QLN.Web.Shared.Services
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = true
             };
-          
+
             try
             {
                 var json = JsonSerializer.Serialize(model, options);
