@@ -198,7 +198,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                        dto.UpdatedBy = userId;
                        dto.CreatedAt = DateTime.UtcNow;
                        dto.UpdatedAt = DateTime.UtcNow;
-                       dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
 
                        var result = await service.CreateContentAsync(userId, dto, ct);
 
@@ -223,6 +222,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                        });
                    }
                    catch (InvalidDataException ex)
+                   {
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Invalid Data",
+                           Detail = ex.Message,
+                           Status = StatusCodes.Status400BadRequest
+                       });
+                   }
+                   catch (KeyNotFoundException ex)
                    {
                        return TypedResults.BadRequest(new ProblemDetails
                        {
@@ -277,7 +285,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     {
                         dto.CreatedAt = DateTime.UtcNow;
                         dto.UpdatedAt = DateTime.UtcNow;
-                        dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
 
                         var result = await service.CreateContentAsync(userId, dto, ct);
                         return TypedResults.Created($"/topic/content/{userId}", result);
