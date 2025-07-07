@@ -71,6 +71,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
         protected async Task LoadReportsAsync()
         {
             IsLoading = true;
+             StateHasChanged();
 
             string endpoint = Type switch
             {

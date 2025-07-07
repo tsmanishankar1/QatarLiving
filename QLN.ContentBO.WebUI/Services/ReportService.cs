@@ -23,7 +23,7 @@ namespace QLN.ContentBO.WebUI.Services
     {
         var payload = new
         {
-            id,
+            reportId = id,
             isKeep,
             isDelete
         };
