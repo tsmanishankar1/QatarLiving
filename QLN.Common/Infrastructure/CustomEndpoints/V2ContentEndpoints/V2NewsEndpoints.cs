@@ -949,7 +949,7 @@ public static class V2NewsEndpoints
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
 
                 dto.Uid = userData.GetProperty("uid").GetString();
-                if (uid == null)
+                if (dto.Uid == null)
                 {
                     return TypedResults.Forbid();
                 }
