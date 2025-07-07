@@ -88,29 +88,32 @@ namespace QLN.Content.MS.Service.DailyInternalService
         }
         public async Task<string> CreateContentAsync(string userId, DailyTopicContent dto, CancellationToken cancellationToken = default)
         {
-            const int MaxSlots = 9;
+            var indexKey = $"daily-{dto.TopicId}-slots-index";
+            var slotIndex = await _dapr.GetStateAsync<Dictionary<int, Guid>>(
+                Store, indexKey, cancellationToken: cancellationToken)
+                ?? new Dictionary<int, Guid>();
 
-            if (dto.SlotNumber <= 0)
+            if (dto.Id != Guid.Empty)
             {
-                int? free = null;
-                for (int i = 1; i <= MaxSlots; i++)
-                {
-                    var key = GetSlotKey(dto.TopicId, i);
-                    var existing = await _dapr.GetStateAsync<DailyTopicContent>(
-                        Store, key, cancellationToken: cancellationToken);
-                    if (existing == null)
-                    {
-                        free = i;
-                        break;
-                    }
-                }
-                if (!free.HasValue)
-                    throw new InvalidOperationException($"All slots 1–{MaxSlots} are occupied.");
-                dto.SlotNumber = free.Value;
+                var existing = await _dapr.GetStateAsync<DailyTopicContent>(
+                    Store, dto.Id.ToString(), cancellationToken: cancellationToken);
+                if (existing == null)
+                    throw new KeyNotFoundException($"No content found with Id {dto.Id}");
+                dto.SlotNumber = existing.SlotNumber;
             }
-            if (dto.SlotNumber < 1 || dto.SlotNumber > MaxSlots)
+            else
+            {
+                dto.Id = Guid.NewGuid();
+
+                if (dto.SlotNumber <= 0)
+                {
+                    int next = slotIndex.Keys.DefaultIfEmpty(0).Max() + 1;
+                    dto.SlotNumber = next;
+                }
+            }
+            if (dto.SlotNumber < 1)
                 throw new ArgumentOutOfRangeException(
-                    nameof(dto.SlotNumber), $"Slot must be between 1 and {MaxSlots}");
+                    nameof(dto.SlotNumber), "SlotNumber must be a positive integer.");
 
             switch (dto.ContentType)
             {
@@ -119,40 +122,36 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         throw new InvalidOperationException(
                             "A video slot must include a ContentUrl.");
                     break;
-
                 case DailyContentType.Article:
                     if (string.IsNullOrWhiteSpace(dto.Category) ||
                         string.IsNullOrWhiteSpace(dto.Subcategory) ||
                         dto.RelatedContentId == Guid.Empty)
-                    {
                         throw new InvalidOperationException(
                             "An article slot must include Category, Subcategory and a RelatedContentId.");
-                    }
                     break;
-
                 case DailyContentType.Event:
                     if (string.IsNullOrWhiteSpace(dto.Category) ||
                         dto.RelatedContentId == Guid.Empty)
-                    {
                         throw new InvalidOperationException(
                             "An event slot must include Category and a RelatedContentId.");
-                    }
                     break;
-
                 default:
                     throw new InvalidOperationException("Unknown content type.");
             }
-            var desiredKey = GetSlotKey(dto.TopicId, dto.SlotNumber);
-            var occupied = await _dapr.GetStateAsync<DailyTopicContent>(
-                Store, desiredKey, cancellationToken: cancellationToken);
 
-            dto.Id = Guid.NewGuid();
+            var slotKey = GetSlotKey(dto.TopicId, dto.SlotNumber);
+            var occupied = await _dapr.GetStateAsync<DailyTopicContent>(
+                Store, slotKey, cancellationToken: cancellationToken);
+
+            if (dto.Id == Guid.Empty)
+                dto.Id = Guid.NewGuid();
+
             if (dto.CreatedAt == default) dto.CreatedAt = DateTime.UtcNow;
             dto.UpdatedAt = DateTime.UtcNow;
             dto.CreatedBy ??= userId;
             dto.UpdatedBy = userId;
 
-            await _dapr.SaveStateAsync(Store, desiredKey, dto, cancellationToken: cancellationToken);
+            await _dapr.SaveStateAsync(Store, slotKey, dto, cancellationToken: cancellationToken);
             await _dapr.SaveStateAsync(Store, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
 
             await RebuildSlotIndexAsync(dto.TopicId, cancellationToken);
@@ -160,7 +159,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             return occupied == null
                 ? $"Content placed into slot {dto.SlotNumber}."
-                : $"Slot {dto.SlotNumber} overwritten.";
+                : $"Slot {dto.SlotNumber} updated.";
         }
         public async Task<List<DailyTopicContent>> GetSlotsByTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
         {
@@ -193,21 +192,21 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 throw new KeyNotFoundException($"No daily‐topic found with name '{topicName}'");
             return await GetSlotsByTopicAsync(topic.Id, cancellationToken);
         }
-        public async Task<string> ReorderSlotsBatchAsync(string userId, DailyTopicSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSlotsBatchAsync(
+            string userId,
+            DailyTopicSlotReorderRequest request,
+            CancellationToken cancellationToken = default)
         {
-            const int MaxSlot = 9;
             string store = ConstantValues.V2Content.ContentStoreName;
+            var topicKeyPrefix = $"daily-{request.TopicId}-slot";
 
-            // 1) validate exactly 9, unique 1..9
-            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
-                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments are required.");
+            if (request.SlotAssignments == null || !request.SlotAssignments.Any())
+                throw new InvalidDataException("At least one slot assignment is required.");
 
-            var slotNums = request.SlotAssignments.Select(x => x.SlotNumber).ToList();
-            if (slotNums.Distinct().Count() != MaxSlot
-             || slotNums.Any(n => n < 1 || n > MaxSlot))
-                throw new InvalidDataException($"SlotNumber must be unique and between 1 and {MaxSlot}.");
+            var slotNums = request.SlotAssignments.Select(a => a.SlotNumber).ToList();
+            if (slotNums.Any(n => n < 1) || slotNums.Distinct().Count() != slotNums.Count)
+                throw new InvalidDataException("SlotNumber must be unique and positive.");
 
-            // 2) preload all content records
             var loaded = new Dictionary<Guid, DailyTopicContent>();
             foreach (var a in request.SlotAssignments)
             {
@@ -215,7 +214,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     continue;
 
                 var dto = await _dapr.GetStateAsync<DailyTopicContent>(
-                    store, a.DailyId.Value.ToString(),
+                    store,
+                    a.DailyId.Value.ToString(),
                     cancellationToken: cancellationToken);
 
                 if (dto == null)
@@ -224,43 +224,38 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 loaded[a.DailyId.Value] = dto;
             }
 
-            // 3) write each slot
+            var indexKey = $"daily-{request.TopicId}-slots-index";
+            var existingIndex = await _dapr.GetStateAsync<Dictionary<int, Guid>>(
+                store, indexKey, cancellationToken: cancellationToken)
+                ?? new Dictionary<int, Guid>();
+
+            foreach (var oldSlot in existingIndex.Keys)
+            {
+                var oldKey = $"{topicKeyPrefix}{oldSlot}";
+                await _dapr.DeleteStateAsync(store, oldKey, cancellationToken: cancellationToken);
+            }
+
+            var newIndex = new Dictionary<int, Guid>();
             foreach (var a in request.SlotAssignments)
             {
-                string slotKey = $"daily-{request.TopicId}-slot{a.SlotNumber}";
-
                 if (!a.DailyId.HasValue)
-                {
-                    // clear empty slot
-                    await _dapr.DeleteStateAsync(store, slotKey, cancellationToken: cancellationToken);
                     continue;
-                }
 
-                // assign slot number, updated metadata
                 var dto = loaded[a.DailyId.Value];
                 dto.SlotNumber = a.SlotNumber;
                 dto.UpdatedBy = userId;
                 dto.UpdatedAt = DateTime.UtcNow;
 
-                // save both the keyed slot and the content-by-id
+                var slotKey = $"{topicKeyPrefix}{a.SlotNumber}";
                 await _dapr.SaveStateAsync(store, slotKey, dto, cancellationToken: cancellationToken);
                 await _dapr.SaveStateAsync(store, dto.Id.ToString(), dto, cancellationToken: cancellationToken);
+
+                newIndex[a.SlotNumber] = a.DailyId.Value;
             }
 
-            // 4) rebuild slot index for quick GetSlotsByTopicAsync
-            var index = new Dictionary<int, Guid>();
-            foreach (var a in request.SlotAssignments)
-            {
-                if (a.DailyId.HasValue)
-                    index[a.SlotNumber] = a.DailyId.Value;
-            }
-            await _dapr.SaveStateAsync(
-                store,
-                $"daily-{request.TopicId}-slots-index",
-                index,
-                cancellationToken: cancellationToken);
+            await _dapr.SaveStateAsync(store, indexKey, newIndex, cancellationToken: cancellationToken);
 
-            return "Slots updated successfully.";
+            return "Slots reordered successfully.";
         }
         public async Task<string> DeleteContentAsync(Guid contentId, CancellationToken cancellationToken)
         {
@@ -295,52 +290,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
             await RebuildContentIndexAsync(dto.TopicId, cancellationToken);
 
             return "Content deleted and slots collapsed";
-        }
-        private async Task HandleSlotShiftAsync(Guid topicId, int desiredSlot, CancellationToken cancellationToken)
-        {
-            const int MaxSlot = 9;
-            int emptySlot = -1;
-            for (int i = desiredSlot + 1; i <= MaxSlot; i++)
-            {
-                var key = GetSlotKey(topicId, i);
-                var state = await _dapr.GetStateAsync<DailyTopicContent>(Store, key, cancellationToken: cancellationToken);
-                if (state == null)
-                {
-                    emptySlot = i;
-                    break;
-                }
-            }
-
-            if (emptySlot == -1)
-            {
-                var lastKey = GetSlotKey(topicId, MaxSlot);
-                var last = await _dapr.GetStateAsync<DailyTopicContent>(Store, lastKey, cancellationToken: cancellationToken);
-                if (last != null)
-                {
-                    await _dapr.DeleteStateAsync(Store, lastKey, cancellationToken: cancellationToken);
-                    await _dapr.DeleteStateAsync(Store, last.Id.ToString(), cancellationToken: cancellationToken);
-                }
-                emptySlot = MaxSlot;
-            }
-
-            for (int slot = emptySlot - 1; slot >= desiredSlot; slot--)
-            {
-                var fromKey = GetSlotKey(topicId, slot);
-                var toKey = GetSlotKey(topicId, slot + 1);
-
-                var content = await _dapr.GetStateAsync<DailyTopicContent>(Store, fromKey, cancellationToken: cancellationToken);
-                if (content != null)
-                {
-                    content.SlotNumber = slot + 1;
-                    content.UpdatedBy = content.UpdatedBy;
-                    content.UpdatedAt = DateTime.UtcNow;
-
-                    await _dapr.SaveStateAsync(Store, toKey, content, cancellationToken: cancellationToken);
-                    await _dapr.SaveStateAsync(Store, content.Id.ToString(), content, cancellationToken: cancellationToken);
-
-                    await _dapr.DeleteStateAsync(Store, fromKey, cancellationToken: cancellationToken);
-                }
-            }
         }
         private async Task RebuildSlotIndexAsync(Guid topicId, CancellationToken ct)
         {
