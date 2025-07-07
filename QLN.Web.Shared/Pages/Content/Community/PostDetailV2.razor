@@ -1,4 +1,4 @@
-﻿@page "/content/v2/community/post/detail/{*slug}"
+﻿@page "/content/community/v2/post/detail/{*slug}"
 @layout ContentLayout
 @inherits PostDetailBaseV2
 @inject NavigationManager Navigation
@@ -46,7 +46,7 @@
                     }
                     else if (SelectedPost != null)
                     {
-                        <PostCard Post="SelectedPost" IsDetailView="true" />
+                        <PostCardV2 Post="SelectedPost" IsDetailView="true" />
                         <div class="disclaimer-section">
                             <img src="qln-images/content/Warning.svg" alt="Disclaimer Icon" class="disclaimer-icon" />
                             <span class="disclaimer-text">
