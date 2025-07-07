@@ -13,6 +13,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IDialogService DialogService { get; set; }
+        [Parameter] public int? CategoryId { get; set; }
+        [Parameter] public int? SubCategoryId { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -40,6 +42,28 @@ namespace QLN.ContentBO.WebUI.Components.News
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
+        protected async override Task OnParametersSetAsync()
+        {
+            try
+            {
+                if (CategoryId > 0 || SubCategoryId > 0)
+                {
+                    Categories = await GetNewsCategories() ?? [];
+                    TempCategoryList.Add(new()
+                    {
+                        CategoryId = CategoryId ?? 0,
+                        SubcategoryId = SubCategoryId ?? 0,
+                        SlotId = 15,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
                 throw;
             }
         }

@@ -112,9 +112,9 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected void NavigateToAddEvent()
+        protected void NavigateToAddArticle()
         {
-            Navigation.NavigateTo("/manage/news/addarticle");
+            Navigation.NavigateTo($"/manage/news/addarticle/category/{CategoryId}/subcategory/{SelectedSubcategory.Id}",true);
         }
 
         protected async Task DeleteArticle(Guid id)
