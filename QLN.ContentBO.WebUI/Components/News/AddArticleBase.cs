@@ -67,14 +67,8 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if (TempCategoryList.Count <= MinCategory)
-            {
-                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
-                return;
-            }
             if (TempCategoryList.Count > 0)
             {
-
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
