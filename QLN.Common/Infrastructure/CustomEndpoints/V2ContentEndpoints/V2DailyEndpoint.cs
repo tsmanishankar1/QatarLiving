@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using FirebaseAdmin.Auth;
 using QLN.Common.Infrastructure.CustomException;
 using System.Net.Http;
+using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -94,7 +95,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .WithName("CreateOrUpdateSlotByToken")
                 .WithTags("DailyLivingBO")
                 .WithSummary("Create or update a daily living top section using jwt token")
-                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record");
+                .WithDescription("Uses JWT to extract userId and sets CreatedAt, updates slot info and User can create and update the slot record")
+                .RequireAuthorization();
 
             group.MapPost(
                 "/topsection/{userId}",
@@ -425,7 +427,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
 
             group.MapPost("/topic/content/reorderbyid/{userId}", async Task<Results<
                 Ok<string>,
@@ -795,7 +798,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         return TypedResults.Problem("Failed to update publish status", ex.Message);
                     }
                 })
-          .RequireAuthorization()
           .WithName("UpdateDailyTopicPublishStatusWithAuth")
           .WithTags("DailyLivingBO")
           .WithSummary("Update publish/unpublish status of a topic (With Auth)")
@@ -885,6 +887,37 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet(
+                "/landing",
+                async Task<Results<
+                    Ok<ContentsDailyPageResponse>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    try
+                    {
+                        var response = await service.GetDailyLivingLandingAsync(ct);
+                        return TypedResults.Ok(response);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Failed to build landing page",
+                            detail: ex.Message
+                        );
+                    }
+                })
+                .WithName("GetDailyLivingLanding")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Builds the daily-living landing payload")
+                .Produces<ContentsDailyPageResponse>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
