@@ -539,7 +539,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             NotFound<ProblemDetails>,
             ProblemHttpResult>>
             (
-            EventReorder dto,
+            EventSlotReorderRequest dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken = default
@@ -547,13 +547,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
-                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                    if (dto.SlotAssignments == null || dto.SlotAssignments.Count != 6)
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
-                            Detail = "Slot values must be between 1 and 6.",
+                            Detail = "Exactly 6 slot assignments must be provided.",
                             Status = StatusCodes.Status400BadRequest
                         });
+                    }
+
+                    if (dto.SlotAssignments.Select(s => s.SlotNumber).Distinct().Count() != 6 ||
+                        dto.SlotAssignments.Any(s => s.SlotNumber < 1 || s.SlotNumber > 6))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot numbers must be unique and between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
@@ -590,7 +603,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             NotFound<ProblemDetails>,
             ProblemHttpResult>>
             (
-            EventReorder dto,
+            EventSlotReorderRequest dto,
             IV2EventService service,
             CancellationToken cancellationToken
             ) =>
@@ -605,14 +618,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
 
-                    if (dto.FromSlot < 1 || dto.FromSlot > 6 || dto.ToSlot < 1 || dto.ToSlot > 6)
+                    if (dto.SlotAssignments == null || dto.SlotAssignments.Count != 6)
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
-                            Detail = "Slot values must be between 1 and 6.",
+                            Detail = "Exactly 6 slot assignments must be provided.",
                             Status = StatusCodes.Status400BadRequest
                         });
+                    }
 
+                    if (dto.SlotAssignments.Select(s => s.SlotNumber).Distinct().Count() != 6 ||
+                        dto.SlotAssignments.Any(s => s.SlotNumber < 1 || s.SlotNumber > 6))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Slot numbers must be unique and between 1 and 6.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
