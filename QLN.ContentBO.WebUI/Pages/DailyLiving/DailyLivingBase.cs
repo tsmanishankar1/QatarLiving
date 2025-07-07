@@ -4,8 +4,10 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components.RadioAutoCompleteDialog;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using System.Text.Json;
+using QLN.ContentBO.WebUI.Services;
 
 public class DailyLivingBase : QLComponentBase
 {
@@ -20,6 +22,7 @@ public class DailyLivingBase : QLComponentBase
     protected List<EventCategoryModel> Categories = [];
     protected List<FeaturedSlot> featuredEventSlots = [];
     protected List<DailyTopic> ActiveTopics = [];
+    protected DailyTopic selectedTopic { get; set; } = new();
     protected FeaturedSlot ReplaceSlot { get; set; } = new();
 
     [Inject] public IDailyLivingService DailyService { get; set; }
@@ -29,105 +32,100 @@ public class DailyLivingBase : QLComponentBase
     protected bool IsLoading { get; set; } = false;
 
     protected async Task ReplaceSlotHandler(FeaturedSlot slot)
-{
-    // your logic
-}
+    {
+        // your logic
+    }
 
     protected async Task DeleteSlotHandler(string id)
     {
-        // your logic
+        var parameters = new DialogParameters
+        {
+            { "Title", "Delete Confirmation" },
+            { "Descrption", "Do you want to delete this Article?" },
+            { "ButtonTitle", "Delete" },
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteArticleAsync(id))}
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
     }
-protected async Task UpdateHandler(FeaturedSlot slot)
-{
-    // your logic
-}
+    protected async Task UpdateHandler()
+    {
+        if (selectedTopic.isPublished)
+        {
+            await UnPublishArticle();
+        }
+        else
+        {
+            await PublishArticle();
+        }
+
+    }
 
     protected async Task AddItemtHandler(DailyLivingArticleDto item)
     {
-       await OpenDialogAsync();
+        await OpenDialogAsync();
     }
     protected async Task DeleteHandler(string id)
     {
-        // your logic
+
     }
-protected async Task RenameHandler(FeaturedSlot slot)
-{
-    // your logic
-}
+    protected async Task RenameHandler()
+    {
+        if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
+        {
+            OpenRenameDialog(selectedTopic.topicName);
+        }
+    }
 
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadArticlesAsync();
+        await OnTabChanged(0);
         featuredEventSlots = await GetFeaturedSlotsAsync();
         Categories = await GetEventsCategories();
         AllEventsList = await GetAllEvents();
         ActiveTopics = await GetActiveTopics();
     }
 
-    protected async Task OnTabChanged(int newIndex)
+    protected async Task OnTabChanged(int index)
     {
-        if (newIndex == activeIndex)
-            return;
-
-        activeIndex = newIndex;
-        await LoadArticlesAsync();
-    }
-
-
-    private async Task LoadArticlesAsync()
-{
-    isLoading = true;
-    StateHasChanged();
-
-    try
-    {
-        articles = new();
-
-        switch (SelectedTab)
+        activeIndex = index;
+        if (index < 2)
         {
-            case DailyLivingTab.TopSection:
-                articles = await DailyService.GetTopSectionAsync();
-                break;
-
-            case DailyLivingTab.FeaturedEvents:
-                    featuredEventSlots = await GetFeaturedSlotsAsync();
-                break;
-
-            case DailyLivingTab.EverythingQatar:
-            case DailyLivingTab.Lifestyle:
-            case DailyLivingTab.SportsNews:
-            case DailyLivingTab.QLExclusive:
-            case DailyLivingTab.AdviceHelp:
-                {
-                    var topicName = GetTopicNameFromTab(SelectedTab);
-                    var topic = ActiveTopics.FirstOrDefault(t => t.topicName.Equals(topicName, StringComparison.OrdinalIgnoreCase));
-
-                    if (topic is not null)
-                    {
-                        var topicArticles = await DailyService.GetContentByTopicIdAsync(topic.Id);
-                        if (topicArticles?.Any() == true)
-                        {
-                            articles = topicArticles;
-                        }
-                    }
+            switch (index)
+            {
+                case 0:
+                    articles = await DailyService.GetTopSectionAsync();
                     break;
-                }
-
-            default:
-                articles = new();
-                break;
+                case 1:
+                    featuredEventSlots = await GetFeaturedSlotsAsync();
+                    break;
+            }
         }
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "Failed to load articles for tab {Tab}", SelectedTab);
-        articles = new();
+        else
+        {
+            int topicIndex = index - 2;
+            if (topicIndex >= 0 && topicIndex < ActiveTopics.Count)
+            {
+                selectedTopic = ActiveTopics[topicIndex];
+                articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
+            }
+        }
+        StateHasChanged();
     }
 
-    isLoading = false;
-    StateHasChanged();
-}
+    private async Task<List<DailyLivingArticleDto>> GetArticlesByTopicIdAsync(string topicId)
+    {
+        var topicArticles = await DailyService.GetContentByTopicIdAsync(topicId);
+        if (topicArticles?.Any() == true)
+        {
+            Console.WriteLine($"Articles for Topic ID: {topicId}");
+            return topicArticles;
+        }
+
+        return new List<DailyLivingArticleDto>();
+    }
 
     protected Task OpenDialogAsync()
     {
@@ -141,17 +139,17 @@ protected async Task RenameHandler(FeaturedSlot slot)
         return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
     }
     private string GetTopicNameFromTab(DailyLivingTab tab)
-{
-    return tab switch
     {
-        DailyLivingTab.EverythingQatar => "Everything Qatar",
-        DailyLivingTab.Lifestyle => "Lifestyle",
-        DailyLivingTab.SportsNews => "Sports News",
-        DailyLivingTab.QLExclusive => "QL Exclusive",
-        DailyLivingTab.AdviceHelp => "Advice & Help",
-        _ => string.Empty
-    };
-}
+        return tab switch
+        {
+            DailyLivingTab.EverythingQatar => "Everything Qatar",
+            DailyLivingTab.Lifestyle => "LifeStyle",
+            DailyLivingTab.SportsNews => "Sports News",
+            DailyLivingTab.QLExclusive => "QL Exclusive",
+            DailyLivingTab.AdviceHelp => "Advice & Help",
+            _ => string.Empty
+        };
+    }
     protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
     {
         ReplaceSlot = selectedEvent;
@@ -355,13 +353,122 @@ protected async Task RenameHandler(FeaturedSlot slot)
         try
         {
             var topics = await DailyService.GetActiveTopicsAsync();
-            return topics ?? []; 
+            return topics ?? [];
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in GetActiveTopics");
             return [];
-        }   
+        }
     }
+
+    private async Task OpenRenameDialog(string currentName)
+    {
+        var parameters = new DialogParameters
+        {
+            ["TopicName"] = currentName,
+            ["ShowEditField"] = true,
+            ["ButtonTitle"] = "Rename",
+            ["OnConfirmed"] = EventCallback.Factory.Create<string>(this, OnRenameConfirmed)
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogService.Show<TopicRenameDialog>("", parameters, options);
+    }
+
+    private async Task OnRenameConfirmed(string newName)
+    {
+        try
+        {
+            selectedTopic.topicName = newName;
+            var apiResponse = await DailyService.UpdateTopicAsync(selectedTopic);
+            if (apiResponse.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Topic Renamed Successfully", Severity.Success);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetEvents");
+        }
+
+    }
+    private async Task PublishArticle()
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", "Publish Topic" },
+            { "Descrption", $"Do you want to publish this Topic: {selectedTopic?.topicName}?" },
+            { "ButtonTitle", "Publish" },
+            { "OnConfirmed", EventCallback.Factory.Create(this, UpdateArticleAsync) }
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
+    private async Task UnPublishArticle()
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", "UnPublish Topic" },
+            { "Descrption", $"Do you want to unpublish this Topic: {selectedTopic?.topicName}?" },
+            { "ButtonTitle", "UnPublish" },
+            { "OnConfirmed", EventCallback.Factory.Create(this, UpdateArticleAsync) }
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
+    private async Task UpdateArticleAsync()
+    {
+        try
+        {
+            var status = selectedTopic.isPublished;
+            if (selectedTopic.isPublished)
+            {
+                selectedTopic.isPublished = false;
+            }
+            else
+            {
+                selectedTopic.isPublished = true;
+            }
+            Console.WriteLine($"Selected Topic: ID = {selectedTopic.Id}, Name = {selectedTopic.topicName}, IsPublished = {selectedTopic.isPublished}");
+            var apiResponse = await DailyService.UpdateTopicAsync(selectedTopic);
+            if (apiResponse.IsSuccessStatusCode)
+            {
+                if (status)
+                {
+                    Snackbar.Add("Topic UnPublished Successfully", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Topic Published Successfully", Severity.Success);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetEvents");
+        }
+    }
+    private async Task DeleteArticleAsync(string id)
+    {
+        try
+        {
+            Console.Write("the selected articel id is" + id);
+            var apiResponse = await DailyService.DeleteArticleAsync(id);
+            if (apiResponse.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Article Deleted Successfully", Severity.Success);
+                await OnTabChanged(activeIndex);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "DeleteArticle");
+        }
+    }
+
+
+
 }
 

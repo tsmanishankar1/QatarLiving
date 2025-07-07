@@ -1,6 +1,6 @@
 @using MudBlazor
 @inherits MudArticleTableBase
-<MudTable Items="@Articles" Elevation="0" Bordered="true" Hover="true">
+<MudTable Items="@slotArticles" Elevation="0" Bordered="true" Hover="true">
     <HeaderContent>
         <MudTh>Slot</MudTh>
         <MudTh>Title</MudTh>
@@ -10,7 +10,11 @@
         <MudTh>Replace</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Slot">@context.SlotNumber</MudTd>
+            <MudTd DataLabel="Slot">
+                @(Enum.IsDefined(typeof(DailySlotType), context.SlotType) 
+                    ? ((DailySlotType)context.SlotType).ToString() 
+                    : $"Unknown ({context.SlotType})")
+            </MudTd>
         <MudTd DataLabel="Title">
             @if (!string.IsNullOrEmpty(context.ContentURL))
             {

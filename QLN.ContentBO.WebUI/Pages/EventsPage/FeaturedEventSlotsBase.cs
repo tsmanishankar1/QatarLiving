@@ -21,13 +21,12 @@ namespace QLN.ContentBO.WebUI.Pages
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
 
-        // Replace with actual user ID retrieval logic (e.g. from auth claims)
         private string UserId => CurrentUserId.ToString();
 
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            AuthorizedPage(); // Ensure this is called to populate user info
+            AuthorizedPage(); 
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -44,7 +43,6 @@ namespace QLN.ContentBO.WebUI.Pages
             var newSignature = string.Join(",", newOrder);
             Logger.LogInformation("New slot order received: {Order}", newSignature);
 
-            // Compare only once
             var currentOrder = FeaturedEventSlots.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
             if (newSignature == string.Join(",", currentOrder))
             {
@@ -52,7 +50,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 return;
             }
 
-            // Find the first difference (simple diff)
             for (int i = 0; i < newOrder.Count; i++)
             {
                 var newSlotId = int.Parse(newOrder[i]);
@@ -78,11 +75,9 @@ namespace QLN.ContentBO.WebUI.Pages
                          Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
                     }
 
-                    break; // Only process the first change
+                    break; 
                 }
             }
-
-            // ✅ Refresh list from backend (optional but safer)
             StateHasChanged();
         }
     }

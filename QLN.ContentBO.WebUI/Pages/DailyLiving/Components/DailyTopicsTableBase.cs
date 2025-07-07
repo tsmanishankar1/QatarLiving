@@ -12,9 +12,11 @@ namespace QLN.ContentBO.WebUI.Pages
     {
         [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
         [Parameter] public EventCallback<DailyLivingArticleDto> AddItem { get; set; }
-        [Parameter] public EventCallback<FeaturedSlot> RenameTopic { get; set; }
-        [Parameter] public EventCallback<FeaturedSlot> UpdateEvent { get; set; }
+        [Parameter] public EventCallback RenameTopic { get; set; }
+        [Parameter] public EventCallback UpdateEvent { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
+        [Parameter] 
+        public DailyTopic selectedTopic { get; set; }
         public DailyLivingArticleDto selectedItem { get; set; }
         [Parameter] 
         public List<EventCategoryModel> Categories { get; set; } = [];
@@ -53,7 +55,14 @@ namespace QLN.ContentBO.WebUI.Pages
         {
                 await AddItem.InvokeAsync(selectedItem);
         }
-
+        protected async Task RenameTopicaOnClick()
+        {
+                await RenameTopic.InvokeAsync();
+        }
+        protected async Task UpdateEventOnClick()
+        {
+            await UpdateEvent.InvokeAsync();
+        }
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
