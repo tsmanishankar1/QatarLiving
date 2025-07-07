@@ -5,6 +5,7 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
+
 namespace QLN.Content.MS.Service.ReportInternalService
 {
     public class V2InternalReportsService : IV2ReportsService
@@ -228,8 +229,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new Exception("Error creating report", ex);
             }
         }
-
-        public async Task<PagedResult<V2ContentReportArticleResponseDto>> GetAllReports(string sortOrder = "desc", int pageNumber = 1, int pageSize = 12, string? searchTerm = null, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<V2ContentReportArticleResponseDto>> GetAllReports(
+          string sortOrder = "desc",
+          int pageNumber = 1,
+          int pageSize = 12,
+          string? searchTerm = null,
+          CancellationToken cancellationToken = default)
         {
             try
             {
@@ -277,21 +282,19 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 {
                     V2NewsCommentDto comment = null;
                     string postTitle = null;
+                    string slug = null;
                     Guid? postId = null;
 
-                    // If report has a CommentId, fetch the comment to get the Nid (Article ID)
+                    // First try via CommentId
                     if (report.CommentId != null && report.CommentId != Guid.Empty)
                     {
                         try
                         {
-                            // Try to get comment from various possible storage patterns
-                            // First, try to find the comment by searching through news comment indexes
                             var newsKeys = await GetStateWithFallback<List<string>>(
                                 ConstantValues.V2Content.NewsIndexKey,
                                 new List<string>(),
                                 cancellationToken);
 
-                            // Look for the comment across all articles
                             foreach (var newsKey in newsKeys)
                             {
                                 try
@@ -303,7 +306,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                                     if (articleData != null)
                                     {
-                                        // Try to get comments for this article
                                         var commentIndexKey = $"{ConstantValues.V2Content.NewsCommentIndexPrefix}{articleData.Id}";
                                         var commentIds = await _dapr.GetStateAsync<List<Guid>>(
                                             ConstantValues.V2Content.ContentStoreName,
@@ -312,7 +314,6 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                                         if (commentIds != null && commentIds.Contains(report.CommentId.Value))
                                         {
-                                            // Found the article that contains this comment
                                             var commentKey = $"{ConstantValues.V2Content.NewsCommentPrefix}-{articleData.Id}-{report.CommentId}";
                                             comment = await _dapr.GetStateAsync<V2NewsCommentDto>(
                                                 ConstantValues.V2Content.ContentStoreName,
@@ -322,6 +323,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                                             if (comment != null)
                                             {
                                                 postTitle = articleData.Title;
+                                                slug = articleData.Slug; // ✅ Extract slug
                                                 postId = articleData.Id;
                                                 break;
                                             }
@@ -340,7 +342,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         }
                     }
 
-                    // If we still don't have a title and there's a PostId, try to get it directly
+                    // Fallback to PostId
                     if (string.IsNullOrEmpty(postTitle) && report.PostId != null)
                     {
                         try
@@ -353,6 +355,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                             if (article != null)
                             {
                                 postTitle = article.Title;
+                                slug = article.Slug; // ✅ Extract slug
                                 postId = article.Id;
                             }
                         }
@@ -373,6 +376,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         Id = report.Id,
                         PostId = postId,
                         Post = postTitle,
+                        Slug = slug, // ✅ Include in response
                         CommentId = report.CommentId,
                         Reporter = report.ReporterName,
                         ReportDate = report.ReportDate,
@@ -383,7 +387,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     });
                 }
 
-               
+                // Apply filtering
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string lowerSearch = searchTerm.ToLower();
@@ -425,6 +429,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw;
             }
         }
+
         private async Task<T> GetStateWithFallback<T>(string key, T fallback, CancellationToken cancellationToken)
         {
             try
@@ -517,13 +522,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-
         public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(
-        int? pageNumber,
-        int? perPage,
-        string? searchTitle = null,
-        string? sortBy = null,
-        CancellationToken ct = default)
+     int? pageNumber,
+     int? perPage,
+     string? searchTitle = null,
+     string? sortBy = null,
+     CancellationToken ct = default)
         {
             try
             {
@@ -550,7 +554,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 }
 
                 var rawReportsElement = await _dapr.GetStateAsync<JsonElement?>(
-                    "contentstatestore",
+                    V2Content.ContentStoreName,
                     V2Content.ReportsCommunityIndexKey,
                     cancellationToken: ct);
 
@@ -561,7 +565,10 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 foreach (var postId in postIds)
                 {
                     var postKey = $"community-{postId}";
-                    var rawPostElement = await _dapr.GetStateAsync<JsonElement?>("contentstatestore", postKey, cancellationToken: ct);
+                    var rawPostElement = await _dapr.GetStateAsync<JsonElement?>(
+                        V2Content.ContentStoreName,
+                        postKey,
+                        cancellationToken: ct);
 
                     if (rawPostElement is null || rawPostElement.Value.ValueKind == JsonValueKind.Null)
                         continue;
@@ -588,6 +595,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                                 Id = reportId,
                                 PostId = post.Id,
                                 Post = post.Title,
+                                Slug = post.Slug, // ✅ Add slug from post object
                                 UserName = post.UserName,
                                 PostDate = post.DateCreated,
                                 Reporter = reportElement.ReporterName,
@@ -597,6 +605,8 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         }
                     }
                 }
+
+                // Search filter
                 if (!string.IsNullOrWhiteSpace(searchTitle))
                 {
                     allPosts = allPosts
@@ -604,6 +614,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         .ToList();
                 }
 
+                // Sorting
                 var sortKey = sortBy?.ToLowerInvariant();
                 allPosts = sortKey switch
                 {
@@ -618,6 +629,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     _ => allPosts.OrderByDescending(p => p.PostDate).ToList()
                 };
 
+                // Pagination
                 var totalCount = allPosts.Count;
                 var currentPage = pageNumber ?? 1;
                 var pageSize = perPage ?? 12;
@@ -639,6 +651,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw;
             }
         }
+
         public async Task<string> UpdateCommunityPostReportStatus(V2ReportStatus dto, CancellationToken cancellationToken = default)
         {
             string storeName = ConstantValues.V2Content.ContentStoreName;
@@ -891,7 +904,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-        public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
+        public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
+      string sortOrder = "desc",
+      int pageNumber = 1,
+      int pageSize = 12,
+      string? searchTerm = null,
+      CancellationToken cancellationToken = default)
         {
             try
             {
@@ -927,9 +945,11 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 {
                     string? commentContent = null;
                     string? postTitle = null;
+                    string? slug = null;
                     DateTime? commentedAt = null;
                     string? userName = null;
 
+                    // 🔁 Get Post with Slug
                     var postKey = $"community-{report.PostId}";
                     var post = await _dapr.GetStateAsync<V2CommunityPostDto>(
                         ConstantValues.V2Content.ContentStoreName,
@@ -938,8 +958,12 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     );
 
                     if (post != null)
+                    {
                         postTitle = post.Title;
+                        slug = post.Slug; // ✅ Get slug from post
+                    }
 
+                    // 🔁 Get Comment
                     var commentKey = $"comment-{report.PostId}-{report.CommentId}";
                     var comment = await _dapr.GetStateAsync<CommunityCommentDto>(
                         ConstantValues.V2Content.ContentStoreName,
@@ -964,21 +988,24 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         userName = comment.UserName;
                     }
 
+                    // ✅ Add Slug to Response DTO
                     responseDtos.Add(new V2ContentReportCommunityCommentResponseDto
                     {
                         Id = report.Id,
                         PostId = report.PostId,
                         CommentId = report.CommentId,
                         ReporterName = report.ReporterName,
-                        Router=report.Router,
+                        Router = report.Router,
                         ReportDate = report.ReportDate,
                         Title = postTitle,
+                        Slug = slug, // ✅ Include here
                         Comment = commentContent,
                         CommentDate = commentedAt,
                         UserName = userName
                     });
                 }
 
+                // 🔎 Search
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string search = searchTerm.ToLower();
@@ -992,12 +1019,14 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 var totalCount = responseDtos.Count;
 
+                // 🔃 Sorting
                 responseDtos = sortOrder.ToLower() switch
                 {
                     "asc" => responseDtos.OrderBy(r => r.ReportDate).ToList(),
                     _ => responseDtos.OrderByDescending(r => r.ReportDate).ToList()
                 };
 
+                // 📃 Pagination
                 var pagedDtos = responseDtos
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -1019,6 +1048,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw;
             }
         }
+
         public async Task<string> UpdateCommunityCommentReportStatus(V2UpdateCommunityCommentReportDto dto, CancellationToken cancellationToken = default)
         {
             string storeName = ConstantValues.V2Content.ContentStoreName;
