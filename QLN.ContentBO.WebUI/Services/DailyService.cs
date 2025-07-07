@@ -106,20 +106,75 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage> ReorderFeaturedSlots(IEnumerable<object> slotAssignments, string userId)
+        public async Task<HttpResponseMessage> ReorderFeaturedSlots(DailySlotAssignmentRequest slotAssignments)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(slotAssignments, new JsonSerializerOptions { WriteIndented = true });
+
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content/reorder")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ReorderDailyTopics");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetAvailableArticles(string topicId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/dailyliving/topic/{topicId}/unusedarticles");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventById");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage> AddArticle(DailyLivingArticleDto article)
 {
     try
     {
         var payload = new
         {
-            slotAssignments = slotAssignments,
-            userId = userId
+            slotType = article.SlotType == 0 ? 1 : article.SlotType,
+            title = string.IsNullOrWhiteSpace(article.Title) ? "string" : article.Title,
+            category = string.IsNullOrWhiteSpace(article.Category) ? "string" : article.Category,
+            subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "string" : article.Subcategory,
+            relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+            contentType = article.ContentType == 0 ? 1 : article.ContentType,
+            publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
+            endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
+            slotNumber = article.SlotNumber == 0 ? 1 : article.SlotNumber,
+            createdBy = string.IsNullOrWhiteSpace(article.CreatedBy) ? "string" : article.CreatedBy,
+            createdAt = article.CreatedAt == default ? DateTime.UtcNow : article.CreatedAt,
+            updatedBy = string.IsNullOrWhiteSpace(article.UpdatedBy) ? "string" : article.UpdatedBy,
+            updatedAt = article.UpdatedAt ?? DateTime.UtcNow,
+            topicId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId
         };
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+        Console.WriteLine("Payload being sent:");
+        Console.WriteLine(payload);
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content/reorder")
+        var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
         {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
+            WriteIndented = true
+        });
+
+        var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content")
+        {
+            Content = content
         };
 
         var response = await _httpClient.SendAsync(request);
@@ -127,11 +182,9 @@ namespace QLN.ContentBO.WebUI.Services
     }
     catch (Exception ex)
     {
-        Logger.LogError(ex, "ReorderDailyTopics");
+        Logger.LogError(ex, "CreateArticle");
         return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
     }
 }
-
-
     }
 }
