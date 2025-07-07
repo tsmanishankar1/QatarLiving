@@ -19,11 +19,42 @@ public class DailyLivingBase : QLComponentBase
     protected EventDTO ReplacedEvent { get; set; } = new();
     protected List<EventCategoryModel> Categories = [];
     protected List<FeaturedSlot> featuredEventSlots = [];
+    protected List<DailyTopic> ActiveTopics = [];
     protected FeaturedSlot ReplaceSlot { get; set; } = new();
 
     [Inject] public IDailyLivingService DailyService { get; set; }
     [Inject] public IDialogService DialogService { get; set; }
     [Inject] public ILogger<DailyLivingBase> Logger { get; set; }
+    protected List<FeaturedSlot> FeaturedEventSlots { get; set; } = new();
+    protected bool IsLoading { get; set; } = false;
+
+    protected async Task ReplaceSlotHandler(FeaturedSlot slot)
+{
+    // your logic
+}
+
+    protected async Task DeleteSlotHandler(string id)
+    {
+        // your logic
+    }
+protected async Task UpdateHandler(FeaturedSlot slot)
+{
+    // your logic
+}
+
+    protected async Task AddItemtHandler(DailyLivingArticleDto item)
+    {
+       await OpenDialogAsync();
+    }
+    protected async Task DeleteHandler(string id)
+    {
+        // your logic
+    }
+protected async Task RenameHandler(FeaturedSlot slot)
+{
+    // your logic
+}
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -31,6 +62,7 @@ public class DailyLivingBase : QLComponentBase
         featuredEventSlots = await GetFeaturedSlotsAsync();
         Categories = await GetEventsCategories();
         AllEventsList = await GetAllEvents();
+        ActiveTopics = await GetActiveTopics();
     }
 
     protected async Task OnTabChanged(int newIndex)
@@ -44,49 +76,58 @@ public class DailyLivingBase : QLComponentBase
 
 
     private async Task LoadArticlesAsync()
+{
+    isLoading = true;
+    StateHasChanged();
+
+    try
     {
-        isLoading = true;
-        StateHasChanged();
+        articles = new();
 
-        try
+        switch (SelectedTab)
         {
-            switch (SelectedTab)
-            {
-                case DailyLivingTab.TopSection:
-                    articles = await DailyService.GetTopSectionAsync();
-                    break;
-                case DailyLivingTab.FeaturedEvents:
-                    articles = await DailyService.GetFeaturedEventsAsync();
-                    break;
-                case DailyLivingTab.EverythingQatar:
-                    articles = await DailyService.GetContentByTopicIdAsync("5da6688e-6018-48bb-8c17-d4b0219adc8c");
-                    break;
-                case DailyLivingTab.Lifestyle:
-                    articles = await DailyService.GetContentByTopicIdAsync("3072ea6f-35b2-460a-b45c-796b942d0bad");
-                    break;
-                case DailyLivingTab.SportsNews:
-                    articles = await DailyService.GetContentByTopicIdAsync("83a18b49-7ad7-4148-b5a0-5dc71e75a537");
-                    break;
-                case DailyLivingTab.QLExclusive:
-                    articles = await DailyService.GetContentByTopicIdAsync("31e36a07-acb0-4a32-9d4e-ca55a68f9f8f");
-                    break;
-                case DailyLivingTab.AdviceHelp:
-                    articles = await DailyService.GetContentByTopicIdAsync("4c1e7ed7-9424-413b-b846-81454183e87b");
-                    break;
-                default:
-                    articles = new();
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to load articles for tab {Tab}", SelectedTab);
-            articles = new();
-        }
+            case DailyLivingTab.TopSection:
+                articles = await DailyService.GetTopSectionAsync();
+                break;
 
-        isLoading = false;
-        StateHasChanged();
+            case DailyLivingTab.FeaturedEvents:
+                    featuredEventSlots = await GetFeaturedSlotsAsync();
+                break;
+
+            case DailyLivingTab.EverythingQatar:
+            case DailyLivingTab.Lifestyle:
+            case DailyLivingTab.SportsNews:
+            case DailyLivingTab.QLExclusive:
+            case DailyLivingTab.AdviceHelp:
+                {
+                    var topicName = GetTopicNameFromTab(SelectedTab);
+                    var topic = ActiveTopics.FirstOrDefault(t => t.topicName.Equals(topicName, StringComparison.OrdinalIgnoreCase));
+
+                    if (topic is not null)
+                    {
+                        var topicArticles = await DailyService.GetContentByTopicIdAsync(topic.Id);
+                        if (topicArticles?.Any() == true)
+                        {
+                            articles = topicArticles;
+                        }
+                    }
+                    break;
+                }
+
+            default:
+                articles = new();
+                break;
+        }
     }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "Failed to load articles for tab {Tab}", SelectedTab);
+        articles = new();
+    }
+
+    isLoading = false;
+    StateHasChanged();
+}
 
     protected Task OpenDialogAsync()
     {
@@ -99,6 +140,18 @@ public class DailyLivingBase : QLComponentBase
 
         return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
     }
+    private string GetTopicNameFromTab(DailyLivingTab tab)
+{
+    return tab switch
+    {
+        DailyLivingTab.EverythingQatar => "Everything Qatar",
+        DailyLivingTab.Lifestyle => "Lifestyle",
+        DailyLivingTab.SportsNews => "Sports News",
+        DailyLivingTab.QLExclusive => "QL Exclusive",
+        DailyLivingTab.AdviceHelp => "Advice & Help",
+        _ => string.Empty
+    };
+}
     protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
     {
         ReplaceSlot = selectedEvent;
@@ -297,6 +350,18 @@ public class DailyLivingBase : QLComponentBase
         }
         return new List<EventDTO>();
     }
-
+    private async Task<List<DailyTopic>> GetActiveTopics()
+    {
+        try
+        {
+            var topics = await DailyService.GetActiveTopicsAsync();
+            return topics ?? []; 
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in GetActiveTopics");
+            return [];
+        }   
+    }
 }
 

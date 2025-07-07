@@ -32,17 +32,17 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<List<DailyLivingArticleDto>> GetFeaturedEventsAsync()
+        public async Task<List<EventDTO>> GetFeaturedEventsAsync()
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<List<DailyLivingArticleDto>>("/api/v2/dailyliving/featuredevents")
-                    ?? new List<DailyLivingArticleDto>();
+                return await _httpClient.GetFromJsonAsync<List<EventDTO>>("/api/v2/dailyliving/featuredevents")
+                    ?? new List<EventDTO>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching Featured Events articles.");
-                return new List<DailyLivingArticleDto>();
+                return new List<EventDTO>();
             }
         }
 
@@ -57,6 +57,19 @@ namespace QLN.ContentBO.WebUI.Services
             {
                 _logger.LogError(ex, "Error fetching Topic Content articles for TopicId: {TopicId}", topicId);
                 return new List<DailyLivingArticleDto>();
+            }
+        }
+        public async Task<List<DailyTopic>> GetActiveTopicsAsync()
+        {
+            try
+            {
+                return await _httpClient.GetFromJsonAsync<List<DailyTopic>>("api/v2/dailyliving/dailytopics")
+                    ?? new List<DailyTopic>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Featured Events articles.");
+                return new List<DailyTopic>();
             }
         }
     }

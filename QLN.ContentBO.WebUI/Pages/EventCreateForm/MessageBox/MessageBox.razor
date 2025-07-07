@@ -12,16 +12,22 @@
                  Label="@Placeholder"
                  Variant="Variant.Outlined"
                  @bind-Value="SelectedEvent.Event"
+                 @bind-SearchText="_searchText"
                  Adornment="Adornment.None"
                  SearchFunc="SearchEventTitles"
                  ToStringFunc="@(e => e?.EventTitle ?? string.Empty)"
                  ResetValueOnEmptyText="true"
                  CoerceText="true"
-                 Clearable="true">
+                 Clearable="true"
+                 OnSearchTextChanged="ValidateTypedText">
     <ItemTemplate Context="eventItem">
         <MudText>@eventItem.EventTitle</MudText>
     </ItemTemplate>
 </MudAutocomplete>
+            @if (!string.IsNullOrEmpty(_autocompleteError))
+            {
+                    <div class="mud-error-text">@_autocompleteError</div>
+            }
         <div class="mt-4 d-flex flex-column gap-2">
         <MudButton Variant="Variant.Filled"  Class="mt-4 custom-add-btn" OnClick="AddClicked">
             Add

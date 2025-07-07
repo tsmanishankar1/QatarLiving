@@ -164,6 +164,7 @@ namespace QLN.ContentBO.WebUI.Pages
         [JSInvokable]
         public static Task UpdateLatLng(double lat, double lng)
         {
+            Console.WriteLine($"Latitude: {lat}, Longitude: {lng}");
             return Task.CompletedTask;
         }
         protected Task OpenDialogAsync()
@@ -351,6 +352,14 @@ namespace QLN.ContentBO.WebUI.Pages
                 _timeError = "Start Time and End Time are required.";
                 hasError = true;
             }
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+            {
+                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
+                {
+                    _timeError = "Please enter a valid start and end time.";
+                    hasError = true;
+                }
+            }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
@@ -371,6 +380,10 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             try
             {
+                if (int.TryParse(SelectedLocationId, out int value))
+                {
+                    CurrentEvent.LocationId = value;
+                }
                 CurrentEvent.Status = EventStatus.Published;
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
@@ -452,12 +465,12 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
-            var existingSlot = CurrentEvent.EventSchedule.TimeSlots
+            var existingSlot = CurrentEvent?.EventSchedule?.TimeSlots
                  .FirstOrDefault(ts => ts.DayOfWeek == entry.Date.DayOfWeek);
 
             if (existingSlot != null)
             {
-                CurrentEvent.EventSchedule.TimeSlots.Remove(existingSlot);
+                CurrentEvent?.EventSchedule?.TimeSlots?.Remove(existingSlot);
             }
             else
             {

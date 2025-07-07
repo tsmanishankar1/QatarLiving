@@ -145,53 +145,44 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
         protected override async Task OnParametersSetAsync()
-{
-    Categories = await GetEventsCategories();
-    var locationsResponse = await GetEventsLocations();
-    Locations = locationsResponse?.Locations ?? [];
-
-    // Fetch event first
-    CurrentEvent = await GetEventById(Id);
-    _editContext = new EditContext(CurrentEvent);
-
-    // Location mapping
-    SelectedLocationId = Locations?
-        .FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
-        ?.Id;
-
-    // Set coordinates if valid
-    if (double.TryParse(CurrentEvent?.Latitude, out var lat) &&
-        double.TryParse(CurrentEvent?.Longitude, out var lng))
-    {
-        latitude = lat;
-        Longitude = lng;
-    }
-
-    // Date range
-    var startDate = CurrentEvent?.EventSchedule?.StartDate;
-    var endDate = CurrentEvent?.EventSchedule?.EndDate;
-
-    if (startDate.HasValue && endDate.HasValue &&
-        startDate.Value != DateOnly.MinValue && endDate.Value != DateOnly.MinValue)
-    {
-        _dateRange = new DateRange(
-            startDate.Value.ToDateTime(TimeOnly.MinValue),
-            endDate.Value.ToDateTime(TimeOnly.MinValue)
-        );
-        SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
-    }
-    else
-    {
-        _dateRange = null;
-        SelectedDateLabel = "No valid date selected";
-    }
-     var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
-            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
-            {
-                GeneratePerDayTimeList();
-            }
-    _shouldInitializeMap = true;
-}
+        {
+            Categories = await GetEventsCategories();
+            var locationsResponse = await GetEventsLocations();
+            Locations = locationsResponse?.Locations ?? [];
+            CurrentEvent = await GetEventById(Id);
+            _editContext = new EditContext(CurrentEvent);   
+            SelectedLocationId = Locations?
+                .FirstOrDefault(loc => loc.Name.Equals(CurrentEvent?.Location, StringComparison.OrdinalIgnoreCase))
+                    ?.Id;
+            if (double.TryParse(CurrentEvent?.Latitude, out var lat) &&
+                double.TryParse(CurrentEvent?.Longitude, out var lng))
+                {
+                    latitude = lat;
+                    Longitude = lng;
+                }
+                var startDate = CurrentEvent?.EventSchedule?.StartDate;
+                var endDate = CurrentEvent?.EventSchedule?.EndDate;
+            if (startDate.HasValue && endDate.HasValue &&
+                startDate.Value != DateOnly.MinValue && endDate.Value != DateOnly.MinValue)
+                {
+                    _dateRange = new DateRange(
+                        startDate.Value.ToDateTime(TimeOnly.MinValue),
+                        endDate.Value.ToDateTime(TimeOnly.MinValue)
+                        );
+                    SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
+                }
+                else
+                {
+                     _dateRange = null;
+                     SelectedDateLabel = "No valid date selected";
+                }
+                var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
+                if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
+                {
+                    GeneratePerDayTimeList();
+                }
+                _shouldInitializeMap = true;
+        }
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (_shouldInitializeMap)
@@ -445,6 +436,14 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 _coverImageError = "Cover Image is required.";
                 hasError = true;
+            }
+             if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
+            {
+                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
+                {
+                    _timeError = "Please enter a valid start and end time.";
+                    hasError = true;
+                }
             }
 
             if (hasError)
