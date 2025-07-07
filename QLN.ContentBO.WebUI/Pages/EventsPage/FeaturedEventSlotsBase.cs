@@ -37,53 +37,38 @@ namespace QLN.ContentBO.WebUI.Pages
                 await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
             }
         }
+      [JSInvokable]
+    public async Task OnTableReordered(List<string> newOrder)
+    {
+        // Convert slot numbers to int
+        var newSlotOrder = newOrder.Select(int.Parse).ToList();
 
-        [JSInvokable]
-        public async Task OnTableReordered(List<string> newOrder)
+        // Build a map from slotNumber to eventId from the current state
+        var eventMap = FeaturedEventSlots
+            .Where(s => s.Event != null)
+            .ToDictionary(s => s.SlotNumber, s => s.Event.Id);
+
+        // Prepare new assignments by mapping each new slot number
+        var slotAssignments = newSlotOrder.Select((slotNumber, index) => new
         {
-            var newSignature = string.Join(",", newOrder);
-            Logger.LogInformation("New slot order received: {Order}", newSignature);
+            slotNumber = index + 1, // visual/ordered slot position
+            eventId = eventMap.TryGetValue(slotNumber, out var eventId) && eventId != Guid.Empty 
+            ? (Guid?)eventId 
+            : null
+        }).ToList();
 
-            // Compare only once
-            var currentOrder = FeaturedEventSlots.OrderBy(s => s.SlotNumber).Select(s => s.SlotNumber.ToString()).ToList();
-            if (newSignature == string.Join(",", currentOrder))
+        var response = await EventsService.ReorderFeaturedSlots(slotAssignments, UserId);
+            if (response.IsSuccessStatusCode)
             {
-                Logger.LogInformation("Same order as before, skipping API call.");
-                return;
+                Snackbar.Add("slots reordered successfully.", Severity.Success);
             }
 
-            // Find the first difference (simple diff)
-            for (int i = 0; i < newOrder.Count; i++)
+        if (!response.IsSuccessStatusCode)
             {
-                var newSlotId = int.Parse(newOrder[i]);
-                var expectedSlotId = FeaturedEventSlots[i].SlotNumber;
-
-                if (newSlotId != expectedSlotId)
-                {
-                    int fromSlot = FeaturedEventSlots.First(s => s.SlotNumber == newSlotId).SlotNumber;
-                    int toSlot = i + 1;
-
-                    Logger.LogInformation("Calling reorder API: fromSlot={From} toSlot={To} userId={UserId}", fromSlot, toSlot, UserId);
-                    var response = await EventsService.ReorderFeaturedSlots(fromSlot, toSlot, UserId);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        Logger.LogInformation("Successfully reordered slot from {From} to {To}", fromSlot, toSlot);
-                        Snackbar.Add($"Slot reordered from {fromSlot} to {toSlot}.", Severity.Success);
-                    }
-                    else
-                    {
-                        var error = await response.Content.ReadAsStringAsync();
-                        Logger.LogError("Reorder failed: {Status} - {Error}", response.StatusCode, error);
-                         Snackbar.Add("Failed to reorder slot. Try again.", Severity.Error);
-                    }
-
-                    break; // Only process the first change
-                }
+                Snackbar.Add("Failed to reorder slots", Severity.Error);
+                Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
             }
+    }
 
-            // ✅ Refresh list from backend (optional but safer)
-            StateHasChanged();
-        }
     }
 }

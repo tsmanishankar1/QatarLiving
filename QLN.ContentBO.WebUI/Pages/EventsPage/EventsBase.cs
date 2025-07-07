@@ -68,6 +68,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             PaginatedData = await GetEvents(currentPage, pageSize);
             StateHasChanged();
         }
+        protected async Task HandleReorderComplete()
+        {
+            await GetFeaturedSlotsAsync();
+            StateHasChanged();
+        }
+
         protected bool SortAscending = true;
 
         protected async Task HandleSortOrderChange(bool ascending)
@@ -82,7 +88,15 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
-            AllEventsList = await GetAllEvents();
+            var allEvents = await GetAllEvents();
+            var featuredEventTitles = featuredEventSlots
+                .Where(slot => slot.Event != null)
+                .Select(slot => slot.Event.EventTitle)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase); // for case-insensitive comparison
+
+            AllEventsList = allEvents
+                .Where(e => !featuredEventTitles.Contains(e.EventTitle))
+                .ToList();
         }
         protected EventDTO? draggedItem;
 
