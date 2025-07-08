@@ -328,13 +328,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
         }
 
         public async Task<CommunityCommentListResponse> GetCommentsByPostIdAsync(
-            Guid postId,
-            int? page = null,
-            int? perPage = null,
-            CancellationToken ct = default)
+      Guid postId,
+      int? page = null,
+      int? perPage = null,
+      CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
-            // Defensive: Deduplicate if any accidental dups in index
             var index = (await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct)
                 ?? new List<Guid>()).Distinct().ToList();
 
@@ -343,7 +342,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             int itemsPerPage = perPage ?? 10;
             int skip = (currentPage - 1) * itemsPerPage;
 
-            // Pagination
             var pagedCommentIds = index.Skip(skip).Take(itemsPerPage).ToList();
             var commentKeys = pagedCommentIds
                 .Select(id => $"comment-{postId}-{id}")
@@ -355,10 +353,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             foreach (var state in commentStates)
             {
                 if (string.IsNullOrWhiteSpace(state.Value))
-                {
-                    _logger.LogWarning("Orphaned comment ID in index for post {PostId}: {Key}", postId, state.Key);
                     continue;
-                }
 
                 CommunityCommentDto? comment = null;
                 try
@@ -368,9 +363,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                         PropertyNameCaseInsensitive = true
                     });
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    _logger.LogError(ex, "Failed to deserialize comment: {Key} Value: {Value}", state.Key, state.Value);
                     continue;
                 }
 
@@ -380,13 +374,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 comments.Add(comment);
             }
 
-            // Optional: update index if orphans found (keeps index clean over time)
-            if (comments.Count < pagedCommentIds.Count)
-            {
-                var cleanedIndex = index.Where(id => comments.Any(c => c.CommentId == id)).ToList();
-                await _dapr.SaveStateAsync(StoreName, indexKey, cleanedIndex, cancellationToken: ct);
-            }
-
+            // Defensive: if no comments found, return empty list (never null)
             comments = comments.OrderByDescending(c => c.CommentedAt).ToList();
 
             return new CommunityCommentListResponse
@@ -394,7 +382,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 TotalComments = total,
                 PerPage = itemsPerPage,
                 CurrentPage = currentPage,
-                Comments = comments
+                Comments = comments // can be empty, but never null
             };
         }
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
