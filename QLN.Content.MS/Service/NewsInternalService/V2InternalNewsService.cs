@@ -711,6 +711,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
+
         public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
@@ -729,16 +730,19 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     .Take(itemsPerPage)
                     .ToList();
 
-                var commentKeys = pagedCommentIds
+                var commentKeys = index
                     .Select(id => $"{V2Content.NewsCommentPrefix}-{nid}-{id}")
                     .ToList();
 
                 var commentStates = await _dapr.GetBulkStateAsync(
-                    V2Content.ContentStoreName,
-                    commentKeys,
-                    null);
+                   storeName: V2Content.ContentStoreName,
+                   keys: commentKeys,
+                   parallelism: null, 
+                   metadata: null,
+                   cancellationToken: ct
+                );
 
-                var comments = new List<NewsCommentListItem>();
+                var allComments = new List<V2NewsCommentDto>();
 
                 foreach (var state in commentStates)
                 {
@@ -750,28 +754,61 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         PropertyNameCaseInsensitive = true
                     });
 
-                    if (comment == null || !comment.IsActive)
-                        continue;
+                    if (comment != null && comment.IsActive)
+                        allComments.Add(comment);
+                }
 
-                    var likeIndexKey = $"news-comment-like-index-{comment.CommentId}";
-                    var dislikeIndexKey = $"news-comment-dislike-index-{comment.CommentId}";
+                var grouped = allComments
+                    .GroupBy(c => c.ParentCommentId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
 
-                    var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct)
-                                ?? new List<string>();
+                var topLevel = grouped.ContainsKey(null) ? grouped[null] : new List<V2NewsCommentDto>();
+                var comments = new List<NewsCommentListItem>();
 
-                    var dislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct)
-                        ?? new List<string>();
+                foreach (var parent in topLevel)
+                {
+                    var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";
+                    var dislikeIndexKey = $"news-comment-dislike-index-{parent.CommentId}";
 
-                    comments.Add(new NewsCommentListItem
+                    var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();
+                    var dislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct) ?? new();
+
+                    var commentItem = new NewsCommentListItem
                     {
-                        CommentId = comment.CommentId,
-                        UserId = comment.Uid ?? string.Empty,
-                        UserName = comment.UserName ?? string.Empty,
-                        Subject = comment.Comment,
-                        DateCreated = comment.CommentedAt,
+                        CommentId = parent.CommentId,
+                        UserId = parent.Uid ?? "",
+                        UserName = parent.UserName ?? "",
+                        Subject = parent.Comment,
+                        DateCreated = parent.CommentedAt,
                         LikeCount = likes.Count,
-                        DislikeCount = dislikes.Count
-                    });
+                        DislikeCount = dislikes.Count,
+                        Replies = new List<NewsCommentListItem>()
+                    };
+                    
+                    if (grouped.ContainsKey(parent.CommentId))
+                    {
+                        foreach (var reply in grouped[parent.CommentId])
+                        {
+                            var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";
+                            var replyDislikeKey = $"news-comment-dislike-index-{reply.CommentId}";
+
+                            var replyLikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();
+                            var replyDislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, replyDislikeKey, cancellationToken: ct) ?? new();
+
+                            commentItem.Replies.Add(new NewsCommentListItem
+                            {
+                                CommentId = reply.CommentId,
+                                UserId = reply.Uid ?? "",
+                                UserName = reply.UserName ?? "",
+                                Subject = reply.Comment,
+                                DateCreated = reply.CommentedAt,
+                                LikeCount = replyLikes.Count,
+                                DislikeCount = replyDislikes.Count
+                            });
+                        }
+                    }
+
+                    comments.Add(commentItem);
                 }
 
                 return new NewsCommentListResponse

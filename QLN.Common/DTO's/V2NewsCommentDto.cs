@@ -29,6 +29,9 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [JsonPropertyName("parentCommentId")]
+        public Guid? ParentCommentId { get; set; }
     }
 
     public class NewsCommentApiResponse

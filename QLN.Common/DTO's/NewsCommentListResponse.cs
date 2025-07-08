@@ -25,5 +25,6 @@ namespace QLN.Common.DTO_s
         public string Subject { get; set; }
         public DateTime DateCreated { get; set; }
         public bool IsActive { get; set; } = true;
+        public List<NewsCommentListItem>? Replies { get; set; } = new();
     }
 }
