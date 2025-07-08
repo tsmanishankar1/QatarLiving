@@ -49,17 +49,17 @@
                                         FeaturedEventSlots="featuredEventSlots"
                                         Categories="Categories"
                                         ReplaceSlot="ReplaceEventSlot"
-                                        OnDelete="DeleteFeatureEvent" />
+                                        OnDelete="DeleteEventOnClick" />
             }
         }
-        else if (articles is null || !articles.Any())
+        @* else if (articles is null || !articles.Any())
         {
             <EmptyCard Title="No Content Found"
                        Subtitle="Please check back later." />
-        }
+        } *@
         else if(SelectedTab == DailyLivingTab.TopSection)
         {
-            <MudArticleTable Articles="articles" ReplaceItem="ReplaceItem"/>
+            <MudArticleTable Articles="articles" ReplaceItem="ReplaceTopSectionItem"/>
         }
         else if(SelectedTab != DailyLivingTab.TopSection){
             <DailyTopicsTable 

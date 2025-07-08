@@ -145,26 +145,35 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var payload = new
+                object payload; 
+                if (article.ContentType == 3)
                 {
-                    slotType = article.SlotType == 0 ? 1 : article.SlotType,
-                    title = string.IsNullOrWhiteSpace(article.Title) ? "string" : article.Title,
-                    category = string.IsNullOrWhiteSpace(article.Category) ? "string" : article.Category,
-                    subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "string" : article.Subcategory,
-                    relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                    contentType = article.ContentType == 0 ? 1 : article.ContentType,
-                    publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
-                    endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
-                    slotNumber = article.SlotNumber == 0 ? 1 : article.SlotNumber,
-                    createdBy = string.IsNullOrWhiteSpace(article.CreatedBy) ? "string" : article.CreatedBy,
-                    createdAt = article.CreatedAt == default ? DateTime.UtcNow : article.CreatedAt,
-                    updatedBy = string.IsNullOrWhiteSpace(article.UpdatedBy) ? "string" : article.UpdatedBy,
-                    updatedAt = article.UpdatedAt ?? DateTime.UtcNow,
-                    topicId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId
-                };
-                Console.WriteLine("Payload being sent:");
-                Console.WriteLine(payload);
-
+                     payload = new
+                    {
+                        contentType = article.ContentType,
+                        topicId = article.TopicId,
+                        contentUrl = article.ContentURL
+                    };
+                }
+                else
+                {
+                    payload = new
+                    {
+                        slotType = article.SlotType == 0 ? 1 : article.SlotType,
+                        title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
+                        category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
+                        subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                        contentType = article.ContentType == 0 ? 1 : article.ContentType,
+                        publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
+                        endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
+                        createdBy = string.IsNullOrWhiteSpace(article.CreatedBy) ? "unknown" : article.CreatedBy,
+                        createdAt = article.CreatedAt == default ? DateTime.UtcNow : article.CreatedAt,
+                        updatedBy = string.IsNullOrWhiteSpace(article.UpdatedBy) ? "unknown" : article.UpdatedBy,
+                        updatedAt = article.UpdatedAt ?? DateTime.UtcNow,
+                        topicId = article.TopicId
+                    };
+                }
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
                 {
                     WriteIndented = true
@@ -186,37 +195,86 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> ReplaceArticle(DailyLivingArticleDto article)
+        {
+            try
+            {
+                object payload;
+                if (article.ContentType == 3)
+                {
+                    payload = new
+                    {
+                        contentType = article.ContentType,
+                        topicId = article.TopicId,
+                        slotNumber = article.SlotNumber,
+                        contentUrl = article.ContentURL
+                    };
+                }
+                else
+                {
+                    payload = new
+                    {
+                        slotType = article.SlotType,
+                        title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
+                        category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
+                        subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                        contentType = article.ContentType == 0 ? 1 : article.ContentType,
+                        publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
+                        endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
+                        slotNumber = article.SlotNumber,
+                        createdBy = string.IsNullOrWhiteSpace(article.CreatedBy) ? "unknown" : article.CreatedBy,
+                        createdAt = article.CreatedAt == default ? DateTime.UtcNow : article.CreatedAt,
+                        updatedBy = string.IsNullOrWhiteSpace(article.UpdatedBy) ? "unknown" : article.UpdatedBy,
+                        updatedAt = article.UpdatedAt ?? DateTime.UtcNow,
+                        topicId = article.TopicId
+                    };
+                }
+                var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content")
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "CreateArticle");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage> ReplaceTopSectionArticle(DailyLivingArticleDto article)
         {
             try
             {
                 var payload = new
                 {
-                    slotType = article.SlotType == 0 ? 1 : article.SlotType,
-                    title = string.IsNullOrWhiteSpace(article.Title) ? "string" : article.Title,
-                    category = string.IsNullOrWhiteSpace(article.Category) ? "string" : article.Category,
-                    subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "string" : article.Subcategory,
+                    id = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                    slotType = article.SlotType,
+                    title = article.Title,
+                    category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
+                    subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
                     relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                    contentType = article.ContentType == 0 ? 1 : article.ContentType,
-                    publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
-                    endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
-                    slotNumber = article.SlotNumber == 0 ? 1 : article.SlotNumber,
-                    createdBy = string.IsNullOrWhiteSpace(article.CreatedBy) ? "string" : article.CreatedBy,
-                    createdAt = article.CreatedAt == default ? DateTime.UtcNow : article.CreatedAt,
-                    updatedBy = string.IsNullOrWhiteSpace(article.UpdatedBy) ? "string" : article.UpdatedBy,
-                    updatedAt = article.UpdatedAt ?? DateTime.UtcNow,
-                    topicId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId
+                    contentType = 1,
+                    publishedDate = article.PublishedDate.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    endDate = (article.EndDate ?? DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    slotNumber = article.SlotNumber,
+                    createdBy = article.CreatedBy.ToString(),
+                    createdAt = article.CreatedAt.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    updatedBy = article.UpdatedBy.ToString(),
+                    updatedAt = article.UpdatedAt?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
                 };
-                Console.WriteLine("Payload being sent:");
-                Console.WriteLine(payload);
-
                 var jsonPayload = JsonSerializer.Serialize(payload, new JsonSerializerOptions
                 {
                     WriteIndented = true
                 });
-
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
-
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topsection")
                 {
                     Content = content

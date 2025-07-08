@@ -74,7 +74,35 @@ public class DailyLivingBase : QLComponentBase
             WriteIndented = true
         });
         ReplaceArticle = item;
-        OpenRadioAutoCompleteDialog();
+        OpenRadioDialog();
+    }
+    protected async Task ReplaceTopSectionItem(DailyLivingArticleDto item)
+    {
+        var json = JsonSerializer.Serialize(item, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        ReplaceArticle = item;
+        OpenTopSectionRadioDialog();
+    }
+    private async Task OpenTopSectionRadioDialog()
+    {
+        var parameters = new DialogParameters
+    {
+        { nameof(RadioAutoCompleteDialog.Title), "" },
+        { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
+        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceTopSectionArticles) }
+    };
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            NoHeader = true
+        };
+
+        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        await dialog.Result;
     }
     private async Task OpenRadioAutoCompleteDialog()
     {
@@ -82,7 +110,28 @@ public class DailyLivingBase : QLComponentBase
     {
         { nameof(RadioAutoCompleteDialog.Title), "" },
         { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
+        { nameof(RadioAutoCompleteDialog.origin), "dailyTopic" },
         { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, activeIndex == 0 ? ReplaceArticles : AddArticles) }
+    };
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            NoHeader = true
+        };
+
+        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        await dialog.Result;
+    }
+    private async Task OpenRadioDialog()
+    {
+        var parameters = new DialogParameters
+    {
+        { nameof(RadioAutoCompleteDialog.Title), "" },
+        { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
+        { nameof(RadioAutoCompleteDialog.origin), "dailyTopic" },
+        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceArticles) }
     };
         var options = new DialogOptions
         {
@@ -537,7 +586,7 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-            article.RelatedContentId = selectedTopic.Id;
+            article.TopicId = selectedTopic.Id;
             var topics = await DailyService.AddArticle(article);
             if (topics.IsSuccessStatusCode)
             {
@@ -554,16 +603,17 @@ public class DailyLivingBase : QLComponentBase
             Logger.LogError(ex, "AddArticles");
         }
     }
-    protected async Task ReplaceArticles(DailyLivingArticleDto article)
+    protected async Task ReplaceTopSectionArticles(DailyLivingArticleDto article)
     {
         try
         {
-            article.RelatedContentId = selectedTopic.Id;
             article.SlotNumber = ReplaceArticle.SlotNumber;
-            var topics = await DailyService.AddArticle(article);
+            article.SlotType = ReplaceArticle.SlotNumber;
+            article.TopicId = selectedTopic.Id;
+            var topics = await DailyService.ReplaceTopSectionArticle(article);
             if (topics.IsSuccessStatusCode)
             {
-                Snackbar.Add("Article Added Successfully", Severity.Success);
+                Snackbar.Add("Article Replaced Successfully", Severity.Success);
                 await OnTabChanged(activeIndex);
             }
             else
@@ -573,8 +623,43 @@ public class DailyLivingBase : QLComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "AddArticles");
+            Logger.LogError(ex, "ReplaceArticles");
         }
+    }
+    protected async Task ReplaceArticles(DailyLivingArticleDto article)
+    {
+        try
+        {
+            article.SlotNumber = ReplaceArticle.SlotNumber;
+            article.TopicId = selectedTopic.Id;
+            var topics = await DailyService.ReplaceArticle(article);
+            if (topics.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Article Replaced Successfully", Severity.Success);
+                await OnTabChanged(activeIndex);
+            }
+            else
+            {
+                Snackbar.Add("Failed to add article", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ReplaceArticles");
+        }
+    }
+    protected async Task DeleteEventOnClick(string id)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", "Delete Confirmation" },
+            { "Descrption", "Do you want to delete this Event?" },
+            { "ButtonTitle", "Delete" },
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent(id))}
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
     }
 
 }
