@@ -219,7 +219,7 @@
                 <div class="mud-error-text">@_descriptionerror</div>
             }
              <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
-            <button type="button" class="event-custom-close full-width">Cancel</button>
+            <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
             <button type="submit" class="event-custom-add full-width">
                   @if (IsLoading)
                         {
