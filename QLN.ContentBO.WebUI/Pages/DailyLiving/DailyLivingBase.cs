@@ -115,17 +115,11 @@ public class DailyLivingBase : QLComponentBase
         return DialogService.ShowAsync<MessageBox>("", parameters, options);
     }
 
-
-
-
-
-
-
-
     protected async Task DeleteHandler(string id)
     {
 
     }
+
     protected async Task RenameHandler()
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
@@ -134,19 +128,28 @@ public class DailyLivingBase : QLComponentBase
         }
     }
 
-
     protected override async Task OnInitializedAsync()
     {
-        await OnTabChanged(0);
-        featuredEventSlots = await GetFeaturedSlotsAsync();
-        Categories = await GetEventsCategories();
-        AllEventsList = await GetAllEvents();
-        ActiveTopics = await GetActiveTopics();
-        ActiveTopics = await GetActiveTopics();
-        if (ActiveTopics?.Any() == true)
+        try
         {
-            selectedTopic = ActiveTopics.First();
-            AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
+          //  await AuthorizedPage();
+
+            await OnTabChanged(0);
+            featuredEventSlots = await GetFeaturedSlotsAsync();
+            Categories = await GetEventsCategories();
+            AllEventsList = await GetAllEvents();
+            ActiveTopics = await GetActiveTopics();
+            ActiveTopics = await GetActiveTopics();
+            if (ActiveTopics?.Any() == true)
+            {
+                selectedTopic = ActiveTopics.First();
+                AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnInitializedAsync");
+            throw;
         }
     }
 
