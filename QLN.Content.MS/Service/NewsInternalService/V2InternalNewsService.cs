@@ -481,7 +481,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             int catId = request.CategoryId;
             int subCatId = request.SubCategoryId;
 
-            // 1) Validate count & slot numbers
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
@@ -489,7 +488,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             if (slots.Distinct().Count() != MaxSlot || slots.Any(n => n < 1 || n > MaxSlot))
                 throw new InvalidDataException($"SlotNumber must be unique and between 1 and {MaxSlot}.");
 
-            // 2) Preload all referenced articles
             var loaded = new Dictionary<string, V2NewsArticleDTO>();
             foreach (var sa in request.SlotAssignments)
             {
@@ -503,8 +501,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 if (article == null)
                     throw new InvalidDataException($"Article with ID '{sa.ArticleId}' not found.");
-
-                // ensure it belongs to this category/subcategory
+                
                 if (!article.Categories.Any(c =>
                       c.CategoryId == catId &&
                       c.SubcategoryId == subCatId))
@@ -516,21 +513,21 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 loaded[sa.ArticleId] = article;
             }
 
-            // 3) Write each slot
+            
             foreach (var sa in request.SlotAssignments)
             {
                 string slotKey = GetSlotKey(catId, subCatId, sa.SlotNumber);
 
                 if (string.IsNullOrWhiteSpace(sa.ArticleId))
                 {
-                    // clear this slot
+                    
                     await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
                     continue;
                 }
 
                 var article = loaded[sa.ArticleId]!;
 
-                // update the matching Category DTO inside the article (if you track slot there)
+                
                 var catDto = article.Categories
                     .First(c => c.CategoryId == catId && c.SubcategoryId == subCatId);
                 catDto.SlotId = sa.SlotNumber;
@@ -757,8 +754,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         continue;
 
                     var likeIndexKey = $"news-comment-like-index-{comment.CommentId}";
+                    var dislikeIndexKey = $"news-comment-dislike-index-{comment.CommentId}";
+
                     var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct)
                                 ?? new List<string>();
+
+                    var dislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct)
+                        ?? new List<string>();
 
                     comments.Add(new NewsCommentListItem
                     {
@@ -767,7 +769,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         UserName = comment.UserName ?? string.Empty,
                         Subject = comment.Comment,
                         DateCreated = comment.CommentedAt,
-                        LikeCount = likes.Count
+                        LikeCount = likes.Count,
+                        DislikeCount = dislikes.Count
                     });
                 }
 
@@ -822,6 +825,44 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            var key = $"news-comment-dislike-{commentId}-{userId}";
+            var indexKey = $"news-comment-dislike-index-{commentId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+
+                if (!string.IsNullOrWhiteSpace(existing))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
+                    index.Remove(userId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                    _logger.LogInformation("User {UserId} removed dislike from comment {CommentId}", userId, commentId);
+                    return false;
+                }
+
+                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
+
+                if (!index.Contains(userId))
+                    index.Add(userId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                _logger.LogInformation("User {UserId} disliked comment {CommentId}", userId, commentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling dislike for comment {CommentId}", commentId);
+                throw;
+            }
+        }
+
 
     }
 }

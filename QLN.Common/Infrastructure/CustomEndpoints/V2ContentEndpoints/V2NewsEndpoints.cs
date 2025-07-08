@@ -1135,6 +1135,85 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapPost("/commentsdislike/{commentId}", async Task<Results<
+            Ok<bool>,
+            ForbidHttpResult,
+            ProblemHttpResult>>
+            (
+            string commentId,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken ct
+            ) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                    return TypedResults.Forbid();
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
+
+                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle dislike for news comment.", ex.Message);
+            }
+        })
+            .WithName("DislikeNewsCommentJWT")
+            .WithTags("News")
+            .WithSummary("Toggle dislike on a comment (JWT-based)")
+            .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
+            .Produces<bool>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/commentsdislike/byid/{commentId}", async Task<Results<
+            Ok<bool>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            string commentId,
+            [FromQuery] string userId,
+            IV2NewsService service,
+            CancellationToken ct
+            ) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User ID",
+                        Detail = "The 'userId' query parameter is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle dislike (by user ID).", ex.Message);
+            }
+        })
+            .ExcludeFromDescription()
+            .WithName("DislikeNewsCommentByUserId")
+            .WithTags("News")
+            .WithSummary("Toggle dislike with explicit user ID")
+            .WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
+            .Produces<bool>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
         return group;
     }
 }
