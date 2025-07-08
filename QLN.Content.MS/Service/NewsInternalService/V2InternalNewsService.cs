@@ -596,9 +596,17 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             return "News slots updated successfully.";
         }
-        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _dapr.GetStateAsync<V2NewsArticleDTO>(V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
+            var result = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                V2Content.ContentStoreName,
+                id.ToString(),
+                cancellationToken: cancellationToken);
+
+            if (result == null || !result.IsActive)
+                return null;
+
+            return result;
         }
 
         public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)

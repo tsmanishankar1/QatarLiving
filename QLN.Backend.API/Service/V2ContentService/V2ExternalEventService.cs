@@ -108,6 +108,10 @@ namespace QLN.Backend.API.Service.V2ContentService
                     cancellationToken
                 ) ?? new List<V2Events>();
             }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving all events.");

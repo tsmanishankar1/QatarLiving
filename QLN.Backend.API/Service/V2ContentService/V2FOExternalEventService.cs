@@ -11,12 +11,10 @@ namespace QLN.Backend.API.Service.V2ContentService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2ExternalEventService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
-        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, IFileStorageBlobService blobStorage)
+        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger)
         {
             _dapr = dapr;
             _logger = logger;
-            _blobStorage = blobStorage;
         }
         public async Task<V2Events> GetEventBySlug(string slug, CancellationToken cancellationToken = default)
         {

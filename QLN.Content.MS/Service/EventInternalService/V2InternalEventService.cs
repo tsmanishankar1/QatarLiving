@@ -21,6 +21,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(dto.EventTitle))
+                    throw new ArgumentException("Event title must not be empty.");
                 if (dto.EventType == V2EventType.FeePrice)
                 {
                     if (dto.Price == null)
@@ -236,27 +238,22 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var result = await _dapr.GetStateAsync<V2Events>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
-                if (result == null)
-                    throw new KeyNotFoundException($"Event with id '{id}' was not found.");
-                if (!result.IsActive)
-                    return null;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving event with ID: {id}", ex);
-            }
+            var result = await _dapr.GetStateAsync<V2Events>(
+                ConstantValues.V2Content.ContentStoreName,
+                id.ToString(),
+                cancellationToken: cancellationToken);
+
+            if (result == null || !result.IsActive)
+                return null;
+
+            return result;
         }
         public async Task<string> UpdateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(dto.EventTitle))
+                    throw new ArgumentException("Event title must not be empty.");
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Event ID is required for update.");
                 if (dto.EventType == V2EventType.FeePrice)
@@ -297,7 +294,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     RedirectionLink = dto.RedirectionLink,
                     EventDescription = dto.EventDescription,
                     CoverImage = dto.CoverImage,
-                    IsFeatured = dto.IsFeatured,
+                    IsFeatured = false,
                     FeaturedSlot = dto.FeaturedSlot,
                     Status = dto.Status,
                     PublishedDate = shouldUpdatePublishedDate ? DateTime.UtcNow : existing.PublishedDate,
@@ -420,20 +417,13 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<EventsCategory?> GetEventCategoryById(int id, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var result = await _dapr.GetStateAsync<EventsCategory>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    id.ToString(),
-                    cancellationToken: cancellationToken);
-                if (result == null)
-                    throw new KeyNotFoundException($"Event with id '{id}' was not found.");
-                return result;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving event with ID: {id}", ex);
-            }
+            var result = await _dapr.GetStateAsync<EventsCategory>(
+                  ConstantValues.V2Content.ContentStoreName,
+                  id.ToString(),
+                  cancellationToken: cancellationToken);
+            if (result == null)
+                return null;
+            return result;
         }
         public async Task<PagedResponse<V2Events>> GetPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
         {
