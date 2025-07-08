@@ -17,50 +17,46 @@ namespace QLN.ContentBO.WebUI.Services
         }
 
         public async Task<HttpResponseMessage> GetEventsByPagination(
-            int page,
-            int perPage,
-            string? search = null,
-            int? categoryId = null,
-            string? sortOrder = null,
-            string? fromDate = null,
-            string? toDate = null,
-            string? filterType = null,
-            string? location = null,
-            bool? freeOnly = null,
-            bool? featuredFirst = null,
-             int? status = null)
+    int page,
+    int perPage,
+    string? search = null,
+    int? categoryId = null,
+    string? sortOrder = null,
+    string? fromDate = null,
+    string? toDate = null,
+    string? filterType = null,
+    string? location = null,
+    bool? freeOnly = null,
+    bool? featuredFirst = null,
+    int? status = null)
         {
             try
             {
-                var queryParams = new Dictionary<string, string?>
+
+                var requestBody = new GetPagedEventsRequest
                 {
-                    ["page"] = page.ToString(),
-                    ["perPage"] = perPage.ToString(),
-                    ["search"] = search,
-                    ["categoryId"] = categoryId?.ToString(),
-                    ["sortOrder"] = sortOrder,
-                    ["fromDate"] = fromDate,
-                    ["toDate"] = toDate,
-                    ["filterType"] = filterType,
-                    ["location"] = location,
-                    ["freeOnly"] = freeOnly?.ToString()?.ToLower(),
-                    ["featuredFirst"] = featuredFirst?.ToString()?.ToLower(),
-                    ["status"] = status?.ToString()
+                    Page = page,
+                    PerPage = perPage,
+                    Search = search,
+                    CategoryId = categoryId,
+                    SortOrder = sortOrder,
+                    FromDate = string.IsNullOrEmpty(fromDate) ? null : DateOnly.Parse(fromDate),
+                    ToDate = string.IsNullOrEmpty(toDate) ? null : DateOnly.Parse(toDate),
+                    FilterType = filterType,
+                    FreeOnly = freeOnly,
+                    FeaturedFirst = featuredFirst,
+                    Status = status.HasValue ? (EventStatus?)status.Value : null
                 };
 
-                var queryString = string.Join("&",
-                    queryParams
-                        .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
-                        .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}")
-                );
+                var json = JsonSerializer.Serialize(requestBody);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var request = new HttpRequestMessage(
-                    HttpMethod.Get,
-                    $"api/v2/event/getpaginatedevents?{queryString}"
-                );
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/getpaginatedevents")
+                {
+                    Content = content
+                };
 
-                var response = await _httpClient.SendAsync(request);
-                return response;
+                return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
             {
@@ -69,15 +65,16 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+
         public async Task<HttpResponseMessage> CreateEvent(EventDTO events)
         {
             try
-    {
-        var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
-        {
-            WriteIndented = true 
-        });
-        var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+            {
+                var jsonPayload = JsonSerializer.Serialize(events, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                var eventsJson = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/create")
                 {
@@ -204,36 +201,36 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-       public async Task<HttpResponseMessage> UpdateFeaturedEvents(object payload)
-{
-    try
-    {
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-        Logger.LogInformation("Sending payload to update featured event: {Payload}", json);
-
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/updatefeaturedevent")
+        public async Task<HttpResponseMessage> UpdateFeaturedEvents(object payload)
         {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Logger.LogInformation("Sending payload to update featured event: {Payload}", json);
 
-        var response = await _httpClient.SendAsync(request);
-        return response;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "UpdateFeaturedEvents");
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
-public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
-{
-    try
-    {
-        var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
-        var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/updatefeaturedevent")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateFeaturedEvents");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
         {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
+            try
+            {
+                var json = JsonSerializer.Serialize(events, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/event/update")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
                 var response = await _httpClient.SendAsync(request);
                 return response;
@@ -258,33 +255,30 @@ public async Task<HttpResponseMessage> UpdateEvents(EventDTO events)
         {
             throw new NotImplementedException();
         }
-        public async Task<HttpResponseMessage> ReorderFeaturedSlots(int fromSlot, int toSlot, string userId)
-{
-    try
-    {
-        var payload = new
+        public async Task<HttpResponseMessage> ReorderFeaturedSlots(IEnumerable<object> slotAssignments, string userId)
         {
-            fromSlot = fromSlot,
-            toSlot = toSlot,
-            userId = userId
-        };
+            try
+            {
+                var payload = new
+                {
+                    slotAssignments = slotAssignments,
+                    userId = userId
+                };
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
 
-        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/reorderslots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/event/reorderslots")
-        {
-            Content = new StringContent(json, Encoding.UTF8, "application/json")
-        };
-
-        var response = await _httpClient.SendAsync(request);
-        return response;
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "ReorderFeaturedSlots");
-        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-    }
-}
-
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ReorderFeaturedSlots");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

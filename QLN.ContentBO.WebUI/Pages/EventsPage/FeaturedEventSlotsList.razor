@@ -15,9 +15,10 @@ else if (FeaturedEventSlots == null || Categories == null)
 }
 else
 {
-    var indexedFeatured = FeaturedEventSlots
-        .Select((e, i) => new { Slot = e, Index = i + 1 })
-        .ToList();
+   var indexedFeatured = FeaturedEventSlots
+    .OrderBy(s => s.SlotNumber)
+    .Select((e, i) => new { Slot = e, Index = i + 1 })
+    .ToList();
 
     <table class="table table-hover featured-table" style="width: 100%;">
         <thead>
@@ -35,24 +36,24 @@ else
             {
                 <tr data-slot-id="@context.Slot.SlotNumber">
                     <td>
-                        <img src="/qln-images/arrow_icon.svg" 
-                             class="drag-handle" 
-                             style="cursor: grab; width: 24px;" 
-                             alt="drag" />
+                      <img src="/qln-images/arrow_icon.svg" 
+                        class="@(context.Slot.Event?.EventTitle == "Feature an Event" ? "" : "drag-handle")"
+                        style="cursor: @(context.Slot.Event?.EventTitle == "Feature an Event" ? "default" : "grab"); width: 24px;" 
+                        alt="drag" />
                     </td>
-                    <td>@context.Index</td>
+                    <td><span class="slot-position"></span></td>
                     <td>
                         @if (context.Slot.Event?.EventTitle == "Feature an Event")
                         {
                             <span class="placeholder-text"
-                                  style="color: gray; cursor: pointer;"
+                                  style="color: #FF7F38; cursor: pointer;"
                                   @onclick="@(() => ReplaceSlot.InvokeAsync(context.Slot))">
                                 @context.Slot.Event?.EventTitle
                             </span>
                         }
                         else
                         {
-                            <a href="#" class="event-link" style="text-decoration: none; color: #1976d2;">
+                            <a href="#" class="event-link" style="text-decoration: none; color: #787878;">
                                 @context.Slot.Event?.EventTitle
                             </a>
                         }
@@ -99,83 +100,20 @@ else
     </table>
 }
 
-<style>
-    /* Base table styling */
-.featured-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-radius: 8px;
-    border: 1px solid var(--color-background-secondary-grey-medium);
-    overflow: hidden;
-     font-family: 'Public Sans', sans-serif;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
 
-/* Header styling */
-.featured-table thead th {
-    background: var(--color-background-secondary-grey-medium);
-    font-weight: 500;
-    font-size: 14px;
-    padding:  16px;
-    text-align: left;
-    color: var(--color-background-grey);
-    border-bottom:none;
-}
 
-/* Row styling */
-.featured-table tbody tr {
-    padding: 16px;
-    border-bottom: 1px solid var(var(--color-background-grey));
-    transition: background 0.2s ease;
-}
 
-.featured-table tbody tr:hover {
-    background: var(var(--color-background-grey));
-}
 
-/* Cell styling */
-.featured-table tbody td {
-    padding: 12px;
-    vertical-align: middle;
-    font-size: 14px;
-    color: #333;
-}
 
-/* Drag handle */
-.drag-handle {
-    cursor: grab;
-}
 
-/* Action icons container */
-.action-buttons {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 
-/* Replace and delete buttons */
-.action-button {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    background: #f44336; /* Red */
-    border-radius: 6px;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
 
-.action-button:hover {
-    background: #d32f2f;
-}
 
-/* Action icons */
-.action-button img {
-    width: 18px;
-    height: 18px;
-    filter: brightness(0) invert(1); /* make icon white */
-}
 
-</style>
+
+
+
+
+
+
+

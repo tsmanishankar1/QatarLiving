@@ -1,53 +1,110 @@
 @typeparam TPost
-@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Components.ConfirmationDialog
 @using MudBlazor
 
 @if (IsLoading)
 {
     <TableSkeleton Rows="10" />
 }
+else if (Posts == null || Posts.Count == 0)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No Reports found" Subtitle="Please check back later or explore other categories." />
+    </div>
+}
 else
 {
- <MudTable Items="Posts" Hover="true" Class="custom-table">
+    <MudTable Items="Posts" Hover="true" Class="custom-table">
     <HeaderContent>
-        <MudTh>Report ID</MudTh>
-        <MudTh>Post</MudTh>
-        <MudTh>Comment</MudTh>
-        <MudTh>Username</MudTh>
-        <MudTh>Comment Date</MudTh>
-        <MudTh>Reporter</MudTh>
-        <MudTh>Report Date</MudTh>
-        <MudTh>Actions</MudTh>
+        <MudTh class="header-cell">Number</MudTh>
+        <MudTh class="header-cell">Post</MudTh>
+        @if (Type != "community-posts")
+        {
+            <MudTh class="header-cell">Comment</MudTh>
+            <MudTh class="header-cell">Comment Date</MudTh>
+        }
+        else
+        {
+            <MudTh class="header-cell">Post Date</MudTh>
+        }
+        <MudTh class="header-cell">Username</MudTh>
+        <MudTh class="header-cell">Reporter</MudTh>
+        <MudTh class="header-cell">Report Date</MudTh>
+        <MudTh class="header-cell">Actions</MudTh>
     </HeaderContent>
-   <RowTemplate>
+    <RowTemplate>
         <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
-        <MudTd DataLabel="Post Title" >
-            <MudLink Href="#" Class="post-title">@context.PostTitle</MudLink>
+        <MudTd DataLabel="Post">
+            <MudLink Href="#" Class="post-title">@context.Post</MudLink>
         </MudTd>
-        <MudTd DataLabel="Category">@context.Category</MudTd>
-        <MudTd DataLabel="Username">@context.Username</MudTd>
-        <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
-        <MudTd DataLabel="Reporter">@context.Reporter</MudTd>
+
+        @if (Type != "community-posts")
+        {
+            <MudTd DataLabel="Comment">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "--")</MudTd>
+            <MudTd DataLabel="Comment Date">@((context.CommentDate.HasValue) ? context.CommentDate.Value.ToString("dd-MM-yyyy") : "--")</MudTd>
+        }
+        else
+        {
+            <MudTd DataLabel="Post Date">@((context.PostDate.HasValue) ? context.PostDate.Value.ToString("dd-MM-yyyy") : "--")</MudTd>
+        }
+
+        <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "--")</MudTd>
+        <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "--")</MudTd>
         <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+
         <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                <MudMenuItem>
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Class="me-2" /> Keep
+                <MudMenuItem OnClick="@(async () => await ShowConfirmationDialog(context.Id, true))">
+                    <img src="/qln-images/Ignore_icon.svg" class="menu-icon-style" alt="Ignore" />
+                    <span class="menu-text">Ignore</span>
                 </MudMenuItem>
-                <MudMenuItem OnClick="@(async () => await OnDelete.InvokeAsync(context.Number))" Class="mud-error-text">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                <MudMenuItem OnClick="@(async () => await ShowConfirmationDialog(context.Id, false))" Class="mud-error-text">
+                    <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Delete" />
+                    <span class="menu-text" style="color: #F04438;">Delete</span>
                 </MudMenuItem>
             </MudMenu>
         </MudTd>
     </RowTemplate>
 </MudTable>
+
 }
+
 @code {
-    [Parameter] public List<ReportsListDto> Posts { get; set; }
-    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public List<ReportDto> Posts { get; set; } = new();
+    [Parameter] public EventCallback<Guid> OnIgnore { get; set; }
+    [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+    [Parameter] public string Type { get; set; } = string.Empty;
     [Parameter] public bool IsLoading { get; set; }
+    [Inject] public IDialogService DialogService { get; set; }
+   
+    protected async Task ShowConfirmationDialog(Guid id, bool isIgnore)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", isIgnore ? "Ignore Confirmation" : "Delete Confirmation" },
+            { "Descrption", isIgnore ? "Do you want to ignore this report?" : "Do you want to delete this report?" },
+            { "ButtonTitle", isIgnore ? "Ignore" : "Delete" },
+            {
+                "OnConfirmed", EventCallback.Factory.Create(this, async () =>
+                {
+                    if (isIgnore)
+                        await OnIgnore.InvokeAsync(id);
+                    else
+                        await OnDelete.InvokeAsync(id);
+                })
+            }
+        };
+
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
+
 }
+
 
 <style>
      /* Table header style */

@@ -29,6 +29,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default);
         Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default);
         Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
+        Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
     }
 
 }
