@@ -190,8 +190,11 @@ namespace QLN.ContentBO.WebUI.Pages
                 throw;
             }
         }
+        protected void OnCancelClicked()
+        {
+            Navigation.NavigateTo("/manage/events");
+        }
       
-     
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
