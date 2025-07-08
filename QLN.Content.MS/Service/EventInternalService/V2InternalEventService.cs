@@ -238,15 +238,44 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<V2Events?> GetEventById(Guid id, CancellationToken cancellationToken = default)
         {
-            var result = await _dapr.GetStateAsync<V2Events>(
-                ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
-                cancellationToken: cancellationToken);
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
 
-            if (result == null || !result.IsActive)
+                if (keys.Count == 0)
+                    return null;
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var ev = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (ev is not null && ev.IsActive && ev.Id == id)
+                    {
+                        return ev;
+                    }
+                }
+
                 return null;
-
-            return result;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
         public async Task<string> UpdateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
@@ -963,35 +992,28 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<List<V2Events>> GetAllIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken)
         {
-            try
-            {
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.EventIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new List<string>();
+            var keys = await _dapr.GetStateAsync<List<string>>(
+                     ConstantValues.V2Content.ContentStoreName,
+                     ConstantValues.V2Content.EventIndexKey,
+                     cancellationToken: cancellationToken
+                 ) ?? new List<string>();
 
-                var items = await _dapr.GetBulkStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    keys,
-                    parallelism: null,
-                    cancellationToken: cancellationToken
-                );
+            var items = await _dapr.GetBulkStateAsync(
+                ConstantValues.V2Content.ContentStoreName,
+                keys,
+                parallelism: null,
+                cancellationToken: cancellationToken
+            );
 
-                var events = items
-                    .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }))
-                    .Where(e => e != null && e.IsActive == true && e.IsFeatured == isFeatured)
-                    .ToList();
+            var events = items
+                .Select(i => JsonSerializer.Deserialize<V2Events>(i.Value, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }))
+                .Where(e => e != null && e.IsActive == true && e.IsFeatured == isFeatured)
+                .ToList();
 
-                return events;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error occurred while retrieving all events", ex);
-            }
+            return events;
         }
         public async Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default)
         {

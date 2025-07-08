@@ -146,7 +146,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var events = await service.GetAllIsFeaturedEvents(isFeatured, cancellationToken);
-                    if (events == null)
+                    if (events == null || events.Count == 0)
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {

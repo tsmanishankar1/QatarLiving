@@ -27,7 +27,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 try
                 {
                     var events = await service.GetAllFOIsFeaturedEvents(isFeatured, cancellationToken);
-                    if (events == null)
+                    if (events == null || events.Count == 0)
                     {
                         return TypedResults.NotFound(new ProblemDetails
                         {

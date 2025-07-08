@@ -54,15 +54,43 @@ namespace QLN.Content.MS.Service.EventInternalService
         }
         public async Task<V2Events?> GetFOEventById(Guid id, CancellationToken cancellationToken = default)
         {
-            var result = await _dapr.GetStateAsync<V2Events>(
-                ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
-                cancellationToken: cancellationToken);
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
 
-            if (result == null || !result.IsActive)
+                if (keys.Count == 0)
+                    return null;
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var ev = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (ev is not null && ev.IsActive && ev.Id == id)
+                    {
+                        return ev;
+                    }
+                }
                 return null;
-
-            return result;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
         public async Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken)
         {
