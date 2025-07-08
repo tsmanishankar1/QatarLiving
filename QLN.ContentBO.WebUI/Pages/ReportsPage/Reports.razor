@@ -12,7 +12,7 @@
         </div>
 
         <div class="reports-table">
-            <ReportsTable TPost="ReportDto" IsLoading="IsLoading" Posts="_paginatedPosts"   OnIgnore="HandleIgnoreAction"
+            <ReportsTable Type="@Type" TPost="ReportDto" IsLoading="IsLoading" Posts="_paginatedPosts"   OnIgnore="HandleIgnoreAction"
               OnDelete="HandleDeleteAction" />
           @if (!IsLoading && _paginatedPosts != null && _paginatedPosts.Any())
             {
