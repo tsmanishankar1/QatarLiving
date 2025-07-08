@@ -174,8 +174,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-
-
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
@@ -554,7 +552,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 if (article == null)
                     throw new InvalidDataException($"Article with ID '{sa.ArticleId}' not found.");
-                
+
                 if (!article.Categories.Any(c =>
                       c.CategoryId == catId &&
                       c.SubcategoryId == subCatId))
@@ -566,21 +564,21 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 loaded[sa.ArticleId] = article;
             }
 
-            
+
             foreach (var sa in request.SlotAssignments)
             {
                 string slotKey = GetSlotKey(catId, subCatId, sa.SlotNumber);
 
                 if (string.IsNullOrWhiteSpace(sa.ArticleId))
                 {
-                    
+
                     await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
                     continue;
                 }
 
                 var article = loaded[sa.ArticleId]!;
 
-                
+
                 var catDto = article.Categories
                     .First(c => c.CategoryId == catId && c.SubcategoryId == subCatId);
                 catDto.SlotId = sa.SlotNumber;
