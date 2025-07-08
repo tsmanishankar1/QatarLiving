@@ -848,41 +848,5 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        public static RouteGroupBuilder MapUnfeatureEventEndpoint(this RouteGroupBuilder group)
-        {
-            group.MapPut("/unfeature/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
-                Guid id,
-                IV2EventService service,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    var result = await service.UnfeatureEvent(id, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("UnfeatureEvent")
-            .WithTags("Event")
-            .WithSummary("Unfeature an Event")
-            .WithDescription("Marks an event as not featured and removes it from its slot.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            return group;
-        }
     }
 }

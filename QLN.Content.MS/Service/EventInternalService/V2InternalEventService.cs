@@ -5,7 +5,6 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.EventInternalService
@@ -193,13 +192,9 @@ namespace QLN.Content.MS.Service.EventInternalService
         private string GenerateSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-
+            var slug = title.Trim().ToLower()
+                             .Replace(" ", "-")  
+                             .Replace("--", "-");
             return slug;
         }
         public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
@@ -1003,43 +998,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error occurred while retrieving all events", ex);
             }
         }
-        public async Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default)
-        {
-            var storeName = ConstantValues.V2Content.ContentStoreName;
 
-            var existing = await _dapr.GetStateAsync<V2Events>(
-                storeName,
-                id.ToString(),
-                cancellationToken: cancellationToken);
-
-            if (existing == null)
-                throw new KeyNotFoundException($"Event with ID '{id}' not found.");
-
-            if (existing.IsFeatured && existing.FeaturedSlot?.Id >= 1 && existing.FeaturedSlot.Id <= 6)
-            {
-                string slotKey = $"event-slot-{existing.FeaturedSlot.Id}";
-
-                var slotEvent = await _dapr.GetStateAsync<V2Events>(
-                    storeName,
-                    slotKey,
-                    cancellationToken: cancellationToken);
-                if (slotEvent?.Id == id)
-                {
-                    await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
-                }
-            }
-            existing.IsFeatured = false;
-            existing.FeaturedSlot = new V2Slot();  
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            await _dapr.SaveStateAsync(
-                storeName,
-                id.ToString(),
-                existing,
-                new StateOptions { Consistency = ConsistencyMode.Strong },
-                cancellationToken: cancellationToken);
-
-            return "Event unfeatured and removed from slot successfully";
-        }
     }
 }

@@ -12,6 +12,5 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<V2Events?> GetFOEventById(Guid id, CancellationToken cancellationToken = default);
         Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default);
         Task<PagedResponse<V2Events>> GetFOPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default);
-        Task<V2Events> GetEventBySlug(string slug, CancellationToken cancellationToken = default);
     }
 }
