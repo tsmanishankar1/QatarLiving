@@ -1,97 +1,79 @@
 @page "/dashboard"
 @inherits DailyLivingBase
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.DailyLiving.MudArticleTable;
+@using QLN.ContentBO.WebUI.Pages.EventsPage;
+@using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-            <MudText Class="daily-style">Daily Living</MudText>
-            <MudTabs @bind-ActivePanelIndex="@activeIndex"
-            Rounded="false"
-            Centered="false"
-            ScrollButtons="ScrollButtons.Auto"
-            Scrollable="true"
-            Class="custom-tabs"
-            Style="background-color: #FAFAFA;"
-            DisableSlideAnimation="true">
+        <MudText Class="daily-style">Daily Living</MudText>
+        <MudTabs ActivePanelIndex="@activeIndex"
+                 ActivePanelIndexChanged="OnTabChanged"
+                 Rounded="false"
+                 Centered="false"
+                 ScrollButtons="ScrollButtons.Auto"
+                 Scrollable="true"
+                 Class="daily-custom-tabs"
+                 Style="background-color: #FAFAFA;"
+                 DisableSlideAnimation="true">
 
             <MudTabPanel Text="Top Section" />
             <MudTabPanel Text="Featured Events" />
-            <MudTabPanel Text="Everything Qatar" />
-            <MudTabPanel Text="Lifestyle" />
-            <MudTabPanel Text="Sports News" />
-            <MudTabPanel Text="QL Exclusive" />
-            <MudTabPanel Text="Advice & Help" />
-
-            </MudTabs>
-            @if (activeIndex != 0 && activeIndex != 1) {
-                <MudGrid AlignItems="Center" Class="py-3">
-                    <MudItem xs="12" md="12">
-                        <div class="button-container">
-                            <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="@OpenDialogAsync">
-                                Add Item
-                            </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
-                                Rename Topic
-                            </MudButton>
-                            <MudButton StartIcon="@Icons.Material.Outlined.VisibilityOff" Style="background-color: #F04438; color: white; text-transform: none;" Class="compact-button" OnClick="async () => await OpenDialogAsync()">
-                                Unpublish
-                            </MudButton>
-                        </div>
-                    </MudItem>
-                </MudGrid>
+            @foreach (var topic in ActiveTopics)
+            {
+                <MudTabPanel Text="@topic.topicName">
+                </MudTabPanel>
             }
-            <MudArticleTable />
-
+        </MudTabs>
+        @if (isLoading)
+        {
+            <MudPaper Class="p-4">
+                @for (int i = 0; i < 5; i++)
+                {
+                    <MudSkeleton Height="30px" Width="100%" Animation="Animation.Pulse" Class="mb-2" />
+                }
+            </MudPaper>
+      }
+        else if (SelectedTab == DailyLivingTab.FeaturedEvents)
+        {
+            if (featuredEventSlots is null || !featuredEventSlots.Any())
+            {
+                <EmptyCard Title="No Featured Events Found"
+                           Subtitle="Please check back later." />
+            }
+            else
+            {
+                <FeaturedEventSlotsList IsLoadingEvent="IsLoadingEvent"
+                                        FeaturedEventSlots="featuredEventSlots"
+                                        Categories="Categories"
+                                        ReplaceSlot="ReplaceEventSlot"
+                                        OnDelete="DeleteFeatureEvent" />
+            }
+        }
+        else if (articles is null || !articles.Any())
+        {
+            <EmptyCard Title="No Content Found"
+                       Subtitle="Please check back later." />
+        }
+        else if(SelectedTab == DailyLivingTab.TopSection)
+        {
+            <MudArticleTable Articles="articles" />
+        }
+        else if(SelectedTab != DailyLivingTab.TopSection){
+            <DailyTopicsTable 
+                ReplaceSlot="ReplaceSlotHandler"
+                OnDelete="DeleteSlotHandler"
+                IsLoadingEvent="IsLoading"
+                articles="articles"
+                UpdateEvent="UpdateHandler"
+                RenameTopic="RenameHandler"
+                AddItem="AddItemtHandler"
+                Categories="Categories"
+                selectedTopic="selectedTopic"
+                />
+        }
     </MudItem>
 </MudGrid>
 
-<style>
-    .daily-style {
-        font-family: 'Public Sans', sans-serif;
-        font-size: 30px;
-        font-weight: 600;
-        color: #242424;
-        text-transform: none;
-        padding-bottom: 32px;
-    }
-    .custom-tabs {
-        background-color: #FAFAFA !important;
-        border-bottom: 1px solid #f0f0f0;
-        margin-bottom: 8px;
-        font-family: 'Public Sans', sans-serif;
-    }
-
-    .custom-tabs .mud-tab {
-        font-weight: 600;
-        font-size: 14px;
-        color: #A1A1A1;
-        text-transform: none;
-        padding: 12px 20px;
-    }
-
-    .custom-tabs .mud-tab.mud-tab-active {
-        color: #FF7F38 !important; 
-        font-weight: 600;
-        border-bottom: 3px solid #FF7F38;
-    }
-
-    .custom-tabs .mud-tabs-toolbar {
-        border-bottom: none; 
-    }
-    .custom-tabs .mud-tab {
-        transition: color 0.3s ease, border-bottom 0.3s ease;
-    }
-    .button-container {
-        display: flex;
-        gap: 16px; 
-        align-items: center;
-    }
-    .compact-button {
-        min-width: unset !important;
-        width: auto !important;
-        padding: 6px 16px; 
-        white-space: nowrap; 
-        height: 44px;
-    }
-    
-</style>

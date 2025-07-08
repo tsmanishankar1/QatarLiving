@@ -6,7 +6,10 @@ using QLN.Web.Shared.Components.ReportDialog;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using System.Net.Http;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -188,10 +191,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
             await GetCommentAsync();
 
             //StateHasChanged();
-        }
-        protected async Task ToggleLikeAsync()
-        {
-            IsLiked = !IsLiked;
         }
 
         protected async Task OnReport(string postId, string commentId)

@@ -1,6 +1,8 @@
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using QLN.ContentBO.WebUI.Components.EmptyCard
+@using MudBlazor;
+@using QLN.ContentBO.WebUI.Components.ConfirmationDialog
 @typeparam TPost
 
 @if (IsLoading)
@@ -31,30 +33,9 @@ else
             <MudTd DataLabel="User Name">@context.UserName</MudTd>
             <MudTd DataLabel="Date Created">@context.DateCreated.ToString("dd-MM-yyyy")</MudTd>
             <MudTd>
-                <MudMenu Icon="false" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <ActivatorContent>
-                        <div class="custom-delete-button">
-                            <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                        </div>
-                    </ActivatorContent>
-                    <ChildContent>
-                    <MudMenuItem >
-                        <img src="/qln-images/Ignore_icon.svg" class="menu-icon-style" alt="Ignore" />
-                        <span class="menu-text">Cancel</span>
-                     </MudMenuItem>
-                    <MudMenuItem Class="delete-menu-item" OnClick="@(() => OnDelete.InvokeAsync(context.Id))">
-                           @if (DeletingId == context.Id)
-                            {
-                                <MudProgressCircular Indeterminate="true" Color="Color.Error" Class="spinner-margin" />
-                            }
-                            else
-                            {
-                                <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Delete" />
-                            }
-                        <span class="menu-text" style="color: #F04438;">Confirm</span>
-                    </MudMenuItem>       
-                    </ChildContent>
-                </MudMenu>
+                <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Id))">
+                    <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                </div>
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -71,6 +52,26 @@ else
 
     [Parameter]
     public EventCallback<string> OnDelete { get; set; }
+    [Inject] public IDialogService DialogService { get; set; }
+   
+   protected async Task DeleteSlotHandler(string id)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", "Delete Confirmation" },
+            { "Descrption", "Do you want to delete this Community?" },
+            { "ButtonTitle", "Delete" },
+              { "OnConfirmed", EventCallback.Factory.Create(this, async () =>
+                {
+                    await OnDelete.InvokeAsync(id);
+                })
+            }
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
+
 }
 
 

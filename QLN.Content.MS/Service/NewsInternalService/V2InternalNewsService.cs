@@ -36,7 +36,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _dapr = dapr;
             _logger = logger;
         }
-         
+
         public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
@@ -89,15 +89,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         WriterTag = dto.WriterTag,
                         Slug = $"{slugBase}-{cat.CategoryId}-{cat.SubcategoryId}",
                         IsActive = true,
-                        Categories = new List<V2ArticleCategory>
-                {
-                    new V2ArticleCategory
-                    {
-                        CategoryId = cat.CategoryId,
-                        SubcategoryId = cat.SubcategoryId,
-                        SlotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId
-                    }
-                },
+                        Categories = new List<V2ArticleCategory> {
+            new V2ArticleCategory {
+                CategoryId    = cat.CategoryId,
+                SubcategoryId = cat.SubcategoryId,
+                SlotId        = cat.SlotId == 0
+                                  ? (int)Slot.UnPublished
+                                  : cat.SlotId
+            }
+        },
                         PublishedDate = DateTime.UtcNow,
                         CreatedBy = userId,
                         UpdatedBy = userId,
@@ -108,41 +108,58 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         UserId = dto.UserId
                     };
 
-
+                    int slotId = singleDto.Categories[0].SlotId;
                     string storeName = V2Content.ContentStoreName;
                     string articleIdStr = singleDto.Id.ToString();
 
-                    // Save the article
-                    await _dapr.SaveStateAsync(storeName, articleIdStr, singleDto, cancellationToken: cancellationToken);
+                    if (slotId > 0)
+                    {
+                        await HandleSlotShiftAsync(
+                            cat.CategoryId,
+                            cat.SubcategoryId,
+                            slotId,
+                            singleDto,
+                            cancellationToken);
+                    }
+                    else
+                    {
+                        string statusKey = GetStatusSlotKey(
+                            cat.CategoryId,
+                            cat.SubcategoryId,
+                            slotId);
+                        await _dapr.SaveStateAsync(
+                            storeName,
+                            statusKey,
+                            articleIdStr,
+                            cancellationToken: cancellationToken);
+                    }
 
-                    // Update index
+                    await _dapr.SaveStateAsync(
+                        storeName,
+                        articleIdStr,
+                        singleDto,
+                        cancellationToken: cancellationToken);
+
                     var indexKey = V2Content.NewsIndexKey;
-                    var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
-                                       ?? new List<string>();
+                    var currentIndex = await _dapr.GetStateAsync<List<string>>(
+                        storeName,
+                        indexKey,
+                        cancellationToken: cancellationToken)
+                       ?? new List<string>();
 
                     if (!currentIndex.Contains(articleIdStr))
                     {
                         currentIndex.Add(articleIdStr);
-                        await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
-                    }
-
-                    int slotId = singleDto.Categories[0].SlotId;
-                    if (slotId == (int)Slot.Published || slotId == (int)Slot.UnPublished)
-                    {
-                        string key = GetStatusSlotKey(cat.CategoryId, cat.SubcategoryId, slotId);
-                        await _dapr.SaveStateAsync(storeName, key, articleIdStr, cancellationToken: cancellationToken);
-                    }
-                    else if (slotId >= 1 && slotId <= 13)
-                    {
-                        await HandleSlotShiftAsync(cat.CategoryId, cat.SubcategoryId, slotId, singleDto, cancellationToken);
-                    }
-                    else
-                    {
-                        throw new InvalidDataException($"Invalid SlotId: {slotId} for category {cat.CategoryId}-{cat.SubcategoryId}");
+                        await _dapr.SaveStateAsync(
+                            storeName,
+                            indexKey,
+                            currentIndex,
+                            cancellationToken: cancellationToken);
                     }
 
                     articleCount++;
                 }
+
 
                 return $"{articleCount} news article(s) created successfully";
             }
@@ -161,7 +178,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
-            const int MaxSlot = 13; // Maximum slots
+            const int MaxSlot = 13;
             string storeName = V2Content.ContentStoreName;
 
             var desiredSlotKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
@@ -851,4 +868,3 @@ namespace QLN.Content.MS.Service.NewsInternalService
 }
 
 
-  

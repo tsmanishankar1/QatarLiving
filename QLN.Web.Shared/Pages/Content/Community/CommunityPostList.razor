@@ -1,10 +1,10 @@
-﻿@page "/content/v2/community"
+﻿@page "/content/community/v2"
 <PageTitle>Community</PageTitle>
 @layout ContentLayout
 @inherits CommunityPostListBase
 
 @inject NavigationManager Navigation
-@using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSection
+@using QLN.Web.Shared.Pages.Content.Community.Components.SearchBarSectionV2
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.Community.Components.CustomDropdown
 @using QLN.Web.Shared.Components.NewCustomSelect
@@ -32,7 +32,7 @@
     </div>
     <div class="container-inner-wrapper">
 
-        <CommunitySearchBarSection OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" InitialCategoryId="@categoryId" OnSearchTextChanged="HandleSearchChanged" />
+        <CommunitySearchBarSectionV2 OnSearchCompleted="HandleSearchResults" OnCategoryChanged="HandleCategoryChanged" InitialCategoryId="@categoryId" OnSearchTextChanged="HandleSearchChanged" />
         <div class="section-container">
 
             <MudGrid>
@@ -210,7 +210,7 @@
     }
 
     .postcard-margin-top {
-        margin-top: 20px;
+        margin-top: 10px;
     }
 
     .community-header {
