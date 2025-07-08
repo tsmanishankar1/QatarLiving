@@ -41,7 +41,7 @@ namespace QLN.ContentBO.WebUI.Pages
         "Option 3",
         "Option 4"
     };
-
+ 
         protected TimeSpan? StartTimeSpan
         {
             get => CurrentEvent.EventSchedule.StartTime.HasValue
@@ -60,8 +60,8 @@ namespace QLN.ContentBO.WebUI.Pages
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartTime));
             }
         }
-
-
+ 
+ 
         protected TimeSpan? EndTimeSpan
         {
             get => CurrentEvent.EventSchedule.EndTime.HasValue
@@ -87,14 +87,14 @@ namespace QLN.ContentBO.WebUI.Pages
         protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
         protected string SelectedTimeOption = "General";
         protected string GeneralTime;
-
+ 
         public class DayTimeEntry
         {
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public TimeSpan? StartTime { get; set; } 
-            public TimeSpan? EndTime { get; set; } 
+            public TimeSpan? StartTime { get; set; }
+            public TimeSpan? EndTime { get; set; }
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -105,7 +105,7 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 if (CurrentEvent?.EventSchedule == null)
                     return null;
-
+ 
                 return new DateRange(
                     CurrentEvent.EventSchedule.StartDate.ToDateTime(TimeOnly.MinValue),
                     CurrentEvent.EventSchedule.EndDate.ToDateTime(TimeOnly.MinValue)
@@ -121,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
         protected ElementReference _popoverDiv;
-
+ 
         protected bool _showDatePicker = false;
         protected string EventTitle;
         protected string AccessType = "Free Access";
@@ -195,7 +195,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             if (startDate == null || endDate == null)
                 return null;
-
+ 
             return new DateRange(
                 startDate.Value.ToDateTime(TimeOnly.MinValue),
                 endDate.Value.ToDateTime(TimeOnly.MinValue)
@@ -233,18 +233,18 @@ namespace QLN.ContentBO.WebUI.Pages
         protected void GeneratePerDayTimeList()
     {
         DayTimeList.Clear();
-
+ 
          if (_dateRange?.Start == null || _dateRange?.End == null)
             return;
-
+ 
         var start = _dateRange.Start.Value.Date;
         var end = _dateRange.End.Value.Date;
-
+ 
         var timeSlots = CurrentEvent?.EventSchedule?.TimeSlots ?? new List<TimeSlotModel>();
         for (var date = start; date <= end; date = date.AddDays(1))
             {
                 var matchingSlot = timeSlots.FirstOrDefault(slot => slot.DayOfWeek == date.DayOfWeek);
-
+ 
                 DayTimeList.Add(new DayTimeEntry
                 {
                     Date = date,
@@ -258,6 +258,19 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _isTimeDialogOpen = true;
         }
+         protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
         protected void ApplyTimeRange()
         {
             if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
@@ -299,7 +312,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             CurrentEvent.CoverImage = null;
         }
-
+ 
         protected void DeleteImage()
         {
             uploadedImage = null;
@@ -312,7 +325,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             "Viva Bahriya - The Pearl Island"
         };
-
+ 
         protected void RemoveLocation()
         {
             CurrentEvent.Location = string.Empty;
@@ -362,7 +375,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected void ToggleDatePicker()
         {
             _showDatePicker = !_showDatePicker;
-
+ 
             if (_showDatePicker)
             {
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
@@ -371,13 +384,13 @@ namespace QLN.ContentBO.WebUI.Pages
         protected void GenerateDayTimeList()
         {
             DayTimeList.Clear();
-
+ 
             if (_dateRange?.Start == null || _dateRange?.End == null)
                 return;
-
+ 
             var start = _dateRange.Start.Value.Date;
             var end = _dateRange.End.Value.Date;
-
+ 
             for (var date = start; date <= end; date = date.AddDays(1))
             {
                 DayTimeList.Add(new DayTimeEntry
@@ -407,13 +420,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 _PriceError = "Price is required for Fees events.";
                 hasError = true;
             }
-
+ 
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
                 hasError = true;
             }
-
+ 
             if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
@@ -425,13 +438,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 _timeError = "Start Time and End Time are required.";
                 hasError = true;
             }
-
+ 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
                 hasError = true;
             }
-
+ 
             if (string.IsNullOrWhiteSpace(CurrentEvent.CoverImage))
             {
                 _coverImageError = "Cover Image is required.";
@@ -445,7 +458,7 @@ namespace QLN.ContentBO.WebUI.Pages
                     hasError = true;
                 }
             }
-
+ 
             if (hasError)
             {
                 StateHasChanged();
@@ -532,7 +545,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected async Task OnLocationChanged(string locationId)
         {
             SelectedLocationId = locationId;
-
+ 
             var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
             if (selectedLocation != null)
             {
@@ -551,7 +564,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             var existingSlot = CurrentEvent.EventSchedule.TimeSlots
                  .FirstOrDefault(ts => ts.DayOfWeek == entry.Date.DayOfWeek);
-
+ 
             if (existingSlot != null)
             {
                 CurrentEvent.EventSchedule.TimeSlots.Remove(existingSlot);
@@ -575,7 +588,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 IsActive = true,
                 IsFeatured = false
             };
-
+ 
             SelectedDateLabel = string.Empty;
             StartTimeSpan = null;
             EndTimeSpan = null;
@@ -592,4 +605,3 @@ namespace QLN.ContentBO.WebUI.Pages
         
     };
 }
-

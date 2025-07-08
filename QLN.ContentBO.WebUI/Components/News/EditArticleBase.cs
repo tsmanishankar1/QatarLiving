@@ -29,7 +29,6 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
-        public int MinCategory { get; set; } = 1;
         public int MaxCategory { get; set; } = 2;
 
         protected async override Task OnParametersSetAsync()
@@ -65,13 +64,10 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected void AddCategory()
         {
-            if (Category.SlotId == 0)
-            {
-                Category.SlotId = 15; 
-            }
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
                 Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+                return;
             }
             if (TempCategoryList.Count >= MaxCategory)
             {
@@ -79,20 +75,18 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Category = new();
                 return;
             }
+            if (Category.SlotId == 0)
+            {
+                Category.SlotId = 15; // By Default UnPublished.
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if (TempCategoryList.Count <= MinCategory)
-            {
-                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
-                return;
-            }
             if (TempCategoryList.Count > 0)
             {
-
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
@@ -113,7 +107,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     Snackbar.Add("Image is required", severity: Severity.Error);
                     return;
                 }
-                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content))
+                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
                 {
                     Snackbar.Add("Article Content is required", severity: Severity.Error);
                     return;

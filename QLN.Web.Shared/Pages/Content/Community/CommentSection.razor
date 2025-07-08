@@ -14,7 +14,7 @@
         <!-- Comment list skeletons -->
         @for (var i = 0; i < 3; i++)
         {
-            <div class="comment-item" style="margin-top: 16px;">
+            <div class="comment-item" >
                 <div style="display: flex; gap: 0.75rem;">
                     <MudSkeleton Height="24px" Width="24px" Variant="Variant.Circle" Animation="Animation.Pulse" />
                     <div style="flex-grow: 1;">
@@ -210,14 +210,6 @@ else
         height: 36px;
         padding: 0 1rem;
         text-transform: none;
-    }
-
-    .post-icons-comment-section {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 2px 4px;
-        margin-top: 10px;
     }
 
     .empty-state {

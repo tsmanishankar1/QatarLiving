@@ -21,14 +21,14 @@ namespace QLN.Web.Shared.Models
             [JsonPropertyName("itemsDashboard")]
             public ItemsDashboard ItemsDashboard { get; set; }
 
-        
+
         }
         public class PreLovedDashboardResponse
         {
             [JsonPropertyName("prelovedDashboard")]
             public PreLovedDashboard preLovedDashboard { get; set; }
 
-            
+
         }
 
         public class PreLovedDashboard

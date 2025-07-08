@@ -31,6 +31,19 @@ namespace QLN.Common.DTO_s
         Event = 2,
         Video = 3
     }
+    public class DailyTopicSlotAssignment
+    {
+        public int SlotNumber { get; set; }
+        public Guid? DailyId { get; set; }
+    }
+
+    public class DailyTopicSlotReorderRequest
+    {
+        public Guid TopicId { get; set; }
+        public List<DailyTopicSlotAssignment> SlotAssignments { get; set; } = new();
+        public string? UserId { get; set; }
+    }
+
     public class DailyTopSectionSlot
     {
         [JsonPropertyName("id")]
@@ -58,13 +71,4 @@ namespace QLN.Common.DTO_s
         public string? ContentUrl { get; set; }
 
     }
-    public class ReorderDailyTopicContentDto
-    {
-        public Guid TopicId { get; set; }
-        public int FromSlot { get; set; }
-        public int ToSlot { get; set; }
-        public string UserId { get; set; } = "";
-        public string? AuthorName { get; set; }
-    }
-
 }

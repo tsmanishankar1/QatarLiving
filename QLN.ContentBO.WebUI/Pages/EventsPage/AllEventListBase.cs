@@ -7,8 +7,11 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
 using System.Text.Json;
+using MudBlazor;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Components.PaginationFooter;
+using Microsoft.JSInterop;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
@@ -30,8 +33,34 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
 
+        [Inject] protected ILogger<AllEventsListBase> Logger { get; set; }
+
         protected string SearchText { get; set; } = string.Empty;
         protected bool SortAscending { get; set; } = true;
+
+    [Inject] public IDialogService DialogService { get; set; }
+    
+    protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", title },
+            { "Descrption", description },
+            { "ButtonTitle", buttonTitle },
+            { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+
+    }
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -65,6 +94,19 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }  // New param to send status
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
 
         protected async Task OnTabChanged(string newTab)
         {

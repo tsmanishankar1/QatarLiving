@@ -302,10 +302,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                     request,
                     cancellationToken);
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                return null;
-            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving paged event categories.");
@@ -350,7 +346,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> ReorderEventSlotsAsync(EventReorder dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {

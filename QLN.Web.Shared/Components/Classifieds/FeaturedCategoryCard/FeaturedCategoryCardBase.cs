@@ -10,36 +10,36 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedCategoryCard
 
         [Parameter]
         public EventCallback<LandingBackOfficeIndex> OnClick { get; set; }
-         protected bool imageLoaded = false;
+        protected bool imageLoaded = false;
 
-    protected bool imageFailed = false;
-    protected string? currentImageUrl;
-     protected override void OnParametersSet()
-    {
-        // Detect change of image and reset loading states
-        if (currentImageUrl != Item.ImageUrl)
+        protected bool imageFailed = false;
+        protected string? currentImageUrl;
+        protected override void OnParametersSet()
         {
-            currentImageUrl = Item.ImageUrl;
-            imageLoaded = false;
-            imageFailed = false;
+            // Detect change of image and reset loading states
+            if (currentImageUrl != Item.ImageUrl)
+            {
+                currentImageUrl = Item.ImageUrl;
+                imageLoaded = false;
+                imageFailed = false;
+            }
         }
-    }
 
-    protected void OnImageLoaded()
-    {
-        imageLoaded = true;
-        imageFailed = false;
-        StateHasChanged();
-    }
+        protected void OnImageLoaded()
+        {
+            imageLoaded = true;
+            imageFailed = false;
+            StateHasChanged();
+        }
 
-    protected void OnImageError()
-    {
-        imageLoaded = true; // stop skeleton
-        imageFailed = true; // show fallback UI
-        StateHasChanged();
-    }
+        protected void OnImageError()
+        {
+            imageLoaded = true; // stop skeleton
+            imageFailed = true; // show fallback UI
+            StateHasChanged();
+        }
 
-    protected bool ShowEmptyCard =>
-        string.IsNullOrWhiteSpace(Item?.ImageUrl) || imageFailed;
+        protected bool ShowEmptyCard =>
+            string.IsNullOrWhiteSpace(Item?.ImageUrl) || imageFailed;
     }
 }

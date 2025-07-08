@@ -2,7 +2,6 @@ using MudBlazor.Extensions;
 using MudBlazor.Services;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudExtensions.Services;
-using QLN.ContentBO.WebUI.MockServices;
 using QLN.ContentBO.WebUI.Services;
 using QLN.ContentBO.WebUI.Handlers;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -60,6 +59,12 @@ builder.Services.AddHttpClient<ICommunityService, CommunityService>(client =>
 {
     client.BaseAddress = new Uri(contentBOAPIURL);
 }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+builder.Services.AddHttpClient<IReportService, ReportService>(client =>
+{
+    client.BaseAddress = new Uri(contentBOAPIURL);
+}).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
 
 builder.Services.AddHttpClient<IDailyLivingService, DailyService>(client =>
 {

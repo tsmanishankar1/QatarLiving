@@ -13,6 +13,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] INewsService newsService { get; set; }
         [Inject] ILogger<AddArticleBase> Logger { get; set; }
         [Inject] IDialogService DialogService { get; set; }
+        [Parameter] public int? CategoryId { get; set; }
+        [Parameter] public int? SubCategoryId { get; set; }
 
         protected NewsArticleDTO article { get; set; } = new();
 
@@ -25,7 +27,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory Category { get; set; } = new();
 
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
-        public int MinCategory { get; set; } = 1;
+
         public int MaxCategory { get; set; } = 2;
 
         protected override async Task OnInitializedAsync()
@@ -44,15 +46,34 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
+        protected async override Task OnParametersSetAsync()
+        {
+            try
+            {
+                if (CategoryId > 0 || SubCategoryId > 0)
+                {
+                    Categories = await GetNewsCategories() ?? [];
+                    TempCategoryList.Add(new()
+                    {
+                        CategoryId = CategoryId ?? 0,
+                        SubcategoryId = SubCategoryId ?? 0,
+                        SlotId = 15,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+                throw;
+            }
+        }
+
         protected void AddCategory()
         {
-            if (Category.SlotId == 0)
-            {
-                Category.SlotId = 15; // By Default UnPublished.
-            }
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
                 Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+                return;
             }
             if (TempCategoryList.Count >= MaxCategory)
             {
@@ -60,20 +81,18 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Category = new();
                 return;
             }
+            if (Category.SlotId == 0)
+            {
+                Category.SlotId = 15; // By Default UnPublished.
+            }
             TempCategoryList.Add(Category);
             Category = new();
         }
 
         protected void RemoveCategory(ArticleCategory articleCategory)
         {
-            if (TempCategoryList.Count <= MinCategory)
-            {
-                Snackbar.Add("At least 2 Category and Sub-Category is required", severity: Severity.Normal);
-                return;
-            }
             if (TempCategoryList.Count > 0)
             {
-
                 TempCategoryList.Remove(articleCategory);
                 Category = new();
             }
@@ -94,7 +113,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     Snackbar.Add("Image is required", severity: Severity.Error);
                     return;
                 }
-                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content))
+                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
                 {
                     Snackbar.Add("Article Content is required", severity: Severity.Error);
                     return;

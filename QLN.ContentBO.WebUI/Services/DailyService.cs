@@ -106,6 +106,32 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> ReorderFeaturedSlots(IEnumerable<object> slotAssignments, string userId)
+{
+    try
+    {
+        var payload = new
+        {
+            slotAssignments = slotAssignments,
+            userId = userId
+        };
+        var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content/reorder")
+        {
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
+        };
+
+        var response = await _httpClient.SendAsync(request);
+        return response;
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "ReorderDailyTopics");
+        return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+    }
+}
+
 
     }
 }

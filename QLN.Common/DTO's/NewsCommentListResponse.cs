@@ -23,5 +23,6 @@ namespace QLN.Common.DTO_s
         public string UserName { get; set; }
         public string Subject { get; set; }
         public DateTime DateCreated { get; set; }
+        public bool IsActive { get; set; } = true;
     }
 }

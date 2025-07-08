@@ -1,4 +1,6 @@
 ﻿@page "/manage/news/addarticle"
+@page "/manage/news/addarticle/category/{CategoryId:int}/subcategory/{SubCategoryId:int}"
+
 @inherits AddArticleBase
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -65,14 +67,17 @@
                         </MudItem>
 
                         <MudItem xs="3">
-                            <MudSelect T="int" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" Disabled="true">
-                                <MudSelectItem Value="@(0)">@Slots.FirstOrDefault(s => s.Id == category.SlotId)?.Name</MudSelectItem>
+                            <MudSelect T="int" @bind-Value="category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot">
+                                @foreach (var item in Slots)
+                                {
+                                    <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                                }
                             </MudSelect>
                         </MudItem>
 
                         <MudItem xs="1" Class="d-flex align-center">
                             <MudTooltip Text="Remove">
-                                <MudIconButton OnClick="@(() => RemoveCategory(category))" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" Disabled="@(TempCategoryList.Count() <= MinCategory)" />
+                                <MudIconButton OnClick="@(() => RemoveCategory(category))" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
                             </MudTooltip>
                         </MudItem>
                     </MudGrid>
@@ -93,7 +98,8 @@
                                    Height="444"
                                    Class="m-2"
                                    Placeholder="Start Typing"
-                                   For="@(() => article.Content)">
+                                   For="@(() => article.Content)"
+                                   Required="true">
                 </MudExRichTextEdit>
                 <ValidationSummary />
                 <MudStack Row Class="mt-6 justify-content-between">

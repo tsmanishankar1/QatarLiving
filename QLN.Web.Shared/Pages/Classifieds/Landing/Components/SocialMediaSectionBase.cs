@@ -1,11 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using QLN.Common.DTO_s;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Net.Http;
-using Microsoft.Extensions.Logging;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
 {
@@ -19,7 +15,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
         [Parameter] public IEnumerable<LandingBackOfficeIndex>? SocialLinksList { get; set; }
         [Parameter] public IEnumerable<LandingBackOfficeIndex>? SocialMediaVideosList { get; set; }
         [Parameter] public bool Loading { get; set; }
-        
+
         public string Title { get; set; } = "Are you Following Classifieds on Social Media?";
         public string Description { get; set; } = "Stay Tuned with Qatar Living Classifieds on social media for the latest updates, featured exclusive listings, market trends, and valuable insights to guide your investments.";
         public string AvatarUrl { get; set; } = "/qln-images/qatar_socialmedia_logo.svg";

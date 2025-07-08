@@ -15,9 +15,10 @@ else if (FeaturedEventSlots == null || Categories == null)
 }
 else
 {
-    var indexedFeatured = FeaturedEventSlots
-        .Select((e, i) => new { Slot = e, Index = i + 1 })
-        .ToList();
+   var indexedFeatured = FeaturedEventSlots
+    .OrderBy(s => s.SlotNumber)
+    .Select((e, i) => new { Slot = e, Index = i + 1 })
+    .ToList();
 
     <table class="table table-hover featured-table" style="width: 100%;">
         <thead>
@@ -35,12 +36,12 @@ else
             {
                 <tr data-slot-id="@context.Slot.SlotNumber">
                     <td>
-                        <img src="/qln-images/arrow_icon.svg" 
-                             class="@(context.Slot.Event?.EventTitle == "Feature an Event" ? "" : "drag-handle")" 
-                             style="cursor: grab; width: 24px;" 
-                             alt="drag" />
+                      <img src="/qln-images/arrow_icon.svg" 
+                        class="@(context.Slot.Event?.EventTitle == "Feature an Event" ? "" : "drag-handle")"
+                        style="cursor: @(context.Slot.Event?.EventTitle == "Feature an Event" ? "default" : "grab"); width: 24px;" 
+                        alt="drag" />
                     </td>
-                    <td>@context.Index</td>
+                    <td><span class="slot-position"></span></td>
                     <td>
                         @if (context.Slot.Event?.EventTitle == "Feature an Event")
                         {

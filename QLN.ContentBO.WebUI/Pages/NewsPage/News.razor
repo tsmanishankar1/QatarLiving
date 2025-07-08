@@ -31,7 +31,7 @@
                     <MudButton OnClick="UpdateSubCategory" StartIcon="@Icons.Material.Outlined.Edit" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button">
                         @(IsEditingSubCategoryName ? "Save" : "Rename")
                     </MudButton>
-                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddEvent">
+                    <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToAddArticle">
                         Add Article
                     </MudButton>
                     <MudTextField @bind-Value="SearchString"
@@ -74,7 +74,7 @@
                                     <CellTemplate>
                                         <MudStack Row AlignItems="AlignItems.Center" Spacing="1">
 
-                                            <MudText Typo="Typo.body2">@GetCurrentSlot(context.Item)</MudText>
+                                            <MudText Typo="Typo.body2">@("-")</MudText>
                                         </MudStack>
                                     </CellTemplate>
                                 </TemplateColumn>
@@ -82,7 +82,17 @@
                                 <!-- Title Column -->
                                 <TemplateColumn Title="Title" Width="auto">
                                     <CellTemplate>
-                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                        @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
+                                        {
+                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                                     Target="_blank">
+                                                @context.Item.Title
+                                            </MudLink>
+                                        }
+                                        else
+                                        {
+                                            <MudLink Href="#">@context.Item.Title</MudLink>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
 
@@ -174,7 +184,17 @@
                                 <!-- Title Column -->
                                 <TemplateColumn Title="Title" Width="auto">
                                     <CellTemplate>
-                                        <MudLink Href="#">@context.Item.Title</MudLink>
+                                        @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
+                                        {
+                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                                     Target="_blank">
+                                                @context.Item.Title
+                                            </MudLink>
+                                        }
+                                        else
+                                        {
+                                            <MudLink Href="#">@context.Item.Title</MudLink>
+                                        }
                                     </CellTemplate>
                                 </TemplateColumn>
 
@@ -236,104 +256,112 @@
                     }
                     else
                     {
-                        <MudTable Items="IndexedLiveArticles" Hover="true" Style="padding-top: 20px;">
-                            <HeaderContent>
-                                <MudTh>Slot</MudTh>
-                                <MudTh>Title</MudTh>
-                                <MudTh>Creation Date</MudTh>
-                                <MudTh>Live for</MudTh>
-                                <MudTh>Author</MudTh>
-                                <MudTh>Actions</MudTh>
-                            </HeaderContent>
-                            <RowTemplate>
-                                <MudTd DataLabel="Slot">
-                                    @if (context.SlotNumber > 1 && context.Article is not null)
-                                    {
-                                        <MudTooltip Text="Move Up">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowUpward"
-                                                           Color="Color.Secondary"
-                                                           Size="Size.Small"
-                                                           @onclick="@(() => Click_MoveItemUp(context.Article.Id))" />
-                                        </MudTooltip>
-                                    }
+                        <table id ="live-article-table" class="table table-hover featured-table mt-4" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"></th> <!-- drag handle -->
+                                    <th style="width: 60px;">Slot</th>
+                                    <th>Title</th>
+                                    <th>Creation Date</th>
+                                    <th>Live for</th>
+                                    <th>Author</th>
+                                    <th style="width: 120px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var context in IndexedLiveArticles)
+                                {
 
-                                    @if (context.SlotNumber < 13 && context.Article is not null)
+                                    if (context.Article is not null)
                                     {
-                                        <MudTooltip Text="Move Down">
-                                            <MudIconButton Icon="@Icons.Material.Filled.ArrowDownward"
-                                                           Color="Color.Secondary"
-                                                           Size="Size.Small"
-                                                           @onclick="@(() => Click_MoveItemDown(context.Article.Id))" />
-                                        </MudTooltip>
-                                    }
+                                        <tr data-slot-id="@GetCurrentSlot(context.Article)">
+                                            <td>
+                                                <img src="/qln-images/arrow_icon.svg"
+                                                     class="drag-handle"
+                                                     style="cursor:grab; width: 24px;"
+                                                     alt="drag" />
+                                            </td>
+                                            <td><span class="slot-position"></span></td>
+                                            <td>
+                                                @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
+                                                {
+                                                    <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                             Target="_blank">
+                                                        @context.Article.Title
+                                                    </MudLink>
+                                                }
+                                                else if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Title))
+                                                {
+                                                    <MudLink Href="#">@context.Article.Title</MudLink>
+                                                }
+                                                else
+                                                {
+                                                    <MudLink OnClick="NavigateToAddArticle">Add Article</MudLink>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (context.Article?.CreatedAt is not null)
+                                                {
+                                                    @context.Article?.CreatedAt.ToString("dd-MM-yyyy")
+                                                }
+                                                else
+                                                {
+                                                    @("-")
+                                                }
+                                            </td>
 
-                                    @context.SlotNumber
-                                </MudTd>
+                                            <td>
+                                                @if (context.Article?.PublishedDate is not null)
+                                                {
+                                                    @GetTimeDifferenceFromNowUtc(context.Article?.PublishedDate ?? new())
+                                                }
+                                                else
+                                                {
+                                                    @("-")
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (context.Article?.authorName is not null)
+                                                {
+                                                    @context.Article?.authorName
+                                                }
+                                                else
+                                                {
+                                                    @("-")
+                                                }
+                                            </td>
+                                            <td>
+                                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
+                                                    <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
+                                                    </MudMenuItem>
+                                                    <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Article))">
+                                                        <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
+                                                        <span>Go live</span>
+                                                    </MudMenuItem>
+                                                    <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Article))">
+                                                        @if (selectedTab == "published")
+                                                        {
+                                                            <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
+                                                            <span>Unpublish</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <MudIcon Icon="@Icons.Material.Outlined.Visibility" Class="me-2" />
+                                                            <span>Publish</span>
+                                                        }
+                                                    </MudMenuItem>
 
-                                <MudTd DataLabel="Article Title">
-                                    @if (context?.Article?.Title is not null)
-                                    {
-                                        <MudLink Href="#">@context.Article.Title</MudLink>
+                                                    <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
+                                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                                    </MudMenuItem>
+                                                </MudMenu>
+                                            </td>
+                                        </tr>
                                     }
-                                    else
-                                    {
-                                        @("-")
-                                    }
-                                </MudTd>
-
-                                <MudTd DataLabel="Creation Date">
-                                    @if (context.Article?.CreatedAt is not null)
-                                    {
-                                        @context.Article?.CreatedAt.ToString("dd-MM-yyyy")
-                                    }
-                                    else
-                                    {
-                                        @("-")
-                                    }
-                                </MudTd>
-                                <MudTd DataLabel="Live for">
-                                    @if (context.Article?.PublishedDate is not null)
-                                    {
-                                        @GetTimeDifferenceFromNowUtc(context.Article?.PublishedDate ?? new())
-                                    }
-                                    else
-                                    {
-                                        @("-")
-                                    }
-
-                                </MudTd>
-                                <MudTd DataLabel="Author">
-                                    @if (context.Article?.authorName is not null)
-                                    {
-                                        @context.Article?.authorName
-                                    }
-                                    else
-                                    {
-                                        @("-")
-                                    }
-                                </MudTd>
-                                <MudTd>
-                                    @if (context.Article is not null)
-                                    {
-                                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">
-                                            <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
-                                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
-                                            </MudMenuItem>
-                                            <MudMenuItem>
-                                                <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" /> Unpublish
-                                            </MudMenuItem>
-                                            <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
-                                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
-                                            </MudMenuItem>
-                                        </MudMenu>
-                                    }
-                                    else
-                                    {
-                                        <MudText Color="Color.Secondary">@("-")</MudText>
-                                    }
-                                </MudTd>
-                            </RowTemplate>
-                        </MudTable>
+                                }
+                            </tbody>
+                        </table>
                     }
                 </div>
             </MudItem>

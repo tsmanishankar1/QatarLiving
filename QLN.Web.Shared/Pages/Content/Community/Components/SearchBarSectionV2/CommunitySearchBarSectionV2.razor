@@ -1,0 +1,156 @@
+@using MudBlazor
+@inherits CommunitySearchBarSectionBaseV2
+@using QLN.Web.Shared.Components.CustomSelect
+@using QLN.Web.Shared.Components.NewCustomSelect
+
+<MudPaper Elevation="0" Class="py-4 custom-paper">
+    <MudContainer MaxWidth="MaxWidth.False">
+        <div class="d-flex flex-column flex-md-row align-items-center px-4 gap-3 gap-md-0">
+            <!-- Search Field -->
+            <div class="flex-grow-1 flex-md-grow-4 w-100 w-md-auto">
+                <div class="search-field search-input">
+                    <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon" height="23" width="23"  />
+                    <input type="text" id="community-search-input" placeholder="Search" class="text-input" @bind="searchText"
+                           @bind:event="oninput" />
+                </div>
+            </div>
+
+            <!-- Category Dropdown -->
+            <div class="flex-grow-1 flex-md-grow-2_2 w-100 w-md-auto ms-md-0">
+                <NewCustomSelect TItem="SelectOption"
+                                 Items="@CategorySelectOptions"
+                                 Label="Category"
+                                 Placeholder="Choose"
+                                 SelectedId="@SelectedCategoryId"
+                                 SelectedIdChanged="@OnCategoryChange"
+                                 GetLabel="x => x.Label"
+                                 GetId="x => x.Id"
+                                 BorderRadius="0px"
+                                 Padding="8px 10px" />
+            </div>
+
+            <!-- Search Button -->
+            <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
+                <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
+                           Disabled="@loading"
+                           Class="community-search-button"
+                           Style="height: 56px; color: var(--color-text-white); background-color: var(--color-accent); text-transform: capitalize;">
+                    
+                    @if (loading)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" />
+                    }
+                    else
+                    {
+                        <span>Show Results</span>
+                    }
+                </MudButton>
+            </div>
+        </div>
+    </MudContainer>
+</MudPaper>
+
+<style>
+    .custom-paper {
+        background-color: var(--color-secondary-grey-container);
+        border-radius: 12px;
+        height: auto;
+        min-height: 120px;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+
+        .custom-paper .d-flex {
+            gap: 16px;
+        }
+
+    .search-field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        height: 55px;
+        background-color: white;
+        padding: 0 12px;
+        width:100%;
+    }
+
+    .search-input {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+        border: 1px solid transparent;
+        transition: border 0.3s ease;
+        font-size: 20px;
+        color: #888;
+    }
+
+    .text-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        background: transparent;
+    }
+
+    .select-field {
+        width: 255px;
+    }
+
+    .community-search-button {
+        border-radius: 6px;
+    }
+
+    @@media (min-width: 950px) {
+        .community-search-button {
+            border-top-left-radius: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-top-right-radius: 6px !important;
+            border-bottom-right-radius: 6px !important;
+        }
+    }
+
+
+    @@media (min-width: 600px) {
+        .custom-paper {
+            padding: 40px 70px;
+            height: 120px;
+        }
+
+            .custom-paper .d-flex {
+                gap: 0 !important;
+            }
+
+            .custom-paper .ms-md-0 {
+                margin-left: 0 !important;
+            }
+    }
+
+    @@media (min-width: 601px) and (max-width: 950px) {
+        .custom-paper {
+            height: 210px;
+            padding: 40px 70px;
+        }
+    }
+
+
+
+    @@media (min-width: 1010px) and (max-width: 1024px) {
+
+        .select-field {
+            width: 220px !important;
+        }
+    }
+
+    @@media (max-width: 500px) and (min-width: 240px) {
+        .custom-paper{
+            padding: 2px 4px;
+            display: flex;
+        }
+    }
+
+</style>

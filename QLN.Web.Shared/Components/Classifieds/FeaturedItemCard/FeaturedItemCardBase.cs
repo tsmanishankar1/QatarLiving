@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 using Microsoft.JSInterop;
 using QLN.Common.DTO_s;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
 {
@@ -35,7 +32,7 @@ namespace QLN.Web.Shared.Components.Classifieds.FeaturedItemCard
         protected bool imageFailed = false;
         protected string? currentImageUrl;
 
-        protected string? FirstImageUrl => 
+        protected string? FirstImageUrl =>
             Item.ImageURLs?.FirstOrDefault(u => !string.IsNullOrWhiteSpace(u?.Url))?.Url;
 
         protected override void OnParametersSet()
