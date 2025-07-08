@@ -32,6 +32,19 @@ public class DailyLivingBase : QLComponentBase
     protected List<FeaturedSlot> FeaturedEventSlots { get; set; } = new();
     protected bool IsLoading { get; set; } = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            AuthorizedPage();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnInitializedAsync");
+            throw;
+        }
+    }
+
     protected async Task ReplaceSlotHandler(FeaturedSlot slot)
     {
         // your logic
