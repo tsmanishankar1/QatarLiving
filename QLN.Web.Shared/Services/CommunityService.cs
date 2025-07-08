@@ -356,6 +356,39 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
+        public async Task<bool> LikeCommunityCommentAsync(string postId,string commentId)
+        {
+            try
+            {
+                var url = "api/v2/community/likeCommentByUserId/";
+
+                var body = new
+                {
+                    communityPostId = postId
+                };
+
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error liking post: {ex.Message}");
+                return false;
+            }
+        }
 
     }
 }
