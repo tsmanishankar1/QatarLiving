@@ -227,17 +227,11 @@ public class DailyLivingBase : QLComponentBase
         return DialogService.ShowAsync<MessageBox>("", parameters, options);
     }
 
-
-
-
-
-
-
-
     protected async Task DeleteHandler(string id)
     {
 
     }
+
     protected async Task RenameHandler()
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
@@ -246,11 +240,12 @@ public class DailyLivingBase : QLComponentBase
         }
     }
 
-
     protected override async Task OnInitializedAsync()
     {
         try
         {
+          //  await AuthorizedPage();
+
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();

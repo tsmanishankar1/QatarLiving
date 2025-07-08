@@ -84,7 +84,7 @@
                                     <CellTemplate>
                                         @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
                                         {
-                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                            <MudLink Href="@($"{ArticleDetailBaseURL}{context.Item.Slug}")"
                                                      Target="_blank">
                                                 @context.Item.Title
                                             </MudLink>
@@ -186,7 +186,7 @@
                                     <CellTemplate>
                                         @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
                                         {
-                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                            <MudLink Href="@($"{ArticleDetailBaseURL}{context.Item.Slug}")"
                                                      Target="_blank">
                                                 @context.Item.Title
                                             </MudLink>
@@ -285,7 +285,7 @@
                                             <td>
                                                 @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
                                                 {
-                                                    <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                    <MudLink Href="@($"{ArticleDetailBaseURL}{context.Article.Slug}")"
                                                              Target="_blank">
                                                         @context.Article.Title
                                                     </MudLink>
