@@ -130,7 +130,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, 
+                var request = new HttpRequestMessage(HttpMethod.Get,
                     $"api/v2/news/categories/{categoryId}");
 
                 var response = await _httpClient.SendAsync(request);
@@ -195,19 +195,19 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> ReOrderNews(ArticleSlotAssignment slotAssignment)
+        public async Task<HttpResponseMessage> ReOrderNews(ReorderRequest slotAssignment, string UserId)
         {
             try
             {
 
-                var articleReOrderJson = new StringContent(JsonSerializer.Serialize(slotAssignment), Encoding.UTF8, "application/json");
+                var articleReOrderJson = JsonSerializer.Serialize(slotAssignment, new JsonSerializerOptions { WriteIndented = true });
+
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/news/reorderslot")
                 {
-                    Content = articleReOrderJson
+                    Content = new StringContent(articleReOrderJson, Encoding.UTF8, "application/json")
                 };
 
                 var response = await _httpClient.SendAsync(request);
-
                 return response;
             }
             catch (Exception ex)

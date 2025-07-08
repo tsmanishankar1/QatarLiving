@@ -1,5 +1,7 @@
 window.initializeSortable = (tableSelector, dotNetHelper) => {
     const tbody = document.querySelector(`${tableSelector} tbody`);
+    console.log(tableSelector);
+    console.log(tbody);
     if (!tbody) return;
 
     let dragStarted = false;
@@ -44,12 +46,31 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
 };
 
 
-window.initializeLiveSortable = (tableSelector, dotNetHelper) => {
-    var tbody = document.querySelector(`live-slots`);
+window.initializeArticleSortable = (tableSelector, dotNetHelper) => {
 
-    if (!tbody) return;
+    const table = document.querySelector(`#${tableSelector}`);
+    if (!table) {
+        console.error(`Table with ID '${tableSelector}' not found.`);
+        return;
+    }
+
+    const tbody = table.querySelector("tbody");
+    if (!tbody) {
+        console.error("tbody not found in table.");
+        return;
+    }
+
 
     let dragStarted = false;
+
+    const updateSlotNumbers = () => {
+        tbody.querySelectorAll("tr").forEach((tr, index) => {
+            const slotCell = tr.querySelector(".slot-position");
+            if (slotCell) {
+                slotCell.textContent = index + 1;
+            }
+        });
+    };
 
     new Sortable(tbody, {
         animation: 150,
@@ -63,6 +84,8 @@ window.initializeLiveSortable = (tableSelector, dotNetHelper) => {
                 newOrder.push(tr.getAttribute("data-slot-id"));
             });
 
+            updateSlotNumbers(); // Update the visible row numbers after drag
+
             dotNetHelper.invokeMethodAsync('OnTableReordered', newOrder);
             setTimeout(() => dragStarted = false, 0);
         }
@@ -75,4 +98,6 @@ window.initializeLiveSortable = (tableSelector, dotNetHelper) => {
             return false;
         }
     }, true);
+
+    updateSlotNumbers(); // Set initial numbers on load
 };
