@@ -267,33 +267,35 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetCommentsByPostIdAsync(
+            Guid postId,
+            int? page = null,
+            int? perPage = null,
+            CancellationToken ct = default)
         {
             try
             {
-                var url = $"/api/v2/community/getCommentsByPostId/{postId}";
+                var queryParams = new List<string>();
+                if (page.HasValue) queryParams.Add($"page={page.Value}");
+                if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
 
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
-                response.EnsureSuccessStatusCode();
+                var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+                var url = $"/api/v2/community/comments/byPost/{postId}{queryString}";
 
-                var json = await response.Content.ReadAsStringAsync();
+                var response = await _dapr.InvokeMethodAsync<CommunityCommentListResponse>(
+                    HttpMethod.Get,
+                    "qln-content-ms",
+                    url,
+                    ct);
 
-                var comments = JsonSerializer.Deserialize<List<CommunityCommentDto>>(json, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-                return comments ?? new List<CommunityCommentDto>();
+                return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching comments for post {PostId} via Dapr", postId);
-                throw;
+                _logger.LogError(ex, "Failed to fetch comments for Post ID: {PostId}", postId);
+                throw new InvalidOperationException("Error retrieving comments for community post.", ex);
             }
         }
-
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
             try
@@ -320,6 +322,36 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error invoking LikeCommentAsync via Dapr");
+                throw;
+            }
+        }
+
+        public async Task<bool> DislikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"/api/v2/community/dislikeCommentInternal/{commentId}/{communityPostId}/{userId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var jsonDoc = JsonDocument.Parse(json);
+                    if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
+                    {
+                        return statusElement.GetString()?.ToLowerInvariant() == "disliked";
+                    }
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error invoking DislikeCommentAsync via Dapr");
                 throw;
             }
         }
