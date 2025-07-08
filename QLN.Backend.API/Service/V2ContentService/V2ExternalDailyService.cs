@@ -1,33 +1,11 @@
-﻿using System;
-
-using System.Collections.Generic;
-
-using System.Net;
-
-using System.Net.Http;
-
-using System.Text;
-
-using System.Text.Json;
-
-using System.Threading;
-
-using System.Threading.Tasks;
-
-using Dapr.Client;
-
-using Microsoft.Extensions.Logging;
-
+﻿using Dapr.Client;
 using QLN.Common.DTO_s;
-
 using QLN.Common.Infrastructure.Constants;
-
 using QLN.Common.Infrastructure.CustomException;
-
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-
-using QLN.Common.Infrastructure.IService.IFileStorage;
-
+using System.Text;
+using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -164,9 +142,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<List<DailyTopicContent>> GetSlotsByTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/dailyliving/topic/content";
+            var url = $"/api/v2/dailyliving/topic/content?topicId={topicId}";
             var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, AppId, url);
-            req.Headers.Add("TopicId", topicId.ToString());
 
             _logger.LogDebug("GET {Url} with TopicId={TopicId}", url, topicId);
 
@@ -189,7 +166,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             return list ?? new List<DailyTopicContent>();
         }
-        public async Task<string> ReorderSlotsAsync(string userId, ReorderDailyTopicContentDto dto, CancellationToken ct)
+        public async Task<string> ReorderSlotsBatchAsync(string userId, DailyTopicSlotReorderRequest dto, CancellationToken ct)
         {
             var url = $"/api/v2/dailyliving/topic/content/reorderbyid/{userId}";
             var payload = JsonSerializer.Serialize(dto);
@@ -333,6 +310,38 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Failed to create DailyTopic");
                 throw;
             }
+        }
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(
+            Guid topicId,
+            CancellationToken cancellationToken = default)
+        {
+            var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles";
+
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    AppId,
+                    path,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+        }
+        public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
+        {
+            var path = "/api/v2/dailyliving/landing";
+            var appId = V2Content.ContentServiceAppId;
+            return await _dapr.InvokeMethodAsync<ContentsDailyPageResponse>(
+                HttpMethod.Get,
+                appId,
+                path,
+                cancellationToken: ct
+            );
         }
     }
 

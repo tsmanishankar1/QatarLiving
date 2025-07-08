@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Web.Shared.Pages.Content.News;
 using QLN.Web.Shared.Components.LocationSelect;
 
 namespace QLN.Web.Shared.Components.NewCustomSelect

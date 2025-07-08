@@ -19,6 +19,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<IV2NewsService> _logger;
+        private const string StoreName = V2Content.ContentStoreName;
         private static readonly List<string> writerTags = new()
     {
         "Qatar Living",
@@ -27,13 +28,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
         "QL Exclusive",
         "Advice & Help"
     };
+        private static int _nextCategoryId = 101;
+        private static int _nextSubCategoryId = 1001;
 
         public V2InternalNewsService(DaprClient dapr, ILogger<IV2NewsService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-         
+
         public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Returning static writer tags as key-value JSON");
@@ -73,50 +76,92 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             try
             {
-                var slug = GenerateNewsSlug(dto.Title);
-                dto.Slug = slug;
-                dto.Id = Guid.NewGuid();
-                dto.CreatedBy = userId;
-                dto.UpdatedBy = userId;
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-                dto.PublishedDate = DateTime.UtcNow;
-
-                string storeName = V2Content.ContentStoreName;
-                string articleIdStr = dto.Id.ToString();
-
-                await _dapr.SaveStateAsync(storeName, articleIdStr, dto, cancellationToken: cancellationToken);
-
-                var indexKey = V2Content.NewsIndexKey;
-                var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
-                                  ?? new List<string>();
-
-                if (!currentIndex.Contains(articleIdStr))
-                {
-                    currentIndex.Add(articleIdStr);
-                    await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
-                }
+                var slugBase = GenerateNewsSlug(dto.Title);
+                int articleCount = 0;
 
                 foreach (var cat in dto.Categories)
                 {
-                    int slotId = cat.SlotId == 0 ? (int)Slot.UnPublished : cat.SlotId;
+                    var singleDto = new V2NewsArticleDTO
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = dto.Title,
+                        Content = dto.Content,
+                        WriterTag = dto.WriterTag,
+                        Slug = $"{slugBase}-{cat.CategoryId}-{cat.SubcategoryId}",
+                        IsActive = true,
+                        Categories = new List<V2ArticleCategory> {
+            new V2ArticleCategory {
+                CategoryId    = cat.CategoryId,
+                SubcategoryId = cat.SubcategoryId,
+                SlotId        = cat.SlotId == 0
+                                  ? (int)Slot.UnPublished
+                                  : cat.SlotId
+            }
+        },
+                        PublishedDate = DateTime.UtcNow,
+                        CreatedBy = userId,
+                        UpdatedBy = userId,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        authorName = dto.authorName,
+                        CoverImageUrl = dto.CoverImageUrl,
+                        UserId = dto.UserId
+                    };
 
-                    if (slotId == (int)Slot.Published || slotId == (int)Slot.UnPublished)
+                    int slotId = singleDto.Categories[0].SlotId;
+                    string storeName = V2Content.ContentStoreName;
+                    string articleIdStr = singleDto.Id.ToString();
+
+                    if (slotId > 0)
                     {
-                        string key = GetStatusSlotKey(cat.CategoryId, cat.SubcategoryId, slotId);
-                        await _dapr.SaveStateAsync(storeName, key, articleIdStr, cancellationToken: cancellationToken);
-                    }
-                    else if (slotId >= 1 && slotId <= 13)
-                    {
-                        await HandleSlotShiftAsync(cat.CategoryId, cat.SubcategoryId, slotId, dto, cancellationToken);
+                        await HandleSlotShiftAsync(
+                            cat.CategoryId,
+                            cat.SubcategoryId,
+                            slotId,
+                            singleDto,
+                            cancellationToken);
                     }
                     else
                     {
-                        throw new InvalidDataException($"Invalid SlotId: {slotId} for category {cat.CategoryId}-{cat.SubcategoryId}");
+                        string statusKey = GetStatusSlotKey(
+                            cat.CategoryId,
+                            cat.SubcategoryId,
+                            slotId);
+                        await _dapr.SaveStateAsync(
+                            storeName,
+                            statusKey,
+                            articleIdStr,
+                            cancellationToken: cancellationToken);
                     }
+
+                    await _dapr.SaveStateAsync(
+                        storeName,
+                        articleIdStr,
+                        singleDto,
+                        cancellationToken: cancellationToken);
+
+                    var indexKey = V2Content.NewsIndexKey;
+                    var currentIndex = await _dapr.GetStateAsync<List<string>>(
+                        storeName,
+                        indexKey,
+                        cancellationToken: cancellationToken)
+                       ?? new List<string>();
+
+                    if (!currentIndex.Contains(articleIdStr))
+                    {
+                        currentIndex.Add(articleIdStr);
+                        await _dapr.SaveStateAsync(
+                            storeName,
+                            indexKey,
+                            currentIndex,
+                            cancellationToken: cancellationToken);
+                    }
+
+                    articleCount++;
                 }
 
-                return "News article created successfully";
+
+                return $"{articleCount} news article(s) created successfully";
             }
             catch (InvalidDataException)
             {
@@ -124,15 +169,16 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to create article");
+                _logger.LogError(ex, "Failed to create article(s)");
                 throw new Exception("Unexpected error during article creation", ex);
             }
         }
 
 
+
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
-            const int MaxSlot = 13; // Maximum slots
+            const int MaxSlot = 13;
             string storeName = V2Content.ContentStoreName;
 
             var desiredSlotKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
@@ -315,26 +361,50 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
+            var key = id.ToString();
+
+            // Fetch existing article
             var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
                 ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
+                key,
                 cancellationToken: cancellationToken);
 
             if (existing == null)
                 throw new KeyNotFoundException($"News with ID '{id}' not found.");
 
+            // Mark as inactive (soft delete)
             existing.IsActive = false;
             existing.UpdatedAt = DateTime.UtcNow;
 
+            // Save back to store
             await _dapr.SaveStateAsync(
                 ConstantValues.V2Content.ContentStoreName,
-                id.ToString(),
+                key,
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
 
+            // --- 🔥 Remove ID from News Index ---
+            var index = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.V2Content.ContentStoreName,
+                ConstantValues.V2Content.NewsIndexKey,
+                cancellationToken: cancellationToken) ?? new();
+
+            if (index.Contains(key))
+            {
+                index.Remove(key);
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.NewsIndexKey,
+                    index,
+                    cancellationToken: cancellationToken);
+
+                _logger.LogInformation("Removed article ID {NewsId} from index after soft delete", id);
+            }
+
             return "News Soft Deleted Successfully";
         }
+
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
             try
@@ -375,122 +445,153 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-        public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateNewsArticleAsync(
+            V2NewsArticleDTO dto,
+            CancellationToken cancellationToken = default)
         {
-            try
+            const int MaxLiveSlot = 13;
+            const int UnpublishedId = (int)Slot.UnPublished;
+            const int PublishedId = (int)Slot.Published;
+
+            var store = V2Content.ContentStoreName;
+            if (dto.Id == Guid.Empty)
+                throw new InvalidDataException("Id is required for update");
+
+            var key = dto.Id.ToString();
+            var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                store, key, cancellationToken: cancellationToken);
+
+            if (existing == null)
+                throw new KeyNotFoundException("News article not found");
+
+            var oldCat = existing.Categories.First();
+            var oldSlot = oldCat.SlotId;
+
+            var newCat = dto.Categories.First();
+            var newSlot = newCat.SlotId;
+
+            if (newSlot >= 1 && newSlot <= MaxLiveSlot)
             {
-                var StoreName = V2Content.ContentStoreName;
-
-                if (dto.Id == Guid.Empty)
-                    throw new InvalidDataException("Id is required for update");
-
-                string key = dto.Id.ToString();
-                var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(StoreName, key, cancellationToken: cancellationToken);
-                if (existing == null)
-                    throw new KeyNotFoundException("News article not found");
-
-                dto.UpdatedAt = DateTime.UtcNow;
-
-                // Optional: Handle slot logic or image updates if needed here
-
-                await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: cancellationToken);
-                return "News article updated successfully.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to update news article");
-                throw;
-            }
-        }
-
-        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
-        {
-            const int MaxSlot = 13;
-
-            if (dto.FromSlot < 1 || dto.FromSlot > MaxSlot || dto.ToSlot < 1 || dto.ToSlot > MaxSlot)
-                throw new InvalidDataException("FromSlot and ToSlot must be between 1 and 13.");
-
-            if (dto.FromSlot == dto.ToSlot)
-                return $"No changes needed. Article is already in slot {dto.ToSlot}.";
-
-            string storeName = V2Content.ContentStoreName;
-
-            var fromKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, dto.FromSlot);
-            var fromArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, fromKey, cancellationToken: cancellationToken);
-            if (fromArticle == null)
-                throw new InvalidDataException($"No article found in slot {dto.FromSlot}.");
-
-            var updatedSlots = new List<int>();
-            var missingSlots = new List<int>();
-
-            if (dto.FromSlot < dto.ToSlot)
-            {
-                // Move down: shift up articles
-                for (int i = dto.FromSlot + 1; i <= dto.ToSlot; i++)
-                {
-                    var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
-                    var previousKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i - 1);
-                    var article = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, currentKey, cancellationToken: cancellationToken);
-
-                    if (article == null)
-                    {
-                        missingSlots.Add(i);
-                        continue;
-                    }
-
-                    var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
-                    if (cat != null) cat.SlotId = i - 1;
-
-                    await _dapr.SaveStateAsync(storeName, previousKey, article, cancellationToken: cancellationToken);
-                    await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
-                    updatedSlots.Add(i - 1);
-                }
+                await HandleSlotShiftAsync(
+                    newCat.CategoryId,
+                    newCat.SubcategoryId,
+                    newSlot,
+                    dto,
+                    cancellationToken);
             }
             else
             {
-                // Move up: shift down articles
-                for (int i = dto.FromSlot - 1; i >= dto.ToSlot; i--)
+                if (oldSlot >= 1 && oldSlot <= MaxLiveSlot)
                 {
-                    var currentKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i);
-                    var nextKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, i + 1);
-                    var article = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, currentKey, cancellationToken: cancellationToken);
-
-                    if (article == null)
-                    {
-                        missingSlots.Add(i);
-                        continue;
-                    }
-
-                    var cat = article.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
-                    if (cat != null) cat.SlotId = i + 1;
-
-                    await _dapr.SaveStateAsync(storeName, nextKey, article, cancellationToken: cancellationToken);
-                    await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
-                    updatedSlots.Add(i + 1);
+                    var oldSlotKey = GetSlotKey(
+                        oldCat.CategoryId,
+                        oldCat.SubcategoryId,
+                        oldSlot);
+                    await _dapr.DeleteStateAsync(
+                        store,
+                        oldSlotKey,
+                        cancellationToken: cancellationToken);
                 }
+
+                if (oldSlot == UnpublishedId || oldSlot == PublishedId)
+                {
+                    var oldStatusKey = GetStatusSlotKey(
+                        oldCat.CategoryId,
+                        oldCat.SubcategoryId,
+                        oldSlot);
+                    await _dapr.DeleteStateAsync(
+                        store,
+                        oldStatusKey,
+                        cancellationToken: cancellationToken);
+                }
+
+                var statusKey = GetStatusSlotKey(
+                    newCat.CategoryId,
+                    newCat.SubcategoryId,
+                    newSlot);
+                await _dapr.SaveStateAsync(
+                    store,
+                    statusKey,
+                    dto.Id.ToString(),
+                    cancellationToken: cancellationToken);
             }
 
-            // Place original article in new slot
-            var toKey = GetSlotKey(dto.CategoryId, dto.SubCategoryId, dto.ToSlot);
-            var fromCat = fromArticle.Categories.FirstOrDefault(c => c.CategoryId == dto.CategoryId && c.SubcategoryId == dto.SubCategoryId);
-            if (fromCat != null) fromCat.SlotId = dto.ToSlot;
+            dto.UpdatedAt = DateTime.UtcNow;
+            await _dapr.SaveStateAsync(
+                store,
+                key,
+                dto,
+                cancellationToken: cancellationToken);
 
-            await _dapr.SaveStateAsync(storeName, toKey, fromArticle, cancellationToken: cancellationToken);
-            await _dapr.SaveStateAsync(storeName, fromArticle.Id.ToString(), fromArticle, cancellationToken: cancellationToken);
-            await _dapr.DeleteStateAsync(storeName, fromKey, cancellationToken: cancellationToken);
-            updatedSlots.Add(dto.ToSlot);
-
-            updatedSlots.Sort();
-
-            // ✅ Build detailed response
-            var result = $"Reordered successfully. Updated slots: {string.Join(", ", updatedSlots)}.";
-            if (missingSlots.Any())
-                result += $"Warning: Some slots were empty and skipped: {string.Join(", ", missingSlots)}.";
-
-            return result;
+            return "News article updated successfully.";
         }
+        public async Task<string> ReorderSlotsAsync(
+            NewsSlotReorderRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            const int MaxSlot = 13;
+            string storeName = V2Content.ContentStoreName;
+            int catId = request.CategoryId;
+            int subCatId = request.SubCategoryId;
 
+            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
+            var slots = request.SlotAssignments.Select(x => x.SlotNumber).ToList();
+            if (slots.Distinct().Count() != MaxSlot || slots.Any(n => n < 1 || n > MaxSlot))
+                throw new InvalidDataException($"SlotNumber must be unique and between 1 and {MaxSlot}.");
+
+            var loaded = new Dictionary<string, V2NewsArticleDTO>();
+            foreach (var sa in request.SlotAssignments)
+            {
+                if (string.IsNullOrWhiteSpace(sa.ArticleId))
+                    continue;
+
+                var article = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                    storeName,
+                    sa.ArticleId,
+                    cancellationToken: cancellationToken);
+
+                if (article == null)
+                    throw new InvalidDataException($"Article with ID '{sa.ArticleId}' not found.");
+                
+                if (!article.Categories.Any(c =>
+                      c.CategoryId == catId &&
+                      c.SubcategoryId == subCatId))
+                {
+                    throw new InvalidOperationException(
+                        $"Article '{sa.ArticleId}' does not belong to Category {catId} / SubCategory {subCatId}.");
+                }
+
+                loaded[sa.ArticleId] = article;
+            }
+
+            
+            foreach (var sa in request.SlotAssignments)
+            {
+                string slotKey = GetSlotKey(catId, subCatId, sa.SlotNumber);
+
+                if (string.IsNullOrWhiteSpace(sa.ArticleId))
+                {
+                    
+                    await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
+                    continue;
+                }
+
+                var article = loaded[sa.ArticleId]!;
+
+                
+                var catDto = article.Categories
+                    .First(c => c.CategoryId == catId && c.SubcategoryId == subCatId);
+                catDto.SlotId = sa.SlotNumber;
+
+                // save both keyed slot and by‐ID
+                await _dapr.SaveStateAsync(storeName, slotKey, article, cancellationToken: cancellationToken);
+                await _dapr.SaveStateAsync(storeName, article.Id.ToString(), article, cancellationToken: cancellationToken);
+            }
+
+            return "News slots updated successfully.";
+        }
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             return await _dapr.GetStateAsync<V2NewsArticleDTO>(V2Content.ContentStoreName, id.ToString(), cancellationToken: cancellationToken);
@@ -565,8 +666,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             return await _dapr.GetStateAsync<V2NewsCategory>(V2Content.ContentStoreName, key, cancellationToken: cancellationToken);
         }
 
-        private static int _nextCategoryId = 101;
-        private static int _nextSubCategoryId = 1001;
+
 
         private static string GetCategoryKey(int id) => $"category-{id}";
 
@@ -612,20 +712,40 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
+            _logger.LogInformation("Starting to save news comment for Article ID: {Nid}", dto.Nid);
             try
             {
                 var commentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.CommentId}";
                 var indexKey = $"{V2Content.NewsCommentIndexPrefix}{dto.Nid}";
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
+                _logger.LogInformation("Generated comment key: {CommentKey}", commentKey);
+                _logger.LogInformation("Generated index key: {IndexKey}", indexKey);
 
+                _logger.LogInformation("Saving comment state to Dapr store...");
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
+                _logger.LogInformation("Comment saved to key: {CommentKey}", commentKey);
+
+                _logger.LogInformation("Retrieving existing index list from Dapr...");
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
+                _logger.LogInformation("Retrieved {Count} comment IDs from index.", index.Count);
+
+
                 if (!index.Contains(dto.CommentId))
+                {
+                    _logger.LogInformation("Comment ID {CommentId} not found in index. Adding...", dto.CommentId);
                     index.Add(dto.CommentId);
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    _logger.LogInformation("Saving updated index back to Dapr...");
+                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    _logger.LogInformation("Index saved with {Count} total comment IDs.", index.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping update.", dto.CommentId);
+                }
 
                 _logger.LogInformation("News comment saved successfully for Article {Nid}", dto.Nid);
+
 
                 return new NewsCommentApiResponse
                 {
@@ -644,7 +764,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
-
         public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
@@ -679,28 +798,38 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     if (string.IsNullOrWhiteSpace(state.Value))
                         continue;
 
-                    var comment = JsonSerializer.Deserialize<V2NewsCommentDto>(state.Value);
-                    if (comment == null)
+                    var comment = JsonSerializer.Deserialize<V2NewsCommentDto>(state.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (comment == null || !comment.IsActive)
                         continue;
 
                     var likeIndexKey = $"news-comment-like-index-{comment.CommentId}";
+                    var dislikeIndexKey = $"news-comment-dislike-index-{comment.CommentId}";
+
                     var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct)
                                 ?? new List<string>();
+
+                    var dislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct)
+                        ?? new List<string>();
 
                     comments.Add(new NewsCommentListItem
                     {
                         CommentId = comment.CommentId,
-                        UserId = comment.Uid,
-                        UserName = comment.UserName ?? "",
+                        UserId = comment.Uid ?? string.Empty,
+                        UserName = comment.UserName ?? string.Empty,
                         Subject = comment.Comment,
                         DateCreated = comment.CommentedAt,
-                        LikeCount = likes.Count
+                        LikeCount = likes.Count,
+                        DislikeCount = dislikes.Count
                     });
                 }
 
                 return new NewsCommentListResponse
                 {
-                    TotalComments = total,
+                    TotalComments = comments.Count,
                     PerPage = itemsPerPage,
                     CurrentPage = currentPage,
                     Comments = comments
@@ -720,36 +849,72 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             try
             {
-                var existing = await _dapr.GetStateAsync<string>(V2Content.ContentStoreName, key, cancellationToken: ct);
-                var index = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
+                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
                 if (!string.IsNullOrWhiteSpace(existing))
                 {
-                    await _dapr.DeleteStateAsync(V2Content.ContentStoreName, key, cancellationToken: ct);
+                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
                     index.Remove(userId);
-                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
-                    _logger.LogInformation("User {UserId} unliked news comment {CommentId}", userId, commentId);
+                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
                     return false;
                 }
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, key, userId, cancellationToken: ct);
+                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
 
                 if (!index.Contains(userId))
                     index.Add(userId);
 
-                await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
+                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
-                _logger.LogInformation("User {UserId} liked news comment {CommentId}", userId, commentId);
+                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, commentId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error toggling like for news comment {CommentId}", commentId);
+                _logger.LogError(ex, "Error toggling like for comment {CommentId}", commentId);
                 throw;
             }
         }
-        
+
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            var key = $"news-comment-dislike-{commentId}-{userId}";
+            var indexKey = $"news-comment-dislike-index-{commentId}";
+
+            try
+            {
+                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+
+                if (!string.IsNullOrWhiteSpace(existing))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
+                    index.Remove(userId);
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                    _logger.LogInformation("User {UserId} removed dislike from comment {CommentId}", userId, commentId);
+                    return false;
+                }
+
+                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
+
+                if (!index.Contains(userId))
+                    index.Add(userId);
+
+                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
+
+                _logger.LogInformation("User {UserId} disliked comment {CommentId}", userId, commentId);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error toggling dislike for comment {CommentId}", commentId);
+                throw;
+            }
+        }
 
 
     }

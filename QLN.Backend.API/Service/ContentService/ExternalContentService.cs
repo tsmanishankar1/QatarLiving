@@ -1,9 +1,6 @@
-﻿using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Constants;
+﻿using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace QLN.Backend.API.Service.ContentService
 {
@@ -16,7 +13,7 @@ namespace QLN.Backend.API.Service.ContentService
 
             var httpRequest = await httpClient.PostAsJsonAsync<CreateCommentRequest>(DrupalContentConstants.CommentsSavePath, request, cancellationToken);
 
-            if(httpRequest.IsSuccessStatusCode)
+            if (httpRequest.IsSuccessStatusCode)
             {
                 var response = await httpRequest.Content.ReadFromJsonAsync<CreateCommentResponse>(cancellationToken);
                 return response;
@@ -64,13 +61,13 @@ namespace QLN.Backend.API.Service.ContentService
         }
         // qlnapi/events?category_id=126205&location_id=102701&date=2025-01-01'
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
-            CancellationToken cancellationToken, 
+            CancellationToken cancellationToken,
             string? category_id = null,
             string? location_id = null,
             string? from = null,
             string? to = null,
             string? order = null,
-            int? page = null, 
+            int? page = null,
             int? page_size = null
             )
         {
@@ -114,10 +111,10 @@ namespace QLN.Backend.API.Service.ContentService
         }
 
         public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(
-            CancellationToken cancellationToken, 
-            string? forum_id = null, 
-            string? order = null, 
-            int? page = null, 
+            CancellationToken cancellationToken,
+            string? forum_id = null,
+            string? order = null,
+            int? page = null,
             int? page_size = null
             )
         {
@@ -135,9 +132,9 @@ namespace QLN.Backend.API.Service.ContentService
         }
 
         public async Task<GetCommentsResponse?> GetCommentsFromDrupalAsync(
-            string forum_id, 
-            CancellationToken cancellationToken, 
-            int? page = 1, 
+            string forum_id,
+            CancellationToken cancellationToken,
+            int? page = 1,
             int? page_size = 10
             )
         {

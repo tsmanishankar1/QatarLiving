@@ -6,7 +6,6 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -47,7 +46,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-     
+
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -161,7 +160,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
                     dto.CoverImageUrl = blobUrl;
                 }
-                var url = "/api/v2/news/updateNewsarticleByUserId"; 
+                var url = "/api/v2/news/updateNewsarticleByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -231,8 +230,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
-
+        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
         {
             try
             {
@@ -251,7 +249,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var url = $"/api/v2/news/getbyid/{id}";
@@ -343,7 +340,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             response.EnsureSuccessStatusCode();
             return true;
         }
-
+        //comments
 
 
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
@@ -353,7 +350,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 dto.CommentId = dto.CommentId == Guid.Empty ? Guid.NewGuid() : dto.CommentId;
                 dto.CommentedAt = dto.CommentedAt == default ? DateTime.UtcNow : dto.CommentedAt;
 
-                var url = "/api/v2/news/commentsSavebyid"; // This should match the internal endpoint route
+                var url = "/api/v2/news/commentsavebyid"; // This should match the internal endpoint route
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     V2Content.ContentServiceAppId,
@@ -401,7 +398,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
 
                 var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-                var url = $"/api/v2/news/comments/byArticle/{nid}{queryString}";
+                var url = $"/api/v2/news/commentsbyArticleid/{nid}{queryString}";
 
                 var response = await _dapr.InvokeMethodAsync<NewsCommentListResponse>(
                     HttpMethod.Get,
@@ -422,7 +419,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/news/comments/{commentId}/like/by-user";
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -438,11 +436,36 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to like (by user ID) for comment {CommentId}", commentId);
-                throw new InvalidOperationException("like (by user ID) failed", ex);
+                _logger.LogError(ex, "Failed to like comment {CommentId} by user {UserId}", commentId, userId);
+                throw new InvalidOperationException("Like (by user ID) failed", ex);
             }
         }
 
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/commentsdislike/byid/{commentId}?userId={encodedUserId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<bool>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to dislike comment {CommentId} by user {UserId}", commentId, userId);
+                throw new InvalidOperationException("Dislike (by user ID) failed", ex);
+            }
+        }
 
 
     }

@@ -5,7 +5,6 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
-using static QLN.Web.Shared.Models.VerticalConstants;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 {
@@ -237,7 +236,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
                 Snackbar.Add("An error occurred.", Severity.Error);
             }
         }
-       
+
         protected async Task UnPublishAd(List<string> adId)
         {
             try
@@ -300,7 +299,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo($"/qln/classifieds/items/details/{adId}", forceLoad: true);
         }
 
-   
+
         protected void SetTab(int index)
         {
             _activeTabIndex = index;
@@ -314,8 +313,8 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         {
             Navigation.NavigateTo("/qln/PurchaseRefresh", forceLoad: true);
         }
-    
- 
+
+
         public static string GetDisplayName<TEnum>(TEnum enumValue) where TEnum : Enum
         {
             var member = typeof(TEnum).GetMember(enumValue.ToString()).FirstOrDefault();

@@ -1,12 +1,12 @@
-﻿using Dapr.Actors.Client;
-using Dapr.Actors;
+﻿using Dapr.Actors;
+using Dapr.Actors.Client;
 using QLN.Common.DTO_s;
-using System.Collections.Concurrent;
+using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
+using QLN.Common.Infrastructure.IService.IPayToFeatureService;
 using QLN.Common.Infrastructure.Subscriptions;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
-using QLN.Common.Infrastructure.IService.IPayToFeatureService;
-using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
 
 namespace QLN.Backend.API.Service.PayToFeatureService
 {
@@ -21,7 +21,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
         {
             _logger = logger;
 
-           
+
             _defaultIds.TryAdd("paytofeature_default", Guid.Parse("00000000-0000-0000-0000-000000000001"));
             _defaultIds.TryAdd("payment_default", Guid.Parse("00000000-0000-0000-0000-000000000002"));
         }
@@ -36,12 +36,12 @@ namespace QLN.Backend.API.Service.PayToFeatureService
             return ActorProxy.Create<IPayToFeatureActor>(new ActorId(_masterActorId.ToString()), "PayToFeatureActor");
         }
 
-      
+
         public async Task<PayToFeatureDataDto> SetPayToFeatureDataAsync(PayToFeatureDataDto data, CancellationToken cancellationToken = default)
         {
             var actor = GetActorProxy(data.Id);
 
-           
+
             if (data.Plans != null)
             {
                 foreach (var plan in data.Plans)
@@ -120,7 +120,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
             var basicPriceActor = GetActorProxy(basicPrice.Id);
             await basicPriceActor.SetDatasAsync(basicPrice, cancellationToken);
 
-            
+
             var masterActor = GetActorProxy(_defaultIds["paytofeature_default"]);
             await masterActor.AddBasicPriceIdAsync(basicPrice.Id, cancellationToken);
 
@@ -144,14 +144,14 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 VerticalTypeId = request.VerticalTypeId,
                 CategoryId = request.CategoryId,
                 StatusId = request.StatusId,
-                IsPromoteAd=request.IsPromoteAd,
-                IsFeaturedAd=request.IsFeatureAd,
+                IsPromoteAd = request.IsPromoteAd,
+                IsFeaturedAd = request.IsFeatureAd,
                 LastUpdated = DateTime.UtcNow
             };
             var planActor = GetActorProxy(plan.Id);
             await planActor.SetDataAsync(plan, cancellationToken);
 
-           
+
             var masterActor = GetActorProxy(_defaultIds["paytofeature_default"]);
             await masterActor.AddPlanIdAsync(plan.Id, cancellationToken);
 
@@ -298,7 +298,7 @@ namespace QLN.Backend.API.Service.PayToFeatureService
 
             foreach (var plan in data.Plans.Where(p => p.StatusId != Status.Expired))
             {
-               
+
                 var lookupKey = $"{(int)plan.VerticalTypeId}_{(int)plan.CategoryId}";
                 basicPriceLookup.TryGetValue(lookupKey, out var matchingBasicPrice);
 
@@ -309,8 +309,8 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                     Price = plan.Price,
                     Currency = plan.Currency,
                     Description = plan.Description,
-                  IsPromoteAd=plan.IsPromoteAd,
-                  IsFeaturedAd=plan.IsFeaturedAd,
+                    IsPromoteAd = plan.IsPromoteAd,
+                    IsFeaturedAd = plan.IsFeaturedAd,
                     DurationName = ConvertToReadableFormat(plan.Duration),
                     VerticalId = (int)plan.VerticalTypeId,
                     VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
@@ -449,8 +449,8 @@ namespace QLN.Backend.API.Service.PayToFeatureService
                 DurationId = (int)durationEnum,
                 DurationName = durationEnum.ToString(),
                 VerticalTypeId = (int)plan.VerticalTypeId,
-                IsFeatureAd=plan.IsFeaturedAd,
-                IsPromoteAd=plan.IsPromoteAd,
+                IsFeatureAd = plan.IsFeaturedAd,
+                IsPromoteAd = plan.IsPromoteAd,
                 VerticalName = GetEnumDisplayName(plan.VerticalTypeId),
                 CategoryId = (int)plan.CategoryId,
                 CategoryName = GetEnumDisplayName(plan.CategoryId),

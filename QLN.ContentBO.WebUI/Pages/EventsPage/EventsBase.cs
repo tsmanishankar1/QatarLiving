@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
@@ -36,7 +38,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         public List<EventDTO> AllEventsList { get; set; } = new();
         protected int pageSize = 12;
         protected bool IsLoading = true;
-         protected bool IsLoadingEvent = true;
+        protected bool IsLoadingEvent = true;
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -64,10 +66,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected async Task HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; 
+            currentPage = 1;
             PaginatedData = await GetEvents(currentPage, pageSize);
             StateHasChanged();
         }
+
         protected bool SortAscending = true;
 
         protected async Task HandleSortOrderChange(bool ascending)
@@ -79,10 +82,19 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
-            AllEventsList = await GetAllEvents();
+            var allEvents = await GetAllEvents();
+            var featuredEventTitles = featuredEventSlots
+                .Where(slot => slot.Event != null)
+                .Select(slot => slot.Event.EventTitle)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase); // for case-insensitive comparison
+
+            AllEventsList = allEvents
+                .Where(e => !featuredEventTitles.Contains(e.EventTitle))
+                .ToList();
         }
         protected EventDTO? draggedItem;
 
@@ -205,11 +217,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     page: page,
                     perPage: pageSize,
                     search: search ?? "",
-                    categoryId: null, 
+                    categoryId: null,
                     sortOrder: sortOrder,
                     fromDate: null,
                     toDate: null,
-                    filterType: "", 
+                    filterType: "",
                     status: status,
                     location: null,
                     freeOnly: false,
@@ -222,7 +234,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     if (result != null)
                     {
                         result.Items = result.Items
-                            .Where(e => e.IsActive) 
+                            .Where(e => e.IsActive)
                             .ToList();
                     }
                     return result ?? new PaginatedEventResponse();
@@ -403,48 +415,48 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
             }
         }
-      protected async Task ReplaceFeaturedEvent()
-{
-    try
-    {
-            var payload = new
+        protected async Task ReplaceFeaturedEvent()
         {
-            eventId = ReplacedEvent.Id,
-            isFeatured = true,
-            slot = new
+            try
             {
-                id = ReplacedEvent.FeaturedSlot.Id,
-                name = ReplacedEvent.FeaturedSlot.Name
+                var payload = new
+                {
+                    eventId = ReplacedEvent.Id,
+                    isFeatured = true,
+                    slot = new
+                    {
+                        id = ReplacedEvent.FeaturedSlot.Id,
+                        name = ReplacedEvent.FeaturedSlot.Name
+                    }
+                };
+
+                var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+
+                Logger.LogInformation("New slot replacement payload: {Payload}", payloadJson);
+
+                var apiResponse = await eventsService.UpdateFeaturedEvents(payload);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Event Replaced successfully", Severity.Success);
+                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+                    StateHasChanged();
+                }
+                else
+                {
+                    var error = await apiResponse.Content.ReadAsStringAsync();
+                    Logger.LogError("Failed to replace event. StatusCode: {StatusCode}, Response: {Response}", apiResponse.StatusCode, error);
+                    Snackbar.Add("Failed to replace event", Severity.Error);
+                }
             }
-        };
-
-        var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
-
-        Logger.LogInformation("New slot replacement payload: {Payload}", payloadJson);
-
-        var apiResponse = await eventsService.UpdateFeaturedEvents(payload);
-        if (apiResponse.IsSuccessStatusCode)
-        {
-            Snackbar.Add("Event Replaced successfully", Severity.Success);
-            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
-            StateHasChanged();
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ReplaceFeaturedEvent");
+                Snackbar.Add("Something went wrong while replacing the event.", Severity.Error);
+            }
         }
-        else
-        {
-            var error = await apiResponse.Content.ReadAsStringAsync();
-            Logger.LogError("Failed to replace event. StatusCode: {StatusCode}, Response: {Response}", apiResponse.StatusCode, error);
-            Snackbar.Add("Failed to replace event", Severity.Error);
-        }
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "ReplaceFeaturedEvent");
-        Snackbar.Add("Something went wrong while replacing the event.", Severity.Error);
-    }
-}
 
         protected async Task UpdateEvent()
         {
@@ -490,5 +502,18 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 Snackbar.Add($"Failed to update status to {newStatus}.", Severity.Error);
             }
         }
+        protected async Task DeleteEventOnClick(string id)
+        {
+        var parameters = new DialogParameters
+        {
+            { "Title", "Delete Confirmation" },
+            { "Descrption", "Do you want to delete this Event?" },
+            { "ButtonTitle", "Delete" },
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent(id))}
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
     }
 }

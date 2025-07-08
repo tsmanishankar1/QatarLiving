@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Pages.Subscription;
 using QLN.Web.Shared.Services.Interface;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 
@@ -36,7 +34,7 @@ namespace QLN.Web.Shared.Services
             };
             var response = await _httpClient.PostAsJsonAsync("api/subscription/add", payload);
             return response.IsSuccessStatusCode;
-         
+
         }
 
         public async Task<SubscriptionResponse?> GetSubscriptionAsync(int verticalId, int categoryId)
@@ -96,13 +94,13 @@ namespace QLN.Web.Shared.Services
                     Content = JsonContent.Create(payload)
                 };
 
-               
+
 
                 var response = await _httpClient.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();
-                  
+
                 }
                 return response.IsSuccessStatusCode;
             }

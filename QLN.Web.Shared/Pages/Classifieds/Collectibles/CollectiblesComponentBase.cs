@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using QLN.Common.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 using System.Text.Json;
-using MudBlazor;
 public class CollectiblesComponentBase : ComponentBase
 {
     [Inject] protected SearchStateService SearchState { get; set; }
@@ -154,32 +154,32 @@ public class CollectiblesComponentBase : ComponentBase
         IsLoadingSaveSearch = true;
         try
         {
-              if (string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText))
+            if (string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText))
             {
                 Snackbar.Add("Search text is required before saving.", Severity.Warning);
                 return;
             }
-                var searchQuery = BuildSearchPayload();
-                bool hasAppliedAnything = false;
-                if (searchQuery.TryGetValue("text", out var textVal) &&
-                textVal is string text && !string.IsNullOrWhiteSpace(text))
+            var searchQuery = BuildSearchPayload();
+            bool hasAppliedAnything = false;
+            if (searchQuery.TryGetValue("text", out var textVal) &&
+            textVal is string text && !string.IsNullOrWhiteSpace(text))
             {
                 hasAppliedAnything = true;
             }
-        
+
             if (searchQuery.TryGetValue("filters", out var filtersObj) &&
                     filtersObj is Dictionary<string, object> filters)
-                {
-                    // Count filters that are not just "SubVertical"
-                    var nonDefaultFilters = filters
-                        .Where(f => !string.Equals(f.Key, "SubVertical", StringComparison.OrdinalIgnoreCase))
-                        .ToDictionary(f => f.Key, f => f.Value);
+            {
+                // Count filters that are not just "SubVertical"
+                var nonDefaultFilters = filters
+                    .Where(f => !string.Equals(f.Key, "SubVertical", StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(f => f.Key, f => f.Value);
 
-                    if (nonDefaultFilters.Count > 0)
-                    {
-                        hasAppliedAnything = true;
-                    }
+                if (nonDefaultFilters.Count > 0)
+                {
+                    hasAppliedAnything = true;
                 }
+            }
 
             if (!hasAppliedAnything)
             {
@@ -218,7 +218,7 @@ public class CollectiblesComponentBase : ComponentBase
     }
     private Dictionary<string, object> BuildSearchPayload(string? searchText = null)
     {
-         var filters = new Dictionary<string, object>
+        var filters = new Dictionary<string, object>
             {
                 { "SubVertical", "Collectibles" }
             };
@@ -249,8 +249,8 @@ public class CollectiblesComponentBase : ComponentBase
                 filters[fieldFilter.Key] = fieldFilter.Value;
         }
 
-        var safeText = string.IsNullOrWhiteSpace(searchText) 
-                ? (string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText) ? "" : SearchState.CollectiblesSearchText) 
+        var safeText = string.IsNullOrWhiteSpace(searchText)
+                ? (string.IsNullOrWhiteSpace(SearchState.CollectiblesSearchText) ? "" : SearchState.CollectiblesSearchText)
                 : searchText;
         return new Dictionary<string, object>
         {

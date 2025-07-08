@@ -14,7 +14,8 @@ namespace QLN.Common.DTO_s
         public V2EventType EventType { get; set; }
         public int? Price { get; set; }
         [Required]
-        public int LocationId { get; set; }
+        public string Location { get; set; }
+        public int? LocationId { get; set; }
         public string Venue { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
@@ -68,10 +69,15 @@ namespace QLN.Common.DTO_s
         public int FeaturedCount { get; set; }
         public int FeaturedInCurrentPage { get; set; }
     }
-    public class EventReorder
+    public class EventSlotAssignment
     {
-        public int FromSlot { get; set; }
-        public int ToSlot { get; set; }
+        public int SlotNumber { get; set; } 
+        public string? EventId { get; set; } 
+    }
+
+    public class EventSlotReorderRequest
+    {
+        public List<EventSlotAssignment> SlotAssignments { get; set; } = new();
         public string? UserId { get; set; }
     }
     public class UpdateFeaturedEvent

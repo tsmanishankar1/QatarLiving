@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Common.DTO_s;
-using QLN.Web.Shared.Components.BreadCrumb;
-using MudBlazor;
-using QLN.Web.Shared.Helpers;
 using Microsoft.JSInterop;
+using MudBlazor;
+using QLN.Common.DTO_s;
+using QLN.Web.Shared.Helpers;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 {
@@ -11,7 +10,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
     {
         protected bool isSaved = false;
         public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-        
+
         [Inject] protected NavigationManager Navigation { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JSRuntime { get; set; }
@@ -22,13 +21,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
 
         [Parameter]
         public List<ClassifiedsIndex> Simler { get; set; } = new();
-       [Inject] protected SearchStateService SearchState { get; set; }
+        [Inject] protected SearchStateService SearchState { get; set; }
         protected string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
         protected int selectedImageIndex = 0;
-        protected string categorySegment = "items"; 
+        protected string categorySegment = "items";
         protected void OnClickCardItem(ClassifiedsIndex item)
         {
-            Navigation.NavigateTo($"/qln/classifieds/collectibles/details/{item.Id}",true);
+            Navigation.NavigateTo($"/qln/classifieds/collectibles/details/{item.Id}", true);
         }
 
         protected override void OnParametersSet()
@@ -78,7 +77,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Collectibles.Components
             });
         }
 
- 
+
         protected List<MenuItem> ShareMenuItems => new()
         {
             new MenuItem {

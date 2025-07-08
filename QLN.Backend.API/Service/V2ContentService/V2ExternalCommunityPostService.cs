@@ -1,15 +1,13 @@
 ﻿using Dapr.Client;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Mvc;
 using static QLN.Common.DTO_s.CommunityBo;
-using System.Security.Cryptography.X509Certificates;
-using System.Net;
 
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -164,7 +162,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var json = await resp.Content.ReadAsStringAsync();
                 return JsonSerializer.Deserialize<bool>(json);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -221,7 +219,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Error fetching community post with ID {Id}", communityId);
                 throw;
             }
-        }       
+        }
         public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
         {
             try
@@ -245,7 +243,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return false;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error liking/unliking community post");
                 throw;
