@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                await AuthorizedPage();
+                AuthorizedPage();
                 if (!Guid.TryParse(ArticleId, out var parsedArticleId))
                 {
                     Snackbar.Add("Invalid article ID", Severity.Error);

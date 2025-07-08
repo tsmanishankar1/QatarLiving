@@ -29,16 +29,8 @@ namespace QLN.ContentBO.WebUI.Pages.Community
 
         protected override async Task OnInitializedAsync()
         {
-            try
-            {
-                await AuthorizedPage();
-                await LoadPostsAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnInitializedAsync");
-                throw;
-            }
+            AuthorizedPage();
+            await LoadPostsAsync();
         }
 
         protected async Task LoadPostsAsync()

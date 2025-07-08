@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
         protected string searchText = string.Empty;
         protected bool ascending = true;
         protected int currentPage = 1;
-        protected int pageSize = 12;
+        protected int pageSize = 10;
         protected bool IsLoading = false;
 
         protected List<ReportDto> _paginatedPosts = new();
@@ -35,17 +35,9 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 
         protected override async Task OnInitializedAsync()
         {
-            try
-            {
-                await AuthorizedPage();
-                Navigation.LocationChanged += OnLocationChanged;
-                await SetTypeAndLoadReportsAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnInitializedAsync");
-                throw;
-            }
+            AuthorizedPage();
+            Navigation.LocationChanged += OnLocationChanged;
+            await SetTypeAndLoadReportsAsync();
         }
 
         private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
