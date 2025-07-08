@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using static QLN.Common.DTO_s.CommunityBo;
+using Microsoft.Extensions.Logging;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -112,7 +113,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                  Ok<PaginatedCommunityPostResponseDto>,
                 ProblemHttpResult
             >>
-            (                
+            (
 
                 [FromQuery] string? categoryId,
                 [FromQuery] string? search,
@@ -260,7 +261,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 ProblemHttpResult>>
                 (
                 CommunityPostLikeDto dto,
-                IV2CommunityPostService service,HttpContext httpContext,
+                IV2CommunityPostService service, HttpContext httpContext,
                 CancellationToken ct
                 ) =>
             {
@@ -348,7 +349,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.               WithName("LikeCommunityPostInternal")
+.WithName("LikeCommunityPostInternal")
                 .WithTags("V2Community")
                 .ExcludeFromDescription();
 
@@ -453,22 +454,68 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .WithTags("V2Community")
                 .ExcludeFromDescription();
 
-            group.MapGet("/getCommentsByPostId/{postId:guid}", async Task<IResult> (
-    Guid postId,
-    IV2CommunityPostService service,
-    CancellationToken ct) =>
+            group.MapGet("/comments/byPost/{postId:guid}", async Task<Results<
+     Ok<CommunityCommentListResponse>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult>>
+ (
+     Guid postId,
+     int? page,
+     int? perPage,
+     IV2CommunityPostService service,
+     CancellationToken ct
+ ) =>
             {
-                var comments = await service.GetAllCommentsByPostIdAsync(postId, ct);
-                return Results.Ok(comments);
-            })
-                .WithName("GetCommunityPostComments")
-                .WithTags("V2Community")
-                .WithSummary("Get all comments for a community post")
-                .WithDescription("Retrieves a list of comments by post ID.")
-                .Produces<List<CommunityCommentDto>>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status500InternalServerError);
+                try
+                {
+                    var response = await service.GetCommentsByPostIdAsync(postId, page, perPage, ct);
 
-            group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
+                    // Check if there are comments
+                    if (response.Comments == null || !response.Comments.Any())
+                    {
+                        // If no comments found, return a 404 Not Found with the custom message
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Comments available for this post",
+                            Detail = $"No comments found for Post ID: {postId}",
+                            Status = StatusCodes.Status404NotFound,
+                            Instance = $"/comments/byPost/{postId}"
+                        });
+                    }
+
+                    // If comments exist, return them with a 200 OK response
+                    return TypedResults.Ok(response);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Handle specific exception for no comments found
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No Comments available for this post",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = $"/comments/byPost/{postId}"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // In case of an unexpected error, return a 500 Internal Server Error
+                    return TypedResults.Problem(
+                        title: "Error retrieving comments",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+             .WithName("GetCommentsByPostId")
+             .WithTags("V2Community")
+             .WithSummary("Get all comments for a community post")
+             .WithDescription("Retrieves a paginated list of comments by post ID.")
+             .Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+             group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
     Ok<object>,
     ForbidHttpResult,
     ProblemHttpResult>>
@@ -542,6 +589,82 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("V2Community")
             .ExcludeFromDescription();
 
+            group.MapPost("/dislikeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
+    Ok<object>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+(
+    Guid commentId,
+    Guid communityPostId,
+    IV2CommunityPostService service,
+    HttpContext httpContext,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+
+                    var disliked = await service.DislikeCommentAsync(commentId, userId, communityPostId, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        status = disliked ? "disliked" : "undisliked",
+                        commentId,
+                        userId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to process comment dislike operation.", ex.Message);
+                }
+            })
+.WithName("DislikeCommentByUser")
+.WithTags("V2Community")
+.WithSummary("Dislike/Undislike a comment using JWT")
+.WithDescription("Extracts user ID from token and toggles comment dislike.");
+
+
+            group.MapPost("/dislikeCommentInternal/{commentId:guid}/{communityPostId:guid}/{userId}", async Task<Results<
+    Ok<object>,
+    ProblemHttpResult>>
+(
+    Guid commentId,
+    Guid communityPostId,
+    string userId,
+    IV2CommunityPostService service,
+    CancellationToken ct
+) =>
+            {
+                try
+                {
+                    var disliked = await service.DislikeCommentAsync(commentId, userId, communityPostId, ct);
+
+                    return TypedResults.Ok((object)new
+                    {
+                        status = disliked ? "disliked" : "undisliked",
+                        commentId,
+                        userId
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+.WithName("DislikeCommentInternal")
+.WithTags("V2Community")
+.ExcludeFromDescription();
+
+
+
             group.MapGet("/getBySlug/{slug}", async Task<Results<
             Ok<V2CommunityPostDto>,
             NotFound<ProblemDetails>,
@@ -599,7 +722,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-        
+
             .WithName("GetAllCommunityCategories")
             .WithTags("V2Community")
             .WithSummary("Get all community catrgory value with id for dropdown")
