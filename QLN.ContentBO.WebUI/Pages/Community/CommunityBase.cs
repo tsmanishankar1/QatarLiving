@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Community
 {
-    public class CommunityBase : ComponentBase
+    public class CommunityBase : QLComponentBase
     {
         protected string searchText = string.Empty;
 
@@ -28,6 +29,7 @@ namespace QLN.ContentBO.WebUI.Pages.Community
 
         protected override async Task OnInitializedAsync()
         {
+            AuthorizedPage();
             await LoadPostsAsync();
         }
 

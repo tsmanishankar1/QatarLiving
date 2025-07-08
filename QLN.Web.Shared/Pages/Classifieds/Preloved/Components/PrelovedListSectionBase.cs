@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Web.Shared.Components.BreadCrumb;
-using QLN.Common.DTO_s;
 using Microsoft.JSInterop;
+using QLN.Common.DTO_s;
+using QLN.Web.Shared.Components.BreadCrumb;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 {
@@ -13,15 +13,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         [Parameter] public bool IsSearchPerformed { get; set; }
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Inject] NavigationManager NavigationManager { get; set; }
-       [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
-       [Parameter]
-       public int TotalCount { get; set; } = 0;
+        [Parameter] public List<ClassifiedsIndex> Items { get; set; } = new();
+        [Parameter]
+        public int TotalCount { get; set; } = 0;
         protected List<BreadcrumbItem> breadcrumbItems = new();
         protected string selectedSort = "default";
         protected int currentPage => SearchState.PrelovedCurrentPage;
         protected int pageSize => SearchState.PrelovedPageSize;
 
-       protected async void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             SearchState.PrelovedSetPage(newPage);
             if (OnSearch.HasDelegate)
@@ -33,45 +33,45 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
             SearchState.PrelovedSetPageSize(newSize);
             if (OnSearch.HasDelegate)
                 await OnSearch.InvokeAsync(SearchState.PrelovedSearchText ?? string.Empty);
-    }
-    protected List<object> GetPageWithAd(List<ClassifiedsIndex> items, int currentPage)
-    {
-        var result = new List<object>();
-        int adIndex = GetAdInsertIndex(currentPage);
-
-        for (int i = 0; i < items.Count; i++)
+        }
+        protected List<object> GetPageWithAd(List<ClassifiedsIndex> items, int currentPage)
         {
-            if (i == adIndex)
+            var result = new List<object>();
+            int adIndex = GetAdInsertIndex(currentPage);
+
+            for (int i = 0; i < items.Count; i++)
             {
-                result.Add("ad"); // use string or special marker for ad
+                if (i == adIndex)
+                {
+                    result.Add("ad"); // use string or special marker for ad
+                }
+
+                result.Add(items[i]);
             }
 
-            result.Add(items[i]);
+            // if ad wasn't inserted (e.g., adIndex > items.Count), append it
+            if (!result.Contains("ad"))
+            {
+                result.Add("ad");
+            }
+
+            // Trim if somehow more than 12 items
+            return result.Take(12).ToList();
         }
 
-        // if ad wasn't inserted (e.g., adIndex > items.Count), append it
-        if (!result.Contains("ad"))
+        private int GetAdInsertIndex(int page)
         {
-            result.Add("ad");
+            // Always start from 3, vary based on page number
+            var positions = new[] { 2, 4, 9, 5, 6 };
+            return positions[(page - 1) % positions.Length];
         }
 
-        // Trim if somehow more than 12 items
-        return result.Take(12).ToList();
-    }
 
-    private int GetAdInsertIndex(int page)
-    {
-        // Always start from 3, vary based on page number
-        var positions = new[] { 2, 4, 9, 5, 6 };
-        return positions[(page - 1) % positions.Length];
-    }
-
-
-       protected void OnClickCardItem(ClassifiedsIndex item)
+        protected void OnClickCardItem(ClassifiedsIndex item)
         {
             NavigationManager.NavigateTo($"/qln/classifieds/preloved/details/{item.Id}");
         }
-          protected int WindowWidth { get; set; }
+        protected int WindowWidth { get; set; }
 
         [Inject] protected IJSRuntime JS { get; set; } = default!;
         private DotNetObjectReference<PrelovedListSectionBase>? _objectRef;
@@ -81,7 +81,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         {
             WindowWidth = width;
             StateHasChanged();
-           if (WindowWidth <= 992 && ViewMode != "grid")
+            if (WindowWidth <= 992 && ViewMode != "grid")
             {
                 ViewMode = "grid";
                 StateHasChanged();
@@ -143,12 +143,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         }
 
 
-    public class SortOption
-    {
-        public string Id { get; set; }
-        public string Label { get; set; }
-        public string? OrderByValue { get; set; } 
-    }
+        public class SortOption
+        {
+            public string Id { get; set; }
+            public string Label { get; set; }
+            public string? OrderByValue { get; set; }
+        }
 
         protected List<SortOption> sortOptions = new()
         {

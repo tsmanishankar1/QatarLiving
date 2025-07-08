@@ -6,7 +6,6 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -47,7 +46,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-     
+
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -161,7 +160,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
                     dto.CoverImageUrl = blobUrl;
                 }
-                var url = "/api/v2/news/updateNewsarticleByUserId"; 
+                var url = "/api/v2/news/updateNewsarticleByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -231,8 +230,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken)
-
+        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
         {
             try
             {
@@ -251,7 +249,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var url = $"/api/v2/news/getbyid/{id}";
@@ -420,7 +417,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
-            try 
+            try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
                 var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
@@ -444,6 +441,31 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/commentsdislike/byid/{commentId}?userId={encodedUserId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<bool>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to dislike comment {CommentId} by user {UserId}", commentId, userId);
+                throw new InvalidOperationException("Dislike (by user ID) failed", ex);
+            }
+        }
 
 
     }

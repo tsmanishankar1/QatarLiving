@@ -1,8 +1,6 @@
 ﻿using Dapr.Actors.Runtime;
 using global::QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
-using QLN.Common.Infrastructure.IService.IPayToPublicActor;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {

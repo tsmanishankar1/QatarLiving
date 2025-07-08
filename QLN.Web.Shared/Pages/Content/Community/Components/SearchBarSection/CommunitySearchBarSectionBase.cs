@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Services;
 
 public class CommunitySearchBarSectionBase : ComponentBase
 {

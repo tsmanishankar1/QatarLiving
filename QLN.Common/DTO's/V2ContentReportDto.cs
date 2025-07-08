@@ -66,6 +66,7 @@ namespace QLN.Common.DTO_s
         public string? UserName { get; set; }
         public DateTime? CommentDate { get; set; }
         public string? Router { get; set; }
+        public string Slug { get; set; }
     }
 
     public class V2UpdateReportStatusDto
@@ -91,10 +92,11 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Guid PostId { get; set; }
         public Guid CommentId { get; set; }
-        public string ReporterName { get; set; } = string.Empty;
+        public string Reporter { get; set; } = string.Empty;
+        public string Slug { get; set; }
         public DateTime ReportDate { get; set; }
         public DateTime? CommentDate { get; set; }
-        public string? Title { get; set; }     
+        public string? Post { get; set; }     
         public string? Comment { get; set; }
         public string? UserName { get; set; } 
         public string? Router { get; set; }

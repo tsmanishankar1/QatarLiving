@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Common.DTO_s;
-using QLN.Web.Shared.Components.BreadCrumb;
-using MudBlazor;
-using QLN.Web.Shared.Helpers;
 using Microsoft.JSInterop;
+using MudBlazor;
+using QLN.Common.DTO_s;
+using QLN.Web.Shared.Helpers;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 {
@@ -12,7 +11,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
         protected bool isSaved = false;
         [Inject] protected SearchStateService SearchState { get; set; }
         public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-        
+
         [Inject] protected NavigationManager Navigation { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JSRuntime { get; set; }
@@ -26,10 +25,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 
         protected string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
         protected int selectedImageIndex = 0;
-        protected string categorySegment = "items"; 
+        protected string categorySegment = "items";
         protected void OnClickCardItem(ClassifiedsIndex item)
         {
-            Navigation.NavigateTo($"/qln/classifieds/preloved/details/{item.Id}",true);
+            Navigation.NavigateTo($"/qln/classifieds/preloved/details/{item.Id}", true);
         }
 
         protected override void OnParametersSet()
@@ -54,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
                 breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
                 {
                     Label = SearchState.PrelovedSelectedCategoryName,
-                    Url = "/qln/classifieds/preloved" 
+                    Url = "/qln/classifieds/preloved"
                 });
             }
 
@@ -63,7 +62,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
                 breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
                 {
                     Label = SearchState.PrelovedSelectedSubCategoryName,
-                    Url = "/qln/classifieds/preloved" 
+                    Url = "/qln/classifieds/preloved"
                 });
             }
 
@@ -72,7 +71,7 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
                 breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
                 {
                     Label = SearchState.PrelovedSelectedSubSubCategoryName,
-                    Url = "/qln/classifieds/preloved" 
+                    Url = "/qln/classifieds/preloved"
                 });
             }
 

@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Components.ToggleTabs.ToggleTabs;
@@ -16,6 +18,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         [Inject] protected ILogger<NewsBase> Logger { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; }
+
         [Parameter] public int CategoryId { get; set; }
 
         protected int activeIndex = 0;
@@ -51,11 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected string selectedTab = "live";
 
         public List<IndexedArticle> IndexedLiveArticles { get; set; } = [];
-        public class IndexedArticle
-        {
-            public int SlotNumber { get; set; }
-            public NewsArticleDTO? Article { get; set; }
-        }
 
         protected bool IsLoadingDataGrid { get; set; } = false;
 
@@ -65,15 +64,39 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
 
+        protected string articleDetailBaseURL { get; set; }
+
+        public class NewsArticleSearchResponse
+        {
+            public List<NewsArticleDTO> Items { get; set; } = [];
+        }
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                AuthorizedPage();
+                articleDetailBaseURL = $"{NavigationPath.Value.ContentWeb.TrimEnd('/')}/content/article";
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             try
             {
+                await JS.InvokeVoidAsync("initializeArticleSortable", "live-article-table", DotNetObjectReference.Create(this));
+
                 if (shouldFocusInput && subCategoryInputRef is not null)
                 {
                     shouldFocusInput = false;
                     await subCategoryInputRef.FocusAsync();
                 }
+
             }
             catch (Exception ex)
             {
@@ -103,9 +126,9 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected void NavigateToAddEvent()
+        protected void NavigateToAddArticle()
         {
-            Navigation.NavigateTo("/manage/news/addarticle");
+            Navigation.NavigateTo($"/manage/news/addarticle/category/{CategoryId}/subcategory/{SelectedSubcategory.Id}", true);
         }
 
         protected async Task DeleteArticle(Guid id)
@@ -151,128 +174,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Logger.LogError(ex, "GetAllArticles");
                 return [];
-            }
-        }
-
-        protected async void Click_MoveItemUp(Guid Id)
-        {
-            try
-            {
-                var articleToUpdate = IndexedLiveArticles
-                                        .Where(x => x.Article?.IsActive == true)
-                                        .Select(x => x.Article)
-                                        .FirstOrDefault(a =>
-                                            a != null &&
-                                            a.Id == Id &&
-                                            a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
-                                        ) ?? new NewsArticleDTO();
-
-                var toSlot = GetCurrentSlot(articleToUpdate);
-
-                var selectedCategory = articleToUpdate.Categories
-                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
-
-                if (toSlot > 1)
-                {
-                    toSlot -= 1;
-                }
-
-                articleSlotAssignment = new()
-                {
-                    CategoryId = CategoryId,
-                    SubCategoryId = SelectedSubcategory.Id,
-                    FromSlot = selectedCategory?.SlotId ?? 0,
-                    ToSlot = toSlot,
-                    AuthorName = articleToUpdate.authorName ?? string.Empty,
-                    UserId = articleToUpdate.UserId ?? string.Empty
-                };
-
-                var response = await newsService.ReOrderNews(articleSlotAssignment);
-                if (response != null)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        UpdateArticleSlot(IndexedLiveArticles, articleToUpdate.Id, articleSlotAssignment.ToSlot);
-                        Snackbar.Add("Slot Updated");
-                        StateHasChanged();
-                    }
-                    else if (response.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Click_MoveItemUp");
-            }
-        }
-
-        protected async void Click_MoveItemDown(Guid Id)
-        {
-            try
-            {
-                var articleToUpdate = IndexedLiveArticles
-                                        .Where(x => x.Article?.IsActive == true)
-                                        .Select(x => x.Article)
-                                        .FirstOrDefault(a =>
-                                            a != null &&
-                                            a.Id == Id &&
-                                            a.Categories.Any(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id)
-                                        ) ?? new NewsArticleDTO();
-
-                var toSlot = GetCurrentSlot(articleToUpdate);
-
-                var selectedCategory = articleToUpdate.Categories
-                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
-
-                if (toSlot < 13)
-                {
-                    toSlot += 1;
-                }
-
-                articleSlotAssignment = new()
-                {
-                    CategoryId = CategoryId,
-                    SubCategoryId = SelectedSubcategory.Id,
-                    FromSlot = selectedCategory?.SlotId ?? 0,
-                    ToSlot = toSlot,
-                    AuthorName = articleToUpdate.authorName ?? string.Empty,
-                    UserId = articleToUpdate.UserId ?? string.Empty
-                };
-
-                var response = await newsService.ReOrderNews(articleSlotAssignment);
-                if (response != null)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        UpdateArticleSlot(IndexedLiveArticles, articleToUpdate.Id, articleSlotAssignment.ToSlot);
-                        Snackbar.Add("Slot Updated");
-                        StateHasChanged();
-                    }
-                    else if (response.StatusCode == HttpStatusCode.BadRequest)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                    {
-                        APIError? error = JsonSerializer.Deserialize<APIError>(content, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                        Snackbar.Add(error?.Detail ?? "Slot not Updated", Severity.Error);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Click_MoveItemDown");
             }
         }
 
@@ -493,12 +394,15 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     {
                         case 1:
                             IndexedLiveArticles.Clear();
+                            ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
                             break;
                         case 2:
+                            ResetSearch();
                             ListOfNewsArticles = await GetPublishedArticlesAsync();
                             break;
                         case 3:
+                            ResetSearch();
                             ListOfNewsArticles = await GetUnpublishedArticlesAsync();
                             break;
                     }
@@ -696,11 +600,19 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async Task SearchArticles()
         {
-            IsSearchEnabled = true;
-            IsLoadingDataGrid = true;
-            selectedTab = string.Empty;
-            SearchListOfNewsArticles = await SearchArticlesAsync();
-            IsLoadingDataGrid = false;
+            try
+            {
+                IsSearchEnabled = true;
+                IsLoadingDataGrid = true;
+                selectedTab = string.Empty;
+                SearchListOfNewsArticles = await SearchArticlesAsync();
+                IsLoadingDataGrid = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SearchArticles");
+                IsLoadingDataGrid = false;
+            }
         }
 
         private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
@@ -713,7 +625,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     var content = await response.Content.ReadAsStringAsync();
                     if (response.IsSuccessStatusCode)
                     {
-                        return await response.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                        var result = JsonSerializer.Deserialize<NewsArticleSearchResponse>(content, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        return result?.Items ?? new List<NewsArticleDTO>();
                     }
                     else if (response.StatusCode == HttpStatusCode.BadRequest)
                     {
@@ -734,6 +651,77 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 Logger.LogError(ex, "SearchArticles");
                 return [];
             }
+        }
+
+        [JSInvokable]
+        public async Task OnTableReordered(List<string> newOrder)
+        {
+            try
+            {
+                // Convert to integers: newOrder contains original SlotNumbers in new order
+                var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
+
+                // Map of original slot numbers to their article IDs
+                var articleSlotMap = IndexedLiveArticles
+                    .Where(x => x.Article != null)
+                    .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
+
+                // Prepare 13-slot list (1 to 13)
+                var totalSlots = Enumerable.Range(1, 13).ToList();
+
+                // Create ArticleSlotAssignments based on reordering
+                var slotAssignments = totalSlots.Select(slotNumber =>
+                {
+                    // Find the index of this slot in the reordered list
+                    var newIndex = reorderedSlotNumbers.IndexOf(slotNumber);
+
+                    // If this slot was part of the newOrder list, use its new index + 1
+                    var newSlotNumber = newIndex >= 0 ? newIndex + 1 : slotNumber;
+
+                    // Lookup the articleId for this original slot number
+                    var articleId = articleSlotMap.TryGetValue(slotNumber, out var id) ? (Guid?)id : null;
+
+                    return new ArticleSlotAssignment
+                    {
+                        SlotNumber = newSlotNumber,
+                        ArticleId = articleId
+                    };
+                })
+                .OrderBy(x => x.SlotNumber) // optional: keep the output ordered
+                .ToList();
+
+
+                var request = new ReorderRequest
+                {
+                    SlotAssignments = slotAssignments,
+                    CategoryId = CategoryId,
+                    SubCategoryId = SelectedSubcategory.Id,
+                    UserId = CurrentUserId.ToString()
+                };
+
+                var response = await newsService.ReOrderNews(request, CurrentUserId.ToString());
+                var content = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Slots Reordered Successfully", Severity.Success);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Failed to Reorder slots", Severity.Error);
+                    Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnTableReordered");
+            }
+        }
+
+        protected void ResetSearch()
+        {
+            IsSearchEnabled = false;
+            SearchString = string.Empty;
         }
     }
 }

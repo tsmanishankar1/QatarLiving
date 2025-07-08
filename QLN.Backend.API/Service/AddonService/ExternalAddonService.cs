@@ -53,7 +53,7 @@ namespace QLN.Backend.API.Service.AddonService
             await actor.SetAddonDataAsync(data, cancellationToken);
             _logger.LogDebug("Saved addon data with ID: {AddonId}", data.Id);
         }
-       public async Task<IEnumerable<QuantityResponse>> GetAllQuantitiesAsync()
+        public async Task<IEnumerable<QuantityResponse>> GetAllQuantitiesAsync()
         {
             var data = await GetOrCreateAddonDataAsync();
 
@@ -67,7 +67,7 @@ namespace QLN.Backend.API.Service.AddonService
             _logger.LogInformation("Retrieved {Count} quantities (excluding CreatedAt)", response.Count);
 
             return response;
-       }
+        }
 
         public async Task<Quantities> CreateQuantityAsync(CreateQuantityRequest request)
         {
@@ -126,7 +126,7 @@ namespace QLN.Backend.API.Service.AddonService
                 Id = Guid.NewGuid(),
                 QuantityId = request.QuantityId,
                 CurrencyId = request.CurrencyId,
-                currency=request.currency,
+                currency = request.currency,
                 Duration = (DurationType)request.durationId,
                 CreatedAt = DateTime.UtcNow
             };
@@ -154,9 +154,9 @@ namespace QLN.Backend.API.Service.AddonService
                     QuantityId = uc.QuantityId,
                     QuantityName = data.Quantities.FirstOrDefault(q => q.QuantitiesId == uc.QuantityId)?.QuantitiesName,
                     CurrencyId = uc.CurrencyId,
-                    Currency=uc.currency,
+                    Currency = uc.currency,
                     CurrencyName = data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyName,
-                    durationId =  (int)uc.Duration,
+                    durationId = (int)uc.Duration,
                     durationName = System.Enum.GetName(typeof(DurationType), uc.Duration) ?? "Unknown"
                 }).ToList() ?? new List<UnitCurrencyResponse>();
 
@@ -206,10 +206,10 @@ namespace QLN.Backend.API.Service.AddonService
             _addonPaymentIds.TryAdd(dto.Id, 0);
             _logger.LogInformation("Addon payment transaction created with ID: {TransactionId}", dto.Id);
 
-          
+
             var combinedDto = new AddonPaymentWithCurrencyDto
             {
-               
+
                 Id = dto.Id,
                 AddonId = dto.AddonId,
                 VerticalId = dto.VerticalId,
@@ -226,7 +226,7 @@ namespace QLN.Backend.API.Service.AddonService
                 UnitCurrencyId = unitCurrency.Id,
                 QuantityId = unitCurrency.QuantityId,
                 CurrencyId = unitCurrency.CurrencyId,
-                Currency=unitCurrency.currency,
+                Currency = unitCurrency.currency,
                 QuantityName = quantityName,
                 CurrencyName = currencyName,
                 Duration = unitCurrency.Duration,

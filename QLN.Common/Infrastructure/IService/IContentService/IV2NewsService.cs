@@ -18,7 +18,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         // Filter articles by IsActive status 
         Task<List<V2NewsArticleDTO>> GetAllNewsFilterArticles(bool? isActive = null, CancellationToken cancellationToken = default);
         Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default);
-        Task<string> ReorderSlotsAsync(ReorderSlotRequestDto dto, CancellationToken cancellationToken);
+        Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken);
         Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken);
         Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken);
         //category
@@ -29,6 +29,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default);
         Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default);
         Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
+        Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
     }
 
 }

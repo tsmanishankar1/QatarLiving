@@ -1,9 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text;
 using System.Text.Json;
@@ -434,12 +432,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
-     string sortOrder = "desc",
-     int pageNumber = 1,
-     int pageSize = 12,
-     string? searchTerm = null,
-     CancellationToken cancellationToken = default)
+     public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports( string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -511,8 +504,6 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                     throw new InvalidDataException(errorMessage);
                 }
-
-                // Parse success response
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(rawJson))

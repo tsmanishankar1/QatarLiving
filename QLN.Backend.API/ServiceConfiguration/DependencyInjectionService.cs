@@ -1,22 +1,22 @@
 ﻿using QLN.Backend.API.Service.AnalyticsService;
+using QLN.Backend.API.Service.BackOffice;
 using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
 using QLN.Backend.API.Service.ContentService;
 using QLN.Backend.API.Service.SearchService;
-using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.IService.ICompanyService;
-using QLN.Common.Infrastructure.IService.IBannerService;
-using QLN.Common.Infrastructure.IService.IContentService;
-using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Backend.API.Service.ServicesService;
-using QLN.Common.Infrastructure.IService.IFileStorage;
-using QLN.Common.Infrastructure.Service.FileStorage;
-using QLN.Common.Infrastructure.IService.IBackOfficeService;
-using QLN.Backend.API.Service.BackOffice;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Backend.API.Service.V2ContentService;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
+using QLN.Common.Infrastructure.IService.IBannerService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Common.Infrastructure.Service.FileStorage;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -49,7 +49,7 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
             {
-                services.AddHttpClient<IContentService, ExternalContentService>(option => 
+                services.AddHttpClient<IContentService, ExternalContentService>(option =>
                     {
                         option.BaseAddress = drupalBaseUrl;
                     });
@@ -81,6 +81,11 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<IV2EventService, V2ExternalEventService>();
+            return services;
+        }
+        public static IServiceCollection EventFOConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IV2FOEventService, V2FOExternalEventService>();
             return services;
         }
 
