@@ -1,8 +1,7 @@
-using Markdig.Syntax;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.Extensions.Logging;
+using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
@@ -15,8 +14,9 @@ using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Pages.EventsPage;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components;
 using System.Net;
-using System.Text.Json;
+using Markdig.Syntax;
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EventCreateFormBase : QLComponentBase
@@ -120,8 +120,8 @@ namespace QLN.ContentBO.WebUI.Pages
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public TimeSpan? StartTime { get; set; }
-            public TimeSpan? EndTime { get; set; }
+            public TimeSpan? StartTime { get; set; } 
+            public TimeSpan? EndTime { get; set; } 
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -170,25 +170,16 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
         private bool _shouldInitializeMap = true;
-
         protected override async Task OnInitializedAsync()
         {
-            try
-            {
-                await AuthorizedPage();
-                CurrentEvent ??= new EventDTO();
-                CurrentEvent.EventSchedule ??= new EventScheduleModel();
-                CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
-                _editContext = new EditContext(CurrentEvent);
-                Categories = await GetEventsCategories();
-                var locationsResponse = await GetEventsLocations();
-                Locations = locationsResponse?.Locations ?? [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnInitializedAsync");
-                throw;
-            }
+            AuthorizedPage();
+            CurrentEvent ??= new EventDTO();
+            CurrentEvent.EventSchedule ??= new EventScheduleModel();
+            CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
+            _editContext = new EditContext(CurrentEvent);
+            Categories = await GetEventsCategories();
+            var locationsResponse = await GetEventsLocations();
+            Locations = locationsResponse?.Locations ?? [];
         }
         protected void OnCancelClicked()
         {
@@ -591,7 +582,7 @@ public async ValueTask DisposeAsync()
             if (!start.HasValue || !end.HasValue)
                 return false;
             return end > start;
-        }
+        }       
         private void ClearForm()
         {
             CurrentEvent = new EventDTO
