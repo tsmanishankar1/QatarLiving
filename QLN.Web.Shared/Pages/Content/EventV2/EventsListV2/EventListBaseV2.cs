@@ -6,7 +6,14 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 {
     public class EventListBaseV2 : ComponentBase
     {
-        [Parameter] public List<EventDTOV2> Items { get; set; } = [];
+       private List<EventDTOV2> _allItems = new();
+
+        [Parameter]
+        public List<EventDTOV2> Items
+        {
+            get => _allItems.Where(e => e.Status == EventStatus.Published).ToList();
+            set => _allItems = value ?? new();
+        }
 
         [Parameter] public bool Loading { get; set; } = false;
 

@@ -34,7 +34,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
