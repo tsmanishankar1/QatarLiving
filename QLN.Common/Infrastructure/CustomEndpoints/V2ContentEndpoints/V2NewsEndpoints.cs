@@ -305,6 +305,7 @@ public static class V2NewsEndpoints
                        }
                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                        var uid = userData.GetProperty("uid").GetString();
+                       dto.authorName = userData.GetProperty("name").GetString()??"";
                        if (uid == null)
                        {
                            return TypedResults.Forbid();
