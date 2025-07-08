@@ -88,13 +88,13 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
             var allEvents = await GetAllEvents();
-            var featuredEventTitles = featuredEventSlots
+           var featuredEventIds = featuredEventSlots
                 .Where(slot => slot.Event != null)
-                .Select(slot => slot.Event.EventTitle)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase); // for case-insensitive comparison
+                .Select(slot => slot.Event.Id)
+                .ToHashSet();
 
             AllEventsList = allEvents
-                .Where(e => !featuredEventTitles.Contains(e.EventTitle))
+                .Where(e => !featuredEventIds.Contains(e.Id))
                 .ToList();
         }
         protected EventDTO? draggedItem;
