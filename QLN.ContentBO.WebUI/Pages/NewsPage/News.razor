@@ -285,7 +285,7 @@
                                             <td>
                                                 @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
                                                 {
-                                                    <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                    <MudLink Href="@($"{ArticleDetailBaseURL}{context.Article.Slug}")"
                                                              Target="_blank">
                                                         @context.Article.Title
                                                     </MudLink>

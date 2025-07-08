@@ -21,6 +21,10 @@ namespace QLN.ContentBO.WebUI.Components
         public bool IsLoggedIn { get; set; } = false;
         public int CurrentUserId { get; set; }
 
+        public string ArticleDetailBaseURL { get; set; } = string.Empty;
+        public string EventDetailBaseURL { get; set; } = string.Empty;
+        public string PostDetailBaseURL { get; set; } = string.Empty;
+
         protected async void AuthorizedPage()
         {
             try
@@ -36,6 +40,7 @@ namespace QLN.ContentBO.WebUI.Components
                     CurrentUserAlias = user.FindFirst("alias")?.Value;
                     CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                     IsLoggedIn = true;
+                    SetContentWebURl();
                 }
                 else
                 {
@@ -54,6 +59,13 @@ namespace QLN.ContentBO.WebUI.Components
             var destination = new Uri(NavManager.Uri).AbsolutePath.Substring(1);
 
             return destination;
+        }
+
+        protected void SetContentWebURl()
+        {
+            ArticleDetailBaseURL = $"{NavigationPath.Value.ContentNewsDetail}";
+            EventDetailBaseURL = $"{NavigationPath.Value.ContentEventDetail}";
+            PostDetailBaseURL = $"{NavigationPath.Value.ContentPostDetail}";
         }
     }
 }
