@@ -4,6 +4,7 @@ using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -137,6 +138,23 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             };
             return DialogService.ShowAsync<MessageBox>("", parameters, options);
         }
+        private async Task ShowSuccessModal(string title)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SuccessModalBase.Title), title },
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+        }
+
         protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
         {
             if (ReplaceSlot?.SlotNumber > 0 && ReplaceSlot?.SlotNumber != null)
@@ -157,12 +175,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             ReplaceSlot = selectedEvent;
             OpenDialogAsync();
-            await Task.CompletedTask;
-        }
-        protected async Task UpdateEvent(EventDTO selectedEvent)
-        {
-            SelectedEvent = selectedEvent;
-
             await Task.CompletedTask;
         }
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
@@ -401,7 +413,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     {
                         EventTitle = "Feature an Event"
                     };
-                    Snackbar.Add("Featured event deleted successfully", Severity.Success);
+                    Snackbar.Add($"Featured event deleted successfully", Severity.Success);
                     featuredEventSlots = await GetFeaturedSlotsAsync();
                 }
                 else
@@ -440,7 +452,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 var apiResponse = await eventsService.UpdateFeaturedEvents(payload);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Event Replaced successfully", Severity.Success);
+                    await ShowSuccessModal("Event replaced successfully!");
                     PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
                     StateHasChanged();
                 }
@@ -458,28 +470,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             }
         }
 
-        protected async Task UpdateEvent()
-        {
-            try
-            {
-                var apiResponse = await eventsService.UpdateEvents(SelectedEvent);
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Event  successfully", Severity.Success);
-                    PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
-                    StateHasChanged();
-                }
-                else
-                {
-                    Snackbar.Add("Failed to delete event", Severity.Error);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "DeleteEvent");
-                Snackbar.Add("Something went wrong while deleting the event.", Severity.Error);
-            }
-        }
         protected async Task UpdateEventStatusAsync((EventDTO evt, EventStatus newStatus) args)
         {
             var (evt, newStatus) = args;
