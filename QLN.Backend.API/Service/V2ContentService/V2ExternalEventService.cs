@@ -5,6 +5,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -433,6 +434,30 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating featured event");
+                throw;
+            }
+        }
+        public async Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/event/unfeature/{id}";
+
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                );
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Event with ID {id} not found.", id);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unfeaturing event with ID {id}", id);
                 throw;
             }
         }
