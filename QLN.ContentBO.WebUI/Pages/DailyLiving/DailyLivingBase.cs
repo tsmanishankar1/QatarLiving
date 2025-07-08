@@ -82,7 +82,7 @@ public class DailyLivingBase : QLComponentBase
     {
         { nameof(RadioAutoCompleteDialog.Title), "" },
         { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
-        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, AddArticles) }
+        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, activeIndex == 0 ? ReplaceArticles : AddArticles) }
     };
         var options = new DialogOptions
         {
@@ -551,7 +551,7 @@ public class DailyLivingBase : QLComponentBase
             Logger.LogError(ex, "AddArticles");
         }
     }
-    private async Task ReplaceArticles(DailyLivingArticleDto article)
+    protected async Task ReplaceArticles(DailyLivingArticleDto article)
     {
         try
         {
