@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
+using QLN.Common.Infrastructure.DTO_s;
 
 public static class V2NewsEndpoints
 {
@@ -1213,6 +1214,55 @@ public static class V2NewsEndpoints
             .Produces<bool>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/landing", async Task<Results<
+            Ok<QlnNewsNewsQatarPageResponse>,
+            NotFound<ProblemDetails>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>> (
+        [FromQuery] int categoryId,
+        [FromQuery] int subCategoryId,
+        IV2NewsService service,
+        CancellationToken ct) =>
+        {
+            try
+            {
+                var page = await service.GetNewsLandingPageAsync(categoryId, subCategoryId, ct);
+                return TypedResults.Ok(page);
+            }
+            catch (KeyNotFoundException knf)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = knf.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (ArgumentException arg)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = arg.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+           
+            catch (Exception ex)
+            {
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Detail = "An unexpected error occurred. Please try again later.",
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        })
+        .WithName("GetNewsLandingPage")
+        .WithTags("News")
+        .WithSummary("Get the 6-section news landing page for a category/subcategory");
+
 
 
         return group;
