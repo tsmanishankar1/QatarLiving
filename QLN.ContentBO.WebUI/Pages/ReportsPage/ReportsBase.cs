@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
         protected string searchText = string.Empty;
         protected bool ascending = true;
         protected int currentPage = 1;
-        protected int pageSize = 10;
+        protected int pageSize = 12;
         protected bool IsLoading = false;
 
         protected List<ReportDto> _paginatedPosts = new();
