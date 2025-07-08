@@ -8,241 +8,18 @@
 @inject IOptions<NavigationPath> options;
 
 <PageTitle>Qatar Living Content Back Office</PageTitle>
+@using QLN.ContentBO.WebUI.Components.Sidebar
 <MudThemeProvider Theme="defaultTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="DrawerVariant.Persistent" Breakpoint="Breakpoint.None">
-        <MudDrawerHeader Class="drawer-style">
-            <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
-        </MudDrawerHeader>
-        <MudPaper Class="py-3 sidebar-container" Elevation="0">
-            <div class="menu-content">
-                <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
-                    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All">
-                        <img src="/qln-images/daily_icon.svg"
-                             class="nav-icon-style @(NavManager.Uri.Contains("/dashboard") ? "active-orange" : "default-gray")" />
-                        <span class="nav-item @(NavManager.Uri.Contains("/dashboard") ? "active-orange" : "default-gray")">Daily Living</span>
-                    </MudNavLink>
-                    <MudNavGroup Expanded="_isNewsGroupExpanded" ExpandedChanged="OnNewsGroupExpanded">
-                        <TitleContent>
-                            <img src="/qln-images/news_icon.svg"
-                                 alt="News Icon"
-                                 class="nav-icon-style default-gray" />
-                            <span class="nav-item default-gray">News</span>
-                        </TitleContent>
-                        <ChildContent>
-                            <MudNavLink 
-                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/101", true))"
-                                Match="NavLinkMatch.All"
-                                Class="@GetActiveClass("/manage/news/category/101")"
-                            >
-                                News
-                            </MudNavLink>
-                            <MudNavLink 
-                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/102", true))"
-                                Match="NavLinkMatch.All"
-                                Class="@GetActiveClass("/manage/news/category/102")"
-                            >
-                                Business
-                            </MudNavLink>
-
-                            <MudNavLink 
-                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/103", true))"
-                                Match="NavLinkMatch.All"
-                                Class="@GetActiveClass("/manage/news/category/103")"
-                            >
-                                Sports
-                            </MudNavLink>
-
-                            <MudNavLink 
-                                OnClick="@(() => NavManager.NavigateTo("/manage/news/category/104", true))"
-                                Match="NavLinkMatch.All"
-                                Class="@GetActiveClass("/manage/news/category/104")"
-                            >
-                                Lifestyle
-                            </MudNavLink>
-                        </ChildContent>
-                    </MudNavGroup>
-                    <MudNavLink Href="/manage/community" Class="nav-item">
-                        <img src="/qln-images/community_icon.svg" alt="Community" class="nav-icon-style @(NavManager.Uri.Contains("/manage/community") ? "active-orange" : "default-gray")" />
-                        <span class="nav-item @(NavManager.Uri.Contains("/manage/community") ? "active-orange" : "default-gray")">Community</span>
-                    </MudNavLink>
-                    <MudNavLink Href="/manage/events" Class="nav-item">
-                        <img src="/qln-images/event_icon.svg" alt="Events" class="nav-icon-style @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")" />
-                        <span class="nav-item @(NavManager.Uri.Contains("/manage/events") ? "active-orange" : "default-gray")">Events</span>
-                    </MudNavLink>
-                    <MudNavGroup Expanded="_isReportGroupExpanded" ExpandedChanged="OnReportsGroupExpanded">
-                        <TitleContent>
-                            <img src="/qln-images/report_icon.svg"
-                                 alt="Reports Icon"
-                                 class="nav-icon-style default-gray" />
-                            <span class="nav-item default-gray">Report</span>
-                        </TitleContent>
-                        <ChildContent>
-                            <MudNavLink Href="/manage/reports?type=article-comments"  Match="NavLinkMatch.Prefix" Class="@GetActiveClass("/manage/reports?type=article-comments")" >Article Comments</MudNavLink>
-                            <MudNavLink Href="/manage/reports?type=community-posts"   Class="@GetActiveClass("/manage/reports?type=community-posts")">Community Posts</MudNavLink>
-                            <MudNavLink Href="/manage/reports?type=community-comments" Class="@GetActiveClass("/manage/reports?type=community-comments")">Community Comments</MudNavLink>
-                        </ChildContent>
-                    </MudNavGroup>
-                </MudNavMenu>
-                @if (IsLoggedIn)
-                {
-                    <MudPaper Class="user-card" Elevation="0">
-                        <MudDivider DividerType="DividerType.Inset" />
-                        <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween" Class="pa-3">
-                            <MudItem xs="10">
-                                <MudText Class="user-name-style">@Name</MudText>
-                                <MudText Class="user-email-style">@Email</MudText>
-                            </MudItem>
-                            <MudItem xs="2" Class="text-end">
-                                <a href="@options.Value.Logout">
-                                    <img src="/qln-images/logout.svg" alt="search" class="logout-image-style" />
-                                </a>
-                            </MudItem>
-                        </MudGrid>
-                    </MudPaper>
-                }
-            </div>
-        </MudPaper>
-    </MudDrawer>
+   <Sidebar IsLoggedIn="@IsLoggedIn" Name="@Name" Email="@Email" />
     <MudMainContent class="main-content-style">
         @Body
     </MudMainContent>
 </MudLayout>
-
-<style>
-    .custom-news-icon .mud-nav-link-icon {
-        background-image: url('/qln-images/news_icon.svg');
-        background-size: contain;
-        background-repeat: no-repeat;
-        width: 24px;
-        height: 24px;
-        display: inline-block;
-    }
-
-    .mud-navmenu.mud-navmenu-secondary .mud-nav-link-expand-icon.mud-transform {
-        fill: var(--mud-palette-secondary) !important;
-    }
-
-    .sidebar-container {
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .nav-item {
-        font-family: 'Public Sans', sans-serif;
-        font-size: 16px;
-        font-weight: 600 !important;
-        color: #646464;
-    }
-
-    .news-nav-item {
-        background-color: #FFFFFF;
-    }
-
-    .active-news-nav-item {
-        background-color: #FF7F38;
-    }
-
-    .bottom-container {
-        padding: 16px 0;
-        text-align: center;
-        color: #888;
-    }
-
-    .menu-content {
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        height: 100%;
-    }
-
-    .user-card {
-        border-top: 1px solid #E0E0E0;
-        background-color: #fff;
-        border-radius: 0 !important;
-    }
-
-    .user-name-style {
-        font-family: 'Public Sans', sans-serif;
-        font-size: 14px;
-        font-weight: 600 !important;
-        color: #414651;
-    }
-
-    .user-email-style {
-        font-family: 'Public Sans', sans-serif;
-        font-size: 14px;
-        font-weight: 400 !important;
-        color: #535862;
-    }
-
-    .mud-navmenu.mud-navmenu-secondary .mud-nav-link.active:not(.mud-nav-link-disabled) {
-        color: white;
-        --mud-ripple-color: #FF7F38;
-        background-color: #FF7F38;
-    }
-
-    .mud-navmenu.mud-navmenu-secondary .mud-nav-link-expand-icon.mud-transform {
-        fill: var(#646464) !important;
-    }
-
-    .mud-nav-link-active {
-        border-radius: 8px;
-        font-weight: 600;
-        color: #FF7F38 !important;
-    }
-
-        .mud-nav-link-active .nav-item {
-            color: white !important;
-            font-weight: 600;
-        }
-
-    .drawer-style {
-        padding-top: 30px;
-    }
-     .active-news-link {
-            background-color: #FF7F38;
-            color: white !important;
-            font-weight: 600;
-            border-radius: 6px;
-        }
-
-        .inactive-news-link {
-            color: #646464;
-        }
-
-
-    .nav-icon-style {
-        width: 24px;
-        height: 24px;
-        margin-right: 8px;
-        transition: filter 0.3s ease;
-    }
-
-    .active-orange {
-        filter: brightness(0) invert(1);
-    }
-
-    .default-gray {
-        filter: invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%);
-    }
-
-    .main-content-style {
-        background-color: #FAFAFA;
-        padding: 10px 25px 25px 25px;
-    }
-
-    .logout-image-style {
-        height: 30px;
-        width: 30px;
-    }
-
-</style>
 
 @code {
     bool _drawerOpen = true;
@@ -275,10 +52,6 @@
         }
     };
 
-    private string GetActiveClass(string path)
-    {
-        return NavManager.Uri.Contains(path) ? "active-news-link" : "inactive-news-link";
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -299,21 +72,10 @@
         }
 
     }
-
-    protected void OnNewsGroupExpanded(bool expanded)
-    {
-        _isNewsGroupExpanded = expanded;
-         if (expanded)
-        {
-            NavManager.NavigateTo("/manage/news/category/101");
-        }
-    }
-    protected void OnReportsGroupExpanded(bool expanded)
-    {
-        _isReportGroupExpanded = expanded;
-        if (expanded)
-        {
-            NavManager.NavigateTo("/manage/reports?type=article-comments");
-        }
-    }
 }
+<style>
+    .main-content-style {
+        background-color: #FAFAFA;
+        padding: 10px 25px 25px 25px;
+    }
+</style>
