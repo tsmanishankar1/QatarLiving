@@ -67,13 +67,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
         private string GenerateNewsSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-
+            var slug = title.Trim().ToLower()
+                             .Replace(" ", "-")
+                             .Replace("--", "-");
             return slug;
         }
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
@@ -177,6 +173,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new Exception("Unexpected error during article creation", ex);
             }
         }
+
+
 
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
@@ -556,7 +554,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 if (article == null)
                     throw new InvalidDataException($"Article with ID '{sa.ArticleId}' not found.");
-
+                
                 if (!article.Categories.Any(c =>
                       c.CategoryId == catId &&
                       c.SubcategoryId == subCatId))
@@ -568,21 +566,21 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 loaded[sa.ArticleId] = article;
             }
 
-
+            
             foreach (var sa in request.SlotAssignments)
             {
                 string slotKey = GetSlotKey(catId, subCatId, sa.SlotNumber);
 
                 if (string.IsNullOrWhiteSpace(sa.ArticleId))
                 {
-
+                    
                     await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
                     continue;
                 }
 
                 var article = loaded[sa.ArticleId]!;
 
-
+                
                 var catDto = article.Categories
                     .First(c => c.CategoryId == catId && c.SubcategoryId == subCatId);
                 catDto.SlotId = sa.SlotNumber;
