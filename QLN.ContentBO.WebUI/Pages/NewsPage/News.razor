@@ -84,7 +84,7 @@
                                     <CellTemplate>
                                         @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
                                         {
-                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                            <MudLink Href="@($"{ArticleDetailBaseURL}{context.Item.Slug}")"
                                                      Target="_blank">
                                                 @context.Item.Title
                                             </MudLink>

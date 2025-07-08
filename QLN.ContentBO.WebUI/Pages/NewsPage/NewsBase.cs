@@ -73,7 +73,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
             }
             catch (Exception ex)
             {

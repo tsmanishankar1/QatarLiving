@@ -35,9 +35,17 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
 
         protected override async Task OnInitializedAsync()
         {
-            AuthorizedPage();
-            Navigation.LocationChanged += OnLocationChanged;
-            await SetTypeAndLoadReportsAsync();
+            try
+            {
+                await AuthorizedPage();
+                Navigation.LocationChanged += OnLocationChanged;
+                await SetTypeAndLoadReportsAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
         }
 
         private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
