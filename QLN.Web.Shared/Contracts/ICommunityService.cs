@@ -20,6 +20,8 @@ namespace QLN.Web.Shared.Contracts
         Task<List<CommentModelV2>> GetCommentsByPostIdAsyncV2(string postId);
         Task<bool> ReportCommunityPostAsync(string postId);
         Task<bool> ReportCommentAsync(string postId, string commentId);
+        Task<bool> LikeCommunityPostAsync(string postId);
+
 
 
     }

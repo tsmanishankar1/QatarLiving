@@ -96,8 +96,16 @@ public static class V2NewsEndpoints
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
+                    {
+                        return TypedResults.Forbid();
+                    }
                     var name = userData.GetProperty("name").GetString();
 
                     dto.CreatedBy = uid;
@@ -158,7 +166,7 @@ public static class V2NewsEndpoints
                         dto.UpdatedAt = DateTime.UtcNow;
 
                         var result = await service.CreateNewsArticleAsync(dto.CreatedBy, dto, cancellationToken);
-                        return TypedResults.Ok(result); 
+                        return TypedResults.Ok(result);
                     }
                     catch (InvalidDataException ex)
                     {
@@ -275,77 +283,83 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-         group.MapPut("/updatenews", async Task<Results<
-             Ok<string>,
-             ForbidHttpResult,
-             BadRequest<ProblemDetails>,
-             NotFound<ProblemDetails>,
-             ProblemHttpResult>>
-         (
-             V2NewsArticleDTO dto,
-             IV2NewsService service,
-             HttpContext httpContext,
-             CancellationToken cancellationToken
-         ) =>
-                {
-                    try
-                    {
-                        // ✅ Extract user from token
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uid = userData.GetProperty("uid").GetString();
-                        dto.UpdatedBy = uid;
+        group.MapPut("/updatenews", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            V2NewsArticleDTO dto,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+        ) =>
+               {
+                   try
+                   {
+                       var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                       if (string.IsNullOrEmpty(userClaim))
+                       {
+                           return TypedResults.Forbid();
+                       }
+                       var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                       var uid = userData.GetProperty("uid").GetString();
+                       if (uid == null)
+                       {
+                           return TypedResults.Forbid();
+                       }
+                       dto.UpdatedBy = uid;
 
-                        // ✅ Basic validation
-                        if (dto.Id == Guid.Empty)
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Validation Error",
-                                Detail = "News ID must be provided.",
-                                Status = 400
-                            });
+                       if (dto.Id == Guid.Empty)
+                           return TypedResults.BadRequest(new ProblemDetails
+                           {
+                               Title = "Validation Error",
+                               Detail = "News ID must be provided.",
+                               Status = 400
+                           });
 
-                        dto.UserId = uid;
-                        dto.authorName = uid;
-                        dto.UpdatedBy = uid;
-                        dto.UpdatedAt = DateTime.UtcNow;
+                       dto.UserId = uid;
+                       dto.authorName = uid;
+                       dto.UpdatedBy = uid;
+                       dto.UpdatedAt = DateTime.UtcNow;
 
-                        var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
+                       var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
 
-                        return TypedResults.Ok(result); // result should be a success message
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = ex.Message,
-                            Status = 404
-                        });
-                    }
-                    catch (InvalidDataException ex)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = ex.Message,
-                            Status = 400
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        return TypedResults.Problem("Internal Server Error", ex.Message);
-                    }
-                })
-         .WithName("UpdateNewsArticles")
-         .WithTags("News")
-         .WithSummary("Update News (Authenticated)")
-         .WithDescription("Updates a news entry using DTO and assigns the user info from access token.")
-         .Produces<string>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                       return TypedResults.Ok(result); // result should be a success message
+                   }
+                   catch (KeyNotFoundException ex)
+                   {
+                       return TypedResults.NotFound(new ProblemDetails
+                       {
+                           Title = "Not Found",
+                           Detail = ex.Message,
+                           Status = 404
+                       });
+                   }
+                   catch (InvalidDataException ex)
+                   {
+                       return TypedResults.BadRequest(new ProblemDetails
+                       {
+                           Title = "Invalid Data",
+                           Detail = ex.Message,
+                           Status = 400
+                       });
+                   }
+                   catch (Exception ex)
+                   {
+                       return TypedResults.Problem("Internal Server Error", ex.Message);
+                   }
+               })
+        .WithName("UpdateNewsArticles")
+        .WithTags("News")
+        .WithSummary("Update News (Authenticated)")
+        .WithDescription("Updates a news entry using DTO and assigns the user info from access token.")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
         group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
@@ -439,23 +453,22 @@ public static class V2NewsEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        // EXTERNAL - Preview Slot Rearrangement (Authenticated)
         group.MapPost("/reorderslot", async Task<Results<
-     Ok<string>,
-     ForbidHttpResult,
-     BadRequest<ProblemDetails>,
-     NotFound<ProblemDetails>,
-     ProblemHttpResult>>
- (
-     ReorderSlotRequestDto dto,
-     IV2NewsService service,
-     HttpContext httpContext,
-     CancellationToken cancellationToken
- ) =>
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            NewsSlotReorderRequest dto,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+        ) =>
         {
             try
             {
-                if (dto.FromSlot < 1 || dto.FromSlot > 13 || dto.ToSlot < 1 || dto.ToSlot > 13)
+                if (dto.SlotAssignments == null || dto.SlotAssignments.Count != 13)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -466,12 +479,18 @@ public static class V2NewsEndpoints
                 }
 
                 var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Forbid();
+                }
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                 var uid = userData.GetProperty("uid").GetString();
+                if (uid == null)
+                {
+                    return TypedResults.Forbid();
+                }
                 var name = userData.GetProperty("name").GetString();
 
-                dto.UserId = uid;
-                dto.AuthorName = name;
 
                 var result = await service.ReorderSlotsAsync(dto, cancellationToken);
                 return TypedResults.Ok(result);
@@ -490,112 +509,112 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
- .WithName("ReorderLiveSlots")
- .WithTags("News")
- .WithSummary("Reorder Live Slots (Authenticated)")
- .WithDescription("Reorders live news articles using authenticated user.")
- .Produces<string>(StatusCodes.Status200OK)
- .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
- .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
- .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        .WithName("ReorderLiveSlots")
+        .WithTags("News")
+        .WithSummary("Reorder Live Slots (Authenticated)")
+        .WithDescription("Reorders live news articles using authenticated user.")
+        .Produces<string>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/reorderLiveSlotsByUserId", async Task<Results<
-    Ok<string>,
-    BadRequest<ProblemDetails>,
-    NotFound<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    ReorderSlotRequestDto dto,
-    IV2NewsService service,
-    CancellationToken cancellationToken
-) =>
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(dto.UserId))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                NewsSlotReorderRequest dto,
+                IV2NewsService service,
+                CancellationToken cancellationToken
+            ) =>
                     {
-                        Title = "Validation Error",
-                        Detail = "UserId must be provided.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+                        try
+                        {
+                            if (string.IsNullOrWhiteSpace(dto.UserId))
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Validation Error",
+                                    Detail = "UserId must be provided.",
+                                    Status = StatusCodes.Status400BadRequest
+                                });
+                            }
 
-                if (dto.FromSlot < 1 || dto.FromSlot > 13 || dto.ToSlot < 1 || dto.ToSlot > 13)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Slot values must be between 1 and 13.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+                            if (dto.SlotAssignments == null || dto.SlotAssignments.Count != 13)
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Validation Error",
+                                    Detail = "Slot values must be between 1 and 13.",
+                                    Status = StatusCodes.Status400BadRequest
+                                });
+                            }
 
-                var result = await service.ReorderSlotsAsync(dto, cancellationToken);
-                return TypedResults.Ok(result);
-            }
-            catch (InvalidDataException ex)
-            {
-                return TypedResults.NotFound(new ProblemDetails
-                {
-                    Title = "Not Found",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status404NotFound
-                });
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
-.ExcludeFromDescription()
-.WithName("ReorderLiveSlotsByUserId")
-.WithTags("News")
-.WithSummary("Reorder Live Slots (Manual/UserId)")
-.WithDescription("Reorders live news slots using UserId from the payload.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                            var result = await service.ReorderSlotsAsync(dto, cancellationToken);
+                            return TypedResults.Ok(result);
+                        }
+                        catch (InvalidDataException ex)
+                        {
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = ex.Message,
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            return TypedResults.Problem("Internal Server Error", ex.Message);
+                        }
+                    })
+            .ExcludeFromDescription()
+            .WithName("ReorderLiveSlotsByUserId")
+            .WithTags("News")
+            .WithSummary("Reorder Live Slots (Manual/UserId)")
+            .WithDescription("Reorders live news slots using UserId from the payload.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/getbyid/{id:guid}", async Task<Results<
-    Ok<V2NewsArticleDTO>,
-    NotFound<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    Guid id,
-    IV2NewsService service,
-    CancellationToken cancellationToken
-) =>
-        {
-            try
-            {
-                var article = await service.GetArticleByIdAsync(id, cancellationToken);
-                if (article is null)
+            Ok<V2NewsArticleDTO>,
+            NotFound<ProblemDetails>,
+            ProblemHttpResult>>
+        (
+            Guid id,
+            IV2NewsService service,
+            CancellationToken cancellationToken
+        ) =>
                 {
-                    return TypedResults.NotFound(new ProblemDetails
+                    try
                     {
-                        Title = "Not Found",
-                        Detail = $"No article found with ID: {id}",
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
+                        var article = await service.GetArticleByIdAsync(id, cancellationToken);
+                        if (article is null)
+                        {
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Not Found",
+                                Detail = $"No article found with ID: {id}",
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
 
-                return TypedResults.Ok(article);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
-.WithName("GetNewsArticleById")
-.WithTags("News")
-.WithSummary("Get News Article by ID")
-.WithDescription("Returns the news article for the given ID.")
-.Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                        return TypedResults.Ok(article);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem("Internal Server Error", ex.Message);
+                    }
+                })
+        .WithName("GetNewsArticleById")
+        .WithTags("News")
+        .WithSummary("Get News Article by ID")
+        .WithDescription("Returns the news article for the given ID.")
+        .Produces<V2NewsArticleDTO>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/getbyslug/{slug}", async Task<Results<
     Ok<V2NewsArticleDTO>,
@@ -657,6 +676,10 @@ public static class V2NewsEndpoints
 
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                 var uid = userData.GetProperty("uid").GetString();
+                if (uid == null)
+                {
+                    return TypedResults.Forbid();
+                }
                 var name = userData.GetProperty("name").GetString();
 
                 if (string.IsNullOrWhiteSpace(category.CategoryName))
@@ -926,7 +949,11 @@ public static class V2NewsEndpoints
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
 
                 dto.Uid = userData.GetProperty("uid").GetString();
-                dto.UserName =  userData.GetProperty("name").GetString();
+                if (dto.Uid == null)
+                {
+                    return TypedResults.Forbid();
+                }
+                dto.UserName = userData.GetProperty("name").GetString();
                 dto.CommentedAt = DateTime.UtcNow;
                 dto.CommentId = Guid.NewGuid();
 
@@ -1068,7 +1095,6 @@ public static class V2NewsEndpoints
      .Produces(StatusCodes.Status403Forbidden)
      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        // ----- Optional endpoint without JWT (e.g. backend system)
         group.MapPost("/commentsbyid/{commentId}", async Task<Results<
             Ok<bool>,
             BadRequest<ProblemDetails>,
@@ -1108,6 +1134,85 @@ public static class V2NewsEndpoints
         .Produces<bool>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/commentsdislike/{commentId}", async Task<Results<
+            Ok<bool>,
+            ForbidHttpResult,
+            ProblemHttpResult>>
+            (
+            string commentId,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken ct
+            ) =>
+        {
+            try
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                    return TypedResults.Forbid();
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
+
+                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle dislike for news comment.", ex.Message);
+            }
+        })
+            .WithName("DislikeNewsCommentJWT")
+            .WithTags("News")
+            .WithSummary("Toggle dislike on a comment (JWT-based)")
+            .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
+            .Produces<bool>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/commentsdislike/byid/{commentId}", async Task<Results<
+            Ok<bool>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            string commentId,
+            [FromQuery] string userId,
+            IV2NewsService service,
+            CancellationToken ct
+            ) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User ID",
+                        Detail = "The 'userId' query parameter is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to toggle dislike (by user ID).", ex.Message);
+            }
+        })
+            .ExcludeFromDescription()
+            .WithName("DislikeNewsCommentByUserId")
+            .WithTags("News")
+            .WithSummary("Toggle dislike with explicit user ID")
+            .WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
+            .Produces<bool>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
         return group;
     }

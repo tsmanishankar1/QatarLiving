@@ -48,6 +48,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithName("CreateEvent")
             .WithTags("Event")
             .WithSummary("Create Event")
@@ -160,7 +161,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-
         public static RouteGroupBuilder MapGetEventEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>>
@@ -248,6 +248,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithName("UpdateEvent")
             .WithTags("Event")
             .WithSummary("Update Event")
@@ -589,6 +590,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithName("ReorderFeaturedEventSlots")
             .WithTags("Event")
             .WithSummary("Reorder Featured Event Slots")
@@ -782,6 +784,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization() 
             .WithName("UpdateFeaturedEvent")
             .WithTags("Event")
             .WithSummary("Update Featured Event")

@@ -18,10 +18,10 @@ builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
+builder.Services.AddScoped<IV2FOEventService, V2InternalFOEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
-
 builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
@@ -52,6 +52,7 @@ builder.Services.AddSwaggerGen(opts =>
 builder.Services.AddDaprClient();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
+builder.Services.AddScoped<IV2FOEventService, V2InternalFOEventService>();
 builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
@@ -65,6 +66,8 @@ if (app.Environment.IsDevelopment())
 }
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
+var foEventGroup = app.MapGroup("/api/v2/fo/event");
+foEventGroup.MapFOEventEndpoints();
 var reportgroup = app.MapGroup("/api/v2/report");
 reportgroup.MapReportsEndpoints();
 

@@ -15,6 +15,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         protected NavigationManager Navigation { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
+        [Inject] protected ICommunityService CommunityService { get; set; } = default!;
+        [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
 
         [Inject] protected ISnackbar Snackbar { get; set; }
 
@@ -27,22 +29,56 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsLiked { get; set; } = false;
         protected bool IsDisliked { get; set; } = false;
         protected bool isMenuOpen = false;
+        public bool IsLoggedIn { get; set; } = false;
 
         protected void OnMenuToggle(bool open)
         {
             isMenuOpen = open;
             StateHasChanged();
         }
+        protected override async Task OnInitializedAsync()
+        {
+            var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated == true)
+            {
+               
+                IsLoggedIn = true;
+            }
+
+        }
 
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/v2/community/post/detail/{Post.Slug}");
+            Navigation.NavigateTo($"/content/community/v2/post/detail/{Post.Slug}");
         }
         protected async Task ToggleLikeAsync()
         {
-            IsLiked = !IsLiked;
+            try
+            {
+                var success = await CommunityService.LikeCommunityPostAsync(Post.Id);
+
+                if (success)
+                {
+                    IsLiked = !IsLiked;
+                    Post.LikeCount += IsLiked ? 1 : -1;
+                }
+                else
+                {
+                    Snackbar.Add("Failed to like the post.", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while liking post: {ex.Message}");
+                Snackbar.Add("An unexpected error occurred.", Severity.Error);
+            }
+
+            StateHasChanged();
         }
+
 
         protected async Task ToggleDislikeAsync()
         {
@@ -73,7 +109,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         private string CurrentUrl =>
     IsDetailView
         ? Navigation.Uri
-        : $"{Navigation.BaseUri.TrimEnd('/')}/content/v2/community/post/detail/{Post.Slug}";
+        : $"{Navigation.BaseUri.TrimEnd('/')}/content/community/v2post/detail/{Post.Slug}";
 
         //private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
         protected List<MenuItem> shareMenuItems => new()
@@ -169,6 +205,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected async Task OnReport()
         {
+            if (!IsLoggedIn)
+            {
+                Snackbar.Add("Please login to report this post.", Severity.Warning);
+                return;
+            }
             var parameters = new DialogParameters
     {
         { "PostId", Post.Id },
