@@ -111,7 +111,7 @@ namespace QLN.Web.Shared.Services
     {
         var isFeaturedValue = isFeatured ?? true;
 
-        var url = $"api/v2/event/getallfeaturedevents?isFeatured={isFeaturedValue.ToString().ToLower()}";
+        var url = $"api/v2/fo/event/getallfofeaturedevents?isFeatured={isFeaturedValue.ToString().ToLower()}";
 
         var response = await _httpClient.GetAsync(url);
         return response;
@@ -127,7 +127,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/v2/event/getbyid/{id}");
+                var response = await _httpClient.GetAsync($"api/v2/fo/event/getfobyid/{id}");
                 return response;
             }
             catch (Exception ex)
@@ -174,7 +174,7 @@ namespace QLN.Web.Shared.Services
                 });
 
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync("/api/v2/event/getpaginatedevents", content);
+                var response = await _httpClient.PostAsync("api/v2/fo/event/getfopaginatedevents", content);
                 return response;
             }
             catch (Exception ex)
