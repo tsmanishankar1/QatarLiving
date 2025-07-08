@@ -596,15 +596,43 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
         public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var result = await _dapr.GetStateAsync<V2NewsArticleDTO>(
-                V2Content.ContentStoreName,
-                id.ToString(),
-                cancellationToken: cancellationToken);
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
 
-            if (result == null || !result.IsActive)
+                if (keys.Count == 0)
+                    return null;
+
+                var items = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+
+                    var article = JsonSerializer.Deserialize<V2NewsArticleDTO>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (article is not null && article.IsActive && article.Id == id)
+                    {
+                        return article;
+                    }
+                }
                 return null;
-
-            return result;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
         }
 
         public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)
