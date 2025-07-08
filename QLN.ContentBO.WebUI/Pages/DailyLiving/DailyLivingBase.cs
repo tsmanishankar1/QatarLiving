@@ -3,10 +3,10 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components.RadioAutoCompleteDialog;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Services;
 
@@ -20,12 +20,13 @@ public class DailyLivingBase : QLComponentBase
     protected DailyLivingTab SelectedTab => (DailyLivingTab)activeIndex;
     public List<EventDTO> AllEventsList { get; set; } = new();
     protected EventDTO ReplacedEvent { get; set; } = new();
+    protected DailyLivingArticleDto ReplaceArticle { get; set; } = new();
     protected List<EventCategoryModel> Categories = [];
     protected List<FeaturedSlot> featuredEventSlots = [];
     protected List<DailyTopic> ActiveTopics = [];
     protected DailyTopic selectedTopic { get; set; } = new();
     protected FeaturedSlot ReplaceSlot { get; set; } = new();
-
+    protected List<DailyLivingArticleDto> AvailableArticles = new();
     [Inject] public IDailyLivingService DailyService { get; set; }
     [Inject] public IDialogService DialogService { get; set; }
     [Inject] public ILogger<DailyLivingBase> Logger { get; set; }
@@ -47,7 +48,6 @@ public class DailyLivingBase : QLComponentBase
 
     protected async Task ReplaceSlotHandler(FeaturedSlot slot)
     {
-        // your logic
     }
 
     protected async Task DeleteSlotHandler(string id)
@@ -78,8 +78,63 @@ public class DailyLivingBase : QLComponentBase
 
     protected async Task AddItemtHandler(DailyLivingArticleDto item)
     {
-        await OpenDialogAsync();
+        OpenRadioAutoCompleteDialog();
     }
+    protected async Task ReplaceItem(DailyLivingArticleDto item)
+    {
+        var json = JsonSerializer.Serialize(item, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        ReplaceArticle = item;
+        OpenRadioAutoCompleteDialog();
+    }
+    private async Task OpenRadioAutoCompleteDialog()
+    {
+        var parameters = new DialogParameters
+    {
+        { nameof(RadioAutoCompleteDialog.Title), "" },
+        { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
+        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, activeIndex == 0 ? ReplaceArticles : AddArticles) }
+    };
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            NoHeader = true
+        };
+
+        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        await dialog.Result;
+    }
+
+
+    protected Task OpenDReplaceDialogAsync()
+    {
+        var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), "Featured Event" },
+                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
+                { nameof(MessageBoxBase.events), AllEventsList },
+                { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
+            };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        return DialogService.ShowAsync<MessageBox>("", parameters, options);
+    }
+
+
+
+
+
+
+
+
     protected async Task DeleteHandler(string id)
     {
 
@@ -100,6 +155,12 @@ public class DailyLivingBase : QLComponentBase
         Categories = await GetEventsCategories();
         AllEventsList = await GetAllEvents();
         ActiveTopics = await GetActiveTopics();
+        ActiveTopics = await GetActiveTopics();
+        if (ActiveTopics?.Any() == true)
+        {
+            selectedTopic = ActiveTopics.First();
+            AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
+        }
     }
 
     protected async Task OnTabChanged(int index)
@@ -124,6 +185,7 @@ public class DailyLivingBase : QLComponentBase
             {
                 selectedTopic = ActiveTopics[topicIndex];
                 articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
+                AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
             }
         }
         StateHasChanged();
@@ -134,7 +196,6 @@ public class DailyLivingBase : QLComponentBase
         var topicArticles = await DailyService.GetContentByTopicIdAsync(topicId);
         if (topicArticles?.Any() == true)
         {
-            Console.WriteLine($"Articles for Topic ID: {topicId}");
             return topicArticles;
         }
 
@@ -149,7 +210,6 @@ public class DailyLivingBase : QLComponentBase
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-
         return DialogService.ShowAsync<RadioAutoCompleteDialog>(string.Empty, options);
     }
     private string GetTopicNameFromTab(DailyLivingTab tab)
@@ -169,23 +229,6 @@ public class DailyLivingBase : QLComponentBase
         ReplaceSlot = selectedEvent;
         OpenDReplaceDialogAsync();
         await Task.CompletedTask;
-    }
-    protected Task OpenDReplaceDialogAsync()
-    {
-        var parameters = new DialogParameters
-            {
-                { nameof(MessageBoxBase.Title), "Featured Event" },
-                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
-                { nameof(MessageBoxBase.events), AllEventsList },
-                { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
-            };
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true
-        };
-        return DialogService.ShowAsync<MessageBox>("", parameters, options);
     }
     protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
     {
@@ -445,7 +488,6 @@ public class DailyLivingBase : QLComponentBase
             {
                 selectedTopic.isPublished = true;
             }
-            Console.WriteLine($"Selected Topic: ID = {selectedTopic.Id}, Name = {selectedTopic.topicName}, IsPublished = {selectedTopic.isPublished}");
             var apiResponse = await DailyService.UpdateTopicAsync(selectedTopic);
             if (apiResponse.IsSuccessStatusCode)
             {
@@ -468,7 +510,6 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-            Console.Write("the selected articel id is" + id);
             var apiResponse = await DailyService.DeleteArticleAsync(id);
             if (apiResponse.IsSuccessStatusCode)
             {
@@ -481,8 +522,70 @@ public class DailyLivingBase : QLComponentBase
             Logger.LogError(ex, "DeleteArticle");
         }
     }
-
-
+    private async Task<List<DailyLivingArticleDto>> GetAvailableArticles(string topicId)
+    {
+        try
+        {
+            var topics = await DailyService.GetAvailableArticles(topicId);
+            if (topics.IsSuccessStatusCode)
+            {
+                var response = await topics.Content.ReadFromJsonAsync<List<DailyLivingArticleDto>>();
+                var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                {
+                    WriteIndented = true
+                });
+                return response ?? new List<DailyLivingArticleDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetAvailableArticles");
+        }
+        return new List<DailyLivingArticleDto>();
+    }
+    private async Task AddArticles(DailyLivingArticleDto article)
+    {
+        try
+        {
+            article.RelatedContentId = selectedTopic.Id;
+            var topics = await DailyService.AddArticle(article);
+            if (topics.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Article Added Successfully", Severity.Success);
+                await OnTabChanged(activeIndex);
+            }
+            else
+            {
+                Snackbar.Add("Failed to add article", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "AddArticles");
+        }
+    }
+    protected async Task ReplaceArticles(DailyLivingArticleDto article)
+    {
+        try
+        {
+            article.RelatedContentId = selectedTopic.Id;
+            article.SlotNumber = ReplaceArticle.SlotNumber;
+            var topics = await DailyService.AddArticle(article);
+            if (topics.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Article Added Successfully", Severity.Success);
+                await OnTabChanged(activeIndex);
+            }
+            else
+            {
+                Snackbar.Add("Failed to add article", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "AddArticles");
+        }
+    }
 
 }
 
