@@ -445,32 +445,85 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-        public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateNewsArticleAsync(
+            V2NewsArticleDTO dto,
+            CancellationToken cancellationToken = default)
         {
-            try
+            const int MaxLiveSlot = 13;
+            const int UnpublishedId = (int)Slot.UnPublished;
+            const int PublishedId = (int)Slot.Published;
+
+            var store = V2Content.ContentStoreName;
+            if (dto.Id == Guid.Empty)
+                throw new InvalidDataException("Id is required for update");
+
+            var key = dto.Id.ToString();
+            var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                store, key, cancellationToken: cancellationToken);
+
+            if (existing == null)
+                throw new KeyNotFoundException("News article not found");
+
+            var oldCat = existing.Categories.First();
+            var oldSlot = oldCat.SlotId;
+
+            var newCat = dto.Categories.First();
+            var newSlot = newCat.SlotId;
+
+            if (newSlot >= 1 && newSlot <= MaxLiveSlot)
             {
-                var StoreName = V2Content.ContentStoreName;
-
-                if (dto.Id == Guid.Empty)
-                    throw new InvalidDataException("Id is required for update");
-
-                string key = dto.Id.ToString();
-                var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(StoreName, key, cancellationToken: cancellationToken);
-                if (existing == null)
-                    throw new KeyNotFoundException("News article not found");
-
-                dto.UpdatedAt = DateTime.UtcNow;
-
-                // Optional: Handle slot logic or image updates if needed here
-
-                await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: cancellationToken);
-                return "News article updated successfully.";
+                await HandleSlotShiftAsync(
+                    newCat.CategoryId,
+                    newCat.SubcategoryId,
+                    newSlot,
+                    dto,
+                    cancellationToken);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError(ex, "Failed to update news article");
-                throw;
+                if (oldSlot >= 1 && oldSlot <= MaxLiveSlot)
+                {
+                    var oldSlotKey = GetSlotKey(
+                        oldCat.CategoryId,
+                        oldCat.SubcategoryId,
+                        oldSlot);
+                    await _dapr.DeleteStateAsync(
+                        store,
+                        oldSlotKey,
+                        cancellationToken: cancellationToken);
+                }
+
+                if (oldSlot == UnpublishedId || oldSlot == PublishedId)
+                {
+                    var oldStatusKey = GetStatusSlotKey(
+                        oldCat.CategoryId,
+                        oldCat.SubcategoryId,
+                        oldSlot);
+                    await _dapr.DeleteStateAsync(
+                        store,
+                        oldStatusKey,
+                        cancellationToken: cancellationToken);
+                }
+
+                var statusKey = GetStatusSlotKey(
+                    newCat.CategoryId,
+                    newCat.SubcategoryId,
+                    newSlot);
+                await _dapr.SaveStateAsync(
+                    store,
+                    statusKey,
+                    dto.Id.ToString(),
+                    cancellationToken: cancellationToken);
             }
+
+            dto.UpdatedAt = DateTime.UtcNow;
+            await _dapr.SaveStateAsync(
+                store,
+                key,
+                dto,
+                cancellationToken: cancellationToken);
+
+            return "News article updated successfully.";
         }
         public async Task<string> ReorderSlotsAsync(
             NewsSlotReorderRequest request,

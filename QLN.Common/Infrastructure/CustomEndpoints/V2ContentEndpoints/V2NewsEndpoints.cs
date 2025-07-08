@@ -283,6 +283,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+
         group.MapPut("/updatenews", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -1136,15 +1137,15 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/commentsdislike/{commentId}", async Task<Results<
-            Ok<bool>,
-            ForbidHttpResult,
-            ProblemHttpResult>>
-            (
-            string commentId,
-            IV2NewsService service,
-            HttpContext httpContext,
-            CancellationToken ct
-            ) =>
+    Ok<bool>,
+    ForbidHttpResult,
+    ProblemHttpResult>>
+    (
+    string commentId,
+    IV2NewsService service,
+    HttpContext httpContext,
+    CancellationToken ct
+    ) =>
         {
             try
             {
@@ -1165,13 +1166,13 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Failed to toggle dislike for news comment.", ex.Message);
             }
         })
-            .WithName("DislikeNewsCommentJWT")
-            .WithTags("News")
-            .WithSummary("Toggle dislike on a comment (JWT-based)")
-            .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
-            .Produces<bool>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status403Forbidden)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+    .WithName("DislikeNewsCommentJWT")
+    .WithTags("News")
+    .WithSummary("Toggle dislike on a comment (JWT-based)")
+    .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
+    .Produces<bool>(StatusCodes.Status200OK)
+    .Produces(StatusCodes.Status403Forbidden)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/commentsdislike/byid/{commentId}", async Task<Results<
             Ok<bool>,
@@ -1212,8 +1213,6 @@ public static class V2NewsEndpoints
             .Produces<bool>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
         return group;
     }
 }
