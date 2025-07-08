@@ -20,5 +20,6 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<List<V2Events>> GetEventsByStatus(EventStatus status, CancellationToken cancellationToken);
         Task<List<V2Events>> GetEventStatus(EventStatus status, CancellationToken cancellationToken);
         Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default);
+        Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default);
     }
 }

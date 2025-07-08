@@ -450,13 +450,11 @@ namespace QLN.Content.MS.Service.DailyInternalService
         {
             _logger.LogInformation("Starting GetDailyLivingLandingAsync");
 
-            // 1) Fetch slots 1–9
             var slots = await GetAllSlotsAsync(ct) ?? new List<DailyTopSectionSlot>();
             _logger.LogDebug("Retrieved {Count} slots from state store", slots.Count);
             if (!slots.Any())
                 _logger.LogWarning("No slots found in state; landing page will be empty");
 
-            // 2) Top Story (slot 1, Article)
             var topStoryItems = new List<ContentPost>();
             var slot1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
             if (slot1 == null)
@@ -484,7 +482,12 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         NodeType = "Post",
                         Nid = article.Id.ToString(),
                         DateCreated = article.CreatedAt.ToString("o"),
+                        Description = article.Content,
                         ImageUrl = article.CoverImageUrl,
+                        Id = article.Id,
+                        IsActive = article.IsActive,
+                        CreatedAt = article.CreatedAt,
+                        UpdatedAt = article.UpdatedAt,
                         UserName = article.authorName,
                         Title = article.Title,
                         Slug = article.Slug,
@@ -494,7 +497,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 }
             }
 
-            // 3) Top Stories (slots 3–5, Article)
             var topStoriesItems = new List<ContentPost>();
             foreach (var slot in slots.Where(s => s.SlotNumber is >= 3 and <= 5))
             {
@@ -520,15 +522,19 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     Nid = art.Id.ToString(),
                     DateCreated = art.CreatedAt.ToString("o"),
                     ImageUrl = art.CoverImageUrl,
+                    UpdatedAt = art.UpdatedAt,
+                    CreatedAt = art.CreatedAt,
+                    IsActive = art.IsActive,
                     UserName = art.authorName,
                     Title = art.Title,
+                    Description = art.Content,
+                    Id = art.Id,
                     Slug = art.Slug,
                     Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
                 });
             }
             _logger.LogInformation("Top Stories loaded: {Count} items", topStoriesItems.Count);
 
-            // 4) Highlighted Event (slot 2, Event)
             var highlightedEventItems = new List<ContentEvent>();
             var slot2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
             if (slot2 == null)
@@ -556,7 +562,13 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         UserName = ev.CreatedBy,
                         Title = ev.EventTitle,
                         Slug = ev.Slug,
-                        Category = ev.CategoryName,
+                        CategroryId = ev.CategoryId.ToString(),
+                        CreatedAt = ev.CreatedAt,
+                        UpdatedAt = ev.UpdatedAt,
+                        Id = ev.Id,
+                        IsActive = ev.IsActive,
+                        Description = ev.EventDescription,
+                        EventCategory = ev.CategoryName,
                         EventVenue = ev.Venue,
                         EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                         EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
@@ -568,7 +580,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 }
             }
 
-            // 5) Featured Events (all flagged featured)
             var featuredEventItems = new List<ContentEvent>();
             _logger.LogDebug("Loading all featured events");
             var featured = await _events.GetAllIsFeaturedEvents(true, ct) ?? new List<V2Events>();
@@ -585,18 +596,23 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = ev.CreatedBy,
                     Title = ev.EventTitle,
                     Slug = ev.Slug,
-                    Category = ev.CategoryName,
+                    CategroryId = ev.CategoryId.ToString(),
+                    Description = ev.EventDescription,
+                    EventCategory = ev.CategoryName,
+                    CreatedAt = ev.CreatedAt,
+                    UpdatedAt = ev.UpdatedAt,
+                    Id = ev.Id,
+                    IsActive = ev.IsActive,
                     EventVenue = ev.Venue,
                     EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                     EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
                     EventLat = ev.Latitude,
                     EventLong = ev.Longitude,
-                    EventLocation = ev.LocationId.ToString()
+                    EventLocation = ev.Location,
                 });
             }
             _logger.LogInformation("Featured Events loaded: {Count}", featuredEventItems.Count);
 
-            // 6) More Articles (slots 6–9)
             var moreArticlesItems = new List<ContentEvent>();
             foreach (var slot in slots.Where(s => s.SlotNumber is >= 6 and <= 9))
             {
@@ -623,6 +639,12 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     DateCreated = art.CreatedAt.ToString("o"),
                     ImageUrl = art.CoverImageUrl,
                     UserName = art.authorName,
+                    Id = art.Id,
+                    IsActive = art.IsActive,
+                    CreatedAt = art.CreatedAt,
+                    UpdatedAt = art.UpdatedAt,
+                    Description = art.Content,
+                    CategroryId = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
                     Title = art.Title,
                     Slug = art.Slug,
                     Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
@@ -630,7 +652,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
             }
             _logger.LogInformation("More Articles loaded: {Count}", moreArticlesItems.Count);
 
-            // 7) Dynamic Topics (one queue per published topic)
             var allTopics = (await GetAllDailyTopicsAsync(ct))
                             .Where(t => t.IsPublished)
                             .ToList();
@@ -656,6 +677,13 @@ namespace QLN.Content.MS.Service.DailyInternalService
                                     PageName = DrupalContentConstants.QlnContentsDaily,
                                     Nid = a.Id.ToString(),
                                     Title = a.Title,
+                                    Description = a.Content,
+                                    UserName = a.authorName,
+                                    CategroryId = a.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
+                                    Id = a.Id,
+                                    IsActive = a.IsActive,
+                                    CreatedAt = a.CreatedAt,
+                                    UpdatedAt = a.UpdatedAt,
                                     Category = a.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
                                     DateCreated = a.CreatedAt.ToString("o"),
                                     ImageUrl = a.CoverImageUrl,
@@ -675,14 +703,21 @@ namespace QLN.Content.MS.Service.DailyInternalService
                                     PageName = DrupalContentConstants.QlnContentsDaily,
                                     Nid = e2.Id.ToString(),
                                     Title = e2.EventTitle,
-                                    Category = e2.CategoryName,
+                                    EventCategory = e2.CategoryName,
+                                    CategroryId = e2.CategoryId.ToString(),
                                     DateCreated = e2.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                                     EventStart = e2.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                                     EventEnd = e2.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
                                     ImageUrl = e2.CoverImage,
+                                    Id = e2.Id,
+                                    IsActive = e2.IsActive,
+                                    CreatedAt = e2.CreatedAt,
+                                    UpdatedAt = e2.UpdatedAt,
+                                    Description = e2.EventDescription,
                                     EventVenue = e2.Venue,
                                     EventLat = e2.Latitude,
                                     EventLong = e2.Longitude,
+                                    EventLocation = e2.Location,
                                     Slug = e2.Slug,
                                     NodeType = "Event"
                                 });
@@ -700,6 +735,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
                                 Category = slot.Category,
                                 DateCreated = slot.PublishedDate.ToString("o"),
                                 ImageUrl = slot.ContentUrl,
+                                Id = slot.Id,
+                                IsActive = true,
+                                UpdatedAt = slot.UpdatedAt,
+                                CreatedAt = slot.CreatedAt,
                                 Slug = slot.ContentUrl,
                                 NodeType = "Video"
                             });
@@ -716,13 +755,11 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 _logger.LogInformation("Topic '{Topic}' queue built with {Count} items", topic.TopicName, items.Count);
             }
 
-            // Helper to avoid out‐of‐range on topicQueues
             BaseQueueResponse<ContentEvent> GetOrEmpty(int idx) =>
                 idx < topicQueues.Count
                     ? topicQueues[idx]
                     : new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() };
 
-            // 8) Assemble everything into the DTO
             var contents = new ContentsDaily
             {
                 DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = topStoryItems },
