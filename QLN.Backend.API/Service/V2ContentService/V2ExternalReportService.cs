@@ -432,12 +432,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports(
-     string sortOrder = "desc",
-     int pageNumber = 1,
-     int pageSize = 12,
-     string? searchTerm = null,
-     CancellationToken cancellationToken = default)
+     public async Task<PagedResult<V2ContentReportCommunityCommentResponseDto>> GetAllCommunityCommentReports( string sortOrder = "desc",int pageNumber = 1,int pageSize = 12,string? searchTerm = null,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -509,8 +504,6 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                     throw new InvalidDataException(errorMessage);
                 }
-
-                // Parse success response
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 if (string.IsNullOrWhiteSpace(rawJson))

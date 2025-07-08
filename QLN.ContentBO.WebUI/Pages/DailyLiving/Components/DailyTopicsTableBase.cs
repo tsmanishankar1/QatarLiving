@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
+using System.Text.Json;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudBlazor;
@@ -12,6 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages
     {
         [Parameter] public EventCallback<FeaturedSlot> ReplaceSlot { get; set; }
         [Parameter] public EventCallback<DailyLivingArticleDto> AddItem { get; set; }
+        [Parameter] public EventCallback<DailyLivingArticleDto> ReplaceItem { get; set; }
         [Parameter] public EventCallback RenameTopic { get; set; }
         [Parameter] public EventCallback UpdateEvent { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
@@ -35,6 +37,26 @@ namespace QLN.ContentBO.WebUI.Pages
             await base.OnInitializedAsync();
             AuthorizedPage();
         }
+        protected override async Task OnParametersSetAsync()
+{
+    await base.OnParametersSetAsync();
+
+            if (articles != null && articles.Any())
+            {
+                ReplaceTopicsSlot = articles
+                    .Select(article => new TopicSlot
+                    {
+                        SlotNumber = article.SlotNumber,
+                        Article = article
+                    })
+                    .ToList();
+            
+    }
+            else
+            {
+                ReplaceTopicsSlot = new();
+            }
+}
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -47,6 +69,10 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             await AddItem.InvokeAsync(selectedItem);
         }
+        protected async Task ReplaceArticle(DailyLivingArticleDto article) 
+        {
+            await ReplaceItem.InvokeAsync(article);
+        }
         protected async Task RenameTopicaOnClick()
         {
             await RenameTopic.InvokeAsync();
@@ -56,32 +82,38 @@ namespace QLN.ContentBO.WebUI.Pages
             await UpdateEvent.InvokeAsync();
         }
         [JSInvokable]
-            public async Task OnTableReordered(List<string> newOrder)
-            {
-                var newSlotOrder = newOrder.Select(int.Parse).ToList();
-                var eventMap = ReplaceTopicsSlot
-                    .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
-                    .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
+        public async Task OnTableReordered(List<string> newOrder)
+{
+    var newSlotOrder = newOrder.Select(int.Parse).ToList();
 
-                var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
-                {
-                 Guid? resolvedEventId = null;
+    var eventMap = ReplaceTopicsSlot
+        .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
+        .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
 
+    var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
+    {
         if (eventMap.TryGetValue(slotNumber, out var stringId) &&
             Guid.TryParse(stringId, out var parsedGuid) &&
             parsedGuid != Guid.Empty)
         {
-            resolvedEventId = parsedGuid;
+            return new DailySlotAssignment
+            {
+                SlotNumber = index + 1,
+                DailyId = parsedGuid
+            };
         }
 
-        return new
-        {
-            slotNumber = index + 1,
-            eventId = resolvedEventId
-        };
-    }).ToList();
-
-    var response = await DailyService.ReorderFeaturedSlots(slotAssignments, UserId);
+        return null;
+    })
+    .Where(sa => sa != null)
+    .ToList()!;
+    var request = new DailySlotAssignmentRequest
+    {
+        TopicId = selectedTopic != null ? Guid.Parse(selectedTopic.Id) : Guid.Empty,
+        SlotAssignments = slotAssignments,
+        UserId = UserId
+    };
+    var response = await DailyService.ReorderFeaturedSlots(request);
 
     if (response.IsSuccessStatusCode)
     {
@@ -93,7 +125,6 @@ namespace QLN.ContentBO.WebUI.Pages
         Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
     }
 }
-
 
     }
 }

@@ -45,7 +45,8 @@ else
                     </div>
                 </MudItem>
             </MudGrid>
-    var indexedFeatured = articles
+    var indexedFeatured = ReplaceTopicsSlot
+        .OrderBy(s => s.SlotNumber)
         .Select((e, i) => new { Slot = e, Index = i + 1 })
         .ToList();
 
@@ -65,14 +66,14 @@ else
         <tbody>
             @foreach (var context in indexedFeatured)
             {
-                <tr data-slot-id="@context.Slot.SlotNumber">
+                <tr data-slot-id="@context.Slot.Article?.SlotNumber">
                     <td>
                         <img src="/qln-images/arrow_icon.svg" 
-                             class="@(context.Slot.Title == "Feature an Event" ? "" : "drag-handle")" 
+                             class="@(context.Slot.Article?.Title == "Feature an Event" ? "" : "drag-handle")" 
                              style="cursor: grab; width: 24px;" 
                              alt="drag" />
                     </td>
-                    <td>@context.Index</td>
+                    <td><span class="slot-position"></span></td>
                     <td>
                         @* @if (context.Slot.Event?.EventTitle == "Feature an Event")
                         {
@@ -85,7 +86,7 @@ else
                         else
                         { *@
                             <a href="#" class="event-link" style="text-decoration: none; color: #787878;">
-                                @context.Slot.Title
+                                @context.Slot.Article?.Title
                             </a>
                         @* } *@
                     </td>
@@ -99,27 +100,27 @@ else
                     <td>
                          <span class="placeholder-text"
                                   style="color: #FF7F38; cursor: pointer;">
-                                @context.Slot.Category
+                                @context.Slot.Article?.Category
                             </span>
                     </td>
                      <td>
                          <span class="placeholder-text"
                                   style="color: #FF7F38; cursor: pointer;">
-                                @context.Slot.Subcategory
+                                @context.Slot.Article?.Subcategory
                             </span>
                     </td>
                     <td>
-                        @(context.Slot.CreatedAt != null 
-                        ? context.Slot.CreatedAt.ToString("dd-MM-yyyy") 
+                        @(context.Slot.Article?.CreatedAt != null 
+                        ? context.Slot.Article?.CreatedAt.ToString("dd-MM-yyyy") 
                         : "--")
                     </td>
                     <td>
                         <div class="d-flex align-center gap-2">
                         <div class="custom-delete-button">
-                        <img src="/qln-images/replace_icon.svg"   alt="delete" class="action-icon-style" />
+                        <img src="/qln-images/replace_icon.svg" @onclick="() => ReplaceArticle(context.Slot.Article)"  alt="delete" class="action-icon-style" />
                         </div>
                         <div class="custom-delete-button" 
-                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Id))">
+                        @onclick="@(() => OnDelete.InvokeAsync(context?.Slot?.Article?.Id))">
                         <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
                         </div>
                         </div>
@@ -128,6 +129,7 @@ else
             }
         </tbody>
     </table>
+
 }
 
 

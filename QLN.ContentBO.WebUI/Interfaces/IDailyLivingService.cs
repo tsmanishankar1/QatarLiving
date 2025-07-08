@@ -10,6 +10,9 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<List<DailyTopic>> GetActiveTopicsAsync();
         Task<HttpResponseMessage> UpdateTopicAsync(DailyTopic topic);
         Task<HttpResponseMessage> DeleteArticleAsync(string id);
-        Task<HttpResponseMessage> ReorderFeaturedSlots(IEnumerable<object> slotAssignments, string userId);
+        Task<HttpResponseMessage> ReorderFeaturedSlots(DailySlotAssignmentRequest request);
+        Task<HttpResponseMessage> GetAvailableArticles(string topicId);
+        Task<HttpResponseMessage> AddArticle(DailyLivingArticleDto article);
+        Task<HttpResponseMessage> ReplaceTopSectionArticle(DailyLivingArticleDto article);
     }
 }
