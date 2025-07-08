@@ -234,34 +234,29 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        //public async Task<PaginatedCommentResponse> GetCommentsByPostIdAsyncV2(int postId, int page, int pageSize)
-        //{
-        //    try
-        //    {
-        //        var url = $"api/v2/community/getCommentsByPostId/{postId}";
-        //        var response = await _httpClient.GetFromJsonAsync<PaginatedCommentResponse>(url);
-        //        return response ?? new PaginatedCommentResponse();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"API Error: {ex.Message}");
-        //        return new PaginatedCommentResponse();
-        //    }
-        //}
-        public async Task<List<CommentModelV2>> GetCommentsByPostIdAsyncV2(string postId)
+
+        public async Task<PaginatedCommentResponseV2> GetCommentsByPostIdAsyncV2(string postId, int page, int pageSize)
         {
             try
             {
-                var url = $"api/v2/community/getCommentsByPostId/{postId}";
-                var response = await _httpClient.GetFromJsonAsync<List<CommentModelV2>>(url);
-                return response ?? new List<CommentModelV2>();
+                var url = $"api/v2/community/comments/byPost/{postId}?page={page}&perPage={pageSize}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                var response = await _httpClient.SendAsync(request);
+
+                var result = await response.Content.ReadFromJsonAsync<PaginatedCommentResponseV2>();
+                return result ?? new PaginatedCommentResponseV2();
+            
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
-                return new List<CommentModelV2>();
+                Console.WriteLine($"API Exception: {ex.Message}");
+                return new PaginatedCommentResponseV2();
             }
         }
+
+
         public async Task<bool> ReportCommunityPostAsync(string postId)
         {
             try
