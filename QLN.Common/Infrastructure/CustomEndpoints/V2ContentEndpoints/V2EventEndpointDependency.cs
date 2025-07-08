@@ -8,6 +8,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         {
             group.MapCreateEventEndpoints()
                 .MapGetEventEndpoints()
+                .MapUnfeatureEventEndpoint()
                 .MapGetAllEventEndpoints()
                 .MapGetAllFeaturedEventEndpoints()
                 .MapUpdateEventEndpoints()
