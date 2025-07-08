@@ -47,17 +47,17 @@
 
             </div>
 
-            <div class="post-icons">
-                @* <div class="like-wrapper" @onclick="ToggleLikeAsync">
+            <div class="commonunity-post-action-wrapper">
+                <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleLikeAsync">
 
                   <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                                      <span class="icon-text">@Post.LikeCount</span> 
     
-    </div> *@
-               @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+               </div>
+                <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
-                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
-                </div> *@
+                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" /> <span class="icon-text">@Post.LikeCount</span>
+                </div>
                 <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrimagin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
                     <ActivatorContent>
                         <img src="qln-images/content/Share.svg" class="icon" />
@@ -67,13 +67,13 @@
                         {
                             if (item.OnClick != null)
                             {
-                                <MudMenuItem OnClick="@item.OnClick">
+                                <MudMenuItem OnClick="@item.OnClick" Class="share-wrapper">
                                     <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
                                 </MudMenuItem>
                             }
                             else
                             {
-                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <MudMenuItem Href="@item.Route"   Class="share-wrapper" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
                                     <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
                                 </MudMenuItem>
                             }
@@ -96,7 +96,7 @@
         @((MarkupString)Post.BodyPreview)</div>
     }
         <div class="post-details-report-section">
-            <MudChip T="string" Class="report-chip" Variant="Variant.Outlined"  OnClick="OnReport">
+            <MudChip T="string" Variant="Variant.Outlined" Class="report-chip" OnClick="OnReport">
                 <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
                 <span class="report-text">Report</span>
             </MudChip>
@@ -130,16 +130,16 @@
 
             </div>
 
-            <div class="post-icons">
-              @*   <div class="like-wrapper" @onclick="ToggleLikeAsync">
+            <div class="commonunity-post-action-wrapper">
+                <div class="like-wrapper"@onclick:stopPropagation @onclick="ToggleLikeAsync">
 
                     <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                     <span class="icon-text">@Post.LikeCount</span>
-                            </div> *@
-                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+                            </div>
+                <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
-                </div> *@
+                </div>
                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
                     <ActivatorContent>
                         <img src="qln-images/content/Share.svg" class="icon" />
@@ -357,14 +357,13 @@
         padding: 2px 4px;
     }
 
-    .post-icons {
+    .commonunity-post-action-wrapper {
         display: flex;
         align-items: center;
         gap: 4px;
         padding: 2px 4px;
         border-radius: 25px;
-        background-color: #F4F4FA;
-    }
+sh    }
 
     .menu-icon {
         width: 20px;
@@ -506,7 +505,10 @@
     }
 
         .report-chip:hover {
-            background-color: #FFE6D9;
+            background-color: #FF7F38 !important;
+            border-color: inherit !important;
+            cursor: pointer !important;
+            box-shadow: none !important;
         }
 
     .report-icon {
