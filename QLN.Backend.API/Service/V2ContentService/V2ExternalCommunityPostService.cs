@@ -268,10 +268,10 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
         public async Task<CommunityCommentListResponse> GetCommentsByPostIdAsync(
-            Guid postId,
-            int? page = null,
-            int? perPage = null,
-            CancellationToken ct = default)
+          Guid postId,
+          int? page = null,
+          int? perPage = null,
+          CancellationToken ct = default)
         {
             try
             {
@@ -288,7 +288,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                     url,
                     ct);
 
+                // If response is empty or no comments, throw an exception
+                if (response == null || response.Comments == null || !response.Comments.Any())
+                {
+                    throw new InvalidOperationException($"No comments available for Post ID: {postId}");
+                }
+
                 return response;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "No comments found for Post ID: {PostId}", postId);
+                throw new InvalidOperationException("No Comments available for this post.", ex);
             }
             catch (Exception ex)
             {

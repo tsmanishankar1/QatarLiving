@@ -455,46 +455,67 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .ExcludeFromDescription();
 
             group.MapGet("/comments/byPost/{postId:guid}", async Task<Results<
-                Ok<CommunityCommentListResponse>,
-                NotFound<ProblemDetails>,
-                ProblemHttpResult>>
-            (
-                Guid postId,
-                int? page,
-                int? perPage,
-                IV2CommunityPostService service,
-                CancellationToken ct
-            ) =>
+     Ok<CommunityCommentListResponse>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult>>
+ (
+     Guid postId,
+     int? page,
+     int? perPage,
+     IV2CommunityPostService service,
+     CancellationToken ct
+ ) =>
             {
                 try
                 {
                     var response = await service.GetCommentsByPostIdAsync(postId, page, perPage, ct);
 
+                    // Check if there are comments
                     if (response.Comments == null || !response.Comments.Any())
                     {
+                        // If no comments found, return a 404 Not Found with the custom message
                         return TypedResults.NotFound(new ProblemDetails
                         {
-                            Title = "No Comments Found",
-                            Detail = $"No comments found for Post ID: {postId}"
+                            Title = "No Comments available for this post",
+                            Detail = $"No comments found for Post ID: {postId}",
+                            Status = StatusCodes.Status404NotFound,
+                            Instance = $"/comments/byPost/{postId}"
                         });
                     }
 
+                    // If comments exist, return them with a 200 OK response
                     return TypedResults.Ok(response);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Handle specific exception for no comments found
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No Comments available for this post",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = $"/comments/byPost/{postId}"
+                    });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Error retrieving comments", ex.Message);
+                    // In case of an unexpected error, return a 500 Internal Server Error
+                    return TypedResults.Problem(
+                        title: "Error retrieving comments",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
-            .WithName("GetCommentsByPostId")
-            .WithTags("V2Community")
-            .WithSummary("Get all comments for a community post")
-            .WithDescription("Retrieves a paginated list of comments by post ID.")
-            .Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+             .WithName("GetCommentsByPostId")
+             .WithTags("V2Community")
+             .WithSummary("Get all comments for a community post")
+             .WithDescription("Retrieves a paginated list of comments by post ID.")
+             .Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
+             group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
     Ok<object>,
     ForbidHttpResult,
     ProblemHttpResult>>
