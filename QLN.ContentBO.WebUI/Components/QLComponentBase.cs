@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Components
         public string EventDetailBaseURL { get; set; } = string.Empty;
         public string PostDetailBaseURL { get; set; } = string.Empty;
 
-        protected async void AuthorizedPage()
+        protected async Task AuthorizedPage()
         {
             try
             {

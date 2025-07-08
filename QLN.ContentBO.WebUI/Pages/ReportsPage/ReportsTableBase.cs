@@ -11,6 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
         [Parameter] public List<ReportDto> Posts { get; set; } = new();
         [Parameter] public EventCallback<Guid> OnIgnore { get; set; }
         [Parameter] public EventCallback<Guid> OnDelete { get; set; }
+        [Parameter] public string Type { get; set; } = string.Empty;
         [Parameter] public bool IsLoading { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
 
