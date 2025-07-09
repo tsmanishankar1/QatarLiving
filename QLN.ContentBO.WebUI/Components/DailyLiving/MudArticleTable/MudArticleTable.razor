@@ -1,5 +1,11 @@
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
 @inherits MudArticleTableBase
+@if (IsLoadingEvent)
+{
+    <TableSkeleton Rows="10" />
+}
+else{
 <MudTable Items="@slotArticles" Class="table-style" Elevation="0" Bordered="true" Hover="true">
     <HeaderContent>
         <MudTh Class="custom-header">Slot</MudTh>
@@ -47,6 +53,7 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
+}
 
 <style>
 .custom-header {

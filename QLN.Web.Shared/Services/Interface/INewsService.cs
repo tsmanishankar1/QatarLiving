@@ -38,6 +38,9 @@ namespace QLN.Web.Shared.Services.Interface
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetNewsBySlugAsync(string slug);
         Task<HttpResponseMessage?> GetNewsAsync(string tab);
+        Task<HttpResponseMessage?> GetAllNewsCategoriesAsync();
+        Task<HttpResponseMessage?> GetNewsByCategoryIdAsync(int categoryId);
+        Task<HttpResponseMessage?> GetNewsBySubCategoryAsync(int categoryId, int subCategoryId);
         
     }
 }

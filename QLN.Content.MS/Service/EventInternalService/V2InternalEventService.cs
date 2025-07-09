@@ -1,8 +1,8 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -13,6 +13,7 @@ namespace QLN.Content.MS.Service.EventInternalService
     public class V2InternalEventService : IV2EventService
     {
         private readonly DaprClient _dapr;
+        private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
         public V2InternalEventService(DaprClient dapr)
         {
             _dapr = dapr;
@@ -343,10 +344,94 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error updating events", ex);
             }
         }
+        private async Task<List<Guid>> GetAllDailyTopicIdsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var topics = await _dapr.GetStateAsync<List<Guid>>(
+                    DailyStore,
+                    "daily-topics-index",
+                    cancellationToken: ct)
+                    ?? new List<Guid>();
+                return topics;
+            }
+            catch (Exception ex)
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+        }
+
+        private async Task<List<DailyTopicContent>> GetSlotsByTopicIdAsync(Guid topicId, CancellationToken ct)
+        {
+            try
+            {
+                var key = $"daily-topic-{topicId}-slots";
+                var slots = await _dapr.GetStateAsync<List<DailyTopicContent>>(
+                    DailyStore,
+                    key,
+                    cancellationToken: ct)
+                    ?? new List<DailyTopicContent>();
+                return slots;
+            }
+            catch (Exception ex)
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+        }
+
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
+            try
+            {
+                var topSlotTasks = Enumerable.Range(1, 9)
+                    .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
+                        DailyStore,
+                        $"daily-slot-{i}",
+                        cancellationToken: cancellationToken))
+                    .ToArray();
+
+                var topSlots = (await Task.WhenAll(topSlotTasks))
+                    .Where(s => s != null)
+                    .ToList();
+
+                var usedInTop = topSlots
+                    .FirstOrDefault(s => s.ContentType == DailyContentType.Event
+                                      && s.RelatedContentId == id);
+
+                if (usedInTop != null)
+                    throw new InvalidOperationException(
+                        $"Cannot delete event {id}: it’s used in Daily Top Section slot #{usedInTop.SlotNumber}");
+            }
+            catch (DaprServiceException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (!(ex is InvalidOperationException))
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+
+            List<Guid> topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
+            foreach (var topicId in topicIds)
+            {
+                var topicSlots = await GetSlotsByTopicIdAsync(topicId, cancellationToken);
+                var usedInTopic = topicSlots
+                    .FirstOrDefault(ts => ts.ContentType == DailyContentType.Event
+                                       && ts.RelatedContentId == id);
+
+                if (usedInTopic != null)
+                    throw new InvalidOperationException(
+                        $"Cannot delete event {id}: it’s used in Topic slot #{usedInTopic.SlotNumber}");
+            }
+
             var existing = await _dapr.GetStateAsync<V2Events>(
-                ConstantValues.V2Content.ContentStoreName,
+                V2Content.ContentStoreName,
                 id.ToString(),
                 cancellationToken: cancellationToken);
 
@@ -357,7 +442,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             existing.UpdatedAt = DateTime.UtcNow;
 
             await _dapr.SaveStateAsync(
-                ConstantValues.V2Content.ContentStoreName,
+                V2Content.ContentStoreName,
                 id.ToString(),
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },

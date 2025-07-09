@@ -36,9 +36,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;
             dto.Slug = GenerateSlug(dto.Title);
-
-
-
             var key = GetKey(dto.Id);
 
             try
@@ -82,7 +79,13 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
             }
         }
-        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null, string? search = null, int? page = null, int? pageSize = null, string? sortDirection = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(
+         string? categoryId = null,
+         string? search = null,
+         int? page = null,
+         int? pageSize = null,
+         string? sortDirection = null,
+         CancellationToken ct = default)
         {
             _logger.LogInformation("Starting retrieval of all community posts...");
 
@@ -126,13 +129,31 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                                 continue;
                         }
 
+                        // ✅ Fetch liked user IDs
                         var likeIndexKey = $"like-index-{post.Id}";
-                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct);
-                        post.LikeCount = likedUsers?.Count ?? 0;
+                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
+                        post.LikeCount = likedUsers.Count;
+                        post.LikedUserIds = likedUsers;
 
+                        // ✅ Fetch comment count + commented user IDs
                         var commentIndexKey = $"comment-index-{post.Id}";
-                        var commentList = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey);
-                        post.CommentCount = commentList?.Count ?? 0;
+                        var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey, cancellationToken: ct) ?? new();
+                        post.CommentCount = commentIds.Count;
+
+                        var commentedUserIds = new HashSet<string>();
+
+                        foreach (var commentId in commentIds)
+                        {
+                            var commentKey = $"comment-{post.Id}-{commentId}";
+                            var commentState = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey, cancellationToken: ct);
+
+                            if (commentState != null && commentState.IsActive && !string.IsNullOrWhiteSpace(commentState.UserId))
+                            {
+                                commentedUserIds.Add(commentState.UserId);
+                            }
+                        }
+
+                        post.CommentedUserIds = commentedUserIds.ToList();
 
                         filteredPosts.Add(post);
                     }
@@ -168,6 +189,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while retrieving community posts.", ex);
             }
         }
+
 
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
         {
@@ -240,7 +262,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 new ForumCategoryDto { Id = "20000007", Name = "Moving to Qatar" },
                 new ForumCategoryDto { Id = "41696191", Name = "World Cup" }
             };
-
             return Task.FromResult(new ForumCategoryListDto { ForumCategories = categories });
         }
         
@@ -327,28 +348,27 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(
+      Guid postId,
+      int? page = null,
+      int? perPage = null,
+      CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
+
             try
             {
                 var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
-                int currentPage = page ?? 1;
-                int itemsPerPage = perPage ?? 10;
-                int skip = (currentPage - 1) * itemsPerPage;
-
-                var pagedCommentIds = commentIds.Skip(skip).Take(itemsPerPage).ToList();
-
-                var commentKeys = pagedCommentIds
+                var commentKeys = commentIds
                     .Select(id => $"comment-{postId}-{id}")
                     .ToList();
 
                 var commentStates = await _dapr.GetBulkStateAsync(
                     storeName: StoreName,
                     keys: commentKeys,
-                    parallelism:null,
-                    metadata:null,
+                    parallelism: null,
+                    metadata: null,
                     cancellationToken: ct
                 );
 
@@ -356,8 +376,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                 foreach (var state in commentStates)
                 {
-                    if (string.IsNullOrWhiteSpace(state.Value))
-                        continue;
+                    if (string.IsNullOrWhiteSpace(state.Value)) continue;
 
                     try
                     {
@@ -368,10 +387,11 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                         if (comment != null && comment.IsActive && comment.CommentId != Guid.Empty)
                         {
-                            // Count likes
+                            // Get liked user IDs
                             var likeIndexKey = $"comment-like-index-{comment.CommentId}";
                             var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
                             comment.CommentsLikeCount = likedUsers.Count;
+                            comment.LikedUserIds = likedUsers;
 
                             allComments.Add(comment);
                         }
@@ -382,14 +402,19 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     }
                 }
 
-                // Group comments by ParentCommentId
+                // Pagination after filtering
+                int currentPage = page ?? 1;
+                int itemsPerPage = perPage ?? 10;
+                int skip = (currentPage - 1) * itemsPerPage;
+
+                // Group comments by parent
                 var grouped = allComments
                     .GroupBy(c => c.ParentCommentId ?? Guid.Empty)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
                 var result = new List<CommunityCommentItem>();
 
-                // Recursive function to build comment tree
+                // Recursive builder
                 List<CommunityCommentItem> BuildReplies(Guid parentId)
                 {
                     if (!grouped.ContainsKey(parentId))
@@ -404,15 +429,22 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             Content = reply.Content,
                             CommentedAt = reply.CommentedAt,
                             LikeCount = reply.CommentsLikeCount,
+                            LikedUserIds = reply.LikedUserIds ?? new(),
+                            CommentedUserId = reply.UserId,
                             Replies = BuildReplies(reply.CommentId)
                         })
                         .ToList();
                 }
 
-                // Build the tree from root-level comments
+                // Build paginated root-level comments
                 if (grouped.ContainsKey(Guid.Empty))
                 {
-                    foreach (var parent in grouped[Guid.Empty])
+                    var rootParents = grouped[Guid.Empty]
+                        .Skip(skip)
+                        .Take(itemsPerPage)
+                        .ToList();
+
+                    foreach (var parent in rootParents)
                     {
                         var parentItem = new CommunityCommentItem
                         {
@@ -422,6 +454,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             Content = parent.Content,
                             CommentedAt = parent.CommentedAt,
                             LikeCount = parent.CommentsLikeCount,
+                            LikedUserIds = parent.LikedUserIds ?? new(),
+                            CommentedUserId = parent.UserId,
                             Replies = BuildReplies(parent.CommentId)
                         };
 
@@ -429,12 +463,19 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     }
                 }
 
+                var uniqueCommentedUserIds = allComments
+                    .Where(c => !string.IsNullOrWhiteSpace(c.UserId))
+                    .Select(c => c.UserId)
+                    .Distinct()
+                    .ToList();
+
                 return new CommunityCommentListResponse
                 {
-                    TotalComments = commentIds.Count,
+                    TotalComments = grouped.ContainsKey(Guid.Empty) ? grouped[Guid.Empty].Count : 0,
                     PerPage = itemsPerPage,
                     CurrentPage = currentPage,
-                    Comments = result
+                    Comments = result,
+                    //CommentedUserIds = uniqueCommentedUserIds
                 };
             }
             catch (Exception ex)
@@ -443,6 +484,9 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
+
+
+
 
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
@@ -484,9 +528,14 @@ namespace QLN.Content.MS.Service.CommunityInternalService
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey) ?? new();
+                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: cancellationToken) ?? new();
 
-                // Bulk fetch for all post keys
+                if (keys.Count == 0)
+                {
+                    _logger.LogWarning("No community post keys found in the index.");
+                    return null;
+                }
+
                 var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: null, cancellationToken: cancellationToken);
 
                 foreach (var item in items)
@@ -499,18 +548,58 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                         PropertyNameCaseInsensitive = true
                     });
 
-                    if (post != null && string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase) && post.IsActive)
-                    {
-                        return post;
-                    }
-                }
+                    if (post == null || !post.IsActive || !string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    var likeIndexKey = $"like-index-{post.Id}";
+                    var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: cancellationToken);
+                    post.LikedUserIds = (likedUsers ?? new())
+                        .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                        .ToList();
+                    post.LikeCount = post.LikedUserIds.Count;
+                    var commentIndexKey = $"comment-index-{post.Id}";
+                    var commentIds = await _dapr.GetStateAsync<List<string>>(StoreName, commentIndexKey, cancellationToken: cancellationToken);
 
+                    if (commentIds is not null && commentIds.Count > 0)
+                    {
+                        var commentKeys = commentIds
+                            .Select(cid => $"comment-{post.Id}-{cid}")
+                            .ToList();
+
+                        var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null, cancellationToken: cancellationToken);
+
+                        foreach (var state in commentStates)
+                        {
+                            if (string.IsNullOrWhiteSpace(state.Value))
+                                continue;
+
+                            var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (comment is { IsActive: true }
+                                && !string.IsNullOrWhiteSpace(comment.UserId)
+                                && comment.UserId != "string")
+                            {
+                                post.CommentedUserIds.Add(comment.UserId);
+                            }
+                        }
+                        post.CommentedUserIds = post.CommentedUserIds
+                            .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                            .ToList();
+
+                        post.CommentCount = post.CommentedUserIds.Count;
+                    }
+
+                    return post;
+                }
+                _logger.LogInformation("No matching post found with slug: {Slug}", slug);
                 return null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving community post by slug: {Slug}", slug);
-                throw;
+                throw new InvalidOperationException($"Error fetching community post by slug: {slug}", ex);
             }
         }
         public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)
@@ -585,6 +674,80 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 };
             }
         }
+        public async Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            var commentKey = $"comment-{postId}-{commentId}";
+
+            try
+            {
+                _logger.LogInformation("Attempting to edit comment {CommentId} on post {PostId} by user {UserId}", commentId, postId, userId);
+
+                var comment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey, cancellationToken: ct);
+
+                if (comment == null)
+                {
+                    _logger.LogWarning("Comment not found for key {CommentKey}", commentKey);
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment not found"
+                    };
+                }
+
+                if (!comment.IsActive)
+                {
+                    _logger.LogWarning("Attempt to edit inactive comment {CommentId}", commentId);
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Cannot edit a deleted comment"
+                    };
+                }
+
+                if (!string.Equals(comment.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Unauthorized edit attempt. Comment owner: {CommentUserId}, Requesting user: {RequestUserId}", comment.UserId, userId);
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "You are not authorized to edit this comment"
+                    };
+                }
+
+                if (string.IsNullOrWhiteSpace(updatedText))
+                {
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Updated text cannot be empty"
+                    };
+                }
+
+                comment.Content = updatedText;
+                comment.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, commentKey, comment, cancellationToken: ct);
+
+                _logger.LogInformation("Successfully updated comment {CommentId}", commentId);
+
+                return new CommunityCommentApiResponse
+                {
+                    Status = "success",
+                    Message = "Comment updated successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error editing community comment {CommentId} for post {PostId} by user {UserId}", commentId, postId, userId);
+                return new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Error occurred while editing comment"
+                };
+            }
+        }
+
+
 
 
 
