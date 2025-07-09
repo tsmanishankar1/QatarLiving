@@ -30,6 +30,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default);
         Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
         Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
+        Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default);
     }
 
 }

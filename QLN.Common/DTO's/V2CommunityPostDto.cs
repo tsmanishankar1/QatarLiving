@@ -58,5 +58,11 @@ namespace QLN.Common.DTO_s
         [JsonPropertyName("CommentCount")]
         public int CommentCount { get; set; } = 0;
     }
+    public class CommunityCommentApiResponse
+    {
+        public string Status { get; set; } = "failed";
+        public string Message { get; set; } = string.Empty;
+    }
+
 
 }

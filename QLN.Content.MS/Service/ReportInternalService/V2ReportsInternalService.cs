@@ -10,7 +10,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
 {
     public class V2InternalReportsService : IV2ReportsService
     {
-        private readonly DaprClient _dapr;
+        private readonly DaprClient _dapr; 
         private readonly ILogger<V2InternalReportsService> _logger;
 
         public V2InternalReportsService(DaprClient dapr, ILogger<V2InternalReportsService> logger)
