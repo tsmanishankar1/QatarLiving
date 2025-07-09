@@ -244,7 +244,7 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-          //  await AuthorizedPage();
+            await AuthorizedPage();
 
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();

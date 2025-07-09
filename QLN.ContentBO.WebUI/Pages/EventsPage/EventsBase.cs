@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
         protected override async Task OnInitializedAsync()
         {
-            AuthorizedPage();
+            await AuthorizedPage();
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
