@@ -690,6 +690,86 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
  .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("/comments/edit/{postId}/{commentId}", async Task<Results<
+                Ok<CommunityCommentApiResponse>,
+                ForbidHttpResult,
+                ProblemHttpResult>>
+            (
+                Guid postId,
+                Guid commentId,
+                [FromBody] string updatedText,
+                IV2CommunityPostService service,
+                HttpContext httpContext,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await service.EditCommunityCommentAsync(postId, commentId, userId, updatedText, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to edit community comment.", ex.Message);
+                }
+            })
+            .WithName("EditCommunityCommentJWT")
+            .WithTags("V2Community")
+            .WithSummary("Edit a community comment (JWT-based)")
+            .WithDescription("Allows a user to edit their community comment by reading user ID from JWT token.")
+            .Produces<CommunityCommentApiResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/comments/edit/byid/{postId}/{commentId}", async Task<Results<
+                Ok<CommunityCommentApiResponse>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                Guid postId,
+                Guid commentId,
+                [FromQuery] string userId,
+                [FromBody] string updatedText,
+                IV2CommunityPostService service,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Missing User ID",
+                            Detail = "The 'userId' query parameter is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.EditCommunityCommentAsync(postId, commentId, userId, updatedText, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Failed to edit community comment (by user ID).", ex.Message);
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("EditCommunityCommentByUserId")
+            .WithTags("V2Community")
+            .WithSummary("Edit community comment with explicit user ID")
+            .WithDescription("Used when the client provides the user ID directly in the query.")
+            .Produces<CommunityCommentApiResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
