@@ -5,7 +5,7 @@
 
 <MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
-    <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
+        <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
         @if (!IsDetailView)
         {
 
@@ -27,7 +27,7 @@
         }
 
     </div>
-    <div class="post-title">@Post.Title</div>
+     <div class="post-title">@Post.Title</div>
 
     @if (IsDetailView)
     {
@@ -39,8 +39,8 @@
         <div class="post-footer">
             <div class="post-footer-left">
                 <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
-              
- <span class="post-meta">
+
+                <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -50,38 +50,38 @@
             <div class="commonunity-post-action-wrapper">
                 <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleLikeAsync">
 
-                  <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
-                                     <span class="icon-text">@Post.LikeCount</span> 
-    
-               </div>
-            @*     <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+                    <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                    <span class="icon-text">@Post.LikeCount</span>
+
+                </div>
+                @*     <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" /> <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-            <div class="share-wrapper" >
+                <div class="share-wrapper">
 
-                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrimagin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
-                    <ActivatorContent>
-                        <img src="qln-images/content/Share.svg" class="icon" />
-                    </ActivatorContent>
-                    <ChildContent>
-                        @foreach (var item in shareMenuItems)
-                        {
-                            if (item.OnClick != null)
+                    <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrimagin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                        <ActivatorContent>
+                            <img src="qln-images/content/Share.svg" class="icon" />
+                        </ActivatorContent>
+                        <ChildContent>
+                            @foreach (var item in shareMenuItems)
                             {
-                                <MudMenuItem OnClick="@item.OnClick" Class="share-wrapper">
-                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                </MudMenuItem>
+                                if (item.OnClick != null)
+                                {
+                                    <MudMenuItem OnClick="@item.OnClick" Class="share-wrapper">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem Href="@item.Route" Class="share-wrapper" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
                             }
-                            else
-                            {
-                                <MudMenuItem Href="@item.Route"   Class="share-wrapper" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
-                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                </MudMenuItem>
-                            }
-                        }
-                    </ChildContent>
-                </MudMenu>
+                        </ChildContent>
+                    </MudMenu>
                 </div>
 
                 <div class="post-card-comment-wrapper">
@@ -91,11 +91,12 @@
                 </div>
             </div>
         </div>
-     if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
-    {
-    <div class="post-body-preview-details">
-        @((MarkupString)Post.BodyPreview)</div>
-    }
+        if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+        {
+            <div class="post-body-preview-details">
+                @((MarkupString)Post.BodyPreview)
+            </div>
+        }
         <div class="post-details-report-section">
             <MudChip T="string" Variant="Variant.Outlined" Class="report-chip" OnClick="OnReport">
                 <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
@@ -114,17 +115,17 @@
         {
             <div class="post-body-preview">@((MarkupString)Post.BodyPreview)</div>
         }
-       @*  else
+        @*  else
         {
-            
+
             <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
 
         } *@
         <div class="post-footer">
             <div class="post-footer-left">
                 <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
-               
- <span class="post-meta">
+
+                <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -132,41 +133,41 @@
             </div>
 
             <div class="commonunity-post-action-wrapper">
-                <div class="like-wrapper"@onclick:stopPropagation @onclick="ToggleLikeAsync">
+                <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleLikeAsync">
 
                     <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                     <span class="icon-text">@Post.LikeCount</span>
-                            </div>
-              @*   <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleDislikeAsync">
+                </div>
+                @*   <div class="like-wrapper" @onclick:stopPropagation @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-            <div class="share-wrapper" >
+                <div class="share-wrapper">
 
-               <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
-                    <ActivatorContent>
-                        <img src="qln-images/content/Share.svg" class="icon" />
-                    </ActivatorContent>
-                    <ChildContent>
-                        @foreach (var item in shareMenuItems)
-                        {
-                            if (item.OnClick != null)
+                    <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                        <ActivatorContent>
+                            <img src="qln-images/content/Share.svg" class="icon" />
+                        </ActivatorContent>
+                        <ChildContent>
+                            @foreach (var item in shareMenuItems)
                             {
-                                <MudMenuItem OnClick="@item.OnClick">
-                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                </MudMenuItem>
+                                if (item.OnClick != null)
+                                {
+                                    <MudMenuItem OnClick="@item.OnClick">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
+                                else
+                                {
+                                    <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                        <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                    </MudMenuItem>
+                                }
                             }
-                            else
-                            {
-                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
-                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
-                                </MudMenuItem>
-                            }
-                        }
-                    </ChildContent>
-                </MudMenu>
-</div>
-                   <div class="post-card-comment-wrapper">
+                        </ChildContent>
+                    </MudMenu>
+                </div>
+                <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
                     <span class="icon-text">@Post.CommentCount</span>
@@ -181,13 +182,13 @@
 
 
 <style>
-     .share-icon {
+    .share-icon {
         margin: 0;
         width: 32px;
         height: 32px;
     }
 
-         /* Target all popover menus that are open and belong to the share menu */
+    /* Target all popover menus that are open and belong to the share menu */
     .mud-popover:has(.share-icon) .mud-list {
         display: flex !important;
         flex-direction: row !important;
@@ -222,10 +223,10 @@
         margin-top: 16px;
     }
 
-            .hover-expand {
+    .hover-expand {
         cursor: pointer;
-     }
-    
+    }
+
 
     .post-header {
         display: flex;
@@ -256,6 +257,17 @@
         font-weight: 600;
         color: #242424;
         margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 5;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-height: 7.5em;
+        line-height: 1.5em;
+        word-break: break-word;
+        position: relative;
+        cursor: default;
+        white-space: normal;
     }
 
     .post-image {
@@ -338,18 +350,19 @@
         line-height: 2;
     }
 
-    .post-body-preview-details img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1rem auto;
-        border-radius: 8px;
-    }
+        .post-body-preview-details img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
 
-    .post-body-preview-details a {
-        color: #00426D !important; 
-        text-decoration: underline !important;
-    }
+        .post-body-preview-details a {
+            color: #00426D !important;
+            text-decoration: underline !important;
+        }
+
     .post-footer {
         display: flex;
         justify-content: space-between;
@@ -367,7 +380,7 @@
         gap: 4px;
         padding: 2px 4px;
         border-radius: 25px;
-   }
+    }
 
     .menu-icon {
         width: 20px;
@@ -430,6 +443,7 @@
     .mud-elevation-8 {
         box-shadow: none !important;
     }
+
     .icon {
         width: 18px;
         height: 18px;
@@ -527,5 +541,4 @@
         margin-left: 4px;
     }
 
-  
 </style>
