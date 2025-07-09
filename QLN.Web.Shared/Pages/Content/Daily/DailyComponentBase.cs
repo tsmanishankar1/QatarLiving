@@ -2,7 +2,7 @@
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
-
+using Microsoft.Extensions.Logging;
 
 namespace QLN.Web.Shared.Pages.Content.Daily
 {
@@ -70,12 +70,13 @@ namespace QLN.Web.Shared.Pages.Content.Daily
                 StateHasChanged();
             }
         }
+[Inject] private ILogger<DailyComponentBase> Logger { get; set; }
 
         private async Task LoadContent()
         {
             LandingContent = await _simpleCacheService.GetContentLandingAsync() ?? new();
-            TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items.First() ?? new();
-            HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items.First() ?? new();
+            TopStoryItem = LandingContent?.ContentsDaily?.DailyTopStory?.Items?.FirstOrDefault() ?? new();
+            HighlightedEvent = LandingContent?.ContentsDaily?.DailyEvent?.Items?.FirstOrDefault() ?? new();
             FeaturedEvents = LandingContent?.ContentsDaily?.DailyFeaturedEvents?.Items ?? [];
             vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
             vVideoList = LandingContent?.ContentsDaily?.DailyWatchOnQatarLiving?.Items ?? [];

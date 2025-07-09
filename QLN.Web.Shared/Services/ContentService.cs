@@ -17,7 +17,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/v2/dailyliving/landing");
+                var response = await _httpClient.GetAsync($"api/v2/dailyliving/landing");
                 return response;
             }
             catch (Exception ex)
