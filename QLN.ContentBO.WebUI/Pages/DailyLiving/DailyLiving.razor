@@ -8,7 +8,7 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-        <MudText Class="daily-style">Daily Living</MudText>
+        <h2 class="main-title-name-style">Daily Living</h2>
         <MudTabs ActivePanelIndex="@activeIndex"
                  ActivePanelIndexChanged="OnTabChanged"
                  Rounded="false"
@@ -49,17 +49,17 @@
                                         FeaturedEventSlots="featuredEventSlots"
                                         Categories="Categories"
                                         ReplaceSlot="ReplaceEventSlot"
-                                        OnDelete="DeleteFeatureEvent" />
+                                        OnDelete="DeleteEventOnClick" />
             }
         }
-        else if (articles is null || !articles.Any())
+        @* else if (articles is null || !articles.Any())
         {
             <EmptyCard Title="No Content Found"
                        Subtitle="Please check back later." />
-        }
+        } *@
         else if(SelectedTab == DailyLivingTab.TopSection)
         {
-            <MudArticleTable Articles="articles" ReplaceItem="ReplaceItem"/>
+            <MudArticleTable Articles="articles" ReplaceItem="ReplaceTopSectionItem"/>
         }
         else if(SelectedTab != DailyLivingTab.TopSection){
             <DailyTopicsTable 

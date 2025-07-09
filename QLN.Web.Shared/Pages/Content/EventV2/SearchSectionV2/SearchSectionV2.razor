@@ -20,9 +20,9 @@
                     Items="FilteredAreas"
                     SelectedItemsChanged="HandleLocationSelectionChanged"
                     OnLocationUpdated="CallApiForLocationChange"
-                    GetLabel="item => item.Name"
-                    GetId="item => item.Id"
-                    CustomStyle="@(IsMobile ? "border-radius:8px;" : "border-top-left-radius:8px; border-bottom-left-radius:8px;")"
+                                GetLabel="item => item?.Name ?? string.Empty"
+                                GetId="item => item?.Id ?? string.Empty"
+                                CustomStyle="@(IsMobile ? "border-radius:8px;" : "border-top-left-radius:8px; border-bottom-left-radius:8px;")"
                     OnSearch="PerformSearch" 
                     NoWrap="@(!IsMobile)"
                 />

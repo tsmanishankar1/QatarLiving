@@ -79,7 +79,7 @@ else
                             }
                             else if (context.Event.Status == EventStatus.UnPublished)
                             {
-                                <MudMenuItem OnClick="@(() => ShowConfirmation("Unpublish this event?", "Are you sure you want to unpublish this event?", "Unpublish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.UnPublished))))">
+                                <MudMenuItem OnClick="@(() => ShowConfirmation("Publish this event?", "Are you sure you want to Publish this event?", "Publish", () => EventStatusChanged.InvokeAsync((context.Event, EventStatus.Published))))">
                                     <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Publish</span>
                                 </MudMenuItem>

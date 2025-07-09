@@ -1,16 +1,22 @@
 @inherits RadioAutoCompleteDialogBase
 @using QLN.ContentBO.WebUI.Models;
-<MudDialog Class="pa-2 custom-dialog">
+<MudDialog Class="pa-2 custom-dialog py-4">
     <DialogContent>
          <div class="d-flex justify-center">
         <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
         </div>
         <MudRadioGroup T="string" @bind-Value="@TopicType" Class="custom-radio-group">
             <MudRadio T="string" Value="@("Article")">Article</MudRadio>
+            @if(origin == "dailyTopic"){
             <MudRadio T="string" Value="@("Video")">Video</MudRadio>
+            }
             <MudRadio T="string" Value="@("Event")">Event</MudRadio>
         </MudRadioGroup>
-        <MudAutocomplete T="DailyLivingArticleDto"
+        @if(TopicType == "Video"){
+        <MudTextField Variant="Variant.Outlined" Label="VideoLink"  Class="my-2 event-custom-textfield" @bind-Value="@youTubelink"/>
+        }
+        else{
+            <MudAutocomplete T="DailyLivingArticleDto"
                  Key="@Placeholder"
                  Label="@Placeholder"
                  Variant="Variant.Outlined"
@@ -27,6 +33,8 @@
         <MudText>@eventItem.Title</MudText>
     </ItemTemplate>
          </MudAutocomplete>
+
+        }
           @if (!string.IsNullOrEmpty(_autocompleteError))
             {
                     <div class="mud-error-text">@_autocompleteError</div>

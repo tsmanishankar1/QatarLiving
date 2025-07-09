@@ -33,7 +33,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
 
         }
-
         public async Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto, CancellationToken cancellationToken = default)
 
         {
@@ -77,7 +76,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             })!;
 
         }
-
         public async Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
 
         {
@@ -94,6 +92,25 @@ namespace QLN.Backend.API.Service.V2ContentService
 
             return result ?? new List<DailyTopSectionSlot>();
 
+        }
+        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default)
+        {
+            var path = $"/api/v2/dailyliving/topsection/unusedarticles";
+
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    AppId,
+                    path,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
         }
         public async Task<List<DailyTopic>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default)
         {
@@ -179,7 +196,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new DaprServiceException((int)res.StatusCode, body);
             return JsonSerializer.Deserialize<string>(body)!;
         }
-
         public async Task<string> DeleteContentAsync(Guid contentId, CancellationToken ct)
         {
             var url = $"/api/v2/dailyliving/topic/content/{contentId}";
@@ -191,8 +207,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new DaprServiceException((int)res.StatusCode, body);
             return JsonSerializer.Deserialize<string>(body)!;
         }
-
-
         public async Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -219,7 +233,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<bool> UpdateDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
         {
             try
@@ -247,7 +260,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default)
         {
             try
@@ -283,8 +295,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
         public async Task AddDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default)
         {
             try
@@ -311,9 +321,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(
-            Guid topicId,
-            CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
         {
             var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles";
 
