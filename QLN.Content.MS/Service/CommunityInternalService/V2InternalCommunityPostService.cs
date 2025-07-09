@@ -36,9 +36,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;
             dto.Slug = GenerateSlug(dto.Title);
-
-
-
             var key = GetKey(dto.Id);
 
             try
@@ -531,9 +528,14 @@ namespace QLN.Content.MS.Service.CommunityInternalService
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey) ?? new();
+                var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: cancellationToken) ?? new();
 
-                // Bulk fetch for all post keys
+                if (keys.Count == 0)
+                {
+                    _logger.LogWarning("No community post keys found in the index.");
+                    return null;
+                }
+
                 var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: null, cancellationToken: cancellationToken);
 
                 foreach (var item in items)
@@ -546,18 +548,58 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                         PropertyNameCaseInsensitive = true
                     });
 
-                    if (post != null && string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase) && post.IsActive)
-                    {
-                        return post;
-                    }
-                }
+                    if (post == null || !post.IsActive || !string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    var likeIndexKey = $"like-index-{post.Id}";
+                    var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: cancellationToken);
+                    post.LikedUserIds = (likedUsers ?? new())
+                        .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                        .ToList();
+                    post.LikeCount = post.LikedUserIds.Count;
+                    var commentIndexKey = $"comment-index-{post.Id}";
+                    var commentIds = await _dapr.GetStateAsync<List<string>>(StoreName, commentIndexKey, cancellationToken: cancellationToken);
 
+                    if (commentIds is not null && commentIds.Count > 0)
+                    {
+                        var commentKeys = commentIds
+                            .Select(cid => $"comment-{post.Id}-{cid}")
+                            .ToList();
+
+                        var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null, cancellationToken: cancellationToken);
+
+                        foreach (var state in commentStates)
+                        {
+                            if (string.IsNullOrWhiteSpace(state.Value))
+                                continue;
+
+                            var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (comment is { IsActive: true }
+                                && !string.IsNullOrWhiteSpace(comment.UserId)
+                                && comment.UserId != "string")
+                            {
+                                post.CommentedUserIds.Add(comment.UserId);
+                            }
+                        }
+                        post.CommentedUserIds = post.CommentedUserIds
+                            .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                            .ToList();
+
+                        post.CommentCount = post.CommentedUserIds.Count;
+                    }
+
+                    return post;
+                }
+                _logger.LogInformation("No matching post found with slug: {Slug}", slug);
                 return null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving community post by slug: {Slug}", slug);
-                throw;
+                throw new InvalidOperationException($"Error fetching community post by slug: {slug}", ex);
             }
         }
         public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)

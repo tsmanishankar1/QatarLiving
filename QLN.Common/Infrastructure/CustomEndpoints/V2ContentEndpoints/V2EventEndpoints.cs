@@ -48,7 +48,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("CreateEvent")
             .WithTags("Event")
             .WithSummary("Create Event")
@@ -126,6 +125,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEvents")
             .WithTags("Event")
             .WithSummary("Get All Events")
@@ -153,6 +153,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllFeaturedEvents")
             .WithTags("Event")
             .WithSummary("Get All Events")
@@ -189,6 +190,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                         return TypedResults.Problem("Internal Server Error", ex.Message);
                     }
                 })
+                .AllowAnonymous()
                 .WithName("GetEventById")
                 .WithTags("Event")
                 .WithSummary("Get Event By ID")
@@ -246,7 +248,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("UpdateEvent")
             .WithTags("Event")
             .WithSummary("Update Event")
@@ -365,6 +366,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("CreateEventCategory")
             .WithTags("Event")
             .WithSummary("Create Event Category")
@@ -391,6 +393,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEventCategories")
             .WithTags("Event")
             .WithSummary("Get All Event Categories")
@@ -428,13 +431,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("GetEventCategoryById")
-                .WithTags("Event")
-                .WithSummary("Get Event Category By ID")
-                .WithDescription("Retrieves a single event.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .AllowAnonymous()
+            .WithName("GetEventCategoryById")
+            .WithTags("Event")
+            .WithSummary("Get Event Category By ID")
+            .WithDescription("Retrieves a single event.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
@@ -462,6 +466,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+            .AllowAnonymous()
             .WithName("GetPaginatedEvents")
             .WithTags("Event")
             .WithSummary("Paginated Events List")
@@ -488,6 +493,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem($"Unexpected error: {ex.Message}");
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEventSlots")
             .WithTags("Event")
             .WithSummary("Get All Event Slots")
@@ -519,6 +525,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+            .AllowAnonymous()
             .WithName("GetExpiredEvents")
             .WithTags("Event")
             .WithSummary("Get Expired Events")
@@ -586,7 +593,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("ReorderFeaturedEventSlots")
             .WithTags("Event")
             .WithSummary("Reorder Featured Event Slots")
@@ -690,6 +696,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+                .AllowAnonymous()
                 .WithName("GetEventsByStatus")
                 .WithTags("Event")
                 .WithSummary("Get Events By Status")
@@ -725,6 +732,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+                .AllowAnonymous()
                 .WithName("GetFeaturedEventsByStatus")
                 .WithTags("Event")
                 .WithSummary("Get Featured Events By Status")
@@ -780,7 +788,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization() 
             .WithName("UpdateFeaturedEvent")
             .WithTags("Event")
             .WithSummary("Update Featured Event")

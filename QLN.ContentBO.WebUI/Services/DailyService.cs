@@ -145,10 +145,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                object payload; 
+                object payload;
                 if (article.ContentType == 3)
                 {
-                     payload = new
+                    payload = new
                     {
                         contentType = article.ContentType,
                         topicId = article.TopicId,
@@ -285,6 +285,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "CreateArticle");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetAvailableTopSectionArticles()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/dailyliving/topsection/unusedarticles");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetUnusedTopSectionArticles");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

@@ -285,6 +285,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+
         group.MapPut("/updatenews", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
@@ -1083,12 +1084,16 @@ public static class V2NewsEndpoints
                         return TypedResults.Forbid();
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    
+                    var userId = userData.GetProperty("uid").GetString();                    
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
-                    var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
+                    var userName = userData.GetProperty("name").GetString();
+                    if(string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
+
+
+                    var result = await service.LikeNewsCommentAsync(commentId, userId, userName, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1112,6 +1117,7 @@ public static class V2NewsEndpoints
         (
             string commentId,
             [FromQuery] string userId,
+            [FromQuery] string userName,
             IV2NewsService service,
             CancellationToken ct
         ) =>
@@ -1127,8 +1133,17 @@ public static class V2NewsEndpoints
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
+                if (string.IsNullOrWhiteSpace(userName))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User Name",
+                        Detail = "The 'userName' query parameter is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
 
-                var result = await service.LikeNewsCommentAsync(commentId, userId, ct);
+                var result = await service.LikeNewsCommentAsync(commentId, userId, userName, ct);
                 return TypedResults.Ok(result);
             }
             catch (Exception ex)
@@ -1143,14 +1158,15 @@ public static class V2NewsEndpoints
         .WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
         .Produces<bool>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);       
 
-        group.MapPost("/commentsdislike/{commentId}", async Task<Results<
-            Ok<bool>,
+        group.MapPost("/comments/delete/{articleId}/{commentId}", async Task<Results<
+            Ok<NewsCommentApiResponse>,
             ForbidHttpResult,
             ProblemHttpResult>>
             (
-            string commentId,
+            string articleId,
+            Guid commentId,
             IV2NewsService service,
             HttpContext httpContext,
             CancellationToken ct
@@ -1159,7 +1175,7 @@ public static class V2NewsEndpoints
             try
             {
                 var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
+                if (string.IsNullOrWhiteSpace(userClaim))
                     return TypedResults.Forbid();
 
                 var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
@@ -1167,29 +1183,29 @@ public static class V2NewsEndpoints
                 if (string.IsNullOrWhiteSpace(userId))
                     return TypedResults.Forbid();
 
-                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                var result = await service.SoftDeleteNewsCommentAsync(articleId, commentId, userId, ct);
                 return TypedResults.Ok(result);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Failed to toggle dislike for news comment.", ex.Message);
+                return TypedResults.Problem("Failed to delete comment using JWT.", ex.Message);
             }
         })
-            .RequireAuthorization()
-            .WithName("DislikeNewsCommentJWT")
+            .WithName("SoftDeleteNewsCommentJWT")
             .WithTags("News")
-            .WithSummary("Toggle dislike on a comment (JWT-based)")
-            .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
-            .Produces<bool>(StatusCodes.Status200OK)
+            .WithSummary("Soft delete a comment using JWT")
+            .WithDescription("Sets IsActive=false for a comment. Only the owner can delete their own comment or reply using JWT.")
+            .Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/commentsdislike/byid/{commentId}", async Task<Results<
-            Ok<bool>,
+        group.MapPost("/comments/delete/byid/{articleId}/{commentId}", async Task<Results<
+            Ok<NewsCommentApiResponse>,
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            string commentId,
+            string articleId,
+            Guid commentId,
             [FromQuery] string userId,
             IV2NewsService service,
             CancellationToken ct
@@ -1207,71 +1223,104 @@ public static class V2NewsEndpoints
                     });
                 }
 
-                var result = await service.DislikeNewsCommentAsync(commentId, userId, ct);
+                var result = await service.SoftDeleteNewsCommentAsync(articleId, commentId, userId, ct);
                 return TypedResults.Ok(result);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Failed to toggle dislike (by user ID).", ex.Message);
+                return TypedResults.Problem("Failed to delete comment with provided user ID.", ex.Message);
             }
         })
             .ExcludeFromDescription()
-            .WithName("DislikeNewsCommentByUserId")
+            .WithName("SoftDeleteNewsCommentByUserId")
             .WithTags("News")
-            .WithSummary("Toggle dislike with explicit user ID")
-            .WithDescription("Used when the client provides the user ID directly in query (not via JWT).")
-            .Produces<bool>(StatusCodes.Status200OK)
+            .WithSummary("Soft delete a comment by ID (explicit userId)")
+            .WithDescription("Used for admin/debug cases to delete a comment by supplying the userId directly.")
+            .Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/landing", async Task<Results<
-            Ok<QlnNewsNewsQatarPageResponse>,
-            NotFound<ProblemDetails>,
-            BadRequest<ProblemDetails>,
-            ProblemHttpResult>> (
-        [FromQuery] int categoryId,
-        [FromQuery] int subCategoryId,
-        IV2NewsService service,
-        CancellationToken ct) =>
+        group.MapPost("/comments/edit/{articleId}/{commentId}", async Task<Results<
+            Ok<NewsCommentApiResponse>,
+            ForbidHttpResult,
+            ProblemHttpResult>>
+            (
+            string articleId,
+            Guid commentId,
+            [FromBody] string updatedText,
+            IV2NewsService service,
+            HttpContext httpContext,
+            CancellationToken ct
+            ) =>
         {
             try
             {
-                var page = await service.GetNewsLandingPageAsync(categoryId, subCategoryId, ct);
-                return TypedResults.Ok(page);
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                    return TypedResults.Forbid();
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                if (string.IsNullOrWhiteSpace(userId))
+                    return TypedResults.Forbid();
+
+                var result = await service.EditNewsCommentAsync(articleId, commentId, userId, updatedText, ct);
+                return TypedResults.Ok(result);
             }
-            catch (KeyNotFoundException knf)
-            {
-                return TypedResults.NotFound(new ProblemDetails
-                {
-                    Title = "Not Found",
-                    Detail = knf.Message,
-                    Status = StatusCodes.Status404NotFound
-                });
-            }
-            catch (ArgumentException arg)
-            {
-                return TypedResults.BadRequest(new ProblemDetails
-                {
-                    Title = "Bad Request",
-                    Detail = arg.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-           
             catch (Exception ex)
             {
-                return TypedResults.Problem(new ProblemDetails
-                {
-                    Title = "Internal Server Error",
-                    Detail = "An unexpected error occurred. Please try again later.",
-                    Status = StatusCodes.Status500InternalServerError
-                });
+                return TypedResults.Problem("Failed to edit news comment.", ex.Message);
             }
         })
-        .WithName("GetNewsLandingPage")
-        .WithTags("News")
-        .WithSummary("Get the 6-section news landing page for a category/subcategory");
+            .WithName("EditNewsCommentJWT")
+            .WithTags("News")
+            .WithSummary("Edit a news comment (JWT-based)")
+            .WithDescription("Allows a user to edit their comment by reading user ID from JWT token.")
+            .Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapPost("/comments/editbyid/{articleId}/{commentId}", async Task<Results<
+            Ok<NewsCommentApiResponse>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            string articleId,
+            Guid commentId,
+            [FromQuery] string userId,
+            [FromBody] string updatedText,
+            IV2NewsService service,
+            CancellationToken ct
+            ) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing User ID",
+                        Detail = "The 'userId' query parameter is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var result = await service.EditNewsCommentAsync(articleId, commentId, userId, updatedText, ct);
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Failed to edit comment (by user ID).", ex.Message);
+            }
+        })
+            .ExcludeFromDescription()
+            .WithName("EditNewsCommentByUserId")
+            .WithTags("News")
+            .WithSummary("Edit comment with explicit user ID")
+            .WithDescription("Used when the client provides the user ID directly in the query.")
+            .Produces<NewsCommentApiResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
         return group;
