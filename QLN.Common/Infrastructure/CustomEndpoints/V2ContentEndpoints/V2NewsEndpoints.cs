@@ -329,7 +329,7 @@ public static class V2NewsEndpoints
 
                        var result = await service.UpdateNewsArticleAsync(dto, cancellationToken);
 
-                       return TypedResults.Ok(result); // result should be a success message
+                       return TypedResults.Ok(result); 
                    }
                    catch (KeyNotFoundException ex)
                    {

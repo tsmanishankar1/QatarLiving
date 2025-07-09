@@ -67,9 +67,11 @@ namespace QLN.Content.MS.Service.NewsInternalService
         private string GenerateNewsSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.Trim().ToLower()
-                             .Replace(" ", "-")
-                             .Replace("--", "-");
+            var slug = title.ToLowerInvariant().Trim();
+            slug = Regex.Replace(slug, @"[\s_]+", "-");
+            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
+            slug = Regex.Replace(slug, @"-+", "-");
+            slug = slug.Trim('-');
             return slug;
         }
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)

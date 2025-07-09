@@ -13,6 +13,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         {
             group.MapGetAllFOFeaturedEventEndpoints()
                 .MapGetFOEventEndpoints()
+                .MapGetEventBySlugEndpoint()
                 .MapGetFOPaginatedEvents();
                 return group;
         }

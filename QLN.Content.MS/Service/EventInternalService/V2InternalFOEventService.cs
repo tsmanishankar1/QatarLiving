@@ -61,7 +61,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                     ConstantValues.V2Content.EventIndexKey,
                     cancellationToken: cancellationToken
                 ) ?? new List<string>();
-
+            if (keys.Count == 0)
+                return new List<V2Events>();
             var items = await _dapr.GetBulkStateAsync(
                 ConstantValues.V2Content.ContentStoreName,
                 keys,
@@ -77,7 +78,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 .Where(e => e != null && e.IsActive == true && e.IsFeatured == isFeatured)
                 .ToList();
 
-            return events;
+            return events ?? new List<V2Events?>();
         }
         public async Task<PagedResponse<V2Events>> GetFOPagedEvents(GetPagedEventsRequest request, CancellationToken cancellationToken = default)
         {
@@ -273,5 +274,39 @@ namespace QLN.Content.MS.Service.EventInternalService
             TotalCount = 0,
             Items = new List<V2Events>()
         };
+        public async Task<V2Events?> GetEventBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    keys,
+                    parallelism: null,
+                    cancellationToken: cancellationToken);
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Value))
+                        continue;
+                    var ev = JsonSerializer.Deserialize<V2Events>(item.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    if (ev is not null && ev.IsActive &&
+                        ev.Slug.Trim() == slug.Trim())
+                    {
+                        return ev;
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
     }
 }
