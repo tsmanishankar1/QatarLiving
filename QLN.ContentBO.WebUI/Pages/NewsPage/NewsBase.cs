@@ -64,6 +64,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
 
+        protected string articleDetailBaseURL { get; set; }
+
         public class NewsArticleSearchResponse
         {
             public List<NewsArticleDTO> Items { get; set; } = [];
@@ -73,7 +75,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                await AuthorizedPage();
+                AuthorizedPage();
+                articleDetailBaseURL = $"{NavigationPath.Value.ContentWeb.TrimEnd('/')}/content/article";
             }
             catch (Exception ex)
             {

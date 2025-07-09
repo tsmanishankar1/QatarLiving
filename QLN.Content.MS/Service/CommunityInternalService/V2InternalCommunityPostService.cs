@@ -327,64 +327,36 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
-        public async Task<CommunityCommentListResponse> GetCommentsByPostIdAsync(
-      Guid postId,
-      int? page = null,
-      int? perPage = null,
-      CancellationToken ct = default)
+        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
-            var index = (await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct)
-                ?? new List<Guid>()).Distinct().ToList();
-
-            int total = index.Count;
-            int currentPage = page ?? 1;
-            int itemsPerPage = perPage ?? 10;
-            int skip = (currentPage - 1) * itemsPerPage;
-
-            var pagedCommentIds = index.Skip(skip).Take(itemsPerPage).ToList();
-            var commentKeys = pagedCommentIds
-                .Select(id => $"comment-{postId}-{id}")
-                .ToList();
-
-            var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null);
-            var comments = new List<CommunityCommentDto>();
-
-            foreach (var state in commentStates)
+            try
             {
-                if (string.IsNullOrWhiteSpace(state.Value))
-                    continue;
+                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
 
-                CommunityCommentDto? comment = null;
-                try
+                var commentList = new List<CommunityCommentDto>();
+                foreach (var commentId in commentIds)
                 {
-                    comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                    var commentKey = $"comment-{postId}-{commentId}";
+                    var comment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey);
+                    if (comment != null)
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
-                }
-                catch (Exception)
-                {
-                    continue;
+                        var likeIndexKey = $"comment-like-index-{comment.CommentId}";
+                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey);
+                        comment.CommentsLikeCount = likedUsers?.Count ?? 0;
+                        commentList.Add(comment);
+                    }
                 }
 
-                if (comment == null || !comment.IsActive)
-                    continue;
-
-                comments.Add(comment);
+                return commentList.OrderByDescending(c => c.CommentedAt).ToList();
             }
-
-            // Defensive: if no comments found, return empty list (never null)
-            comments = comments.OrderByDescending(c => c.CommentedAt).ToList();
-
-            return new CommunityCommentListResponse
+            catch (Exception ex)
             {
-                TotalComments = total,
-                PerPage = itemsPerPage,
-                CurrentPage = currentPage,
-                Comments = comments // can be empty, but never null
-            };
+                _logger.LogError(ex, "Error fetching comment list for post {PostId}", postId);
+                throw;
+            }
         }
+
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
             var key = $"comment-like-{commentId}-{userId}";
@@ -421,7 +393,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-
         public async Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
         {
             try
@@ -456,42 +427,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
-        public async Task<bool> DislikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
-        {
-            var key = $"comment-dislike-{commentId}-{userId}";
-            var indexKey = $"comment-dislike-index-{commentId}";
-
-            try
-            {
-                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
-
-                if (!string.IsNullOrWhiteSpace(existing))
-                {
-                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
-                    index.Remove(userId);
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
-
-                    _logger.LogInformation("User {UserId} removed dislike from comment {CommentId}", userId, commentId);
-                    return false;
-                }
-
-                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
-
-                if (!index.Contains(userId))
-                    index.Add(userId);
-
-                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
-
-                _logger.LogInformation("User {UserId} disliked comment {CommentId}", userId, commentId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing dislike for comment {CommentId}", commentId);
-                throw;
-            }
-        }
 
     }
 }

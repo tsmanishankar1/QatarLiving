@@ -4,7 +4,7 @@
 @using QLN.Common.Infrastructure.DTO_s;
 @using QLN.Web.Shared.Components.EmptyCard
 @inject NavigationManager Navigation
-
+@inherits FeaturedEventsBaseV2
 <div class="categories-wrapper">
     <div class="categories-header">
         <MudContainer MaxWidth="MaxWidth.False">
@@ -48,51 +48,6 @@
         </div>
     }
 </div>
-
-@code {
-    [Parameter]
-    public List<EventDTOV2> FeaturedEvent { get; set; } = new();
-
-    [Parameter]
-    public bool Loading { get; set; } = true;
-
-    [Inject]
-    private IJSRuntime JSRuntime { get; set; } = default!;
-
-    private bool _categoriesSwiperInitialized = false;
-
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!_categoriesSwiperInitialized && !Loading && FeaturedEvent?.Any() == true)
-        {
-            _categoriesSwiperInitialized = true;
-            await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
-        }
-    }
-
-    private void HandleCategoryClick(EventDTOV2 clickedItem)
-    {
-        Navigation.NavigateTo($"/content/eventsV2/details/{clickedItem.Id}");
-        // Handle click logic here or raise EventCallback if needed
-    }
-        private List<EventDTOV2> GetSlotOrderedEvents(List<EventDTOV2> events)
-    {
-        const int maxSlots = 100;
-        var slotEvents = new EventDTOV2[maxSlots];
-
-        foreach (var ev in events)
-        {
-            if (ev.IsFeatured && ev.FeaturedSlot != null && ev.FeaturedSlot.Id > 0 && ev.FeaturedSlot.Id <= maxSlots)
-            {
-                int index = ev.FeaturedSlot.Id - 1;
-                slotEvents[index] = ev;
-            }
-        }
-
-        return slotEvents.Where(e => e != null).ToList();
-    }
-}
 
 <style>
     .categories-wrapper {

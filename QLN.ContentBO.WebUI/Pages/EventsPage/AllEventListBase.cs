@@ -99,7 +99,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
-               await AuthorizedPage();
+                AuthorizedPage();
             }
             catch (Exception ex)
             {

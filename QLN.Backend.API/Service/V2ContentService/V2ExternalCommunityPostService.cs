@@ -267,46 +267,33 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetCommentsByPostIdAsync(
-          Guid postId,
-          int? page = null,
-          int? perPage = null,
-          CancellationToken ct = default)
+
+        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
         {
             try
             {
-                var queryParams = new List<string>();
-                if (page.HasValue) queryParams.Add($"page={page.Value}");
-                if (perPage.HasValue) queryParams.Add($"perPage={perPage.Value}");
+                var url = $"/api/v2/community/getCommentsByPostId/{postId}";
 
-                var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-                var url = $"/api/v2/community/comments/byPost/{postId}{queryString}";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
 
-                var response = await _dapr.InvokeMethodAsync<CommunityCommentListResponse>(
-                    HttpMethod.Get,
-                    "qln-content-ms",
-                    url,
-                    ct);
+                var json = await response.Content.ReadAsStringAsync();
 
-                // If response is empty or no comments, throw an exception
-                if (response == null || response.Comments == null || !response.Comments.Any())
+                var comments = JsonSerializer.Deserialize<List<CommunityCommentDto>>(json, new JsonSerializerOptions
                 {
-                    throw new InvalidOperationException($"No comments available for Post ID: {postId}");
-                }
+                    PropertyNameCaseInsensitive = true
+                });
 
-                return response;
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogError(ex, "No comments found for Post ID: {PostId}", postId);
-                throw new InvalidOperationException("No Comments available for this post.", ex);
+                return comments ?? new List<CommunityCommentDto>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch comments for Post ID: {PostId}", postId);
-                throw new InvalidOperationException("Error retrieving comments for community post.", ex);
+                _logger.LogError(ex, "Error fetching comments for post {PostId} via Dapr", postId);
+                throw;
             }
         }
+
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
             try
@@ -333,36 +320,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error invoking LikeCommentAsync via Dapr");
-                throw;
-            }
-        }
-
-        public async Task<bool> DislikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
-        {
-            try
-            {
-                var url = $"/api/v2/community/dislikeCommentInternal/{commentId}/{communityPostId}/{userId}";
-
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-
-                if (!string.IsNullOrEmpty(json))
-                {
-                    var jsonDoc = JsonDocument.Parse(json);
-                    if (jsonDoc.RootElement.TryGetProperty("status", out var statusElement))
-                    {
-                        return statusElement.GetString()?.ToLowerInvariant() == "disliked";
-                    }
-                }
-
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error invoking DislikeCommentAsync via Dapr");
                 throw;
             }
         }
