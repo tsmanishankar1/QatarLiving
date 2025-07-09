@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Components
 {
@@ -7,11 +8,13 @@ namespace QLN.ContentBO.WebUI.Components
     {
         [Parameter]
         public List<DailyLivingArticleDto> Articles { get; set; } = new();
+        [Parameter] public EventCallback<DailyLivingArticleDto> ReplaceItem { get; set; }
         public List<DailyLivingArticleDto> slotArticles = Enumerable.Range(1, 9)
                 .Select(i => new DailyLivingArticleDto
                 {
                     Title = "Add Item",
-                    SlotType = i
+                    SlotType = i,
+                    SlotNumber = i
                 })
                 .ToList();
         protected override async Task OnParametersSetAsync()
@@ -20,7 +23,8 @@ namespace QLN.ContentBO.WebUI.Components
             .Select(i => new DailyLivingArticleDto
             {
                 Title = "Add Item",
-                SlotType = i
+                SlotType = i,
+                SlotNumber = i
             })
             .ToList();
             foreach (var article in Articles)
@@ -35,6 +39,9 @@ namespace QLN.ContentBO.WebUI.Components
                 }
             }
         }
-        
+        protected async Task ReplaceArticle(DailyLivingArticleDto article)
+        {
+            await ReplaceItem.InvokeAsync(article);
+        }
     }
 }

@@ -40,15 +40,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task HandleValidSubmit()
         {
             IsLoading = true;
-            if (!editContext.Validate())
-            {
-                var messages = editContext.GetValidationMessages();
-                foreach (var message in messages)
-                {
-                    Snackbar.Add(message, Severity.Error);
-                }
-                return;
-            }
+           
 
             try
             {
@@ -75,9 +67,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
+
         protected void Cancel()
         {
-            NavigationManager.NavigateTo("/content/community");
+            NavigationManager.NavigateTo("/content/community/v2");
         }
 
       

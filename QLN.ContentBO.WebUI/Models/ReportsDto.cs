@@ -17,6 +17,7 @@ public class ReportDto
     public string? Comment { get; set; }
     public string? UserName { get; set; } 
     public DateTime? CommentDate { get; set; } 
+    public DateTime? PostDate { get; set; } 
 
     public int Number { get; set; }
     public string Category => "N/A";

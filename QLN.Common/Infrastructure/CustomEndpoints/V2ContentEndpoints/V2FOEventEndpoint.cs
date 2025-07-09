@@ -27,7 +27,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 try
                 {
                     var events = await service.GetAllFOIsFeaturedEvents(isFeatured, cancellationToken);
-                    return TypedResults.Ok(events);
+                    return TypedResults.Ok(events ?? new List<V2Events>());
                 }
                 catch (Exception ex)
                 {
@@ -55,17 +55,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 {
                     var result = await service.GetFOEventById(id, cancellationToken);
                     if (result == null || result.IsActive == false)
-                        throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
-                    return TypedResults.Ok(result);
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
                     {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Event Not Found",
+                            Detail = $"Active event with ID '{id}' not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
@@ -113,6 +111,39 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<PagedResponse<V2Events>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            return group;
+        }
+        public static RouteGroupBuilder MapGetEventBySlugEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/slug/{slug}", async Task<Results<Ok<V2Events>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+                string slug,
+                IV2FOEventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetEventBySlug(slug, cancellationToken);
+                    return result is not null
+                        ? TypedResults.Ok(result)
+                        : TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = $"No event found with slug '{slug}'"
+                        });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetEventsBySlug")
+            .WithTags("FOEvent")
+            .WithSummary("Get Event by Slug")
+            .WithDescription("Retrieves event details using SEO-friendly slug.")
+            .Produces<V2Events>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }

@@ -5,14 +5,13 @@
 
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
-        <MudText Class="reports-style">Reports</MudText>
-
+        <h2 class="main-title-name-style">Reports</h2>
         <div class="sticky-search-bar">
             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
         </div>
 
         <div class="reports-table">
-            <ReportsTable TPost="ReportDto" IsLoading="IsLoading" Posts="_paginatedPosts"   OnIgnore="HandleIgnoreAction"
+            <ReportsTable Type="@Type" TPost="ReportDto" IsLoading="IsLoading" Posts="_paginatedPosts"   OnIgnore="HandleIgnoreAction"
               OnDelete="HandleDeleteAction" />
           @if (!IsLoading && _paginatedPosts != null && _paginatedPosts.Any())
             {

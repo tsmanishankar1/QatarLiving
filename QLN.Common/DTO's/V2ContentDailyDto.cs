@@ -48,11 +48,12 @@ namespace QLN.Common.DTO_s
     {
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
-        public DailySlotType SlotType { get; set; } 
+        public DailySlotType? SlotType { get; set; } 
         public string Title { get; set; } 
-        public string Category { get; set; }
+        public string? Category { get; set; }
         public string? Subcategory { get; set; } 
         public Guid RelatedContentId { get; set; } 
+        public string? Slug { get; set; } = string.Empty;
         public DailyContentType ContentType { get; set; }
         public DateTime PublishedDate { get; set; }
         public DateTime? EndDate { get; set; }

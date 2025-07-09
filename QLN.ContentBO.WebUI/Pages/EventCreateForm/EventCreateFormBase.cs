@@ -4,8 +4,14 @@ using Microsoft.AspNetCore.Components.Web;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Components.SuccessModal;
+using MudBlazor;
+using MudExRichTextEditor;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Text.Json;
+using QLN.ContentBO.WebUI.Components.News;
+using QLN.ContentBO.WebUI.Pages.EventsPage;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Components;
@@ -18,8 +24,13 @@ namespace QLN.ContentBO.WebUI.Pages
         [Inject] IEventsService eventsService { get; set; }
         [Inject]
         public IDialogService DialogService { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+        [Inject] private NavigationManager Navigation { get; set; } = default!;
+        protected bool IsLoading = false;
         [Inject] ILogger<EventCreateFormBase> Logger { get; set; }
         protected EditContext _editContext;
+        public string? _timeTypeError;
+        public string? _eventTypeError;
         protected List<LocationEventDto> Locations = new();
         public EventDTO CurrentEvent { get; set; } = new EventDTO();
         public string selectedLocation { get; set; } = string.Empty;
@@ -39,6 +50,22 @@ namespace QLN.ContentBO.WebUI.Pages
         "Option 3",
         "Option 4"
     };
+    private async Task ShowSuccessModal(string title)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SuccessModalBase.Title), title },
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,  
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+        }
 
         protected TimeSpan? StartTimeSpan
         {
@@ -154,20 +181,11 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse?.Locations ?? [];
         }
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected void OnCancelClicked()
         {
-             if (_shouldInitializeMap)
-            {
-                _shouldInitializeMap = false;
-                 await JS.InvokeVoidAsync("initMap", 25.32, 51.54);
-            }
+            Navigation.NavigateTo("/manage/events");
         }
-        [JSInvokable]
-        public static Task UpdateLatLng(double lat, double lng)
-        {
-            Console.WriteLine($"Latitude: {lat}, Longitude: {lng}");
-            return Task.CompletedTask;
-        }
+      
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -177,6 +195,16 @@ namespace QLN.ContentBO.WebUI.Pages
                 CloseOnEscapeKey = true
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
+        }
+         protected async Task DeleteEventOnClick()
+        {
+            var parameters = new DialogParameters
+         {
+            { "OnAdd", EventCallback.Factory.Create(this, ClearForm) }
+        };
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<EventDiscardArticle>("", parameters, options);
+        var result = await dialog.Result;
         }
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
@@ -330,57 +358,71 @@ namespace QLN.ContentBO.WebUI.Pages
             _timeError = null;
             _coverImageError = null;
             bool hasError = false;
-            if (CurrentEvent.EventType == EventType.FeePrice && CurrentEvent.Price == null)
+             if (CurrentEvent?.EventType == 0)
+            {
+                _eventTypeError = "Event Type is required.";
+                Snackbar.Add("Event Type is required.", severity: Severity.Error);
+                return;
+            }
+            if (CurrentEvent?.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
                 _PriceError = "Price is required for Fees events.";
-                hasError = true;
+                Snackbar.Add("Price is required for Fees events.", severity: Severity.Error);
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
-                hasError = true;
+                Snackbar.Add("Location is required.", severity: Severity.Error);
+                return;
+            }
+              if (CurrentEvent?.EventSchedule?.TimeSlotType == 0)
+            {
+                _timeTypeError = "Time Type is required.";
+                Snackbar.Add("Time Type is required.", severity: Severity.Error);
+                return;
             }
 
             if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
-                hasError = true;
+                Snackbar.Add("Start date is required.", severity: Severity.Error);
+                return;
             }
             else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime &&
              (CurrentEvent.EventSchedule.StartTime == null || CurrentEvent.EventSchedule.EndTime == null))
             {
                 _timeError = "Start Time and End Time are required.";
-                hasError = true;
+                Snackbar.Add("Start Time and End Time are required.", severity: Severity.Error);
+                return;
             }
             if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
                 if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
                 {
                     _timeError = "Please enter a valid start and end time.";
-                    hasError = true;
+                    Snackbar.Add("Please enter a valid start and end time.", severity: Severity.Error);
+                    return;
                 }
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
-                hasError = true;
+                Snackbar.Add("Event description is required.", severity: Severity.Error);
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.CoverImage))
             {
                 _coverImageError = "Cover Image is required.";
-                hasError = true;
-            }
-
-            if (hasError)
-            {
-                StateHasChanged();
+                Snackbar.Add("Cover Image is required.", severity: Severity.Error);
                 return;
             }
             try
             {
+                IsLoading = true;
                 if (int.TryParse(SelectedLocationId, out int value))
                 {
                     CurrentEvent.LocationId = value;
@@ -389,8 +431,10 @@ namespace QLN.ContentBO.WebUI.Pages
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    Snackbar.Add("Events Added", severity: Severity.Success);
+                    await ShowSuccessModal("Events Added successfully!");
                     ClearForm();
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -405,6 +449,10 @@ namespace QLN.ContentBO.WebUI.Pages
             catch (Exception ex)
             {
                 Logger.LogError(ex, "GetWriterTags");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
         private async Task<List<EventCategoryModel>> GetEventsCategories()
@@ -445,25 +493,65 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             return new LocationListResponseDto();
         }
-        protected async Task OnLocationChanged(string locationId)
-        {
-            SelectedLocationId = locationId;
+            private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 
-            var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
-            if (selectedLocation != null)
+            protected override async Task OnAfterRenderAsync(bool firstRender)
             {
-                CurrentEvent.Location = selectedLocation.Name;
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
-                CurrentEvent.Latitude = selectedLocation.Latitude;
-                CurrentEvent.Longitude = selectedLocation.Longitude;
-                if (double.TryParse(selectedLocation.Latitude, out var lat) &&
-                    double.TryParse(selectedLocation.Longitude, out var lng))
+                if (firstRender)
                 {
-                    await JS.InvokeVoidAsync("initMap", lat, lng);
+                    _dotNetRef = DotNetObjectReference.Create(this);
+
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                 }
-                StateHasChanged();
             }
-        }
+
+            [JSInvokable]
+            public Task SetCoordinates(double lat, double lng)
+            {
+                Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
+
+                // Update current event coordinates
+                CurrentEvent.Latitude = lat.ToString();
+                CurrentEvent.Longitude = lng.ToString();
+
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Latitude));
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Longitude));
+
+                StateHasChanged(); // Reflect changes in UI
+                return Task.CompletedTask;
+            }
+
+            protected async Task OnLocationChanged(string locationId)
+            {
+                SelectedLocationId = locationId;
+
+                var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
+                if (selectedLocation != null)
+                {
+                    CurrentEvent.Location = selectedLocation.Name;
+                    _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
+
+                    CurrentEvent.Latitude = selectedLocation.Latitude;
+                    CurrentEvent.Longitude = selectedLocation.Longitude;
+
+                    if (double.TryParse(selectedLocation.Latitude, out var lat) &&
+                        double.TryParse(selectedLocation.Longitude, out var lng))
+                    {
+                        // Update map marker position
+                        await JS.InvokeVoidAsync("updateMapCoordinates", lat, lng);
+                    }
+
+                    StateHasChanged(); // Refresh UI
+                }
+            }
+
+public async ValueTask DisposeAsync()
+{
+    _dotNetRef?.Dispose();
+}
+
+
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
             var existingSlot = CurrentEvent?.EventSchedule?.TimeSlots

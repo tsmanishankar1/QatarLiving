@@ -56,6 +56,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected async Task ToggleLikeAsync()
         {
+            if (!IsLoggedIn)
+            {
+                Snackbar.Add("Please login to like this post.", Severity.Warning);
+                return;
+            }
             try
             {
                 var success = await CommunityService.LikeCommunityPostAsync(Post.Id);
