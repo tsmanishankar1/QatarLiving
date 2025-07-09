@@ -34,16 +34,14 @@
     else
     {
         <MudVirtualize Context="article" Items="Items" T="ContentEvent">
-            <div class="article-entry">
-                <MudLink Href="@($" /content/daily/article/details/{article.Slug}")" class="article-content" Style="display:flex !important">
-                    <div class="article-title">
+            <div class="daily-article-entry">
+                    <div class="daily-article-title" @onclick="@(() => NavigatetoArticle(article))">
                         @(article.Title)
                     </div>
-                    @if (!string.IsNullOrWhiteSpace(@article.ImageUrl))
-                    {
-                        <img src="@(article.ImageUrl)" class="article-image" />
-                    }
-                </MudLink>
+                       <div class="daily-image-container" >
+                         <img src="@article.ImageUrl" alt="News-Image" class="daily-article-image"
+                        key="@article.ImageUrl"/> 
+                    </div>
             </div>
         </MudVirtualize>
     }
@@ -87,15 +85,23 @@
         margin-bottom: 20px;
     }
 
-    .article-entry {
+    .daily-article-entry {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         padding: 0px 0px 6px 0px;
         border-bottom: 1px solid #F0F0F0;
     }
-
-    .article-entry:last-child {
+    .daily-image-container {
+        width: 100%;
+        max-width: 124px;
+        aspect-ratio: 16 / 9;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #f3f3f3; 
+        flex-shrink: 0;
+    }
+    .daily-article-entry:last-child {
         border-bottom: none;
     }
 
@@ -110,7 +116,7 @@
         margin-bottom: 4px;
     }
 
-    .article-title {
+    .daily-article-title {
         font-size: 16px;
         font-weight: 600;
         padding-right: 12px;
@@ -125,20 +131,20 @@
         text-overflow: ellipsis;
     }
 
-    .article-title:hover {
+    .daily-article-title:hover {
         text-decoration: underline;
+        cursor: pointer;
         color: var(--color-primary) !important;
     }
 
-    .article-image {
-        width: 124px;
+    .daily-article-image {
+       width: 100%;
         height: 100%;
-        aspect-ratio: 16/9;
-        border-radius: 6px;
-        object-fit: cover;
+        border-radius: 4px;
+        object-fit: cover; 
     }
 
-        .article-image:hover{
+        .daily-article-image:hover{
             cursor: pointer;
         }
 

@@ -27,14 +27,13 @@
     {
         @foreach (var article in Articles.Take(4))
         {
-            <div class="article-entry">
-                <MudLink Class="article-content" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")" Style="display:flex !important">
-                <div class="more-article-title">
+            <div class="more-article-entry">
+                <div class="more-article-title" @onclick="@(() => onclick(article))">
                         @(article.Title)
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
-                    <div class="image-container" @onclick="@(() => onclick(article))">
+                    <div class="more-image-container" @onclick="@(() => onclick(article))">
                      @if (!imageLoaded)
                     {
                         <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="more-article-image"  />
@@ -50,7 +49,6 @@
                         No image available
                     </div>
                 }
-                </MudLink>
             </div>
             
         }
@@ -86,7 +84,7 @@
         color: #555;
         font-size: 1rem;
     }
-    .image-container {
+    .more-image-container {
         width: 100%;
         max-width: 124px;
         aspect-ratio: 16 / 9;
@@ -121,7 +119,7 @@
         font-size: 20px;
     }
 
-    .article-entry {
+    .more-article-entry {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -129,7 +127,7 @@
         border-bottom: 1px solid #F0F0F0;
     }
 
-    .article-entry:last-child {
+    .more-article-entry:last-child {
         border-bottom: none;
     }
 
@@ -165,6 +163,7 @@
 
     .more-article-title:hover {
         text-decoration: underline;
+        cursor: pointer;
         color: var(--color-primary) !important;          
     }
 
