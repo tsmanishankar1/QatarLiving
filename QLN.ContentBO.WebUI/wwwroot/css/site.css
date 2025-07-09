@@ -256,10 +256,11 @@ a, .btn-link {
 
     /* Event razor styles */
 
-     .events-style {
+     .main-title-name-style {
         font-family: 'Public Sans', sans-serif;
         font-size: 30px;
         font-weight: 600;
+        margin-bottom: 10px;
         color: #242424;
         text-transform: none;
     }

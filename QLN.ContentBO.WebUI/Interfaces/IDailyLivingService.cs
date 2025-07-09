@@ -14,5 +14,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetAvailableArticles(string topicId);
         Task<HttpResponseMessage> AddArticle(DailyLivingArticleDto article);
         Task<HttpResponseMessage> ReplaceTopSectionArticle(DailyLivingArticleDto article);
+        Task<HttpResponseMessage> ReplaceArticle(DailyLivingArticleDto article);
     }
 }

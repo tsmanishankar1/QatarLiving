@@ -1,0 +1,280 @@
+@using Microsoft.Extensions.Options
+@using QLN.ContentBO.WebUI.Models
+@inherits SidebarBase
+@inject NavigationManager NavManager
+@inject IOptions<NavigationPath> options;
+
+<MudDrawer Open="true" Elevation="2" Variant="DrawerVariant.Persistent" Breakpoint="Breakpoint.None">
+    <MudDrawerHeader Class="drawer-style">
+        <MudImage id="logoImage" Src="/qln-images/ql_logo.svg" Alt="Qatar Living" Class="logo-img" />
+    </MudDrawerHeader>
+    <MudPaper Class="py-3 sidebar-container" Elevation="0">
+        <div class="menu-content">
+            <MudNavMenu Rounded="true" Margin="Margin.Dense" Color="Color.Secondary" Class="pa-2">
+                @foreach (var item in NavigationItems)
+                {
+                    var isActive = item.ActiveRoutePaths.Any(p => IsActive(p));
+
+                    if (!item.IsGroup)
+                    {
+                        <div @onclick="() => HandleRouterClick(item.Url)"
+                             class="non-group-link @(isActive ? "active-parent" : "inactive-parent")"
+                             style="cursor: pointer;">
+                            <img src="@item.IconPath" class="nav-icon-style @(isActive ? "active-icon" : "")" />
+                            <span class="nav-item-text @(isActive ? "active-text" : "")">@item.Title</span>
+                        </div>
+                    }
+                    else
+                    {
+                       var isGroupExpanded = ExpandedGroups.Contains(item.Title);
+                       var isGroupActive = item.ActiveRoutePaths.Any(p => IsActive(p)) || 
+                       (item.Children?.Any(c => IsActive(c.Url)) ?? false);
+
+
+                        <div class="expandable-group">
+                           <div class="expandable-header @(isGroupExpanded || isGroupActive ? "active" : "")"
+                             @onclick="() => ToggleGroup(item.Title)">
+                                <div class="left-section">
+                                    <img src="@item.IconPath" class="nav-icon-style @(isGroupExpanded || isGroupActive ? "active-icon" : "")" />
+                                    <span class="nav-item @(isGroupExpanded || isGroupActive ? "active-text" : "")">@item.Title</span>
+                                </div>
+                                <MudIcon Icon="@((isGroupExpanded) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                         Size="Size.Small"
+                                         Class=@($"expand-icon {(isGroupExpanded || isGroupActive ? "active-text" : "")}") />
+                            </div>
+
+                            <div class="expandable-content @(isGroupExpanded ? "expand-in" : "expand-out")">
+                                @foreach (var child in item.Children)
+                                {
+                                    var isChildActive = IsActive(child.Url);
+                                    <div @onclick="() => HandleRouterClick(child.Url)"
+                                         class="@(isChildActive ? "active-news-link" : "inactive-news-link")"
+                                         style="cursor: pointer;">
+                                        @child.Title
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </MudNavMenu>
+
+            @if (IsLoggedIn)
+            {
+                <MudPaper Class="user-card" Elevation="0">
+                    <MudDivider DividerType="DividerType.Inset" />
+                    <MudGrid AlignItems="Center" Justify="Justify.SpaceBetween" Class="pa-3">
+                        <MudItem xs="10">
+                            <MudText Class="user-name-style">@Name</MudText>
+                            <MudText Class="user-email-style">@Email</MudText>
+                        </MudItem>
+                        <MudItem xs="2" Class="text-end">
+                            <a href="@options.Value.Logout">
+                                <img src="/qln-images/logout.svg" alt="logout" class="logout-image-style" />
+                            </a>
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+        </div>
+    </MudPaper>
+</MudDrawer>
+<style>
+     .sidebar-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+   .menu-content {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        justify-content: space-between;
+        height: 100%;
+         font-family: 'Public Sans', sans-serif;
+    }
+.non-group-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    margin-bottom: 6px;
+}
+
+.inactive-parent {
+    background-color: transparent;
+}
+
+.active-parent {
+    background-color: #FF7F38;
+}
+
+.nav-item-text {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #646464;
+    margin-left: 8px;
+    transition: color 0.3s ease;
+}
+
+.active-text {
+    color: white !important;
+}
+
+.active-icon {
+    filter: brightness(0) invert(1);
+}
+
+.expandable-group {
+    margin-bottom: 10px;
+}
+
+.expandable-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Group icon + title on left */
+.left-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Push arrow to right */
+.expand-icon {
+    margin-left: auto;
+    color: inherit;
+}
+
+/* Icon style */
+.nav-icon-style {
+    width: 24px;
+    height: 24px;
+}
+
+/* Title text */
+.nav-item {
+    font-family: 'Public Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: #646464;
+}
+.user-name-style,
+.user-email-style {
+    display: block;
+    max-width: 100%; /* or set a fixed width like 180px */
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+.expandable-header:hover {
+    background-color: #f5f5f5;
+}
+
+.expandable-header.active {
+    background-color: #FF7F38;
+}
+.expandable-header,
+.nav-icon-style,
+.nav-item {
+    transition: all 0.25s ease;
+}
+
+
+.expandable-header.active .nav-item,
+.expandable-header.active img {
+    color: white;
+    filter: brightness(0) invert(1);
+    font-weight: 600;
+}
+
+.nav-icon-style {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    transition: filter 0.3s ease;
+}
+
+.expand-icon {
+    margin-left: auto;
+    font-size: 16px;
+    color: inherit;
+}
+
+.expandable-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+}
+
+.expandable-content.expand-in {
+    max-height: 500px; /* Enough height to fit the inner content */
+    opacity: 1;
+    margin-top: 10px;
+}
+
+@@keyframes expand {
+    from { max-height: 0; opacity: 0; }
+    to { max-height: 500px; opacity: 1; }
+}
+
+@@keyframes collapse {
+    from { max-height: 500px; opacity: 1; }
+    to { max-height: 0; opacity: 0; }
+}
+
+.active-news-link {
+    background-color: #F6EAE3;
+    color: black;
+    font-weight: 500;
+    padding: 8px 24px;
+    display: block;
+    border-radius: 6px;
+}
+
+.inactive-news-link {
+    color: #646464;
+    padding: 8px 24px;
+    display: block;
+    border-radius: 6px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.inactive-news-link:hover {
+    background-color: #f5f5f5;
+}
+  .user-card {
+        border-top: 1px solid #E0E0E0;
+        background-color: #fff;
+        border-radius: 0 !important;
+    }
+
+    .user-name-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 600 !important;
+        color: #414651;
+    }
+
+    .user-email-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        font-weight: 400 !important;
+        color: #535862;
+    }
+    .logout-image-style {
+        height: 30px;
+        width: 30px;
+    }
+</style>
