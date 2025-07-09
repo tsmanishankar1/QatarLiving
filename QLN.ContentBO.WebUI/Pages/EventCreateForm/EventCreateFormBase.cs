@@ -1,8 +1,7 @@
-using Markdig.Syntax;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.Extensions.Logging;
+using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
@@ -14,13 +13,10 @@ using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Pages.EventsPage;
 using MudBlazor;
-using MudExRichTextEditor;
-using QLN.ContentBO.WebUI.Components;
-using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components;
 using System.Net;
-using System.Text.Json;
+using Markdig.Syntax;
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EventCreateFormBase : QLComponentBase
@@ -54,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Pages
         "Option 3",
         "Option 4"
     };
-    private async Task ShowSuccessModal(string title)
+        private async Task ShowSuccessModal(string title)
         {
             var parameters = new DialogParameters
             {
@@ -63,7 +59,7 @@ namespace QLN.ContentBO.WebUI.Pages
 
             var options = new DialogOptions
             {
-                CloseButton = false,  
+                CloseButton = false,
                 MaxWidth = MaxWidth.ExtraSmall,
                 FullWidth = true
             };
@@ -174,58 +170,22 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
         private bool _shouldInitializeMap = true;
-
         protected override async Task OnInitializedAsync()
         {
-            try
-            {
-                await AuthorizedPage();
-                CurrentEvent ??= new EventDTO();
-                CurrentEvent.EventSchedule ??= new EventScheduleModel();
-                CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
-                _editContext = new EditContext(CurrentEvent);
-                Categories = await GetEventsCategories();
-                var locationsResponse = await GetEventsLocations();
-                Locations = locationsResponse?.Locations ?? [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnInitializedAsync");
-                throw;
-            }
+            AuthorizedPage();
+            CurrentEvent ??= new EventDTO();
+            CurrentEvent.EventSchedule ??= new EventScheduleModel();
+            CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
+            _editContext = new EditContext(CurrentEvent);
+            Categories = await GetEventsCategories();
+            var locationsResponse = await GetEventsLocations();
+            Locations = locationsResponse?.Locations ?? [];
         }
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (_shouldInitializeMap)
-                {
-                    _shouldInitializeMap = false;
-                    await JS.InvokeVoidAsync("initMap", 25.32, 51.54);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnAfterRenderAsync");
-                throw;
-            }
-        }
-
         protected void OnCancelClicked()
         {
             Navigation.NavigateTo("/manage/events");
         }
 
-            [JSInvokable]
-        public static Task UpdateLatLng(double lat, double lng)
-        {
-            Console.WriteLine($"Latitude: {lat}, Longitude: {lng}");
-            return Task.CompletedTask;
-        }
-
-            Navigation.NavigateTo("/manage/events");
-        }
-      
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -236,15 +196,15 @@ namespace QLN.ContentBO.WebUI.Pages
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
         }
-         protected async Task DeleteEventOnClick()
+        protected async Task DeleteEventOnClick()
         {
             var parameters = new DialogParameters
          {
             { "OnAdd", EventCallback.Factory.Create(this, ClearForm) }
         };
-        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<EventDiscardArticle>("", parameters, options);
-        var result = await dialog.Result;
+            var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = DialogService.Show<EventDiscardArticle>("", parameters, options);
+            var result = await dialog.Result;
         }
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
@@ -398,7 +358,7 @@ namespace QLN.ContentBO.WebUI.Pages
             _timeError = null;
             _coverImageError = null;
             bool hasError = false;
-             if (CurrentEvent?.EventType == 0)
+            if (CurrentEvent?.EventType == 0)
             {
                 _eventTypeError = "Event Type is required.";
                 Snackbar.Add("Event Type is required.", severity: Severity.Error);
@@ -417,7 +377,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 Snackbar.Add("Location is required.", severity: Severity.Error);
                 return;
             }
-              if (CurrentEvent?.EventSchedule?.TimeSlotType == 0)
+            if (CurrentEvent?.EventSchedule?.TimeSlotType == 0)
             {
                 _timeTypeError = "Time Type is required.";
                 Snackbar.Add("Time Type is required.", severity: Severity.Error);
@@ -533,63 +493,63 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             return new LocationListResponseDto();
         }
-            private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
+        private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 
-            protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
             {
-                if (firstRender)
+                _dotNetRef = DotNetObjectReference.Create(this);
+
+                await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+            }
+        }
+
+        [JSInvokable]
+        public Task SetCoordinates(double lat, double lng)
+        {
+            Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
+
+            // Update current event coordinates
+            CurrentEvent.Latitude = lat.ToString();
+            CurrentEvent.Longitude = lng.ToString();
+
+            _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Latitude));
+            _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Longitude));
+
+            StateHasChanged(); // Reflect changes in UI
+            return Task.CompletedTask;
+        }
+
+        protected async Task OnLocationChanged(string locationId)
+        {
+            SelectedLocationId = locationId;
+
+            var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
+            if (selectedLocation != null)
+            {
+                CurrentEvent.Location = selectedLocation.Name;
+                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
+
+                CurrentEvent.Latitude = selectedLocation.Latitude;
+                CurrentEvent.Longitude = selectedLocation.Longitude;
+
+                if (double.TryParse(selectedLocation.Latitude, out var lat) &&
+                    double.TryParse(selectedLocation.Longitude, out var lng))
                 {
-                    _dotNetRef = DotNetObjectReference.Create(this);
-
-                    await JS.InvokeVoidAsync("resetLeafletMap");
-                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    // Update map marker position
+                    await JS.InvokeVoidAsync("updateMapCoordinates", lat, lng);
                 }
+
+                StateHasChanged(); // Refresh UI
             }
+        }
 
-            [JSInvokable]
-            public Task SetCoordinates(double lat, double lng)
-            {
-                Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
-
-                // Update current event coordinates
-                CurrentEvent.Latitude = lat.ToString();
-                CurrentEvent.Longitude = lng.ToString();
-
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Latitude));
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Longitude));
-
-                StateHasChanged(); // Reflect changes in UI
-                return Task.CompletedTask;
-            }
-
-            protected async Task OnLocationChanged(string locationId)
-            {
-                SelectedLocationId = locationId;
-
-                var selectedLocation = Locations.FirstOrDefault(l => l.Id == locationId);
-                if (selectedLocation != null)
-                {
-                    CurrentEvent.Location = selectedLocation.Name;
-                    _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Location));
-
-                    CurrentEvent.Latitude = selectedLocation.Latitude;
-                    CurrentEvent.Longitude = selectedLocation.Longitude;
-
-                    if (double.TryParse(selectedLocation.Latitude, out var lat) &&
-                        double.TryParse(selectedLocation.Longitude, out var lng))
-                    {
-                        // Update map marker position
-                        await JS.InvokeVoidAsync("updateMapCoordinates", lat, lng);
-                    }
-
-                    StateHasChanged(); // Refresh UI
-                }
-            }
-
-public async ValueTask DisposeAsync()
-{
-    _dotNetRef?.Dispose();
-}
+        public async ValueTask DisposeAsync()
+        {
+            _dotNetRef?.Dispose();
+        }
 
 
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
