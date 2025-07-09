@@ -424,7 +424,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {
             try
             {
@@ -450,7 +450,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {
             try
             {
@@ -475,30 +475,88 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidOperationException("Dislike (by user ID) failed", ex);
             }
         }
-        public async Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
-       int categoryId,
-       int subCategoryId,
-       CancellationToken cancellationToken = default
-   )
+       
+        public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
-            var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
             try
             {
-                return await _dapr.InvokeMethodAsync<QlnNewsNewsQatarPageResponse>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("GetNewsLandingPageAsync was cancelled by caller.");
-                throw;
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/comments/delete/byid/{articleId}/{commentId}?userId={encodedUserId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<NewsCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from delete call."
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calling content service for landing page");
-                throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
+                _logger.LogError(ex, "Failed to soft delete comment {CommentId} for article {ArticleId} by user {UserId}", commentId, articleId, userId);
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Soft delete request failed"
+                };
+            }
+        }
+
+        public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/comments/edit/byid/{articleId}/{commentId}?userId={encodedUserId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
+
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(updatedText),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<NewsCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from edit call."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit comment {CommentId} for article {ArticleId} by user {UserId}", commentId, articleId, userId);
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Edit request failed"
+                };
             }
         }
 
