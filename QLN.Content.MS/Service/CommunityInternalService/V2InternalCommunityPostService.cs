@@ -327,28 +327,115 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
-        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
             try
             {
-                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
+                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
-                var commentList = new List<CommunityCommentDto>();
-                foreach (var commentId in commentIds)
+                int currentPage = page ?? 1;
+                int itemsPerPage = perPage ?? 10;
+                int skip = (currentPage - 1) * itemsPerPage;
+
+                var pagedCommentIds = commentIds.Skip(skip).Take(itemsPerPage).ToList();
+
+                var commentKeys = pagedCommentIds
+                    .Select(id => $"comment-{postId}-{id}")
+                    .ToList();
+
+                var commentStates = await _dapr.GetBulkStateAsync(
+                    storeName: StoreName,
+                    keys: commentKeys,
+                    parallelism:null,
+                    metadata:null,
+                    cancellationToken: ct
+                );
+
+                var allComments = new List<CommunityCommentDto>();
+
+                foreach (var state in commentStates)
                 {
-                    var commentKey = $"comment-{postId}-{commentId}";
-                    var comment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey);
-                    if (comment != null)
+                    if (string.IsNullOrWhiteSpace(state.Value))
+                        continue;
+
+                    try
                     {
-                        var likeIndexKey = $"comment-like-index-{comment.CommentId}";
-                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey);
-                        comment.CommentsLikeCount = likedUsers?.Count ?? 0;
-                        commentList.Add(comment);
+                        var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (comment != null && comment.IsActive && comment.CommentId != Guid.Empty)
+                        {
+                            // Count likes
+                            var likeIndexKey = $"comment-like-index-{comment.CommentId}";
+                            var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
+                            comment.CommentsLikeCount = likedUsers.Count;
+
+                            allComments.Add(comment);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to deserialize comment for key: {Key}", state.Key);
                     }
                 }
 
-                return commentList.OrderByDescending(c => c.CommentedAt).ToList();
+                // Group comments by ParentCommentId
+                var grouped = allComments
+                    .GroupBy(c => c.ParentCommentId ?? Guid.Empty)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                var result = new List<CommunityCommentItem>();
+
+                // Recursive function to build comment tree
+                List<CommunityCommentItem> BuildReplies(Guid parentId)
+                {
+                    if (!grouped.ContainsKey(parentId))
+                        return new();
+
+                    return grouped[parentId]
+                        .Select(reply => new CommunityCommentItem
+                        {
+                            CommentId = reply.CommentId,
+                            UserId = reply.UserId,
+                            UserName = reply.UserName,
+                            Content = reply.Content,
+                            CommentedAt = reply.CommentedAt,
+                            LikeCount = reply.CommentsLikeCount,
+                            Replies = BuildReplies(reply.CommentId)
+                        })
+                        .ToList();
+                }
+
+                // Build the tree from root-level comments
+                if (grouped.ContainsKey(Guid.Empty))
+                {
+                    foreach (var parent in grouped[Guid.Empty])
+                    {
+                        var parentItem = new CommunityCommentItem
+                        {
+                            CommentId = parent.CommentId,
+                            UserId = parent.UserId,
+                            UserName = parent.UserName,
+                            Content = parent.Content,
+                            CommentedAt = parent.CommentedAt,
+                            LikeCount = parent.CommentsLikeCount,
+                            Replies = BuildReplies(parent.CommentId)
+                        };
+
+                        result.Add(parentItem);
+                    }
+                }
+
+                return new CommunityCommentListResponse
+                {
+                    TotalComments = commentIds.Count,
+                    PerPage = itemsPerPage,
+                    CurrentPage = currentPage,
+                    Comments = result
+                };
             }
             catch (Exception ex)
             {
@@ -426,6 +513,82 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
+        public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)
+        {
+            var commentKey = $"comment-{postId}-{commentId}";
+            _logger.LogInformation("Attempting to soft delete community comment {CommentId} for post {PostId}", commentId, postId);
+
+            try
+            {
+                var comment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey, cancellationToken: ct);
+                if (comment == null)
+                {
+                    _logger.LogWarning("Comment not found for key: {CommentKey}", commentKey);
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment not found"
+                    };
+                }
+
+                if (!comment.IsActive)
+                {
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment already deleted"
+                    };
+                }
+
+                if (!string.Equals(comment.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "You are not authorized to delete this comment"
+                    };
+                }
+
+                comment.IsActive = false;
+                await _dapr.SaveStateAsync(StoreName, commentKey, comment, cancellationToken: ct);
+                _logger.LogInformation("Soft-deleted comment ID: {CommentId} from post {PostId}", commentId, postId);
+
+                // 🔁 Soft delete replies
+                var indexKey = $"comment-index-{postId}";
+                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+
+                foreach (var childId in commentIds)
+                {
+                    var childKey = $"comment-{postId}-{childId}";
+                    var childComment = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, childKey, cancellationToken: ct);
+                    if (childComment != null && childComment.IsActive && childComment.ParentCommentId == commentId)
+                    {
+                        childComment.IsActive = false;
+                        await _dapr.SaveStateAsync(StoreName, childKey, childComment, cancellationToken: ct);
+                        _logger.LogInformation("Also soft-deleted reply comment ID: {ChildCommentId}", childId);
+                    }
+                }
+
+                return new CommunityCommentApiResponse
+                {
+                    Status = "success",
+                    Message = "Comment and its replies deleted successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting community comment {CommentId} on post {PostId}", commentId, postId);
+                return new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Error occurred while deleting comment"
+                };
+            }
+        }
+
+
+
+
 
 
     }
