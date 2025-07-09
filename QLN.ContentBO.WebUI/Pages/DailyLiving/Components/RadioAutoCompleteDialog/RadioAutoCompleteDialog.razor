@@ -2,18 +2,21 @@
 @using QLN.ContentBO.WebUI.Models;
 <MudDialog Class="pa-2 custom-dialog py-4">
     <DialogContent>
-         <div class="d-flex justify-center">
-        <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
+        <div class="d-flex flex-column align-items-center pb-3 pt-3">
+            <img class="icon-circle" src="/qln-images/search.svg" alt="search" />
+            <span class="mt-2 title-style">
+            @(IsHighlightedEvent ? "Highlighted Event" : (IsTopStory ? "Top Story" : origin == "dailyTopic" ? " " : "Add Article"))
+            </span>
         </div>
-        <MudRadioGroup T="string" @bind-Value="@TopicType" Class="custom-radio-group">
-            <MudRadio T="string" Value="@("Article")">Article</MudRadio>
-            @if(origin == "dailyTopic"){
-            <MudRadio T="string" Value="@("Video")">Video</MudRadio>
-            }
-            <MudRadio T="string" Value="@("Event")">Event</MudRadio>
-        </MudRadioGroup>
+        @if(origin == "dailyTopic"){
+            <MudRadioGroup T="string" Value="@TopicType" ValueChanged="OnTopicTypeChanged" Class="custom-radio-group">
+            <MudRadio Color="Color.Primary" T="string" Value="@("Article")">Article</MudRadio>
+            <MudRadio Color="Color.Primary" T="string" Value="@("Video")">Video</MudRadio>
+            <MudRadio Color="Color.Primary" T="string" Value="@("Event")">Event</MudRadio>
+            </MudRadioGroup>
+        }
         @if(TopicType == "Video"){
-        <MudTextField Variant="Variant.Outlined" Label="VideoLink"  Class="my-2 event-custom-textfield" @bind-Value="@youTubelink"/>
+            <MudTextField Variant="Variant.Outlined" Label="VideoLink"  Class="my-2 event-custom-textfield" @bind-Value="@youTubelink"/>
         }
         else{
             <MudAutocomplete T="DailyLivingArticleDto"
@@ -23,6 +26,7 @@
                  @bind-Value="SelectedArticle"
                  @bind-SearchText="_searchText"
                  Adornment="Adornment.None"
+                 MaxItems="50"
                  SearchFunc="SearchEventTitles"
                   ToStringFunc="@(e => e?.Title ?? string.Empty)"
                  ResetValueOnEmptyText="true"
