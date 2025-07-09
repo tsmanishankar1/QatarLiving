@@ -42,7 +42,7 @@ public class RadioAutoCompleteDialogBase : ComponentBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "AddArticles");
+            Logger.LogError(ex, "OnParametersSetAsync failed in RadioAutoCompleteDialogBase");
         }
     }
     protected async Task AddClicked()
