@@ -1,7 +1,10 @@
 ﻿using Dapr;
 using Dapr.Client;
+using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -210,30 +213,51 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
+            var url = $"/api/v2/news/news/{id}";
             try
             {
-                var url = $"/api/v2/news/news/{id}";
-
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2Content.ContentServiceAppId,
+                    V2Content.ContentServiceAppId,
                     url,
-                    cancellationToken
+                    cancellationToken: cancellationToken
                 );
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (InvocationException ex)
             {
-                _logger.LogWarning(ex, "News with ID {id} not found.", id);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting News with Id {id}", id);
-                throw;
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
         }
-        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
-        {
+            public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
+            {
             try
             {
                 var url = "/api/v2/news/reorderLiveSlotsByUserId";
@@ -475,7 +499,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidOperationException("Dislike (by user ID) failed", ex);
             }
         }
-        public async Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
+        public async Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
        int categoryId,
        int subCategoryId,
        CancellationToken cancellationToken = default
@@ -484,7 +508,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
             try
             {
-                return await _dapr.InvokeMethodAsync<QlnNewsNewsQatarPageResponse>(
+                return await _dapr.InvokeMethodAsync<GenericNewsPageResponse>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
