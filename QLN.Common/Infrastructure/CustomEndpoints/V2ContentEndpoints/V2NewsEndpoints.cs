@@ -1280,7 +1280,7 @@ public static class V2NewsEndpoints
             .Produces(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/comments/edit/byid/{articleId}/{commentId}", async Task<Results<
+        group.MapPost("/comments/editbyid/{articleId}/{commentId}", async Task<Results<
             Ok<NewsCommentApiResponse>,
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
@@ -1288,7 +1288,7 @@ public static class V2NewsEndpoints
             string articleId,
             Guid commentId,
             [FromQuery] string userId,
-            [FromQuery] string updatedText,
+            [FromBody] string updatedText,
             IV2NewsService service,
             CancellationToken ct
             ) =>

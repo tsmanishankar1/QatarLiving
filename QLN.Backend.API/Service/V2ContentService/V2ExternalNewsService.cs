@@ -429,7 +429,8 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
-                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
+                var encodedUserName = Uri.EscapeDataString(userName);
+                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}&userName={encodedUserName}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -494,7 +495,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
-                var url = $"/api/v2/news/comments/edit/byid/{articleId}/{commentId}?userId={encodedUserId}";
+                var url = $"/api/v2/news/comments/editbyid/{articleId}/{commentId}?userId={encodedUserId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
