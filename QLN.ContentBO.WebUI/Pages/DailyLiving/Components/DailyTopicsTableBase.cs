@@ -15,6 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback<DailyLivingArticleDto> AddItem { get; set; }
         [Parameter] public EventCallback<DailyLivingArticleDto> ReplaceItem { get; set; }
         [Parameter] public EventCallback RenameTopic { get; set; }
+        [Parameter] public int activeIndex { get; set; }
         [Parameter] public EventCallback UpdateEvent { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
         public List<TopicSlot> ReplaceTopicsSlot { get; set; }
@@ -37,34 +38,41 @@ namespace QLN.ContentBO.WebUI.Pages
             await base.OnInitializedAsync();
             AuthorizedPage();
         }
-        protected override async Task OnParametersSetAsync()
-{
-    await base.OnParametersSetAsync();
+        private bool shouldReinitializeSortable = false;
 
-            if (articles != null && articles.Any())
-            {
-                ReplaceTopicsSlot = articles
-                    .Select(article => new TopicSlot
-                    {
-                        SlotNumber = article.SlotNumber,
-                        Article = article
-                    })
-                    .ToList();
-            
+
+        protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (articles != null && articles.Any())
+        {
+            ReplaceTopicsSlot = articles
+                .Select(article => new TopicSlot
+                {
+                    SlotNumber = article.SlotNumber,
+                    Article = article
+                })
+                .ToList();
+        }
+        else
+        {
+            ReplaceTopicsSlot = new();
+        }
+
+        // Flag JS reinitialization
+        shouldReinitializeSortable = true;
     }
-            else
-            {
-                ReplaceTopicsSlot = new();
-            }
-}
+
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender || shouldReinitializeSortable)
         {
-            if (firstRender)
-            {
-                await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
-            }
+            await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
+            shouldReinitializeSortable = false;
         }
+    }
         protected async Task OnAddItemClicked()
         {
             await AddItem.InvokeAsync(selectedItem);

@@ -290,9 +290,21 @@ public class DailyLivingBase : QLComponentBase
             int topicIndex = index - 2;
             if (topicIndex >= 0 && topicIndex < ActiveTopics.Count)
             {
-                selectedTopic = ActiveTopics[topicIndex];
-                articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
-                AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
+             selectedTopic = ActiveTopics[topicIndex];
+              articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
+              var relatedContentIds = articles
+                .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
+                .Select(a => a.RelatedContentId)
+                .ToHashSet();
+
+              var allAvailable = await GetAvailableArticles(selectedTopic.Id);
+            var skippedIds = allAvailable
+                .Where(av => relatedContentIds.Contains(av.Id))
+                .Select(av => av.Id)
+                .ToList();
+            AvailableArticles = allAvailable
+                .Where(av => !relatedContentIds.Contains(av.Id))
+                .ToList();
             }
         }
         StateHasChanged();
