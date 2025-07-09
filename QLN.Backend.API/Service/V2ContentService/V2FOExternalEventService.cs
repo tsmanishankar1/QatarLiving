@@ -2,7 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
-using QLN.Common.Infrastructure.IService.IFileStorage;
+using System.Net;
 
 namespace QLN.Backend.API.Service.V2ContentService
 {
@@ -10,12 +10,33 @@ namespace QLN.Backend.API.Service.V2ContentService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2ExternalEventService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
-        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, IFileStorageBlobService blobStorage)
+        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger)
         {
             _dapr = dapr;
             _logger = logger;
-            _blobStorage = blobStorage;
+        }
+        public async Task<V2Events> GetEventBySlug(string slug, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/fo/event/slug/{slug}";
+                return await _dapr.InvokeMethodAsync<V2Events>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                );
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Event with Slug '{slug}' not found.", slug);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching event by slug '{slug}'", slug);
+                throw;
+            }
         }
         public async Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
         {

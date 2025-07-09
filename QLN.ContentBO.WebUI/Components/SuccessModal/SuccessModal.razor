@@ -1,0 +1,50 @@
+@inherits SuccessModalBase
+
+<MudDialog Class="pa-2 success-modal">
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img class="icon-circle" src="/qln-images/success_icon.svg" alt="Success Icon" />
+        </div>
+
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style">
+            @Title
+        </MudText>
+
+        <div class="d-flex justify-center mb-4">
+            <MudButton Variant="Variant.Filled" Class="mt-4 close-btn full-width" OnClick="Close">
+                Close
+            </MudButton>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+
+    .close-btn {
+        background-color: #FF7F38;
+        font-size: 16px;
+        font-weight: 400;
+        color: white;
+        text-transform: none;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .success-modal {
+        width: 400px;
+        max-width: 90vw;
+    }
+</style>

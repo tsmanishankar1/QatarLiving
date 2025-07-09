@@ -8,8 +8,19 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-        <MudText Class="daily-style">Daily Living</MudText>
-        <MudTabs ActivePanelIndex="@activeIndex"
+        <h2 class="main-title-name-style">Daily Living</h2>
+        @if(isTabLoading){
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+                <MudSkeleton Width="150px" Height="70px" Animation="Animation.Pulse" Variant="Variant.Rect" />
+            </div>
+        }
+        else{
+            <MudTabs ActivePanelIndex="@activeIndex"
                  ActivePanelIndexChanged="OnTabChanged"
                  Rounded="false"
                  Centered="false"
@@ -27,16 +38,8 @@
                 </MudTabPanel>
             }
         </MudTabs>
-        @if (isLoading)
-        {
-            <MudPaper Class="p-4">
-                @for (int i = 0; i < 5; i++)
-                {
-                    <MudSkeleton Height="30px" Width="100%" Animation="Animation.Pulse" Class="mb-2" />
-                }
-            </MudPaper>
-      }
-        else if (SelectedTab == DailyLivingTab.FeaturedEvents)
+        }
+         @if (SelectedTab == DailyLivingTab.FeaturedEvents)
         {
             if (featuredEventSlots is null || !featuredEventSlots.Any())
             {
@@ -49,17 +52,12 @@
                                         FeaturedEventSlots="featuredEventSlots"
                                         Categories="Categories"
                                         ReplaceSlot="ReplaceEventSlot"
-                                        OnDelete="DeleteFeatureEvent" />
+                                        OnDelete="DeleteEventOnClick" />
             }
-        }
-        else if (articles is null || !articles.Any())
-        {
-            <EmptyCard Title="No Content Found"
-                       Subtitle="Please check back later." />
         }
         else if(SelectedTab == DailyLivingTab.TopSection)
         {
-            <MudArticleTable Articles="articles" ReplaceItem="ReplaceItem"/>
+            <MudArticleTable Articles="articles" ReplaceItem="ReplaceTopSectionItem" IsLoadingEvent="isTabLoading"/>
         }
         else if(SelectedTab != DailyLivingTab.TopSection){
             <DailyTopicsTable 
@@ -72,6 +70,7 @@
                 AddItem="AddItemtHandler"
                 Categories="Categories"
                 selectedTopic="selectedTopic"
+                activeIndex="activeIndex"
                 ReplaceItem="ReplaceItem"
                 />
         }

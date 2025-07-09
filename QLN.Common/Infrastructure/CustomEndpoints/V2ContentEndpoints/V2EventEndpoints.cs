@@ -48,7 +48,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("CreateEvent")
             .WithTags("Event")
             .WithSummary("Create Event")
@@ -119,13 +118,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var events = await service.GetAllEvents(cancellationToken);
-                    return TypedResults.Ok(events);
+                    return TypedResults.Ok(events ?? new List<V2Events>());
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEvents")
             .WithTags("Event")
             .WithSummary("Get All Events")
@@ -146,13 +146,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var events = await service.GetAllIsFeaturedEvents(isFeatured, cancellationToken);
-                    return TypedResults.Ok(events);
+                    return TypedResults.Ok(events ?? new List<V2Events>());
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllFeaturedEvents")
             .WithTags("Event")
             .WithSummary("Get All Events")
@@ -174,23 +175,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     {
                         var result = await service.GetEventById(id, cancellationToken);
                         if (result == null || result.IsActive == false)
-                            throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
-                        return TypedResults.Ok(result);
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
                         {
-                            Title = "Not Found",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status404NotFound
-                        });
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Event Not Found",
+                                Detail = $"Active event with ID '{id}' not found.",
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
+                        return TypedResults.Ok(result);
                     }
                     catch (Exception ex)
                     {
                         return TypedResults.Problem("Internal Server Error", ex.Message);
                     }
                 })
+                .AllowAnonymous()
                 .WithName("GetEventById")
                 .WithTags("Event")
                 .WithSummary("Get Event By ID")
@@ -248,7 +248,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("UpdateEvent")
             .WithTags("Event")
             .WithSummary("Update Event")
@@ -367,6 +366,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("CreateEventCategory")
             .WithTags("Event")
             .WithSummary("Create Event Category")
@@ -386,18 +386,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var eventCategories = await service.GetAllCategories(cancellationToken);
-                    return TypedResults.Ok(eventCategories);
+                    return TypedResults.Ok(eventCategories ?? new List<EventsCategory>());
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEventCategories")
             .WithTags("Event")
             .WithSummary("Get All Event Categories")
             .WithDescription("Retrieves all event categories.")
-            .Produces<List<EventsCategory>>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -415,30 +416,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var result = await service.GetEventCategoryById(id, cancellationToken);
                     if (result == null)
-                        throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
-                    return TypedResults.Ok(result);
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
                     {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Event Not Found",
+                            Detail = $"Active event with ID '{id}' not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("GetEventCategoryById")
-                .WithTags("Event")
-                .WithSummary("Get Event Category By ID")
-                .WithDescription("Retrieves a single event.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .AllowAnonymous()
+            .WithName("GetEventCategoryById")
+            .WithTags("Event")
+            .WithSummary("Get Event Category By ID")
+            .WithDescription("Retrieves a single event.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
@@ -466,6 +466,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+            .AllowAnonymous()
             .WithName("GetPaginatedEvents")
             .WithTags("Event")
             .WithSummary("Paginated Events List")
@@ -492,6 +493,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem($"Unexpected error: {ex.Message}");
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllEventSlots")
             .WithTags("Event")
             .WithSummary("Get All Event Slots")
@@ -523,6 +525,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+            .AllowAnonymous()
             .WithName("GetExpiredEvents")
             .WithTags("Event")
             .WithSummary("Get Expired Events")
@@ -590,7 +593,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("ReorderFeaturedEventSlots")
             .WithTags("Event")
             .WithSummary("Reorder Featured Event Slots")
@@ -694,6 +696,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+                .AllowAnonymous()
                 .WithName("GetEventsByStatus")
                 .WithTags("Event")
                 .WithSummary("Get Events By Status")
@@ -729,6 +732,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     });
                 }
             })
+                .AllowAnonymous()
                 .WithName("GetFeaturedEventsByStatus")
                 .WithTags("Event")
                 .WithSummary("Get Featured Events By Status")
@@ -784,7 +788,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization() 
             .WithName("UpdateFeaturedEvent")
             .WithTags("Event")
             .WithSummary("Update Featured Event")
@@ -846,6 +849,41 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapUnfeatureEventEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPut("/unfeature/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+                Guid id,
+                IV2EventService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.UnfeatureEvent(id, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("UnfeatureEvent")
+            .WithTags("Event")
+            .WithSummary("Unfeature an Event")
+            .WithDescription("Marks an event as not featured and removes it from its slot.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }
