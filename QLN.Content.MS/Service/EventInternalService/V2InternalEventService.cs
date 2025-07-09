@@ -486,7 +486,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 });
 
                 var fetchedEvents = await Task.WhenAll(fetchTasks);
-                allEvents = fetchedEvents.Where(e => e != null).ToList();
+                allEvents = fetchedEvents.Where(e => e != null && e.IsActive).ToList();
 
                 if (!allEvents.Any())
                 {
