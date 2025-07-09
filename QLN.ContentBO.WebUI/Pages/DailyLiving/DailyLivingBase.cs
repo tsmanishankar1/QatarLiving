@@ -258,11 +258,9 @@ public class DailyLivingBase : QLComponentBase
             Categories = await GetEventsCategories();
             AllEventsList = await GetAllEvents();
             ActiveTopics = await GetActiveTopics();
-            ActiveTopics = await GetActiveTopics();
             if (ActiveTopics?.Any() == true)
             {
                 selectedTopic = ActiveTopics.First();
-                AvailableArticles = await GetAvailableArticles(selectedTopic.Id);
             }
         }
         catch (Exception ex)
@@ -291,7 +289,19 @@ public class DailyLivingBase : QLComponentBase
                 {
                     case 0:
                         articles = await DailyService.GetTopSectionAsync();
-                        StateHasChanged();
+                        var relatedContentIds = articles
+                            .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
+                            .Select(a => a.RelatedContentId)
+                            .ToHashSet();
+                        var allAvailable = await GetAvailableTopSectionArticles();
+                        var skippedIds = allAvailable
+                            .Where(av => relatedContentIds.Contains(av.Id))
+                            .Select(av => av.Id)
+                            .ToList();
+                        AvailableArticles = allAvailable
+                            .Where(av => !relatedContentIds.Contains(av.Id))
+                            .ToList();
+                            StateHasChanged();
                         break;
                     case 1:
                         featuredEventSlots = await GetFeaturedSlotsAsync();
