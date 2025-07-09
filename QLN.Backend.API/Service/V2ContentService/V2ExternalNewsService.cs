@@ -1,6 +1,8 @@
-﻿using Dapr.Client;
+﻿using Dapr;
+using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
@@ -471,6 +473,32 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 _logger.LogError(ex, "Failed to dislike comment {CommentId} by user {UserId}", commentId, userId);
                 throw new InvalidOperationException("Dislike (by user ID) failed", ex);
+            }
+        }
+        public async Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
+       int categoryId,
+       int subCategoryId,
+       CancellationToken cancellationToken = default
+   )
+        {
+            var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
+            try
+            {
+                return await _dapr.InvokeMethodAsync<QlnNewsNewsQatarPageResponse>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("GetNewsLandingPageAsync was cancelled by caller.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling content service for landing page");
+                throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
             }
         }
 
