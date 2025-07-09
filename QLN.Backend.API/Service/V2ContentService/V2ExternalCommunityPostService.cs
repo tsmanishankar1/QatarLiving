@@ -370,11 +370,60 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
+        public async Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/community/comments/edit/byid/{postId}/{commentId}?userId={encodedUserId}";
 
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                   InternalAppId,
+                    url
+                );
 
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(updatedText),
+                    Encoding.UTF8,
+                    "application/json"
+                );
 
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Internal edit call failed with status {StatusCode}. Error: {Error}", response.StatusCode, errorContent);
 
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = $"Edit failed: {response.StatusCode}"
+                    };
+                }
 
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<CommunityCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from internal service"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit community comment {CommentId} for post {PostId} by user {UserId}", commentId, postId, userId);
+
+                return new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Edit request failed"
+                };
+            }
+        }
     }
 }
