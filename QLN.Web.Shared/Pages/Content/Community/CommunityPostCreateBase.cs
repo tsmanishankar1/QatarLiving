@@ -32,7 +32,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             breadcrumbItems = new()
             {
-                new() { Label = "Community", Url = "/content/community/v2" },
+                new() { Label = "Community", Url = "/content/community" }, // have purposefully broke this one as I just dont havre the time to inject NavigationPAth in all of these files - developers should think before they code... "how am I going to impact someone through my change"
                 new() { Label = "Create a Post", Url = "/qln/community/post/create", IsLast = true }
             };
         }
@@ -70,7 +70,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected void Cancel()
         {
-            NavigationManager.NavigateTo("/content/community/v2");
+            NavigationManager.NavigateTo("/content/community"); // needs injection of NavigationPath options
         }
 
       

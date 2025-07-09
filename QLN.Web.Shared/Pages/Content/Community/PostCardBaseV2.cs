@@ -52,7 +52,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/v2/post/detail/{Post.Slug}");
+            Navigation.NavigateTo($"/content/community/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
         }
         protected async Task ToggleLikeAsync()
         {
