@@ -6,7 +6,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Services
 {
@@ -356,15 +355,17 @@ namespace QLN.Web.Shared.Services
                 return false;
             }
         }
-        public async Task<bool> LikeCommunityCommentAsync(string postId,string commentId)
+        public async Task<bool> LikeCommunityCommentstAsync(string postId,string commentId)
         {
             try
             {
-                var url = "api/v2/community/likeCommentByUserId/";
+                var url = "api/v2/community/likeCommentByUserId";
 
                 var body = new
                 {
-                    communityPostId = postId
+                    communityPostId = postId,
+                    commentId = commentId,
+
                 };
 
                 var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
