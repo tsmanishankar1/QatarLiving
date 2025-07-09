@@ -114,8 +114,8 @@ namespace QLN.Web.Shared.Components.NewCustomSelect
         protected async Task PerformSearch(string keyword)
         {
             FilteredAreas = Areas
-                .Where(a => a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+       .Where(a => a != null && !string.IsNullOrEmpty(a.Name) && a.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase))
+       .ToList();
 
             StateHasChanged();
         }
