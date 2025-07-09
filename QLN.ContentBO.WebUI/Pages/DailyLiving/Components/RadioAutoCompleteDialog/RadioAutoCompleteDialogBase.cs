@@ -13,6 +13,7 @@ public class RadioAutoCompleteDialogBase : ComponentBase
     [Parameter] public bool IsTopStory { get; set; }
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter] public EventCallback<DailyLivingArticleDto> OnAdd { get; set; }
+    [Inject] public ILogger<DailyLivingBase> Logger { get; set; }
     public void Cancel() => MudDialog.Cancel();
     [Parameter]
     public List<DailyLivingArticleDto> articles { get; set; } = new();
@@ -32,15 +33,17 @@ public class RadioAutoCompleteDialogBase : ComponentBase
     protected string TopicType = "Article";
     protected override async Task OnParametersSetAsync()
     {
+        try{
         if (IsHighlightedEvent)
         {
             TopicType = "Event";
         }
         optionsList = origin == "dailyTopic" ? articles : IsHighlightedEvent ? articles : articles;
-        foreach (var item in optionsList)
-{
-    Console.WriteLine($"Id: {item.Id}, Title: {item.Title}, Category: {item.Category}, SlotType: {item.SlotType}, ContentType: {item.ContentType}");
-}
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnParametersSetAsync failed in RadioAutoCompleteDialogBase");
+        }
     }
     protected async Task AddClicked()
     {
@@ -70,11 +73,6 @@ public class RadioAutoCompleteDialogBase : ComponentBase
                 return;
             }
             SelectedArticle.ContentType = 1;
-           Console.WriteLine($"Id: {SelectedArticle?.Id}");
-Console.WriteLine($"Title: {SelectedArticle?.Title}");
-Console.WriteLine($"Category: {SelectedArticle?.Category}");
-Console.WriteLine($"ContentType: {SelectedArticle?.ContentType}");
-Console.WriteLine($"PublishedDate: {SelectedArticle?.PublishedDate}");
         }
         if (origin == "dailyTopic")
         {
