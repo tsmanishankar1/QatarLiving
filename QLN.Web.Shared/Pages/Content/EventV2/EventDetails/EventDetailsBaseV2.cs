@@ -5,6 +5,7 @@ using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Services.Interface;
 using QLN.Common.Infrastructure.DTO_s;
 using System.Net.Http.Json;
+using System.Data.SqlTypes;
 
 namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
 {
@@ -14,7 +15,8 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
         [Inject] protected ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected ILogger<EventDetailsBaseV2> Logger { get; set; }
 
-        [Parameter] public string Id { get; set; }
+        [Parameter]
+        public string Slug { get; set; }
 
         protected bool isLoading { get; set; } = true;
         protected bool isLoadingEventBanners { get; set; } = true;
@@ -41,7 +43,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
                 new BreadcrumbItem
                 {
                     Label = "Event Detail",
-                    Url = $"/content/events/details/{Id}",
+                    Url = $"/content/events/details/{Slug}",
                     IsLast = true
                 }
             };
@@ -50,8 +52,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
             {
                 isLoading = true;
 
-                var guid = Guid.Parse(Id);
-                var response = await EventService.GetEventByIdV2Async(guid);
+                var response = await EventService.GetEventByIdV2Async(Slug);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     eventDetails = await response.Content.ReadFromJsonAsync<EventDTOV2>();
@@ -63,7 +64,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
                 }
                 else
                 {
-                    Logger.LogWarning($"Failed to fetch event details for slug: {Id}. StatusCode: {response?.StatusCode}");
+                    Logger.LogWarning($"Failed to fetch event details for slug: {Slug}. StatusCode: {response?.StatusCode}");
                 }
 
                 // Load banners after event details
@@ -71,7 +72,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Exception in GetEventBySlugAsync for slug: {Id}");
+                Logger.LogError(ex, $"Exception in GetEventBySlugAsync for slug: {Slug}");
             }
             finally
             {
