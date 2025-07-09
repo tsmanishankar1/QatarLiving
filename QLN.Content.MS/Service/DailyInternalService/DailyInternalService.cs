@@ -68,6 +68,41 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 ? "Slot created successfully"
                 : "Slot updated successfully";
         }
+        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default)
+        {
+            var allArticles = await _news.GetAllNewsFilterArticles(true, cancellationToken)
+                           ?? new List<V2NewsArticleDTO>();
+
+            var published = allArticles
+                .Where(a => a.Categories.Any(c => c.SlotId < 15))
+                .ToList();
+
+            List<DailyTopSectionSlot> slots;
+            try
+            {
+                var tasks = Enumerable.Range(1, 9).Select(i =>
+                    _dapr.GetStateAsync<DailyTopSectionSlot>(
+                        Store, $"daily-slot-{i}", cancellationToken: cancellationToken));
+                var results = await Task.WhenAll(tasks);
+                slots = results.Where(s => s != null).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read daily top‐section slots");
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+
+            var usedIds = slots
+                .Where(s => s.ContentType == DailyContentType.Article)
+                .Select(s => s.RelatedContentId)
+                .ToHashSet();
+
+            return published
+                .Where(a => !usedIds.Contains(a.Id))
+                .ToList();
+        }
         public async Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             var slots = new List<DailyTopSectionSlot>();
@@ -192,10 +227,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 throw new KeyNotFoundException($"No daily‐topic found with name '{topicName}'");
             return await GetSlotsByTopicAsync(topic.Id, cancellationToken);
         }
-        public async Task<string> ReorderSlotsBatchAsync(
-            string userId,
-            DailyTopicSlotReorderRequest request,
-            CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSlotsBatchAsync(string userId,DailyTopicSlotReorderRequest request,CancellationToken cancellationToken = default)
         {
             string store = ConstantValues.V2Content.ContentStoreName;
             var topicKeyPrefix = $"daily-{request.TopicId}-slot";
@@ -409,9 +441,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             return true;
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(
-            Guid topicId,
-            CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
         {
             if (topicId == Guid.Empty)
                 throw new ArgumentOutOfRangeException(
@@ -445,7 +475,6 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             return unused;
         }
-
         public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
         {
             _logger.LogInformation("Starting GetDailyLivingLandingAsync");
