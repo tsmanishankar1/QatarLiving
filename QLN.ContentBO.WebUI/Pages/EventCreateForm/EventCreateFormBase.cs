@@ -429,12 +429,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 Snackbar.Add("Cover Image is required.", severity: Severity.Error);
                 return;
             }
-
-            if (hasError)
-            {
-                StateHasChanged();
-                return;
-            }
             try
             {
                 IsLoading = true;

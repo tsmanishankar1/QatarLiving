@@ -95,7 +95,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getAll");
+                var request = new HttpRequestMessage(HttpMethod.Get, "api/v2/event/getall");
                 var response = await _httpClient.SendAsync(request);
                 return response;
             }

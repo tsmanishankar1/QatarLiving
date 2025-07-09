@@ -17,6 +17,7 @@ public class DailyLivingBase : QLComponentBase
     protected bool isLoading = false;
     protected bool IsLoadingEvent = true;
     [Inject] IEventsService eventsService { get; set; }
+     [Inject] protected INewsService newsService { get; set; }
     protected DailyLivingTab SelectedTab => (DailyLivingTab)activeIndex;
     public List<EventDTO> AllEventsList { get; set; } = new();
     protected EventDTO ReplacedEvent { get; set; } = new();
@@ -87,12 +88,44 @@ public class DailyLivingBase : QLComponentBase
     }
     private async Task OpenTopSectionRadioDialog()
     {
+        Console.WriteLine("------ Top Section Article Selected Object ------");
+        foreach (var item in AllEventsList)
+        {
+            Console.WriteLine($"Title: {item.EventTitle}, Location: {item.Location}, StartDate: {item.EventSchedule?.StartDate}, IsFeatured: {item.IsFeatured}");
+        }
+
+            var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
+            {
+                Id = e.Id.ToString(),
+                Title = e.EventTitle,
+                Category = e.CategoryName ?? e.CategoryId.ToString(),
+                Subcategory = string.Empty,
+                RelatedContentId = e.Id.ToString(),
+                ContentType = 2,
+                ContentURL = null,
+                PublishedDate = e.PublishedDate ?? DateTime.UtcNow,
+                EndDate = null,
+                SlotType = e.FeaturedSlot?.Id ?? 0,
+                SlotNumber = e.FeaturedSlot?.Id ?? 0,
+                CreatedBy = e.CreatedBy,
+                CreatedAt = e.CreatedAt,
+                UpdatedBy = e.UpdatedBy ?? e.CreatedBy,
+                UpdatedAt = e.UpdatedAt ?? e.CreatedAt,
+                TopicId = null
+            }).ToList();
+            foreach (var item in articlesList)
+        {
+            Console.WriteLine($"Title: {item.Title}, Location: {item.Id}, ");
+        }
         var parameters = new DialogParameters
-    {
-        { nameof(RadioAutoCompleteDialog.Title), "" },
-        { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
-        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceTopSectionArticles) }
-    };
+        {
+            { nameof(RadioAutoCompleteDialog.Title), "" },
+            { nameof(RadioAutoCompleteDialog.articles), ReplaceArticle.SlotNumber == 2 ? articlesList : AvailableArticles },
+            { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceTopSectionArticles) },
+            { nameof(RadioAutoCompleteDialog.IsHighlightedEvent), ReplaceArticle.SlotNumber == 2 ? true : false },
+            { nameof(RadioAutoCompleteDialog.IsTopStory), ReplaceArticle.SlotNumber == 1 ? true : false },
+
+        };
         var options = new DialogOptions
         {
             CloseButton = false,
@@ -100,19 +133,39 @@ public class DailyLivingBase : QLComponentBase
             FullWidth = true,
             NoHeader = true
         };
-
         var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
         await dialog.Result;
     }
     private async Task OpenRadioAutoCompleteDialog()
     {
+         var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
+            {
+                Id = e.Id.ToString(),
+                Title = e.EventTitle,
+                Category = e.CategoryName ?? e.CategoryId.ToString(),
+                Subcategory = string.Empty,
+                RelatedContentId = null,
+                ContentType = 2,
+                ContentURL = null,
+                PublishedDate = e.PublishedDate ?? DateTime.UtcNow,
+                EndDate = null,
+                SlotType = e.FeaturedSlot?.Id ?? 0,
+                SlotNumber = e.FeaturedSlot?.Id ?? 0,
+                CreatedBy = e.CreatedBy,
+                CreatedAt = e.CreatedAt,
+                UpdatedBy = e.UpdatedBy ?? e.CreatedBy,
+                UpdatedAt = e.UpdatedAt ?? e.CreatedAt,
+                TopicId = null
+            }).ToList();
         var parameters = new DialogParameters
-    {
-        { nameof(RadioAutoCompleteDialog.Title), "" },
-        { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
-        { nameof(RadioAutoCompleteDialog.origin), "dailyTopic" },
-        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, activeIndex == 0 ? ReplaceArticles : AddArticles) }
-    };
+        {
+            { nameof(RadioAutoCompleteDialog.Title), "" },
+            { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
+            { nameof(RadioAutoCompleteDialog.origin), "dailyTopic" },
+            { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, activeIndex == 0 ? ReplaceArticles : AddArticles) },
+            { nameof(RadioAutoCompleteDialog.eventList), articlesList },
+
+        };
         var options = new DialogOptions
         {
             CloseButton = false,
@@ -126,12 +179,32 @@ public class DailyLivingBase : QLComponentBase
     }
     private async Task OpenRadioDialog()
     {
+        var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
+            {
+                Id = e.Id.ToString(),
+                Title = e.EventTitle,
+                Category = e.CategoryName ?? e.CategoryId.ToString(),
+                Subcategory = string.Empty,
+                RelatedContentId = null,
+                ContentType = 2,
+                ContentURL = null,
+                PublishedDate = e.PublishedDate ?? DateTime.UtcNow,
+                EndDate = null,
+                SlotType = e.FeaturedSlot?.Id ?? 0,
+                SlotNumber = e.FeaturedSlot?.Id ?? 0,
+                CreatedBy = e.CreatedBy,
+                CreatedAt = e.CreatedAt,
+                UpdatedBy = e.UpdatedBy ?? e.CreatedBy,
+                UpdatedAt = e.UpdatedAt ?? e.CreatedAt,
+                TopicId = null
+            }).ToList();
         var parameters = new DialogParameters
     {
         { nameof(RadioAutoCompleteDialog.Title), "" },
         { nameof(RadioAutoCompleteDialog.articles), AvailableArticles },
         { nameof(RadioAutoCompleteDialog.origin), "dailyTopic" },
-        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceArticles) }
+        { nameof(RadioAutoCompleteDialog.OnAdd), EventCallback.Factory.Create<DailyLivingArticleDto>(this, ReplaceArticles) },
+        { nameof(RadioAutoCompleteDialog.eventList), articlesList },
     };
         var options = new DialogOptions
         {
@@ -187,6 +260,10 @@ public class DailyLivingBase : QLComponentBase
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
             AllEventsList = await GetAllEvents();
+            foreach (var item in AllEventsList)
+            {
+                Console.WriteLine($"Title: {item.EventTitle}, Location: {item.Location}, StartDate: {item.EventSchedule?.StartDate}, IsFeatured: {item.IsFeatured}");
+            }
             ActiveTopics = await GetActiveTopics();
             ActiveTopics = await GetActiveTopics();
             if (ActiveTopics?.Any() == true)
@@ -607,13 +684,23 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
+             string json = JsonSerializer.Serialize(article, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            Console.WriteLine("------ Article Selected Object ------");
+             Console.WriteLine(json);
             article.SlotNumber = ReplaceArticle.SlotNumber;
             article.SlotType = ReplaceArticle.SlotNumber;
             article.TopicId = selectedTopic.Id;
+            article.ContentType = article.SlotNumber == 2? 2 : 1;
             var topics = await DailyService.ReplaceTopSectionArticle(article);
             if (topics.IsSuccessStatusCode)
             {
-                Snackbar.Add("Article Replaced Successfully", Severity.Success);
+                Snackbar.Add(
+                article.SlotNumber == 2 ? "Highlighted Event Replaced Successfully" :  article.SlotNumber == 1 ? "Top Story Replaced Successfully" : "Article Replaced Successfully", 
+                 Severity.Success
+                );
                 await OnTabChanged(activeIndex);
             }
             else

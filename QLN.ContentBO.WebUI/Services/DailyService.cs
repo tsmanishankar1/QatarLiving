@@ -219,7 +219,7 @@ namespace QLN.ContentBO.WebUI.Services
                         category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                         subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
                         relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                        contentType = article.ContentType == 0 ? 1 : article.ContentType,
+                        contentType = article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
                         endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
                         slotNumber = article.SlotNumber,
@@ -261,7 +261,7 @@ namespace QLN.ContentBO.WebUI.Services
                     category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                     subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
                     relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                    contentType = 1,
+                    contentType = article.ContentType,
                     publishedDate = article.PublishedDate.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     endDate = (article.EndDate ?? DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     slotNumber = article.SlotNumber,
@@ -274,6 +274,7 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     WriteIndented = true
                 });
+                Console.WriteLine("Replace Top Section Article Payload: " + jsonPayload);
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topsection")
                 {
