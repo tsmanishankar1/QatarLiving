@@ -64,5 +64,11 @@ namespace QLN.Common.DTO_s
         [JsonPropertyName("commentedUserIds")]
         public List<string>? CommentedUserIds { get; set; }
     }
+    public class CommunityCommentApiResponse
+    {
+        public string Status { get; set; } = "failed";
+        public string Message { get; set; } = string.Empty;
+    }
+
 
 }
