@@ -57,6 +57,12 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("CommentCount")]
         public int CommentCount { get; set; } = 0;
+
+        [JsonPropertyName("likedUserIds")]
+        public List<string>? LikedUserIds { get; set; }
+
+        [JsonPropertyName("commentedUserIds")]
+        public List<string>? CommentedUserIds { get; set; }
     }
 
 }
