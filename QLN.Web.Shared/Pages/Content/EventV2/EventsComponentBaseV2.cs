@@ -278,7 +278,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
         var payload = new Dictionary<string, object>
         {
             ["page"] = page,
-            ["perPage"] = pageSize
+            ["perPage"] = pageSize,
         };
 
         if (!string.IsNullOrWhiteSpace(SearchKeyword))
@@ -303,6 +303,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
             payload["locationId"] = parsedLocationIds;
 
         payload["freeOnly"] = ShowFreeOnly;
+        payload["status"] = 1;
 
 
         var apiResponse = await _eventService.GetEventsByPagination(payload);
@@ -310,11 +311,6 @@ namespace QLN.Web.Shared.Pages.Content.EventV2
         if (apiResponse.IsSuccessStatusCode)
         {
             var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
-            if (result != null)
-            {
-                result.Items = result.Items.Where(e => e.IsActive).ToList();
-            }
-
             PaginatedData = result ?? new PaginatedEventResponse();
         }
         else
