@@ -30,7 +30,7 @@
             </div>
 
             <!-- Search Button -->
-            <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0">
+            <div class="flex-grow-1 flex-md-grow-1_2 w-100 w-md-auto ms-md-0 d-flex flex-column align-items-center">
                 <MudButton Variant="Variant.Filled" FullWidth="true" OnClick="PerformSearch"
                            Disabled="@loading"
                            Class="community-search-button"
@@ -45,8 +45,21 @@
                         <span>Show Results</span>
                     }
                 </MudButton>
+              
             </div>
+
+         
+
         </div>
+        @if (!string.IsNullOrWhiteSpace(searchText) || !string.IsNullOrWhiteSpace(SelectedCategoryId))
+        {
+            <div class="text-center mt-2" style="width: 95%;display:flex;justify-content:flex-end">
+                <span @onclick="ClearFilters"
+                      style="cursor: pointer; color: var(--color-accent); text-decoration: underline; font-size: 0.95rem;">
+                    Clear filters
+                </span>
+            </div>
+        }
     </MudContainer>
 </MudPaper>
 
