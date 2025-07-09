@@ -713,49 +713,39 @@ namespace QLN.Content.MS.Service.NewsInternalService
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
             _logger.LogInformation("Starting to save news comment for Article ID: {Nid}", dto.Nid);
-
             try
-            {               
-                if (dto.ParentCommentId.HasValue && dto.ParentCommentId.Value != Guid.Empty)
-                {
-                    var parentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.ParentCommentId.Value}";
-                    var parentComment = await _dapr.GetStateAsync<V2NewsCommentDto>(V2Content.ContentStoreName, parentKey, cancellationToken: ct);
-
-                    if (parentComment == null || !parentComment.IsActive)
-                    {
-                        _logger.LogWarning("Invalid parent comment ID: {ParentCommentId} for article {Nid}", dto.ParentCommentId, dto.Nid);
-                        return new NewsCommentApiResponse
-                        {
-                            Status = "failed",
-                            Message = "Parent comment does not exist or is inactive."
-                        };
-                    }
-                }
-
+            {
                 var commentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.CommentId}";
                 var indexKey = $"{V2Content.NewsCommentIndexPrefix}{dto.Nid}";
 
                 _logger.LogInformation("Generated comment key: {CommentKey}", commentKey);
                 _logger.LogInformation("Generated index key: {IndexKey}", indexKey);
 
+                _logger.LogInformation("Saving comment state to Dapr store...");
                 await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
                 _logger.LogInformation("Comment saved to key: {CommentKey}", commentKey);
 
+                _logger.LogInformation("Retrieving existing index list from Dapr...");
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
                 _logger.LogInformation("Retrieved {Count} comment IDs from index.", index.Count);
 
+
                 if (!index.Contains(dto.CommentId))
                 {
+                    _logger.LogInformation("Comment ID {CommentId} not found in index. Adding...", dto.CommentId);
                     index.Add(dto.CommentId);
-                    _logger.LogInformation("Comment ID {CommentId} added to index. Saving index...", dto.CommentId);
 
+                    _logger.LogInformation("Saving updated index back to Dapr...");
                     await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
                     _logger.LogInformation("Index saved with {Count} total comment IDs.", index.Count);
                 }
                 else
                 {
-                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping index update.", dto.CommentId);
+                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping update.", dto.CommentId);
                 }
+
+                _logger.LogInformation("News comment saved successfully for Article {Nid}", dto.Nid);
+
 
                 return new NewsCommentApiResponse
                 {
@@ -774,7 +764,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
-
 
         public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
@@ -843,8 +832,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Console.WriteLine($"[ERROR] Failed to deserialize comment for key: {state.Key}, ex: {ex.Message}");
                     }
                 }
-
-                // ✅ Safe grouping using Guid.Empty for top-level (no null keys)
+                
                 var grouped = new Dictionary<Guid, List<V2NewsCommentDto>>();
 
                 foreach (var comment in allComments.Where(c => c.CommentId != Guid.Empty))
@@ -857,7 +845,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     grouped[parentId].Add(comment);
                 }
 
-                var topLevel = grouped.ContainsKey(Guid.Empty) ? grouped[Guid.Empty] : new List<V2NewsCommentDto>();
+                var topLevel = grouped.ContainsKey(Guid.Empty)
+                    ? grouped[Guid.Empty].OrderByDescending(c => c.CommentedAt).ToList()
+                    : new List<V2NewsCommentDto>();
+
                 var comments = new List<NewsCommentListItem>();
 
                 foreach (var parent in topLevel)
@@ -865,8 +856,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";
                     var dislikeIndexKey = $"news-comment-dislike-index-{parent.CommentId}";
 
-                    var likes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();
-                    var dislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct) ?? new();
+                    var likes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();
+                    var dislikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct) ?? new();
 
                     var commentItem = new NewsCommentListItem
                     {
@@ -876,7 +867,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Subject = parent.Comment,
                         DateCreated = parent.CommentedAt,
                         LikeCount = likes.Count,
-                        DislikeCount = dislikes.Count,
+                        LikedUsers = likes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
+                        DislikedUsers = dislikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
                         Replies = new List<NewsCommentListItem>()
                     };
 
@@ -887,8 +879,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                             var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";
                             var replyDislikeKey = $"news-comment-dislike-index-{reply.CommentId}";
 
-                            var replyLikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();
-                            var replyDislikes = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, replyDislikeKey, cancellationToken: ct) ?? new();
+                            var replyLikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();
+                            var replyDislikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyDislikeKey, cancellationToken: ct) ?? new();
 
                             commentItem.Replies.Add(new NewsCommentListItem
                             {
@@ -898,7 +890,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 Subject = reply.Comment,
                                 DateCreated = reply.CommentedAt,
                                 LikeCount = replyLikes.Count,
-                                DislikeCount = replyDislikes.Count
+                                LikedUsers = replyLikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
+                                DislikeCount = replyDislikes.Count,
+                                DislikedUsers = replyDislikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName}).ToList()
                             });
 
                             Console.WriteLine($"[INFO] Added reply {reply.CommentId} to parent {parent.CommentId}");
@@ -925,8 +919,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-
-        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {
             var key = $"news-comment-like-{commentId}-{userId}";
             var indexKey = $"news-comment-like-index-{commentId}";
@@ -934,12 +927,12 @@ namespace QLN.Content.MS.Service.NewsInternalService
             try
             {
                 var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+                var index = await _dapr.GetStateAsync<List<ReactionUser>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
                 if (!string.IsNullOrWhiteSpace(existing))
                 {
                     await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
-                    index.Remove(userId);
+                    index.RemoveAll(u => u.UserId == userId);
                     await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
                     _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
@@ -948,8 +941,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
 
-                if (!index.Contains(userId))
-                    index.Add(userId);
+                if (!index.Any(u => u.UserId == userId))
+                    index.Add(new ReactionUser { UserId = userId, UserName = userName });
+
 
                 await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
@@ -963,7 +957,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {
             var key = $"news-comment-dislike-{commentId}-{userId}";
             var indexKey = $"news-comment-dislike-index-{commentId}";
@@ -971,12 +965,12 @@ namespace QLN.Content.MS.Service.NewsInternalService
             try
             {
                 var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: ct) ?? new();
+                var index = await _dapr.GetStateAsync<List<ReactionUser>>(StoreName, indexKey, cancellationToken: ct) ?? new();
 
                 if (!string.IsNullOrWhiteSpace(existing))
                 {
                     await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
-                    index.Remove(userId);
+                    index.RemoveAll(u => u.UserId == userId);
                     await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
                     _logger.LogInformation("User {UserId} removed dislike from comment {CommentId}", userId, commentId);
@@ -985,8 +979,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
 
-                if (!index.Contains(userId))
-                    index.Add(userId);
+                if (!index.Any(u => u.UserId == userId))
+                    index.Add(new ReactionUser { UserId = userId, UserName = userName });
 
                 await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
 
@@ -1000,6 +994,131 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+        public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var commentKey = $"{V2Content.NewsCommentPrefix}-{articleId}-{commentId}";
+
+                Console.WriteLine($"[INFO] Attempting to delete comment key: {commentKey}");
+
+
+                var comment = await _dapr.GetStateAsync<V2NewsCommentDto>(V2Content.ContentStoreName, commentKey, cancellationToken: ct);
+
+                if (comment == null)
+                {
+                    Console.WriteLine($"[WARN] Comment not found or failed to deserialize for key: {commentKey}");
+
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment not found or invalid"
+                    };
+                }
+
+                if (!comment.IsActive)
+                {
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment already deleted"
+                    };
+                }
+
+                if (!string.Equals(comment.Uid, userId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "You are not authorized to delete this comment"
+                    };
+                }
+
+                comment.IsActive = false;
+
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, comment, cancellationToken: ct);
+
+                Console.WriteLine($"[INFO] Soft-deleted comment ID: {commentId}");
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "success",
+                    Message = "Comment deleted successfully"
+                };
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Exception while deleting comment {commentId}: {ex.Message}");
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Error occurred while deleting comment"
+                };
+            }
+        }
+
+        public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            try
+            {
+                var commentKey = $"{V2Content.NewsCommentPrefix}-{articleId}-{commentId}";
+                Console.WriteLine($"[INFO] Attempting to edit comment key: {commentKey}");
+
+                var comment = await _dapr.GetStateAsync<V2NewsCommentDto>(V2Content.ContentStoreName, commentKey, cancellationToken: ct);
+
+                if (comment == null)
+                {
+                    Console.WriteLine($"[WARN] Comment not found or invalid for key: {commentKey}");
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Comment not found"
+                    };
+                }
+
+                if (!comment.IsActive)
+                {
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "Cannot edit a deleted comment"
+                    };
+                }
+
+                if (!string.Equals(comment.Uid, userId, StringComparison.OrdinalIgnoreCase))
+                {
+                    return new NewsCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = "You are not authorized to edit this comment"
+                    };
+                }
+
+                comment.Comment = updatedText;
+                comment.UpdatedAt = DateTime.UtcNow; 
+
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, comment, cancellationToken: ct);
+                Console.WriteLine($"[INFO] Edited comment ID: {commentId}");
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "success",
+                    Message = "Comment updated successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] Exception while editing comment {commentId}: {ex.Message}");
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Error occurred while editing comment"
+                };
+            }
+        }
 
 
     }

@@ -24,7 +24,23 @@ namespace QLN.Common.DTO_s
         public string UserName { get; set; }
         public string Subject { get; set; }
         public DateTime DateCreated { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public List<UserSummary> LikedUsers { get; set; } = new();
+        public List<UserSummary> DislikedUsers { get; set; } = new();
         public List<NewsCommentListItem>? Replies { get; set; } = new();
     }
+
+    public class ReactionUser
+    {
+        public string UserId { get; set; }
+        public string UserName { get; set; }
+    }
+
+    public class UserSummary
+    {
+        public string UserId { get; set; }
+        public string UserName { get; set; }
+    }
+
 }
