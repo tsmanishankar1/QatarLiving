@@ -30,6 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsDisliked { get; set; } = false;
         protected bool isMenuOpen = false;
         public bool IsLoggedIn { get; set; } = false;
+        public string UID { get; set; } 
 
         protected void OnMenuToggle(bool open)
         {
@@ -43,8 +44,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             if (user.Identity?.IsAuthenticated == true)
             {
-               
                 IsLoggedIn = true;
+                UID =user.FindFirst("uid")?.Value;
             }
 
         }

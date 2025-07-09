@@ -239,7 +239,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var url = $"api/v2/community/comments/byPost/{postId}?page={page}&perPage={pageSize}";
+                var url = $"api/v2/community/getCommentsByPostId/{postId}?page={page}&perPage={pageSize}";
 
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
 
