@@ -36,7 +36,9 @@
                 <div class="swiper-wrapper @(FeaturedEvent.Count <= 5 ? "les5swiper-wrapper" : "")">
                       <MudVirtualize Context="item" Items="FeaturedEvent">
                         <div class="swiper-slide swiper-slide-Card">
-                            <FeaturedEventCard Item="item" OnClick="HandleCategoryClick" />
+                            <FeaturedEventCard
+                                Item="item"
+                                />
                         </div>
                     </MudVirtualize>
                 </div>
@@ -68,12 +70,6 @@
             _categoriesSwiperInitialized = true;
             await JSRuntime.InvokeVoidAsync("initCategoriesSwiper");
         }
-    }
-
-    private void HandleCategoryClick(ContentEvent clickedItem)
-    {
-        Navigation.NavigateTo($"/content/events/details/{clickedItem.Slug}");
-        // Handle click logic here or raise EventCallback if needed
     }
 }
 

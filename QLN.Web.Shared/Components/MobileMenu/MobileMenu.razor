@@ -212,10 +212,12 @@
         NavigationManager.NavigateTo(url, true); // `true` forces full page reload
         await HandleLinkClick();
     }
+
     private async Task HandleLinkClick()
     {
         await OnClose.InvokeAsync();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_jsInitialized)
