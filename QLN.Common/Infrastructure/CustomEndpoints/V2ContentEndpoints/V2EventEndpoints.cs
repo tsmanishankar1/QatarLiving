@@ -300,7 +300,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapDeleteEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapDelete("/delete/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
+            group.MapDelete("/delete/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, Conflict<ProblemDetails>, ProblemHttpResult>>
             (
                 Guid id,
                 IV2EventService service,
@@ -314,18 +314,31 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                         throw new KeyNotFoundException($"Event with ID '{id}' not found.");
                     return TypedResults.Ok(success);
                 }
-                catch (KeyNotFoundException ex)
+                catch (KeyNotFoundException knf)
                 {
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
-                        Detail = ex.Message,
+                        Detail = knf.Message,
                         Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (InvalidOperationException iex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict – cannot delete",
+                        Detail = iex.Message,
+                        Status = StatusCodes.Status409Conflict
                     });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.ToString(),
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
             .WithName("DeleteEvent")
@@ -334,6 +347,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithDescription("Soft delete a event and saves it via Dapr state store.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

@@ -1,13 +1,19 @@
-﻿using Dapr;
+﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Dapr;
 using Dapr.Client;
+using Dapr.Client.Autogen.Grpc.v1;
+using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -210,30 +216,51 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
+            var url = $"/api/v2/news/news/{id}";
             try
             {
-                var url = $"/api/v2/news/news/{id}";
-
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2Content.ContentServiceAppId,
+                    V2Content.ContentServiceAppId,
                     url,
-                    cancellationToken
+                    cancellationToken: cancellationToken
                 );
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (InvocationException ex)
             {
-                _logger.LogWarning(ex, "News with ID {id} not found.", id);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting News with Id {id}", id);
-                throw;
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
         }
-        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
-        {
+            public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
+            {
             try
             {
                 var url = "/api/v2/news/reorderLiveSlotsByUserId";
@@ -489,7 +516,32 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
-
+        public async Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
+         int categoryId,
+         int subCategoryId,
+         CancellationToken cancellationToken = default
+     )
+        {
+            var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
+            try
+            {
+                return await _dapr.InvokeMethodAsync<GenericNewsPageResponse>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("GetNewsLandingPageAsync was cancelled by caller.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling content service for landing page");
+                throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
+            }
+        }
         public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
             try
@@ -534,7 +586,5 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
-
-
     }
 }

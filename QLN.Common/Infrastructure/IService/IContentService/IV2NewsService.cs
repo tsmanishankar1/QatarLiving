@@ -32,6 +32,11 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default);       
         Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default);
         Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default);
+        Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
+       int categoryId,
+       int subCategoryId,
+       CancellationToken cancellationToken = default
+   );
     }
 
 }

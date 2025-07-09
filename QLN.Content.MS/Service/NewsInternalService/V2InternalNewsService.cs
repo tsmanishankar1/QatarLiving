@@ -1,16 +1,13 @@
-﻿using Dapr.Client;
+﻿using Dapr;
+using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
-using System;
-using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.NewsInternalService
@@ -20,6 +17,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
         private readonly DaprClient _dapr;
         private readonly ILogger<IV2NewsService> _logger;
         private const string StoreName = V2Content.ContentStoreName;
+        private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
         private static readonly List<string> writerTags = new()
     {
         "Qatar Living",
@@ -361,43 +359,132 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+        private async Task<List<Guid>> GetAllDailyTopicIdsAsync(CancellationToken ct)
+        {
+            try
+            {
+                var topics = await _dapr.GetStateAsync<List<Guid>>(
+                    DailyStore,
+                    "daily-topics-index",
+                    cancellationToken: ct)
+                    ?? new List<Guid>();
+                return topics;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read daily-topics-index");
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+        }
+
+        private async Task<List<DailyTopicContent>> GetSlotsByTopicIdAsync(Guid topicId, CancellationToken ct)
+        {
+            try
+            {
+                var key = $"daily-topic-{topicId}-slots";
+                var slots = await _dapr.GetStateAsync<List<DailyTopicContent>>(
+                    DailyStore,
+                    key,
+                    cancellationToken: ct)
+                    ?? new List<DailyTopicContent>();
+                return slots;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read slots for topic {TopicId}", topicId);
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+        }
+
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
             var key = id.ToString();
 
-            // Fetch existing article
+            try
+            {
+                var topSlotTasks = Enumerable.Range(1, 9)
+                    .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
+                        DailyStore,
+                        $"daily-slot-{i}",
+                        cancellationToken: cancellationToken))
+                    .ToArray();
+
+                var topSlots = (await Task.WhenAll(topSlotTasks))
+                    .Where(s => s != null)
+                    .ToList();
+
+                var usedInTop = topSlots
+                    .FirstOrDefault(s => s.ContentType == DailyContentType.Article
+                                      && s.RelatedContentId == id);
+
+                if (usedInTop != null)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot delete news {id}: it’s used in Daily Top Section slot #{usedInTop.SlotNumber}");
+                }
+            }
+            catch (DaprServiceException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (!(ex is InvalidOperationException))
+            {
+                _logger.LogError(ex, "Error reading Daily Top-Section slots before delete");
+                throw new DaprServiceException(
+                    statusCode: StatusCodes.Status502BadGateway,
+                    responseBody: ex.Message);
+            }
+
+            List<Guid> topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
+            foreach (var topicId in topicIds)
+            {
+                var topicSlots = await GetSlotsByTopicIdAsync(topicId, cancellationToken);
+                var usedInTopic = topicSlots
+                    .FirstOrDefault(ts => ts.ContentType == DailyContentType.Article
+                                       && ts.RelatedContentId == id);
+
+                if (usedInTopic != null)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot delete news {id}: it’s used in Topic '{topicId}' slot #{usedInTopic.SlotNumber}");
+                }
+            }
+
             var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
-                ConstantValues.V2Content.ContentStoreName,
+                StoreName,
                 key,
                 cancellationToken: cancellationToken);
 
             if (existing == null)
+            {
                 throw new KeyNotFoundException($"News with ID '{id}' not found.");
+            }
 
-            // Mark as inactive (soft delete)
             existing.IsActive = false;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            // Save back to store
             await _dapr.SaveStateAsync(
-                ConstantValues.V2Content.ContentStoreName,
+                StoreName,
                 key,
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
 
-            // --- 🔥 Remove ID from News Index ---
             var index = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.V2Content.ContentStoreName,
-                ConstantValues.V2Content.NewsIndexKey,
-                cancellationToken: cancellationToken) ?? new();
+                StoreName,
+                V2Content.NewsIndexKey,
+                cancellationToken: cancellationToken)
+                ?? new List<string>();
 
-            if (index.Contains(key))
+            if (index.Remove(key))
             {
-                index.Remove(key);
                 await _dapr.SaveStateAsync(
-                    ConstantValues.V2Content.ContentStoreName,
-                    ConstantValues.V2Content.NewsIndexKey,
+                    StoreName,
+                    V2Content.NewsIndexKey,
                     index,
                     cancellationToken: cancellationToken);
 
@@ -406,7 +493,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             return "News Soft Deleted Successfully";
         }
-
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
         {
             try
@@ -471,7 +557,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             var newCat = dto.Categories.First();
             var newSlot = newCat.SlotId;
-
+            if (oldSlot == 15 && (newSlot >= 1 && newSlot <= 14))
+            {
+                dto.PublishedDate = DateTime.UtcNow;
+            }
             if (newSlot >= 1 && newSlot <= MaxLiveSlot)
             {
                 await HandleSlotShiftAsync(
@@ -556,7 +645,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 if (article == null)
                     throw new InvalidDataException($"Article with ID '{sa.ArticleId}' not found.");
-                
+
                 if (!article.Categories.Any(c =>
                       c.CategoryId == catId &&
                       c.SubcategoryId == subCatId))
@@ -568,21 +657,21 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 loaded[sa.ArticleId] = article;
             }
 
-            
+
             foreach (var sa in request.SlotAssignments)
             {
                 string slotKey = GetSlotKey(catId, subCatId, sa.SlotNumber);
 
                 if (string.IsNullOrWhiteSpace(sa.ArticleId))
                 {
-                    
+
                     await _dapr.DeleteStateAsync(storeName, slotKey, cancellationToken: cancellationToken);
                     continue;
                 }
 
                 var article = loaded[sa.ArticleId]!;
 
-                
+
                 var catDto = article.Categories
                     .First(c => c.CategoryId == catId && c.SubcategoryId == subCatId);
                 catDto.SlotId = sa.SlotNumber;
@@ -870,7 +959,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Console.WriteLine($"[ERROR] Failed to deserialize comment for key: {state.Key}, ex: {ex.Message}");
                     }
                 }
-                
+
                 var grouped = new Dictionary<Guid, List<V2NewsCommentDto>>();
 
                 foreach (var comment in allComments.Where(c => c.CommentId != Guid.Empty))
@@ -891,9 +980,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 foreach (var parent in topLevel)
                 {
-                    var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";                  
+                    var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";
 
-                    var likes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();                    
+                    var likes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();
 
                     var commentItem = new NewsCommentListItem
                     {
@@ -911,9 +1000,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     {
                         foreach (var reply in grouped[parent.CommentId])
                         {
-                            var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";                          
+                            var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";
 
-                            var replyLikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();                            
+                            var replyLikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();
 
                             commentItem.Replies.Add(new NewsCommentListItem
                             {
@@ -923,7 +1012,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 Subject = reply.Comment,
                                 DateCreated = reply.CommentedAt,
                                 LikeCount = replyLikes.Count,
-                                LikedUsers = replyLikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),                                
+                                LikedUsers = replyLikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
                             });
 
                             Console.WriteLine($"[INFO] Added reply {reply.CommentId} to parent {parent.CommentId}");
@@ -986,7 +1075,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 _logger.LogError(ex, "Error toggling like for comment {CommentId}", commentId);
                 throw;
             }
-        }     
+        }
 
         public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
@@ -1052,7 +1141,112 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
+        public async Task<Common.Infrastructure.DTO_s.GenericNewsPageResponse> GetNewsLandingPageAsync(
+            int categoryId,
+            int subCategoryId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            try
+            {
+                var categoryDto = await GetCategoryByIdAsync(categoryId, cancellationToken)
+                                  ?? throw new KeyNotFoundException($"Category {categoryId} not found");
+                var catKey = categoryDto.CategoryName
+                              .ToLowerInvariant()
+                              .Replace(" ", "_");
 
+                var subDto = categoryDto.SubCategories
+                               .FirstOrDefault(s => s.Id == subCategoryId)
+                             ?? throw new KeyNotFoundException($"SubCategory {subCategoryId} not found");
+                var subKey = subDto.SubCategoryName
+                              .ToLowerInvariant()
+                              .Replace(" ", "_");
+
+                var pageName = $"qln_{catKey}_{subKey}";
+
+                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
+                var posts = dtos.Select(dto => new Common.Infrastructure.DTO_s.ContentPost
+                {
+                    Id = dto.Id,
+                    Nid = dto.Id.ToString(),
+                    DateCreated = dto.PublishedDate.ToString("o"),
+                    ImageUrl = dto.CoverImageUrl,
+                    UserName = dto.authorName,
+                    Title = dto.Title,
+                    Description = dto.Content,
+                    Category = categoryDto.CategoryName,
+                    NodeType = "Post",
+                    IsActive = dto.IsActive,
+                    Slug = dto.Slug,
+                    CreatedAt = dto.CreatedAt,
+                    UpdatedAt = dto.UpdatedAt
+                })
+                            .ToList();
+
+                Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost> BuildQueue(
+                    string sectionKey,
+                    string queueLabel,
+                    IEnumerable<Common.Infrastructure.DTO_s.ContentPost> slice
+                )
+                {
+                    var qName = $"{pageName}_{sectionKey}";
+                    var list = slice.ToList();
+                    list.ForEach(p =>
+                    {
+                        p.PageName = pageName;
+                        p.QueueName = qName;
+                        p.QueueLabel = queueLabel;
+                    });
+                    return new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost>
+                    {
+                        QueueLabel = queueLabel,
+                        Items = list
+                    };
+                }
+
+                var qlnPage = new Common.Infrastructure.DTO_s.QlnNewsNewsQatar
+                {
+                    TopStory = BuildQueue("top_story", "Top Story", posts.Take(1)),
+                    MoreArticles = BuildQueue("more_articles", "More Articles", posts.Skip(1).Take(5)),
+                    Articles1 = BuildQueue("articles_1", "Articles 1", posts.Skip(6).Take(5)),
+                    Articles2 = BuildQueue("articles_2", "Articles 2", posts.Skip(11).Take(5)),
+                    MostPopularArticles = BuildQueue("most_popular_articles", "Most Popular Articles", posts.OrderByDescending(p => p.DateCreated).Take(5)),
+                    WatchOnQatarLiving = new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentVideo>
+                    {
+                        QueueLabel = "Watch on Qatar Living",
+                        Items = Enumerable.Empty<Common.Infrastructure.DTO_s.ContentVideo>().ToList()
+                    }
+                };
+
+                var qlnResp = new Common.Infrastructure.DTO_s.QlnNewsNewsQatarPageResponse { News = qlnPage };
+
+                return (Common.Infrastructure.DTO_s.GenericNewsPageResponse)qlnResp;
+            }
+            catch (KeyNotFoundException knf)
+            {
+                _logger.LogWarning(knf,
+                    "GetNewsLandingPageAsync: not found Category={CategoryId} or SubCategory={SubCategoryId}",
+                    categoryId, subCategoryId);
+                throw;
+            }
+            catch (ArgumentException ae)
+            {
+                _logger.LogWarning(ae,
+                    "GetNewsLandingPageAsync: bad arguments Category={CategoryId} or SubCategory={SubCategoryId}",
+                    categoryId, subCategoryId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "GetNewsLandingPageAsync: unexpected error for Category={CategoryId}, SubCategory={SubCategoryId}",
+                    categoryId, subCategoryId);
+                throw new ApplicationException(
+                    "An error occurred while retrieving the news landing page. See inner exception for details.",
+                    ex
+                );
+            }
+        }
         public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
             try
@@ -1091,7 +1285,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
 
                 comment.Comment = updatedText;
-                comment.UpdatedAt = DateTime.UtcNow; 
+                comment.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, comment, cancellationToken: ct);
                 Console.WriteLine($"[INFO] Edited comment ID: {commentId}");
@@ -1113,7 +1307,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
-        
     }
 }
 

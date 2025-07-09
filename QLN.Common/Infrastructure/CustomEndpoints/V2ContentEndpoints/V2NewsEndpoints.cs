@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using QLN.Common.Infrastructure.DTO_s;
+using Microsoft.Extensions.Logging;
+using QLN.Common.Infrastructure.CustomException;
 
 public static class V2NewsEndpoints
 {
@@ -422,40 +424,69 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
 
-        group.MapDelete("/news/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>>
+        group.MapDelete("/news/{id:guid}",
+            async Task<Results<
+                Ok<string>,
+                NotFound<ProblemDetails>,
+                Conflict<ProblemDetails>,
+                ProblemHttpResult>>
             (
-                Guid id,
-                IV2NewsService service,
-                CancellationToken cancellationToken
+                [FromRoute] Guid id,
+                [FromServices] IV2NewsService service,
+                [FromServices] ILogger<IV2NewsService> log,
+                CancellationToken ct
             ) =>
-        {
-            try
             {
-                var success = await service.DeleteNews(id, cancellationToken);
-                if (success == null)
-                    throw new KeyNotFoundException($"News with ID '{id}' not found.");
-                return TypedResults.Ok(success);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return TypedResults.NotFound(new ProblemDetails
+                try
                 {
-                    Title = "Not Found",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status404NotFound
-                });
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
-            }
-        })
+                    var msg = await service.DeleteNews(id, ct);
+                    return TypedResults.Ok(msg);
+                }
+                catch (KeyNotFoundException knf)
+                {
+                    log.LogWarning(knf, "News {NewsId} not found", id);
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = knf.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (InvalidOperationException iex)
+                {
+                    log.LogWarning(iex, "Cannot delete News {NewsId}", id);
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict – cannot delete",
+                        Detail = iex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (DaprServiceException dse)
+                {
+                    log.LogError(dse, "Upstream error deleting News {NewsId}", id);
+                    return TypedResults.Problem(
+                    title:   "Upstream service error",
+                    detail:  dse.ResponseBody,
+                    statusCode: dse.StatusCode,
+                    instance: $"/news/{id}");
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "Unhandled exception deleting News {NewsId}", id);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
             .WithName("DeleteNews")
             .WithTags("News")
-            .WithSummary("Delete News")
-            .WithDescription("Soft delete a news and saves it via Dapr state store.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/reorderslot", async Task<Results<
@@ -1322,6 +1353,53 @@ public static class V2NewsEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+        group.MapGet("/landing", async Task<Results<
+            Ok<GenericNewsPageResponse>,
+            NotFound<ProblemDetails>,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>> (
+        [FromQuery] int categoryId,
+        [FromQuery] int subCategoryId,
+        IV2NewsService service,
+        CancellationToken ct) =>
+        {
+            try
+            {
+                var page = await service.GetNewsLandingPageAsync(categoryId, subCategoryId, ct);
+                return TypedResults.Ok(page);
+            }
+            catch (KeyNotFoundException knf)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = knf.Message,
+                    Status = StatusCodes.Status404NotFound
+                });
+            }
+            catch (ArgumentException arg)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = arg.Message,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            catch (Exception ex)
+            {
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Detail = "An unexpected error occurred. Please try again later.",
+                    Status = StatusCodes.Status500InternalServerError
+                });
+            }
+        })
+        .WithName("GetNewsLandingPage")
+        .WithTags("News")
+        .WithSummary("Get the 6-section news landing page for a category/subcategory");
 
         return group;
     }
