@@ -145,10 +145,10 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                object payload; 
+                object payload;
                 if (article.ContentType == 3)
                 {
-                     payload = new
+                    payload = new
                     {
                         contentType = article.ContentType,
                         topicId = article.TopicId,
@@ -163,7 +163,7 @@ namespace QLN.ContentBO.WebUI.Services
                         title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
                         category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                         subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                         contentType = article.ContentType == 0 ? 1 : article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
                         endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
@@ -178,7 +178,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     WriteIndented = true
                 });
-
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content")
@@ -218,8 +217,8 @@ namespace QLN.ContentBO.WebUI.Services
                         title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
                         category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                         subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                        contentType = article.ContentType == 0 ? 1 : article.ContentType,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
+                        contentType = article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
                         endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
                         slotNumber = article.SlotNumber,
@@ -260,8 +259,8 @@ namespace QLN.ContentBO.WebUI.Services
                     title = article.Title,
                     category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                     subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                    relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
-                    contentType = 1,
+                    relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
+                    contentType = article.ContentType,
                     publishedDate = article.PublishedDate.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     endDate = (article.EndDate ?? DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     slotNumber = article.SlotNumber,
@@ -286,6 +285,20 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 Logger.LogError(ex, "CreateArticle");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> GetAvailableTopSectionArticles()
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/dailyliving/topsection/unusedarticles");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetUnusedTopSectionArticles");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

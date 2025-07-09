@@ -27,8 +27,14 @@ namespace QLN.Common.DTO_s
         [JsonPropertyName("commentedAt")]
         public DateTime CommentedAt { get; set; } = DateTime.UtcNow;
 
+        [JsonPropertyName("updatedAt")]
+        public DateTime? UpdatedAt { get; set; }
+
         [JsonPropertyName("isActive")]
         public bool IsActive { get; set; } = true;
+
+        [JsonPropertyName("parentCommentId")]
+        public Guid? ParentCommentId { get; set; }
     }
 
     public class NewsCommentApiResponse

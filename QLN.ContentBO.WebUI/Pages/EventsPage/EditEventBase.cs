@@ -32,6 +32,8 @@ namespace QLN.ContentBO.WebUI.Pages
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
         protected string? _PriceError;
+        public string? _timeTypeError;
+        public string? _eventTypeError;
         protected string? _timeError;
         protected string? _LocationError;
         protected string? _descriptionerror;
@@ -477,53 +479,66 @@ namespace QLN.ContentBO.WebUI.Pages
             _coverImageError = null;
             _timeError = null;
             bool hasError = false;
-            if (CurrentEvent.EventType == EventType.FeePrice && CurrentEvent.Price == null)
+             if (CurrentEvent?.EventType == 0)
+            {
+                _eventTypeError = "Event Type is required.";
+                Snackbar.Add("Event Type is required.", severity: Severity.Error);
+                return;
+            }
+            if (CurrentEvent?.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
                 _PriceError = "Price is required for Fees events.";
-                hasError = true;
+                Snackbar.Add("Price is required for Fees events.", severity: Severity.Error);
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
-                hasError = true;
+                Snackbar.Add("Location is required.", severity: Severity.Error);
+                return;
+            }
+              if (CurrentEvent?.EventSchedule?.TimeSlotType == 0)
+            {
+                _timeTypeError = "Time Type is required.";
+                Snackbar.Add("Time Type is required.", severity: Severity.Error);
+                return;
             }
 
             if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
-                hasError = true;
+                Snackbar.Add("Start date is required.", severity: Severity.Error);
+                return;
             }
             else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime &&
              (CurrentEvent.EventSchedule.StartTime == null || CurrentEvent.EventSchedule.EndTime == null))
             {
                 _timeError = "Start Time and End Time are required.";
-                hasError = true;
+                Snackbar.Add("Start Time and End Time are required.", severity: Severity.Error);
+                return;
+            }
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+            {
+                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
+                {
+                    _timeError = "Please enter a valid start and end time.";
+                    Snackbar.Add("Please enter a valid start and end time.", severity: Severity.Error);
+                    return;
+                }
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
-                hasError = true;
+                Snackbar.Add("Event description is required.", severity: Severity.Error);
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.CoverImage))
             {
                 _coverImageError = "Cover Image is required.";
-                hasError = true;
-            }
-            if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
-            {
-                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
-                {
-                    _timeError = "Please enter a valid start and end time.";
-                    hasError = true;
-                }
-            }
-
-            if (hasError)
-            {
-                StateHasChanged();
+                Snackbar.Add("Cover Image is required.", severity: Severity.Error);
                 return;
             }
             try

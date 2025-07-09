@@ -479,6 +479,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
         {
             _logger.LogInformation("Starting GetDailyLivingLandingAsync");
 
+            var allCategoryDtos = await _news.GetAllCategoriesAsync(ct);
+            var categoryLookup = allCategoryDtos
+                .Where(c => !string.IsNullOrWhiteSpace(c.CategoryName))
+                .ToDictionary(c => c.Id, c => c.CategoryName);
             // 1) Fetch slots 1–9
             var slots = await GetAllSlotsAsync(ct) ?? new List<DailyTopSectionSlot>();
             _logger.LogDebug("Retrieved {Count} slots from state store", slots.Count);
@@ -506,8 +510,14 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 }
                 else
                 {
+                    var catId = article.Categories?.FirstOrDefault()?.CategoryId ?? default;
                     topStoryItems.Add(new ContentPost
                     {
+                        Id = article.Id,
+                        Description = article.Content,
+                        CreatedAt = article.CreatedAt,
+                        UpdatedAt = article.UpdatedAt,
+                        IsActive = article.IsActive,
                         PageName = DrupalContentConstants.QlnContentsDaily,
                         QueueLabel = "Top Story",
                         NodeType = "Post",
@@ -517,7 +527,9 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         UserName = article.authorName,
                         Title = article.Title,
                         Slug = article.Slug,
-                        Category = article.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
+                        Category = categoryLookup.TryGetValue(catId, out var catName)
+                               ? catName
+                               : string.Empty
                     });
                     _logger.LogInformation("Top Story loaded: {Title}", article.Title);
                 }
@@ -540,9 +552,14 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     _logger.LogWarning("Article {ArticleId} not found for slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
                     continue;
                 }
-
+                var catId = art.Categories?.FirstOrDefault()?.CategoryId ?? default;
                 topStoriesItems.Add(new ContentPost
                 {
+                    Id = art.Id,
+                    Description = art.Content,
+                    CreatedAt = art.CreatedAt,
+                    UpdatedAt = art.UpdatedAt,
+                    IsActive = art.IsActive,
                     PageName = DrupalContentConstants.QlnContentsDaily,
                     QueueLabel = "Top Stories",
                     NodeType = "Post",
@@ -552,7 +569,9 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = art.authorName,
                     Title = art.Title,
                     Slug = art.Slug,
-                    Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
+                    Category = categoryLookup.TryGetValue(catId, out var catName)
+                               ? catName
+                               : string.Empty
                 });
             }
             _logger.LogInformation("Top Stories loaded: {Count} items", topStoriesItems.Count);
@@ -576,6 +595,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 {
                     highlightedEventItems.Add(new ContentEvent
                     {
+                        Id = ev.Id,
+                        IsActive = ev.IsActive,
+                        CreatedAt = ev.CreatedAt,
+                        UpdatedAt = ev.UpdatedAt,
                         PageName = DrupalContentConstants.QlnContentsDaily,
                         QueueLabel = "Highlighted Event",
                         NodeType = "Event",
@@ -585,13 +608,13 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         UserName = ev.CreatedBy,
                         Title = ev.EventTitle,
                         Slug = ev.Slug,
-                        Category = ev.CategoryName,
+                        EventCategory = ev.CategoryName,
                         EventVenue = ev.Venue,
                         EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                         EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
                         EventLat = ev.Latitude,
                         EventLong = ev.Longitude,
-                        EventLocation = ev.LocationId.ToString()
+                        EventLocation = ev.Location
                     });
                     _logger.LogInformation("Highlighted Event loaded: {Title}", ev.EventTitle);
                 }
@@ -605,6 +628,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
             {
                 featuredEventItems.Add(new ContentEvent
                 {
+                    Id = ev.Id,
+                    IsActive = ev.IsActive,
+                    CreatedAt = ev.CreatedAt,
+                    UpdatedAt = ev.UpdatedAt,
                     PageName = DrupalContentConstants.QlnContentsDaily,
                     QueueLabel = "Featured Events",
                     NodeType = "Event",
@@ -614,13 +641,13 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = ev.CreatedBy,
                     Title = ev.EventTitle,
                     Slug = ev.Slug,
-                    Category = ev.CategoryName,
+                    EventCategory = ev.CategoryName,
                     EventVenue = ev.Venue,
                     EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
                     EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
                     EventLat = ev.Latitude,
                     EventLong = ev.Longitude,
-                    EventLocation = ev.LocationId.ToString()
+                    EventLocation = ev.Location
                 });
             }
             _logger.LogInformation("Featured Events loaded: {Count}", featuredEventItems.Count);
@@ -642,6 +669,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     _logger.LogWarning("Article {ArticleId} not found for slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
                     continue;
                 }
+                var catId = art.Categories?.FirstOrDefault()?.CategoryId ?? default;
 
                 moreArticlesItems.Add(new ContentEvent
                 {
@@ -654,7 +682,14 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     UserName = art.authorName,
                     Title = art.Title,
                     Slug = art.Slug,
-                    Category = art.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty
+                    Description = art.Content,
+                    Id = art.Id,
+                    CreatedAt = art.CreatedAt,
+                    UpdatedAt = art.UpdatedAt,
+                    IsActive = art.IsActive,
+                    Category = categoryLookup.TryGetValue(catId, out var catName)
+                               ? catName
+                               : string.Empty
                 });
             }
             _logger.LogInformation("More Articles loaded: {Count}", moreArticlesItems.Count);
@@ -679,13 +714,22 @@ namespace QLN.Content.MS.Service.DailyInternalService
                         case DailyContentType.Article:
                             _logger.LogDebug("Topic {Topic}: loading Article {Id}", topic.TopicName, slot.RelatedContentId);
                             var a = await _news.GetArticleByIdAsync(slot.RelatedContentId, ct);
+                            var catId = a.Categories?.FirstOrDefault()?.CategoryId ?? default;
                             if (a != null)
                                 items.Add(new ContentEvent
                                 {
+                                    Id = a.Id,
+                                    IsActive = a.IsActive,
+                                    CreatedAt = a.CreatedAt,
+                                    UpdatedAt = a.UpdatedAt,
+                                    Description = a.Content,
+                                    UserName = a.authorName,
                                     PageName = DrupalContentConstants.QlnContentsDaily,
                                     Nid = a.Id.ToString(),
                                     Title = a.Title,
-                                    Category = a.Categories?.FirstOrDefault()?.CategoryId.ToString() ?? string.Empty,
+                                    Category = categoryLookup.TryGetValue(catId, out var catName)
+                               ? catName
+                               : string.Empty,
                                     DateCreated = a.CreatedAt.ToString("o"),
                                     ImageUrl = a.CoverImageUrl,
                                     Slug = a.Slug,
@@ -701,6 +745,12 @@ namespace QLN.Content.MS.Service.DailyInternalService
                             if (e2 != null)
                                 items.Add(new ContentEvent
                                 {
+                                    Id = e2.Id,
+                                    IsActive = e2.IsActive,
+                                    EventLocation = e2.Location,
+                                    CreatedAt = e2.CreatedAt,
+                                    UpdatedAt = e2.UpdatedAt,
+                                    EventCategory = e2.CategoryName,
                                     PageName = DrupalContentConstants.QlnContentsDaily,
                                     Nid = e2.Id.ToString(),
                                     Title = e2.EventTitle,
@@ -723,6 +773,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
                             _logger.LogDebug("Topic {Topic}: adding Video slot {Slot}", topic.TopicName, slot.SlotNumber);
                             items.Add(new ContentEvent
                             {
+                                Id = slot.Id,
+                                IsActive = true,
+                                CreatedAt = slot.CreatedAt,
+                                UpdatedAt = slot.UpdatedAt,
                                 PageName = DrupalContentConstants.QlnContentsDaily,
                                 Nid = slot.RelatedContentId.ToString(),
                                 Title = slot.Title,

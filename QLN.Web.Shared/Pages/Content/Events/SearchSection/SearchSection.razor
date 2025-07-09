@@ -17,7 +17,7 @@
                 <LocationSelect 
                     @ref="_locationSelectRef"
                     TItem="Area"
-                    Items="FilteredAreas"
+                    Items="Areas"
                     SelectedItemsChanged="HandleLocationSelectionChanged"
                     OnLocationUpdated="CallApiForLocationChange"
                     GetLabel="item => item.Name"
