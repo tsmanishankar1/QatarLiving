@@ -68,7 +68,7 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
     {
         SelectedCategoryId = newId;
         await OnCategoryChanged.InvokeAsync(newId);
-        NavigationManager.NavigateTo($"content/community/v2?categoryId={newId}", forceLoad: false);
+        NavigationManager.NavigateTo($"content/community/v2?categoryId={newId}", forceLoad: false); // leaving this as it is a V2 component
     }
 
     protected override void OnParametersSet()

@@ -152,11 +152,11 @@
         <footer class="mobile-menu-footer">
             <!-- Top Border Section with Links -->
             <div class="footer-links-grid">
-                <div><a href="/content/news" @onclick="HandleLinkClick">News</a></div>
+                <div><a href="@navigationPath.ContentNews" @onclick="HandleLinkClick">News</a></div>
                 @* <div><a href="#">Business pages</a></div> *@
-                <div><a href="/content/events" @onclick="HandleLinkClick">Events</a></div>
+                <div><a href="@navigationPath.ContentEvents" @onclick="HandleLinkClick">Events</a></div>
                 @* <div><a href="#">eShops</a></div> *@
-                <div><a href="/content/community" @onclick="HandleLinkClick">Community</a></div>
+                <div><a href="@navigationPath.ContentCommunity" @onclick="HandleLinkClick">Community</a></div>
             </div>
 
             <!-- Social Icons -->
@@ -212,10 +212,12 @@
         NavigationManager.NavigateTo(url, true); // `true` forces full page reload
         await HandleLinkClick();
     }
+
     private async Task HandleLinkClick()
     {
         await OnClose.InvokeAsync();
     }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_jsInitialized)

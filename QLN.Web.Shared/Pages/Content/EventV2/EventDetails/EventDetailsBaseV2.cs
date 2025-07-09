@@ -39,7 +39,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
             // Initialize breadcrumbs
             breadcrumbItems = new()
             {
-                new BreadcrumbItem { Label = "Events", Url = "/content/eventsV2" },
+                new BreadcrumbItem { Label = "Events", Url = "/content/v2/events" },
                 new BreadcrumbItem
                 {
                     Label = "Event Detail",
