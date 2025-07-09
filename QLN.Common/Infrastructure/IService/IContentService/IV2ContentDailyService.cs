@@ -11,6 +11,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
     {
         Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
         Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
+        Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default);
         Task<string> CreateContentAsync(string userId, DailyTopicContent dto, CancellationToken ct);
         Task<string> ReorderSlotsBatchAsync(string userId, DailyTopicSlotReorderRequest request, CancellationToken cancellationToken = default);
         Task<string> DeleteContentAsync(Guid contentId, CancellationToken ct);

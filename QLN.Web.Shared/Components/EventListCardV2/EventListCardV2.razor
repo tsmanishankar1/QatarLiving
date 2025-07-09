@@ -5,7 +5,7 @@
 
 
 
-<MudLink Href="@($"/content/eventsV2/details/{Item.Id}")" Style="text-decoration: none;">
+<MudLink Href="@($"/content/eventsV2/details/{Item.Slug}")" Style="text-decoration: none;">
     <div class="Event-list-card">
         <div class="image-wrapper">
             @if (string.IsNullOrWhiteSpace(Item.CoverImage) || imageFailed)
