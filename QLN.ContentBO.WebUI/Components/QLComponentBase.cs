@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Components
                 }
                 else
                 {
-                    NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
+                    NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
                 }
             }
             catch (Exception ex)

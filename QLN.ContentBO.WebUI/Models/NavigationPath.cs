@@ -6,5 +6,7 @@
         public string Logout { get; set; } = "https://www.qatarliving.com/user/logout";
 
         public string ContentWeb { get; set; } = "https://qlm.qatarliving.com/";
+
+        public string BORedirectPrefix { get; set; } = "qlnext/contents_bo/";
     }
 }
