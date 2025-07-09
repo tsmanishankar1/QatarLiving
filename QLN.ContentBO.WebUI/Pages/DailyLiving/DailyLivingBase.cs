@@ -88,12 +88,6 @@ public class DailyLivingBase : QLComponentBase
     }
     private async Task OpenTopSectionRadioDialog()
     {
-        Console.WriteLine("------ Top Section Article Selected Object ------");
-        foreach (var item in AllEventsList)
-        {
-            Console.WriteLine($"Title: {item.EventTitle}, Location: {item.Location}, StartDate: {item.EventSchedule?.StartDate}, IsFeatured: {item.IsFeatured}");
-        }
-
             var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
             {
                 Id = e.Id.ToString(),
@@ -113,10 +107,6 @@ public class DailyLivingBase : QLComponentBase
                 UpdatedAt = e.UpdatedAt ?? e.CreatedAt,
                 TopicId = null
             }).ToList();
-            foreach (var item in articlesList)
-        {
-            Console.WriteLine($"Title: {item.Title}, Location: {item.Id}, ");
-        }
         var parameters = new DialogParameters
         {
             { nameof(RadioAutoCompleteDialog.Title), "" },
@@ -261,16 +251,10 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-          //  await AuthorizedPage();
-
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
             AllEventsList = await GetAllEvents();
-            foreach (var item in AllEventsList)
-            {
-                Console.WriteLine($"Title: {item.EventTitle}, Location: {item.Location}, StartDate: {item.EventSchedule?.StartDate}, IsFeatured: {item.IsFeatured}");
-            }
             ActiveTopics = await GetActiveTopics();
             ActiveTopics = await GetActiveTopics();
             if (ActiveTopics?.Any() == true)
@@ -691,12 +675,6 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-             string json = JsonSerializer.Serialize(article, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-            Console.WriteLine("------ Article Selected Object ------");
-             Console.WriteLine(json);
             article.SlotNumber = ReplaceArticle.SlotNumber;
             article.SlotType = ReplaceArticle.SlotNumber;
             article.TopicId = selectedTopic.Id;

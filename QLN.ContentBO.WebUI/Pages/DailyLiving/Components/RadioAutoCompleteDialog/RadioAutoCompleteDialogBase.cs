@@ -31,21 +31,11 @@ public class RadioAutoCompleteDialogBase : ComponentBase
     protected string TopicType = "Article";
     protected override async Task OnParametersSetAsync()
     {
-        Console.WriteLine("Received articels are!!");
-        foreach (var item in articles)
-        {
-            Console.WriteLine($"Title: {item.Title}, Location: {item.Id}, ");
-        }
         if (IsHighlightedEvent)
         {
             TopicType = "Event";
         }
         optionsList = origin == "dailyTopic" ? articles : IsHighlightedEvent ? articles : articles;
-        Console.WriteLine("the options list");
-        foreach (var item in articles)
-        {
-            Console.WriteLine($"Title: {item.Title}, Location: {item.Id}, ");
-        }
     }
     protected async Task AddClicked()
     {
@@ -127,7 +117,6 @@ public class RadioAutoCompleteDialogBase : ComponentBase
     }
     protected void OnTopicTypeChanged(string value)
 {
-    Console.WriteLine($"Selected Topic Type: {value}");
     TopicType = value;
 
     if (value == "Event")
