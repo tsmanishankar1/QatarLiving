@@ -163,7 +163,7 @@ namespace QLN.ContentBO.WebUI.Services
                         title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
                         category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                         subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                         contentType = article.ContentType == 0 ? 1 : article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
                         endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
@@ -178,7 +178,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     WriteIndented = true
                 });
-
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topic/content")
@@ -218,7 +217,7 @@ namespace QLN.ContentBO.WebUI.Services
                         title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
                         category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                         subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                        relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                        relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                         contentType = article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,
                         endDate = article.EndDate ?? DateTime.UtcNow.AddDays(7),
@@ -260,7 +259,7 @@ namespace QLN.ContentBO.WebUI.Services
                     title = article.Title,
                     category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
                     subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
-                    relatedContentId = string.IsNullOrWhiteSpace(article.RelatedContentId) ? Guid.NewGuid().ToString() : article.RelatedContentId,
+                    relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                     contentType = article.ContentType,
                     publishedDate = article.PublishedDate.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     endDate = (article.EndDate ?? DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
@@ -274,7 +273,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     WriteIndented = true
                 });
-                Console.WriteLine("Replace Top Section Article Payload: " + jsonPayload);
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/v2/dailyliving/topsection")
                 {

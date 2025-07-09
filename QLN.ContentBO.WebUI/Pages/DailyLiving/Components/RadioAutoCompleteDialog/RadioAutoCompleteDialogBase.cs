@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using MudBlazor;
 public class RadioAutoCompleteDialogBase : ComponentBase
@@ -36,6 +37,10 @@ public class RadioAutoCompleteDialogBase : ComponentBase
             TopicType = "Event";
         }
         optionsList = origin == "dailyTopic" ? articles : IsHighlightedEvent ? articles : articles;
+        foreach (var item in optionsList)
+{
+    Console.WriteLine($"Id: {item.Id}, Title: {item.Title}, Category: {item.Category}, SlotType: {item.SlotType}, ContentType: {item.ContentType}");
+}
     }
     protected async Task AddClicked()
     {
@@ -65,6 +70,11 @@ public class RadioAutoCompleteDialogBase : ComponentBase
                 return;
             }
             SelectedArticle.ContentType = 1;
+           Console.WriteLine($"Id: {SelectedArticle?.Id}");
+Console.WriteLine($"Title: {SelectedArticle?.Title}");
+Console.WriteLine($"Category: {SelectedArticle?.Category}");
+Console.WriteLine($"ContentType: {SelectedArticle?.ContentType}");
+Console.WriteLine($"PublishedDate: {SelectedArticle?.PublishedDate}");
         }
         if (origin == "dailyTopic")
         {
