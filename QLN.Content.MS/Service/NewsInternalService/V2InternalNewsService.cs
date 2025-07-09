@@ -1155,51 +1155,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
-
-                var page = new Common.Infrastructure.DTO_s.QlnNewsNewsQatar
-                {
-                    TopStory = BuildQueue("top_story", "Top Story", posts.Take(1)),
-                    MoreArticles = BuildQueue("more_articles", "More Articles", posts.Skip(1).Take(5)),
-                    Articles1 = BuildQueue("articles_1", "Articles 1", posts.Skip(6).Take(5)),
-                    Articles2 = BuildQueue("articles_2", "Articles 2", posts.Skip(11).Take(5)),
-                    MostPopularArticles = BuildQueue("most_popular_articles", "Most Popular Articles", posts.OrderByDescending(p => p.DateCreated).Take(5)),
-                    WatchOnQatarLiving = new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentVideo>
-                    {
-                        QueueLabel = "Watch on Qatar Living",
-                        Items = Enumerable.Empty<Common.Infrastructure.DTO_s.ContentVideo>().ToList()
-                    }
-                };
-
-                return new Common.Infrastructure.DTO_s.QlnNewsNewsQatarPageResponse
-                {
-                    News = page
-                };
-            }
-            catch (KeyNotFoundException knf)
-            {
-                _logger.LogWarning(knf,
-                    "GetNewsLandingPageAsync: not found Category={CategoryId} or SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
-                throw; 
-            }
-            catch (ArgumentException ae)
-            {
-                _logger.LogWarning(ae,
-                    "GetNewsLandingPageAsync: bad arguments Category={CategoryId} or SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
-                throw; 
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "GetNewsLandingPageAsync: unexpected error for Category={CategoryId}, SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
-                throw new ApplicationException(
-                    "An error occurred while retrieving the news landing page. See inner exception for details.",
-                    ex
-                );
-            }
-        }
+              
     }
 }
 

@@ -475,33 +475,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidOperationException("Dislike (by user ID) failed", ex);
             }
         }
-        public async Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
-       int categoryId,
-       int subCategoryId,
-       CancellationToken cancellationToken = default
-   )
-        {
-            var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
-            try
-            {
-                return await _dapr.InvokeMethodAsync<QlnNewsNewsQatarPageResponse>(
-                    HttpMethod.Get,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url,
-                    cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogInformation("GetNewsLandingPageAsync was cancelled by caller.");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calling content service for landing page");
-                throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
-            }
-        }
-
+       
         public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
             try
