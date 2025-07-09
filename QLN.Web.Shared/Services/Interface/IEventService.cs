@@ -34,7 +34,7 @@
         Task<HttpResponseMessage?> GetBannerAsync();
 
         Task<HttpResponseMessage?> GetAllEventsV2Async(bool? isFeatured = null);
-        Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id);
+        Task<HttpResponseMessage?> GetEventByIdV2Async(string slug);
         Task<HttpResponseMessage> GetEventLocations();
         Task<HttpResponseMessage> GetEventCategoriesV2();
         Task<HttpResponseMessage> GetEventsByPagination(object payload);

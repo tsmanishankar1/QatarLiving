@@ -1,36 +1,36 @@
 @page "/content/events/create"
 @inherits EventCreateFormBase;
+
+
  <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
      <DataAnnotationsValidator />
 <MudGrid Style="padding-top: 0">
     <!-- Left Form Section -->
     <MudItem xs="12" md="6">
-        <MudPaper Class="pa-4 event-main-content-style" Elevation="0">
-            <MudText Class="event-form-title">Event Form</MudText>
-            <MudSelect T="int"
+        <h2 class="mb-2 mt-3 event-form-title">Event Form</h2>
+           <MudSelect T="int"
             Label="Category"
             Placeholder="Choose"
             Variant="Variant.Outlined"
             @bind-Value="CurrentEvent.CategoryId"
             Class="my-2 event-custom-textfield"
             Style="background-color: #FFFFFF;">
-            @if (Categories != null && Categories.Any())
-            {
-                @foreach (var category in Categories)
+             <MudSelectItem Value="0" Disabled="true">Category</MudSelectItem>
+                @if (Categories != null && Categories.Any())
                 {
-                    <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                    @foreach (var category in Categories.Where(c => c.Id != 0))
+                        {
+                            <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                        }
+
                 }
-            }
-            else
-            {
-                <MudSelectItem Disabled="true" Value="0">Choose</MudSelectItem>
-            }
             </MudSelect>
+
             <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;"/>
             <MudRadioGroup Required="true" RequiredError="Event type is required." T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
-                <MudRadio T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
-                <MudRadio T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
-                <MudRadio T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
+                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
+                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
+                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
             <MudTextField T="int?" 
               Variant="Variant.Outlined" 
@@ -39,6 +39,7 @@
               For="@(() => CurrentEvent.Price)"
               Adornment="Adornment.End" 
               AdornmentText="QAR" 
+              Style="background-color: #FFFFFF;"
               Class="@PriceFieldClass" 
               Disabled="@(!IsFeesSelected)" />
               @if (!string.IsNullOrEmpty(_PriceError))
@@ -80,6 +81,7 @@
                 ReadOnly="true"
                 DisableUnderLine="true"
                 Variant="Variant.Outlined"
+                Style="background-color: #FFFFFF;"
                 Class="event-cursor-pointer event-custom-textfield"
                 Adornment="Adornment.End"
                 AdornmentIcon="@Icons.Material.Filled.DateRange"
@@ -132,8 +134,8 @@
             @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
                 <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
-                <MudRadio T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
-                <MudRadio T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
+                <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
+                <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 </MudRadioGroup>
             }
             @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
@@ -216,18 +218,28 @@
             {
                 <div class="mud-error-text">@_descriptionerror</div>
             }
-            <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
-                <MudButton FullWidth=true Variant="Variant.Outlined" Class="event-custom-close">Cancel</MudButton>
-                <MudButton FullWidth=true Variant="Variant.Filled"   Class="event-custom-add" ButtonType="ButtonType.Submit">Save</MudButton>
-            </MudStack>
+             <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
+            <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
+            <button type="submit" class="event-custom-add full-width">
+                  @if (IsLoading)
+                        {
+                            <MudProgressCircular Color="Color.Inherit"
+                                                 Size="Size.Small"
+                                                 Indeterminate="true" />
+                        }
+                        else
+                        {
+                         <span>Save</span>
+                        }
+            </button>
+        </MudStack>
 
-        </MudPaper>
     </MudItem>
 
     <!-- Right Cover Image Section -->
     <MudItem xs="12" md="6">
     
-                    <MudText Class="mb-2 mt-3 event-form-title">Cover Image</MudText>
+                    <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
                         <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                         <ActivatorContent>
                         <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
@@ -279,26 +291,46 @@
 
 
 <style>
+    .main-back{
+
+    }
     .event-form-title{
         font-family: 'Public Sans', sans-serif;
         font-size: 18px;
         font-weight: 600;
         color: #00426D;
+        padding: 10px 0;
         text-transform: none;
     }
-    .event-custom-add {
+   .event-custom-add {
         background-color: #FF7F38;
         font-family: 'Public Sans', sans-serif;
         font-size: 16px;
-        font-weight: 600;
+        font-weight: 500;
+        border-radius: 4px;
         color: white;
         text-transform: none;
+        border: none;
+        padding: 10px 1rem;
+        cursor: pointer;
     }
+
     .event-custom-close {
-        border-color: #D5D7DA;
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 4px;
+        border: 1px solid #D5D7DA;
         color: #242424;
         text-transform: none;
+        background-color: transparent;
+        padding: 10px 1rem;
+        cursor: pointer;
     }
+
+    .full-width {
+        width: 100%;
+    }
+
     .event-image-picker-style {
         background-color: #000000CC; 
         width: 100%; 
@@ -349,7 +381,7 @@
         height: 220px;
     }
     .event-main-content-style{
-        background-color: #FAFAFA;
+        background-color: transparent;
         gap: 16px
     }
     .event-side-content-style {

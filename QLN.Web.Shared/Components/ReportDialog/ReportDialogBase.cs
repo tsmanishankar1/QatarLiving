@@ -61,5 +61,14 @@ namespace QLN.Web.Shared.Components.ReportDialog
                 _ => "Are you sure you want to report this post?"
             };
         }
+        protected string GetReportConfirmationHeaderText()
+        {
+            return Type switch
+            {
+                "Comment" => "Report Comment",
+                "News" => "Report News",
+                _ => "Report Post"
+            };
+        }
     }
 }

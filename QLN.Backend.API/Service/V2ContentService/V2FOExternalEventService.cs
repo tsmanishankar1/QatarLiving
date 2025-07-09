@@ -10,12 +10,10 @@ namespace QLN.Backend.API.Service.V2ContentService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2ExternalEventService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
-        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger, IFileStorageBlobService blobStorage)
+        public V2FOExternalEventService(DaprClient dapr, ILogger<V2ExternalEventService> logger)
         {
             _dapr = dapr;
             _logger = logger;
-            _blobStorage = blobStorage;
         }
         public async Task<List<V2Events>> GetAllFOIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
         {
@@ -27,6 +25,10 @@ namespace QLN.Backend.API.Service.V2ContentService
                     $"/api/v2/fo/event/getallfofeaturedevents?isFeatured={isFeatured}",
                     cancellationToken
                 ) ?? new List<V2Events>();
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
             }
             catch (Exception ex)
             {

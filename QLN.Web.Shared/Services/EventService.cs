@@ -123,11 +123,11 @@ namespace QLN.Web.Shared.Services
     }
 }
 
-        public async Task<HttpResponseMessage?> GetEventByIdV2Async(Guid id)
+        public async Task<HttpResponseMessage?> GetEventByIdV2Async(string Slug)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/v2/fo/event/getfobyid/{id}");
+                var response = await _httpClient.GetAsync($"api/v2/fo/event/slug/{Slug}");
                 return response;
             }
             catch (Exception ex)
