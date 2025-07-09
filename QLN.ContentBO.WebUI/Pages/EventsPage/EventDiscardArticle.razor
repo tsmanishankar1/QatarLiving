@@ -1,0 +1,44 @@
+@using MudBlazor
+
+<MudDialog Style="width:400px">
+    <DialogContent>
+        <MudPaper Elevation="0" Class="p-6 d-flex flex-column align-items-center" >
+            <img src="/qln-images/discard_icon.svg" 
+            alt="Discard Icon" 
+            style="width: 48px; height: 48px;" />
+
+            <MudText Typo="Typo.h6" Class="mb-1">Discard Event</MudText>
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="my-5">
+                Are you sure you want to discard this Event? Any unsaved changes will be gone.
+            </MudText>
+
+            <MudGrid GutterSize="0" Class="mb-2">
+                <MudItem xs="6">
+                    <DialogActions>
+                        <MudButton OnClick="Cancel" Variant="Variant.Filled" Class="w-100" Style="background-color: #FFFFFF; color:#242424; border-color: #D5D7DA;">Close</MudButton>
+                    </DialogActions>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Filled"  FullWidth="true" OnClick="AddClicked"  Style="background-color: #FF7F38; color:white">
+                        Discard
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    void Cancel() => MudDialog.Cancel();
+    void Discard() => MudDialog.Close(DialogResult.Ok(true));
+    [Parameter] public EventCallback OnAdd { get; set; }
+     protected async Task AddClicked()
+    {
+        if (OnAdd.HasDelegate)
+        {
+            await OnAdd.InvokeAsync();
+        }
+        Cancel();
+    }
+}

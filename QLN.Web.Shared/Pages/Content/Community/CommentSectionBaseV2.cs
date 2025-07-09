@@ -140,13 +140,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
             try
             {
                 string postId = Comment.Id;
-                var response = await CommunityService.GetCommentsByPostIdAsyncV2(postId);
+                var response = await CommunityService.GetCommentsByPostIdAsyncV2(postId ,page: CurrentPage, pageSize: PageSize);
+                TotalCount = response.TotalComments;
 
-                TotalCount = 10;
-
-                if (response?.Any() == true)
+                if (response?.comments != null && response.comments.Any())
                 {
-                    Comments = response.Select(c => new CommentModelV2
+                    Comments = response.comments.Select(c => new CommentModelV2
                     {
                         CommentId = c.CommentId,
                         UserName = !string.IsNullOrWhiteSpace(c.UserName) ? c.UserName : "User not found",

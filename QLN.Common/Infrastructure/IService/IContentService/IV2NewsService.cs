@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using System.Threading;
 using System.Threading.Tasks;
 

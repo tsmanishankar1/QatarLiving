@@ -22,14 +22,28 @@
             }
             else
             {
-                @context.Title
+                @if (context.Title == "Add Item")
+                {
+                    <span style="color: #FF7F38;" @onclick="() => ReplaceArticle(context)">@context.Title</span>
+                }
+                else
+                {
+                    <span style="color: #535862; font-weight: normal;">@context.Title</span>
+                }
             }
         </MudTd>
         <MudTd DataLabel="Category">@context.Category</MudTd>
         <MudTd DataLabel="Subcategory">@context.Subcategory</MudTd>
         <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
         <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.FindReplace" Color="Color.Primary" />
+             @if (context.Title == "Add Item")
+                    {
+                        <img src="/qln-images/replace_icon1.svg" alt="delete" class="action-icon-style" />
+                    }
+                    else
+                    {
+                        <img src="/qln-images/replace_icon.svg" @onclick="() => ReplaceArticle(context)" alt="delete" class="action-icon-style" />
+                    }
         </MudTd>
     </RowTemplate>
 </MudTable>

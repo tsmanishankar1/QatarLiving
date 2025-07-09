@@ -336,24 +336,25 @@
                                                         <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                                     </MudMenuItem>
                                                     <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Article))">
-                                                        <MudIcon Icon="@Icons.Material.Filled.OpenWith" Class="me-2" />
-                                                        <span>Go live</span>
+                                                           <img src="/qln-images/arrow_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                          <span class="menu-text">Go live</span>
                                                     </MudMenuItem>
                                                     <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Article))">
                                                         @if (selectedTab == "published")
                                                         {
-                                                            <MudIcon Icon="@Icons.Material.Outlined.VisibilityOff" Class="me-2" />
-                                                            <span>Unpublish</span>
+                                                             <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                             <span class="menu-text">Unpublish</span>
                                                         }
                                                         else
                                                         {
-                                                            <MudIcon Icon="@Icons.Material.Outlined.Visibility" Class="me-2" />
-                                                            <span>Publish</span>
+                                                            <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                             <span class="menu-text">Publish</span>
                                                         }
                                                     </MudMenuItem>
 
                                                     <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
-                                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" /> Delete
+                                                          <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                          <span class="menu-text">Delete</span>
                                                     </MudMenuItem>
                                                 </MudMenu>
                                             </td>

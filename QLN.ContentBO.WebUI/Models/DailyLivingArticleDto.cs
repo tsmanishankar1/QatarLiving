@@ -17,6 +17,7 @@
         public DateTime CreatedAt { get; set; }
         public string UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? TopicId { get; set; }
     }
     public enum DailyLivingTab
     {
@@ -47,3 +48,15 @@ public enum DailySlotType
        Article6 = 8,
        Article7 = 9
    }
+public class DailySlotAssignmentRequest
+{
+    public Guid TopicId { get; set; }
+    public List<DailySlotAssignment> SlotAssignments { get; set; } = new();
+    public string UserId { get; set; } = string.Empty;
+}
+
+public class DailySlotAssignment
+{
+    public int SlotNumber { get; set; }
+    public Guid DailyId { get; set; }
+}

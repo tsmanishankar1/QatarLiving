@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
+using QLN.Common.Infrastructure.DTO_s;
 
 public static class V2NewsEndpoints
 {
@@ -131,6 +132,7 @@ public static class V2NewsEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
       .WithName("CreateNewsArticle")
       .WithTags("News")
       .WithSummary("Create News Article")
@@ -306,6 +308,7 @@ public static class V2NewsEndpoints
                        }
                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                        var uid = userData.GetProperty("uid").GetString();
+                       var authorName = userData.GetProperty("name").GetString()??"";
                        if (uid == null)
                        {
                            return TypedResults.Forbid();
@@ -321,7 +324,7 @@ public static class V2NewsEndpoints
                            });
 
                        dto.UserId = uid;
-                       dto.authorName = uid;
+                       dto.authorName = authorName;
                        dto.UpdatedBy = uid;
                        dto.UpdatedAt = DateTime.UtcNow;
 
@@ -352,6 +355,7 @@ public static class V2NewsEndpoints
                        return TypedResults.Problem("Internal Server Error", ex.Message);
                    }
                })
+            .RequireAuthorization()
         .WithName("UpdateNewsArticles")
         .WithTags("News")
         .WithSummary("Update News (Authenticated)")
@@ -510,6 +514,7 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
+            .RequireAuthorization()
         .WithName("ReorderLiveSlots")
         .WithTags("News")
         .WithSummary("Reorder Live Slots (Authenticated)")
@@ -710,6 +715,7 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Failed to create news category", ex.Message);
             }
         })
+            .RequireAuthorization()
 .WithName("CreateNewsCategory")
 .WithTags("News")
 .WithSummary("Create a news category (Authorized)")
@@ -873,6 +879,7 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Error updating subcategory", ex.Message);
             }
         })
+            .RequireAuthorization()
 .WithName("UpdateSubCategory")
 .WithTags("News")
 .WithSummary("Update subcategory name by authorized user")
@@ -966,6 +973,7 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Failed to post news comment.", ex.Message);
             }
         })
+            .RequireAuthorization()
 .WithName("PostNewsComment")
 .WithTags("News")
 .WithSummary("Post comment for a news article (JWT based)")
@@ -1093,6 +1101,7 @@ public static class V2NewsEndpoints
                     return TypedResults.Problem("Failed to toggle like for news comment.", ex.Message);
                 }
             })
+        .RequireAuthorization()    
      .WithName("LikeNewsCommentJWT")
      .WithTags("News")
      .WithSummary("Toggle like on a comment (JWT-based)")
@@ -1185,13 +1194,14 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Failed to toggle dislike for news comment.", ex.Message);
             }
         })
-    .WithName("DislikeNewsCommentJWT")
-    .WithTags("News")
-    .WithSummary("Toggle dislike on a comment (JWT-based)")
-    .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
-    .Produces<bool>(StatusCodes.Status200OK)
-    .Produces(StatusCodes.Status403Forbidden)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .RequireAuthorization()
+            .WithName("DislikeNewsCommentJWT")
+            .WithTags("News")
+            .WithSummary("Toggle dislike on a comment (JWT-based)")
+            .WithDescription("Toggles dislike/undislike for a news comment by reading user ID from JWT token.")
+            .Produces<bool>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapPost("/commentsdislike/byid/{commentId}", async Task<Results<
             Ok<bool>,
