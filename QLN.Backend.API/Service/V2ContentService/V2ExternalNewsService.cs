@@ -251,20 +251,27 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<V2NewsArticleDTO?> GetArticleByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/news/getbyid/{id}";
-            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var rawJson = await response.Content.ReadAsStringAsync();
-
-            return JsonSerializer.Deserialize<V2NewsArticleDTO>(rawJson, new JsonSerializerOptions
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
+                var url = $"/api/v2/news/getbyid/{id}";
+
+                return await _dapr.InvokeMethodAsync<V2NewsArticleDTO>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving news article for Id: {Id}", id);
+                throw;
+            }
         }
 
         public async Task<V2NewsArticleDTO?> GetArticleBySlugAsync(string slug, CancellationToken cancellationToken)

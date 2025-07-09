@@ -6,14 +6,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 {
     public class EventListBaseV2 : ComponentBase
     {
-       private List<EventDTOV2> _allItems = new();
-
-        [Parameter]
-        public List<EventDTOV2> Items
-        {
-            get => _allItems.Where(e => e.Status == EventStatus.Published).ToList();
-            set => _allItems = value ?? new();
-        }
+        [Parameter] public List<EventDTOV2> Items { get; set; } = [];
 
         [Parameter] public bool Loading { get; set; } = false;
 
@@ -68,7 +61,8 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 
         protected void HandleCardClick(EventDTOV2 item)
         {
-            Navigation.NavigateTo($"/content/eventsV2/details/{item.Id}");
+          
+            Navigation.NavigateTo($"/content/eventsV2/details/{item.Slug}");
         }
     }
 }

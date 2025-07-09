@@ -136,7 +136,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         }
         public static RouteGroupBuilder MapGetAllFeaturedEventEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getallfeaturedevents", static async Task<Results<Ok<List<V2Events>>, ProblemHttpResult>>
+            group.MapGet("/getallfeaturedevents", static async Task<Results<Ok<List<V2Events>>, NotFound<ProblemDetails>, ProblemHttpResult>>
             (
                 bool isFeatured,
                 IV2EventService service,
@@ -146,6 +146,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 try
                 {
                     var events = await service.GetAllIsFeaturedEvents(isFeatured, cancellationToken);
+                    if (events == null || events.Count == 0)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "No Featured Events Found",
+                            Detail = "There are no featured events available at this time.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
                     return TypedResults.Ok(events);
                 }
                 catch (Exception ex)
@@ -158,6 +167,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithSummary("Get All Events")
             .WithDescription("Retrieves all events.")
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
@@ -174,17 +184,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     {
                         var result = await service.GetEventById(id, cancellationToken);
                         if (result == null || result.IsActive == false)
-                            throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
-                        return TypedResults.Ok(result);
-                    }
-                    catch (KeyNotFoundException ex)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
                         {
-                            Title = "Not Found",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status404NotFound
-                        });
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "Event Not Found",
+                                Detail = $"Active event with ID '{id}' not found.",
+                                Status = StatusCodes.Status404NotFound
+                            });
+                        }
+                        return TypedResults.Ok(result);
                     }
                     catch (Exception ex)
                     {
@@ -415,17 +423,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var result = await service.GetEventCategoryById(id, cancellationToken);
                     if (result == null)
-                        throw new KeyNotFoundException($"Active event with ID '{id}' not found.");
-                    return TypedResults.Ok(result);
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
                     {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Event Not Found",
+                            Detail = $"Active event with ID '{id}' not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
@@ -846,42 +852,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            return group;
-        }
-        public static RouteGroupBuilder MapUnfeatureEventEndpoint(this RouteGroupBuilder group)
-        {
-            group.MapPut("/unfeature/{id:guid}", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
-                Guid id,
-                IV2EventService service,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    var result = await service.UnfeatureEvent(id, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("UnfeatureEvent")
-            .WithTags("Event")
-            .WithSummary("Unfeature an Event")
-            .WithDescription("Marks an event as not featured and removes it from its slot.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             return group;
         }
     }
