@@ -449,33 +449,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidOperationException("Like (by user ID) failed", ex);
             }
         }
-
-        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
-        {
-            try
-            {
-                var encodedUserId = Uri.EscapeDataString(userId);
-                var url = $"/api/v2/news/commentsdislike/byid/{commentId}?userId={encodedUserId}";
-
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Post,
-                    V2Content.ContentServiceAppId,
-                    url
-                );
-
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<bool>(json);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to dislike comment {CommentId} by user {UserId}", commentId, userId);
-                throw new InvalidOperationException("Dislike (by user ID) failed", ex);
-            }
-        }
-       
+            
         public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
             try

@@ -891,11 +891,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 foreach (var parent in topLevel)
                 {
-                    var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";
-                    var dislikeIndexKey = $"news-comment-dislike-index-{parent.CommentId}";
+                    var likeIndexKey = $"news-comment-like-index-{parent.CommentId}";                  
 
-                    var likes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();
-                    var dislikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, dislikeIndexKey, cancellationToken: ct) ?? new();
+                    var likes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, likeIndexKey, cancellationToken: ct) ?? new();                    
 
                     var commentItem = new NewsCommentListItem
                     {
@@ -906,7 +904,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         DateCreated = parent.CommentedAt,
                         LikeCount = likes.Count,
                         LikedUsers = likes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
-                        DislikedUsers = dislikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
                         Replies = new List<NewsCommentListItem>()
                     };
 
@@ -914,11 +911,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     {
                         foreach (var reply in grouped[parent.CommentId])
                         {
-                            var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";
-                            var replyDislikeKey = $"news-comment-dislike-index-{reply.CommentId}";
+                            var replyLikeKey = $"news-comment-like-index-{reply.CommentId}";                          
 
-                            var replyLikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();
-                            var replyDislikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyDislikeKey, cancellationToken: ct) ?? new();
+                            var replyLikes = await _dapr.GetStateAsync<List<ReactionUser>>(V2Content.ContentStoreName, replyLikeKey, cancellationToken: ct) ?? new();                            
 
                             commentItem.Replies.Add(new NewsCommentListItem
                             {
@@ -928,9 +923,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 Subject = reply.Comment,
                                 DateCreated = reply.CommentedAt,
                                 LikeCount = replyLikes.Count,
-                                LikedUsers = replyLikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),
-                                DislikeCount = replyDislikes.Count,
-                                DislikedUsers = replyDislikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName}).ToList()
+                                LikedUsers = replyLikes.Select(u => new UserSummary { UserId = u.UserId, UserName = u.UserName }).ToList(),                                
                             });
 
                             Console.WriteLine($"[INFO] Added reply {reply.CommentId} to parent {parent.CommentId}");
@@ -993,44 +986,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 _logger.LogError(ex, "Error toggling like for comment {CommentId}", commentId);
                 throw;
             }
-        }
-
-        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
-        {
-            var key = $"news-comment-dislike-{commentId}-{userId}";
-            var indexKey = $"news-comment-dislike-index-{commentId}";
-
-            try
-            {
-                var existing = await _dapr.GetStateAsync<string>(StoreName, key, cancellationToken: ct);
-                var index = await _dapr.GetStateAsync<List<ReactionUser>>(StoreName, indexKey, cancellationToken: ct) ?? new();
-
-                if (!string.IsNullOrWhiteSpace(existing))
-                {
-                    await _dapr.DeleteStateAsync(StoreName, key, cancellationToken: ct);
-                    index.RemoveAll(u => u.UserId == userId);
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
-
-                    _logger.LogInformation("User {UserId} removed dislike from comment {CommentId}", userId, commentId);
-                    return false;
-                }
-
-                await _dapr.SaveStateAsync(StoreName, key, userId, cancellationToken: ct);
-
-                if (!index.Any(u => u.UserId == userId))
-                    index.Add(new ReactionUser { UserId = userId, UserName = userName });
-
-                await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: ct);
-
-                _logger.LogInformation("User {UserId} disliked comment {CommentId}", userId, commentId);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error toggling dislike for comment {CommentId}", commentId);
-                throw;
-            }
-        }
+        }     
 
         public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
