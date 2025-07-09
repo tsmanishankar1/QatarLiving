@@ -713,39 +713,49 @@ namespace QLN.Content.MS.Service.NewsInternalService
         public async Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default)
         {
             _logger.LogInformation("Starting to save news comment for Article ID: {Nid}", dto.Nid);
+
             try
-            {
+            {               
+                if (dto.ParentCommentId.HasValue && dto.ParentCommentId.Value != Guid.Empty)
+                {
+                    var parentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.ParentCommentId.Value}";
+                    var parentComment = await _dapr.GetStateAsync<V2NewsCommentDto>(V2Content.ContentStoreName, parentKey, cancellationToken: ct);
+
+                    if (parentComment == null || !parentComment.IsActive)
+                    {
+                        _logger.LogWarning("Invalid parent comment ID: {ParentCommentId} for article {Nid}", dto.ParentCommentId, dto.Nid);
+                        return new NewsCommentApiResponse
+                        {
+                            Status = "failed",
+                            Message = "Parent comment does not exist or is inactive."
+                        };
+                    }
+                }
+
                 var commentKey = $"{V2Content.NewsCommentPrefix}-{dto.Nid}-{dto.CommentId}";
                 var indexKey = $"{V2Content.NewsCommentIndexPrefix}{dto.Nid}";
 
                 _logger.LogInformation("Generated comment key: {CommentKey}", commentKey);
                 _logger.LogInformation("Generated index key: {IndexKey}", indexKey);
 
-                _logger.LogInformation("Saving comment state to Dapr store...");
                 await _dapr.SaveStateAsync(V2Content.ContentStoreName, commentKey, dto, cancellationToken: ct);
                 _logger.LogInformation("Comment saved to key: {CommentKey}", commentKey);
 
-                _logger.LogInformation("Retrieving existing index list from Dapr...");
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct) ?? new();
                 _logger.LogInformation("Retrieved {Count} comment IDs from index.", index.Count);
 
-
                 if (!index.Contains(dto.CommentId))
                 {
-                    _logger.LogInformation("Comment ID {CommentId} not found in index. Adding...", dto.CommentId);
                     index.Add(dto.CommentId);
+                    _logger.LogInformation("Comment ID {CommentId} added to index. Saving index...", dto.CommentId);
 
-                    _logger.LogInformation("Saving updated index back to Dapr...");
                     await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, index, cancellationToken: ct);
                     _logger.LogInformation("Index saved with {Count} total comment IDs.", index.Count);
                 }
                 else
                 {
-                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping update.", dto.CommentId);
+                    _logger.LogInformation("Comment ID {CommentId} already exists in index. Skipping index update.", dto.CommentId);
                 }
-
-                _logger.LogInformation("News comment saved successfully for Article {Nid}", dto.Nid);
-
 
                 return new NewsCommentApiResponse
                 {
@@ -765,34 +775,40 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+
         public async Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
             {
+                Console.WriteLine($"[INFO] Fetching comments for article ID: {nid}");
+
                 var indexKey = $"{V2Content.NewsCommentIndexPrefix}{nid}";
+                Console.WriteLine($"[INFO] Index key: {indexKey}");
+
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct)
                              ?? new List<Guid>();
 
-                int total = index.Count;
+                Console.WriteLine($"[INFO] Comment count in index: {index.Count}");
+
                 int currentPage = page ?? 1;
                 int itemsPerPage = perPage ?? 10;
                 int skip = (currentPage - 1) * itemsPerPage;
 
-                var pagedCommentIds = index
-                    .Skip(skip)
-                    .Take(itemsPerPage)
-                    .ToList();
+                var pagedCommentIds = index.Skip(skip).Take(itemsPerPage).ToList();
+                Console.WriteLine($"[INFO] Paged comment IDs: {string.Join(", ", pagedCommentIds)}");
 
-                var commentKeys = index
+                var commentKeys = pagedCommentIds
                     .Select(id => $"{V2Content.NewsCommentPrefix}-{nid}-{id}")
                     .ToList();
 
+                Console.WriteLine($"[INFO] Comment keys: {string.Join(", ", commentKeys)}");
+
                 var commentStates = await _dapr.GetBulkStateAsync(
-                   storeName: V2Content.ContentStoreName,
-                   keys: commentKeys,
-                   parallelism: null, 
-                   metadata: null,
-                   cancellationToken: ct
+                    storeName: V2Content.ContentStoreName,
+                    keys: commentKeys,
+                    parallelism: null,
+                    metadata: null,
+                    cancellationToken: ct
                 );
 
                 var allComments = new List<V2NewsCommentDto>();
@@ -800,22 +816,48 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 foreach (var state in commentStates)
                 {
                     if (string.IsNullOrWhiteSpace(state.Value))
-                        continue;
-
-                    var comment = JsonSerializer.Deserialize<V2NewsCommentDto>(state.Value, new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
-                    });
+                        Console.WriteLine($"[WARN] Empty value for key: {state.Key}");
+                        continue;
+                    }
 
-                    if (comment != null && comment.IsActive)
-                        allComments.Add(comment);
+                    try
+                    {
+                        var comment = JsonSerializer.Deserialize<V2NewsCommentDto>(state.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        if (comment != null && comment.IsActive && comment.CommentId != Guid.Empty)
+                        {
+                            allComments.Add(comment);
+                            Console.WriteLine($"[INFO] Loaded comment {comment.CommentId}, parent: {comment.ParentCommentId}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[INFO] Skipped invalid or inactive comment: {state.Key}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[ERROR] Failed to deserialize comment for key: {state.Key}, ex: {ex.Message}");
+                    }
                 }
 
-                var grouped = allComments
-                    .GroupBy(c => c.ParentCommentId)
-                    .ToDictionary(g => g.Key, g => g.ToList());
+                // ✅ Safe grouping using Guid.Empty for top-level (no null keys)
+                var grouped = new Dictionary<Guid, List<V2NewsCommentDto>>();
 
-                var topLevel = grouped.ContainsKey(null) ? grouped[null] : new List<V2NewsCommentDto>();
+                foreach (var comment in allComments.Where(c => c.CommentId != Guid.Empty))
+                {
+                    var parentId = comment.ParentCommentId ?? Guid.Empty;
+
+                    if (!grouped.ContainsKey(parentId))
+                        grouped[parentId] = new List<V2NewsCommentDto>();
+
+                    grouped[parentId].Add(comment);
+                }
+
+                var topLevel = grouped.ContainsKey(Guid.Empty) ? grouped[Guid.Empty] : new List<V2NewsCommentDto>();
                 var comments = new List<NewsCommentListItem>();
 
                 foreach (var parent in topLevel)
@@ -837,7 +879,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         DislikeCount = dislikes.Count,
                         Replies = new List<NewsCommentListItem>()
                     };
-                    
+
                     if (grouped.ContainsKey(parent.CommentId))
                     {
                         foreach (var reply in grouped[parent.CommentId])
@@ -858,11 +900,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 LikeCount = replyLikes.Count,
                                 DislikeCount = replyDislikes.Count
                             });
+
+                            Console.WriteLine($"[INFO] Added reply {reply.CommentId} to parent {parent.CommentId}");
                         }
                     }
 
                     comments.Add(commentItem);
                 }
+
+                Console.WriteLine($"[INFO] Total top-level comments returned: {comments.Count}");
 
                 return new NewsCommentListResponse
                 {
@@ -874,10 +920,11 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get comments for article {Nid}", nid);
+                Console.WriteLine($"[ERROR] Failed to get comments for article {nid}: {ex}");
                 throw new InvalidOperationException("Error fetching comments");
             }
         }
+
 
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
         {
@@ -952,6 +999,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
 
 
     }
