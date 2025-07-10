@@ -30,6 +30,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected bool IsDisliked { get; set; } = false;
         protected bool isMenuOpen = false;
         public bool IsLoggedIn { get; set; } = false;
+        public string UID { get; set; } 
 
         protected void OnMenuToggle(bool open)
         {
@@ -43,8 +44,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             if (user.Identity?.IsAuthenticated == true)
             {
-               
                 IsLoggedIn = true;
+                UID =user.FindFirst("uid")?.Value;
             }
 
         }
@@ -52,7 +53,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/v2/post/detail/{Post.Slug}");
+            Navigation.NavigateTo($"/content/community/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
         }
         protected async Task ToggleLikeAsync()
         {

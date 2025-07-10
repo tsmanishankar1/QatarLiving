@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace QLN.Common.DTO_s
+﻿namespace QLN.Common.DTO_s
 {
     public enum V2EventType
     {

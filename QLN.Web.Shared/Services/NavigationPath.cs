@@ -82,5 +82,14 @@
 
         public string WishlistBase { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
 
+        public string ContentDaily { get; set; } = "/content/daily";
+        public string ContentNews { get; set; } = "/content/news";
+        public string ContentEvents { get; set; } = "/content/events";
+        public string ContentCommunity { get; set; } = "/content/community";
+
+        public string ContentDailyBackEnd { get; set; } = "/api/content/qln_contents_daily/landing"; // new one is "/api/v2/dailyliving/landing"
+
+        public string ContentDailyVideosBackEnd { get; set; } = "/api/content/qln_videos/landing";
+
     }
 }

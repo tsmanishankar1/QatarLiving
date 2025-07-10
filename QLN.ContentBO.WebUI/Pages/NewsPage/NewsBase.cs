@@ -64,8 +64,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
 
-        protected string articleDetailBaseURL { get; set; }
-
         public class NewsArticleSearchResponse
         {
             public List<NewsArticleDTO> Items { get; set; } = [];
@@ -75,8 +73,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                AuthorizedPage();
-                articleDetailBaseURL = $"{NavigationPath.Value.ContentWeb.TrimEnd('/')}/content/article";
+                await AuthorizedPage();
             }
             catch (Exception ex)
             {
@@ -467,8 +464,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     _ => null
                 };
 
-                var title = status == 3 ? "Publish Article" : "UnPublish Article";
-                var successMessage = status == 3 ? "Article Published" : "Article UnPublished";
+                var title = string.Empty;
+                var successMessage = string.Empty;
+                if (status == 1)
+                {
+                    title = "UnPublish Article";
+                    successMessage = "Article UnPublished";
+                }
+                else
+                {
+                    title = status == 3 ? "Publish Article" : "UnPublish Article";
+                    successMessage = status == 3 ? "Article Published" : "Article UnPublished";
+                }
 
                 var parameters = new DialogParameters
                 {

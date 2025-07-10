@@ -161,6 +161,59 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetAllNewsCategoriesAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("api/v2/news/allcategories");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetAllNewsCategoriesAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetNewsByCategoryIdAsync(int categoryId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/v2/news/byCategory/{categoryId}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetNewsByCategoryIdAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetNewsBySubCategoryAsync(int categoryId, int subCategoryId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetNewsBySubCategoryAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+                public async Task<HttpResponseMessage?> GetNewsV2BySlugAsync(string slug)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/content/news/{slug}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetNewsQatarAsync" + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
     }
 }
 

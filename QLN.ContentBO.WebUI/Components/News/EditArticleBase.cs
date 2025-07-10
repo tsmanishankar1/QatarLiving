@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
                 if (!Guid.TryParse(ArticleId, out var parsedArticleId))
                 {
                     Snackbar.Add("Invalid article ID", Severity.Error);
@@ -66,19 +66,21 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
-                Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+                Snackbar.Add("Category and Sub Category is required", Severity.Error);
                 return;
             }
             if (TempCategoryList.Count >= MaxCategory)
             {
-                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", severity: Severity.Normal);
+                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", Severity.Error);
                 Category = new();
                 return;
             }
-            if (Category.SlotId == 0)
+            if (TempCategoryList.Any(x => x.CategoryId == Category.CategoryId && x.SubcategoryId == Category.SubcategoryId))
             {
-                Category.SlotId = 15; // By Default UnPublished.
+                Snackbar.Add("This Category and Sub Category combination already exists", Severity.Error);
+                return;
             }
+            Category.SlotId = Category.SlotId == 0 ? 15 : Category.SlotId; // Defaults UnPublished.
             TempCategoryList.Add(Category);
             Category = new();
         }
@@ -88,7 +90,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             if (TempCategoryList.Count > 0)
             {
                 TempCategoryList.Remove(articleCategory);
-                Category = new();
             }
         }
 
@@ -125,23 +126,24 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
-                    var redirectToCateg = article.Categories.First();
+                    var redirectToCateg = article.Categories.FirstOrDefault();
                     NavManager.NavigateTo($"/manage/news/category/{redirectToCateg.CategoryId}", true);
                     ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    Snackbar.Add("You are unauthorized to perform this action");
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
                 }
                 else if (response.StatusCode == HttpStatusCode.InternalServerError)
                 {
-                    Snackbar.Add("Internal API Error");
+                    Snackbar.Add("Internal API Error", Severity.Error);
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
-                article = new();
+                Snackbar.Add("Edit Article Failed", Severity.Error);
+                ResetForm();
             }
         }
 
