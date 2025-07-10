@@ -48,7 +48,11 @@ else
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd Class="number-cell">@context.Index</MudTd>
-                    <MudTd><MudLink Href="@($"{EventDetailBaseURL}{context.Event.Slug}")" Class="post-title">@context.Event.EventTitle</MudLink></MudTd>
+                    <MudTd>
+                    <MudLink Href="@($"{EventDetailBaseURL}{context.Event.Slug}")" Target="_blank" Class="post-title">
+                     @context.Event.EventTitle
+                    </MudLink>
+                    </MudTd>
                     <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
                     <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
                     <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
