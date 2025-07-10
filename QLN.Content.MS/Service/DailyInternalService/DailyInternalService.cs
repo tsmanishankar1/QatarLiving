@@ -497,19 +497,36 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 // Sort slots by slot number to ensure proper ordering
                 var sortedSlots = slots.OrderBy(s => s.SlotNumber).ToList();
 
+                // Get all published topics first for consistent mapping
+                var allPublishedTopics = (await GetAllDailyTopicsAsync(ct))
+                               .Where(t => t.IsPublished)
+                               .ToList();
+
                 // Process content sequentially to avoid race conditions
                 var topStoryResult = await ProcessTopStoryAsync(sortedSlots, categoryLookup, ct);
                 var highlightedEventResult = await ProcessHighlightedEventAsync(sortedSlots, ct);
                 var topStoriesResult = await ProcessTopStoriesAsync(sortedSlots, categoryLookup, ct);
                 var moreArticlesResult = await ProcessMoreArticlesAsync(sortedSlots, categoryLookup, ct);
                 var featuredEventsResult = await ProcessFeaturedEventsAsync(ct);
-                var topicQueues = await ProcessDynamicTopicsAsync(categoryLookup, ct);
+                var topicQueues = await ProcessDynamicTopicsAsync(allPublishedTopics, categoryLookup, ct);
 
-                // Helper to avoid out‐of‐range on topicQueues
-                BaseQueueResponse<ContentEvent> GetTopicQueue(int idx) =>
-                    idx < topicQueues.Count
-                        ? topicQueues[idx]
-                        : new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() };
+                // Helper to avoid out‐of‐range on topicQueues - now preserves topic names
+                BaseQueueResponse<ContentEvent> GetTopicQueue(int idx)
+                {
+                    if (idx < topicQueues.Count)
+                    {
+                        return topicQueues[idx];
+                    }
+
+                    // Return empty queue but preserve any available topic name
+                    var topicName = idx < allPublishedTopics.Count ? allPublishedTopics[idx].TopicName : string.Empty;
+
+                    return new BaseQueueResponse<ContentEvent>
+                    {
+                        QueueLabel = topicName,
+                        Items = new List<ContentEvent>()
+                    };
+                }
 
                 // Assemble response
                 var contents = new ContentsDaily
@@ -664,7 +681,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
             };
         }
 
-        private async Task<List<BaseQueueResponse<ContentEvent>>> ProcessDynamicTopicsAsync(Dictionary<int, string> categoryLookup, CancellationToken ct)
+        private async Task<List<BaseQueueResponse<ContentEvent>>> ProcessDynamicTopicsAsync(IEnumerable<dynamic> publishedTopics, Dictionary<int, string> categoryLookup, CancellationToken ct)
         {
             var allTopics = (await GetAllDailyTopicsAsync(ct))
                             .Where(t => t.IsPublished)
@@ -758,7 +775,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 DateCreated = slot.PublishedDate.ToString("o"),
                 ImageUrl = slot.ContentUrl,
                 Slug = slot.ContentUrl,
-                NodeType = "video"
+                NodeType = "Video"
             };
         }
 
@@ -802,7 +819,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
         private ContentPost CreateContentPost(dynamic article, Dictionary<int, string> categoryLookup, string queueLabel)
         {
-            var catId = article.Categories?.FirstOrDefault()?.CategoryId ?? default(int);
+            // Handle Categories collection properly with explicit casting
+            var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
+            var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+
             return new ContentPost
             {
                 Id = (Guid)article.Id,
@@ -812,7 +832,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 IsActive = (bool)article.IsActive,
                 PageName = DrupalContentConstants.QlnContentsDaily,
                 QueueLabel = queueLabel,
-                NodeType = "post",
+                NodeType = "Post",
                 Nid = article.Id.ToString(),
                 DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
                 ImageUrl = (string)article.CoverImageUrl,
@@ -833,7 +853,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 UpdatedAt = eventItem.UpdatedAt,
                 PageName = DrupalContentConstants.QlnContentsDaily,
                 QueueLabel = queueLabel,
-                NodeType = "event",
+                NodeType = "Event",
                 Nid = eventItem.Id.ToString(),
                 DateCreated = eventItem.CreatedAt.ToString("o"),
                 ImageUrl = eventItem.CoverImage,
@@ -852,7 +872,10 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
         private ContentEvent CreateContentEventFromArticle(dynamic article, Dictionary<int, string> categoryLookup, string queueLabel)
         {
-            var catId = article.Categories?.FirstOrDefault()?.CategoryId ?? default(int);
+            // Handle Categories collection properly with explicit casting
+            var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
+            var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+
             return new ContentEvent
             {
                 Id = (Guid)article.Id,
@@ -869,7 +892,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
                 ImageUrl = (string)article.CoverImageUrl,
                 Slug = (string)article.Slug,
-                NodeType = "post"
+                NodeType = "Post"
             };
         }
 
