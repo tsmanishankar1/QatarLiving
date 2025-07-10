@@ -39,7 +39,7 @@ namespace QLN.Common.DTO_s
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
-        public DateTime PublishedDate { get; set; }
+        public DateTime? PublishedDate { get; set; }
 
         public string CreatedBy { get; set; }
 
