@@ -57,17 +57,13 @@ else
                     <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
                     <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
                     <MudTd Class="date-cell">
-                        @if (context.Event.PublishedDate != null)
+                        @if (context.Event?.PublishedDate is not null)
                         {
-                            var duration = DateTime.Now - context.Event.PublishedDate.Value;
-                            string liveFor = duration.TotalHours < 24
-                            ? $"{Math.Floor(duration.TotalHours)} hour{(Math.Floor(duration.TotalHours) == 1 ? "" : "s")}"
-                            : $"{duration.Days} day{(duration.Days == 1 ? "" : "s")}";
-                            @liveFor
+                            @GetTimeDifferenceFromNowUtc(context.Event?.PublishedDate ?? new())
                         }
                         else
                         {
-                            <span>--</span>
+                            @("-")
                         }
                     </MudTd>
 
