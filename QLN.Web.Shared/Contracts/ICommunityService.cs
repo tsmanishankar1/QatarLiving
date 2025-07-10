@@ -21,6 +21,7 @@ namespace QLN.Web.Shared.Contracts
         Task<bool> ReportCommunityPostAsync(string postId);
         Task<bool> ReportCommentAsync(string postId, string commentId);
         Task<bool> LikeCommunityPostAsync(string postId);
+        Task<bool> LikeCommunityCommentstAsync(string postId,string commentId);
 
 
 
