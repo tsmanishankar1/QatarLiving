@@ -174,8 +174,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-
-
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
             const int MaxSlot = 13;
