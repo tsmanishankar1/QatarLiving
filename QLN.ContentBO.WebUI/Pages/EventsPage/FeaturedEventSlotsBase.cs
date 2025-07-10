@@ -25,17 +25,31 @@ namespace QLN.ContentBO.WebUI.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            await AuthorizedPage();
             await base.OnInitializedAsync();
-            AuthorizedPage(); 
         }
+        private bool shouldInitializeSortable = false;
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
+        protected override async Task OnParametersSetAsync()
         {
-            if (firstRender)
+            await base.OnParametersSetAsync();
+
+            // Only trigger JS if data is loaded and has events
+            if (FeaturedEventSlots != null && FeaturedEventSlots.Any(s => s.Event != null))
             {
-                await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
+                shouldInitializeSortable = true;
             }
         }
+
+      protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldInitializeSortable)
+        {
+            await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
+            shouldInitializeSortable = false;
+        }
+    }
+
       [JSInvokable]
     public async Task OnTableReordered(List<string> newOrder)
     {

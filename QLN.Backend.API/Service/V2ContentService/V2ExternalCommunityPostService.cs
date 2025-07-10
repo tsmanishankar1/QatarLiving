@@ -267,12 +267,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-        public async Task<List<CommunityCommentDto>> GetAllCommentsByPostIdAsync(Guid postId, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
             {
-                var url = $"/api/v2/community/getCommentsByPostId/{postId}";
+                var query = $"?page={page ?? 1}&perPage={perPage ?? 10}";
+                var url = $"/api/v2/community/getCommentsByPostId/{postId}{query}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
@@ -280,12 +280,12 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 var json = await response.Content.ReadAsStringAsync();
 
-                var comments = JsonSerializer.Deserialize<List<CommunityCommentDto>>(json, new JsonSerializerOptions
+                var result = JsonSerializer.Deserialize<CommunityCommentListResponse>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                return comments ?? new List<CommunityCommentDto>();
+                return result ?? new CommunityCommentListResponse();
             }
             catch (Exception ex)
             {
@@ -293,7 +293,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
             try
@@ -323,7 +322,108 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+        public async Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/community/comments/delete/byid/{postId}/{commentId}?userId={encodedUserId}";
 
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                   InternalAppId, 
+                    url
+                );
 
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"[ERROR] Soft delete failed: StatusCode={response.StatusCode}, Content={error}");
+
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = $"Soft delete failed: {response.ReasonPhrase}"
+                    };
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<CommunityCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "No content received"
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EXCEPTION] {ex.Message}");
+                return new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = $"Exception occurred: {ex.Message}"
+                };
+            }
+        }
+        public async Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/community/comments/edit/byid/{postId}/{commentId}?userId={encodedUserId}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                   InternalAppId,
+                    url
+                );
+
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(updatedText),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Internal edit call failed with status {StatusCode}. Error: {Error}", response.StatusCode, errorContent);
+
+                    return new CommunityCommentApiResponse
+                    {
+                        Status = "failed",
+                        Message = $"Edit failed: {response.StatusCode}"
+                    };
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<CommunityCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from internal service"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit community comment {CommentId} for post {PostId} by user {UserId}", commentId, postId, userId);
+
+                return new CommunityCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Edit request failed"
+                };
+            }
+        }
     }
 }

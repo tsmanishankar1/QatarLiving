@@ -17,10 +17,10 @@
                 <LocationSelect 
                     @ref="_locationSelectRef"
                     TItem="Area"
-                    Items="FilteredAreas"
+                    Items="Areas"
                     SelectedItemsChanged="HandleLocationSelectionChanged"
                     OnLocationUpdated="CallApiForLocationChange"
-                    GetLabel="item => item.Name"
+                    GetLabel="@(item => (item != null) ? item.Name : null)"
                     GetId="item => item.Id"
                     CustomStyle="@(IsMobile ? "border-radius:8px;" : "border-top-left-radius:8px; border-bottom-left-radius:8px;")"
                     OnSearch="PerformSearch" 

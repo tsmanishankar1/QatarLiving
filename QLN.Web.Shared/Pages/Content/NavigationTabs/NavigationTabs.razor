@@ -1,37 +1,62 @@
 @inject NavigationManager NavigationManager
+@using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Components.SubTabs
+@using QLN.Web.Shared.Services
+
+@inject IOptions<NavigationPath> NavigationPathOptions
 
 <SubTabs Tabs="@tabItems" OnTabClick="@OnTabClick" />
 
 @code {
-    private List<SubTabs.TabItem> tabItems = new()
-{
-new() {
-Text = "Daily",
-Route = "/content/daily",
-ActiveRoutePaths = new List<string> { "/content/daily", "/","/content/daily/article/details" },
-ImagePath = "/qln-images/content/daily_icon.svg"
-},
-new() {
-Text = "News",
-Route = "/content/news",
-ActiveRoutePaths = new List<string> { "/content/news", "/content/article/details" },
-ImagePath = "/qln-images/content/news_icon.svg"
-},
-new() {
-Text = "Events",
-Route = "/content/eventsV2",
-ActiveRoutePaths = new List<string> { "/content/eventsV2" ,"/content/events/details" },
-ImagePath = "/qln-images/content/events_icon.svg"
-},
-new() {
-Text = "Community",
-Route = "/content/community/V2",
-ActiveRoutePaths = new List<string> { "/content/community/V2" ,"/content/community/post/detail"},
-ImagePath = "/qln-images/content/community_icon.svg"
-}
-};
 
+    private string ContentDaily { get; set; } = "/content/daily";
+    private string ContentNews { get; set; } = "/content/news";
+    private string ContentEvents { get; set; } = "/content/events";
+    private string ContentCommunity { get; set; } = "/content/community";
+
+    private List<SubTabs.TabItem> tabItems = new();
+
+    protected override void OnInitialized()
+    {
+        ContentDaily = NavigationPathOptions.Value.ContentDaily;
+        ContentNews = NavigationPathOptions.Value.ContentNews;
+        ContentEvents = NavigationPathOptions.Value.ContentEvents;
+        ContentCommunity = NavigationPathOptions.Value.ContentCommunity;
+
+        tabItems = new () {
+            new()
+            {
+                Text = "Daily",
+                Route = ContentDaily,
+                ActiveRoutePaths = new List<string> { ContentDaily, "/", "/content/daily/article/details" },
+                ImagePath = "/qln-images/content/daily_icon.svg"
+            },
+            new()
+            {
+                Text = "News",
+                Route = ContentNews,
+                ActiveRoutePaths = new List<string> { ContentNews, "/content/article/details" },
+                ImagePath = "/qln-images/content/news_icon.svg"
+            },
+            new()
+            {
+                Text = "Events",
+                Route = ContentEvents,
+                ActiveRoutePaths = new List<string> { ContentEvents, "/content/events/details" },
+                ImagePath = "/qln-images/content/events_icon.svg"
+            },
+            new()
+            {
+                Text = "Community",
+                Route = ContentCommunity,
+                ActiveRoutePaths = new List<string> { ContentCommunity, "/content/community/post/detail" },
+                ImagePath = "/qln-images/content/community_icon.svg"
+            }
+        };
+
+        // You can perform any initialization logic here if needed
+        base.OnInitialized();
+    }
 
     private void OnTabClick(SubTabs.TabItem tab)
     {

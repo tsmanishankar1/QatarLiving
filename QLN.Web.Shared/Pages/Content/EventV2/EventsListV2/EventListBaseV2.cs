@@ -61,7 +61,8 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 
         protected void HandleCardClick(EventDTOV2 item)
         {
-            Navigation.NavigateTo($"/content/eventsV2/details/{item.Slug}");
+          
+            Navigation.NavigateTo($"/content/v2/events/details/{item.Slug}");
         }
     }
 }

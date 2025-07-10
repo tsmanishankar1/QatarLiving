@@ -171,6 +171,56 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<List<DailyTopSectionSlot>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/topsection/unusedarticles",
+                async Task<Results<
+                    Ok<List<V2NewsArticleDTO>>,
+                    NotFound<ProblemDetails>,
+                    ProblemHttpResult>>
+                (
+                    [FromServices] IV2ContentDailyService service,
+                    CancellationToken ct
+                ) =>
+                {
+                    try
+                    {
+                        var list = await service.GetUnusedDailyTopSectionArticlesAsync(ct);
+
+                        if (list == null || list.Count == 0)
+                            return TypedResults.NotFound(new ProblemDetails
+                            {
+                                Title = "No Unused Articles",
+                                Detail = "There are no unused articles available for the daily top section."
+                            });
+
+                        return TypedResults.Ok(list);
+                    }
+                    catch (DaprServiceException dsx)
+                    {
+                        return TypedResults.Problem(
+                            title: $"Upstream error ({dsx.StatusCode})",
+                            detail: dsx.ResponseBody,
+                            statusCode: dsx.StatusCode,
+                            instance: "/topsection/unusedarticles"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                    }
+                })
+                .WithName("GetUnusedNewsArticlesForTopSection")
+                .WithTags("DailyLivingBO")
+                .WithSummary("Fetch news articles not yet used in the Daily Top Section")
+                .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
             group.MapPost("/topic/content",
                async Task<Results<
                    Created<string>,
@@ -190,7 +240,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                                        .FirstOrDefault(c => c.Type == "user")?.Value;
                        if (string.IsNullOrEmpty(userClaim))
                            return TypedResults.Forbid();
-                       if(dto.TopicId == Guid.Empty)
+                       if (dto.TopicId == Guid.Empty)
                            return TypedResults.BadRequest(new ProblemDetails
                            {
                                Title = "Topic Id is mandatory",

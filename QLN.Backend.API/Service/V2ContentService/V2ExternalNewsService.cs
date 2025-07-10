@@ -1,13 +1,19 @@
-﻿using Dapr;
+﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Dapr;
 using Dapr.Client;
+using Dapr.Client.Autogen.Grpc.v1;
+using FirebaseAdmin.Messaging;
+using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Backend.API.Service.V2ContentService
@@ -210,30 +216,51 @@ namespace QLN.Backend.API.Service.V2ContentService
 
         public async Task<string> DeleteNews(Guid id, CancellationToken cancellationToken = default)
         {
+            var url = $"/api/v2/news/news/{id}";
             try
             {
-                var url = $"/api/v2/news/news/{id}";
-
                 return await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
-                    ConstantValues.V2Content.ContentServiceAppId,
+                    V2Content.ContentServiceAppId,
                     url,
-                    cancellationToken
+                    cancellationToken: cancellationToken
                 );
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            catch (InvocationException ex)
             {
-                _logger.LogWarning(ex, "News with ID {id} not found.", id);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error deleting News with Id {id}", id);
-                throw;
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
         }
-        public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
-        {
+            public async Task<string> ReorderSlotsAsync(NewsSlotReorderRequest dto, CancellationToken cancellationToken)
+            {
             try
             {
                 var url = "/api/v2/news/reorderLiveSlotsByUserId";
@@ -424,12 +451,13 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+        public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {
             try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
-                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}";
+                var encodedUserName = Uri.EscapeDataString(userName);
+                var url = $"/api/v2/news/commentsbyid/{commentId}?userId={encodedUserId}&userName={encodedUserName}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -449,13 +477,13 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new InvalidOperationException("Like (by user ID) failed", ex);
             }
         }
-
-        public async Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default)
+            
+        public async Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default)
         {
             try
             {
                 var encodedUserId = Uri.EscapeDataString(userId);
-                var url = $"/api/v2/news/commentsdislike/byid/{commentId}?userId={encodedUserId}";
+                var url = $"/api/v2/news/comments/delete/byid/{articleId}/{commentId}?userId={encodedUserId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -467,24 +495,37 @@ namespace QLN.Backend.API.Service.V2ContentService
                 response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<bool>(json);
+
+                return JsonSerializer.Deserialize<NewsCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from delete call."
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to dislike comment {CommentId} by user {UserId}", commentId, userId);
-                throw new InvalidOperationException("Dislike (by user ID) failed", ex);
+                _logger.LogError(ex, "Failed to soft delete comment {CommentId} for article {ArticleId} by user {UserId}", commentId, articleId, userId);
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Soft delete request failed"
+                };
             }
         }
-        public async Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
-       int categoryId,
-       int subCategoryId,
-       CancellationToken cancellationToken = default
-   )
+        public async Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
+         int categoryId,
+         int subCategoryId,
+         CancellationToken cancellationToken = default
+     )
         {
             var url = $"/api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}";
             try
             {
-                return await _dapr.InvokeMethodAsync<QlnNewsNewsQatarPageResponse>(
+                return await _dapr.InvokeMethodAsync<GenericNewsPageResponse>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
@@ -501,7 +542,49 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw new ApplicationException("Failed to retrieve news landing page. See inner exception for details.", ex);
             }
         }
+        public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
+        {
+            try
+            {
+                var encodedUserId = Uri.EscapeDataString(userId);
+                var url = $"/api/v2/news/comments/editbyid/{articleId}/{commentId}?userId={encodedUserId}";
 
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    V2Content.ContentServiceAppId,
+                    url
+                );
 
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(updatedText),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<NewsCommentApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Empty response received from edit call."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit comment {CommentId} for article {ArticleId} by user {UserId}", commentId, articleId, userId);
+
+                return new NewsCommentApiResponse
+                {
+                    Status = "failed",
+                    Message = "Edit request failed"
+                };
+            }
+        }
     }
 }

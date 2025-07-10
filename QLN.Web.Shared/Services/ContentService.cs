@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using Microsoft.Extensions.Options;
+using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -6,10 +7,15 @@ namespace QLN.Web.Shared.Services
     public class ContentService : IContentService
     {
         private readonly HttpClient _httpClient;
+        private readonly NavigationPath _navigationPath;
 
-        public ContentService(HttpClient httpClient)
+        public ContentService(
+            HttpClient httpClient,
+            IOptions<NavigationPath> navigationPath
+            )
         {
             _httpClient = httpClient;
+            _navigationPath = navigationPath.Value;
         }
 
         /// <inheritdoc />
@@ -17,7 +23,9 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/v2/dailyliving/landing");
+                var response = await _httpClient.GetAsync(_navigationPath.ContentDailyBackEnd);
+
+
                 return response;
             }
             catch (Exception ex)
@@ -66,7 +74,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync("/api/content/qln_videos/landing");
+                var response = await _httpClient.GetAsync(_navigationPath.ContentDailyVideosBackEnd);
                 return response;
             }
             catch (Exception ex)
