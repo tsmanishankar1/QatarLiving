@@ -76,6 +76,18 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             try
             {
+
+
+                var duplicateCheck = dto.Categories.GroupBy(c => new { c.CategoryId, c.SubcategoryId }).
+                    Where(d => d.Count() > 1)
+                    .Select(d => d.Key).ToList();
+                if (duplicateCheck.Any())
+                {
+                    var duplicates = string.Join(", ",  duplicateCheck.Select(h=> $"CategoryId:{h.CategoryId}, subCategoryId:{h.SubcategoryId}"));
+                    throw new InvalidDataException($"Please select different category and subcategory combinations. Duplicates: {duplicates}");
+
+                }
+
                 var slugBase = GenerateNewsSlug(dto.Title);
                 int articleCount = 0;
 
