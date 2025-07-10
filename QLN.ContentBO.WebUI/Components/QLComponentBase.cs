@@ -65,7 +65,6 @@ namespace QLN.ContentBO.WebUI.Components
         {
             ArticleDetailBaseURL = $"{NavigationPath.Value.ContentNewsDetail}";
             EventDetailBaseURL = $"{NavigationPath.Value.ContentEventDetail}";
-            Console.WriteLine($"EventDetailBaseURL: {EventDetailBaseURL}");
             PostDetailBaseURL = $"{NavigationPath.Value.ContentPostDetail}";
         }
     }
