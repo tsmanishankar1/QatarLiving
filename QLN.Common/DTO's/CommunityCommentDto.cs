@@ -14,9 +14,9 @@ namespace QLN.Common.DTO_s
         public string UserName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public DateTime CommentedAt { get; set; }
-        public Guid? ParentCommentId { get; set; } // Nullable for top-level comments
+        public Guid? ParentCommentId { get; set; }
         public bool IsActive { get; set; } = true;
-        public int CommentsLikeCount { get; set; } // Calculated, not persisted
+        public int CommentsLikeCount { get; set; } 
     }
     public class CommunityCommentItem
     {

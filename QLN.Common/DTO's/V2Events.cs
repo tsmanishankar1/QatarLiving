@@ -19,11 +19,9 @@ namespace QLN.Common.DTO_s
         public string Venue { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
-
         [Url(ErrorMessage = "Invalid URL format.")]
         public string? RedirectionLink { get; set; }
         public EventSchedule EventSchedule { get; set; }
-
         [Required(ErrorMessage = "Event description is required.")]
         public string EventDescription { get; set; }
         public string CoverImage { get; set; }
@@ -74,7 +72,6 @@ namespace QLN.Common.DTO_s
         public int SlotNumber { get; set; } 
         public string? EventId { get; set; } 
     }
-
     public class EventSlotReorderRequest
     {
         public List<EventSlotAssignment> SlotAssignments { get; set; } = new();
@@ -99,11 +96,9 @@ namespace QLN.Common.DTO_s
         public DateOnly? FromDate { get; set; }
         public DateOnly? ToDate { get; set; }
         public string? FilterType { get; set; }
-
         [FromQuery(Name = "locationId")]
         public List<int>? LocationId { get; set; }
         public bool? FreeOnly { get; set; }
         public bool? FeaturedFirst { get; set; }
     }
-
 }
