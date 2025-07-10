@@ -110,7 +110,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                   : cat.SlotId
             }
         },
-                        PublishedDate = DateTime.UtcNow,
+                        PublishedDate = cat.SlotId == (int)Slot.UnPublished ? null : DateTime.UtcNow,
                         CreatedBy = userId,
                         UpdatedBy = userId,
                         CreatedAt = DateTime.UtcNow,
@@ -572,6 +572,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
             if (oldSlot == 15 && (newSlot >= 1 && newSlot <= 14))
             {
                 dto.PublishedDate = DateTime.UtcNow;
+            }
+            if (newSlot == UnpublishedId)
+            {
+                dto.PublishedDate = null; 
             }
             if (newSlot >= 1 && newSlot <= MaxLiveSlot)
             {
@@ -1181,7 +1185,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 {
                     Id = dto.Id,
                     Nid = dto.Id.ToString(),
-                    DateCreated = dto.PublishedDate.ToString("o"),
+                    DateCreated = dto.CreatedAt.ToString("o"),
                     ImageUrl = dto.CoverImageUrl,
                     UserName = dto.authorName,
                     Title = dto.Title,
