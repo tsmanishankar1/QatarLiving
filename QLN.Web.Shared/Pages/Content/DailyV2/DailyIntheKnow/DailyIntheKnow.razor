@@ -1,0 +1,117 @@
+@inherits DailyIntheKnowBase
+<div class="daily-know-section">
+    <!-- Section Title -->
+    <div class="daily-title">
+        <span class="title-orange">IN</span>
+        <span class="title-blue">the Know</span>
+    </div>
+
+    <!-- Categories -->
+    <div class="daily-category-group">
+        @foreach (var item in DailyCategories)
+        {
+            <button class="daily-category-btn" @onclick="() => OnClickCommunityCateg(item)">
+                <img src="@item.Icon" alt="@item.Label" class="btn-icon" />
+                @item.Label
+            </button>
+        }
+
+
+        <button class="view-all-btn" @onclick="OnClickCommunityViewAll">
+            View all
+            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" class="arrow-icon" />
+        </button>
+    </div>
+</div>
+
+<style>
+    .daily-know-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        width: 100%;
+        padding: 20px 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .daily-title {
+        font-size: 25px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .title-orange {
+        color: var(--color-accent);
+    }
+
+    .title-blue {
+        color: var(--color-primary);
+    }
+
+    .daily-category-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 0;
+
+    }
+
+    .daily-category-btn {
+        display: flex;
+        align-items: center;
+        padding: 10px 24px;
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 999px;
+        background-color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .daily-category-btn:hover,
+    .view-all-btn:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+    }
+
+    .view-all-btn {
+        background-color: var(--color-primary);
+        color: white;
+        font-weight: 600;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 24px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .arrow-icon {
+        font-size: 18px;
+        margin-left: 6px;
+        color: white;
+    }
+
+    .view-all-btn:hover {
+        background-color: var(--color-accent);
+    }
+</style>

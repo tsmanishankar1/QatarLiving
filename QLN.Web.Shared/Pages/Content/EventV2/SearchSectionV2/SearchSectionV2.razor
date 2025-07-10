@@ -13,7 +13,7 @@
                 <img src="/qln-images/content/Search.svg" alt="mail icon" class="left-icon" height="23" width="23"  />
                 <input type="text" id="event-search-input" placeholder="Search"  @oninput="HandleSearchChange"  class="text-input" />
             </div>
-            <div class="select-field" style="@(IsMobile? "height: auto;" : "")">
+            <div class="events-select-field" style="@(IsMobile? "height: auto;" : "")">
                 <LocationSelect 
                     @ref="_locationSelectRef"
                      TItem="LocationDto.AreaDto"
@@ -29,7 +29,7 @@
             </div>
 
             <!-- Property Type Select -->
-            <div class="select-field">
+            <div class="events-select-field">
                 <NewCustomSelect TItem="SelectOption" Items="@PropertyTypes" Label="Category" Placeholder="Choose"
                     SelectedId="@SelectedPropertyTypeId" SelectedIdChanged="@HandleCategoryChanged"
                     GetLabel="x => x.Label" GetId="x => x.Id" BorderRadius="@(IsMobile ? "8px" : "0px")"
@@ -37,12 +37,12 @@
             </div>
 
             <!-- Date Picker Field -->
-            <div class="select-field date-picker-field" @onclick="ToggleDatePicker">
+            <div class="events-select-field date-picker-field" @onclick="ToggleDatePicker">
 
                 <div class="select-label">Dates</div>
                 <div class="date-choose-wrapper">
                     <div class="date-labels">
-                        <div class="select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "unselect" : "selected")">
+                        <div class="eventv2-select-choose @(string.IsNullOrEmpty(SelectedDateLabel) ? "unselect" : "selected")">
                             @(string.IsNullOrEmpty(SelectedDateLabel) ? "Choose" : SelectedDateLabel)
                         </div>
                     </div>
@@ -117,7 +117,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        width: 75%;
+        width: 85%;
         font-family: 'Public Sans', sans-serif;
     }
 
@@ -143,8 +143,8 @@
         border-bottom-left-radius: 6px;
     }
 
-    .select-field {
-        width: 285px;
+    .events-select-field {
+        width: 285px !important;
         height: 56px;
     }
 
@@ -198,16 +198,16 @@
         background-color: var(--color-accent);
     }
 
-    .select-choose.unselect {
+    .eventv2-select-choose.unselect {
         color: white;
         background-color: var(--color-accent);
         font-size: 14px;
         font-weight: 400;
     }
 
-    .select-choose.selected {
+    .eventv2-select-choose.selected {
         color: white;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 400;
     }
 
@@ -415,7 +415,7 @@
         }
 
         .search-input,
-        .select-field,
+        .events-select-field,
         .date-picker-field {
             border-radius: 8px !important;
             width: 100% !important;
@@ -439,7 +439,7 @@
     @@media (min-width: 1010px) and (max-width: 1024px) {
 
         .search-field,
-        .select-field {
+        .events-select-field {
             width: 220px !important;
         }
     }

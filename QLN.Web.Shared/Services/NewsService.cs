@@ -161,7 +161,7 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-          public async Task<HttpResponseMessage?> GetAllNewsCategoriesAsync()
+        public async Task<HttpResponseMessage?> GetAllNewsCategoriesAsync()
         {
             try
             {
@@ -174,7 +174,7 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-    public async Task<HttpResponseMessage?> GetNewsByCategoryIdAsync(int categoryId)
+        public async Task<HttpResponseMessage?> GetNewsByCategoryIdAsync(int categoryId)
         {
             try
             {
@@ -197,6 +197,19 @@ namespace QLN.Web.Shared.Services
             catch (Exception ex)
             {
                 _logger.LogError("GetNewsBySubCategoryAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+                public async Task<HttpResponseMessage?> GetNewsV2BySlugAsync(string slug)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"/api/content/news/{slug}");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetNewsQatarAsync" + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
