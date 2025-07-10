@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
+using static MudBlazor.Colors;
 
 namespace QLN.Web.Shared.Pages.Content.Community
 {
@@ -119,7 +120,17 @@ namespace QLN.Web.Shared.Pages.Content.Community
             Console.WriteLine($"Received searchText from child: {searchText}");
             search = searchText;
             CurrentPage = 1;
-            await GetPostListAsync();
+            var (posts, total) = await GetPostListAsync(); 
+
+            if (posts != null)
+            {
+                PostList = posts;
+                TotalPosts = total;
+            }
+
+            StateHasChanged();
+
+
         }
         protected async Task HandleCategoryChanged(string forumId)
         {
@@ -185,6 +196,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsLoading = false;
+
             }
         }
 
