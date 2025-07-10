@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
@@ -9,15 +10,16 @@ using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
 
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class PostDetailBaseV2 : ComponentBase
     {
 
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
-        [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
+        [Inject] protected ILogger<PostDetailBaseV2> Logger { get; set; } = default!;
         [Inject] private IContentService _contentService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
+        [Inject] protected IOptions<NavigationPath> options { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -47,19 +49,18 @@ namespace QLN.Web.Shared.Pages.Content.Community
             postBreadcrumbItem = new()
             {
                 Label =  "Not Found",
-                Url = $"/content/community/post/detail/{slug}",
+                Url = $"/content/v2/community/post/detail/{slug}",
                 IsLast = true
             };
             postBreadcrumbCategory = new()
             {
                 Label = "Not Found",
-                //Url = "/content/community",
-                Url = $"/content/community/v2" // leaving this as it is a V2 component
+                Url =options.Value.ContentCommunity
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
-                new() { Label = "Community", Url = "/content/community/v2" }, // leaving this as it is a V2 component
+                new() { Label = "Community", Url = options.Value.ContentCommunity}, // leaving this as it is a V2 component
                postBreadcrumbCategory,
                 postBreadcrumbItem
             };
@@ -67,70 +68,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             await LoadPostAsync();
         }
 
-        //private async Task LoadPostAsync()
-        //{
-        //    try
-        //    {
-        //        SelectedPost = null;
-        //        IsLoading = true;
-        //        HasError = false;
-        //        StateHasChanged();
-
-        //        var fetched = await CommunityService.GetPostBySlugAsync(slug);
-
-        //        if (fetched != null)
-        //        {
-        //            SelectedPost = new PostModel
-        //            {
-        //                Id = fetched.nid,
-        //                Category = fetched.category,
-        //                CategoryId = fetched.forum_id.ToString(),
-        //                Title = fetched.title,
-        //                BodyPreview = fetched.description,
-        //                Author = fetched.user_name ?? "Unknown User",
-        //                Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
-        //                LikeCount = 0,
-        //                CommentCount = fetched.comments?.Count ?? 0,
-        //                ImageUrl = fetched.image_url,
-        //                Slug = fetched.slug,
-        //                Comments = fetched.comments?.Select(c => new CommentModel
-        //                {
-        //                    Id = c.nid,
-        //                    CreatedBy = c.user_name ?? "Unknown User",
-        //                    CreatedAt = c.created_date,      
-        //                    Description = c.subject ?? "No content to display",
-        //                    LikeCount = 0,
-        //                    UnlikeCount = 0,
-        //                    Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
-        //                        ? c.profile_picture
-        //                        : "/qln-images/content/Sample.svg"
-        //                }).ToList() ?? new List<CommentModel>()
-        //            };
-
-        //            if (postBreadcrumbItem is not null)
-        //            {
-        //                postBreadcrumbItem.Label = SelectedPost.Title;
-        //                StateHasChanged();
-        //            }
-        //            if (postBreadcrumbCategory is not null)
-        //            {
-        //                postBreadcrumbCategory.Label = SelectedPost.Category;
-        //                postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
-        //                StateHasChanged();
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError(ex, "Failed to load post with slug: {Slug}", slug);
-        //        HasError = true;
-        //    }
-        //    finally
-        //    {
-        //        IsLoading = false;
-        //        StateHasChanged();
-        //    }
-        //}
+     
         private async Task LoadPostAsync()
         {
             try

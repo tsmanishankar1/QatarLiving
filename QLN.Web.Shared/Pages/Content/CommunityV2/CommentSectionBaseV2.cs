@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Text;
 
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class CommentSectionBaseV2 : ComponentBase
     {

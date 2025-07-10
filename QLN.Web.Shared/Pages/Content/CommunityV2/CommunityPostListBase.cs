@@ -12,7 +12,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class CommunityPostListBase :ComponentBase
     {
@@ -24,7 +24,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public ISimpleMemoryCache _simpleCacheService { get; set; }
 
-        [Inject] private ILogger<CommunityBase> Logger { get; set; }
+        [Inject] private ILogger<CommunityPostListBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private IContentService _contentService { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }

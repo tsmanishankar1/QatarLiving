@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Pages.Content.CommunityV2;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;

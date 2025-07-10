@@ -8,7 +8,7 @@ using MudBlazor;
 using Microsoft.Extensions.Hosting;
 using QLN.Web.Shared.Components.ReportDialog;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class PostCardBaseV2 : ComponentBase
     {
@@ -52,7 +52,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/v2/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
+            Navigation.NavigateTo($"/content/v2/community/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
         }
         protected async Task ToggleLikeAsync()
         {
@@ -114,7 +114,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         private string CurrentUrl =>
     IsDetailView
         ? Navigation.Uri
-        : $"{Navigation.BaseUri.TrimEnd('/')}/content/community/v2/post/detail/{Post.Slug}";
+        : $"{Navigation.BaseUri.TrimEnd('/')}/content/v2/community/post/detail/{Post.Slug}";
 
         //private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
         protected List<MenuItem> shareMenuItems => new()

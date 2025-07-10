@@ -4,7 +4,7 @@ using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class AddPostDialogBase : ComponentBase
     {
