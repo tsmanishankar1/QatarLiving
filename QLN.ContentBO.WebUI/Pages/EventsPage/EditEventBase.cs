@@ -309,7 +309,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
             }
             catch (Exception ex)
             {

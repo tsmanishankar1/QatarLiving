@@ -29,9 +29,10 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<bool> UpdateSubCategoryAsync(int categoryId, V2NewsSubCategory updatedSubCategory, CancellationToken cancellationToken = default);
         Task<NewsCommentApiResponse> SaveNewsCommentAsync(V2NewsCommentDto dto, CancellationToken ct = default);
         Task<NewsCommentListResponse> GetCommentsByArticleIdAsync(string nid, int? page = null, int? perPage = null, CancellationToken ct = default);
-        Task<bool> LikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
-        Task<bool> DislikeNewsCommentAsync(string commentId, string userId, CancellationToken ct = default);
-        Task<QlnNewsNewsQatarPageResponse> GetNewsLandingPageAsync(
+        Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default);       
+        Task<NewsCommentApiResponse> SoftDeleteNewsCommentAsync(string articleId, Guid commentId, string userId, CancellationToken ct = default);
+        Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default);
+        Task<GenericNewsPageResponse> GetNewsLandingPageAsync(
        int categoryId,
        int subCategoryId,
        CancellationToken cancellationToken = default

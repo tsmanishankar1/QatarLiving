@@ -102,17 +102,17 @@
               @if (Enum.IsDefined(typeof(EventType), Item.EventType))
             {
                 <span class="map-access-name">Event Fees:</span>
-                <div class="price">
+                <div class="eventv2-price">
                     @switch (Item.EventType)
                     {
                         case EventType.FreeAcess:
-                            <span class="event-price-amount">Free</span>
+                            <span class="eventv2-price">Free</span>
                             break;
                         case EventType.OpenRegistrations:
-                            <span class="event-price-amount">Open Registration</span>
+                            <span class="eventv2-price">Open Registration</span>
                             break;
                         case EventType.FeePrice:
-                            <span class="event-price-amount">
+                            <span class="eventv2-price">
                                 @(Item.Price.HasValue ? $"{Item.Price.Value} QAR" : "Based on Prices")
                             </span>
                             break;
@@ -619,6 +619,18 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
     .event-mobile-info {
         display: none;
     }
+      .eventv2-price {
+        font-size: 25px;
+        font-weight: 600;
+        color: var(--color-primary) ;
+    }
+
+    .eventv2-price .currency {
+        font-size: 14px;
+        font-weight: 500;
+        margin-left: 4px;
+        color: var(--color-primary);
+    }
 
     @@media (max-width: 768px) {
         .event-image-container {
@@ -671,17 +683,6 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
             display: flex;
             padding: 5px 0;
         }
-    .event-price-amount {
-        font-size: 25px;
-        font-weight: 600;
-        color: var(--color-primary) ;
-    }
-
-    .event-price-amount .currency {
-        font-size: 14px;
-        font-weight: 500;
-        margin-left: 4px;
-        color: var(--color-primary);
-    }
+  
     }
 </style>

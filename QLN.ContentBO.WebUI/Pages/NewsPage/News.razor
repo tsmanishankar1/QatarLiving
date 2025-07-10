@@ -84,7 +84,7 @@
                                     <CellTemplate>
                                         @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
                                         {
-                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                            <MudLink Href="@($"{ArticleDetailBaseURL}{context.Item.Slug}")"
                                                      Target="_blank">
                                                 @context.Item.Title
                                             </MudLink>
@@ -186,7 +186,7 @@
                                     <CellTemplate>
                                         @if (!string.IsNullOrWhiteSpace(context.Item.Slug))
                                         {
-                                            <MudLink Href="@($"{articleDetailBaseURL}/{context.Item.Slug}")"
+                                            <MudLink Href="@($"{ArticleDetailBaseURL}{context.Item.Slug}")"
                                                      Target="_blank">
                                                 @context.Item.Title
                                             </MudLink>
@@ -256,7 +256,7 @@
                     }
                     else
                     {
-                        <table id ="live-article-table" class="table table-hover featured-table mt-4" style="width: 100%;">
+                        <table id="live-article-table" class="table table-hover featured-table mt-4" style="width: 100%;">
                             <thead>
                                 <tr>
                                     <th style="width: 40px;"></th> <!-- drag handle -->
@@ -285,7 +285,7 @@
                                             <td>
                                                 @if (context.Article is not null && !string.IsNullOrWhiteSpace(context.Article.Slug))
                                                 {
-                                                    <MudLink Href="@($"{articleDetailBaseURL}/{context.Article.Slug}")"
+                                                    <MudLink Href="@($"{ArticleDetailBaseURL}{context.Article.Slug}")"
                                                              Target="_blank">
                                                         @context.Article.Title
                                                     </MudLink>
@@ -335,26 +335,13 @@
                                                     <MudMenuItem OnClick="@(() => Navigation.NavigateTo($"/manage/news/editarticle/{context.Article.Id}", true))">
                                                         <MudIcon Icon="@Icons.Material.Outlined.Edit" Class="me-2" /> Edit
                                                     </MudMenuItem>
-                                                    <MudMenuItem OnClick="@(() => ShowGoLiveDialog(context.Article))">
-                                                           <img src="/qln-images/arrow_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                                          <span class="menu-text">Go live</span>
-                                                    </MudMenuItem>
                                                     <MudMenuItem OnClick="@(() => ShowPublishActionDialog(context.Article))">
-                                                        @if (selectedTab == "published")
-                                                        {
-                                                             <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                                             <span class="menu-text">Unpublish</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                                             <span class="menu-text">Publish</span>
-                                                        }
+                                                        <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                        <span class="menu-text">Unpublish</span>
                                                     </MudMenuItem>
-
                                                     <MudMenuItem OnClick="@(() => DeleteArticle(context.Article.Id))" Class="mud-error-text">
-                                                          <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Ignore" />
-                                                          <span class="menu-text">Delete</span>
+                                                        <img src="/qln-images/red_delete_icon.svg" class="menu-icon-style" alt="Ignore" />
+                                                        <span class="menu-text">Delete</span>
                                                     </MudMenuItem>
                                                 </MudMenu>
                                             </td>

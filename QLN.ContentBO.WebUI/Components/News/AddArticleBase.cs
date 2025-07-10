@@ -34,7 +34,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                AuthorizedPage();
+                await AuthorizedPage();
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
@@ -72,19 +72,21 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             if (Category.CategoryId == 0 || Category.SubcategoryId == 0)
             {
-                Snackbar.Add("Category and Sub Category is required", severity: Severity.Normal);
+                Snackbar.Add("Category and Sub Category is required", Severity.Error);
                 return;
             }
             if (TempCategoryList.Count >= MaxCategory)
             {
-                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", severity: Severity.Normal);
+                Snackbar.Add("Maximum of 2 Category and Sub Category combinations are allowed", Severity.Error);
                 Category = new();
                 return;
             }
-            if (Category.SlotId == 0)
+            if (TempCategoryList.Any(x => x.CategoryId == Category.CategoryId && x.SubcategoryId == Category.SubcategoryId))
             {
-                Category.SlotId = 15; // By Default UnPublished.
+                Snackbar.Add("This Category and Sub Category combination already exists", Severity.Error);
+                return;
             }
+            Category.SlotId = Category.SlotId == 0 ? 15 : Category.SlotId; // Defaults UnPublished.
             TempCategoryList.Add(Category);
             Category = new();
         }
@@ -94,7 +96,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             if (TempCategoryList.Count > 0)
             {
                 TempCategoryList.Remove(articleCategory);
-                Category = new();
             }
         }
 
