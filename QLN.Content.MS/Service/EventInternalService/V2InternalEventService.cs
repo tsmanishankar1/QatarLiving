@@ -78,6 +78,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     IsFeatured = false,
                     FeaturedSlot = dto.FeaturedSlot,
                     Status = dto.Status,
+                    PublishedDate = DateTime.UtcNow,
                     IsActive = true,
                     CreatedBy = userId,
                     CreatedAt = DateTime.UtcNow
