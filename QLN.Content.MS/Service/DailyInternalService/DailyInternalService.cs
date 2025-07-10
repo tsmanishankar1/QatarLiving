@@ -479,314 +479,235 @@ namespace QLN.Content.MS.Service.DailyInternalService
         {
             _logger.LogInformation("Starting GetDailyLivingLandingAsync");
 
+            try
+            {
+                // Initialize category lookup
+                var categoryLookup = await BuildCategoryLookupAsync(ct);
+
+                // Fetch and validate slots
+                var slots = await GetAllSlotsAsync(ct) ?? new List<DailyTopSectionSlot>();
+                _logger.LogDebug("Retrieved {Count} slots from state store", slots.Count);
+
+                if (!slots.Any())
+                {
+                    _logger.LogWarning("No slots found in state; landing page will be empty");
+                    return CreateEmptyResponse();
+                }
+
+                // Sort slots by slot number to ensure proper ordering
+                var sortedSlots = slots.OrderBy(s => s.SlotNumber).ToList();
+
+                // Get all published topics first for consistent mapping
+                var allPublishedTopics = (await GetAllDailyTopicsAsync(ct))
+                               .Where(t => t.IsPublished)
+                               .ToList();
+
+                // Process content sequentially to avoid race conditions
+                var topStoryResult = await ProcessTopStoryAsync(sortedSlots, categoryLookup, ct);
+                var highlightedEventResult = await ProcessHighlightedEventAsync(sortedSlots, ct);
+                var topStoriesResult = await ProcessTopStoriesAsync(sortedSlots, categoryLookup, ct);
+                var moreArticlesResult = await ProcessMoreArticlesAsync(sortedSlots, categoryLookup, ct);
+                var featuredEventsResult = await ProcessFeaturedEventsAsync(ct);
+                var topicQueues = await ProcessDynamicTopicsAsync(allPublishedTopics, categoryLookup, ct);
+
+                // Helper to avoid out‐of‐range on topicQueues - now preserves topic names
+                BaseQueueResponse<ContentEvent> GetTopicQueue(int idx)
+                {
+                    if (idx < topicQueues.Count)
+                    {
+                        return topicQueues[idx];
+                    }
+
+                    // Return empty queue but preserve any available topic name
+                    var topicName = idx < allPublishedTopics.Count ? allPublishedTopics[idx].TopicName : string.Empty;
+
+                    return new BaseQueueResponse<ContentEvent>
+                    {
+                        QueueLabel = topicName,
+                        Items = new List<ContentEvent>()
+                    };
+                }
+
+                // Assemble response
+                var contents = new ContentsDaily
+                {
+                    DailyTopStory = topStoryResult,
+                    DailyTopStories = topStoriesResult,
+                    DailyEvent = highlightedEventResult,
+                    DailyFeaturedEvents = featuredEventsResult,
+                    DailyMoreArticles = moreArticlesResult,
+                    DailyTopics1 = GetTopicQueue(0),
+                    DailyTopics2 = GetTopicQueue(1),
+                    DailyTopics3 = GetTopicQueue(2),
+                    DailyTopics4 = GetTopicQueue(3),
+                    DailyTopics5 = GetTopicQueue(4)
+                };
+
+                _logger.LogInformation("GetDailyLivingLandingAsync completed successfully");
+                return new ContentsDailyPageResponse { ContentsDaily = contents };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetDailyLivingLandingAsync");
+                return CreateEmptyResponse();
+            }
+        }
+
+        private async Task<Dictionary<int, string>> BuildCategoryLookupAsync(CancellationToken ct)
+        {
             var allCategoryDtos = await _news.GetAllCategoriesAsync(ct);
-            var categoryLookup = allCategoryDtos
+            return allCategoryDtos
                 .Where(c => !string.IsNullOrWhiteSpace(c.CategoryName))
                 .ToDictionary(c => c.Id, c => c.CategoryName);
-            // 1) Fetch slots 1–9
-            var slots = await GetAllSlotsAsync(ct) ?? new List<DailyTopSectionSlot>();
-            _logger.LogDebug("Retrieved {Count} slots from state store", slots.Count);
-            if (!slots.Any())
-                _logger.LogWarning("No slots found in state; landing page will be empty");
+        }
 
-            // 2) Top Story (slot 1, Article)
+        private async Task<BaseQueueResponse<ContentPost>> ProcessTopStoryAsync(List<DailyTopSectionSlot> slots, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
             var topStoryItems = new List<ContentPost>();
             var slot1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
-            if (slot1 == null)
+
+            if (slot1?.RelatedContentId != Guid.Empty)
             {
-                _logger.LogWarning("Slot 1 (Top Story) is empty or not an Article");
-            }
-            else if (slot1.RelatedContentId == Guid.Empty)
-            {
-                _logger.LogWarning("Slot 1 has no RelatedContentId");
+                var article = await LoadArticleAsync(slot1.RelatedContentId, ct);
+                if (article != null)
+                {
+                    topStoryItems.Add(CreateContentPost(article, categoryLookup, "Top Story"));
+                    _logger.LogInformation("Top Story loaded: {Title}", (string)article.Title);
+                }
             }
             else
             {
-                _logger.LogDebug("Loading Article {ArticleId} for Top Story", slot1.RelatedContentId);
-                var article = await _news.GetArticleByIdAsync(slot1.RelatedContentId, ct);
-                if (article == null)
-                {
-                    _logger.LogWarning("Article {ArticleId} not found or unpublished", slot1.RelatedContentId);
-                }
-                else
-                {
-                    var catId = article.Categories?.FirstOrDefault()?.CategoryId ?? default;
-                    topStoryItems.Add(new ContentPost
-                    {
-                        Id = article.Id,
-                        Description = article.Content,
-                        CreatedAt = article.CreatedAt,
-                        UpdatedAt = article.UpdatedAt,
-                        IsActive = article.IsActive,
-                        PageName = DrupalContentConstants.QlnContentsDaily,
-                        QueueLabel = "Top Story",
-                        NodeType = "Post",
-                        Nid = article.Id.ToString(),
-                        DateCreated = article.CreatedAt.ToString("o"),
-                        ImageUrl = article.CoverImageUrl,
-                        UserName = article.authorName,
-                        Title = article.Title,
-                        Slug = article.Slug,
-                        Category = categoryLookup.TryGetValue(catId, out var catName)
-                               ? catName
-                               : string.Empty
-                    });
-                    _logger.LogInformation("Top Story loaded: {Title}", article.Title);
-                }
+                _logger.LogWarning("Slot 1 (Top Story) is empty, not an Article, or has no RelatedContentId");
             }
 
-            // 3) Top Stories (slots 3–5, Article)
-            var topStoriesItems = new List<ContentPost>();
-            foreach (var slot in slots.Where(s => s.SlotNumber is >= 3 and <= 5))
+            return new BaseQueueResponse<ContentPost>
             {
-                if (slot.ContentType != DailyContentType.Article)
-                {
-                    _logger.LogWarning("Slot {Slot} in TopStories is not an Article; skipping", slot.SlotNumber);
-                    continue;
-                }
+                QueueLabel = "Top Story",
+                Items = topStoryItems
+            };
+        }
 
-                _logger.LogDebug("Loading Article {ArticleId} for TopStories slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
-                var art = await _news.GetArticleByIdAsync(slot.RelatedContentId, ct);
-                if (art == null)
-                {
-                    _logger.LogWarning("Article {ArticleId} not found for slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
-                    continue;
-                }
-                var catId = art.Categories?.FirstOrDefault()?.CategoryId ?? default;
-                topStoriesItems.Add(new ContentPost
-                {
-                    Id = art.Id,
-                    Description = art.Content,
-                    CreatedAt = art.CreatedAt,
-                    UpdatedAt = art.UpdatedAt,
-                    IsActive = art.IsActive,
-                    PageName = DrupalContentConstants.QlnContentsDaily,
-                    QueueLabel = "Top Stories",
-                    NodeType = "Post",
-                    Nid = art.Id.ToString(),
-                    DateCreated = art.CreatedAt.ToString("o"),
-                    ImageUrl = art.CoverImageUrl,
-                    UserName = art.authorName,
-                    Title = art.Title,
-                    Slug = art.Slug,
-                    Category = categoryLookup.TryGetValue(catId, out var catName)
-                               ? catName
-                               : string.Empty
-                });
-            }
-            _logger.LogInformation("Top Stories loaded: {Count} items", topStoriesItems.Count);
-
-            // 4) Highlighted Event (slot 2, Event)
+        private async Task<BaseQueueResponse<ContentEvent>> ProcessHighlightedEventAsync(List<DailyTopSectionSlot> slots, CancellationToken ct)
+        {
             var highlightedEventItems = new List<ContentEvent>();
             var slot2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
-            if (slot2 == null)
+
+            if (slot2?.RelatedContentId != Guid.Empty)
             {
-                _logger.LogWarning("Slot 2 (Highlighted Event) is empty or not an Event");
+                var eventItem = await LoadEventAsync(slot2.RelatedContentId, ct);
+                if (eventItem != null)
+                {
+                    highlightedEventItems.Add(CreateContentEvent(eventItem, "Highlighted Event"));
+                    _logger.LogInformation("Highlighted Event loaded: {Title}", eventItem.EventTitle);
+                }
             }
             else
             {
-                _logger.LogDebug("Loading Event {EventId} for HighlightedEvent", slot2.RelatedContentId);
-                var ev = await _events.GetEventById(slot2.RelatedContentId, ct);
-                if (ev == null)
+                _logger.LogWarning("Slot 2 (Highlighted Event) is empty, not an Event, or has no RelatedContentId");
+            }
+
+            return new BaseQueueResponse<ContentEvent>
+            {
+                QueueLabel = "Highlighted Event",
+                Items = highlightedEventItems
+            };
+        }
+
+        private async Task<BaseQueueResponse<ContentPost>> ProcessTopStoriesAsync(List<DailyTopSectionSlot> slots, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
+            var topStoriesItems = new List<ContentPost>();
+            var topStorySlots = slots.Where(s => s.SlotNumber is >= 3 and <= 5 && s.ContentType == DailyContentType.Article)
+                                    .OrderBy(s => s.SlotNumber)
+                                    .ToList();
+
+            foreach (var slot in topStorySlots)
+            {
+                var article = await LoadArticleAsync(slot.RelatedContentId, ct);
+                if (article != null)
                 {
-                    _logger.LogWarning("Event {EventId} not found or inactive", slot2.RelatedContentId);
-                }
-                else
-                {
-                    highlightedEventItems.Add(new ContentEvent
-                    {
-                        Id = ev.Id,
-                        IsActive = ev.IsActive,
-                        CreatedAt = ev.CreatedAt,
-                        UpdatedAt = ev.UpdatedAt,
-                        PageName = DrupalContentConstants.QlnContentsDaily,
-                        QueueLabel = "Highlighted Event",
-                        NodeType = "Event",
-                        Nid = ev.Id.ToString(),
-                        DateCreated = ev.CreatedAt.ToString("o"),
-                        ImageUrl = ev.CoverImage,
-                        UserName = ev.CreatedBy,
-                        Title = ev.EventTitle,
-                        Slug = ev.Slug,
-                        EventCategory = ev.CategoryName,
-                        EventVenue = ev.Venue,
-                        EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
-                        EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
-                        EventLat = ev.Latitude,
-                        EventLong = ev.Longitude,
-                        EventLocation = ev.Location
-                    });
-                    _logger.LogInformation("Highlighted Event loaded: {Title}", ev.EventTitle);
+                    topStoriesItems.Add(CreateContentPost(article, categoryLookup, "Top Stories"));
                 }
             }
 
-            // 5) Featured Events (all flagged featured)
+            _logger.LogInformation("Top Stories loaded: {Count} items", topStoriesItems.Count);
+            return new BaseQueueResponse<ContentPost>
+            {
+                QueueLabel = "Top Stories",
+                Items = topStoriesItems
+            };
+        }
+
+        private async Task<BaseQueueResponse<ContentEvent>> ProcessMoreArticlesAsync(List<DailyTopSectionSlot> slots, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
+            var moreArticlesItems = new List<ContentEvent>();
+            var moreArticleSlots = slots.Where(s => s.SlotNumber is >= 6 and <= 9 && s.ContentType == DailyContentType.Article)
+                                       .OrderBy(s => s.SlotNumber)
+                                       .ToList();
+
+            foreach (var slot in moreArticleSlots)
+            {
+                var article = await LoadArticleAsync(slot.RelatedContentId, ct);
+                if (article != null)
+                {
+                    moreArticlesItems.Add(CreateContentEventFromArticle(article, categoryLookup, "More Articles"));
+                }
+            }
+
+            _logger.LogInformation("More Articles loaded: {Count} items", moreArticlesItems.Count);
+            return new BaseQueueResponse<ContentEvent>
+            {
+                QueueLabel = "More Articles",
+                Items = moreArticlesItems
+            };
+        }
+
+        private async Task<BaseQueueResponse<ContentEvent>> ProcessFeaturedEventsAsync(CancellationToken ct)
+        {
             var featuredEventItems = new List<ContentEvent>();
             _logger.LogDebug("Loading all featured events");
-            var featured = await _events.GetAllIsFeaturedEvents(true, ct) ?? new List<V2Events>();
-            foreach (var ev in featured)
+
+            var featuredEvents = await _events.GetAllIsFeaturedEvents(true, ct) ?? new List<V2Events>();
+            var sortedFeaturedEvents = featuredEvents
+       .OrderBy(e => e.FeaturedSlot?.Id ?? int.MaxValue)
+       .ToList();
+
+            foreach (var eventItem in sortedFeaturedEvents)
             {
-                featuredEventItems.Add(new ContentEvent
-                {
-                    Id = ev.Id,
-                    IsActive = ev.IsActive,
-                    CreatedAt = ev.CreatedAt,
-                    UpdatedAt = ev.UpdatedAt,
-                    PageName = DrupalContentConstants.QlnContentsDaily,
-                    QueueLabel = "Featured Events",
-                    NodeType = "Event",
-                    Nid = ev.Id.ToString(),
-                    DateCreated = ev.CreatedAt.ToString("o"),
-                    ImageUrl = ev.CoverImage,
-                    UserName = ev.CreatedBy,
-                    Title = ev.EventTitle,
-                    Slug = ev.Slug,
-                    EventCategory = ev.CategoryName,
-                    EventVenue = ev.Venue,
-                    EventStart = ev.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
-                    EventEnd = ev.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
-                    EventLat = ev.Latitude,
-                    EventLong = ev.Longitude,
-                    EventLocation = ev.Location
-                });
+                featuredEventItems.Add(CreateContentEvent(eventItem, "Featured Events"));
             }
+
             _logger.LogInformation("Featured Events loaded: {Count}", featuredEventItems.Count);
-
-            // 6) More Articles (slots 6–9)
-            var moreArticlesItems = new List<ContentEvent>();
-            foreach (var slot in slots.Where(s => s.SlotNumber is >= 6 and <= 9))
+            return new BaseQueueResponse<ContentEvent>
             {
-                if (slot.ContentType != DailyContentType.Article)
-                {
-                    _logger.LogWarning("Slot {Slot} in MoreArticles is not an Article; skipping", slot.SlotNumber);
-                    continue;
-                }
+                QueueLabel = "Featured Events",
+                Items = featuredEventItems
+            };
+        }
 
-                _logger.LogDebug("Loading Article {ArticleId} for MoreArticles slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
-                var art = await _news.GetArticleByIdAsync(slot.RelatedContentId, ct);
-                if (art == null)
-                {
-                    _logger.LogWarning("Article {ArticleId} not found for slot {Slot}", slot.RelatedContentId, slot.SlotNumber);
-                    continue;
-                }
-                var catId = art.Categories?.FirstOrDefault()?.CategoryId ?? default;
-
-                moreArticlesItems.Add(new ContentEvent
-                {
-                    PageName = DrupalContentConstants.QlnContentsDaily,
-                    QueueLabel = "More Articles",
-                    NodeType = "Post",
-                    Nid = art.Id.ToString(),
-                    DateCreated = art.CreatedAt.ToString("o"),
-                    ImageUrl = art.CoverImageUrl,
-                    UserName = art.authorName,
-                    Title = art.Title,
-                    Slug = art.Slug,
-                    Description = art.Content,
-                    Id = art.Id,
-                    CreatedAt = art.CreatedAt,
-                    UpdatedAt = art.UpdatedAt,
-                    IsActive = art.IsActive,
-                    Category = categoryLookup.TryGetValue(catId, out var catName)
-                               ? catName
-                               : string.Empty
-                });
-            }
-            _logger.LogInformation("More Articles loaded: {Count}", moreArticlesItems.Count);
-
-            // 7) Dynamic Topics (one queue per published topic)
+        private async Task<List<BaseQueueResponse<ContentEvent>>> ProcessDynamicTopicsAsync(IEnumerable<dynamic> publishedTopics, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
             var allTopics = (await GetAllDailyTopicsAsync(ct))
                             .Where(t => t.IsPublished)
                             .ToList();
+
             var topicQueues = new List<BaseQueueResponse<ContentEvent>>();
             _logger.LogDebug("Building queues for {Count} published topics", allTopics.Count);
 
             foreach (var topic in allTopics)
             {
                 var items = new List<ContentEvent>();
-                var topicSlots = await GetSlotsByTopicAsync(topic.Id, ct) ?? new List<DailyTopicContent>();
+                var topicSlots = (await GetSlotsByTopicAsync(topic.Id, ct) ?? new List<DailyTopicContent>())
+                                .OrderBy(s => s.SlotNumber)
+                                .ToList();
+
                 _logger.LogDebug("Topic '{Topic}' has {Count} slots", topic.TopicName, topicSlots.Count);
 
                 foreach (var slot in topicSlots)
                 {
-                    switch (slot.ContentType)
+                    var contentEvent = await ProcessTopicSlotAsync(slot, topic.TopicName, categoryLookup, ct);
+                    if (contentEvent != null)
                     {
-                        case DailyContentType.Article:
-                            _logger.LogDebug("Topic {Topic}: loading Article {Id}", topic.TopicName, slot.RelatedContentId);
-                            var a = await _news.GetArticleByIdAsync(slot.RelatedContentId, ct);
-                            var catId = a.Categories?.FirstOrDefault()?.CategoryId ?? default;
-                            if (a != null)
-                                items.Add(new ContentEvent
-                                {
-                                    Id = a.Id,
-                                    IsActive = a.IsActive,
-                                    CreatedAt = a.CreatedAt,
-                                    UpdatedAt = a.UpdatedAt,
-                                    Description = a.Content,
-                                    UserName = a.authorName,
-                                    PageName = DrupalContentConstants.QlnContentsDaily,
-                                    Nid = a.Id.ToString(),
-                                    Title = a.Title,
-                                    Category = categoryLookup.TryGetValue(catId, out var catName)
-                               ? catName
-                               : string.Empty,
-                                    DateCreated = a.CreatedAt.ToString("o"),
-                                    ImageUrl = a.CoverImageUrl,
-                                    Slug = a.Slug,
-                                    NodeType = "Post"
-                                });
-                            else
-                                _logger.LogWarning("Topic {Topic}: Article {Id} not found", topic.TopicName, slot.RelatedContentId);
-                            break;
-
-                        case DailyContentType.Event:
-                            _logger.LogDebug("Topic {Topic}: loading Event {Id}", topic.TopicName, slot.RelatedContentId);
-                            var e2 = await _events.GetEventById(slot.RelatedContentId, ct);
-                            if (e2 != null)
-                                items.Add(new ContentEvent
-                                {
-                                    Id = e2.Id,
-                                    IsActive = e2.IsActive,
-                                    EventLocation = e2.Location,
-                                    CreatedAt = e2.CreatedAt,
-                                    UpdatedAt = e2.UpdatedAt,
-                                    EventCategory = e2.CategoryName,
-                                    PageName = DrupalContentConstants.QlnContentsDaily,
-                                    Nid = e2.Id.ToString(),
-                                    Title = e2.EventTitle,
-                                    Category = e2.CategoryName,
-                                    DateCreated = e2.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
-                                    EventStart = e2.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
-                                    EventEnd = e2.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
-                                    ImageUrl = e2.CoverImage,
-                                    EventVenue = e2.Venue,
-                                    EventLat = e2.Latitude,
-                                    EventLong = e2.Longitude,
-                                    Slug = e2.Slug,
-                                    NodeType = "Event"
-                                });
-                            else
-                                _logger.LogWarning("Topic {Topic}: Event {Id} not found", topic.TopicName, slot.RelatedContentId);
-                            break;
-
-                        case DailyContentType.Video:
-                            _logger.LogDebug("Topic {Topic}: adding Video slot {Slot}", topic.TopicName, slot.SlotNumber);
-                            items.Add(new ContentEvent
-                            {
-                                Id = slot.Id,
-                                IsActive = true,
-                                CreatedAt = slot.CreatedAt,
-                                UpdatedAt = slot.UpdatedAt,
-                                PageName = DrupalContentConstants.QlnContentsDaily,
-                                Nid = slot.RelatedContentId.ToString(),
-                                Title = slot.Title,
-                                Category = slot.Category,
-                                DateCreated = slot.PublishedDate.ToString("o"),
-                                ImageUrl = slot.ContentUrl,
-                                Slug = slot.ContentUrl,
-                                NodeType = "Video"
-                            });
-                            break;
+                        items.Add(contentEvent);
                     }
                 }
 
@@ -799,30 +720,203 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 _logger.LogInformation("Topic '{Topic}' queue built with {Count} items", topic.TopicName, items.Count);
             }
 
-            // Helper to avoid out‐of‐range on topicQueues
-            BaseQueueResponse<ContentEvent> GetOrEmpty(int idx) =>
-                idx < topicQueues.Count
-                    ? topicQueues[idx]
-                    : new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() };
-
-            // 8) Assemble everything into the DTO
-            var contents = new ContentsDaily
-            {
-                DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = topStoryItems },
-                DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = topStoriesItems },
-                DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = highlightedEventItems },
-                DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = featuredEventItems },
-                DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = moreArticlesItems },
-                DailyTopics1 = GetOrEmpty(0),
-                DailyTopics2 = GetOrEmpty(1),
-                DailyTopics3 = GetOrEmpty(2),
-                DailyTopics4 = GetOrEmpty(3),
-                DailyTopics5 = GetOrEmpty(4),
-            };
-
-            _logger.LogInformation("GetDailyLivingLandingAsync completed successfully");
-            return new ContentsDailyPageResponse { ContentsDaily = contents };
+            return topicQueues;
         }
 
+        private async Task<ContentEvent> ProcessTopicSlotAsync(DailyTopicContent slot, string topicName, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
+            return slot.ContentType switch
+            {
+                DailyContentType.Article => await ProcessTopicArticleAsync(slot, topicName, categoryLookup, ct),
+                DailyContentType.Event => await ProcessTopicEventAsync(slot, topicName, ct),
+                DailyContentType.Video => ProcessTopicVideo(slot, topicName),
+                _ => null
+            };
+        }
+
+        private async Task<ContentEvent> ProcessTopicArticleAsync(DailyTopicContent slot, string topicName, Dictionary<int, string> categoryLookup, CancellationToken ct)
+        {
+            _logger.LogDebug("Topic {Topic}: loading Article {Id}", topicName, slot.RelatedContentId);
+            var article = await LoadArticleAsync(slot.RelatedContentId, ct);
+
+            if (article == null)
+            {
+                _logger.LogWarning("Topic {Topic}: Article {Id} not found", topicName, slot.RelatedContentId);
+                return null;
+            }
+
+            return CreateContentEventFromArticle(article, categoryLookup, topicName);
+        }
+
+        private async Task<ContentEvent> ProcessTopicEventAsync(DailyTopicContent slot, string topicName, CancellationToken ct)
+        {
+            _logger.LogDebug("Topic {Topic}: loading Event {Id}", topicName, slot.RelatedContentId);
+            var eventItem = await LoadEventAsync(slot.RelatedContentId, ct);
+
+            if (eventItem == null)
+            {
+                _logger.LogWarning("Topic {Topic}: Event {Id} not found", topicName, slot.RelatedContentId);
+                return null;
+            }
+
+            return CreateContentEvent(eventItem, topicName);
+        }
+
+        private ContentEvent ProcessTopicVideo(DailyTopicContent slot, string topicName)
+        {
+            _logger.LogDebug("Topic {Topic}: adding Video slot {Slot}", topicName, slot.SlotNumber);
+            return new ContentEvent
+            {
+                Id = slot.Id,
+                IsActive = true,
+                CreatedAt = slot.CreatedAt,
+                UpdatedAt = slot.UpdatedAt,
+                PageName = DrupalContentConstants.QlnContentsDaily,
+                Nid = slot.RelatedContentId.ToString(),
+                Title = slot.Title,
+                Category = slot.Category,
+                DateCreated = slot.PublishedDate.ToString("o"),
+                ImageUrl = slot.ContentUrl,
+                Slug = slot.ContentUrl,
+                NodeType = "video"
+            };
+        }
+
+        private async Task<dynamic> LoadArticleAsync(Guid articleId, CancellationToken ct)
+        {
+            if (articleId == Guid.Empty)
+            {
+                _logger.LogWarning("Cannot load article with empty ID");
+                return null;
+            }
+
+            try
+            {
+                return await _news.GetArticleByIdAsync(articleId, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading article {ArticleId}", articleId);
+                return null;
+            }
+        }
+
+        private async Task<V2Events> LoadEventAsync(Guid eventId, CancellationToken ct)
+        {
+            if (eventId == Guid.Empty)
+            {
+                _logger.LogWarning("Cannot load event with empty ID");
+                return null;
+            }
+
+            try
+            {
+                return await _events.GetEventById(eventId, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading event {EventId}", eventId);
+                return null;
+            }
+        }
+
+        private ContentPost CreateContentPost(dynamic article, Dictionary<int, string> categoryLookup, string queueLabel)
+        {
+            // Handle Categories collection properly with explicit casting
+            var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
+            var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+
+            return new ContentPost
+            {
+                Id = (Guid)article.Id,
+                Description = (string)article.Content,
+                CreatedAt = (DateTime)article.CreatedAt,
+                UpdatedAt = (DateTime)article.UpdatedAt,
+                IsActive = (bool)article.IsActive,
+                PageName = DrupalContentConstants.QlnContentsDaily,
+                QueueLabel = queueLabel,
+                NodeType = "post",
+                Nid = article.Id.ToString(),
+                DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
+                ImageUrl = (string)article.CoverImageUrl,
+                UserName = (string)article.authorName,
+                Title = (string)article.Title,
+                Slug = (string)article.Slug,
+                Category = categoryLookup.ContainsKey(catId) ? categoryLookup[catId] : string.Empty
+            };
+        }
+
+        private ContentEvent CreateContentEvent(V2Events eventItem, string queueLabel)
+        {
+            return new ContentEvent
+            {
+                Id = eventItem.Id,
+                IsActive = eventItem.IsActive,
+                CreatedAt = eventItem.CreatedAt,
+                UpdatedAt = eventItem.UpdatedAt,
+                PageName = DrupalContentConstants.QlnContentsDaily,
+                QueueLabel = queueLabel,
+                NodeType = "event",
+                Nid = eventItem.Id.ToString(),
+                DateCreated = eventItem.CreatedAt.ToString("o"),
+                ImageUrl = eventItem.CoverImage,
+                UserName = eventItem.CreatedBy,
+                Title = eventItem.EventTitle,
+                Slug = eventItem.Slug,
+                EventCategory = eventItem.CategoryName,
+                EventVenue = eventItem.Venue,
+                EventStart = eventItem.EventSchedule?.StartDate.ToString("o") ?? string.Empty,
+                EventEnd = eventItem.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
+                EventLat = eventItem.Latitude,
+                EventLong = eventItem.Longitude,
+                EventLocation = eventItem.Location
+            };
+        }
+
+        private ContentEvent CreateContentEventFromArticle(dynamic article, Dictionary<int, string> categoryLookup, string queueLabel)
+        {
+            // Handle Categories collection properly with explicit casting
+            var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
+            var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+
+            return new ContentEvent
+            {
+                Id = (Guid)article.Id,
+                CreatedAt = (DateTime)article.CreatedAt,
+                UpdatedAt = (DateTime)article.UpdatedAt,
+                IsActive = (bool)article.IsActive,
+                Description = (string)article.Content,
+                UserName = (string)article.authorName,
+                PageName = DrupalContentConstants.QlnContentsDaily,
+                QueueLabel = queueLabel,
+                Nid = article.Id.ToString(),
+                Title = (string)article.Title,
+                Category = categoryLookup.ContainsKey(catId) ? categoryLookup[catId] : string.Empty,
+                DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
+                ImageUrl = (string)article.CoverImageUrl,
+                Slug = (string)article.Slug,
+                NodeType = "post"
+            };
+        }
+
+        private ContentsDailyPageResponse CreateEmptyResponse()
+        {
+            return new ContentsDailyPageResponse
+            {
+                ContentsDaily = new ContentsDaily
+                {
+                    DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = new List<ContentPost>() },
+                    DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = new List<ContentPost>() },
+                    DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = new List<ContentEvent>() },
+                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = new List<ContentEvent>() },
+                    DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = new List<ContentEvent>() },
+                    DailyTopics1 = new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() },
+                    DailyTopics2 = new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() },
+                    DailyTopics3 = new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() },
+                    DailyTopics4 = new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() },
+                    DailyTopics5 = new BaseQueueResponse<ContentEvent> { QueueLabel = string.Empty, Items = new List<ContentEvent>() }
+                }
+            };
+        }
     }
 }
