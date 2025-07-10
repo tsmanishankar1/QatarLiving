@@ -17,7 +17,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected NavigationManager navManager { get; set; }
 
-        public bool isLoading = true;
+        protected bool isLoading = true;
         protected bool isLoadingBanners = true;
         protected bool imageFailed = false;
         protected bool imageLoaded = false;

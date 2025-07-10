@@ -3,6 +3,7 @@
 @layout ContentLayout
 @using MudBlazor
 @using QLN.Web.Shared.Pages.Content.DailyV2.DailyVideoCards
+@using QLN.Web.Shared.Pages.Content.NewsV2.ButtonSkeleton
 @using QLN.Web.Shared.Pages.Content.NewsV2.NewsCard
 @using QLN.Web.Shared.Pages.Content.NewsV2.NewsLetter
 @using QLN.Web.Shared.Pages.Content.NewsV2.PopularArticles
@@ -40,6 +41,12 @@
             }
         </div>
     @* </div> *@
+     @if (isLoading)
+    {
+      <ButtonSkeleton/>
+    }
+    else
+    {
     <div class="tooggle-container">
         <ViewToggleButtons Items="@_viewOptions" SelectedValue="@_selectedView" OnSelected="SetViewMode" TextClass="custom-text" />
     </div>
@@ -53,6 +60,7 @@
             }
         </div>
     </div>
+    }
     <div style="gap: 0px;">
         <div class="news-container">
             <div class="max-container">
