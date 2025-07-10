@@ -6,7 +6,7 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json;
 
-namespace QLN.Web.Shared.Pages.Content.News
+namespace QLN.Web.Shared.Pages.Content.NewsV2
 {
     public class NewsBaseV2 : ComponentBase
     {
