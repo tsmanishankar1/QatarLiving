@@ -171,7 +171,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     CommentCount = dto.CommentCount,
                     isCommented = false,
                     ImageUrl = dto.ImageUrl,
-                    Slug = dto.Slug
+                    Slug = dto.Slug,
+                    //isCommented = dto.CommentedUserIds?.Contains(currentUserId) ?? false,
+                    //IsLiked = dto.LikedUserIds?.Contains(currentUserId) ?? false,
                 }).ToList();
 
                 return (postModelList, totalCount);
