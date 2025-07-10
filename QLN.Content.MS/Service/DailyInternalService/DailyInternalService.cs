@@ -667,8 +667,11 @@ namespace QLN.Content.MS.Service.DailyInternalService
             _logger.LogDebug("Loading all featured events");
 
             var featuredEvents = await _events.GetAllIsFeaturedEvents(true, ct) ?? new List<V2Events>();
+            var sortedFeaturedEvents = featuredEvents
+       .OrderBy(e => e.FeaturedSlot?.Id ?? int.MaxValue)
+       .ToList();
 
-            foreach (var eventItem in featuredEvents)
+            foreach (var eventItem in sortedFeaturedEvents)
             {
                 featuredEventItems.Add(CreateContentEvent(eventItem, "Featured Events"));
             }
@@ -775,7 +778,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 DateCreated = slot.PublishedDate.ToString("o"),
                 ImageUrl = slot.ContentUrl,
                 Slug = slot.ContentUrl,
-                NodeType = "Video"
+                NodeType = "video"
             };
         }
 
@@ -832,7 +835,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 IsActive = (bool)article.IsActive,
                 PageName = DrupalContentConstants.QlnContentsDaily,
                 QueueLabel = queueLabel,
-                NodeType = "Post",
+                NodeType = "post",
                 Nid = article.Id.ToString(),
                 DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
                 ImageUrl = (string)article.CoverImageUrl,
@@ -853,7 +856,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 UpdatedAt = eventItem.UpdatedAt,
                 PageName = DrupalContentConstants.QlnContentsDaily,
                 QueueLabel = queueLabel,
-                NodeType = "Event",
+                NodeType = "event",
                 Nid = eventItem.Id.ToString(),
                 DateCreated = eventItem.CreatedAt.ToString("o"),
                 ImageUrl = eventItem.CoverImage,
@@ -892,7 +895,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
                 ImageUrl = (string)article.CoverImageUrl,
                 Slug = (string)article.Slug,
-                NodeType = "Post"
+                NodeType = "post"
             };
         }
 
