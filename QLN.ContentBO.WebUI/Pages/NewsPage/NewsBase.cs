@@ -132,34 +132,40 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var response = await newsService.DeleteNews(id);
-                if (response != null && response.IsSuccessStatusCode)
+                var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                var dialog = await DialogService.ShowAsync<DeleteArticleConfirmDialog>("", options);
+                var result = await dialog.Result;
+                if (!result.Canceled)
                 {
-                    if (selectedTab == "live")
+                    var response = await newsService.DeleteNews(id);
+                    if (response != null && response.IsSuccessStatusCode)
                     {
-                        IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
-                    }
-                    else
-                    {
-                        ListOfNewsArticles.RemoveAll(a => a.Id == id);
-                        if (SearchListOfNewsArticles.Count > 0)
+                        if (selectedTab == "live")
                         {
-                            SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
                         }
+                        else
+                        {
+                            ListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            if (SearchListOfNewsArticles.Count > 0)
+                            {
+                                SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            }
+                        }
+                        Snackbar.Add("Article Deleted successfully", Severity.Success);
                     }
-                    Snackbar.Add("Article Deleted successfully", Severity.Success);
-                }
-                else if (response?.StatusCode == HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add("Article cannot be Deleted since it is configured in News/Daily Slot", Severity.Error);
-                }
-                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    Snackbar.Add("You are not Authorized to perform this action", Severity.Error);
-                }
-                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
-                {
-                    Snackbar.Add("Internal API Error", Severity.Error);
+                    else if (response?.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        Snackbar.Add("Article cannot be Deleted since it is configured in News/Daily Slot", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        Snackbar.Add("You are not Authorized to perform this action", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        Snackbar.Add("Internal API Error", Severity.Error);
+                    }
                 }
 
                 StateHasChanged();
@@ -440,13 +446,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (!result.Canceled)
                 {
                     await OnTabChanged(selectedTab);
-                    var dparameters = new DialogParameters<ArticleDialog>
-                    {
-                        { x => x.ContentText, "Article is Live" },
-                    };
-
-                    var doptions = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
+                    Snackbar.Add($"Article is Live now", Severity.Success);
                 }
 
                 StateHasChanged();
@@ -505,13 +505,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (!result.Canceled)
                 {
                     await OnTabChanged(selectedTab);
-                    var dparameters = new DialogParameters<ArticleDialog>
-                    {
-                        { x => x.ContentText, successMessage },
-                    };
-
-                    var doptions = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
+                    Snackbar.Add($"{successMessage}", Severity.Success);
                 }
                 StateHasChanged();
             }

@@ -126,9 +126,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     var parameters = new DialogParameters<ArticleDialog>
-                            {
-                                { x => x.ContentText, "Article Published" },
-                            };
+                    {
+                        { x => x.ContentText, "Article Published" },
+                    };
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
