@@ -365,3 +365,5 @@ FodyWeavers.xsd
 
 # appsettings.Development.json
 **/appsettings.Development.json
+/QLN.ContentBO.WebUI/qln-content-bo-web-internal.txt
+/QLN.ContentBO.WebUI/qln-content-bo-web-internal.txt
