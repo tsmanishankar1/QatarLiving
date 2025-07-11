@@ -1179,10 +1179,22 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var pageName = $"qln_{catKey}_{subKey}";
 
                 var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
-                var posts = dtos
-                .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 14))
-                .Select(dto => new Common.Infrastructure.DTO_s.ContentPost
-                {
+
+                var articlesInSlot14 = dtos
+                .Where(dto => dto.Categories.Any(c => c.SlotId == 14))
+                .OrderByDescending(dto => dto.PublishedDate)
+                .Take(3);
+
+                var articlesInSlots1To13 = dtos
+                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 13));
+
+                var filteredDtos = articlesInSlots1To13
+                    .Concat(articlesInSlot14)
+                    .DistinctBy(dto => dto.Id) 
+                    .ToList();
+                var posts = filteredDtos
+                    .Select(dto => new Common.Infrastructure.DTO_s.ContentPost
+                    {
                     Id = dto.Id,
                     Nid = dto.Id.ToString(),
                     DateCreated = dto.CreatedAt.ToString("o"),
