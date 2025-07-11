@@ -57,13 +57,6 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
         }
     }
 
-    //Commented Drupal navigation
-    //protected async Task OnCategoryChange(string newId)
-    //{
-    //    SelectedCategoryId = newId;
-    //    await OnCategoryChanged.InvokeAsync(newId);
-    //    NavigationManager.NavigateTo($"content/community?categoryId={newId}", forceLoad: false);
-    //}
     protected async Task OnCategoryChange(string newId)
     {
         SelectedCategoryId = newId;
@@ -80,16 +73,19 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
         }
     }
 
-    //protected async Task PerformSearch()
-    //{
-    //    //var success = await CommunitySearchService.PerformSearchAsync(searchText);
-    //    Snackbar.Add("More features are coming soon!", Severity.Success);
-
-    //}
     protected async Task PerformSearch()
     {
         Console.WriteLine($"Search text submitted: {searchText}");
         await OnSearchTextChanged.InvokeAsync(searchText);
+    }
+    protected async Task ClearFilters()
+    {
+        searchText = string.Empty;
+        SelectedCategoryId = null;
+
+      
+
+        NavigationManager.NavigateTo("content/community/v2", forceLoad: true);
     }
 
 

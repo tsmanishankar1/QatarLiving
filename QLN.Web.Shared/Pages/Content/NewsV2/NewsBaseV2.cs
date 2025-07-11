@@ -6,7 +6,7 @@ using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json;
 
-namespace QLN.Web.Shared.Pages.Content.News
+namespace QLN.Web.Shared.Pages.Content.NewsV2
 {
     public class NewsBaseV2 : ComponentBase
     {
@@ -17,7 +17,7 @@ namespace QLN.Web.Shared.Pages.Content.News
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected NavigationManager navManager { get; set; }
 
-        public bool isLoading = true;
+        protected bool isLoading = true;
         protected bool isLoadingBanners = true;
         protected bool imageFailed = false;
         protected bool imageLoaded = false;

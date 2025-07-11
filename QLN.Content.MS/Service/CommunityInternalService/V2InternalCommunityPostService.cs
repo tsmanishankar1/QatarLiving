@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using static QLN.Common.DTO_s.CommunityBo;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.Text.RegularExpressions;
 
 namespace QLN.Content.MS.Service.CommunityInternalService
 {
@@ -22,7 +23,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             _dapr = dapr;
             _logger = logger;
         }
-       
 
         public async Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken ct = default)
         {
@@ -189,8 +189,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException("An unexpected error occurred while retrieving community posts.", ex);
             }
         }
-
-
         public async Task<V2CommunityPostDto?> GetCommunityPostByIdAsync(Guid id, CancellationToken ct = default)
         {
             try
@@ -205,19 +203,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-
         private string GenerateSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.Trim().ToLower()
-                             .Replace(" ", "-")
-                             .Replace("--", "-")
-                             .Replace("and", "-")
-                             .Replace("of", "-")
-                             .Replace("the", "-");
+            var slug = title.ToLowerInvariant().Trim();
+            slug = Regex.Replace(slug, @"[\s_]+", "-");
+            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
+            slug = Regex.Replace(slug, @"-+", "-");
+            slug = slug.Trim('-');
             return slug;
         }
-
         public Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             var categories = new List<ForumCategoryDto>
@@ -264,7 +259,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             };
             return Task.FromResult(new ForumCategoryListDto { ForumCategories = categories });
         }
-        
         public async Task<bool> SoftDeleteCommunityPostAsync(Guid postId, string userId, CancellationToken ct = default)
         {
             var key = GetKey(postId);
@@ -281,7 +275,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
             return true;
         }
-
         public async Task<bool> LikePostForUser(CommunityPostLikeDto dto, CancellationToken ct = default)
         {
             var key = $"like-{dto.CommunityPostId}-{dto.UserId}";
@@ -324,7 +317,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-
         public async Task AddCommentToCommunityPostAsync(CommunityCommentDto dto, CancellationToken ct = default)
         {
             var key = $"comment-{dto.CommunityPostId}-{dto.CommentId}";
@@ -334,7 +326,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             {
                 await _dapr.SaveStateAsync(StoreName, key, dto);
 
-                // Update the index list
                 var index = await _dapr.GetStateAsync<List<Guid>>(StoreName, indexKey) ?? new();
                 index.Add(dto.CommentId);
 
@@ -484,10 +475,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-
-
-
-
         public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
         {
             var key = $"comment-like-{commentId}-{userId}";

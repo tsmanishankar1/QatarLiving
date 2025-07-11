@@ -211,5 +211,41 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             var dialog = DialogService.Show<ReportDialog>("", parameters, options);
             var result = await dialog.Result;
         }
+        protected async Task ToggleLikeAsync(string postId, string commentId)
+        {
+            if (!IsLoggedIn)
+            {
+                Snackbar.Add("Please login to like this comment.", Severity.Warning);
+                return;
+            }
+
+            try
+            {
+                var success = await CommunityService.LikeCommunityCommentstAsync(postId, commentId);
+
+                if (success)
+                {
+                    var comment = Comments.FirstOrDefault(c => c.CommentId == commentId);
+                    if (comment is not null)
+                    {
+                        IsLiked = !IsLiked;
+                        comment.CommentsLikeCount += IsLiked ? 1 : -1;
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Failed to like the comment.", Severity.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while liking comment: {ex.Message}");
+                Snackbar.Add("An unexpected error occurred.", Severity.Error);
+            }
+
+            StateHasChanged();
+        }
+
     }
-    }
+
+}

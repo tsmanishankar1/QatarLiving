@@ -76,6 +76,18 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             try
             {
+
+
+                var duplicateCheck = dto.Categories.GroupBy(c => new { c.CategoryId, c.SubcategoryId }).
+                    Where(d => d.Count() > 1)
+                    .Select(d => d.Key).ToList();
+                if (duplicateCheck.Any())
+                {
+                    var duplicates = string.Join(", ",  duplicateCheck.Select(h=> $"CategoryId:{h.CategoryId}, subCategoryId:{h.SubcategoryId}"));
+                    throw new InvalidDataException($"Please select different category and subcategory combinations. Duplicates: {duplicates}");
+
+                }
+
                 var slugBase = GenerateNewsSlug(dto.Title);
                 int articleCount = 0;
 
@@ -98,7 +110,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                   : cat.SlotId
             }
         },
-                        PublishedDate = DateTime.UtcNow,
+                        PublishedDate = cat.SlotId == (int)Slot.UnPublished ? null : DateTime.UtcNow,
                         CreatedBy = userId,
                         UpdatedBy = userId,
                         CreatedAt = DateTime.UtcNow,
@@ -173,8 +185,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new Exception("Unexpected error during article creation", ex);
             }
         }
-
-
 
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
@@ -560,6 +570,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
             if (oldSlot == 15 && (newSlot >= 1 && newSlot <= 14))
             {
                 dto.PublishedDate = DateTime.UtcNow;
+            }
+            if (newSlot == UnpublishedId)
+            {
+                dto.PublishedDate = null; 
             }
             if (newSlot >= 1 && newSlot <= MaxLiveSlot)
             {
@@ -1169,7 +1183,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 {
                     Id = dto.Id,
                     Nid = dto.Id.ToString(),
-                    DateCreated = dto.PublishedDate.ToString("o"),
+                    DateCreated = dto.CreatedAt.ToString("o"),
                     ImageUrl = dto.CoverImageUrl,
                     UserName = dto.authorName,
                     Title = dto.Title,

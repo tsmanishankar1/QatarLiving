@@ -131,7 +131,11 @@ else
 
                             </div>
                             <div class="comment-description">@c.Content</div>
+                            <div class="like-wrapper" @onclick="@(() => ToggleLikeAsync(Comment.Id, c.CommentId))">
 
+                                <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-like-icon" />
+                                <span class="icon-text">@c.CommentsLikeCount</span>
+                            </div>
 
                         </div>
 
@@ -223,6 +227,11 @@ else
     .comment-icon {
         background-color: #eef;
         margin-bottom: 0.5rem;
+    }
+
+    .comment-like-icon{
+        height:14px;
+        width:14px;
     }
 
     .comment-item {
