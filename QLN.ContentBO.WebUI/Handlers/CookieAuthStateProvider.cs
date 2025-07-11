@@ -92,8 +92,8 @@ namespace QLN.ContentBO.WebUI.Handlers
                                             identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                                         if (user.IsAdmin != null)
                                             identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                        if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
+                                        if (user.QlnextUserId != 0)
+                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId?.ToString() ?? ""));
                                         if (!string.IsNullOrEmpty(user.Alias))
                                             identity.AddClaim(new Claim("alias", user.Alias));
                                         if (!string.IsNullOrEmpty(user.Image))

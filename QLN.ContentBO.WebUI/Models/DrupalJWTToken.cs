@@ -50,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string? Uid { get; set; }
 
         [JsonPropertyName("qlnext_user_id")]
-        public string? QlnextUserId { get; set; }
+        public int? QlnextUserId { get; set; }
 
         [JsonPropertyName("name")]
         public string? Name { get; set; }
