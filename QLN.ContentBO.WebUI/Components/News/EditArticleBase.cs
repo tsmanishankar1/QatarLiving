@@ -196,11 +196,12 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
-            var result = dialog.Result;
-            if (!result.IsCanceled)
+            var result = await dialog.Result;
+            if (!result.Canceled)
             {
                 // When Changes are discarded Load Article
                 await LoadArticle();
+                StateHasChanged();
             }
         }
 
