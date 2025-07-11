@@ -379,7 +379,7 @@ public class DailyLivingBase : QLComponentBase
     protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
     {
         ReplaceSlot = selectedEvent;
-        OpenDReplaceDialogAsync();
+        await OpenDReplaceDialogAsync();
         await Task.CompletedTask;
     }
     protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
