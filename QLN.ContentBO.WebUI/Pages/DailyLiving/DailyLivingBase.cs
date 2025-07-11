@@ -246,8 +246,10 @@ public class DailyLivingBase : QLComponentBase
         {
             IsLoading = true;
             isTabLoading = true;
-            await AuthorizedPage();
-
+            if (!NavigationPath.Value.IsLocal) 
+            {
+                await AuthorizedPage();
+            }
 
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();

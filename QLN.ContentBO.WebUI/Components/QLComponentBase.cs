@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Components
         {
             try
             {
-                if (IsLoggedIn) 
+                if (IsLoggedIn)
                 {
                     return;
                 }
@@ -50,7 +50,16 @@ namespace QLN.ContentBO.WebUI.Components
                 else
                 {
                     IsLoggedIn = false;
-                    NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
+
+                    if (NavigationPath.Value.IsLocal)
+                    {
+                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
+                    }
+                    else
+                    {
+                        NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
+
+                    }
                 }
             }
             catch (Exception ex)

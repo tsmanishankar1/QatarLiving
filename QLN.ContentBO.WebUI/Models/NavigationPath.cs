@@ -12,5 +12,6 @@
         public string ContentPostDetail { get; set; } = "https://qlm.qatarliving.com/";
 
         public string BORedirectPrefix { get; set; } = "qlnext/contents_bo/";
+        public bool IsLocal { get; set; } = false;
     }
 }
