@@ -1179,7 +1179,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var pageName = $"qln_{catKey}_{subKey}";
 
                 var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
-                var posts = dtos.Select(dto => new Common.Infrastructure.DTO_s.ContentPost
+                var posts = dtos
+                .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 14))
+                .Select(dto => new Common.Infrastructure.DTO_s.ContentPost
                 {
                     Id = dto.Id,
                     Nid = dto.Id.ToString(),
