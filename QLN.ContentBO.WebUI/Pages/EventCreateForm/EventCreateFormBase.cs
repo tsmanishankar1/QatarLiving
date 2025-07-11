@@ -5,6 +5,7 @@ using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Components;
@@ -156,7 +157,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string LocationType = "Location";
         protected string Price;
         protected bool IsFeesSelected => CurrentEvent.EventType == EventType.FeePrice;
-        protected string PriceFieldClass => IsFeesSelected ? "my-2 enable-field-style" : "my-2 price-class-style custom-border";
+        protected string PriceFieldClass => IsFeesSelected ? "my-2 enable-field-style no-spinner" : "my-2 price-class-style custom-border no-spinner";
         protected string Location;
         protected string RedirectionLink;
         protected string Venue;
@@ -420,6 +421,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 Snackbar.Add("Cover Image is required.", severity: Severity.Error);
                 return;
             }
+            await ShowConfirmation(
+            "Save Event",
+            "Are you sure you want to save this event?",
+            "Save", async () => await SaveEvent());
+        }
+        protected async Task SaveEvent()
+        {
             try
             {
                 IsLoading = true;
@@ -454,7 +462,37 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 IsLoading = false;
             }
+
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         private async Task<List<EventCategoryModel>> GetEventsCategories()
         {
             try
@@ -563,7 +601,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             else
             {
-                CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+                CurrentEvent?.EventSchedule?.TimeSlots?.Add(new TimeSlotModel
                 {
                     DayOfWeek = entry.Date.DayOfWeek,
                     StartTime = entry.StartTime.HasValue ? TimeOnly.FromTimeSpan(entry.StartTime.Value) : null,
@@ -601,6 +639,27 @@ namespace QLN.ContentBO.WebUI.Pages
 
             StateHasChanged();
         }
+        protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Title", title },
+            { "Descrption", description },
+            { "ButtonTitle", buttonTitle },
+            { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = false,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+
+    }
     };
 }
 

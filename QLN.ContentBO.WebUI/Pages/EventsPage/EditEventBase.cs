@@ -140,7 +140,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string LocationType = "Location";
         protected string Price;
         protected bool IsFeesSelected => CurrentEvent.EventType == EventType.FeePrice;
-        protected string PriceFieldClass => IsFeesSelected ? "my-2 enable-field-style" : "my-2 price-class-style custom-border";
+        protected string PriceFieldClass => IsFeesSelected ? "my-2 enable-field-style no-spinner" : "my-2 price-class-style custom-border no-spinner";
         protected string Location;
         protected string RedirectionLink;
         protected string Venue;
