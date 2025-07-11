@@ -8,6 +8,7 @@ using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
@@ -33,6 +34,8 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] public HttpClient Http { get; set; }
         [Inject] private IAdService AdService { get; set; }
+        [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
+
         protected string search = string.Empty;
         protected string sortOption = "Default";
         private string ApiSortValue => sortOption == "Default" ? null : sortOption;
@@ -74,7 +77,35 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
         protected string _newComment;
- 
+
+        protected string currentUserId = string.Empty;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    currentUserId = user.FindFirst("uid")?.Value
+                         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? string.Empty;
+
+                }
+                else
+                {
+                    Logger.LogWarning(" User is not authenticated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while retrieving user authentication state.");
+            }
+        }
+
+
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (!firstRender) return;
@@ -180,11 +211,10 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                     Time = dto.DateCreated,
                     LikeCount = dto.LikeCount,
                     CommentCount = dto.CommentCount,
-                    isCommented = false,
                     ImageUrl = dto.ImageUrl,
                     Slug = dto.Slug,
-                    //isCommented = dto.CommentedUserIds?.Contains(currentUserId) ?? false,
-                    //IsLiked = dto.LikedUserIds?.Contains(currentUserId) ?? false,
+                    isCommented = dto.CommentedUserIds?.Contains(currentUserId) ?? false,
+                    IsLiked = dto.LikedUserIds?.Contains(currentUserId) ?? false,
                 }).ToList();
 
                 return (postModelList, totalCount);

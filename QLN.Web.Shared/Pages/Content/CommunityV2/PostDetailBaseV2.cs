@@ -5,9 +5,11 @@ using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 
 namespace QLN.Web.Shared.Pages.Content.CommunityV2
@@ -20,6 +22,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         [Inject] private IContentService _contentService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected IOptions<NavigationPath> options { get; set; }
+        [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -39,6 +42,34 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected bool isLoadingBanners = true;
         protected List<BannerItem> ContentCommunityPostHero { get; set; } = new();
         protected List<BannerItem> CommunitySideBanners { get; set; } = new();
+
+
+        protected string currentUserId = string.Empty;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    currentUserId = user.FindFirst("uid")?.Value
+                         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? string.Empty;
+                    Console.WriteLine("curentyserid", currentUserId);
+                }
+                else
+                {
+                    Logger.LogWarning("User is not authenticated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while retrieving user authentication state.");
+            }
+        }
 
 
         protected override async Task OnParametersSetAsync()
@@ -95,7 +126,9 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                         CommentCount = fetched.CommentCount,
                         ImageUrl = fetched.ImageUrl,
                         Slug = fetched.Slug,
-                        
+                        isCommented = fetched.CommentedUserIds?.Contains(currentUserId) ?? false,
+                        IsLiked = fetched.LikedUserIds?.Contains(currentUserId) ?? false,
+
                     };
 
                     if (postBreadcrumbItem is not null)

@@ -47,6 +47,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                 IsLoggedIn = true;
                 UID =user.FindFirst("uid")?.Value;
             }
+            IsLiked = Post.IsLiked;
 
         }
 
@@ -69,6 +70,8 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                 if (success)
                 {
                     IsLiked = !IsLiked;
+                    Post.IsLiked = IsLiked;
+
                     Post.LikeCount += IsLiked ? 1 : -1;
                 }
                 else

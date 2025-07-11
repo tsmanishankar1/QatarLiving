@@ -85,7 +85,7 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
 
       
 
-        NavigationManager.NavigateTo("content/community/v2", forceLoad: true);
+        NavigationManager.NavigateTo("content/v2/community", forceLoad: true);
     }
 
 
