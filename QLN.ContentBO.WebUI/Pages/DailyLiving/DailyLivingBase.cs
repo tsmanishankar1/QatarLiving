@@ -236,7 +236,7 @@ public class DailyLivingBase : QLComponentBase
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
         {
-            OpenRenameDialog(selectedTopic.topicName);
+           await OpenRenameDialog(selectedTopic.topicName);
         }
     }
 
