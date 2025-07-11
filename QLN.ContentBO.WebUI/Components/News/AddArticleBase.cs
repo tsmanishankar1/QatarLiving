@@ -185,7 +185,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 ResetForm();
                 StateHasChanged();
-            }   
+            }
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -259,7 +259,20 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected void ResetForm()
         {
             article = new();
-            TempCategoryList = [];
+
+            if (CategoryId != 0 && SubCategoryId != 0)
+            {
+                TempCategoryList.Add(new()
+                {
+                    CategoryId = CategoryId ?? 0,
+                    SubcategoryId = SubCategoryId ?? 0,
+                    SlotId = 15,
+                });
+            }
+            else
+            {
+                TempCategoryList = [];
+            }
         }
     }
 }
