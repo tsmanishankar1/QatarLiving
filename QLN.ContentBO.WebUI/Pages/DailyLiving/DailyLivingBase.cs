@@ -236,7 +236,7 @@ public class DailyLivingBase : QLComponentBase
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
         {
-            OpenRenameDialog(selectedTopic.topicName);
+           await OpenRenameDialog(selectedTopic.topicName);
         }
     }
 
@@ -246,8 +246,10 @@ public class DailyLivingBase : QLComponentBase
         {
             IsLoading = true;
             isTabLoading = true;
-            await AuthorizedPage();
-
+            if (!NavigationPath.Value.IsLocal) 
+            {
+                await AuthorizedPage();
+            }
 
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
@@ -377,7 +379,7 @@ public class DailyLivingBase : QLComponentBase
     protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
     {
         ReplaceSlot = selectedEvent;
-        OpenDReplaceDialogAsync();
+        await OpenDReplaceDialogAsync();
         await Task.CompletedTask;
     }
     protected async Task HandleEventSelected(FeaturedSlot selectedEvent)
