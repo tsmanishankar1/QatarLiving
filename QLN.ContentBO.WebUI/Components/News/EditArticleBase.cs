@@ -31,15 +31,19 @@ namespace QLN.ContentBO.WebUI.Components.News
         public int MaxCategory { get; set; } = 2;
         public bool IsEditorReady { get; set; } = false;
 
+        public bool IsLoading { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                IsLoading = true;
                 await AuthorizedPage();
 
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
+                IsLoading = false;
             }
             catch (Exception ex)
             {
@@ -83,8 +87,10 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                IsLoading = true;
                 await Task.Delay(3000);
                 await LoadArticle();
+                IsLoading = false;
             }
             catch (Exception ex)
             {

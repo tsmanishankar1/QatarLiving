@@ -30,17 +30,22 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         public int MaxCategory { get; set; } = 2;
 
+        public bool IsLoading { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                IsLoading = true;
                 await AuthorizedPage();
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
+                IsLoading = false;
             }
             catch (Exception ex)
             {
+                IsLoading = false;
                 Logger.LogError(ex, "OnInitializedAsync");
                 throw;
             }
@@ -50,6 +55,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                IsLoading = true;
                 if (CategoryId > 0 || SubCategoryId > 0)
                 {
                     Categories = await GetNewsCategories() ?? [];
@@ -60,9 +66,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                         SlotId = 15,
                     });
                 }
+                IsLoading = false;
             }
             catch (Exception ex)
             {
+                IsLoading = false;
                 Logger.LogError(ex, "OnParametersSetAsync");
                 throw;
             }

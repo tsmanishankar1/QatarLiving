@@ -3,8 +3,12 @@
 @inherits EditEventBase;
 @using QLN.ContentBO.WebUI.Components.LoadingOverlay;
 
-<LoadingOverlay IsVisible="IsPageLoading" />
-
+@if (IsPageLoading)
+{
+    <MudOverlay @bind-Visible="IsPageLoading" DarkBackground AutoClose="false">
+        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
+    </MudOverlay>
+}
   <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <MudGrid Style="padding-top: 0">
