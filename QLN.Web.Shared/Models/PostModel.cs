@@ -16,6 +16,7 @@ namespace QLN.Web.Shared.Model
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
         public bool isCommented { get; set; }
+        public bool IsLiked { get; set; }
         public string Slug { get; set; }
         public int TotalCount { get; set; }
         public List<CommentModel> Comments { get; set; } = new();
@@ -137,6 +138,9 @@ namespace QLN.Web.Shared.Model
         public int CommentsLikeCount { get; set; }
         public int UnlikeCount { get; set; }
         public bool IsByCurrentUser { get; set; }
+        public bool IsLiked { get; set; }
+        public List<string> LikedUserIds { get; set; }
+        public List<string> CommentedUserIds { get; set; }
     }
 
 }
