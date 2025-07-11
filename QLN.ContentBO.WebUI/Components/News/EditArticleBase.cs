@@ -83,6 +83,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                await Task.Delay(3000);
                 await LoadArticle();
             }
             catch (Exception ex)
