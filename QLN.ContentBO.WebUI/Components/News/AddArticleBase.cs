@@ -259,7 +259,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected void ResetForm()
         {
             article = new();
-
+            TempCategoryList = [];
             if (CategoryId != 0 && SubCategoryId != 0)
             {
                 TempCategoryList.Add(new()
@@ -268,10 +268,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                     SubcategoryId = SubCategoryId ?? 0,
                     SlotId = 15,
                 });
-            }
-            else
-            {
-                TempCategoryList = [];
             }
         }
     }
