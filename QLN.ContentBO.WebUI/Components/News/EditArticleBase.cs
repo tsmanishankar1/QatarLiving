@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -15,8 +16,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] IDialogService DialogService { get; set; }
         [Parameter] public string? ArticleId { get; set; }
 
-        protected Guid ParsedArticleId { get; set; }
-
         protected NewsArticleDTO article { get; set; } = new();
 
         protected List<NewsCategory> Categories = [];
@@ -30,35 +29,80 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
         public int MaxCategory { get; set; } = 2;
+        public bool IsEditorReady { get; set; } = false;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                await AuthorizedPage();
+
+                Categories = await GetNewsCategories();
+                Slots = await GetSlots();
+                WriterTags = await GetWriterTags();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender && !IsEditorReady)
+                {
+                    if (Editor is not null)
+                    {
+                        try
+                        {
+                            // Confirm Editor is fully ready via JSInterop
+                            var html = await Editor.GetHtml();
+                            if (html is not null)
+                            {
+                                IsEditorReady = true;
+                                StateHasChanged();
+                            }
+                        }
+                        catch (JSException jsEx)
+                        {
+                            Logger.LogWarning(jsEx, "MudEx Editor JS not ready yet");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "OnAfterRenderAsync");
+            }
+        }
 
         protected async override Task OnParametersSetAsync()
         {
             try
             {
-                await AuthorizedPage();
                 if (!Guid.TryParse(ArticleId, out var parsedArticleId))
                 {
                     Snackbar.Add("Invalid article ID", Severity.Error);
                     return;
                 }
-                ParsedArticleId = parsedArticleId;
-                Categories = await GetNewsCategories();
-                Slots = await GetSlots();
-                WriterTags = await GetWriterTags();
-                article = await GetArticleById(ParsedArticleId);
-                if (article.Id == Guid.Empty)
+
+                article = await GetArticleById(parsedArticleId);
+
+                if (article?.Id == Guid.Empty)
                 {
-                    Snackbar.Add("Invalid article ID", Severity.Error);
-                    NavManager.NavigateTo($"/", true);
+                    Snackbar.Add("Article not found", Severity.Error);
+                    NavManager.NavigateTo("/", true);
                     return;
                 }
-                TempCategoryList = article.Categories;
 
+                TempCategoryList = article?.Categories ?? [];
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
-                throw;
             }
         }
 
