@@ -28,7 +28,6 @@ else
         </HeaderContent>
         <RowTemplate Context="context">
             <MudTd DataLabel="Title">
-                <MudLink Href="#" Class="post-title">@context.Title</MudLink>
                 <MudLink Href="@($"{PostDetailBaseURL}{context.Slug}")"
                          Target="_blank">
                     @context.Title

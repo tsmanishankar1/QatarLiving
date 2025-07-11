@@ -29,6 +29,7 @@ namespace QLN.ContentBO.WebUI.Components
         {
             try
             {
+                SetContentWebURl();
                 if (IsLoggedIn)
                 {
                     return;
@@ -45,7 +46,6 @@ namespace QLN.ContentBO.WebUI.Components
                     CurrentUserAlias = user.FindFirst("alias")?.Value ?? string.Empty;
                     CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                     IsLoggedIn = true;
-                    SetContentWebURl();
                 }
                 else
                 {
