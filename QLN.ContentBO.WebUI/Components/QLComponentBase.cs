@@ -29,6 +29,11 @@ namespace QLN.ContentBO.WebUI.Components
         {
             try
             {
+                if (IsLoggedIn) 
+                {
+                    return;
+                }
+
                 var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
                 var destination = SetDestination();
 
@@ -50,8 +55,8 @@ namespace QLN.ContentBO.WebUI.Components
             }
             catch (Exception ex)
             {
+                IsLoggedIn = false;
                 Logger.LogError(ex, "AuthorizedPage");
-                throw;
             }
         }
 
