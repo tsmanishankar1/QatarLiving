@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Nextended.Core.Extensions;
 using QLN.ContentBO.WebUI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
@@ -92,8 +93,8 @@ namespace QLN.ContentBO.WebUI.Handlers
                                             identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                                         if (user.IsAdmin != null)
                                             identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                        if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
+                                   /*   if (!string.IsNullOrEmpty(user.QlnextUserId))
+                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));  Commenting this now for future use as suggested by Grant  */
                                         if (!string.IsNullOrEmpty(user.Alias))
                                             identity.AddClaim(new Claim("alias", user.Alias));
                                         if (!string.IsNullOrEmpty(user.Image))

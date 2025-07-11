@@ -38,11 +38,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected string SearchText { get; set; } = string.Empty;
         protected bool SortAscending { get; set; } = true;
 
-    [Inject] public IDialogService DialogService { get; set; }
-    
-    protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
-    {
-        var parameters = new DialogParameters
+        [Inject] public IDialogService DialogService { get; set; }
+
+        protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
+        {
+            var parameters = new DialogParameters
         {
             { "Title", title },
             { "Descrption", description },
@@ -50,17 +50,17 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
         };
 
-        var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
 
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
-        var result = await dialog.Result;
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
 
-    }
+        }
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -99,7 +99,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
-               await AuthorizedPage();
+                await AuthorizedPage();
             }
             catch (Exception ex)
             {
@@ -136,6 +136,37 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected void NavigateToEditPage(Guid id)
         {
             Navigation.NavigateTo($"/content/events/edit/{id}");
+        }
+        public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+                var diff = now - givenUtcTime;
+                var isFuture = diff.TotalSeconds < 0;
+                var absDiff = diff.Duration();
+
+                if (absDiff.TotalHours >= 24)
+                {
+                    var days = (int)absDiff.TotalDays;
+                    return isFuture ? $"in {days} day(s)" : $"{days} day(s) ago";
+                }
+                else if (absDiff.TotalHours >= 1)
+                {
+                    var hours = Math.Round(absDiff.TotalHours, 1);
+                    return isFuture ? $"in {hours} hour(s)" : $"{hours} hour(s) ago";
+                }
+                else
+                {
+                    var minutes = (int)Math.Round(absDiff.TotalMinutes);
+                    return isFuture ? $"in {minutes} minute(s)" : $"{minutes} minute(s) ago";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetTimeDifferenceFromNowUtc");
+                return "N/A";
+            }
         }
 
     }

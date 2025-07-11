@@ -29,28 +29,34 @@ namespace QLN.ContentBO.WebUI.Components
         {
             try
             {
+                if (IsLoggedIn) 
+                {
+                    return;
+                }
+
                 var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
                 var destination = SetDestination();
 
                 var user = authState.User;
                 if (user.Identity != null && user.Identity.IsAuthenticated)
                 {
-                    CurrentUserName = user.FindFirst(ClaimTypes.Name)?.Value;
-                    CurrentUserEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value;
-                    CurrentUserAlias = user.FindFirst("alias")?.Value;
+                    CurrentUserName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+                    CurrentUserEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value ?? string.Empty;
+                    CurrentUserAlias = user.FindFirst("alias")?.Value ?? string.Empty;
                     CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
                     IsLoggedIn = true;
                     SetContentWebURl();
                 }
                 else
                 {
+                    IsLoggedIn = false;
                     NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
                 }
             }
             catch (Exception ex)
             {
+                IsLoggedIn = false;
                 Logger.LogError(ex, "AuthorizedPage");
-                throw;
             }
         }
 
