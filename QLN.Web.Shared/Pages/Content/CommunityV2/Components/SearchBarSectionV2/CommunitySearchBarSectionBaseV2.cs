@@ -52,7 +52,6 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
         catch (Exception ex)
         {
             Snackbar.Add("Failed to load categories", Severity.Error);
-            Console.WriteLine(ex.Message);
             CategorySelectOptions = new List<SelectOption>();
         }
     }
@@ -75,7 +74,6 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
 
     protected async Task PerformSearch()
     {
-        Console.WriteLine($"Search text submitted: {searchText}");
         await OnSearchTextChanged.InvokeAsync(searchText);
     }
     protected async Task ClearFilters()

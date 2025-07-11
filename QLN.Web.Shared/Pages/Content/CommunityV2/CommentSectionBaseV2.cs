@@ -177,7 +177,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading comments: {ex.Message}");
+                Logger.LogError($"Error loading comments: {ex.Message}");
                 Comments ??= new List<CommentModelV2>();
                 Comments.Clear();
             }
@@ -199,7 +199,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            Console.WriteLine("current page", CurrentPage);
 
             await GetCommentAsync();
 
@@ -253,7 +252,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while liking comment: {ex.Message}");
+                Logger.LogError($"Error while liking comment: {ex.Message}");
                 Snackbar.Add("An unexpected error occurred.", Severity.Error);
             }
 

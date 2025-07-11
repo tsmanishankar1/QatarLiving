@@ -148,7 +148,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         }
         protected async Task HandleSearchChanged(string searchText)
         {
-            Console.WriteLine($"Received searchText from child: {searchText}");
+            Logger.LogInformation($"Received searchText from child: {searchText}");
             search = searchText;
             CurrentPage = 1;
             var (posts, total) = await GetPostListAsync(); 
@@ -172,13 +172,11 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
         protected async Task HandleSearchResults()
         {
-            Console.WriteLine("Search completed.");
             await Task.CompletedTask;
         }
 
         protected async Task<(List<PostModel>? Posts, int TotalCount)> GetPostListAsync()
         {
-            Console.WriteLine($"Search passed to service: {search}");
 
             try
             {
@@ -235,7 +233,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
         private string GetOrderFromSortOption()
         {
-            Logger.LogInformation($"SelectedCategoryId: {SelectedCategoryId}");
            
             return SelectedCategoryId switch
             {
@@ -247,7 +244,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
         protected async Task OnSortChanged(string newSortId)
         {
-            Logger.LogInformation($"Sort changed to: {newSortId}");
             SelectedCategoryId = newSortId;
             CurrentPage = 1;
             await LoadPosts();
@@ -264,8 +260,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            Console.WriteLine("current page", CurrentPage);
-            Logger.LogInformation($"Page changed to: {CurrentPage}");
 
             await LoadPosts();
             StateHasChanged();
@@ -306,7 +300,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
+                Logger.LogInformation($"Error loading banners: {ex.Message}");
             }
             finally
             {
@@ -401,7 +395,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                Logger.LogInformation($"{ex.Message} Newsletter subscription failed.");
                 SubscriptionStatusMessage = "An error occurred while subscribing.";
                 Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
             }

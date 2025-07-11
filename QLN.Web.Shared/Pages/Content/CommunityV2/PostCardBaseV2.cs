@@ -7,6 +7,7 @@ using QLN.Web.Shared.Helpers;
 using MudBlazor;
 using Microsoft.Extensions.Hosting;
 using QLN.Web.Shared.Components.ReportDialog;
+using Microsoft.Extensions.Logging;
 
 namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
@@ -17,6 +18,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
         [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
+        [Inject] protected ILogger<PostCardBaseV2> Logger { get; set; }
 
         [Inject] protected ISnackbar Snackbar { get; set; }
 
@@ -81,7 +83,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while liking post: {ex.Message}");
+                Logger.LogInformation($"Error while liking post: {ex.Message}");
                 Snackbar.Add("An unexpected error occurred.", Severity.Error);
             }
 

@@ -58,7 +58,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                     currentUserId = user.FindFirst("uid")?.Value
                          ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
                          ?? string.Empty;
-                    Console.WriteLine("curentyserid", currentUserId);
                 }
                 else
                 {
@@ -167,7 +166,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
+                Logger.LogInformation($"Error loading banners: {ex.Message}");
             }
             finally
             {
@@ -187,7 +186,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                Logger.LogInformation($"FetchBannerData error: {ex.Message}");
                 return null;
             }
         }
