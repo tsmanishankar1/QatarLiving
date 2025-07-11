@@ -16,6 +16,6 @@
     [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
     [Parameter]
     public string ContentText { get; set; } = "Article Action Completed";
-    void Close() => MudDialog.Close(DialogResult.Ok(true));
+    void Close() => MudDialog.Cancel();
 }
 

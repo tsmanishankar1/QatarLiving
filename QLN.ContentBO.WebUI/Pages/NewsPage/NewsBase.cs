@@ -132,18 +132,39 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                await DeleteNewsArticle(id);
-
-                if (selectedTab == "live")
+                var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                var dialog = await DialogService.ShowAsync<DeleteArticleConfirmDialog>("", options);
+                var result = await dialog.Result;
+                if (!result.Canceled)
                 {
-                    IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
-                }
-                else
-                {
-                    ListOfNewsArticles.RemoveAll(a => a.Id == id);
-                    if (SearchListOfNewsArticles.Count > 0)
+                    var response = await newsService.DeleteNews(id);
+                    if (response != null && response.IsSuccessStatusCode)
                     {
-                        SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                        if (selectedTab == "live")
+                        {
+                            IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
+                        }
+                        else
+                        {
+                            ListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            if (SearchListOfNewsArticles.Count > 0)
+                            {
+                                SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            }
+                        }
+                        Snackbar.Add("Article Deleted successfully", Severity.Success);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        Snackbar.Add("Article cannot be Deleted since it is configured in News/Daily Slot", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        Snackbar.Add("You are not Authorized to perform this action", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        Snackbar.Add("Internal API Error", Severity.Error);
                     }
                 }
 
@@ -151,7 +172,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"DeleteArticle");
+                Logger.LogError(ex, "DeleteArticle");
             }
         }
 
@@ -263,22 +284,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
 
             return selectedCategory?.SlotId ?? 0;
-        }
-
-        private async Task DeleteNewsArticle(Guid Id)
-        {
-            try
-            {
-                var apiResponse = await newsService.DeleteNews(Id);
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "DeleteNewsArticle");
-            }
         }
 
         public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
@@ -441,7 +446,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (!result.Canceled)
                 {
                     await OnTabChanged(selectedTab);
-                    Snackbar.Add("Go Live Slot Updated", Severity.Success);
+                    Snackbar.Add($"Article is Live now", Severity.Success);
                 }
 
                 StateHasChanged();
@@ -502,7 +507,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     await OnTabChanged(selectedTab);
                     Snackbar.Add($"{successMessage}", Severity.Success);
                 }
-
                 StateHasChanged();
             }
             catch (Exception ex)

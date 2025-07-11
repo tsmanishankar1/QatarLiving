@@ -126,9 +126,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     var parameters = new DialogParameters<ArticleDialog>
-                            {
-                                { x => x.ContentText, "Article Published" },
-                            };
+                    {
+                        { x => x.ContentText, "Article Published" },
+                    };
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
@@ -180,8 +180,12 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
-            var result = dialog.Result;
-            ResetForm();
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                ResetForm();
+                StateHasChanged();
+            }
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -256,6 +260,15 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             article = new();
             TempCategoryList = [];
+            if (CategoryId != 0 && SubCategoryId != 0)
+            {
+                TempCategoryList.Add(new()
+                {
+                    CategoryId = CategoryId ?? 0,
+                    SubcategoryId = SubCategoryId ?? 0,
+                    SlotId = 15,
+                });
+            }
         }
     }
 }
