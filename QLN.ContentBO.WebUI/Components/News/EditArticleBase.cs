@@ -83,22 +83,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
-                if (!Guid.TryParse(ArticleId, out var parsedArticleId))
-                {
-                    Snackbar.Add("Invalid article ID", Severity.Error);
-                    return;
-                }
-
-                article = await GetArticleById(parsedArticleId);
-
-                if (article?.Id == Guid.Empty)
-                {
-                    Snackbar.Add("Article not found", Severity.Error);
-                    NavManager.NavigateTo("/", true);
-                    return;
-                }
-
-                TempCategoryList = article?.Categories ?? [];
+                await LoadArticle();
             }
             catch (Exception ex)
             {
@@ -170,9 +155,6 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
-                    var redirectToCateg = article.Categories.FirstOrDefault();
-                    NavManager.NavigateTo($"/manage/news/category/{redirectToCateg.CategoryId}", true);
-                    ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -187,7 +169,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Logger.LogError(ex, "HandleValidSubmit");
                 Snackbar.Add("Edit Article Failed", Severity.Error);
-                ResetForm();
             }
         }
 
@@ -216,7 +197,11 @@ namespace QLN.ContentBO.WebUI.Components.News
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
             var result = dialog.Result;
-            article = new();
+            if (!result.IsCanceled)
+            {
+                // When Changes are discarded Load Article
+                await LoadArticle();
+            }
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -313,10 +298,31 @@ namespace QLN.ContentBO.WebUI.Components.News
             article.CoverImageUrl = null;
         }
 
-        protected void ResetForm()
+        private async Task LoadArticle()
         {
-            article = new();
-            TempCategoryList = [];
+            try
+            {
+                if (!Guid.TryParse(ArticleId, out var parsedArticleId))
+                {
+                    Snackbar.Add("Invalid article ID", Severity.Error);
+                    return;
+                }
+
+                article = await GetArticleById(parsedArticleId);
+
+                if (article?.Id == Guid.Empty)
+                {
+                    Snackbar.Add("Article not found", Severity.Error);
+                    NavManager.NavigateTo("/", true);
+                    return;
+                }
+
+                TempCategoryList = article?.Categories ?? [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadArticle");
+            }
         }
     }
 }

@@ -181,7 +181,11 @@ namespace QLN.ContentBO.WebUI.Components.News
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
             var result = dialog.Result;
-            ResetForm();
+            if (!result.IsCanceled)
+            {
+                // 
+                ResetForm();
+            }   
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
