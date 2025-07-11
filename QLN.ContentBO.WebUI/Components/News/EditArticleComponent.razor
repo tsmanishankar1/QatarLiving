@@ -153,6 +153,12 @@
         </MudGrid>
     </EditForm>
 </MudContainer>
+@if (IsLoading)
+{
+    <MudOverlay @bind-Visible="IsLoading" DarkBackground AutoClose="false" >
+        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
+    </MudOverlay>
+}
 
 <style>
     .action-btn {

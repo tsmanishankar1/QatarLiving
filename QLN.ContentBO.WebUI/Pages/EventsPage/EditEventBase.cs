@@ -159,6 +159,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected override async Task OnParametersSetAsync()
         {
             IsPageLoading = true;
+            await Task.Delay(3000);
             try
             {
                 Categories = await GetEventsCategories();
@@ -203,10 +204,12 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
 
                 _shouldInitializeMap = true;
+                IsPageLoading = false;
             }
-            finally
+            catch (Exception ex)
             {
                 IsPageLoading = false;
+                Logger.LogError(ex, "OnParametersSetAsync");
             }
         }
 
