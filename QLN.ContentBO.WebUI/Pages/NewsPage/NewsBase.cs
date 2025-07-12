@@ -115,6 +115,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 isTabLoading = true;
                 if (CategoryId > 0)
                 {
+                    activeIndex = 0; // Reset Index when Category is switched
                     SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
                     SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
                     isTabLoading = false;
