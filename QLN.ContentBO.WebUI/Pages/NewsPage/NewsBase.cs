@@ -249,7 +249,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    var rawJson = await apiResponse.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<List<NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return result ?? [];
                 }
 
                 return [];

@@ -129,7 +129,14 @@
                                     <!-- Live for -->
                                     <TemplateColumn Title="Live for" Width="120px">
                                         <CellTemplate>
-                                            @GetTimeDifferenceFromNowUtc(context.Item.PublishedDate)
+                                            @if (context.Item?.PublishedDate is not null)
+                                            {
+                                                @GetTimeDifferenceFromNowUtc(context.Item?.PublishedDate ?? new())
+                                            }
+                                            else
+                                            {
+                                                @("-")
+                                            }
                                         </CellTemplate>
                                     </TemplateColumn>
 
@@ -231,7 +238,14 @@
                                     <!-- Live for -->
                                     <TemplateColumn Title="Live for" Width="120px">
                                         <CellTemplate>
-                                            @GetTimeDifferenceFromNowUtc(context.Item.PublishedDate)
+                                            @if (context.Item?.PublishedDate is not null)
+                                            {
+                                                @GetTimeDifferenceFromNowUtc(context.Item?.PublishedDate ??  new())
+                                            }
+                                            else
+                                            {
+                                                @("-")
+                                            }
                                         </CellTemplate>
                                     </TemplateColumn>
 
