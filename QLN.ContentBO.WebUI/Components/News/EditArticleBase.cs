@@ -33,6 +33,8 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         public bool IsLoading { get; set; } = false;
 
+        public bool IsBtnDisabled { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -133,20 +135,24 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                IsBtnDisabled = true;
                 article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
                     Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.CoverImageUrl))
                 {
                     Snackbar.Add("Image is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
                 {
                     Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
 
@@ -171,11 +177,13 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error", Severity.Error);
                 }
+                IsBtnDisabled = false;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
                 Snackbar.Add("Edit Article Failed", Severity.Error);
+                IsBtnDisabled = false;
             }
         }
 

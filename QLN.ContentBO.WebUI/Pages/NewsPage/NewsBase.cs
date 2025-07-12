@@ -62,7 +62,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string SearchString { get; set; } = string.Empty;
 
-        public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; }
+        public List<NewsArticleDTO> SearchListOfNewsArticles { get; set; } = new();
 
         public class NewsArticleSearchResponse
         {
