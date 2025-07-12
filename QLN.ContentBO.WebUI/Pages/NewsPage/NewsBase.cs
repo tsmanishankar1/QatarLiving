@@ -26,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
+        public List<NewsArticleDTO> ListOfNewsArticles { get; set; } = [];
 
         protected List<Slot> Slots = [];
 
@@ -69,11 +69,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             public List<NewsArticleDTO> Items { get; set; } = [];
         }
 
+        protected bool isTabLoading = false;
+        protected bool isTableLoading = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                isTabLoading = true;
                 await AuthorizedPage();
+                Categories = await GetNewsCategories() ?? [];
+                Slots = await GetSlots();
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -93,7 +100,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     shouldFocusInput = false;
                     await subCategoryInputRef.FocusAsync();
                 }
-
             }
             catch (Exception ex)
             {
@@ -106,15 +112,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                isTabLoading = true;
                 if (CategoryId > 0)
                 {
-                    Categories = await GetNewsCategories() ?? [];
+                    activeIndex = 0; // Reset Index when Category is switched
                     SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
                     SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
-                    Slots = await GetSlots();
-
+                    isTabLoading = false;
+                    isTableLoading = true;
                     IndexedLiveArticles = await GetLiveArticlesAsync();
+                    isTableLoading = false;
                 }
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -240,7 +249,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    var rawJson = await apiResponse.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<List<NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return result ?? [];
                 }
 
                 return [];
@@ -254,8 +269,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async void LoadCategory(int categoryId, NewsSubCategory subCategory)
         {
+            isTableLoading = true;
             SelectedSubcategory = subCategory;
-            IndexedLiveArticles = await GetLiveArticlesAsync();
+            await OnTabChanged("live");
+            isTableLoading = false;
             StateHasChanged();
         }
 
@@ -387,7 +404,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 _ => null
             };
 
+            isTableLoading = true;
             IsLoadingDataGrid = true;
+            if (ListOfNewsArticles.Count > 0)
+            {
+                ListOfNewsArticles.Clear();
+            }
             try
             {
                 if (status.HasValue)
@@ -395,9 +417,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     switch (status.Value)
                     {
                         case 1:
-                            IndexedLiveArticles.Clear();
+                            if (IndexedLiveArticles.Count > 0)
+                            {
+                                IndexedLiveArticles.Clear();
+                            }
+
                             ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
+
                             break;
                         case 2:
                             ResetSearch();
@@ -417,6 +444,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             finally
             {
                 IsLoadingDataGrid = false;
+                isTableLoading = false;
             }
         }
 
@@ -589,26 +617,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        public void UpdateArticleSlot(List<IndexedArticle> indexed, Guid articleId, int newSlotId)
-        {
-            var current = indexed.FirstOrDefault(x => x.Article != null && x.Article.Id == articleId);
-            var target = indexed.FirstOrDefault(x => x.SlotNumber == newSlotId);
-
-            if (current?.Article is null || target == null)
-                return;
-
-            // Move article to the new slot
-            target.Article = current.Article;
-            current.Article = null;
-
-            // Update the SlotId in the UI
-            var category = target.Article?.Categories?.FirstOrDefault();
-            if (category != null)
-            {
-                category.SlotId = newSlotId;
-            }
-        }
-
         protected async Task SearchArticles()
         {
             try
@@ -722,6 +730,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     Snackbar.Add("Failed to Reorder slots", Severity.Error);
                     Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
