@@ -1181,17 +1181,19 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
 
                 var articlesInSlot14 = dtos
-                .Where(dto => dto.Categories.Any(c => c.SlotId == 14))
-                .OrderByDescending(dto => dto.PublishedDate)
-                .Take(3);
+                  .Where(dto => dto.Categories.Any(c => c.SlotId == 14))
+                  .OrderByDescending(dto => dto.PublishedDate)
+                  .Take(3).ToList();
 
                 var articlesInSlots1To13 = dtos
-                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 13));
+                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 13))
+                    .OrderByDescending(dto => dto.PublishedDate).ToList();
 
                 var filteredDtos = articlesInSlots1To13
                     .Concat(articlesInSlot14)
-                    .DistinctBy(dto => dto.Id) 
+                    .DistinctBy(dto => dto.Id)
                     .ToList();
+
                 var posts = filteredDtos
                     .Select(dto => new Common.Infrastructure.DTO_s.ContentPost
                     {
