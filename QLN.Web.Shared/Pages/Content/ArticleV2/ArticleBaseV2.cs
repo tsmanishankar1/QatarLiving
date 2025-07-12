@@ -1,10 +1,12 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Globalization;
 using System.Net.Http.Json;
@@ -103,6 +105,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
 
         protected NewsArticleDTO NewsArticleDTO { get; set; } = new NewsArticleDTO();
 
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -113,8 +118,8 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     category = cat;
                 if (query.TryGetValue("subcategory", out var sub))
                     subcategory = sub;
-                categoryLabel = routerList.FirstOrDefault(item => item.Value == category)?.Label;
-                subcategoryLabel = routerList.FirstOrDefault(item => item.Value == subcategory)?.Label;
+                categoryLabel = category;
+                subcategoryLabel = subcategory;
                 isLoading = true;
                 var bannersTask = LoadBanners();
                 await Task.WhenAll(bannersTask);
@@ -156,10 +161,11 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 {
                     breadcrumbItems = new()
                     {
-                    new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
-                    new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
-                    new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
+                    new() {   Label = categoryLabel,Url =$"{NavigationPath.Value.ContentNews}?category={category}" },
+                    new() { Label = subcategoryLabel, Url = $"{NavigationPath.Value.ContentNews}?category={category}&subcategory={subcategory}"},
+                    new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDetail}/{category}/{subcategory}/{slug}", IsLast = true },
                     };
+
                     NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
                     moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
                 }
