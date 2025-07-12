@@ -140,16 +140,19 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (article.Categories.Count == 0)
                 {
                     Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.CoverImageUrl))
                 {
                     Snackbar.Add("Image is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
                 {
                     Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
 
