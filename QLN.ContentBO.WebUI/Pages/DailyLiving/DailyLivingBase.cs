@@ -34,6 +34,112 @@ public class DailyLivingBase : QLComponentBase
     protected List<FeaturedSlot> FeaturedEventSlots { get; set; } = new();
     protected bool IsLoading { get; set; } = false;
 
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            IsLoading = true;
+            isTabLoading = true;
+            if (!NavigationPath.Value.IsLocal)
+            {
+                await AuthorizedPage();
+            }
+
+            await OnTabChanged(0);
+            featuredEventSlots = await GetFeaturedSlotsAsync();
+            Categories = await GetEventsCategories();
+            AllEventsList = (await GetAllEvents())
+                    .Where(e => e.Status == EventStatus.Published)
+                    .ToList();
+            ActiveTopics = await GetActiveTopics();
+            if (ActiveTopics?.Any() == true)
+            {
+                selectedTopic = ActiveTopics.First();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnInitializedAsync");
+            throw;
+        }
+        finally
+        {
+            IsLoading = false;
+            IsLoadingEvent = false;
+            isTabLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    protected async Task OnTabChanged(int index)
+    {
+        try
+        {
+            IsLoading = true;
+            activeIndex = index;
+            if (index < 2)
+            {
+                switch (index)
+                {
+                    case 0:
+                        articles = await DailyService.GetTopSectionAsync();
+                        var relatedContentIds = articles
+                            .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
+                            .Select(a => a.RelatedContentId)
+                            .ToHashSet();
+                        var allAvailable = await GetAvailableTopSectionArticles();
+                        var skippedIds = allAvailable
+                            .Where(av => relatedContentIds.Contains(av.Id))
+                            .Select(av => av.Id)
+                            .ToList();
+                        AvailableArticles = allAvailable
+                            .Where(av => !relatedContentIds.Contains(av.Id))
+                            .ToList();
+                        StateHasChanged();
+                        break;
+                    case 1:
+                        featuredEventSlots = await GetFeaturedSlotsAsync();
+                        StateHasChanged();
+                        break;
+                }
+            }
+            else
+            {
+                int topicIndex = index - 2;
+                if (topicIndex >= 0 && topicIndex < ActiveTopics.Count)
+                {
+                    selectedTopic = ActiveTopics[topicIndex];
+                    articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
+                    var relatedContentIds = articles
+                      .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
+                      .Select(a => a.RelatedContentId)
+                      .ToHashSet();
+
+                    var allAvailable = await GetAvailableArticles(selectedTopic.Id);
+                    var skippedIds = allAvailable
+                        .Where(av => relatedContentIds.Contains(av.Id))
+                        .Select(av => av.Id)
+                        .ToList();
+                    AvailableArticles = allAvailable
+                        .Where(av => !relatedContentIds.Contains(av.Id))
+                        .ToList();
+                }
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "OnTabChanged");
+            Snackbar.Add("Failed to load articles", Severity.Error);
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
     protected async Task ReplaceSlotHandler(FeaturedSlot slot)
     {
     }
@@ -43,12 +149,12 @@ public class DailyLivingBase : QLComponentBase
         var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
-            { "Descrption", "Do you want to delete this Article?" },
+            { "Descrption", "Do you want to delete this Article from Slot?" },
             { "ButtonTitle", "Delete" },
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteArticleAsync(id))}
         };
         var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
         var result = await dialog.Result;
     }
     protected async Task UpdateHandler()
@@ -66,8 +172,9 @@ public class DailyLivingBase : QLComponentBase
 
     protected async Task AddItemtHandler(DailyLivingArticleDto item)
     {
-        OpenRadioAutoCompleteDialog();
+        await OpenRadioAutoCompleteDialog();
     }
+
     protected async Task ReplaceItem(DailyLivingArticleDto item)
     {
         var json = JsonSerializer.Serialize(item, new JsonSerializerOptions
@@ -75,8 +182,9 @@ public class DailyLivingBase : QLComponentBase
             WriteIndented = true
         });
         ReplaceArticle = item;
-        OpenRadioDialog();
+        await OpenRadioDialog();
     }
+
     protected async Task ReplaceTopSectionItem(DailyLivingArticleDto item)
     {
         var json = JsonSerializer.Serialize(item, new JsonSerializerOptions
@@ -84,8 +192,9 @@ public class DailyLivingBase : QLComponentBase
             WriteIndented = true
         });
         ReplaceArticle = item;
-        OpenTopSectionRadioDialog();
+        await OpenTopSectionRadioDialog();
     }
+
     private async Task OpenTopSectionRadioDialog()
     {
         var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
@@ -123,9 +232,10 @@ public class DailyLivingBase : QLComponentBase
             FullWidth = true,
             NoHeader = true
         };
-        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<RadioAutoCompleteDialog>("", parameters, options);
         await dialog.Result;
     }
+
     private async Task OpenRadioAutoCompleteDialog()
     {
         var articlesList = AllEventsList.Select(e => new DailyLivingArticleDto
@@ -164,7 +274,7 @@ public class DailyLivingBase : QLComponentBase
             NoHeader = true
         };
 
-        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<RadioAutoCompleteDialog>("", parameters, options);
         await dialog.Result;
     }
     private async Task OpenRadioDialog()
@@ -204,7 +314,7 @@ public class DailyLivingBase : QLComponentBase
             NoHeader = true
         };
 
-        var dialog = DialogService.Show<RadioAutoCompleteDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<RadioAutoCompleteDialog>("", parameters, options);
         await dialog.Result;
     }
 
@@ -227,121 +337,11 @@ public class DailyLivingBase : QLComponentBase
         return DialogService.ShowAsync<MessageBox>("", parameters, options);
     }
 
-    protected async Task DeleteHandler(string id)
-    {
-
-    }
-
     protected async Task RenameHandler()
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
         {
            await OpenRenameDialog(selectedTopic.topicName);
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            IsLoading = true;
-            isTabLoading = true;
-            if (!NavigationPath.Value.IsLocal) 
-            {
-                await AuthorizedPage();
-            }
-
-            await OnTabChanged(0);
-            featuredEventSlots = await GetFeaturedSlotsAsync();
-            Categories = await GetEventsCategories();
-            AllEventsList = (await GetAllEvents())
-                    .Where(e => e.Status == EventStatus.Published)
-                    .ToList();
-            ActiveTopics = await GetActiveTopics();
-            if (ActiveTopics?.Any() == true)
-            {
-                selectedTopic = ActiveTopics.First();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "OnInitializedAsync");
-            throw;
-        }
-         finally
-        {
-            IsLoading = false;
-            IsLoadingEvent = false;
-            isTabLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    protected async Task OnTabChanged(int index)
-    {
-        try
-        {
-            IsLoading = true;
-            activeIndex = index;
-            if (index < 2)
-            {
-                switch (index)
-                {
-                    case 0:
-                        articles = await DailyService.GetTopSectionAsync();
-                        var relatedContentIds = articles
-                            .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
-                            .Select(a => a.RelatedContentId)
-                            .ToHashSet();
-                        var allAvailable = await GetAvailableTopSectionArticles();
-                        var skippedIds = allAvailable
-                            .Where(av => relatedContentIds.Contains(av.Id))
-                            .Select(av => av.Id)
-                            .ToList();
-                        AvailableArticles = allAvailable
-                            .Where(av => !relatedContentIds.Contains(av.Id))
-                            .ToList();
-                            StateHasChanged();
-                        break;
-                    case 1:
-                        featuredEventSlots = await GetFeaturedSlotsAsync();
-                        StateHasChanged();
-                        break;
-                }
-            }
-            else
-            {
-                int topicIndex = index - 2;
-                if (topicIndex >= 0 && topicIndex < ActiveTopics.Count)
-                {
-                    selectedTopic = ActiveTopics[topicIndex];
-                    articles = await GetArticlesByTopicIdAsync(selectedTopic.Id);
-                    var relatedContentIds = articles
-                      .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId))
-                      .Select(a => a.RelatedContentId)
-                      .ToHashSet();
-
-                    var allAvailable = await GetAvailableArticles(selectedTopic.Id);
-                    var skippedIds = allAvailable
-                        .Where(av => relatedContentIds.Contains(av.Id))
-                        .Select(av => av.Id)
-                        .ToList();
-                    AvailableArticles = allAvailable
-                        .Where(av => !relatedContentIds.Contains(av.Id))
-                        .ToList();
-                }
-            }
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "OnTabChanged");
-            Snackbar.Add("Failed to load articles", Severity.Error);
-        }
-        finally
-        {
-             IsLoading = false;
-            StateHasChanged();
         }
     }
 

@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.Community
             var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
-            { "Descrption", "Do you want to delete this Community?" },
+            { "Descrption", "Do you want to delete this Community Post?" },
             { "ButtonTitle", "Delete" },
               { "OnConfirmed", EventCallback.Factory.Create(this, async () =>
                 {
