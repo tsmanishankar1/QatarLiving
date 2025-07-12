@@ -146,14 +146,15 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                         Avatar = "/images/content/Sample.svg"
                     }).ToList() ?? new List<CommentModel>()
                 };
+
                 if (category != null && subcategory != null)
                 {
                     breadcrumbItems = new()
-                {
-                new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
-                new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
-                };
+                    {
+                    new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
+                    new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
+                    new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
+                    };
                     NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
                     moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
                 }
@@ -162,7 +163,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
-                // new() { Label = SelectedPost.Category, Url = $"/content/news"},
 
                 new() { Label = newsArticle.Title, Url = $"/content/daily/article/details/{slug}", IsLast = true },
                 };
@@ -171,8 +171,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
                     Console.WriteLine("vMoreArticles count: " + vMoreArticles.Count);
                 }
-
-                // QatarNewsContent = await GetNewsQatarAsync();
             }
             catch (Exception ex)
             {
@@ -183,28 +181,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 isLoading = false;
             }
         }
-        // protected override async Task OnParametersSetAsync()
-        // {
-        //     postBreadcrumbItem = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         Url = $"/content/community/post/detail/{slug}",
-        //         IsLast = true
-        //     };
-        //     postBreadcrumbCategory = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         //Url = "/content/community",
-        //         Url = $"/content/community"
-        //     };
-
-        //     breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
-        //     {
-        //         new() { Label = "Community", Url = "/content/community" },
-        //        postBreadcrumbCategory,
-        //         postBreadcrumbItem
-        //     };
-        // }
 
         protected async Task<ContentPost> GetNewsBySlugAsync()
         {
@@ -224,24 +200,7 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 return new ContentPost();
             }
         }
-        protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
-        {
-            try
-            {
-                var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
-                    return response ?? new QlnNewsNewsQatarPageResponse();
-                }
-                return new QlnNewsNewsQatarPageResponse();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetNewsQatarAsync");
-                return new QlnNewsNewsQatarPageResponse();
-            }
-        }
+ 
         private async Task LoadBanners()
         {
             isLoadingBanners = true;
@@ -256,6 +215,7 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 isLoadingBanners = false;
             }
         }
+
         protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
         {
             try
@@ -274,23 +234,5 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 return new T();
             }
         }
-        //    private async Task<BannerResponse?> FetchBannerData()
-        //{
-        //try
-        //{
-        //    var result = await _eventService.GetBannerAsync();
-        //    if (result.IsSuccessStatusCode && result.Content != null)
-        //    {
-        //        return await result.Content.ReadFromJsonAsync<BannerResponse>();
-        //    }
-        //    return null;
-        //}
-        //catch (Exception ex)
-        //{
-        //    Logger.LogError(ex, "FetchBannerData error.");
-        //    return null;
-        //}
-        //}
     }
-
 }
