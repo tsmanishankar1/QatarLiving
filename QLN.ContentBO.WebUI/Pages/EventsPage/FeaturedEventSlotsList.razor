@@ -59,15 +59,19 @@ else
                         }
                     </td>
                     <td>
-                         @(
-                        Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName 
-                        ?? "--"
-                    )
+                        @if(context.Slot.Event?.CategoryName is not null)
+                        {
+                            <span>@(Categories.FirstOrDefault(c => c.Id == context.Slot.Event?.CategoryId)?.CategoryName) </span>
+                        }
+                        else
+                        {
+                            @("-")
+                        }
                     </td>
                     <td>
                         @(context.Slot.Event?.EventSchedule != null 
                         ? context.Slot.Event.EventSchedule.EndDate.ToString("dd-MM-yyyy") 
-                        : "--")
+                        : "-")
                     </td>
                     <td>
                        @if (context.Slot.Event?.EventTitle == "Feature an Event")
