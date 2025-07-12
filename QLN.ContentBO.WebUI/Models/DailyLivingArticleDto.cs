@@ -10,7 +10,7 @@
         public string RelatedContentId { get; set; }
         public int ContentType { get; set; }
         public string ContentURL { get; set; }
-        public DateTime PublishedDate { get; set; }
+        public DateTime? PublishedDate { get; set; }
         public DateTime? EndDate { get; set; }
         public int SlotNumber { get; set; }
         public string CreatedBy { get; set; }

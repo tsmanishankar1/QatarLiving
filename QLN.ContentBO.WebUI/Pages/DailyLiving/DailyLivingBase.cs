@@ -254,7 +254,9 @@ public class DailyLivingBase : QLComponentBase
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
-            AllEventsList = await GetAllEvents();
+            AllEventsList = (await GetAllEvents())
+                    .Where(e => e.Status == EventStatus.Published)
+                    .ToList();
             ActiveTopics = await GetActiveTopics();
             if (ActiveTopics?.Any() == true)
             {

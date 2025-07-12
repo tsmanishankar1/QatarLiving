@@ -95,8 +95,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 .ToHashSet();
 
             AllEventsList = allEvents
-                .Where(e => !featuredEventIds.Contains(e.Id))
-                .ToList();
+                 .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
+                  .ToList();
         }
         protected EventDTO? draggedItem;
 
