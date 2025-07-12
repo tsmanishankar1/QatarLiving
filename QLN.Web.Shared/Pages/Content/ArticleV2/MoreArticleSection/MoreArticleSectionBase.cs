@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
 {
@@ -26,6 +28,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
 
         [Inject]
         protected NavigationManager navManager { get; set; }
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
 
         protected bool imageLoaded = false;
 
