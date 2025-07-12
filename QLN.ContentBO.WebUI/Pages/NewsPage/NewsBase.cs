@@ -613,26 +613,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        public void UpdateArticleSlot(List<IndexedArticle> indexed, Guid articleId, int newSlotId)
-        {
-            var current = indexed.FirstOrDefault(x => x.Article != null && x.Article.Id == articleId);
-            var target = indexed.FirstOrDefault(x => x.SlotNumber == newSlotId);
-
-            if (current?.Article is null || target == null)
-                return;
-
-            // Move article to the new slot
-            target.Article = current.Article;
-            current.Article = null;
-
-            // Update the SlotId in the UI
-            var category = target.Article?.Categories?.FirstOrDefault();
-            if (category != null)
-            {
-                category.SlotId = newSlotId;
-            }
-        }
-
         protected async Task SearchArticles()
         {
             try
