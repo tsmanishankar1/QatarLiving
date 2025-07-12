@@ -916,9 +916,16 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 Console.WriteLine($"[INFO] Index key: {indexKey}");
 
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct)
-                             ?? new List<Guid>();
+                                 ?? new List<Guid>();
 
                 Console.WriteLine($"[INFO] Comment count in index: {index.Count}");
+
+                // If there are no comments, return a 404
+                if (index.Count == 0)
+                {
+                    Console.WriteLine($"[INFO] No comments found for article {nid}");
+                    throw new KeyNotFoundException($"No comments found for article {nid}");
+                }
 
                 int currentPage = page ?? 1;
                 int itemsPerPage = perPage ?? 10;
@@ -972,6 +979,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     {
                         Console.WriteLine($"[ERROR] Failed to deserialize comment for key: {state.Key}, ex: {ex.Message}");
                     }
+                }
+
+                // If no comments were loaded
+                if (!allComments.Any())
+                {
+                    Console.WriteLine($"[INFO] No valid comments found for article {nid}");
+                    throw new KeyNotFoundException($"No valid comments found for article {nid}");
                 }
 
                 var grouped = new Dictionary<Guid, List<V2NewsCommentDto>>();
@@ -1046,10 +1060,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     Comments = comments
                 };
             }
+            catch (KeyNotFoundException knfEx)
+            {
+                Console.WriteLine($"[INFO] No comments found: {knfEx.Message}");
+                throw new InvalidOperationException("No comments found for the provided article ID.", knfEx);
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] Failed to get comments for article {nid}: {ex}");
-                throw new InvalidOperationException("Error fetching comments");
+                throw new InvalidOperationException("Error fetching comments", ex);
             }
         }
 
@@ -1186,8 +1205,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                   .Take(3).ToList();
 
                 var articlesInSlots1To13 = dtos
-                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 13))
-                    .OrderByDescending(dto => dto.PublishedDate).ToList();
+                .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 13))
+                .OrderBy(dto => dto.Categories.First(c => c.SlotId >= 1 && c.SlotId <= 13).SlotId)
+                .ToList();
+
 
                 var filteredDtos = articlesInSlots1To13
                     .Concat(articlesInSlot14)

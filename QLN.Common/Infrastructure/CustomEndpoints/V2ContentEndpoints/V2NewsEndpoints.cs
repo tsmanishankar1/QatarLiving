@@ -1058,44 +1058,51 @@ public static class V2NewsEndpoints
 
 
         group.MapGet("/commentsbyArticleid/{nid}", async Task<Results<
-    Ok<NewsCommentListResponse>,
-    NotFound<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    string nid,
-    int? page,
-    int? perPage,
-    IV2NewsService service,
-    CancellationToken ct
-) =>
+     Ok<NewsCommentListResponse>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult>> (
+     string nid,
+     int? page,
+     int? perPage,
+     IV2NewsService service,
+     CancellationToken ct
+ ) =>
         {
             try
             {
                 var response = await service.GetCommentsByArticleIdAsync(nid, page, perPage, ct);
 
-                if (response.Comments == null || !response.Comments.Any())
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "No Comments Found",
-                        Detail = $"No comments found for Article ID: {nid}"
-                    });
-                }
-
+                // Always return 200 OK, even if comments are empty
                 return TypedResults.Ok(response);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return TypedResults.NotFound(new ProblemDetails
+                {
+                    Title = "Article or Comment Index Not Found",
+                    Detail = ex.Message
+                });
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Error retrieving comments", ex.Message);
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Detail = "Error retrieving comments",
+                    Status = 500,
+                    Instance = $"Error retrieving comments for article {nid}"
+                });
             }
         })
-.WithName("GetCommentsByArticleId")
-.WithTags("News")
-.WithSummary("Get all comments for a specific news article")
-.WithDescription("Returns a paginated list of comments for the provided article ID. Pagination is optional.")
-.Produces<NewsCommentListResponse>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+ .WithName("GetCommentsByArticleId")
+ .WithTags("News")
+ .WithSummary("Get all comments for a specific news article")
+ .WithDescription("Returns a paginated list of comments for the provided article ID. Pagination is optional.")
+ .Produces<NewsCommentListResponse>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
         group.MapPost("/commentslike/{commentId}", async Task<Results<
          Ok<bool>,
