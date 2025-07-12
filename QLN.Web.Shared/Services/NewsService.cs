@@ -10,6 +10,7 @@ namespace QLN.Web.Shared.Services
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
 
         public NewsService(HttpClient httpClient, IOptions<ApiSettings> options, ILogger<NewsService> logger)
         {
@@ -187,11 +188,12 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
         public async Task<HttpResponseMessage?> GetNewsBySubCategoryAsync(int categoryId, int subCategoryId)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}");
+                var response = await _httpClient.GetAsync($"{NavigationPath.Value.ContentAPINewsLanding}?categoryId={categoryId}&subCategoryId={subCategoryId}");
                 return response;
             }
             catch (Exception ex)
@@ -200,20 +202,20 @@ namespace QLN.Web.Shared.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-                public async Task<HttpResponseMessage?> GetNewsV2BySlugAsync(string slug)
+
+        public async Task<HttpResponseMessage?> GetNewsBySlugV2Async(string slug)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/content/news/{slug}");
+                var response = await _httpClient.GetAsync($"{NavigationPath.Value.ContentAPINewsGetBySlug}/{slug}");
                 return response;
             }
             catch (Exception ex)
             {
-                _logger.LogError("GetNewsQatarAsync" + ex);
+                _logger.LogError(ex, "GetNewsBySlugV2Async");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-
     }
 }
 

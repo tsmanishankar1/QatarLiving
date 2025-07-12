@@ -95,7 +95,7 @@
         public string ContentDailyBackEnd { get; set; } = "/api/content/qln_contents_daily/landing"; // new one is "/api/v2/dailyliving/landing"
 
         public string ContentDailyVideosBackEnd { get; set; } = "/api/content/qln_videos/landing";
-
-
+        public string ContentAPINewsLanding { get; set; } = "api/v2/news/landing";
+        public string ContentAPINewsGetBySlug { get; set; } = "api/v2/news/getbyslug";
     }
 }
