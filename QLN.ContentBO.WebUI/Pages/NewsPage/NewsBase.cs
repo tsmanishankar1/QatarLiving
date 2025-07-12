@@ -722,6 +722,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     Snackbar.Add("Failed to Reorder slots", Severity.Error);
                     Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
