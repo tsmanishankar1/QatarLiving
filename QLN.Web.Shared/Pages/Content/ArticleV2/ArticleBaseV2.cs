@@ -100,6 +100,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
 
         [Parameter]
         public NewsItem Item { get; set; }
+
+        protected NewsArticleDTO NewsArticleDTO { get; set; } = new NewsArticleDTO();
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -116,7 +119,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 var bannersTask = LoadBanners();
                 await Task.WhenAll(bannersTask);
                 isLoading = true;
-                newsArticle = await GetNewsBySlugAsync();
+                NewsArticleDTO = await GetNewsBySlugV2Async();
+                newsArticle = NewsArticleDTO.ToContentPost();
+
                 SelectedPost = new PostModel
                 {
                     Id = newsArticle.Nid,
@@ -182,25 +187,25 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
             }
         }
 
-        protected async Task<ContentPost> GetNewsBySlugAsync()
+        protected async Task<NewsArticleDTO> GetNewsBySlugV2Async()
         {
             try
             {
-                var apiResponse = await _newsService.GetNewsBySlugAsync(slug) ?? new HttpResponseMessage();
+                var apiResponse = await _newsService.GetNewsBySlugV2Async(slug) ?? new HttpResponseMessage();
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentPost>();
-                    return response ?? new ContentPost();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>();
+                    return response ?? new NewsArticleDTO();
                 }
-                return new ContentPost();
+                return new NewsArticleDTO();
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetNewsBySlugAsync");
-                return new ContentPost();
+                Logger.LogError(ex, "GetNewsBySlugV2Async");
+                return new NewsArticleDTO();
             }
         }
- 
+
         private async Task LoadBanners()
         {
             isLoadingBanners = true;

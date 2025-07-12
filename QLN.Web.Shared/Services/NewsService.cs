@@ -193,7 +193,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{NavigationPath.Value.ContentAPINewsLanding}?categoryId={categoryId}&subCategoryId={subCategoryId}");
+                var response = await _httpClient.GetAsync($"api/v2/news/landing?categoryId={categoryId}&subCategoryId={subCategoryId}");
                 return response;
             }
             catch (Exception ex)
@@ -207,7 +207,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{NavigationPath.Value.ContentAPINewsGetBySlug}/{slug}");
+                var response = await _httpClient.GetAsync($"api/v2/news/getbyslug/{slug}");
                 return response;
             }
             catch (Exception ex)
