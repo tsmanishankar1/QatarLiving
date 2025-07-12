@@ -69,11 +69,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             public List<NewsArticleDTO> Items { get; set; } = [];
         }
 
+        protected bool isTabLoading = false;
+        protected bool isTableLoading = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                isTabLoading = true;
                 await AuthorizedPage();
+                Categories = await GetNewsCategories() ?? [];
+                Slots = await GetSlots();
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -93,7 +100,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     shouldFocusInput = false;
                     await subCategoryInputRef.FocusAsync();
                 }
-
             }
             catch (Exception ex)
             {
@@ -106,15 +112,17 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                isTabLoading = true;
                 if (CategoryId > 0)
                 {
-                    Categories = await GetNewsCategories() ?? [];
                     SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
                     SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
-                    Slots = await GetSlots();
-
+                    isTabLoading = false;
+                    isTableLoading = true;
                     IndexedLiveArticles = await GetLiveArticlesAsync();
+                    isTableLoading = false;
                 }
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -254,8 +262,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async void LoadCategory(int categoryId, NewsSubCategory subCategory)
         {
+            isTableLoading = true;
             SelectedSubcategory = subCategory;
             IndexedLiveArticles = await GetLiveArticlesAsync();
+            isTableLoading = false;
             StateHasChanged();
         }
 
@@ -387,6 +397,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 _ => null
             };
 
+            isTableLoading = true;
             IsLoadingDataGrid = true;
             try
             {
@@ -395,9 +406,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     switch (status.Value)
                     {
                         case 1:
-                            IndexedLiveArticles.Clear();
+                            if (IndexedLiveArticles.Count > 0)
+                            {
+                                IndexedLiveArticles.Clear();
+                            }
+
                             ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
+
                             break;
                         case 2:
                             ResetSearch();
@@ -417,6 +433,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             finally
             {
                 IsLoadingDataGrid = false;
+                isTableLoading = false;
             }
         }
 
