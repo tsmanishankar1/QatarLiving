@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -15,8 +16,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         [Inject] IDialogService DialogService { get; set; }
         [Parameter] public string? ArticleId { get; set; }
 
-        protected Guid ParsedArticleId { get; set; }
-
         protected NewsArticleDTO article { get; set; } = new();
 
         protected List<NewsCategory> Categories = [];
@@ -30,35 +29,72 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected List<ArticleCategory> TempCategoryList { get; set; } = [];
 
         public int MaxCategory { get; set; } = 2;
+        public bool IsEditorReady { get; set; } = false;
+
+        public bool IsLoading { get; set; } = false;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                await AuthorizedPage();
+
+                Categories = await GetNewsCategories();
+                Slots = await GetSlots();
+                WriterTags = await GetWriterTags();
+                IsLoading = false;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender && !IsEditorReady)
+                {
+                    if (Editor is not null)
+                    {
+                        try
+                        {
+                            // Confirm Editor is fully ready via JSInterop
+                            var html = await Editor.GetHtml();
+                            if (html is not null)
+                            {
+                                IsEditorReady = true;
+                                StateHasChanged();
+                            }
+                        }
+                        catch (JSException jsEx)
+                        {
+                            Logger.LogWarning(jsEx, "MudEx Editor JS not ready yet");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "OnAfterRenderAsync");
+            }
+        }
 
         protected async override Task OnParametersSetAsync()
         {
             try
             {
-                await AuthorizedPage();
-                if (!Guid.TryParse(ArticleId, out var parsedArticleId))
-                {
-                    Snackbar.Add("Invalid article ID", Severity.Error);
-                    return;
-                }
-                ParsedArticleId = parsedArticleId;
-                Categories = await GetNewsCategories();
-                Slots = await GetSlots();
-                WriterTags = await GetWriterTags();
-                article = await GetArticleById(ParsedArticleId);
-                if (article.Id == Guid.Empty)
-                {
-                    Snackbar.Add("Invalid article ID", Severity.Error);
-                    NavManager.NavigateTo($"/", true);
-                    return;
-                }
-                TempCategoryList = article.Categories;
-
+                IsLoading = true;
+                await Task.Delay(3000);
+                await LoadArticle();
+                IsLoading = false;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
-                throw;
             }
         }
 
@@ -126,9 +162,6 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
-                    var redirectToCateg = article.Categories.FirstOrDefault();
-                    NavManager.NavigateTo($"/manage/news/category/{redirectToCateg.CategoryId}", true);
-                    ResetForm();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -143,7 +176,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Logger.LogError(ex, "HandleValidSubmit");
                 Snackbar.Add("Edit Article Failed", Severity.Error);
-                ResetForm();
             }
         }
 
@@ -171,8 +203,13 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
-            var result = dialog.Result;
-            article = new();
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                // When Changes are discarded Load Article
+                await LoadArticle();
+                StateHasChanged();
+            }
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -269,10 +306,31 @@ namespace QLN.ContentBO.WebUI.Components.News
             article.CoverImageUrl = null;
         }
 
-        protected void ResetForm()
+        private async Task LoadArticle()
         {
-            article = new();
-            TempCategoryList = [];
+            try
+            {
+                if (!Guid.TryParse(ArticleId, out var parsedArticleId))
+                {
+                    Snackbar.Add("Invalid article ID", Severity.Error);
+                    return;
+                }
+
+                article = await GetArticleById(parsedArticleId);
+
+                if (article?.Id == Guid.Empty)
+                {
+                    Snackbar.Add("Article not found", Severity.Error);
+                    NavManager.NavigateTo("/", true);
+                    return;
+                }
+
+                TempCategoryList = article?.Categories ?? [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadArticle");
+            }
         }
     }
 }

@@ -25,6 +25,9 @@ namespace QLN.Web.Shared.Models
         public DateTime DateCreated { get; set; }
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
+        public List<string> LikedUserIds { get; set; }
+        public List<string> CommentedUserIds { get; set; }
+
     }
 
     public class CreateCommunityPostDto

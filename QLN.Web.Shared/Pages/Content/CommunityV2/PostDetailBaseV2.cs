@@ -1,23 +1,28 @@
 ﻿ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
+using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Net.Http.Json;
+using System.Security.Claims;
 
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class PostDetailBaseV2 : ComponentBase
     {
 
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
-        [Inject] protected ILogger<PostDetailBase> Logger { get; set; } = default!;
+        [Inject] protected ILogger<PostDetailBaseV2> Logger { get; set; } = default!;
         [Inject] private IContentService _contentService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
+        [Inject] protected IOptions<NavigationPath> options { get; set; }
+        [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
 
         protected List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
         protected QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem? postBreadcrumbItem;
@@ -39,6 +44,33 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected List<BannerItem> CommunitySideBanners { get; set; } = new();
 
 
+        protected string currentUserId = string.Empty;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    currentUserId = user.FindFirst("uid")?.Value
+                         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? string.Empty;
+                }
+                else
+                {
+                    Logger.LogWarning("User is not authenticated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while retrieving user authentication state.");
+            }
+        }
+
+
         protected override async Task OnParametersSetAsync()
         {
             await LoadBanners();
@@ -47,19 +79,18 @@ namespace QLN.Web.Shared.Pages.Content.Community
             postBreadcrumbItem = new()
             {
                 Label =  "Not Found",
-                Url = $"/content/community/post/detail/{slug}",
+                Url = $"/content/v2/community/post/detail/{slug}",
                 IsLast = true
             };
             postBreadcrumbCategory = new()
             {
                 Label = "Not Found",
-                //Url = "/content/community",
-                Url = $"/content/community/v2" // leaving this as it is a V2 component
+                Url =options.Value.ContentCommunity
             };
 
             breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
             {
-                new() { Label = "Community", Url = "/content/community/v2" }, // leaving this as it is a V2 component
+                new() { Label = "Community", Url = options.Value.ContentCommunity}, // leaving this as it is a V2 component
                postBreadcrumbCategory,
                 postBreadcrumbItem
             };
@@ -67,70 +98,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             await LoadPostAsync();
         }
 
-        //private async Task LoadPostAsync()
-        //{
-        //    try
-        //    {
-        //        SelectedPost = null;
-        //        IsLoading = true;
-        //        HasError = false;
-        //        StateHasChanged();
-
-        //        var fetched = await CommunityService.GetPostBySlugAsync(slug);
-
-        //        if (fetched != null)
-        //        {
-        //            SelectedPost = new PostModel
-        //            {
-        //                Id = fetched.nid,
-        //                Category = fetched.category,
-        //                CategoryId = fetched.forum_id.ToString(),
-        //                Title = fetched.title,
-        //                BodyPreview = fetched.description,
-        //                Author = fetched.user_name ?? "Unknown User",
-        //                Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
-        //                LikeCount = 0,
-        //                CommentCount = fetched.comments?.Count ?? 0,
-        //                ImageUrl = fetched.image_url,
-        //                Slug = fetched.slug,
-        //                Comments = fetched.comments?.Select(c => new CommentModel
-        //                {
-        //                    Id = c.nid,
-        //                    CreatedBy = c.user_name ?? "Unknown User",
-        //                    CreatedAt = c.created_date,      
-        //                    Description = c.subject ?? "No content to display",
-        //                    LikeCount = 0,
-        //                    UnlikeCount = 0,
-        //                    Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
-        //                        ? c.profile_picture
-        //                        : "/qln-images/content/Sample.svg"
-        //                }).ToList() ?? new List<CommentModel>()
-        //            };
-
-        //            if (postBreadcrumbItem is not null)
-        //            {
-        //                postBreadcrumbItem.Label = SelectedPost.Title;
-        //                StateHasChanged();
-        //            }
-        //            if (postBreadcrumbCategory is not null)
-        //            {
-        //                postBreadcrumbCategory.Label = SelectedPost.Category;
-        //                postBreadcrumbCategory.Url = $"/content/community?categoryId={SelectedPost.CategoryId}";
-        //                StateHasChanged();
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Logger.LogError(ex, "Failed to load post with slug: {Slug}", slug);
-        //        HasError = true;
-        //    }
-        //    finally
-        //    {
-        //        IsLoading = false;
-        //        StateHasChanged();
-        //    }
-        //}
+     
         private async Task LoadPostAsync()
         {
             try
@@ -157,7 +125,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         CommentCount = fetched.CommentCount,
                         ImageUrl = fetched.ImageUrl,
                         Slug = fetched.Slug,
-                        
+                        isCommented = fetched.CommentedUserIds?.Contains(currentUserId) ?? false,
+                        IsLiked = fetched.LikedUserIds?.Contains(currentUserId) ?? false,
+
                     };
 
                     if (postBreadcrumbItem is not null)
@@ -196,7 +166,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
+                Logger.LogInformation($"Error loading banners: {ex.Message}");
             }
             finally
             {
@@ -216,7 +186,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"FetchBannerData error: {ex.Message}");
+                Logger.LogInformation($"FetchBannerData error: {ex.Message}");
                 return null;
             }
         }

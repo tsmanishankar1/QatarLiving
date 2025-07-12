@@ -26,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
+        public List<NewsArticleDTO> ListOfNewsArticles { get; set; } = [];
 
         protected List<Slot> Slots = [];
 
@@ -69,11 +69,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             public List<NewsArticleDTO> Items { get; set; } = [];
         }
 
+        protected bool isTabLoading = false;
+        protected bool isTableLoading = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                isTabLoading = true;
                 await AuthorizedPage();
+                Categories = await GetNewsCategories() ?? [];
+                Slots = await GetSlots();
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -93,7 +100,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     shouldFocusInput = false;
                     await subCategoryInputRef.FocusAsync();
                 }
-
             }
             catch (Exception ex)
             {
@@ -106,15 +112,18 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                isTabLoading = true;
                 if (CategoryId > 0)
                 {
-                    Categories = await GetNewsCategories() ?? [];
+                    activeIndex = 0; // Reset Index when Category is switched
                     SubCategories = Categories.Where(c => c.Id == CategoryId)?.FirstOrDefault()?.SubCategories ?? [];
                     SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
-                    Slots = await GetSlots();
-
+                    isTabLoading = false;
+                    isTableLoading = true;
                     IndexedLiveArticles = await GetLiveArticlesAsync();
+                    isTableLoading = false;
                 }
+                isTabLoading = false;
             }
             catch (Exception ex)
             {
@@ -132,18 +141,39 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                await DeleteNewsArticle(id);
-
-                if (selectedTab == "live")
+                var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                var dialog = await DialogService.ShowAsync<DeleteArticleConfirmDialog>("", options);
+                var result = await dialog.Result;
+                if (!result.Canceled)
                 {
-                    IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
-                }
-                else
-                {
-                    ListOfNewsArticles.RemoveAll(a => a.Id == id);
-                    if (SearchListOfNewsArticles.Count > 0)
+                    var response = await newsService.DeleteNews(id);
+                    if (response != null && response.IsSuccessStatusCode)
                     {
-                        SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                        if (selectedTab == "live")
+                        {
+                            IndexedLiveArticles.RemoveAll(a => a.Article?.Id == id);
+                        }
+                        else
+                        {
+                            ListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            if (SearchListOfNewsArticles.Count > 0)
+                            {
+                                SearchListOfNewsArticles.RemoveAll(a => a.Id == id);
+                            }
+                        }
+                        Snackbar.Add("Article Deleted successfully", Severity.Success);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        Snackbar.Add("Article cannot be Deleted since it is configured in News/Daily Slot", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        Snackbar.Add("You are not Authorized to perform this action", Severity.Error);
+                    }
+                    else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        Snackbar.Add("Internal API Error", Severity.Error);
                     }
                 }
 
@@ -151,7 +181,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"DeleteArticle");
+                Logger.LogError(ex, "DeleteArticle");
             }
         }
 
@@ -219,7 +249,13 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsArticleDTO>>() ?? [];
+                    var rawJson = await apiResponse.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<List<NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return result ?? [];
                 }
 
                 return [];
@@ -233,8 +269,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected async void LoadCategory(int categoryId, NewsSubCategory subCategory)
         {
+            isTableLoading = true;
             SelectedSubcategory = subCategory;
-            IndexedLiveArticles = await GetLiveArticlesAsync();
+            await OnTabChanged("live");
+            isTableLoading = false;
             StateHasChanged();
         }
 
@@ -263,22 +301,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                    .FirstOrDefault(c => c.CategoryId == CategoryId && c.SubcategoryId == SelectedSubcategory.Id);
 
             return selectedCategory?.SlotId ?? 0;
-        }
-
-        private async Task DeleteNewsArticle(Guid Id)
-        {
-            try
-            {
-                var apiResponse = await newsService.DeleteNews(Id);
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "DeleteNewsArticle");
-            }
         }
 
         public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
@@ -382,7 +404,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 _ => null
             };
 
+            isTableLoading = true;
             IsLoadingDataGrid = true;
+            if (ListOfNewsArticles.Count > 0)
+            {
+                ListOfNewsArticles.Clear();
+            }
             try
             {
                 if (status.HasValue)
@@ -390,9 +417,14 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     switch (status.Value)
                     {
                         case 1:
-                            IndexedLiveArticles.Clear();
+                            if (IndexedLiveArticles.Count > 0)
+                            {
+                                IndexedLiveArticles.Clear();
+                            }
+
                             ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
+
                             break;
                         case 2:
                             ResetSearch();
@@ -412,6 +444,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             finally
             {
                 IsLoadingDataGrid = false;
+                isTableLoading = false;
             }
         }
 
@@ -441,7 +474,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 if (!result.Canceled)
                 {
                     await OnTabChanged(selectedTab);
-                    Snackbar.Add("Go Live Slot Updated", Severity.Success);
+                    Snackbar.Add($"Article is Live now", Severity.Success);
                 }
 
                 StateHasChanged();
@@ -502,7 +535,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     await OnTabChanged(selectedTab);
                     Snackbar.Add($"{successMessage}", Severity.Success);
                 }
-
                 StateHasChanged();
             }
             catch (Exception ex)
@@ -582,26 +614,6 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Logger.LogError(ex, "GetUnpublishedArticlesAsync");
                 return [];
-            }
-        }
-
-        public void UpdateArticleSlot(List<IndexedArticle> indexed, Guid articleId, int newSlotId)
-        {
-            var current = indexed.FirstOrDefault(x => x.Article != null && x.Article.Id == articleId);
-            var target = indexed.FirstOrDefault(x => x.SlotNumber == newSlotId);
-
-            if (current?.Article is null || target == null)
-                return;
-
-            // Move article to the new slot
-            target.Article = current.Article;
-            current.Article = null;
-
-            // Update the SlotId in the UI
-            var category = target.Article?.Categories?.FirstOrDefault();
-            if (category != null)
-            {
-                category.SlotId = newSlotId;
             }
         }
 
@@ -718,6 +730,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     Snackbar.Add("Failed to Reorder slots", Severity.Error);
                     Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
@@ -10,6 +11,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
     {
         [Inject] protected IPostDialogService PostDialogService { get; set; }
         [Inject] protected ICommunityService CommunityService { get; set; }
+        [Inject] protected ILogger<AddPostDialogBase> Logger { get; set; }
 
         [CascadingParameter]
         private IMudDialogInstance MudDialog { get; set; }
@@ -41,7 +43,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             catch (Exception ex)
             {
                 Snackbar.Add("Failed to load categories", Severity.Error);
-                Console.WriteLine(ex.Message);
+                Logger.LogInformation(ex.Message);
                 CategorySelectOptions = new List<SelectOption>();
             }
         }
@@ -50,7 +52,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected void OnCategoryChange(string newId)
         {
             SelectedCategoryId = newId;
-            Console.WriteLine($"Category changed: {SelectedCategoryId}");
             OnCategoryChanged.InvokeAsync(newId);
         }
 
