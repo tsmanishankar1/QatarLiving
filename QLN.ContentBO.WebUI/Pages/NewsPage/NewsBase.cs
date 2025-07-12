@@ -26,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
         protected string selectedType;
 
-        public List<NewsArticleDTO> ListOfNewsArticles { get; set; }
+        public List<NewsArticleDTO> ListOfNewsArticles { get; set; } = [];
 
         protected List<Slot> Slots = [];
 
@@ -271,7 +271,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             isTableLoading = true;
             SelectedSubcategory = subCategory;
-            IndexedLiveArticles = await GetLiveArticlesAsync();
+            await OnTabChanged("live");
             isTableLoading = false;
             StateHasChanged();
         }
@@ -406,6 +406,10 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
 
             isTableLoading = true;
             IsLoadingDataGrid = true;
+            if (ListOfNewsArticles.Count > 0)
+            {
+                ListOfNewsArticles.Clear();
+            }
             try
             {
                 if (status.HasValue)
