@@ -246,10 +246,13 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
                 </div>
             }
 
-            @* <div class="info-item">
-                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                <span class="info-text">12:00 PM</span>
-            </div> *@
+            @if (Item.EventSchedule.StartTime.HasValue && Item.EventSchedule.EndTime.HasValue)
+            {
+                <div class="info-item">
+                    <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                    <span class="info-text">Item.EventSchedule.StartTime to Item.EventSchedule.EndTime</span>
+                </div>
+            }    
         </div>
 
         @* <div class="info-Access">
@@ -310,10 +313,14 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
 
     RenderFragment ActionButtons() => __builder =>
     {
-        @* <button class="register-button">
-            Register Now
-            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-right: 6px; color:white" />
-        </button> *@
+        @if (!string.IsNullOrEmpty(Item.RedirectionLink) || !string.IsNullOrWhiteSpace(Item.RedirectionLink))
+        {
+            <a href="@Item.RedirectionLink" class="register-button" target="_blank">
+                More Information
+                <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-left: 125px; color:white;" />
+            </a>
+        }
+    
         <button class="calendar-button" @onclick="() => IsModalOpen = true">
             Add to Calendar
             <img src="/qln-images/add_to_calendar_Icons.svg" alt="Date Icon" class="add-to-info-icon" />

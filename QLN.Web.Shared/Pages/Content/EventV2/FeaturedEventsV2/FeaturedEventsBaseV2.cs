@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.EventV2.FeaturedEventsV2
 {
@@ -19,6 +21,8 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.FeaturedEventsV2
         private NavigationManager Navigation { get; set; } = default!;
 
         private bool _categoriesSwiperInitialized = false;
+        [Inject]
+        private IOptions<NavigationPath> NavigationPath { get; set; } = default!;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
@@ -31,7 +35,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.FeaturedEventsV2
 
         protected void HandleCategoryClick(EventDTOV2 clickedItem)
         {
-            Navigation.NavigateTo($"/content/v2/events/details/{clickedItem.Slug}");
+            Navigation.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}/{clickedItem.Slug}", true);
         }
 
         protected List<EventDTOV2> GetSlotOrderedEvents(List<EventDTOV2> events)

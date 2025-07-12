@@ -8,6 +8,8 @@ using MudBlazor;
 using Microsoft.Extensions.Hosting;
 using QLN.Web.Shared.Components.ReportDialog;
 using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Services;
+using Microsoft.Extensions.Options;
 
 namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
@@ -25,6 +27,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         [Inject] protected IPostInteractionService PostInteractionService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
 
+        [Inject] protected IOptions<NavigationPath> NavigationPath { get; set; }
         [Parameter] public PostModel Post { get; set; } = new();
         [Parameter] public bool IsDetailView { get; set; } = false;
 
@@ -56,7 +59,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/v2/community/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
+            Navigation.NavigateTo($"{NavigationPath.Value.ContentCommunityPostDetails}{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
         }
         protected async Task ToggleLikeAsync()
         {

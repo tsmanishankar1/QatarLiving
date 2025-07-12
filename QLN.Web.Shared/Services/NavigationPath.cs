@@ -90,7 +90,7 @@
         public string ContentEventsDetail { get; set; } = "/content/events/details";
         public string ContentCommunity { get; set; } = "/content/v2/community";
         public string ContentCommunityPostCreate { get; set; } = "/content/v2/community/post/create";
-        public string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/details";
+        public string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/detail/";
 
         public string ContentDailyBackEnd { get; set; } = "/api/content/qln_contents_daily/landing"; // new one is "/api/v2/dailyliving/landing"
 

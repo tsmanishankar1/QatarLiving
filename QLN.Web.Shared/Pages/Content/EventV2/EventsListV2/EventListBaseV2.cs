@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.EventListCard;
+using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 {
@@ -33,6 +35,9 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
         [Parameter] public int CurrentPage { get; set; }
         [Parameter] public int PageSize { get; set; }
         [Parameter] public int TotalItems { get; set; }
+        [Inject]
+        private IOptions<NavigationPath> NavigationPath { get; set; } = default!;
+
 
         protected async void HandlePageChange(int newPage)
         {
@@ -61,8 +66,8 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventsListV2
 
         protected void HandleCardClick(EventDTOV2 item)
         {
-          
-            Navigation.NavigateTo($"/content/v2/events/details/{item.Slug}");
+
+            Navigation.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}{item.Slug}", true);
         }
     }
 }
