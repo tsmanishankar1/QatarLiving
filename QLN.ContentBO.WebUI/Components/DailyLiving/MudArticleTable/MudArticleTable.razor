@@ -38,8 +38,26 @@ else{
                 }
             }
         </MudTd>
-        <MudTd DataLabel="Category">@context.Category</MudTd>
-        <MudTd DataLabel="Subcategory">@context.Subcategory</MudTd>
+        <MudTd DataLabel="Category">
+            @if (context.Category is not null)
+            {
+                @(context.Category)
+            }
+            else
+            {
+                @("-")
+            }
+        </MudTd>
+        <MudTd DataLabel="Subcategory">
+            @if(context.Subcategory is not null)
+            {
+                @(context.Subcategory)
+            }
+            else
+            {
+                @("-")
+            }
+        </MudTd>
         <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
         <MudTd>
              @if (context.Title == "Add Item")
