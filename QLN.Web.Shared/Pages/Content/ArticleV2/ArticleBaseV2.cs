@@ -1,10 +1,12 @@
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Globalization;
 using System.Net.Http.Json;
@@ -12,7 +14,7 @@ using System.Net.Http.Json;
 namespace QLN.Web.Shared.Pages.Content.ArticleV2
 {
 
-    public class ArticleBase : ComponentBase
+    public class ArticleBaseV2 : ComponentBase
     {
         [Parameter]
         public string slug { get; set; }
@@ -100,6 +102,12 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
 
         [Parameter]
         public NewsItem Item { get; set; }
+
+        protected NewsArticleDTO NewsArticleDTO { get; set; } = new NewsArticleDTO();
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
+
         protected async override Task OnInitializedAsync()
         {
             try
@@ -110,13 +118,15 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     category = cat;
                 if (query.TryGetValue("subcategory", out var sub))
                     subcategory = sub;
-                categoryLabel = routerList.FirstOrDefault(item => item.Value == category)?.Label;
-                subcategoryLabel = routerList.FirstOrDefault(item => item.Value == subcategory)?.Label;
+                categoryLabel = category;
+                subcategoryLabel = subcategory;
                 isLoading = true;
                 var bannersTask = LoadBanners();
                 await Task.WhenAll(bannersTask);
                 isLoading = true;
-                newsArticle = await GetNewsBySlugAsync();
+                NewsArticleDTO = await GetNewsBySlugV2Async();
+                newsArticle = NewsArticleDTO.ToContentPost();
+
                 SelectedPost = new PostModel
                 {
                     Id = newsArticle.Nid,
@@ -146,14 +156,16 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                         Avatar = "/images/content/Sample.svg"
                     }).ToList() ?? new List<CommentModel>()
                 };
+
                 if (category != null && subcategory != null)
                 {
                     breadcrumbItems = new()
-                {
-                new() {   Label = categoryLabel,Url =$"/content/news?category={category}" },
-                new() { Label = subcategoryLabel, Url = $"/content/news?category={category}&subcategory={subcategory}"},
-                new() { Label = newsArticle.Title, Url = $"/content/article/details/{category}/{subcategory}/{slug}", IsLast = true },
-                };
+                    {
+                    new() {   Label = categoryLabel,Url =$"{NavigationPath.Value.ContentNews}?category={category}" },
+                    new() { Label = subcategoryLabel, Url = $"{NavigationPath.Value.ContentNews}?category={category}&subcategory={subcategory}"},
+                    new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDetail}/{category}/{subcategory}/{slug}", IsLast = true },
+                    };
+
                     NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
                     moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
                 }
@@ -162,7 +174,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     breadcrumbItems = new()
                 {
                 new() { Label = "Daily", Url = "/content/daily"},
-                // new() { Label = SelectedPost.Category, Url = $"/content/news"},
 
                 new() { Label = newsArticle.Title, Url = $"/content/daily/article/details/{slug}", IsLast = true },
                 };
@@ -171,8 +182,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     vMoreArticles = LandingContent?.ContentsDaily?.DailyMoreArticles?.Items ?? [];
                     Console.WriteLine("vMoreArticles count: " + vMoreArticles.Count);
                 }
-
-                // QatarNewsContent = await GetNewsQatarAsync();
             }
             catch (Exception ex)
             {
@@ -183,65 +192,26 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 isLoading = false;
             }
         }
-        // protected override async Task OnParametersSetAsync()
-        // {
-        //     postBreadcrumbItem = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         Url = $"/content/community/post/detail/{slug}",
-        //         IsLast = true
-        //     };
-        //     postBreadcrumbCategory = new()
-        //     {
-        //         Label = slug ?? "Not Found",
-        //         //Url = "/content/community",
-        //         Url = $"/content/community"
-        //     };
 
-        //     breadcrumbItems = new List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem>
-        //     {
-        //         new() { Label = "Community", Url = "/content/community" },
-        //        postBreadcrumbCategory,
-        //         postBreadcrumbItem
-        //     };
-        // }
-
-        protected async Task<ContentPost> GetNewsBySlugAsync()
+        protected async Task<NewsArticleDTO> GetNewsBySlugV2Async()
         {
             try
             {
-                var apiResponse = await _newsService.GetNewsBySlugAsync(slug) ?? new HttpResponseMessage();
+                var apiResponse = await _newsService.GetNewsBySlugV2Async(slug) ?? new HttpResponseMessage();
                 if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<ContentPost>();
-                    return response ?? new ContentPost();
+                    var response = await apiResponse.Content.ReadFromJsonAsync<NewsArticleDTO>();
+                    return response ?? new NewsArticleDTO();
                 }
-                return new ContentPost();
+                return new NewsArticleDTO();
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetNewsBySlugAsync");
-                return new ContentPost();
+                Logger.LogError(ex, "GetNewsBySlugV2Async");
+                return new NewsArticleDTO();
             }
         }
-        protected async Task<QlnNewsNewsQatarPageResponse> GetNewsQatarAsync()
-        {
-            try
-            {
-                var apiResponse = await _newsService.GetNewsQatarAsync() ?? new HttpResponseMessage();
-                if (apiResponse.IsSuccessStatusCode && apiResponse.Content != null)
-                {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<QlnNewsNewsQatarPageResponse>();
-                    return response ?? new QlnNewsNewsQatarPageResponse();
-                }
-                return new QlnNewsNewsQatarPageResponse();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetNewsQatarAsync");
-                return new QlnNewsNewsQatarPageResponse();
-            }
-        }
+
         private async Task LoadBanners()
         {
             isLoadingBanners = true;
@@ -256,6 +226,7 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 isLoadingBanners = false;
             }
         }
+
         protected async Task<T> GetNewsAsync<T>(string tab) where T : new()
         {
             try
@@ -274,23 +245,5 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 return new T();
             }
         }
-        //    private async Task<BannerResponse?> FetchBannerData()
-        //{
-        //try
-        //{
-        //    var result = await _eventService.GetBannerAsync();
-        //    if (result.IsSuccessStatusCode && result.Content != null)
-        //    {
-        //        return await result.Content.ReadFromJsonAsync<BannerResponse>();
-        //    }
-        //    return null;
-        //}
-        //catch (Exception ex)
-        //{
-        //    Logger.LogError(ex, "FetchBannerData error.");
-        //    return null;
-        //}
-        //}
     }
-
 }

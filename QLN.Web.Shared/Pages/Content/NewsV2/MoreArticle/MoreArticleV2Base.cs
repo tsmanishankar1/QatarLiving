@@ -1,14 +1,20 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.NewsV2.MoreArticle
 {
-    public class MoreArticleBase : ComponentBase
+    public class MoreArticleV2Base : ComponentBase
     {
         [Parameter]
         public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
         [Inject]
         protected NavigationManager navManager { get; set; }
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
+
         protected bool imageLoaded = false;
         protected bool imageFailed = false;
         protected string? currentImageUrl;
