@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json;
 
@@ -16,6 +18,9 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         [Inject] private IEventService _eventService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected NavigationManager navManager { get; set; }
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
 
         protected bool isLoading = true;
         protected bool isLoadingBanners = true;
@@ -295,15 +300,15 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
 
             if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
             {
-                return $"/content/V2/article/details/{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}";
+                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}";
             }
             else if (!string.IsNullOrEmpty(selectedTabView))
             {
-                return $"/content/V2/article/details/{news.Slug}?category={selectedTabView}";
+                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}?category={selectedTabView}";
             }
             else
             {
-                return $"/content/V2/article/details/{news.Slug}";
+                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}";
             }
         }
 

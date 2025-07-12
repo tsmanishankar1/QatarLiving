@@ -1,14 +1,14 @@
 @using MudBlazor
-@inherits MoreArticleSectionBase
+@inherits MoreArticleSectionV2Base
 @using QLN.Web.Shared.Components.EmptyCard
- @using QLN.Web.Shared.Components.AdBanner
+@using QLN.Web.Shared.Components.AdBanner
 
 @if (Articles != null)
 {
-<div class="card-container">
+    <div class="card-container">
 
-    <h3><span class="accent-bar">|</span> More Articles</h3>
-    @if (loading)
+        <h3><span class="accent-bar">|</span> More Articles</h3>
+        @if (loading)
         {
             @for (int i = 0; i < 4; i++)
             {
@@ -21,50 +21,53 @@
                 </div>
             }
         }
-    else if (Articles != null && Articles.Any())
-    {
+        else if (Articles != null && Articles.Any())
+        {
             <MudVirtualize Context="article" Items="Articles">
-                <div class="article-entry" @onclick="@(() => NavigateToArticle(article))">
-                    @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
+                <div class="article-entry">
+                    <a href="@($"{NavigationPath.Value.ContentNewsDetail}/{article.Slug}")">
+                        @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
                         @if (!imageLoaded)
                         {
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
                         }
                         <img src="@article.ImageUrl" alt="" class="article-image"
-                        style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                        @onerror="OnImageError" />
+                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                             @onerror="OnImageError" />
                     }
                     else
                     {
                         <EmptyCard Title="No Images Available" Subtitle="" />
                     }
-                   <div class="article-content">
+                    <div class="article-content">
                         <div class="@(selectedPost == article ? "selected-title" : "article-title")">
-                        @article.Title
+                            @article.Title
                         </div>
-                  </div>
+                    </div>
+                    </a>
                 </div>
             </MudVirtualize>
-        
 
-    }
-    else
-    {
-        <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
-    }
 
-     <div style="width: 340px; height: 402px;">
+        }
+        else
+        {
+            <EmptyCard Title="No article found" Subtitle="Please check back later or explore other categories." />
+        }
+
+        <div style="width: 340px; height: 402px;">
             <AdBanner BannerItems="ArticleSideBanners" />
-   </div>
+        </div>
 
-</div>
+    </div>
 }
-else if(Events != null){
-<div class="card-container">
+else if (Events != null)
+{
+    <div class="card-container">
 
-    <h3><span class="accent-bar">|</span> More Articles</h3>
-    @if (loading)
+        <h3><span class="accent-bar">|</span> More Articles</h3>
+        @if (loading)
         {
             @for (int i = 0; i < 4; i++)
             {
@@ -77,42 +80,42 @@ else if(Events != null){
                 </div>
             }
         }
-    else if (Events != null && Events.Any())
-    {
-        <MudVirtualize Context="article" Items="Events">
+        else if (Events != null && Events.Any())
+        {
+            <MudVirtualize Context="article" Items="Events">
                 <div class="article-entry" @onclick="@(() => NavigateToEventArticle(article))">
                     @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
                         @if (!imageLoaded)
                         {
-                                <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" class="article-image" />
                         }
                         <img src="@article.ImageUrl" alt="" class="article-image"
-                        style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                        @onerror="OnImageError" />
+                             style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                             @onerror="OnImageError" />
                     }
                     else
                     {
                         <EmptyCard Title="No Images Available" Subtitle="" />
                     }
-                   <div class="article-content">
+                    <div class="article-content">
                         <div class="@(selectedEvent == article ? "selected-title" : "article-title")">
-                        @article.Title
+                            @article.Title
                         </div>
-                  </div>
+                    </div>
                 </div>
-            </MudVirtualize>  
-    }
-    else
-    {
-        <EmptyCard Title="No Article found" Subtitle="Please check back later or explore other categories." />
-    }
+            </MudVirtualize>
+        }
+        else
+        {
+            <EmptyCard Title="No Article found" Subtitle="Please check back later or explore other categories." />
+        }
 
-    <div style="width: 340px; height: 402px;">
+        <div style="width: 340px; height: 402px;">
             <AdBanner BannerItems="ArticleSideBanners" />
-    </div>
+        </div>
 
-</div>
+    </div>
 
 }
 
@@ -291,7 +294,6 @@ else if(Events != null){
 
     .article-image {
         width: 107px;
-        
         aspect-ratio: 16/9;
         border-radius: 6px;
         object-fit: cover;

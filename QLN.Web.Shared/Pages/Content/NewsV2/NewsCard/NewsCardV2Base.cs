@@ -3,7 +3,7 @@ using QLN.Common.Infrastructure.DTO_s;
 
 namespace QLN.Web.Shared.Pages.Content.NewsV2.NewsCard
 {
-    public class NewsCardBase : ComponentBase
+    public class NewsCardV2Base : ComponentBase
     {
         [Inject]
         protected NavigationManager navManager { get; set; }
