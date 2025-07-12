@@ -12,7 +12,7 @@ using System.Net.Http.Json;
 namespace QLN.Web.Shared.Pages.Content.ArticleV2
 {
 
-    public class ArticleBase : ComponentBase
+    public class ArticleBaseV2 : ComponentBase
     {
         [Parameter]
         public string slug { get; set; }

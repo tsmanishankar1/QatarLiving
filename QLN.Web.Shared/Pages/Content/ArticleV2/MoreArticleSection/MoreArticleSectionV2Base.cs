@@ -6,7 +6,7 @@ using QLN.Web.Shared.Services;
 namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
 {
 
-    public class MoreArticleSectionBase : ComponentBase
+    public class MoreArticleSectionV2Base : ComponentBase
     {
         [Parameter]
         public List<ContentPost>? Articles { get; set; }

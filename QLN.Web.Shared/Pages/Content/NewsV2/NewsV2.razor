@@ -131,7 +131,7 @@
                         </div>
                     </MudItem>
                     <MudItem xs="12" md="4">
-                        <MoreArticle Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@selectedTabView" selectedTab="@SelectedTab" />
+                        <MoreArticleV2 Articles="@moreArticleListSlot" loading="@isLoading" selectedMainTab="@selectedTabView" selectedTab="@SelectedTab" />
                     </MudItem> 
                 </MudGrid>
                 <div class="flex-container" style="padding-bottom: 40px;">
@@ -157,7 +157,7 @@
                         var thirdItem = topNewsListSlot.LastOrDefault();
                         @foreach (var news in topNewsListSlot.Skip(1).Take(3))
                         {
-                            <NewsCard news="news" IsHorizontal="false" Href="@getLink(news)" />
+                            <NewsCardV2 news="news" IsHorizontal="false" Href="@getLink(news)" />
                             @if (news != thirdItem)
                             {
                                 <div style="width: 1px; height: auto; background-color: #F0F0F0; align-self: stretch; margin: 0 14px"></div>
@@ -220,7 +220,7 @@
                     {
                         @foreach (var news in articleListSlot1.Take(5))
                         {
-                            <NewsCard news="news" IsHorizontal="false" Href="@getLink(news)" />
+                            <NewsCardV2 news="news" IsHorizontal="false" Href="@getLink(news)" />
                             @if (news != articleListSlot1.Last())
                             {
                                 <div class="divider-vertical"></div>

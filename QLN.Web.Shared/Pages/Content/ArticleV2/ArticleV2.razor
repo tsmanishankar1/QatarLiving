@@ -1,6 +1,6 @@
 @page "/content/v2/article/{*slug}"
 @page "/content/v2/daily/{*slug}"
-@inherits ArticleBase
+@inherits ArticleBaseV2
 @layout ContentLayout
 @using QLN.Web.Shared.Components.Carousel
 @using QLN.Web.Shared.Pages.Content.ArticleV2.ArticleDetailCard
@@ -38,11 +38,11 @@
                 }
         <MudGrid Class="py-4" GutterSize="16px">
             <MudItem xs="12" md="8">
-                <ArticleDetailCard Post="newsArticle" loading="isLoading"/>
+                <ArticleDetailCardV2 Post="newsArticle" loading="isLoading"/>
                          <CommentSection Comment="SelectedPost"/>    
             </MudItem>
             <MudItem xs="12" md="4">
-                <MoreArticleSection Articles="@moreArticleList" loading="@isLoading" ArticleSideBanners="ArticleSideBanners" Events="@vMoreArticles" category="@category" subCategory="@subcategory"/>
+                <MoreArticleSectionV2 Articles="@moreArticleList" loading="@isLoading" ArticleSideBanners="ArticleSideBanners" Events="@vMoreArticles" category="@category" subCategory="@subcategory" />
             </MudItem>
         </MudGrid>
     </div>
