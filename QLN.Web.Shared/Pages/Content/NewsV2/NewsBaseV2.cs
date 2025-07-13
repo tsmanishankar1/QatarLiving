@@ -56,7 +56,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         };
 
         protected ContentPost? topNewsSlot => NewsContent?.News?.TopStory?.Items?.FirstOrDefault();
-        protected List<ContentPost>? topNewsListSlot => NewsContent?.News?.TopStory?.Items;
+        protected List<ContentPost>? topNewsListSlot => NewsContent?.News?.Articles1?.Items;
         protected List<ContentPost>? moreArticleListSlot => NewsContent?.News?.MoreArticles?.Items;
         protected List<ContentPost>? articleListSlot1 => NewsContent?.News?.Articles1?.Items;
         protected List<ContentPost>? articleListSlot2 => NewsContent?.News?.Articles2?.Items;
