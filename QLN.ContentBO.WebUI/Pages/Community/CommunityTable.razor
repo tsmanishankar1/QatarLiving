@@ -31,7 +31,7 @@ else
         <RowTemplate Context="context">
             <MudTd DataLabel="S.No">@((Posts.IndexOf(context) + 1).ToString())</MudTd>
             <MudTd DataLabel="Title">
-                <MudLink Href="@($"{PostDetailBaseURL}{context.Slug}")"
+                <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Slug}")"
                          Target="_blank">
                     @context.Title
                 </MudLink>

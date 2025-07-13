@@ -120,7 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                     SelectedSubcategory = SubCategories.FirstOrDefault() ?? new NewsSubCategory { Id = 1001, SubCategoryName = "Qatar" };
                     isTabLoading = false;
                     isTableLoading = true;
-                    IndexedLiveArticles = await GetLiveArticlesAsync();
+                    await OnTabChanged("live");
                     isTableLoading = false;
                 }
                 isTabLoading = false;
