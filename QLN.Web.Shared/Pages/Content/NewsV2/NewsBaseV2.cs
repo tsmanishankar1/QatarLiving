@@ -217,30 +217,28 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         protected async void SetViewMode(string view)
         {
             _selectedView = view;
-
+            isLoading = true;
             var selectedCategory = NewsCategories.FirstOrDefault(c => c.Id.ToString() == view);
             if (selectedCategory != null)
             {
                 selectedTabView = selectedCategory.CategoryName;
                 Tabs = selectedCategory.SubCategories.Select(sc => sc.SubCategoryName).ToArray();
 
-                var targetSub = string.IsNullOrEmpty(selectedRouterTab)
-                    ? selectedCategory.SubCategories.FirstOrDefault()
-                    : selectedCategory.SubCategories.FirstOrDefault(sc => sc.SubCategoryName == selectedRouterTab);
+                var targetSub = selectedCategory.SubCategories.FirstOrDefault();
 
                 if (targetSub != null)
                 {
                     SelectedTab = targetSub.SubCategoryName;
                     subTabLabel = targetSub.Id.ToString();
                     await LoadNewsContent(selectedCategory.Id, targetSub.Id);
-
-                    navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
+                    navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: true);
                 }
             }
             else
             {
                 Tabs = Array.Empty<string>();
             }
+            isLoading = false;
         }
 
         protected async Task LoadBanners(string tab)
