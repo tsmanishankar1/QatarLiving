@@ -6,10 +6,11 @@ using QLN.Web.Shared.Services.Interface;
 using QLN.Common.Infrastructure.DTO_s;
 using System.Net.Http.Json;
 using System.Data.SqlTypes;
+using QLN.Web.Shared.Components;
 
 namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
 {
-    public class EventDetailsBaseV2 : ComponentBase
+    public class EventDetailsBaseV2 : QLComponentBase
     {
         [Inject] protected IEventService EventService { get; set; }
         [Inject] protected ISimpleMemoryCache _simpleCacheService { get; set; }
@@ -39,11 +40,11 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.EventDetails
             // Initialize breadcrumbs
             breadcrumbItems = new()
             {
-                new BreadcrumbItem { Label = "Events", Url = "/content/v2/events" },
+                new BreadcrumbItem { Label = "Events", Url = $"{NavigationPath.Value.ContentEvents}" },
                 new BreadcrumbItem
                 {
                     Label = "Event Detail",
-                    Url = $"/content/events/details/{Slug}",
+                    Url = $"{NavigationPath.Value.ContentEventsDetail}{Slug}",
                     IsLast = true
                 }
             };
