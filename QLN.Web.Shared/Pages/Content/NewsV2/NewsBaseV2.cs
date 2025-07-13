@@ -199,7 +199,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
                         await LoadNewsContent(currentCategory.Id, subCategory.Id);
                         selectedRouterTab = subCategory.SubCategoryName;
 
-                        navManager.NavigateTo($"/content/V2/news?category={selectedTabView}&subcategory={selectedRouterTab}", forceLoad: false);
+                        navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={selectedRouterTab}", forceLoad: false);
                     }
                 }
             }
@@ -234,7 +234,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
                     subTabLabel = targetSub.Id.ToString();
                     await LoadNewsContent(selectedCategory.Id, targetSub.Id);
 
-                    navManager.NavigateTo($"/content/V2/news?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
+                    navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: false);
                 }
             }
             else
@@ -276,22 +276,6 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         protected override void OnParametersSet()
         {
             imageLoaded = false;
-        }
-
-        protected void onclick(ContentPost news)
-        {
-            if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
-            {
-                navManager.NavigateTo($"/content/V2/article/details/{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}");
-            }
-            else if (!string.IsNullOrEmpty(selectedTabView))
-            {
-                navManager.NavigateTo($"/content/V2/article/details/{news.Slug}?category={selectedTabView}");
-            }
-            else
-            {
-                navManager.NavigateTo($"/content/V2/article/details/{news.Slug}");
-            }
         }
 
         protected string getLink(ContentPost news)
