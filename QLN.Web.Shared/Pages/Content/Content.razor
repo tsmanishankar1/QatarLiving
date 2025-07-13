@@ -1,5 +1,16 @@
 @page "/"
+@using Microsoft.Extensions.Options
 @using QLN.Web.Shared.Pages.Content.Daily
+@using QLN.Web.Shared.Pages.Content.DailyV2
+@using QLN.Web.Shared.Services
 @layout ContentLayout
+@inject IOptions<NavigationPath> options
 
-<DailyComponent />
+@if (options.Value.ContentDaily.Contains("v2"))
+{
+    <DailyComponentV2 />
+}
+else
+{
+    <DailyComponent />
+}
