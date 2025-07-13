@@ -6,7 +6,7 @@
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> NavigationPath
 
-<MudLink Href="@($"{NavigationPath.Value.ContentEventsDetail}/{Item.Slug}")" Style="text-decoration: none;">
+<MudLink Href="@($"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}")" Style="text-decoration: none;">
     <div class="Event-list-card">
         <div class="eventv2-image-wrapper">
             @if (string.IsNullOrWhiteSpace(Item.CoverImage) || imageFailed)

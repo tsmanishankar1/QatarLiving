@@ -35,7 +35,7 @@ namespace QLN.Web.Shared.Pages.Content.EventV2.FeaturedEventsV2
 
         protected void HandleCategoryClick(EventDTOV2 clickedItem)
         {
-            Navigation.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}/{clickedItem.Slug}", true);
+            Navigation.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}{clickedItem.Slug}", true);
         }
 
         protected List<EventDTOV2> GetSlotOrderedEvents(List<EventDTOV2> events)

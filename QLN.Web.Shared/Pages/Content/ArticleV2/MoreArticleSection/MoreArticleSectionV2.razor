@@ -25,7 +25,7 @@
         {
             <MudVirtualize Context="article" Items="Articles">
                 <div class="article-entry">
-                    <a href="@($"{NavigationPath.Value.ContentNewsDetail}/{article.Slug}")">
+                    <a href="@($"{NavigationPath.Value.ContentNewsDetail}{article.Slug}")">
                         @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                     {
                         @if (!imageLoaded)

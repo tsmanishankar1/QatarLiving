@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.NewsV2.MoreArticle
 {
-    public class MoreArticleV2Base : ComponentBase
+    public class MoreArticleV2Base : QLComponentBase
     {
         [Parameter]
         public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
@@ -30,7 +31,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2.MoreArticle
         [Parameter] public EventCallback<ContentPost> OnClick { get; set; }
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/content/V2/article/details/{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}");
+            navManager.NavigateTo($"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}", true);
         }
         protected override void OnParametersSet()
         {
