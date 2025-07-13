@@ -25,14 +25,11 @@
 
 
                 <div class="event-info-bar">
-                    @if (!string.IsNullOrWhiteSpace(Item?.Venue))
-                    {
-                        <div class="location">
-                            <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
-                            <span class="location-text">@Item.Venue</span>
-                        </div>
-                    }
 
+                    <div class="location">
+                        <MudIcon Icon="@Icons.Material.Filled.LocationOn" class="location-icon" />
+                        <span class="location-text"> @($"{Item?.Venue ?? ""} {Item?.Location ?? "Qatar"}")</span>
+                    </div>
                     <div class="icons">
                         @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
                         <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"

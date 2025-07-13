@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
 
 namespace QLN.Web.Shared.Pages.Content.DailyV2.DailyMoreArticle
 {
-    public class DailyMoreArticleBase : ComponentBase
+    public class DailyMoreArticleBase : QLComponentBase
     {
         [Inject] NavigationManager NavigationManager { get; set; }
         [Parameter]
@@ -11,14 +12,9 @@ namespace QLN.Web.Shared.Pages.Content.DailyV2.DailyMoreArticle
         [Parameter]
         public bool isLoading { get; set; } = false;
 
-        protected void NavigatetoArticle()
-        {
-            NavigationManager.NavigateTo("content/V2/events");
-        }
-
         protected void NavigatetoArticle(ContentEvent article)
         {
-            NavigationManager.NavigateTo($"/content/V2/daily/article/details/{article.Slug}");
+            NavigationManager.NavigateTo($"{NavigationPath.Value.ContentNewsDetail}{article.Slug}");
         }
 
     }
