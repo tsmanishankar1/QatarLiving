@@ -25,7 +25,7 @@ namespace QLN.Web.Shared.Pages.Content.Daily
 
         protected void OnClickEvent(ContentEvent item)
         {
-            NavigationManager.NavigateTo($"/content/events/details/{item.Slug}");
+            NavigationManager.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}{item.Slug}");
         }
     }
 }

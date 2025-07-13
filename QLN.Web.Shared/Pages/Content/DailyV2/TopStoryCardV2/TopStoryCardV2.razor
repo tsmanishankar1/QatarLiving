@@ -1,9 +1,9 @@
 @inherits TopStoryCardBase
 @{
     var detailUrl = (Item.NodeType?.Contains("post") == true && !string.IsNullOrWhiteSpace(Item.Slug))
-        ? $"/content/V2/daily/article/details/{Item.Slug}"
+        ? $"{NavigationPath.Value.ContentNewsDailyDetails}{Item.Slug}"
         : (Item.NodeType?.Contains("event") == true && !string.IsNullOrWhiteSpace(Item.Slug))
-            ? $"/content/V2/events/details/{Item.Slug}"
+            ? $"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}"
             : "#";
 }
 
