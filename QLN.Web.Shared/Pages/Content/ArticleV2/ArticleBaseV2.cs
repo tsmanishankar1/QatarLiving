@@ -164,8 +164,8 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDetail}{category}/{subcategory}/{slug}", IsLast = true },
                     };
 
-                    NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
-                    moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
+                   // NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
+                   // moreArticleList = NewsContent?.News?.MoreArticles?.Items ?? new List<ContentPost>();
                 }
                 else
                 {
