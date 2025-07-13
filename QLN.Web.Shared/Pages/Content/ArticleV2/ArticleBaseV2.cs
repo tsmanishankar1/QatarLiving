@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
@@ -14,7 +15,7 @@ using System.Net.Http.Json;
 namespace QLN.Web.Shared.Pages.Content.ArticleV2
 {
 
-    public class ArticleBaseV2 : ComponentBase
+    public class ArticleBaseV2 : QLComponentBase
     {
         [Parameter]
         public string slug { get; set; }
@@ -105,9 +106,6 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
 
         protected NewsArticleDTO NewsArticleDTO { get; set; } = new NewsArticleDTO();
 
-        [Inject]
-        protected IOptions<NavigationPath> NavigationPath { get; set; }
-
         protected async override Task OnInitializedAsync()
         {
             try
@@ -163,7 +161,7 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                     {
                     new() {   Label = categoryLabel,Url =$"{NavigationPath.Value.ContentNews}?category={category}" },
                     new() { Label = subcategoryLabel, Url = $"{NavigationPath.Value.ContentNews}?category={category}&subcategory={subcategory}"},
-                    new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDetail}/{category}/{subcategory}/{slug}", IsLast = true },
+                    new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDetail}{category}/{subcategory}/{slug}", IsLast = true },
                     };
 
                     NewsContent = await GetNewsAsync<GenericNewsPageResponse>(subcategoryLabel);
@@ -173,9 +171,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2
                 {
                     breadcrumbItems = new()
                 {
-                new() { Label = "Daily", Url = "/content/daily"},
+                new() { Label = "Daily", Url = $"{NavigationPath.Value.ContentDaily}"},
 
-                new() { Label = newsArticle.Title, Url = $"/content/daily/article/details/{slug}", IsLast = true },
+                new() { Label = newsArticle.Title, Url = $"{NavigationPath.Value.ContentNewsDailyDetails}{slug}", IsLast = true },
                 };
                     moreArticleList = null;
                     LandingContent = await _simpleCacheService.GetContentLandingAsync() ?? new();

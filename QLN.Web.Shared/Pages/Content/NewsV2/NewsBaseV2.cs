@@ -300,15 +300,15 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
 
             if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
             {
-                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}";
             }
             else if (!string.IsNullOrEmpty(selectedTabView))
             {
-                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}?category={selectedTabView}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedTabView}";
             }
             else
             {
-                return $"{NavigationPath.Value.ContentNewsDetail}/{news.Slug}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}";
             }
         }
 
