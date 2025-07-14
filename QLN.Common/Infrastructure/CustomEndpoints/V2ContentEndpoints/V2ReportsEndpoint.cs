@@ -167,46 +167,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapCreateReportEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<
-                 Ok<string>,
-                 ForbidHttpResult,
-                 BadRequest<ProblemDetails>,
-                 ProblemHttpResult>>
-             (
-                 V2ContentReportArticleDto dto,
-                 IV2ReportsService service,
-                 HttpContext context,
-                 ILogger<IV2ReportsService> logger,
-                 CancellationToken cancellationToken
-             ) =>
+         Ok<string>,
+         ForbidHttpResult,
+         UnauthorizedHttpResult,
+         BadRequest<ProblemDetails>,
+         ProblemHttpResult>>
+     (
+         V2ContentReportArticleDto dto,
+         IV2ReportsService service,
+         HttpContext context,
+         ILogger<IV2ReportsService> logger,
+         CancellationToken cancellationToken
+     ) =>
             {
                 try
                 {
                     logger.LogInformation("CreateReport called");
 
                     var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("name").GetString();
-                    dto.ReporterName = uid;
 
                     if (string.IsNullOrEmpty(userClaim))
                     {
-                        logger.LogWarning("User claim not found in token");
-                        return TypedResults.BadRequest(new ProblemDetails
+                        logger.LogWarning("Missing user claim from token");
+
+                        var problem = new ProblemDetails
                         {
-                            Title = "Authentication Error",
-                            Detail = "User claim not found in token.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
+                            Status = StatusCodes.Status401Unauthorized,
+                            Title = "Unauthorized",
+                            Detail = "Authorization token is missing or invalid."
+                        };
+                        return TypedResults.Problem(title: problem.Title,detail: problem.Detail,statusCode: problem.Status);
                     }
+
+                    string uid;
                     try
                     {
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("name").GetString();
+
                         if (string.IsNullOrEmpty(uid))
                         {
                             logger.LogWarning("UID is missing in user claim");
+
                             return TypedResults.BadRequest(new ProblemDetails
                             {
-                                Title = "Authentication Error",
-                                Detail = "UID is missing in user claim.",
+                                Title = "Invalid Token",
+                                Detail = "User ID is missing in token claims.",
                                 Status = StatusCodes.Status400BadRequest
                             });
                         }
@@ -216,11 +222,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         logger.LogError(ex, "Failed to parse user claim or extract UID");
                         return TypedResults.BadRequest(new ProblemDetails
                         {
-                            Title = "Authentication Error",
+                            Title = "Invalid Token Format",
                             Detail = $"Failed to parse user claim or extract UID: {ex.Message}",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
+                    dto.ReporterName = uid;
 
                     var result = await service.CreateReport(uid, dto, cancellationToken);
                     logger.LogInformation("Report created successfully for user: {UserId}", uid);
@@ -238,7 +246,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error in CreateReport endpoint");
+                    logger.LogError(ex, "Unhandled error in CreateReport endpoint");
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -246,14 +254,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     );
                 }
             })
-         .WithName("CreateArticleReport")
-         .WithTags("Reports")
-         .WithSummary("Create Report")
-         .WithDescription("Creates a new report and sets the user ID from the token.")
-         .Produces<string>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+ .WithName("CreateArticleReport")
+ .WithTags("Reports")
+ .WithSummary("Create Report")
+ .WithDescription("Creates a new report and sets the user ID from the token.")
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+ .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapPost("/createByUserId", async Task<Results<
             Ok<string>,
@@ -892,8 +902,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-
-
 
     }
 }
