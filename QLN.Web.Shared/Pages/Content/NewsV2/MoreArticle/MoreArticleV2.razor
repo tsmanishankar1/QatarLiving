@@ -28,7 +28,7 @@
         @foreach (var article in Articles.Take(4))
         {
             <div class="more-article-entry">
-                 <a href="@($"{NavigationPath.Value.ContentNewsDetail}/{article.Slug}")">
+                 <a href="@($"{NavigationPath.Value.ContentNewsDetail}{article.Slug}")">
                 <div class="more-article-title" @onclick="@(() => onclick(article))">
                         @(article.Title)
                 </div>

@@ -49,11 +49,11 @@
                         <MudButton id="headerPostButton" Variant="Variant.Filled"
                             Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
                             StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
-                            @onclick="OnPostAdClicked">
+                            >
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
                     </ActivatorContent>
-            @*           <ChildContent>
+                       <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -63,7 +63,7 @@
                 </div>
             </MudMenuItem>
                     }
-                </ChildContent> *@
+                </ChildContent> 
                 </MudMenu>
             </div>
         </div>

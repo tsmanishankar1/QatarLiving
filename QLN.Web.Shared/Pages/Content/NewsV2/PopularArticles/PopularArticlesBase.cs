@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
 
 namespace QLN.Web.Shared.Pages.Content.NewsV2.PopularArticles
 {
-    public class PopularArticlesBase : ComponentBase
+    public class PopularArticlesBase : QLComponentBase
     {
         [Parameter]
         public List<ContentPost> Articles { get; set; } = new List<ContentPost>();
@@ -21,7 +22,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2.PopularArticles
 
         protected void onclick(ContentPost news)
         {
-            navManager.NavigateTo($"/content/article/details/{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}");
+            navManager.NavigateTo($"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedMainTab}&subcategory={selectedTab}");
         }
         protected override void OnParametersSet()
         {
