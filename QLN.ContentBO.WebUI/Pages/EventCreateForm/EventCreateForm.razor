@@ -47,7 +47,7 @@
              { 
                 <div class="event-mud-error-text">@_PriceError</div>
             } 
-            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link" MaxLength="5"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
 
 
        <MudSelect T="string"
