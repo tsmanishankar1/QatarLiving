@@ -1,19 +1,17 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
-using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using static QLN.Common.DTO_s.CommunityBo;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.Text.RegularExpressions;
 
+ 
 namespace QLN.Content.MS.Service.CommunityInternalService
 {
     public class V2InternalCommunityPostService : IV2CommunityPostService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2InternalCommunityPostService> _logger;
-
         private static string GetKey(Guid id) => $"community-{id}";
         private const string StoreName = "contentstatestore";
         private const string IndexKey = "community-index";
@@ -23,7 +21,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             _dapr = dapr;
             _logger = logger;
         }
-
         public async Task<string> CreateCommunityPostAsync(string userId, V2CommunityPostDto dto, CancellationToken ct = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -43,11 +40,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 var existing = await _dapr.GetStateAsync<object>(StoreName, key, cancellationToken: ct);
                 if (existing != null)
                     throw new InvalidOperationException($"Community post with key {key} already exists.");
-
-                // Save post
                 await _dapr.SaveStateAsync(StoreName, key, dto, cancellationToken: ct);
-
-                // Update index
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
                 if (!index.Contains(key))
                 {
@@ -332,7 +325,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-
         public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync( Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
