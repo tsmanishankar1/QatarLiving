@@ -8,7 +8,7 @@ using System.Globalization;
 namespace QLN.Web.Shared.Pages.Content.ArticleV2.ArticleDetailCard
 {
 
-    public class ArticleDetailCardBase : ComponentBase
+    public class ArticleDetailCardV2Base : ComponentBase
     {
         [Parameter]
         public ContentPost Post { get; set; }

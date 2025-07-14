@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
 namespace QLN.Web.Shared.Pages.Content.DailyV2.DailyNewsCard
 {
-    public class DailyNewsCardBase : ComponentBase
+    public class DailyNewsCardBase : QLComponentBase
     {
         [Inject] NavigationManager NavigationManager { get; set; }
         [Parameter]
@@ -14,11 +15,11 @@ namespace QLN.Web.Shared.Pages.Content.DailyV2.DailyNewsCard
         {
             if (Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug))
             {
-                NavigationManager.NavigateTo($"/content/daily/article/details/{Item.Slug}");
+                NavigationManager.NavigateTo($"{NavigationPath.Value.ContentNewsDailyDetails}{Item.Slug}");
             }
             else if (Item.NodeType.Contains("event") && !string.IsNullOrWhiteSpace(Item.Slug))
             {
-                NavigationManager.NavigateTo($"/content/events/details/{Item.Slug}");
+                NavigationManager.NavigateTo($"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}");
             }
         }
     }

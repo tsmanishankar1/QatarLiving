@@ -1,6 +1,6 @@
 @inherits TopEventCardBase
 @using QLN.Web.Shared.Helpers
-<MudLink Href="@($"/content/v2/events/details/{Item.Slug}")" Style="text-decoration: none;">
+<MudLink Href="@($"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}")" Style="text-decoration: none;">
 <div class="Top-event-list-card" @onclick="() => NavigateToEventDetail()">
     <div class="Top-event-image-wrapper">
         <a> <img src="@Item.ImageUrl" class="Top-event-card-img" alt="Title" /></a>

@@ -52,7 +52,6 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
         catch (Exception ex)
         {
             Snackbar.Add("Failed to load categories", Severity.Error);
-            Console.WriteLine(ex.Message);
             CategorySelectOptions = new List<SelectOption>();
         }
     }
@@ -61,7 +60,7 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
     {
         SelectedCategoryId = newId;
         await OnCategoryChanged.InvokeAsync(newId);
-        NavigationManager.NavigateTo($"content/community/v2?categoryId={newId}", forceLoad: false); // leaving this as it is a V2 component
+        NavigationManager.NavigateTo($"content/v2/community?categoryId={newId}", forceLoad: false); // leaving this as it is a V2 component
     }
 
     protected override void OnParametersSet()
@@ -75,7 +74,6 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
 
     protected async Task PerformSearch()
     {
-        Console.WriteLine($"Search text submitted: {searchText}");
         await OnSearchTextChanged.InvokeAsync(searchText);
     }
     protected async Task ClearFilters()
@@ -85,7 +83,7 @@ public class CommunitySearchBarSectionBaseV2 : ComponentBase
 
       
 
-        NavigationManager.NavigateTo("content/community/v2", forceLoad: true);
+        NavigationManager.NavigateTo("content/v2/community", forceLoad: true);
     }
 
 

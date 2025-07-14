@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
-using Microsoft.AspNetCore.Components.Routing;
-using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
-using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
-using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using System.Net;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
@@ -94,8 +95,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 .ToHashSet();
 
             AllEventsList = allEvents
-                .Where(e => !featuredEventIds.Contains(e.Id))
-                .ToList();
+                 .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
+                  .ToList();
         }
         protected EventDTO? draggedItem;
 
@@ -379,6 +380,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     index = 0;
                     PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
                     StateHasChanged();
+                }
+                else if (apiResponse?.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add("Event cannot be Deleted since it is configured in Daily Page", Severity.Error);
                 }
                 else
                 {

@@ -3,8 +3,12 @@
 @inherits EditEventBase;
 @using QLN.ContentBO.WebUI.Components.LoadingOverlay;
 
-<LoadingOverlay IsVisible="IsPageLoading" />
-
+@if (IsPageLoading)
+{
+    <MudOverlay @bind-Visible="IsPageLoading" DarkBackground AutoClose="false">
+        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
+    </MudOverlay>
+}
   <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
     <MudGrid Style="padding-top: 0">
@@ -39,6 +43,7 @@
             <MudTextField T="int?" 
               Variant="Variant.Outlined" 
               Label="Price" 
+              InputType="InputType.Number"
               Style="background-color: #FFFFFF;"
               @bind-Value="CurrentEvent.Price" 
               For="@(() => CurrentEvent.Price)"
@@ -320,6 +325,15 @@
     .full-width {
         width: 100%;
     }
+     .no-spinner input::-webkit-outer-spin-button,
+.no-spinner input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.no-spinner input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}
 </style>
 
 

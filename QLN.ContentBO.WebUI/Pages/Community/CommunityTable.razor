@@ -20,16 +20,18 @@ else
 {
     <MudTable Items="Posts" Hover="true" Class="custom-table">
         <HeaderContent>
+            <MudTh class="header-cell">Number</MudTh>
             <MudTh class="header-cell">Title</MudTh>
             <MudTh class="header-cell">Category</MudTh>
             <MudTh class="header-cell">User Name</MudTh>
             <MudTh class="header-cell">Date Created</MudTh>
+            <MudTh class="header-cell">Live For</MudTh>
             <MudTh class="header-cell">Actions</MudTh>
         </HeaderContent>
         <RowTemplate Context="context">
+            <MudTd DataLabel="S.No">@((Posts.IndexOf(context) + 1).ToString())</MudTd>
             <MudTd DataLabel="Title">
-                <MudLink Href="#" Class="post-title">@context.Title</MudLink>
-                <MudLink Href="@($"{PostDetailBaseURL}{context.Slug}")"
+                <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Slug}")"
                          Target="_blank">
                     @context.Title
                 </MudLink>
@@ -37,6 +39,27 @@ else
             <MudTd DataLabel="Category">@context.Category</MudTd>
             <MudTd DataLabel="User Name">@context.UserName</MudTd>
             <MudTd DataLabel="Date Created">@context.DateCreated.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd >
+                @{
+                    var liveSince = context.DateCreated;
+
+                    if (liveSince != null)
+                    {
+                        var duration = DateTime.Now - liveSince;
+
+                        string liveFor = duration.TotalHours < 24
+                        ? $"{Math.Floor(duration.TotalHours)} hour{(Math.Floor(duration.TotalHours) == 1 ? "" : "s")}"
+                        : $"{duration.Days} day{(duration.Days == 1 ? "" : "s")}";
+
+                        @liveFor
+                    }
+                    else
+                    {
+                        <span>--</span>
+                    }
+                }
+            </MudTd>
+
             <MudTd>
                 <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Id))">
                     <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />

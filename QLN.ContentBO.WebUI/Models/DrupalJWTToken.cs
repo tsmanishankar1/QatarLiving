@@ -49,8 +49,8 @@ namespace QLN.ContentBO.WebUI.Models
         [JsonPropertyName("uid")]
         public string? Uid { get; set; }
 
-        [JsonPropertyName("qlnext_user_id")]
-        public string? QlnextUserId { get; set; }
+        /*        [JsonPropertyName("qlnext_user_id")] // Commenting this for now for future use by Grant
+                public string? QlnextUserId { get; set; } */
 
         [JsonPropertyName("name")]
         public string? Name { get; set; }

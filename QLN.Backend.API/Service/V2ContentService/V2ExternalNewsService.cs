@@ -444,12 +444,18 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return response;
             }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("No comments or article found for Article ID: {Nid}", nid);
+                throw new KeyNotFoundException($"No article or comment index found for article {nid}");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch comments for Article ID: {Nid}", nid);
                 throw new InvalidOperationException("Error retrieving comments for article.", ex);
             }
         }
+
 
         public async Task<bool> LikeNewsCommentAsync(string commentId, string userId, string userName, CancellationToken ct = default)
         {

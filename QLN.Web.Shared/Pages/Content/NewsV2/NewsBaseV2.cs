@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
 using System.Text.Json;
 
@@ -16,6 +18,9 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         [Inject] private IEventService _eventService { get; set; }
         [Inject] private ISimpleMemoryCache _simpleCacheService { get; set; }
         [Inject] protected NavigationManager navManager { get; set; }
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
 
         protected bool isLoading = true;
         protected bool isLoadingBanners = true;
@@ -32,8 +37,7 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
 
         public List<NewsCategory> NewsCategories { get; set; } = new();
 
-         protected NewsContentV2? NewsContent { get; set; }
-
+        protected NewsContentV2? NewsContent { get; set; }
 
         protected List<BannerItem> DailyTakeOverBanners = new();
         protected List<BannerItem> DailyHeroBanners = new();
@@ -93,16 +97,20 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
                                     Value = sub.Id.ToString()
                                 })).ToList();
 
-                            var firstCategory = NewsCategories.First();
-                            _selectedView = firstCategory.Id.ToString();
-                            selectedTabView = firstCategory.CategoryName;
-                            Tabs = firstCategory.SubCategories.Select(sc => sc.SubCategoryName).ToArray();
+                            var (categoryParam, subCategoryParam) = ParseQueryParams();
 
-                            var firstSub = firstCategory.SubCategories.First();
-                            SelectedTab = firstSub.SubCategoryName;
-                            subTabLabel = firstSub.Id.ToString();
+                            var selectedCategory = NewsCategories.FirstOrDefault(c => c.CategoryName == categoryParam) ?? NewsCategories.First();
+                            _selectedView = selectedCategory.Id.ToString();
+                            selectedTabView = selectedCategory.CategoryName;
+                            Tabs = selectedCategory.SubCategories.Select(sc => sc.SubCategoryName).ToArray();
 
-                            await LoadNewsContent(firstCategory.Id, firstSub.Id);
+                            var selectedSub = selectedCategory.SubCategories.FirstOrDefault(sc => sc.SubCategoryName == subCategoryParam)
+                                              ?? selectedCategory.SubCategories.First();
+
+                            SelectedTab = selectedSub.SubCategoryName;
+                            subTabLabel = selectedSub.Id.ToString();
+
+                            await LoadNewsContent(selectedCategory.Id, selectedSub.Id);
                         }
                     }
                 }
@@ -189,11 +197,11 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
                     {
                         subTabLabel = subCategory.Id.ToString();
                         await LoadNewsContent(currentCategory.Id, subCategory.Id);
+                        selectedRouterTab = subCategory.SubCategoryName;
 
+                        navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={selectedRouterTab}", forceLoad: false);
                     }
                 }
-
-                selectedRouterTab = string.Empty;
             }
             catch (Exception ex)
             {
@@ -209,28 +217,28 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
         protected async void SetViewMode(string view)
         {
             _selectedView = view;
-
+            isLoading = true;
             var selectedCategory = NewsCategories.FirstOrDefault(c => c.Id.ToString() == view);
             if (selectedCategory != null)
             {
                 selectedTabView = selectedCategory.CategoryName;
                 Tabs = selectedCategory.SubCategories.Select(sc => sc.SubCategoryName).ToArray();
 
-                var targetSub = string.IsNullOrEmpty(selectedRouterTab)
-                    ? selectedCategory.SubCategories.FirstOrDefault()
-                    : selectedCategory.SubCategories.FirstOrDefault(sc => sc.SubCategoryName == selectedRouterTab);
+                var targetSub = selectedCategory.SubCategories.FirstOrDefault();
 
                 if (targetSub != null)
                 {
                     SelectedTab = targetSub.SubCategoryName;
                     subTabLabel = targetSub.Id.ToString();
                     await LoadNewsContent(selectedCategory.Id, targetSub.Id);
+                    navManager.NavigateTo($"{NavigationPath.Value.ContentNews}?category={selectedTabView}&subcategory={SelectedTab}", forceLoad: true);
                 }
             }
             else
             {
                 Tabs = Array.Empty<string>();
             }
+            isLoading = false;
         }
 
         protected async Task LoadBanners(string tab)
@@ -268,38 +276,31 @@ namespace QLN.Web.Shared.Pages.Content.NewsV2
             imageLoaded = false;
         }
 
-        protected void onclick(ContentPost news)
-        {
-            if (!string.IsNullOrEmpty(_selectedView) && !string.IsNullOrEmpty(subTabLabel))
-            {
-                navManager.NavigateTo($"/content/article/details/{news.Slug}?category={_selectedView}&subcategory={subTabLabel}");
-            }
-            else if (!string.IsNullOrEmpty(_selectedView))
-            {
-                navManager.NavigateTo($"/content/article/details/{news.Slug}?category={_selectedView}");
-            }
-            else
-            {
-                navManager.NavigateTo($"/content/article/details/{news.Slug}");
-            }
-        }
-
         protected string getLink(ContentPost news)
         {
             if (news == null) return "";
 
-            if (!string.IsNullOrEmpty(_selectedView) && !string.IsNullOrEmpty(subTabLabel))
+            if (!string.IsNullOrEmpty(selectedTabView) && !string.IsNullOrEmpty(SelectedTab))
             {
-                return $"/content/article/details/{news.Slug}?category={_selectedView}&subcategory={subTabLabel}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedTabView}&subcategory={SelectedTab}";
             }
-            else if (!string.IsNullOrEmpty(_selectedView))
+            else if (!string.IsNullOrEmpty(selectedTabView))
             {
-                return $"/content/article/details/{news.Slug}?category={_selectedView}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}?category={selectedTabView}";
             }
             else
             {
-                return $"/content/article/details/{news.Slug}";
+                return $"{NavigationPath.Value.ContentNewsDetail}{news.Slug}";
             }
+        }
+
+        private (string? Category, string? SubCategory) ParseQueryParams()
+        {
+            var uri = navManager.ToAbsoluteUri(navManager.Uri);
+            var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+            var category = query["category"];
+            var subcategory = query["subcategory"];
+            return (category, subcategory);
         }
     }
 }

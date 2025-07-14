@@ -3,8 +3,8 @@
 
 @{
     var detailUrl = Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug)
-        ? $"/content/V2/daily/article/details/{Item.Slug}"
-        : $"/content/V2/events/details/{Item.Slug}";
+        ? $"{NavigationPath.Value.ContentNewsDailyDetails}{Item.Slug}"
+        : $"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}";
 }
 @if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
 {

@@ -10,9 +10,10 @@ using System.Net.Http;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class CommentSectionBaseV2 : ComponentBase
     {
@@ -22,6 +23,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] protected ICommunityService CommunityService { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
+        [Inject] protected ILogger<CommentSectionBaseV2> Logger { get; set; } = default!;
 
         protected MudTextField<string> multilineReference;
 
@@ -44,7 +46,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
 
         public string Name { get; set; } = string.Empty;
-        public int CurrentUserId { get; set; }
+        public string CurrentUserId { get; set; }
         public bool IsLoggedIn { get; set; } = false;
         protected bool IsLoading { get; set; } = false;
         protected bool IsPosting { get; set; } = false;
@@ -52,17 +54,29 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnInitializedAsync()
         {
-            //CommentList = new PostModel();
-            var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
-
-            if (user.Identity?.IsAuthenticated == true)
+          
+            try
             {
-                Name = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-                CurrentUserId = int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var uid) ? uid : 0;
-                IsLoggedIn = true;
-            }
+                var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
 
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    CurrentUserId = user.FindFirst("uid")?.Value
+                         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? string.Empty;
+                    IsLoggedIn = true;
+
+                }
+                else
+                {
+                    Logger.LogWarning("User is not authenticated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while retrieving user authentication state.");
+            }
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -98,7 +112,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
-                if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || Comment == null)
+                if (string.IsNullOrWhiteSpace(newComment) || Comment == null)
                 {
                     Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
                     return;
@@ -152,7 +166,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         CommentedAt = c.CommentedAt != default ? c.CommentedAt : DateTime.Now,
                         Content = c.Content ?? "No content to display",
                         CommentsLikeCount = c.CommentsLikeCount,
-                        UnlikeCount = c.UnlikeCount,
+                        IsLiked = c.LikedUserIds?.Contains(CurrentUserId) ?? false,
 
                     }).ToList();
                 }
@@ -163,7 +177,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading comments: {ex.Message}");
+                Logger.LogError($"Error loading comments: {ex.Message}");
                 Comments ??= new List<CommentModelV2>();
                 Comments.Clear();
             }
@@ -185,7 +199,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            Console.WriteLine("current page", CurrentPage);
 
             await GetCommentAsync();
 
@@ -239,7 +252,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while liking comment: {ex.Message}");
+                Logger.LogError($"Error while liking comment: {ex.Message}");
                 Snackbar.Add("An unexpected error occurred.", Severity.Error);
             }
 

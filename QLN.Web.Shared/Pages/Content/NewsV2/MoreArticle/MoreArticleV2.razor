@@ -1,4 +1,4 @@
-@inherits MoreArticleBase
+@inherits MoreArticleV2Base
 @using QLN.Web.Shared.Components.EmptyCard
 <div class="more-articles article-side-spacing" style="padding-top: 20px;">
     <h3 class="section-heading" style="color: var(--color-text-heading);">
@@ -28,6 +28,7 @@
         @foreach (var article in Articles.Take(4))
         {
             <div class="more-article-entry">
+                 <a href="@($"{NavigationPath.Value.ContentNewsDetail}{article.Slug}")">
                 <div class="more-article-title" @onclick="@(() => onclick(article))">
                         @(article.Title)
                 </div>
@@ -49,6 +50,7 @@
                         No image available
                     </div>
                 }
+                </a>
             </div>
             
         }

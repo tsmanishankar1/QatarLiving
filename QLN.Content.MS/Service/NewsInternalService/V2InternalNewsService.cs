@@ -916,9 +916,16 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 Console.WriteLine($"[INFO] Index key: {indexKey}");
 
                 var index = await _dapr.GetStateAsync<List<Guid>>(V2Content.ContentStoreName, indexKey, cancellationToken: ct)
-                             ?? new List<Guid>();
+                                 ?? new List<Guid>();
 
                 Console.WriteLine($"[INFO] Comment count in index: {index.Count}");
+
+                // If there are no comments, return a 404
+                if (index.Count == 0)
+                {
+                    Console.WriteLine($"[INFO] No comments found for article {nid}");
+                    throw new KeyNotFoundException($"No comments found for article {nid}");
+                }
 
                 int currentPage = page ?? 1;
                 int itemsPerPage = perPage ?? 10;
@@ -972,6 +979,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     {
                         Console.WriteLine($"[ERROR] Failed to deserialize comment for key: {state.Key}, ex: {ex.Message}");
                     }
+                }
+
+                // If no comments were loaded
+                if (!allComments.Any())
+                {
+                    Console.WriteLine($"[INFO] No valid comments found for article {nid}");
+                    throw new KeyNotFoundException($"No valid comments found for article {nid}");
                 }
 
                 var grouped = new Dictionary<Guid, List<V2NewsCommentDto>>();
@@ -1046,10 +1060,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     Comments = comments
                 };
             }
+            catch (KeyNotFoundException knfEx)
+            {
+                Console.WriteLine($"[INFO] No comments found: {knfEx.Message}");
+                throw new InvalidOperationException("No comments found for the provided article ID.", knfEx);
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ERROR] Failed to get comments for article {nid}: {ex}");
-                throw new InvalidOperationException("Error fetching comments");
+                throw new InvalidOperationException("Error fetching comments", ex);
             }
         }
 
@@ -1155,76 +1174,119 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 };
             }
         }
+
         public async Task<Common.Infrastructure.DTO_s.GenericNewsPageResponse> GetNewsLandingPageAsync(
-            int categoryId,
-            int subCategoryId,
-            CancellationToken cancellationToken = default
-        )
+      int categoryId,
+      int subCategoryId,
+      CancellationToken cancellationToken = default)
         {
             try
             {
+                _logger.LogInformation("GetNewsLandingPageAsync called with CategoryId={CategoryId}, SubCategoryId={SubCategoryId}", categoryId, subCategoryId);
+
                 var categoryDto = await GetCategoryByIdAsync(categoryId, cancellationToken)
-                                  ?? throw new KeyNotFoundException($"Category {categoryId} not found");
-                var catKey = categoryDto.CategoryName
-                              .ToLowerInvariant()
-                              .Replace(" ", "_");
+                                    ?? throw new KeyNotFoundException($"Category {categoryId} not found");
 
-                var subDto = categoryDto.SubCategories
-                               .FirstOrDefault(s => s.Id == subCategoryId)
-                             ?? throw new KeyNotFoundException($"SubCategory {subCategoryId} not found");
-                var subKey = subDto.SubCategoryName
-                              .ToLowerInvariant()
-                              .Replace(" ", "_");
+                _logger.LogInformation("Category found: {CategoryName}", categoryDto.CategoryName);
 
+                var catKey = categoryDto.CategoryName.ToLowerInvariant().Replace(" ", "_");
+
+                var subDto = categoryDto.SubCategories.FirstOrDefault(s => s.Id == subCategoryId)
+                            ?? throw new KeyNotFoundException($"SubCategory {subCategoryId} not found");
+
+                _logger.LogInformation("SubCategory found: {SubCategoryName}", subDto.SubCategoryName);
+
+                var subKey = subDto.SubCategoryName.ToLowerInvariant().Replace(" ", "_");
                 var pageName = $"qln_{catKey}_{subKey}";
 
                 var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
-                var posts = dtos.Select(dto => new Common.Infrastructure.DTO_s.ContentPost
-                {
-                    Id = dto.Id,
-                    Nid = dto.Id.ToString(),
-                    DateCreated = dto.CreatedAt.ToString("o"),
-                    ImageUrl = dto.CoverImageUrl,
-                    UserName = dto.authorName,
-                    Title = dto.Title,
-                    Description = dto.Content,
-                    Category = categoryDto.CategoryName,
-                    NodeType = "Post",
-                    IsActive = dto.IsActive,
-                    Slug = dto.Slug,
-                    CreatedAt = dto.CreatedAt,
-                    UpdatedAt = dto.UpdatedAt
-                })
-                            .ToList();
+                _logger.LogInformation("Fetched {Count} articles for CategoryId={CategoryId} and SubCategoryId={SubCategoryId}", dtos.Count, categoryId, subCategoryId);
 
-                Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost> BuildQueue(
-                    string sectionKey,
-                    string queueLabel,
-                    IEnumerable<Common.Infrastructure.DTO_s.ContentPost> slice
-                )
+                var articlesInSlot1to4 = dtos
+                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 1 && c.SlotId <= 4))
+                    .OrderBy(dto => dto.Categories.First(c => c.SlotId >= 1 && c.SlotId <= 4).SlotId)
+                    .ToList();
+                _logger.LogInformation("Slot 1–4 Articles: {Count}", articlesInSlot1to4.Count);
+
+                var articlesInSlot5to8 = dtos
+                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 5 && c.SlotId <= 8))
+                    .OrderBy(dto => dto.Categories.First(c => c.SlotId >= 5 && c.SlotId <= 8).SlotId)
+                    .ToList();
+                _logger.LogInformation("Slot 5–8 Articles: {Count}", articlesInSlot5to8.Count);
+
+                var articlesInSlot9to13 = dtos
+                    .Where(dto => dto.Categories.Any(c => c.SlotId >= 9 && c.SlotId <= 13))
+                    .OrderBy(dto => dto.Categories.First(c => c.SlotId >= 9 && c.SlotId <= 13).SlotId)
+                    .ToList();
+                _logger.LogInformation("Slot 9–13 Articles: {Count}", articlesInSlot9to13.Count);
+
+                var articlesInSlot14 = dtos
+                    .Where(dto => dto.Categories.Any(c => c.SlotId == 14))
+                    .OrderByDescending(dto => dto.PublishedDate)
+                    .ToList();
+                _logger.LogInformation("Slot 14 Articles Total: {Count}", articlesInSlot14.Count);
+
+                var top4Slot14 = articlesInSlot14.Take(4).ToList();
+                var remainingSlot14 = articlesInSlot14.Skip(4).ToList();
+                _logger.LogInformation("Slot 14 - Top4: {TopCount}, Remaining: {RemainingCount}", top4Slot14.Count, remainingSlot14.Count);
+
+                List<Common.Infrastructure.DTO_s.ContentPost> MapToPosts(List<V2NewsArticleDTO> list)
+                {
+                    var posts = new List<Common.Infrastructure.DTO_s.ContentPost>();
+                    foreach (var dto in list)
+                    {
+                        try
+                        {
+                            posts.Add(new Common.Infrastructure.DTO_s.ContentPost
+                            {
+                                Id = dto.Id,
+                                Nid = dto.Id.ToString(),
+                                DateCreated = dto.CreatedAt.ToString("o"),
+                                ImageUrl = dto.CoverImageUrl,
+                                UserName = dto.authorName,
+                                Title = dto.Title,
+                                Description = dto.Content,
+                                Category = categoryDto.CategoryName,
+                                NodeType = "post",
+                                IsActive = dto.IsActive,
+                                Slug = dto.Slug,
+                                CreatedAt = dto.CreatedAt,
+                                UpdatedAt = dto.UpdatedAt
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error mapping article Id={Id}", dto.Id);
+                        }
+                    }
+                    return posts;
+                }
+
+                Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost> BuildQueue(string sectionKey, string label, IEnumerable<Common.Infrastructure.DTO_s.ContentPost> items)
                 {
                     var qName = $"{pageName}_{sectionKey}";
-                    var list = slice.ToList();
+                    var list = items.ToList();
                     list.ForEach(p =>
                     {
                         p.PageName = pageName;
                         p.QueueName = qName;
-                        p.QueueLabel = queueLabel;
+                        p.QueueLabel = label;
                     });
+
                     return new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentPost>
                     {
-                        QueueLabel = queueLabel,
+                        QueueLabel = label,
                         Items = list
                     };
                 }
 
-                var qlnPage = new Common.Infrastructure.DTO_s.QlnNewsNewsQatar
+                var qlnPage = new Common.Infrastructure.DTO_s.GenericNewsPage
                 {
-                    TopStory = BuildQueue("top_story", "Top Story", posts.Take(1)),
-                    MoreArticles = BuildQueue("more_articles", "More Articles", posts.Skip(1).Take(5)),
-                    Articles1 = BuildQueue("articles_1", "Articles 1", posts.Skip(6).Take(5)),
-                    Articles2 = BuildQueue("articles_2", "Articles 2", posts.Skip(11).Take(5)),
-                    MostPopularArticles = BuildQueue("most_popular_articles", "Most Popular Articles", posts.OrderByDescending(p => p.DateCreated).Take(5)),
+                    TopStory = BuildQueue("top_story", "Top Story", MapToPosts(articlesInSlot1to4)),
+                    MoreArticles = BuildQueue("more_articles", "More Articles", MapToPosts(articlesInSlot5to8)),
+                    Articles1 = BuildQueue("articles_1", "Articles 1", MapToPosts(articlesInSlot9to13)),
+                    Articles2 = BuildQueue("articles_2", "Articles 2", MapToPosts(remainingSlot14)),
+                    MostPopularArticles = BuildQueue("most_popular_articles", "Most Popular Articles", MapToPosts(top4Slot14)),
                     WatchOnQatarLiving = new Common.Infrastructure.DTO_s.BaseQueueResponse<Common.Infrastructure.DTO_s.ContentVideo>
                     {
                         QueueLabel = "Watch on Qatar Living",
@@ -1232,35 +1294,32 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     }
                 };
 
-                var qlnResp = new Common.Infrastructure.DTO_s.QlnNewsNewsQatarPageResponse { News = qlnPage };
+                _logger.LogInformation("News page successfully built for PageName: {PageName}", pageName);
 
-                return (Common.Infrastructure.DTO_s.GenericNewsPageResponse)qlnResp;
+                return new Common.Infrastructure.DTO_s.GenericNewsPageResponse { News = qlnPage };
             }
             catch (KeyNotFoundException knf)
             {
-                _logger.LogWarning(knf,
-                    "GetNewsLandingPageAsync: not found Category={CategoryId} or SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
+                _logger.LogWarning(knf, "GetNewsLandingPageAsync: not found Category={CategoryId} or SubCategory={SubCategoryId}", categoryId, subCategoryId);
                 throw;
             }
             catch (ArgumentException ae)
             {
-                _logger.LogWarning(ae,
-                    "GetNewsLandingPageAsync: bad arguments Category={CategoryId} or SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
+                _logger.LogWarning(ae, "GetNewsLandingPageAsync: bad arguments Category={CategoryId} or SubCategory={SubCategoryId}", categoryId, subCategoryId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
-                    "GetNewsLandingPageAsync: unexpected error for Category={CategoryId}, SubCategory={SubCategoryId}",
-                    categoryId, subCategoryId);
-                throw new ApplicationException(
-                    "An error occurred while retrieving the news landing page. See inner exception for details.",
-                    ex
-                );
+                _logger.LogError(ex, "GetNewsLandingPageAsync: unexpected error for Category={CategoryId}, SubCategory={SubCategoryId}", categoryId, subCategoryId);
+                _logger.LogError("Exception Message: {Message}", ex.Message);
+                _logger.LogError("Stack Trace: {StackTrace}", ex.StackTrace);
+
+                throw new ApplicationException("An error occurred while retrieving the news landing page. See inner exception for details.", ex);
             }
         }
+
+
+
         public async Task<NewsCommentApiResponse> EditNewsCommentAsync(string articleId, Guid commentId, string userId, string updatedText, CancellationToken ct = default)
         {
             try
