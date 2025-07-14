@@ -53,8 +53,11 @@ else
                         }
                         else
                         {
-                            <a href="#" class="event-link" style="text-decoration: none; color: #787878;">
-                                @context.Slot.Event?.EventTitle
+                            <a href="@($"{EventDetailBaseURL}{context.Slot?.Event?.Slug}")" 
+                            class="event-link" 
+                            style="text-decoration: none; color: #787878;" 
+                            target="_blank">
+                            @context?.Slot?.Event?.EventTitle
                             </a>
                         }
                     </td>
@@ -106,18 +109,16 @@ else
 
 
 
+<style>
+    .custom-hover-link {
+    color:#535862; ! important;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
+.custom-hover-link:hover {
+    color: #42A5F5;
+}
+</style>
 
 
