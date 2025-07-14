@@ -6,14 +6,16 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Pages.Content.Community;
 using QLN.Web.Shared.Services.Interface;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using static MudBlazor.Colors;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class CommunityPostListBase :ComponentBase
     {
@@ -25,7 +27,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject]
         public ISimpleMemoryCache _simpleCacheService { get; set; }
 
-        [Inject] private ILogger<CommunityBase> Logger { get; set; }
+        [Inject] private ILogger<CommunityPostListBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
         [Inject] private IContentService _contentService { get; set; }
         [Inject] protected NavigationManager Navigation { get; set; }
@@ -33,6 +35,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] public HttpClient Http { get; set; }
         [Inject] private IAdService AdService { get; set; }
+        [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
+
         protected string search = string.Empty;
         protected string sortOption = "Default";
         private string ApiSortValue => sortOption == "Default" ? null : sortOption;
@@ -74,7 +78,35 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [SupplyParameterFromQuery]
         public string? categoryId { get; set; }
         protected string _newComment;
- 
+
+        protected string currentUserId = string.Empty;
+
+        protected override async Task OnInitializedAsync()
+        {
+            try
+            {
+                var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
+                var user = authState.User;
+
+                if (user.Identity?.IsAuthenticated == true)
+                {
+                    currentUserId = user.FindFirst("uid")?.Value
+                         ?? user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                         ?? string.Empty;
+
+                }
+                else
+                {
+                    Logger.LogWarning(" User is not authenticated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error while retrieving user authentication state.");
+            }
+        }
+
+
         protected async override Task OnAfterRenderAsync(bool firstRender)
         {
             if (!firstRender) return;
@@ -117,7 +149,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         }
         protected async Task HandleSearchChanged(string searchText)
         {
-            Console.WriteLine($"Received searchText from child: {searchText}");
+            Logger.LogInformation($"Received searchText from child: {searchText}");
             search = searchText;
             CurrentPage = 1;
             var (posts, total) = await GetPostListAsync(); 
@@ -141,13 +173,11 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected async Task HandleSearchResults()
         {
-            Console.WriteLine("Search completed.");
             await Task.CompletedTask;
         }
 
         protected async Task<(List<PostModel>? Posts, int TotalCount)> GetPostListAsync()
         {
-            Console.WriteLine($"Search passed to service: {search}");
 
             try
             {
@@ -180,9 +210,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     Time = dto.DateCreated,
                     LikeCount = dto.LikeCount,
                     CommentCount = dto.CommentCount,
-                    isCommented = false,
                     ImageUrl = dto.ImageUrl,
-                    Slug = dto.Slug
+                    Slug = dto.Slug,
+                    isCommented = dto.CommentedUserIds?.Contains(currentUserId) ?? false,
+                    IsLiked = dto.LikedUserIds?.Contains(currentUserId) ?? false,
                 }).ToList();
 
                 return (postModelList, totalCount);
@@ -203,7 +234,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         private string GetOrderFromSortOption()
         {
-            Logger.LogInformation($"SelectedCategoryId: {SelectedCategoryId}");
            
             return SelectedCategoryId switch
             {
@@ -215,7 +245,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected async Task OnSortChanged(string newSortId)
         {
-            Logger.LogInformation($"Sort changed to: {newSortId}");
             SelectedCategoryId = newSortId;
             CurrentPage = 1;
             await LoadPosts();
@@ -232,8 +261,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task HandlePageChange(int newPage)
         {
             CurrentPage = newPage;
-            Console.WriteLine("current page", CurrentPage);
-            Logger.LogInformation($"Page changed to: {CurrentPage}");
 
             await LoadPosts();
             StateHasChanged();
@@ -274,7 +301,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading banners: {ex.Message}");
+                Logger.LogInformation($"Error loading banners: {ex.Message}");
             }
             finally
             {
@@ -369,7 +396,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                Logger.LogInformation($"{ex.Message} Newsletter subscription failed.");
                 SubscriptionStatusMessage = "An error occurred while subscribing.";
                 Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
             }

@@ -14,6 +14,12 @@
     private string ContentEvents { get; set; } = "/content/events";
     private string ContentCommunity { get; set; } = "/content/community";
 
+    private string ContentNewsDetail { get; set; } = "/content/v2/article";
+    private string ContentNewsDailyDetail { get; set; } = "/content/v2/daily";
+    private string ContentEventsDetail { get; set; } = "/content/v2/event";
+    private string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/detail/";
+
+
     private List<SubTabs.TabItem> tabItems = new();
 
     protected override void OnInitialized()
@@ -23,33 +29,38 @@
         ContentEvents = NavigationPathOptions.Value.ContentEvents;
         ContentCommunity = NavigationPathOptions.Value.ContentCommunity;
 
+        ContentNewsDetail = NavigationPathOptions.Value.ContentNewsDetail;
+        ContentNewsDailyDetail = NavigationPathOptions.Value.ContentNewsDailyDetails;
+        ContentEventsDetail = NavigationPathOptions.Value.ContentEventsDetail;
+        ContentCommunityPostDetails = NavigationPathOptions.Value.ContentCommunityPostDetails;
+
         tabItems = new () {
             new()
             {
                 Text = "Daily",
                 Route = ContentDaily,
-                ActiveRoutePaths = new List<string> { ContentDaily, "/", "/content/daily/article/details" },
+                ActiveRoutePaths = new List<string> { ContentDaily, "/", $"{ContentNewsDailyDetail}" },
                 ImagePath = "/qln-images/content/daily_icon.svg"
             },
             new()
             {
                 Text = "News",
                 Route = ContentNews,
-                ActiveRoutePaths = new List<string> { ContentNews, "/content/article/details" },
+                ActiveRoutePaths = new List<string> { ContentNews, $"{ContentNewsDetail}" },
                 ImagePath = "/qln-images/content/news_icon.svg"
             },
             new()
             {
                 Text = "Events",
                 Route = ContentEvents,
-                ActiveRoutePaths = new List<string> { ContentEvents, "/content/events/details" },
+                ActiveRoutePaths = new List<string> { ContentEvents, $"{ContentEventsDetail}" },
                 ImagePath = "/qln-images/content/events_icon.svg"
             },
             new()
             {
                 Text = "Community",
                 Route = ContentCommunity,
-                ActiveRoutePaths = new List<string> { ContentCommunity, "/content/community/post/detail" },
+                ActiveRoutePaths = new List<string> { ContentCommunity, $"{ContentCommunityPostDetails}" },
                 ImagePath = "/qln-images/content/community_icon.svg"
             }
         };
@@ -60,7 +71,7 @@
 
     private void OnTabClick(SubTabs.TabItem tab)
     {
-        NavigationManager.NavigateTo(tab.Route);
+        NavigationManager.NavigateTo(tab.Route, true);
         // You can do additional logic here
     }
 }

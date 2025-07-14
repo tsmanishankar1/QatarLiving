@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Web.Shared.Components;
+using QLN.Web.Shared.Services;
 
 namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
 {
 
-    public class MoreArticleSectionBase : ComponentBase
+    public class MoreArticleSectionV2Base : QLComponentBase
     {
         [Parameter]
         public List<ContentPost>? Articles { get; set; }
@@ -26,6 +29,9 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
 
         [Inject]
         protected NavigationManager navManager { get; set; }
+
+        [Inject]
+        protected IOptions<NavigationPath> NavigationPath { get; set; }
 
         protected bool imageLoaded = false;
 
@@ -70,7 +76,7 @@ namespace QLN.Web.Shared.Pages.Content.ArticleV2.MoreArticleSection
         }
         protected void NavigateToEventArticle(ContentEvent article)
         {
-            var url = $"/content/daily/article/details/{article.Slug}";
+            var url = $"{NavigationPath.Value.ContentNewsDetail}{article.Slug}";
             navManager.NavigateTo(url, forceLoad: true);
         }
     }

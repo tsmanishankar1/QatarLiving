@@ -4,14 +4,17 @@ using MudBlazor;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Components;
+using Microsoft.Extensions.Options;
+using QLN.Web.Shared.Services;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class CommunityPostCreateBase : QLComponentBase
     {
         [Inject] protected ICommunityService CommunityService { get; set; }
         [Inject] protected NavigationManager NavigationManager { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
+        [Inject] protected IOptions<NavigationPath> options { get; set; }
 
         protected CreateCommunityPostDto PostModel { get; set; } = new();
         protected EditContext editContext;
@@ -32,8 +35,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             breadcrumbItems = new()
             {
-                new() { Label = "Community", Url = "/content/community" }, // have purposefully broke this one as I just dont havre the time to inject NavigationPAth in all of these files - developers should think before they code... "how am I going to impact someone through my change"
-                new() { Label = "Create a Post", Url = "/qln/community/post/create", IsLast = true }
+                new() { Label = "Community", Url = options.Value.ContentCommunity }, // have purposefully broke this one as I just dont havre the time to inject NavigationPAth in all of these files - developers should think before they code... "how am I going to impact someone through my change"
+                new() { Label = "Create a Post", Url = options.Value.ContentCommunityPostCreate, IsLast = true }
             };
         }
 
@@ -70,7 +73,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected void Cancel()
         {
-            NavigationManager.NavigateTo("/content/community"); // needs injection of NavigationPath options
+            NavigationManager.NavigateTo(options.Value.ContentCommunity); // needs injection of NavigationPath options
         }
 
       

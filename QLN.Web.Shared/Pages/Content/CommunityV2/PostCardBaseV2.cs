@@ -7,8 +7,11 @@ using QLN.Web.Shared.Helpers;
 using MudBlazor;
 using Microsoft.Extensions.Hosting;
 using QLN.Web.Shared.Components.ReportDialog;
+using Microsoft.Extensions.Logging;
+using QLN.Web.Shared.Services;
+using Microsoft.Extensions.Options;
 
-namespace QLN.Web.Shared.Pages.Content.Community
+namespace QLN.Web.Shared.Pages.Content.CommunityV2
 {
     public class PostCardBaseV2 : ComponentBase
     {
@@ -17,12 +20,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected ICommunityService CommunityService { get; set; } = default!;
         [Inject] protected CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; }
+        [Inject] protected ILogger<PostCardBaseV2> Logger { get; set; }
 
         [Inject] protected ISnackbar Snackbar { get; set; }
 
         [Inject] protected IPostInteractionService PostInteractionService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
 
+        [Inject] protected IOptions<NavigationPath> NavigationPath { get; set; }
         [Parameter] public PostModel Post { get; set; } = new();
         [Parameter] public bool IsDetailView { get; set; } = false;
 
@@ -47,13 +52,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 IsLoggedIn = true;
                 UID =user.FindFirst("uid")?.Value;
             }
+            IsLiked = Post.IsLiked;
 
         }
 
 
         protected void NavigateToPostDetail()
         {
-            Navigation.NavigateTo($"/content/community/post/detail/{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
+            Navigation.NavigateTo($"{NavigationPath.Value.ContentCommunityPostDetails}{Post.Slug}"); // needs injection of NavigationPath options and then add navigationPath.ContentCommunity as a prefix to this string.
         }
         protected async Task ToggleLikeAsync()
         {
@@ -69,6 +75,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 if (success)
                 {
                     IsLiked = !IsLiked;
+                    Post.IsLiked = IsLiked;
+
                     Post.LikeCount += IsLiked ? 1 : -1;
                 }
                 else
@@ -78,7 +86,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error while liking post: {ex.Message}");
+                Logger.LogInformation($"Error while liking post: {ex.Message}");
                 Snackbar.Add("An unexpected error occurred.", Severity.Error);
             }
 
@@ -115,7 +123,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         private string CurrentUrl =>
     IsDetailView
         ? Navigation.Uri
-        : $"{Navigation.BaseUri.TrimEnd('/')}/content/community/v2post/detail/{Post.Slug}";
+        : $"{Navigation.BaseUri.TrimEnd('/')}/content/v2/community/post/detail/{Post.Slug}";
 
         //private string CurrentUrl => $"{Navigation.BaseUri.TrimEnd('/')}/content/community/post/detail/{Post.Slug}";
         protected List<MenuItem> shareMenuItems => new()

@@ -1,4 +1,5 @@
-﻿using Nextended.Core.Extensions;
+﻿using Microsoft.Extensions.Logging;
+using Nextended.Core.Extensions;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
@@ -12,11 +13,14 @@ namespace QLN.Web.Shared.Services
     public class CommunityService : ServiceBase<CommunityService>, ICommunityService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<CommunityService> _logger;
 
-        public CommunityService(HttpClient httpClient) : base(httpClient)
+        public CommunityService(HttpClient httpClient, ILogger<CommunityService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
+
 
         public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string? order, int page, int pageSize)
         {
@@ -42,7 +46,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return (null, 0);
             }
         }
@@ -56,7 +60,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return null;
             }
         }
@@ -69,7 +73,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new List<MorePostItem>();
             }
         }
@@ -88,7 +92,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new List<SelectOption>();
             }
         }
@@ -101,7 +105,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error posting comment: {ex.Message}");
+                _logger.LogInformation($"Error posting comment: {ex.Message}");
                 return false;
             }
         }
@@ -115,7 +119,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new PaginatedCommentResponse();
             }
         }
@@ -156,7 +160,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return null;
             }
         }
@@ -250,7 +254,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Exception: {ex.Message}");
+                _logger.LogInformation($"API Exception: {ex.Message}");
                 return new PaginatedCommentResponseV2();
             }
         }
@@ -284,7 +288,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reporting post: {ex.Message}");
+                _logger.LogInformation($"Error reporting post: {ex.Message}");
                 return false;
             }
         }
@@ -318,7 +322,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reporting comment: {ex.Message}");
+                _logger.LogInformation($"Error reporting comment: {ex.Message}");
                 return false;
             }
         }
@@ -351,7 +355,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error liking post: {ex.Message}");
+                _logger.LogInformation($"Error liking post: {ex.Message}");
                 return false;
             }
         }
@@ -386,7 +390,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error liking post: {ex.Message}");
+                _logger.LogInformation($"Error liking post: {ex.Message}");
                 return false;
             }
         }

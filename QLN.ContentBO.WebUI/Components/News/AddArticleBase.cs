@@ -30,17 +30,24 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         public int MaxCategory { get; set; } = 2;
 
+        public bool IsLoading { get; set; } = false;
+
+        public bool IsBtnDisabled { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
             {
+                IsLoading = true;
                 await AuthorizedPage();
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
+                IsLoading = false;
             }
             catch (Exception ex)
             {
+                IsLoading = false;
                 Logger.LogError(ex, "OnInitializedAsync");
                 throw;
             }
@@ -50,6 +57,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                IsLoading = true;
                 if (CategoryId > 0 || SubCategoryId > 0)
                 {
                     Categories = await GetNewsCategories() ?? [];
@@ -60,9 +68,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                         SlotId = 15,
                     });
                 }
+                IsLoading = false;
             }
             catch (Exception ex)
             {
+                IsLoading = false;
                 Logger.LogError(ex, "OnParametersSetAsync");
                 throw;
             }
@@ -103,20 +113,24 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             try
             {
+                IsBtnDisabled = true;
                 article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
                     Snackbar.Add("Select atleast one category", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.CoverImageUrl))
                 {
                     Snackbar.Add("Image is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
                 if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
                 {
                     Snackbar.Add("Article Content is required", severity: Severity.Error);
+                    IsBtnDisabled = false;
                     return;
                 }
 
@@ -126,9 +140,9 @@ namespace QLN.ContentBO.WebUI.Components.News
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     var parameters = new DialogParameters<ArticleDialog>
-                            {
-                                { x => x.ContentText, "Article Published" },
-                            };
+                    {
+                        { x => x.ContentText, "Article Published" },
+                    };
 
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
@@ -142,11 +156,14 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     Snackbar.Add("Internal API Error");
                 }
+                IsBtnDisabled = false;
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleValidSubmit");
                 ResetForm();
+                Snackbar.Add("Article could not be created", Severity.Error);
+                IsBtnDisabled = false;
             }
         }
 
@@ -180,8 +197,12 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
-            var result = dialog.Result;
-            ResetForm();
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                ResetForm();
+                StateHasChanged();
+            }
         }
 
         private async Task<List<NewsCategory>> GetNewsCategories()
@@ -256,6 +277,15 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             article = new();
             TempCategoryList = [];
+            if (CategoryId != 0 && SubCategoryId != 0)
+            {
+                TempCategoryList.Add(new()
+                {
+                    CategoryId = CategoryId ?? 0,
+                    SubcategoryId = SubCategoryId ?? 0,
+                    SlotId = 15,
+                });
+            }
         }
     }
 }

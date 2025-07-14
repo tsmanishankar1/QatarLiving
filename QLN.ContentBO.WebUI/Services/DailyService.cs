@@ -261,7 +261,7 @@ namespace QLN.ContentBO.WebUI.Services
                     subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
                     relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                     contentType = article.ContentType,
-                    publishedDate = article.PublishedDate.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    publishedDate = article.PublishedDate?.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     endDate = (article.EndDate ?? DateTime.UtcNow.AddDays(7)).ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
                     slotNumber = article.SlotNumber,
                     createdBy = article.CreatedBy.ToString(),

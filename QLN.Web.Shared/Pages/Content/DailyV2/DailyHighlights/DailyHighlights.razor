@@ -17,8 +17,8 @@
         {
             var item = ListOfItems[i];
             var detailUrl = item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(item.Slug)
-            ? $"/content/V2/daily/article/details/{item.Slug}"
-            : $"/content/V2/events/details/{item.Slug}";
+            ? $"{NavigationPath.Value.ContentNewsDailyDetails}{item.Slug}"
+            : $"{NavigationPath.Value.ContentEventsDetail}{item.Slug}";
 
             bool isLast = i == ListOfItems.Take(3).Count() - 1;
             <MudLink Href="@detailUrl" Style="text-decoration: none;">

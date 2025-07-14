@@ -41,7 +41,7 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
 
             if (currentPath != NavManager.BaseUri + url.TrimStart('/'))
             {
-                NavManager.NavigateTo(url);
+                NavManager.NavigateTo(url, true);
             }
         }
 

@@ -11,7 +11,7 @@ namespace QLN.Web.Shared.Components
     {
         [Inject] public CookieAuthStateProvider CookieAuthenticationStateProvider { get; set; } = default!;
         [Inject] public NavigationManager NavManager { get; set; } = default!;
-        [Inject] public IOptions<NavigationPath> navigationPath { get; set; } = default!;
+        [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
         [Inject] public IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
 
@@ -22,7 +22,7 @@ namespace QLN.Web.Shared.Components
 
             if (authState != null && !authState.User.Identity.IsAuthenticated)
             {
-                NavManager.NavigateTo($"{navigationPath.Value.Login}?destination={destination}", forceLoad: true);
+                NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={destination}", forceLoad: true);
             }
         }
 
