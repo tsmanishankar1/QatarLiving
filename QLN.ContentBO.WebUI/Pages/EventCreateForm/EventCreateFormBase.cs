@@ -184,9 +184,18 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse?.Locations ?? [];
         }
-        protected void OnCancelClicked()
+        protected async  void OnCancelClicked()
         {
-            Navigation.NavigateTo("/manage/events");
+             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                ClearForm();
+                  await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                StateHasChanged();
+            }
         }
 
         protected Task OpenDialogAsync()
