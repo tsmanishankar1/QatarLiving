@@ -127,6 +127,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
+        public bool _isDateRangeSelected = false;
         protected DateRange? _dateRange
         {
             get
@@ -145,6 +146,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
                     CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+                    _isDateRangeSelected = true;
                 }
             }
         }
@@ -288,7 +290,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _showDatePicker = false;
             EventDate = null;
-            SelectedDateLabel = string.Empty;
+            // SelectedDateLabel = string.Empty;
             _confirmedDateRange = new();
             if (_dateRange?.Start != null || _dateRange?.End != null)
             {
@@ -330,6 +332,23 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
+        }
+        protected void ClearSelectedDate()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                SelectedDateLabel = null;
+            }
+            else
+            { 
+                _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
+            }
+
         }
         protected void GenerateDayTimeList()
         {
