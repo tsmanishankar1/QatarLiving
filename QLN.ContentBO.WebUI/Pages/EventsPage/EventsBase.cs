@@ -97,6 +97,9 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             AllEventsList = allEvents
                  .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
                   .ToList();
+             AllEventsList = AllEventsList
+                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                        .ToList();
         }
         protected EventDTO? draggedItem;
 
