@@ -127,6 +127,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
+        public bool _isDateRangeSelected = false;
         protected DateRange? _dateRange
         {
             get
@@ -145,6 +146,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
                     CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+                    _isDateRangeSelected = true;
                 }
             }
         }
@@ -182,9 +184,18 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse?.Locations ?? [];
         }
-        protected void OnCancelClicked()
+        protected async  void OnCancelClicked()
         {
-            Navigation.NavigateTo("/manage/events");
+             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                ClearForm();
+                  await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                StateHasChanged();
+            }
         }
 
         protected Task OpenDialogAsync()
@@ -288,7 +299,6 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _showDatePicker = false;
             EventDate = null;
-            SelectedDateLabel = string.Empty;
             _confirmedDateRange = new();
             if (_dateRange?.Start != null || _dateRange?.End != null)
             {
@@ -330,6 +340,23 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
+        }
+        protected void ClearSelectedDate()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                SelectedDateLabel = null;
+            }
+            else
+            { 
+                _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
+            }
+
         }
         protected void GenerateDayTimeList()
         {

@@ -47,7 +47,7 @@
              { 
                 <div class="event-mud-error-text">@_PriceError</div>
             } 
-            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
 
 
        <MudSelect T="string"
@@ -77,7 +77,7 @@
 
             @* Date picker *@
             <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
-                <MudTextField Label="Date"
+                @* <MudTextField Label="Date"
                 Value="@SelectedDateLabel"
                 ReadOnly="true"
                 DisableUnderLine="true"
@@ -86,7 +86,18 @@
                 Class="event-cursor-pointer event-custom-textfield"
                 Adornment="Adornment.End"
                 AdornmentIcon="@Icons.Material.Filled.DateRange"
-                OnClick="ToggleDatePicker" />
+                OnClick="ToggleDatePicker" /> *@
+                <MudTextField Label="Date"
+              Value="@SelectedDateLabel"
+              ReadOnly="true"
+              DisableUnderLine="true"
+              Variant="Variant.Outlined"
+              Style="background-color: #FFFFFF;"
+              Class="event-cursor-pointer event-custom-textfield"
+              Adornment="Adornment.End"
+              AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
+              AdornmentOnClick="@ClearSelectedDate"
+              OnClick="ToggleDatePicker" />
                 <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
                     TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
                     <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
@@ -134,8 +145,8 @@
 
             @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
-                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
-                <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
+                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType"  Disabled="@string.IsNullOrWhiteSpace(SelectedDateLabel)" Class="my-2">
+                <MudRadio  Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 </MudRadioGroup>
             }
@@ -266,7 +277,7 @@
                                 <div class="mud-error-text">@_coverImageError</div>
                             }
                          @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage)){
-                            <MudPaper Elevation="0" Class="image-picker-style">
+                            <MudPaper Elevation="0" Class="event-image-picker-style">
                                 <div class="event-upload-action-style">
                                 <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                                 <ActivatorContent>
@@ -280,7 +291,7 @@
                                 </MudButton>
                                 </div>
                                 </MudPaper>
-                                }
+                            }
                
 </MudItem>
 </MudGrid>
