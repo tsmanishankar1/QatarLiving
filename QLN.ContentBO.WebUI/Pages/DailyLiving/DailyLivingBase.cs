@@ -486,7 +486,7 @@ public class DailyLivingBase : QLComponentBase
             var apiResponse = await eventsService.UpdateFeaturedEvents(payload);
             if (apiResponse.IsSuccessStatusCode)
             {
-                Snackbar.Add("Event Replaced 123 successfully", Severity.Success);
+                Snackbar.Add("Event Replaced successfully", Severity.Success);
                 // await OnTabChanged(activeIndex);
                 // featuredEventSlots = await GetFeaturedSlotsAsync();
                 StateHasChanged();
@@ -523,11 +523,6 @@ public class DailyLivingBase : QLComponentBase
             if (apiResponse.IsSuccessStatusCode)
             {
                 var events = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>() ?? new();
-                Console.WriteLine("Fetched Events:");
-foreach (var e in events)
-{
-    Console.WriteLine($"Id: {e.Id}, Title: {e.EventTitle}, Category: {e.CategoryName}, Status: {e.Status}, PublishedDate: {e.PublishedDate} , slotnumber {e.FeaturedSlot.Id}");
-}
                 var rawContent = await apiResponse.Content.ReadAsStringAsync();
                 foreach (var ev in events)
                 {

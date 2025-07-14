@@ -37,9 +37,5 @@ namespace QLN.ContentBO.WebUI.Pages.ReportsPage
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-        protected override async Task OnInitializedAsync()
-        {
-            await AuthorizedPage();
-        }
     }
 }

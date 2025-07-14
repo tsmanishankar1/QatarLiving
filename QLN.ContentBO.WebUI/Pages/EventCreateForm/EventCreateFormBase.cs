@@ -290,7 +290,6 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _showDatePicker = false;
             EventDate = null;
-            // SelectedDateLabel = string.Empty;
             _confirmedDateRange = new();
             if (_dateRange?.Start != null || _dateRange?.End != null)
             {

@@ -18,8 +18,6 @@ namespace QLN.ContentBO.WebUI.Models
         public string Venue { get; set; } = string.Empty;
         public string Longitude { get; set; }
         public string Latitude { get; set; }
-        [RegularExpression(@"^(https?://)?([\w\-]+\.)+[\w\-]+(/[\w\-./?%&=]*)?$", 
-        ErrorMessage = "Please enter a valid URL.")]
         public string? RedirectionLink { get; set; } = string.Empty;
         public EventScheduleModel EventSchedule { get; set; }
 
