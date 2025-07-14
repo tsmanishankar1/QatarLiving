@@ -20,30 +20,53 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
         protected override void OnInitialized()
         {
             currentPath = NavManager.Uri;
+
             NavManager.LocationChanged += (_, args) =>
             {
                 currentPath = args.Location;
+
+                // Recalculate expanded groups based on route
+                ExpandGroupForCurrentRoute();
+
                 StateHasChanged();
             };
+
+            // Expand relevant group on first load too
+            ExpandGroupForCurrentRoute();
         }
+    private void ExpandGroupForCurrentRoute()
+    {
+        var relativePath = NavManager.ToBaseRelativePath(currentPath).ToLowerInvariant();
+
+        var matchingGroup = NavigationItems
+            .FirstOrDefault(i =>
+                i.IsGroup &&
+                i.Children?.Any(c => relativePath.StartsWith(c.Url.TrimStart('/').ToLowerInvariant())) == true);
+
+        if (matchingGroup != null)
+        {
+            ExpandedGroups.Add(matchingGroup.Title);
+        }
+    }
 
         protected void HandleRouterClick(string url)
+    {
+        // Find the group this child belongs to (if any)
+        var matchingGroup = NavigationItems
+            .FirstOrDefault(i => i.IsGroup && i.Children?.Any(c => c.Url == url) == true);
+
+        if (matchingGroup != null)
         {
-            var isChildOfExpandedGroup = NavigationItems
-                .Where(i => i.IsGroup && ExpandedGroups.Contains(i.Title))
-                .SelectMany(i => i.Children)
-                .Any(child => child.Url == url);
-
-            if (!isChildOfExpandedGroup)
-            {
-                ExpandedGroups.Clear();
-            }
-
-            if (currentPath != NavManager.BaseUri + url.TrimStart('/'))
-            {
-                NavManager.NavigateTo(url, true);
-            }
+            // Ensure the group is expanded (but DON'T clear others!)
+            ExpandedGroups.Add(matchingGroup.Title);
         }
+
+        if (currentPath != NavManager.BaseUri + url.TrimStart('/'))
+        {
+            NavManager.NavigateTo(url, true);
+        }
+    }
+
 
         protected bool IsActive(string path)
         {
@@ -51,30 +74,22 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             return relativeUri.StartsWith(path.TrimStart('/').ToLowerInvariant());
         }
 
-        protected async Task ToggleGroup(string title)
-        {
-            var group = NavigationItems.FirstOrDefault(i => i.IsGroup && i.Title == title);
-            if (group == null || group.Children == null || group.Children.Count == 0)
-                return;
+      protected Task ToggleGroup(string title)
+{
+    if (ExpandedGroups.Contains(title))
+    {
+        ExpandedGroups.Remove(title);
+    }
+    else
+    {
+        ExpandedGroups.Clear();
+        ExpandedGroups.Add(title);
+    }
 
-            if (ExpandedGroups.Contains(title))
-            {
-                ExpandedGroups.Remove(title);
-            }
-            else
-            {
-                ExpandedGroups.Clear();
-                ExpandedGroups.Add(title);
-                StateHasChanged();
+    StateHasChanged();
+    return Task.CompletedTask;
+}
 
-                await Task.Delay(200);
-                var firstChildUrl = group.Children.FirstOrDefault()?.Url;
-                if (!string.IsNullOrEmpty(firstChildUrl))
-                {
-                    HandleRouterClick(firstChildUrl);
-                }
-            }
-        }
 
         public class NavigationItem
         {
