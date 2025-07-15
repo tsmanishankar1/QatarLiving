@@ -32,22 +32,24 @@
                 <MudRadio Color="Color.Primary"T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
-            <MudTextField T="int?" 
+            <MudNumericField T="int?" 
               Variant="Variant.Outlined" 
-              InputType="InputType.Number"
+              HideSpinButtons="true"
               Label="Price" 
+              MaxLength="5"
               @bind-Value="CurrentEvent.Price" 
               For="@(() => CurrentEvent.Price)"
               Adornment="Adornment.End" 
               AdornmentText="QAR" 
               Style="background-color: #FFFFFF;"
               Class="@PriceFieldClass" 
-              Disabled="@(!IsFeesSelected)" />
+              Disabled="@(!IsFeesSelected)" 
+              Immediate="true"/>
               @if (!string.IsNullOrEmpty(_PriceError))
              { 
                 <div class="event-mud-error-text">@_PriceError</div>
             } 
-            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
+            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
 
 
        <MudSelect T="string"
@@ -78,15 +80,16 @@
             @* Date picker *@
             <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
                 <MudTextField Label="Date"
-                Value="@SelectedDateLabel"
-                ReadOnly="true"
-                DisableUnderLine="true"
-                Variant="Variant.Outlined"
-                Style="background-color: #FFFFFF;"
-                Class="event-cursor-pointer event-custom-textfield"
-                Adornment="Adornment.End"
-                AdornmentIcon="@Icons.Material.Filled.DateRange"
-                OnClick="ToggleDatePicker" />
+              Value="@SelectedDateLabel"
+              ReadOnly="true"
+              DisableUnderLine="true"
+              Variant="Variant.Outlined"
+              Style="background-color: #FFFFFF;"
+              Class="event-cursor-pointer event-custom-textfield"
+              Adornment="Adornment.End"
+              AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
+              OnAdornmentClick="@ClearSelectedDate"
+              OnClick="ToggleDatePicker" />
                 <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
                     TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
                     <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
@@ -134,9 +137,10 @@
 
             @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
-                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
-                <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
+                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType"  Disabled="@string.IsNullOrWhiteSpace(SelectedDateLabel)" Class="my-2">
+                <MudRadio  Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
+                <MudRadio T="EventTimeType" Color="Color.Primary"Value="EventTimeType.FreeTextTime">Free Text time</MudRadio>
                 </MudRadioGroup>
             }
             @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
@@ -176,14 +180,16 @@
                 {
                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
+                             <div >
                             <input type="checkbox"
                             checked="@entry.IsSelected"
                             disabled="@(!IsValidTimeFormat(entry.StartTime, entry.EndTime))"
                             @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
                             style="transform: scale(1.5); margin-right: 8px;" />
                             <label style="font-size: 1rem;">@entry.Day</label>
+                            </div>
                             <div style="display: flex; gap: 16px; align-items: center;">
-                                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                                     <MudTimePicker T="TimeSpan?" 
                                     Label="Start Time"
                                     @bind-Time="entry.StartTime"
@@ -192,7 +198,7 @@
                                     Variant="Variant.Outlined"/>
                                     <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
                                 </div>
-                                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
                                     <MudTimePicker T="TimeSpan?" 
                                     Label="End Time"
                                     @bind-Time="entry.EndTime"
@@ -208,6 +214,10 @@
                         <div class="mud-error-text">Enter Valid Time format</div>
                     }
                 }
+            }
+            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.FreeTextTime)
+            {
+                <MudTextField  Variant="Variant.Outlined" Label="Time" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;"/>
             }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"
@@ -266,7 +276,7 @@
                                 <div class="mud-error-text">@_coverImageError</div>
                             }
                          @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage)){
-                            <MudPaper Elevation="0" Class="image-picker-style">
+                            <MudPaper Elevation="0" Class="event-image-picker-style">
                                 <div class="event-upload-action-style">
                                 <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                                 <ActivatorContent>
@@ -280,7 +290,7 @@
                                 </MudButton>
                                 </div>
                                 </MudPaper>
-                                }
+                            }
                
 </MudItem>
 </MudGrid>
@@ -394,6 +404,9 @@
         display: flex; 
         flex-direction: column;
     }
+    .custom-timepicker-width {
+    width: 150px !important;  
+}
     .event-custom-chip {
         background-color: #FAFAFA;
         color: #242424;

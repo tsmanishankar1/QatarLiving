@@ -126,65 +126,18 @@ namespace QLN.Content.MS.Service.EventInternalService
             string desiredSlotKey = $"event-slot-{desiredSlot}";
             var existingInDesiredSlot = await _dapr.GetStateAsync<V2Events>(storeName, desiredSlotKey, cancellationToken: cancellationToken);
 
-            if (existingInDesiredSlot == null)
+            if (existingInDesiredSlot != null && existingInDesiredSlot.Id != newEvent.Id)
             {
-                newEvent.FeaturedSlot.Id = desiredSlot;
-                newEvent.IsFeatured = true;
-
-                await _dapr.SaveStateAsync(storeName, desiredSlotKey, newEvent, cancellationToken: cancellationToken);
-                await _dapr.SaveStateAsync(storeName, newEvent.Id.ToString(), newEvent, cancellationToken: cancellationToken);
-                return $"Event placed in slot {desiredSlot} successfully.";
+                existingInDesiredSlot.IsFeatured = false;
+                existingInDesiredSlot.FeaturedSlot = new();
+                await _dapr.SaveStateAsync(storeName, existingInDesiredSlot.Id.ToString(), existingInDesiredSlot, cancellationToken: cancellationToken);
             }
-            int emptySlot = -1;
-            for (int i = desiredSlot + 1; i <= MaxSlot; i++)
-            {
-                string slotKey = $"event-slot-{i}";
-                var articleInSlot = await _dapr.GetStateAsync<V2Events>(storeName, slotKey, cancellationToken: cancellationToken);
-                if (articleInSlot == null)
-                {
-                    emptySlot = i;
-                    break;
-                }
-            }
-            if (emptySlot == -1)
-            {
-                string lastSlotKey = $"event-slot-{MaxSlot}";
-                var lastEvent = await _dapr.GetStateAsync<V2Events>(storeName, lastSlotKey, cancellationToken: cancellationToken);
-
-                if (lastEvent != null)
-                {
-                    lastEvent.IsFeatured = false;
-                    lastEvent.FeaturedSlot = new();
-                    await _dapr.SaveStateAsync(storeName, lastEvent.Id.ToString(), lastEvent, cancellationToken: cancellationToken);
-                    await _dapr.DeleteStateAsync(storeName, lastSlotKey, cancellationToken: cancellationToken);
-                }
-
-                emptySlot = MaxSlot;
-            }
-            for (int current = emptySlot - 1; current >= desiredSlot; current--)
-            {
-                string fromKey = $"event-slot-{current}";
-                string toKey = $"event-slot-{current + 1}";
-
-                var evToMove = await _dapr.GetStateAsync<V2Events>(storeName, fromKey, cancellationToken: cancellationToken);
-                if (evToMove != null)
-                {
-                    evToMove.FeaturedSlot.Id = current + 1;
-                    evToMove.IsFeatured = true;
-
-                    await _dapr.SaveStateAsync(storeName, toKey, evToMove, cancellationToken: cancellationToken);
-                    await _dapr.SaveStateAsync(storeName, evToMove.Id.ToString(), evToMove, cancellationToken: cancellationToken);
-                    await _dapr.DeleteStateAsync(storeName, fromKey, cancellationToken : cancellationToken);
-                }
-            }
-
             newEvent.FeaturedSlot.Id = desiredSlot;
             newEvent.IsFeatured = true;
-
             await _dapr.SaveStateAsync(storeName, desiredSlotKey, newEvent, cancellationToken: cancellationToken);
             await _dapr.SaveStateAsync(storeName, newEvent.Id.ToString(), newEvent, cancellationToken: cancellationToken);
 
-            return $"Event placed in slot {desiredSlot} after shifting.";
+            return $"Event placed in slot {desiredSlot} successfully.";
         }
         private void ValidateEventSchedule(EventSchedule schedule)
         {
@@ -402,7 +355,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                     responseBody: ex.Message);
             }
         }
-
         private async Task<List<DailyTopicContent>> GetSlotsByTopicIdAsync(Guid topicId, CancellationToken ct)
         {
             try
@@ -422,7 +374,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                     responseBody: ex.Message);
             }
         }
-
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
             try
@@ -571,6 +522,10 @@ namespace QLN.Content.MS.Service.EventInternalService
         {
             try
             {
+                if (request.Page <= 0 || request.PerPage <= 0)
+                {
+                    throw new ArgumentException("Page and PerPage must be greater than zero.");
+                }
                 var allEvents = new List<V2Events>();
                 var eventIds = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
@@ -748,6 +703,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                     FeaturedCount = featuredCount,
                     FeaturedInCurrentPage = featuredInCurrentPage
                 };
+            }
+            catch(ArgumentException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

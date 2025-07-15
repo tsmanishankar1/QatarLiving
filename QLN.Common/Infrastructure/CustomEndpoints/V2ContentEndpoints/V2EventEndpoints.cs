@@ -143,7 +143,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .AllowAnonymous()
             .WithName("GetAllEvents")
             .WithTags("Event")
             .WithSummary("Get All Events")
@@ -494,7 +493,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         public static RouteGroupBuilder MapGetPaginatedEvents(this RouteGroupBuilder group)
         {
             group.MapPost("/getpaginatedevents", async Task<Results<Ok<PagedResponse<V2Events>>,
-                BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
+                BadRequest<ProblemDetails>, ProblemHttpResult>>
             (
                 [FromBody] GetPagedEventsRequest request,
                 IV2EventService service,
@@ -503,8 +502,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             {
                 try
                 {
+                    if (request.Page <= 0 || request.PerPage <= 0)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "Page and PerPage must be greater than zero.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
                     var result = await service.GetPagedEvents(request, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -522,8 +539,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             .WithSummary("Paginated Events List")
             .WithDescription("Fetches events with support for filtering, sorting, and pagination.")
             .Produces<PagedResponse<V2Events>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             return group;
         }
         public static RouteGroupBuilder MapGetAllEventSlot(this RouteGroupBuilder group)
