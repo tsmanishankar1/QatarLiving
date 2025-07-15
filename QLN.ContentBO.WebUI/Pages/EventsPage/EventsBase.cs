@@ -61,7 +61,15 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             currentStatus = status;
             currentPage = 1;
+            SortAscending = status == 1; 
             PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            if (status == 1)
+            {
+                var sortedList = PaginatedData.Items
+                 .OrderBy(e => e.EventSchedule.StartDate)
+                 .ToList();
+               PaginatedData.Items = sortedList;
+            }
             StateHasChanged();
         }
 
