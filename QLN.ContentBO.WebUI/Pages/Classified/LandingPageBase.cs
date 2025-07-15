@@ -238,10 +238,12 @@ public class LandingPageBase : QLComponentBase
 
     protected async Task DeleteItem(string id)
     {
+        var title = $"{GetCurrentTabAddButtonText()}";
+
         var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
-            { "Description", $"Do you want to delete this {currentItemType}?" },
+            { "Description", $"Do you want to delete this {title}?" },
             { "ButtonTitle", "Delete" },
             { "OnConfirmed", EventCallback.Factory.Create(this, async () => await ConfirmDeleteItem(id)) }
         };
