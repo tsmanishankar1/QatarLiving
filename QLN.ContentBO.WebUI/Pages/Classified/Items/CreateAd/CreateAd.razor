@@ -1,0 +1,16 @@
+@page "/manage/classified/items/createform"
+
+@using QLN.ContentBO.WebUI.Models;
+@inherits CreateAdBase
+
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <CreateFormList UserEmail="@UserEmail" />
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <UploadPhotos />
+        </MudItem>
+    </MudGrid>
+</div>
