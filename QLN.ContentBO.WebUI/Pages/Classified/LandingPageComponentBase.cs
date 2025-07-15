@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
+using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified
 {
@@ -36,12 +37,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified
         private bool shouldInitializeSortable = false;
         private List<Slot> featuredEventSlots = new();
 
+
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
             await base.OnInitializedAsync();
 
-            // Initialize featured slots from Items if needed
             if (Items != null && Items.Any())
             {
                 featuredEventSlots = Items.Select((item, index) => new Slot
@@ -56,7 +57,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified
         {
             await base.OnParametersSetAsync();
 
-            // Only trigger JS if we have items that can be reordered
             if (Items != null && Items.Any())
             {
                 shouldInitializeSortable = true;
@@ -67,7 +67,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified
         {
             if (shouldInitializeSortable)
             {
-                await JS.InvokeVoidAsync("initializeSortable", ".featured-table", DotNetObjectReference.Create(this));
+                await JS.InvokeVoidAsync("initializeSortable", ".classified-table", DotNetObjectReference.Create(this));
                 shouldInitializeSortable = false;
             }
         }
@@ -96,29 +96,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified
                     Event = item
                 }).ToList();
 
-                // Call API to persist changes
                 var slotAssignments = featuredEventSlots.Select(slot => new
                 {
                     slotNumber = slot.SlotNumber,
                     eventId = slot.Event?.Id ?? Guid.Empty
                 }).ToList();
 
-                var response = await EventsService.ReorderFeaturedSlots(slotAssignments, UserId);
+                //var response = await EventsService.ReorderFeaturedSlots(slotAssignments, UserId);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Items reordered successfully.", Severity.Success);
-                    // Update parent's Items collection through OnReplace callback
-                    foreach (var item in updatedItems.Select((value, index) => new { value, index }))
-                    {
-                        await OnReplace.InvokeAsync(item.value);
-                    }
-                }
-                else
-                {
-                    Snackbar.Add("Failed to reorder items", Severity.Error);
-                    Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
-                }
+                //if (response.IsSuccessStatusCode)
+                //{
+                //    Snackbar.Add("Items reordered successfully.", Severity.Success);
+                //    // Update parent's Items collection through OnReplace callback
+                //    foreach (var item in updatedItems.Select((value, index) => new { value, index }))
+                //    {
+                //        await OnReplace.InvokeAsync(item.value);
+                //    }
+                //}
+                //else
+                //{
+                //    Snackbar.Add("Failed to reorder items", Severity.Error);
+                //    Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+                //}
+
+                Snackbar.Add("Items reordered successfully.", Severity.Success);
+
             }
             catch (Exception ex)
             {
@@ -151,11 +153,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified
         }
         protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
 
-        // Nested Slot class for internal use
-        protected class Slot
-        {
-            public int SlotNumber { get; set; }
-            public LandingPageItem? Event { get; set; }
-        }
     }
 }

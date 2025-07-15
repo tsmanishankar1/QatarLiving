@@ -1,12 +1,11 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
-using System.Text.Json;
-using QLN.Common.Infrastructure.IService;
 using QLN.ContentBO.WebUI.Components;
-using System;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Pages.Classified.Modal;
+
+using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 public class LandingPageBase : QLComponentBase
 {
@@ -20,6 +19,8 @@ public class LandingPageBase : QLComponentBase
     protected List<LandingPageItem> currentItems = new();
     protected LandingPageItem currentItem = new();
     protected LandingPageItemType currentItemType;
+    [Inject]
+    public IDialogService DialogService { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,13 +65,6 @@ public class LandingPageBase : QLComponentBase
         };
     }
 
-    protected void NavigateToAddItem()
-    {
-        currentItem = new LandingPageItem();
-        modalTitle = $"Add {GetCurrentTabAddButtonText()}";
-        showItemModal = true;
-        StateHasChanged();
-    }
 
     protected async Task LoadDataForCurrentTab()
     {
@@ -112,20 +106,13 @@ public class LandingPageBase : QLComponentBase
             new LandingPageItem
             {
                 Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Featured Category 1",
-                Description = "Description 1",
                 Category = "Electronics",
-                EndDate = DateTime.Now.AddDays(30),
-                ImageUrl = ""
-            },
+                EndDate = DateTime.Now.AddDays(30),            },
             new LandingPageItem
             {
                 Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Featured Category 2",
-                Description = "Description 2",
                 Category = "Fashion",
                 EndDate = DateTime.Now.AddDays(60),
-                ImageUrl = ""
             }
         };
     }
@@ -138,20 +125,14 @@ public class LandingPageBase : QLComponentBase
             new LandingPageItem
             {
                 Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Summer Collection",
-                Description = "Summer seasonal items",
-                Category = "Seasonal",
+                Category = "Seasonal 1",
                 EndDate = DateTime.Now.AddMonths(3),
-                ImageUrl = ""
             },
             new LandingPageItem
             {
                 Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Winter Specials",
-                Description = "Winter seasonal items",
-                Category = "Seasonal",
+                Category = "Seasonal 2",
                 EndDate = DateTime.Now.AddMonths(6),
-                ImageUrl = ""
             }
         };
     }
@@ -164,20 +145,14 @@ public class LandingPageBase : QLComponentBase
             new LandingPageItem
             {
                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Electronics Store",
-                Description = "Featured electronics store",
                 Category = "Electronics",
                 EndDate = DateTime.Now.AddYears(1),
-                ImageUrl = ""
             },
             new LandingPageItem
             {
                 Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Title = "Fashion Boutique",
-                Description = "Featured fashion store",
                 Category = "Fashion",
                 EndDate = DateTime.Now.AddYears(1),
-                ImageUrl = ""
             }
         };
     }
@@ -222,12 +197,43 @@ public class LandingPageBase : QLComponentBase
         }
     }
 
+
+    protected  Task NavigateToAddItem()
+    {
+        var title = $"Add {GetCurrentTabAddButtonText()}";
+
+        var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), title },
+            };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true
+        };
+        return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+
+    }
+
     protected async Task ReplaceItem(LandingPageItem item)
     {
         currentItem = item;
-        modalTitle = $"Edit {GetCurrentTabAddButtonText()}";
-        showItemModal = true;
-        StateHasChanged();
+        OpenDialogAsync();
+        await Task.CompletedTask;
+    }
+    protected Task OpenDialogAsync()
+    {
+        var parameters = new DialogParameters
+            {
+                { nameof(MessageBoxBase.Title), "Replace Seasonal  Pick" },
+                { nameof(MessageBoxBase.Placeholder), "Plese type search item*" }
+            };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+        return DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
     }
 
     protected async Task DeleteItem(string id)
@@ -240,14 +246,14 @@ public class LandingPageBase : QLComponentBase
             { "OnConfirmed", EventCallback.Factory.Create(this, async () => await ConfirmDeleteItem(id)) }
         };
 
-        await ShowConfirmationDialog(parameters);
+        await ShowConfirmationDialog();
     }
 
     protected async Task ConfirmDeleteItem(string id)
     {
         try
         {
-            await Task.Delay(500); // Simulate API call
+            await Task.Delay(500); 
             Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
             await LoadDataForCurrentTab();
         }
@@ -271,7 +277,7 @@ public class LandingPageBase : QLComponentBase
             IsLoading = true;
             StateHasChanged();
 
-            await Task.Delay(500); // Simulate API call
+            await Task.Delay(500);
 
             Snackbar.Add($"{GetCurrentTabAddButtonText()} saved successfully", Severity.Success);
             showItemModal = false;
@@ -289,17 +295,34 @@ public class LandingPageBase : QLComponentBase
         }
     }
 
-    private async Task ShowConfirmationDialog(DialogParameters parameters)
+    private async Task ShowConfirmationDialog()
     {
-        var options = new DialogOptions
+        var parameters = new DialogParameters
         {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
+            { "Title", "Delete Confirmation" },
+            { "Descrption", "Do you want to delete this Event?" },
+            { "ButtonTitle", "Delete" },
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent("d5d89b0b-eaae-4853-90c3-238d4531bd1a"))}
         };
-
-        //var dialog = await DialogService.ShowAsync<Dia>("", parameters, options);
-        //await dialog.Result;
+        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var result = await dialog.Result;
+    }
+    protected async Task DeleteFeatureEvent(string eventId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(eventId))
+            {
+                Snackbar.Add("Invalid event ID.", Severity.Warning);
+                return;
+            }
+          
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
+        }
     }
 }
 
@@ -310,12 +333,3 @@ public enum LandingPageItemType
     FeaturedStore = 2
 }
 
-public class LandingPageItem
-{
-    public Guid Id { get; set; }
-    public string Title { get; set; }
-    public string Description { get; set; }
-    public string Category { get; set; }
-    public DateTime? EndDate { get; set; }
-    public string ImageUrl { get; set; }
-}

@@ -23,28 +23,30 @@ else
     <table class="table table-hover classified-table" >
         <thead>
             <tr>
-                <th style="width: 40px;"></th> <!-- drag handle -->
-                <th style="width: 60px;">Slot</th>
+                <th >Slot</th>
                 <th>Category</th>
                 <th>End Date</th>
-                <th style="width: 120px;">Actions</th>
+                <th >Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var context in indexedItems)
             {
                 <tr data-slot-id="@context.Index">
+                   
                     <td>
-                        <img src="/qln-images/arrow_icon.svg" 
-                            class="drag-handle"
-                            style="cursor: grab; width: 24px;" 
-                            alt="drag" />
+                        <img src="/qln-images/arrow_icon.svg"
+                             class="drag-handle"
+                             style="cursor: grab; width: 20px;"
+                             alt="drag" />
+                        <span class="slot-position">
+                          
+                        </span>
                     </td>
-                    <td><span class="slot-position">@context.Index</span></td>
                     <td>
                         @if(context.Item.Category is not null)
                         {
-                            <span>@context.Item.Category</span>
+                            <span >@context.Item.Category</span>
                         }
                         else
                         {

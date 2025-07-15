@@ -710,7 +710,7 @@ a, .btn-link {
 }
 
 .classified-table {
-    width: 50%;
+    width: 500px;
     border-collapse: separate;
     border-spacing: 0;
     border-radius: 8px;
