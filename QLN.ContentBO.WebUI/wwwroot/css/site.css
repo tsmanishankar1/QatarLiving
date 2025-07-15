@@ -691,34 +691,3 @@ a, .btn-link {
     background-color: white;
 }
 
-
-/* ViewListingTable.razor */
-   .mud-table .mud-icon-button {
-        color:var(--color-accent)
-    }
-    .mud-table-menu .mud-icon-button{
-        color:#242424
-    }
-    .tab-content{
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 0;
-
-    }
-    .action-buttons {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 8px;
-    }
-    .alert-container {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: center;
-    }
-    .capitalize-button {
-        text-transform: capitalize !important;
-    }
