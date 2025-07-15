@@ -183,8 +183,23 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
+
                     await CleanupUploadedFiles(FileName, cancellationToken);
-                    throw new InvalidDataException(errorMessage);
+
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.Conflict:
+                            throw new InvalidOperationException(errorMessage);
+
+                        case HttpStatusCode.BadRequest:
+                            throw new InvalidDataException(errorMessage);
+
+                        case HttpStatusCode.NotFound:
+                            throw new KeyNotFoundException(errorMessage);
+
+                        default:
+                            throw new DaprServiceException((int)response.StatusCode, errorMessage);
+                    }
                 }
                 response.EnsureSuccessStatusCode();
 
