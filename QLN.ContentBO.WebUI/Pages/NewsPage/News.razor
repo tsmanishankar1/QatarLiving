@@ -64,7 +64,8 @@
                                       Adornment="Adornment.Start"
                                       AdornmentIcon="@Icons.Material.Filled.Search"
                                       Class="search-field"
-                                      OnAdornmentClick="@(() => SearchArticles())"
+                                      DebounceInterval="500"
+                                      OnDebounceIntervalElapsed="@(() => SearchArticles())"
                                       MaxLength="255" />
                     </div>
                     <div class="custom-table">
