@@ -34,34 +34,38 @@ namespace QLN.ContentBO.WebUI.Pages
         [Inject] public IDailyLivingService DailyService { get; set; }
         [Inject] protected ILogger<FeaturedEventSlotsBase> Logger { get; set; }
         private string UserId => CurrentUserId.ToString();
+        [Inject] protected IDialogService DialogService { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
             await base.OnInitializedAsync();
-            AuthorizedPage();
+            await AuthorizedPage();
         }
         private bool shouldReinitializeSortable = false;
 
 
         protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (articles != null && articles.Any())
         {
-            await base.OnParametersSetAsync();
-            if (articles != null && articles.Any())
-            {
-                ReplaceTopicsSlot = articles
-                    .Select(article => new TopicSlot
-                    {
-                        SlotNumber = article.SlotNumber,
-                        Article = article
-                    })
-                    .ToList();
-            }
-            else
-            {
-                ReplaceTopicsSlot = new();
-            }
-            shouldReinitializeSortable = true;
+            ReplaceTopicsSlot = articles
+                .Select(article => new TopicSlot
+                {
+                    SlotNumber = article.SlotNumber,
+                    Article = article
+                })
+                .ToList();
         }
+        else
+        {
+            ReplaceTopicsSlot = new();
+        }
+
+        // Flag JS reinitialization
+        shouldReinitializeSortable = true;
+    }
 
 
 
@@ -77,7 +81,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             await AddItem.InvokeAsync(selectedItem);
         }
-        protected async Task ReplaceArticle(DailyLivingArticleDto article) 
+        protected async Task ReplaceArticle(DailyLivingArticleDto article)
         {
             await ReplaceItem.InvokeAsync(article);
         }
@@ -89,50 +93,84 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             await UpdateEvent.InvokeAsync();
         }
+
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
-{
-    var newSlotOrder = newOrder.Select(int.Parse).ToList();
-
-    var eventMap = ReplaceTopicsSlot
-        .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
-        .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
-
-    var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
-    {
-        if (eventMap.TryGetValue(slotNumber, out var stringId) &&
-            Guid.TryParse(stringId, out var parsedGuid) &&
-            parsedGuid != Guid.Empty)
         {
-            return new DailySlotAssignment
+            try
             {
-                SlotNumber = index + 1,
-                DailyId = parsedGuid
-            };
+                var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
+                var result = await dialog.Result;
+                if (result is not null)
+                {
+                    if (result.Canceled)
+                    {
+                        // Reset the List
+                        await ResetOrder();
+                    }
+                    if (!result.Canceled)
+                    {
+                        var newSlotOrder = newOrder.Select(int.Parse).ToList();
+
+                        var eventMap = ReplaceTopicsSlot
+                            .Where(s => s.Article != null && !string.IsNullOrWhiteSpace(s.Article.Id))
+                            .ToDictionary(s => s.SlotNumber, s => s.Article!.Id);
+
+                        var slotAssignments = newSlotOrder.Select((slotNumber, index) =>
+                        {
+                            if (eventMap.TryGetValue(slotNumber, out var stringId) &&
+                                Guid.TryParse(stringId, out var parsedGuid) &&
+                                parsedGuid != Guid.Empty)
+                            {
+                                return new DailySlotAssignment
+                                {
+                                    SlotNumber = index + 1,
+                                    DailyId = parsedGuid
+                                };
+                            }
+
+                            return null;
+                        })
+                        .Where(sa => sa != null)
+                        .ToList()!;
+                        var request = new DailySlotAssignmentRequest
+                        {
+                            TopicId = selectedTopic != null ? Guid.Parse(selectedTopic.Id) : Guid.Empty,
+                            SlotAssignments = slotAssignments,
+                            UserId = UserId
+                        };
+                        var response = await DailyService.ReorderFeaturedSlots(request);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add("Slot reordered successfully", Severity.Success);
+                        }
+                        else
+                        {
+                            Snackbar.Add("Failed to reorder slots", Severity.Error);
+                            Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+                        }
+                        StateHasChanged();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnTableReordered");
+            }
         }
 
-        return null;
-    })
-    .Where(sa => sa != null)
-    .ToList()!;
-    var request = new DailySlotAssignmentRequest
-    {
-        TopicId = selectedTopic != null ? Guid.Parse(selectedTopic.Id) : Guid.Empty,
-        SlotAssignments = slotAssignments,
-        UserId = UserId
-    };
-    var response = await DailyService.ReorderFeaturedSlots(request);
-
-    if (response.IsSuccessStatusCode)
-    {
-        Snackbar.Add("Slots reordered successfully.", Severity.Success);
-    }
-    else
-    {
-        Snackbar.Add("Failed to reorder slots", Severity.Error);
-        Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
-    }
-}
-
+        protected async Task ResetOrder()
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("resetTableOrder");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ResetOrder");
+            }
+        }
     }
 }
