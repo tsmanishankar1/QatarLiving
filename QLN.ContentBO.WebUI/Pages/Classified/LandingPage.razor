@@ -1,5 +1,45 @@
 ﻿@page "/manage/classified/landing"
+@inherits LandingPageBase
+@using QLN.ContentBO.WebUI.Components.Classifieds.ClassifiedTable
 
-<h3>LandingPage</h3>
-
-
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <h2 class="main-title-name-style">Landing Page</h2>
+        <MudTabs ActivePanelIndex="@activeIndex"
+                 ActivePanelIndexChanged="OnTabChanged"
+                 Rounded="false"
+                 Centered="false"
+                 Class="daily-custom-tabs"
+                 Style="background-color: #FAFAFA;"
+                 DisableSlideAnimation="true">
+            <MudTabPanel Text="Featured Categories" />
+            <MudTabPanel Text="Seasonal Picks" />
+            <MudTabPanel Text="Featured Stores" />
+        </MudTabs>
+        <div class="landing-action-section-container">
+            <MudButton StartIcon="@Icons.Material.Outlined.Add" 
+                       Style="background-color: #FF7F38; color: white; text-transform: none;" 
+                       Class="compact-button" 
+                       OnClick="NavigateToAddItem">
+                Add @GetCurrentTabAddButtonText()
+            </MudButton>
+            <div class="search-wrapper">
+                <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+                <input type="text"
+                       placeholder="Search"
+                       class="search-input"
+                       @bind="searchTerm"
+                       @oninput="async () => await SearchItems()" />
+            </div>
+        </div>
+        
+        <div style="margin-top:10px">
+            <LandingPageComponent 
+                IsLoading="IsLoading"   
+                Items="currentItems" 
+                ItemType="@currentItemType"
+                OnReplace="ReplaceItem"
+                OnDelete="DeleteItem" />
+        </div>
+    </MudItem>
+</MudGrid>
