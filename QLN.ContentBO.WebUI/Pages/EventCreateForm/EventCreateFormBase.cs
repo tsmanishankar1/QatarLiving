@@ -182,7 +182,7 @@ namespace QLN.ContentBO.WebUI.Pages
             _editContext = new EditContext(CurrentEvent);
             Categories = await GetEventsCategories();
             var locationsResponse = await GetEventsLocations();
-            Locations = locationsResponse?.Locations ?? [];
+            Locations = locationsResponse ?? [];
         }
         protected async  void OnCancelClicked()
         {
@@ -197,7 +197,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
-
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -434,6 +433,12 @@ namespace QLN.ContentBO.WebUI.Pages
                     return;
                 }
             }
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTimeText == null)
+            {
+                _timeError = "Free text time is required";
+                Snackbar.Add("Free text time is required", severity: Severity.Error);
+                return;
+            }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
@@ -541,22 +546,42 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
-        private async Task<LocationListResponseDto> GetEventsLocations()
+        private async Task<List<LocationEventDto>> GetEventsLocations()
         {
+            var flattenedList = new List<LocationEventDto>();
             try
             {
                 var apiResponse = await eventsService.GetEventLocations();
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
-                    return response ?? new LocationListResponseDto();
+                    if (response?.Locations != null)
+                    {
+                        foreach (var location in response.Locations)
+                        {
+                            flattenedList.Add(location);
+                            foreach (var area in location.Areas ?? Enumerable.Empty<AreaDto>())
+                            {
+                                var areaAsLocation = new LocationEventDto
+                                {
+                                    Id = area.Id,
+                                    Name = $"{area.Name} , {location.Name}",
+                                    Latitude = area.Latitude,
+                                    Longitude = area.Longitude,
+                                    Areas = new List<AreaDto>()
+                                };
+                                flattenedList.Add(areaAsLocation);
+                            }
+                        }
+                    }
                 }
+                return flattenedList;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsLocations");
+                Logger.LogError(ex, "GetFlattenedLocations");
+                return new List<LocationEventDto>();
             }
-            return new LocationListResponseDto();
         }
         private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 

@@ -11,6 +11,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage> GetAllEvents();
         Task<HttpResponseMessage> GetEventById(Guid eventId);
         Task<HttpResponseMessage> DeleteEvent(string eventId);
+        Task<HttpResponseMessage> UnFeatureEvent(string eventId);
         Task<HttpResponseMessage> GetFeaturedEvents();
         Task<HttpResponseMessage> UpdateFeaturedEvents(object payload);
         Task<HttpResponseMessage> GetEventsByPagination(

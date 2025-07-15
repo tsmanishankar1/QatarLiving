@@ -129,16 +129,43 @@ else
                             )
                             </a>
                     </td>
-                    <td>
-                         <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
-                        @(string.IsNullOrWhiteSpace(@context.Slot.Article?.Category) ? "-" : @context.Slot.Article.Category)
-                        </span>
-                    </td>
-                     <td>
-                         <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
-                        @(string.IsNullOrWhiteSpace(@context.Slot.Article?.Subcategory) ? "-" : @context.Slot.Article.Subcategory)
-                        </span>
-                    </td>
+                    @if (context.Slot.Article?.ContentType == 1)
+                    {
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @{
+                                var categoryName = NewsCategories
+                                    ?.FirstOrDefault(c => c.Id.ToString() == context.Slot.Article.Category)
+                                    ?.CategoryName ?? "-";
+                            }
+                            @categoryName
+                            </span>
+                        </td>
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @{
+                                var subcategoryName = NewsCategories
+                                .SelectMany(c => c.SubCategories)
+                                .FirstOrDefault(sc => sc.Id.ToString() == context.Slot.Article.Subcategory)
+                                ?.SubCategoryName ?? "-";
+                            }
+                            @subcategoryName
+                            </span>
+                        </td>
+                    }
+                    else
+                    { 
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @(string.IsNullOrWhiteSpace(context.Slot.Article?.Category) ? "-" : context.Slot.Article.Category)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @(string.IsNullOrWhiteSpace(context.Slot.Article?.Subcategory) ? "-" : context.Slot.Article.Subcategory)
+                            </span>
+                        </td>
+                    } 
                     <td>
                         @(context.Slot.Article?.CreatedAt != null 
                         ? context.Slot.Article?.CreatedAt.ToString("dd-MM-yyyy") 
