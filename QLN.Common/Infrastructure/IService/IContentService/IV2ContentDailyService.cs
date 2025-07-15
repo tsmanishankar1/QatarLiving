@@ -11,7 +11,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
     {
         Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto,CancellationToken cancellationToken = default);
         Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
-        Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default);
+        Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
         Task<string> CreateContentAsync(string userId, DailyTopicContent dto, CancellationToken ct);
         Task<string> ReorderSlotsBatchAsync(string userId, DailyTopicSlotReorderRequest request, CancellationToken cancellationToken = default);
         Task<string> DeleteContentAsync(Guid contentId, CancellationToken ct);
@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task<bool> DeleteDailyTopicAsync(Guid id, CancellationToken cancellationToken = default);
         Task<bool> UpdateDailyTopicAsync(DailyTopic topic, CancellationToken cancellationToken = default);
         Task<bool> UpdatePublishStatusAsync(Guid id, bool isPublished, CancellationToken cancellationToken = default);
-        Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId,CancellationToken cancellationToken = default);
+        Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default);
         Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct);
 
     }
