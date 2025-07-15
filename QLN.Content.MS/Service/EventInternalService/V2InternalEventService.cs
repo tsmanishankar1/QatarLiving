@@ -148,27 +148,49 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule == null)
                 throw new ArgumentException("EventSchedule is required.");
 
-            if (schedule.TimeSlotType == V2EventTimeType.PerDayTime)
+            switch (schedule.TimeSlotType)
             {
-                if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
-                    throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
+                case V2EventTimeType.PerDayTime:
+                    if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
 
-                if (schedule.StartTime != null || schedule.EndTime != null)
-                    throw new ArgumentException("StartTime, and EndTime must be null for 'PerDayTime' events.");
-            }
-            else
-            {
-                if (schedule.StartDate > schedule.EndDate)
-                    throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
+                    if (schedule.StartTime != null || schedule.EndTime != null)
+                        throw new ArgumentException("StartTime and EndTime must be null for 'PerDayTime' events.");
 
-                if (schedule.StartDate == null || schedule.EndDate == null)
-                    throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
+                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be null or empty for 'PerDayTime' events.");
+                    break;
 
-                if (schedule.StartTime == null || schedule.EndTime == null)
-                    throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
+                case V2EventTimeType.FreeTimeText:
+                    if (string.IsNullOrWhiteSpace(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be provided for 'FreeTimeText' events.");
 
-                if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                    throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
+                    if (schedule.StartTime != null || schedule.EndTime != null)
+                        throw new ArgumentException("StartTime and EndTime must be null for 'FreeTimeText' events.");
+
+                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be empty for 'FreeTimeText' events.");
+                    break;
+
+                case V2EventTimeType.GeneralTime:
+                    if (schedule.StartDate > schedule.EndDate)
+                        throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
+
+                    if (schedule.StartDate == null || schedule.EndDate == null)
+                        throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
+
+                    if (schedule.StartTime == null || schedule.EndTime == null)
+                        throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
+
+                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
+
+                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be null or empty for 'GeneralTime' events.");
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid TimeSlotType value.");
             }
         }
         private string GenerateSlug(string title)
@@ -304,7 +326,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     {
                         throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is currently featured.");
                     }
-
+                    existing.PublishedDate = null;
                     var topSlotTasks = Enumerable.Range(1, 9)
                         .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
                             DailyStore,
