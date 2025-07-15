@@ -45,13 +45,12 @@ public class DailyLivingBase : QLComponentBase
             {
                 await AuthorizedPage();
             }
-
+             AllEventsList = (await GetAllEvents())
+                    .Where(e => e.Status == EventStatus.Published)
+                    .ToList();
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
-            AllEventsList = (await GetAllEvents())
-                    .Where(e => e.Status == EventStatus.Published)
-                    .ToList();
             ActiveTopics = await GetActiveTopics();
             if (ActiveTopics?.Any() == true)
             {
@@ -96,10 +95,38 @@ public class DailyLivingBase : QLComponentBase
                         AvailableArticles = allAvailable
                             .Where(av => !relatedContentIds.Contains(av.Id))
                             .ToList();
+                        AvailableArticles = AvailableArticles
+                            .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                            .ToList();
+                        var matchedArticleKeys = articles
+                            .Where(a => a.SlotNumber == 2 && !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
+                            .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
+                            .ToList();
+                        var removedEvents = AllEventsList
+                            .Where(e => matchedArticleKeys.Any(x => x.Id == e.Id.ToString() && x.EventTitle == e.EventTitle))
+                            .ToList();
+                        AllEventsList.RemoveAll(e => removedEvents.Contains(e));
+                        AllEventsList = AllEventsList
+                            .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                            .ToList();
                         StateHasChanged();
                         break;
                     case 1:
                         featuredEventSlots = await GetFeaturedSlotsAsync();
+                         AllEventsList = (await GetAllEvents())
+                            .Where(e => e.Status == EventStatus.Published)
+                            .ToList();
+                        AllEventsList = AllEventsList
+                            .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                            .ToList();
+                        var matchedFeaturedEvents = featuredEventSlots
+                            .Where(fs => fs.Event != null)
+                             .Select(fs => new { Id = fs.Event?.Id, Title = fs.Event?.EventTitle })
+                             .ToList();
+                        var repeatedEvents = AllEventsList
+                            .Where(e => matchedFeaturedEvents.Any(x => x.Id == e.Id && x.Title == e.EventTitle))
+                            .ToList();
+                        AllEventsList.RemoveAll(e => repeatedEvents.Contains(e));
                         StateHasChanged();
                         break;
                 }
@@ -123,6 +150,23 @@ public class DailyLivingBase : QLComponentBase
                         .ToList();
                     AvailableArticles = allAvailable
                         .Where(av => !relatedContentIds.Contains(av.Id))
+                        .ToList();
+                    AllEventsList = (await GetAllEvents())
+                       .Where(e => e.Status == EventStatus.Published)
+                       .ToList();
+                    AvailableArticles = AvailableArticles
+                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                        .ToList();
+                    var matchedArticleKeys = articles
+                            .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
+                            .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
+                            .ToList();
+                    var removedEvents = AllEventsList
+                        .Where(e => matchedArticleKeys.Any(x => x.Id == e.Id.ToString() && x.EventTitle == e.EventTitle))
+                        .ToList();
+                    AllEventsList.RemoveAll(e => removedEvents.Contains(e));
+                    AllEventsList = AllEventsList
+                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
                         .ToList();
                 }
             }
@@ -443,6 +487,8 @@ public class DailyLivingBase : QLComponentBase
             if (apiResponse.IsSuccessStatusCode)
             {
                 Snackbar.Add("Event Replaced successfully", Severity.Success);
+                // await OnTabChanged(activeIndex);
+                // featuredEventSlots = await GetFeaturedSlotsAsync();
                 StateHasChanged();
             }
             else

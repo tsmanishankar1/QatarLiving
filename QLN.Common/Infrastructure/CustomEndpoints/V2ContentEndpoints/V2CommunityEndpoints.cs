@@ -16,23 +16,57 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         {
             // External (calls external service, which Dapr invokes internal)
             group.MapPost("/createPost", async Task<Results<
-                Ok<string>,
-                ForbidHttpResult,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-            (
-                V2CommunityPostDto dto,
-                IV2CommunityPostService service,
-                HttpContext httpContext,
-                CancellationToken ct
-            ) =>
+       Ok<string>,
+       ForbidHttpResult,
+       BadRequest<ProblemDetails>,
+       ProblemHttpResult>>
+   (
+       V2CommunityPostDto dto,
+       IV2CommunityPostService service,
+       HttpContext httpContext,
+       CancellationToken ct
+   ) =>
             {
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    dto.UserName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(
+                            title: "Unauthorized",
+                            detail: "Authorization token is missing or invalid.",
+                            statusCode: StatusCodes.Status401Unauthorized
+                        );
+                    }
+
+                    JsonElement userData;
+                    string uid;
+                    try
+                    {
+                        userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        uid = userData.GetProperty("uid").GetString();
+
+                        if (string.IsNullOrEmpty(uid))
+                        {
+                            return TypedResults.Problem(
+                                title: "Unauthorized",
+                                detail: "User ID (uid) is missing in token.",
+                                statusCode: StatusCodes.Status401Unauthorized
+                            );
+                        }
+
+                        dto.UserName = userData.GetProperty("name").GetString();
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(
+                            title: "Invalid Token",
+                            detail: $"Failed to parse user claim or extract required fields: {ex.Message}",
+                            statusCode: StatusCodes.Status401Unauthorized
+                        );
+                    }
+
                     dto.UpdatedBy = uid;
                     dto.UpdatedDate = DateTime.UtcNow;
                     dto.IsActive = true;
@@ -52,17 +86,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
-            .WithName("CreateCommunityPost")
-            .WithTags("V2Community")
-            .WithSummary("Create Community Post")
-            .WithDescription("Creates a community post and stores image in blob. Returns status message.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   .WithName("CreateCommunityPost")
+   .WithTags("V2Community")
+   .WithSummary("Create Community Post")
+   .WithDescription("Creates a community post and stores image in blob. Returns status message.")
+   .Produces<string>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
+   .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             // Internal for Dapr invocation:
             group.MapPost("/createPostInternal", async Task<Results<
@@ -353,28 +393,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 .ExcludeFromDescription();
 
             group.MapPost("/addCommentByCategoryId", async Task<Results<
-    Ok<object>,
-    BadRequest<ProblemDetails>,
-    ForbidHttpResult,
-    ProblemHttpResult>>
-(
-    CommunityCommentDto dto,
-    IV2CommunityPostService service,
-    HttpContext httpContext,
-    CancellationToken ct
-) =>
+        Ok<object>,
+        BadRequest<ProblemDetails>,
+        ProblemHttpResult>>
+    (
+        CommunityCommentDto dto,
+        IV2CommunityPostService service,
+        HttpContext httpContext,
+        CancellationToken ct
+    ) =>
             {
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
                     if (string.IsNullOrEmpty(userClaim))
                     {
-                        return TypedResults.Forbid();
+                        return TypedResults.Problem(
+                            title: "Unauthorized",
+                            detail: "Authorization token is missing or invalid.",
+                            statusCode: StatusCodes.Status401Unauthorized
+                        );
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     dto.UserId = userData.GetProperty("uid").GetString();
-                    dto.UserName = userData.GetProperty("name").GetString(); // optional
+                    dto.UserName = userData.GetProperty("name").GetString();
                     dto.CommentedAt = DateTime.UtcNow;
                     dto.CommentId = Guid.NewGuid();
 
@@ -386,6 +430,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         dto.CommunityPostId,
                         dto.UserId
                     });
+
                 }
                 catch (JsonException ex)
                 {
@@ -398,17 +443,22 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Failed to add comment.", ex.Message);
+                    return TypedResults.Problem(
+                        title: "Failed to add comment.",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
                 }
             })
-                .WithName("AddCommentToCommunityPost")
-                .WithTags("V2Community")
-                .WithSummary("Add a comment to a Community Post")
-                .WithDescription("Adds a new comment to a community post based on user token and CommunityPostId.")
-                .Produces<object>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+    .WithName("AddCommentToCommunityPost")
+    .WithTags("V2Community")
+    .WithSummary("Add a comment to a Community Post")
+    .WithDescription("Adds a new comment to a community post based on user token and CommunityPostId.")
+    .Produces<object>(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized) // ✅ updated
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapPost("/addComment", async Task<Results<
     Ok<object>,
