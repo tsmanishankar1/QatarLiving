@@ -9,7 +9,8 @@
     public enum V2EventTimeType
     {
         GeneralTime = 1,
-        PerDayTime = 2
+        PerDayTime = 2,
+        FreeTimeText = 3
     }
     public enum EventStatus
     {
