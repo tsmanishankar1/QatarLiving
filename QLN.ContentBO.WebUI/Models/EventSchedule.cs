@@ -14,7 +14,7 @@ namespace QLN.ContentBO.WebUI.Models
         public TimeOnly? StartTime { get; set; }
         public TimeOnly? EndTime { get; set; }
         public List<TimeSlotModel>? TimeSlots { get; set; } = [];
-        public string? FreeTime { get; set; } 
+        public string? FreeTimeText { get; set; } 
 
 
     }

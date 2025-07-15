@@ -38,26 +38,48 @@ else{
                 }
             }
         </MudTd>
-        <MudTd DataLabel="Category">
-            @if (context.Category is not null)
-            {
-                @(context.Category)
-            }
-            else
-            {
-                @("-")
-            }
-        </MudTd>
-        <MudTd DataLabel="Subcategory">
-            @if(context.Subcategory is not null)
-            {
-                @(context.Subcategory)
-            }
-            else
-            {
-                @("-")
-            }
-        </MudTd>
+        @if (context.ContentType == 1)
+        {
+                <MudTd DataLabel="Category">
+                @{
+                    var categoryName = NewsCategories
+                    ?.FirstOrDefault(c => c.Id.ToString() == context.Category)
+                    ?.CategoryName ?? "-";
+                }
+                @categoryName
+                </MudTd>
+                <MudTd DataLabel="Subcategory">
+                @{
+                    var subcategoryName = NewsCategories
+                        .SelectMany(c => c.SubCategories)
+                        .FirstOrDefault(sc => sc.Id.ToString() == context.Subcategory)
+                        ?.SubCategoryName ?? "-";
+                }
+                @subcategoryName
+                </MudTd>
+        }
+        else{
+                <MudTd DataLabel="Category">
+                @if (context.Category is not null)
+                {
+                    @(context.Category)
+                }
+                else
+                {
+                    @("-")
+                }
+                </MudTd>
+                <MudTd DataLabel="Subcategory">
+                @if(context.Subcategory is not null)
+                {
+                    @(context.Subcategory)
+                }
+                else
+                {
+                    @("-")
+                }
+            </MudTd>
+        }
         <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
         <MudTd>
              @if (context.Title == "Add Item")

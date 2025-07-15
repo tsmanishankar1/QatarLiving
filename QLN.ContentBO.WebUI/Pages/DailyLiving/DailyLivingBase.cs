@@ -25,6 +25,7 @@ public class DailyLivingBase : QLComponentBase
     protected List<EventCategoryModel> Categories = [];
     protected List<FeaturedSlot> featuredEventSlots = [];
     protected List<DailyTopic> ActiveTopics = [];
+    protected List<NewsCategory> NewsCategories = [];
     protected DailyTopic selectedTopic { get; set; } = new();
     protected FeaturedSlot ReplaceSlot { get; set; } = new();
     protected List<DailyLivingArticleDto> AvailableArticles = new();
@@ -41,15 +42,16 @@ public class DailyLivingBase : QLComponentBase
         {
             IsLoading = true;
             isTabLoading = true;
+            NewsCategories = await GetNewsCategories();
             if (!NavigationPath.Value.IsLocal)
             {
                 await AuthorizedPage();
             }
-            var paginatedData = await GetEvents(1, 50,"","desc",1);
+            var paginatedData = await GetEvents(1, 50, "", "desc", 1);
             var allEvents = paginatedData.Items;
-             AllEventsList = allEvents
-                    .Where(e => e.Status == EventStatus.Published)
-                    .ToList();
+            AllEventsList = allEvents
+                   .Where(e => e.Status == EventStatus.Published)
+                   .ToList();
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
@@ -104,8 +106,8 @@ public class DailyLivingBase : QLComponentBase
                             .Where(a => a.SlotNumber == 2 && !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
                             .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
                             .ToList();
-                            var paginatedData = await GetEvents(1, 50,"","desc",1);
-                            AllEventsList = paginatedData.Items;
+                        var paginatedData = await GetEvents(1, 50, "", "desc", 1);
+                        AllEventsList = paginatedData.Items;
                         var removedEvents = AllEventsList
                             .Where(e => matchedArticleKeys.Any(x => x.Id == e.Id.ToString() && x.EventTitle == e.EventTitle))
                             .ToList();
@@ -114,8 +116,8 @@ public class DailyLivingBase : QLComponentBase
                         break;
                     case 1:
                         featuredEventSlots = await GetFeaturedSlotsAsync();
-                        var paginatedEvents = await GetEvents(1, 50,"","desc",1);
-                            AllEventsList = paginatedEvents.Items;
+                        var paginatedEvents = await GetEvents(1, 50, "", "desc", 1);
+                        AllEventsList = paginatedEvents.Items;
                         var matchedFeaturedEvents = featuredEventSlots
                             .Where(fs => fs.Event != null)
                              .Select(fs => new { Id = fs.Event?.Id, Title = fs.Event?.EventTitle })
@@ -148,8 +150,8 @@ public class DailyLivingBase : QLComponentBase
                     AvailableArticles = allAvailable
                         .Where(av => !relatedContentIds.Contains(av.Id))
                         .ToList();
-                    var paginatedEvents = await GetEvents(1, 50,"","desc",1);
-                          var  allEventsList = paginatedEvents.Items;
+                    var paginatedEvents = await GetEvents(1, 50, "", "desc", 1);
+                    var allEventsList = paginatedEvents.Items;
                     var matchedArticleKeys = articles
                             .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
                             .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
@@ -376,7 +378,7 @@ public class DailyLivingBase : QLComponentBase
     {
         if (!string.IsNullOrWhiteSpace(selectedTopic?.topicName))
         {
-           await OpenRenameDialog(selectedTopic.topicName);
+            await OpenRenameDialog(selectedTopic.topicName);
         }
     }
 
@@ -390,6 +392,8 @@ public class DailyLivingBase : QLComponentBase
 
         return new List<DailyLivingArticleDto>();
     }
+    
+    
 
     protected Task OpenDialogAsync()
     {
@@ -582,48 +586,48 @@ public class DailyLivingBase : QLComponentBase
               string sortOrder = "desc",
               int? status = null
           )
+    {
+        try
         {
-            try
-            {
-                IsLoading = true;
-                var apiResponse = await eventsService.GetEventsByPagination(
-                    page: page,
-                    perPage: pageSize,
-                    search: search ?? "",
-                    categoryId: null,
-                    sortOrder: sortOrder,
-                    fromDate: null,
-                    toDate: null,
-                    filterType: "",
-                    status: status,
-                    location: null,
-                    freeOnly: false,
-                    featuredFirst: false
-                );
+            IsLoading = true;
+            var apiResponse = await eventsService.GetEventsByPagination(
+                page: page,
+                perPage: pageSize,
+                search: search ?? "",
+                categoryId: null,
+                sortOrder: sortOrder,
+                fromDate: null,
+                toDate: null,
+                filterType: "",
+                status: status,
+                location: null,
+                freeOnly: false,
+                featuredFirst: false
+            );
 
-                if (apiResponse.IsSuccessStatusCode)
+            if (apiResponse.IsSuccessStatusCode)
+            {
+                var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
+                if (result != null)
                 {
-                    var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
-                    if (result != null)
-                    {
-                        result.Items = result.Items
-                            .Where(e => e.IsActive)
-                            .ToList();
-                    }
-                    return result ?? new PaginatedEventResponse();
+                    result.Items = result.Items
+                        .Where(e => e.IsActive)
+                        .ToList();
                 }
+                return result ?? new PaginatedEventResponse();
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error fetching paginated events");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-
-            return new PaginatedEventResponse();
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error fetching paginated events");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+
+        return new PaginatedEventResponse();
+    }
     private async Task<List<DailyTopic>> GetActiveTopics()
     {
         try
@@ -748,12 +752,29 @@ public class DailyLivingBase : QLComponentBase
             var topics = await DailyService.GetAvailableArticles(topicId);
             if (topics.IsSuccessStatusCode)
             {
-                var response = await topics.Content.ReadFromJsonAsync<List<DailyLivingArticleDto>>();
-                var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                var json = await topics.Content.ReadAsStringAsync();
+                var articles = JsonSerializer.Deserialize<List<DailyLivingArticleDto>>(json, new JsonSerializerOptions
                 {
-                    WriteIndented = true
-                });
-                return response ?? new List<DailyLivingArticleDto>();
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<DailyLivingArticleDto>();
+                using var document = JsonDocument.Parse(json);
+                var root = document.RootElement;
+                for (int i = 0; i < articles.Count; i++)
+                {
+                    var articleElement = root[i];
+                    if (articleElement.TryGetProperty("categories", out var categoriesElement) &&
+                        categoriesElement.ValueKind == JsonValueKind.Array &&
+                        categoriesElement.GetArrayLength() > 0)
+                    {
+                        var firstCategory = categoriesElement[0];
+                        if (firstCategory.TryGetProperty("categoryId", out var categoryId))
+                            articles[i].Category = categoryId.GetInt32().ToString();
+
+                        if (firstCategory.TryGetProperty("subcategoryId", out var subcategoryId))
+                            articles[i].Subcategory = subcategoryId.GetInt32().ToString();
+                    }
+                }
+                return articles;
             }
         }
         catch (Exception ex)
@@ -849,15 +870,32 @@ public class DailyLivingBase : QLComponentBase
     {
         try
         {
-            var topics = await DailyService.GetAvailableTopSectionArticles();
-            if (topics.IsSuccessStatusCode)
+            var response = await DailyService.GetAvailableTopSectionArticles();
+            if (response.IsSuccessStatusCode)
             {
-                var response = await topics.Content.ReadFromJsonAsync<List<DailyLivingArticleDto>>();
-                var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                var json = await response.Content.ReadAsStringAsync();
+                var articles = JsonSerializer.Deserialize<List<DailyLivingArticleDto>>(json, new JsonSerializerOptions
                 {
-                    WriteIndented = true
-                });
-                return response ?? new List<DailyLivingArticleDto>();
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<DailyLivingArticleDto>();
+                using var document = JsonDocument.Parse(json);
+                var root = document.RootElement;
+                for (int i = 0; i < articles.Count; i++)
+                {
+                    var articleElement = root[i];
+                    if (articleElement.TryGetProperty("categories", out var categoriesElement) &&
+                        categoriesElement.ValueKind == JsonValueKind.Array &&
+                        categoriesElement.GetArrayLength() > 0)
+                    {
+                        var firstCategory = categoriesElement[0];
+                        if (firstCategory.TryGetProperty("categoryId", out var categoryId))
+                            articles[i].Category = categoryId.GetInt32().ToString();
+
+                        if (firstCategory.TryGetProperty("subcategoryId", out var subcategoryId))
+                            articles[i].Subcategory = subcategoryId.GetInt32().ToString();
+                    }
+                }
+                return articles;
             }
         }
         catch (Exception ex)
@@ -870,6 +908,24 @@ public class DailyLivingBase : QLComponentBase
         }
         return new List<DailyLivingArticleDto>();
     }
+        private async Task<List<NewsCategory>> GetNewsCategories()
+        {
+            try
+            {
+                var apiResponse = await newsService.GetNewsCategories();
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsCategory>>() ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsCategories");
+                return [];
+            }
+        }
 
 }
 

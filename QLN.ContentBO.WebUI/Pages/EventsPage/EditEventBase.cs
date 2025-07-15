@@ -530,10 +530,10 @@ namespace QLN.ContentBO.WebUI.Pages
                     return;
                 }
             }
-            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTime == null)
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTimeText == null)
             {
-                _timeError = "Start and End time is required";
-                Snackbar.Add("Start and End time is required", severity: Severity.Error);
+                _timeError = "Free text time is required";
+                Snackbar.Add("Free text time is required", severity: Severity.Error);
                 return;
             }
 
@@ -602,44 +602,42 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
         private async Task<List<LocationEventDto>> GetEventsLocations()
-{
-    var flattenedList = new List<LocationEventDto>();
-
-    try
-    {
-        var apiResponse = await eventsService.GetEventLocations();
-        if (apiResponse.IsSuccessStatusCode)
         {
-            var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
-
-            if (response?.Locations != null)
+            var flattenedList = new List<LocationEventDto>();
+            try
             {
-                foreach (var location in response.Locations)
+                var apiResponse = await eventsService.GetEventLocations();
+                if (apiResponse.IsSuccessStatusCode)
                 {
-                    flattenedList.Add(location);
-                    foreach (var area in location.Areas ?? Enumerable.Empty<AreaDto>())
+                    var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
+                    if (response?.Locations != null)
                     {
-                        var areaAsLocation = new LocationEventDto
+                        foreach (var location in response.Locations)
                         {
-                            Id = area.Id,
-                            Name = $"{area.Name} , {location.Name}",
-                            Latitude = area.Latitude,
-                            Longitude = area.Longitude,
-                            Areas = new List<AreaDto>() 
-                        };
-                        flattenedList.Add(areaAsLocation);
+                            flattenedList.Add(location);
+                            foreach (var area in location.Areas ?? Enumerable.Empty<AreaDto>())
+                            {
+                                var areaAsLocation = new LocationEventDto
+                                {
+                                    Id = area.Id,
+                                    Name = $"{area.Name} , {location.Name}",
+                                    Latitude = area.Latitude,
+                                    Longitude = area.Longitude,
+                                    Areas = new List<AreaDto>()
+                                };
+                                flattenedList.Add(areaAsLocation);
+                            }
+                        }
                     }
                 }
+                return flattenedList;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFlattenedLocations");
+                return new List<LocationEventDto>();
             }
         }
-    }
-    catch (Exception ex)
-    {
-        Logger.LogError(ex, "GetFlattenedLocationsAsync");
-    }
-
-    return flattenedList;
-}
         private async Task<EventDTO> GetEventById(Guid Id)
         {
             try

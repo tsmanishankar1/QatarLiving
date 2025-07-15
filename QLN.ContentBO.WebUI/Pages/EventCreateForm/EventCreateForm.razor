@@ -217,7 +217,7 @@
             }
             else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.FreeTextTime)
             {
-                <MudTextField  Variant="Variant.Outlined" Label="Time" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTime" For="@(() => CurrentEvent.EventSchedule.FreeTime)" Style=" background-color: #FFFFFF;"/>
+                <MudTextField  Variant="Variant.Outlined" Label="Time" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;"/>
             }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"

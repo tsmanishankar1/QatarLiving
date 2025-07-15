@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Models
         public int CategoryId { get; set; }
         public string? CategoryName { get; set; }
         public EventType EventType { get; set; }
-       [Range(0, int.MaxValue, ErrorMessage = "Please enter valid integer Number")]
+       [Range(0, 99999, ErrorMessage = "Please enter valid integer Number")]
         public int? Price { get; set; }
         [Required]
         public string Location { get; set; }
