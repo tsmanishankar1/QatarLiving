@@ -14,6 +14,22 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         protected List<ListingItem> Listings { get; set; } = new();
         protected HashSet<ListingItem> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
+        protected int currentPage = 1;
+        protected int pageSize = 12;
+        protected int TotalCount => Listings.Count;
+        protected void HandlePageChange(int newPage)
+        {
+            currentPage = newPage;
+            StateHasChanged();
+        }
+
+        protected void HandlePageSizeChange(int newPageSize)
+        {
+            pageSize = newPageSize;
+            currentPage = 1; // reset to first page
+            StateHasChanged();
+        }
+
 
         protected override void OnInitialized()
         {
@@ -125,7 +141,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRejectDialog();
             return Task.CompletedTask;
         }
-
-
     }
 }

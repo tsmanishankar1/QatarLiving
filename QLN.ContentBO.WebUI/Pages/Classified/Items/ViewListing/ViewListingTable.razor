@@ -1,6 +1,7 @@
 @inherits ViewListingTableBase
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
 
 <MudPaper Class="pa-4">
     <ToggleTabs Options="@tabOptions"
@@ -83,19 +84,19 @@
               Class="mud-table event-custom-table">
 
         <HeaderContent>
-            <MudTh>Item image</MudTh>
-            <MudTh>Ad ID</MudTh>
-            <MudTh>User ID</MudTh>
-            <MudTh>Ad Title</MudTh>
-            <MudTh>User Id</MudTh>
-            <MudTh>User Name</MudTh>
-            <MudTh>Category</MudTh>
-            <MudTh>Sub Category</MudTh>
-            <MudTh>Section</MudTh>
-            <MudTh>Creation Date</MudTh>
-            <MudTh>Date Published</MudTh>
-            <MudTh>Date Expiry</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh class="header-cell">Item image</MudTh>
+            <MudTh class="header-cell">Ad ID</MudTh>
+            <MudTh class="header-cell">User ID</MudTh>
+            <MudTh class="header-cell">Ad Title</MudTh>
+            <MudTh class="header-cell">User Id</MudTh>
+            <MudTh class="header-cell">User Name</MudTh>
+            <MudTh class="header-cell">Category</MudTh>
+            <MudTh class="header-cell">Sub Category</MudTh>
+            <MudTh class="header-cell">Section</MudTh>
+            <MudTh class="header-cell">Creation Date</MudTh>
+            <MudTh class="header-cell">Date Published</MudTh>
+            <MudTh class="header-cell">Date Expiry</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
         </HeaderContent>
 
         <RowTemplate>
@@ -174,6 +175,8 @@
             </MudTd>
         </RowTemplate>
     </MudTable>
+     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 </MudPaper>
 
 

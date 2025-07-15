@@ -136,7 +136,7 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
         },
         new() {
             Title = "Classified",
-            IconPath = "/qln-images/news_icon.svg",
+            IconPath = "/qln-images/classified_icon.svg",
             IsGroup = true,
             ActiveRoutePaths = new() { "/manage/news/category", "/manage/news/addarticle", "/manage/news/editarticle" },
             Children = new List<NavigationItem>
