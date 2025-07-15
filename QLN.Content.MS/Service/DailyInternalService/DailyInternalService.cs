@@ -28,6 +28,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
         }
         public async Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto, CancellationToken cancellationToken = default)
         {
+            dto.Category = string.IsNullOrWhiteSpace(dto.Category) ? null : dto.Category;
+            dto.Subcategory = string.IsNullOrWhiteSpace(dto.Subcategory) ? null : dto.Subcategory;
 
             if (dto.SlotNumber < 1 || dto.SlotNumber > 9)
                 throw new ArgumentOutOfRangeException(nameof(dto.SlotNumber), "Slot must be 1–9");
@@ -128,6 +130,9 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 Store, indexKey, cancellationToken: cancellationToken)
                 ?? new Dictionary<int, Guid>();
 
+            dto.Category = string.IsNullOrWhiteSpace(dto.Category) ? null : dto.Category;
+            dto.Subcategory = string.IsNullOrWhiteSpace(dto.Subcategory) ? null : dto.Subcategory;
+
             if (dto.Id != Guid.Empty)
             {
                 var existing = await _dapr.GetStateAsync<DailyTopicContent>(
@@ -158,15 +163,12 @@ namespace QLN.Content.MS.Service.DailyInternalService
                             "A video slot must include a ContentUrl.");
                     break;
                 case DailyContentType.Article:
-                    if (string.IsNullOrWhiteSpace(dto.Category) ||
-                        string.IsNullOrWhiteSpace(dto.Subcategory) ||
-                        dto.RelatedContentId == Guid.Empty)
+                    if (dto.RelatedContentId == Guid.Empty)
                         throw new InvalidOperationException(
                             "An article slot must include Category, Subcategory and a RelatedContentId.");
                     break;
                 case DailyContentType.Event:
-                    if (string.IsNullOrWhiteSpace(dto.Category) ||
-                        dto.RelatedContentId == Guid.Empty)
+                    if (dto.RelatedContentId == Guid.Empty)
                         throw new InvalidOperationException(
                             "An event slot must include Category and a RelatedContentId.");
                     break;
