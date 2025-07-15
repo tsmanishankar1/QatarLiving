@@ -615,15 +615,16 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async Task SearchArticles()
+        protected async void SearchArticles()
         {
             try
             {
                 IsSearchEnabled = true;
                 IsLoadingDataGrid = true;
                 selectedTab = string.Empty;
-                SearchListOfNewsArticles = await SearchArticlesAsync();
+                SearchListOfNewsArticles = await SearchArticlesAsync(SearchString);
                 IsLoadingDataGrid = false;
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -632,11 +633,11 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
                 
-        private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
+        private async Task<List<NewsArticleDTO>> SearchArticlesAsync(string searchString)
         {
             try
             {
-                var response = await newsService.SearchArticles(SearchString);
+                var response = await newsService.SearchArticles(searchString);
                 if (response != null)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -670,6 +671,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
+       
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
