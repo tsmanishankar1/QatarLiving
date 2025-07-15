@@ -1,19 +1,8 @@
-using System.Text;
-using Dapr.Client;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using QLN.Classified.MS.Service;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using Microsoft.EntityFrameworkCore;
-using System;
-using QLN.Common.Infrastructure.DbContext;
-using Microsoft.AspNetCore.Identity;
-using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +36,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -63,7 +51,8 @@ app.UseHttpsRedirection();
 
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
-
+var ServiceGroup = app.MapGroup("/api/service");
+ServiceGroup.MapAllServiceConfiguration();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
 app.MapAllBackOfficeEndpoints();

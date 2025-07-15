@@ -94,8 +94,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
-            public const string NewsCommentPrefix = "news-comment"; // used to build individual comment key
-            public const string NewsCommentIndexPrefix = "news-comment-index-"; // + nid
+            public const string NewsCommentPrefix = "news-comment"; 
+            public const string NewsCommentIndexPrefix = "news-comment-index-"; 
             public const string NewsIndexKey = "news-index";
             public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
@@ -107,6 +107,13 @@ namespace QLN.Common.Infrastructure.Constants
             public const string DailyTopBOIndexKey = "daily-top-bo-index";
             public const string DailyTopicIndexKey = "daily-topic-index";
         }
+        public static class Services
+        {
+            public const string StoreName = "statestore";
+            public const string IndexKey = "service-category-index";
+            public const string ServiceAppId = "qln-classified-ms";
+            public const string ServicesIndexKey = "services-index";
+        }
     }
-    }
+}
 
