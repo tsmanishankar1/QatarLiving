@@ -186,6 +186,20 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> UnFeatureEvent(string eventId)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put, $"api/v2/event/unfeature/{eventId}");
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteEvent");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage> GetFeaturedEvents()
         {
             try

@@ -16,7 +16,7 @@
             </MudRadioGroup>
         }
         @if(TopicType == "Video"){
-            <MudTextField Variant="Variant.Outlined" Label="VideoLink"  Class="my-2 event-custom-textfield" @bind-Value="@youTubelink"/>
+            <MudTextField Variant="Variant.Outlined" Label="Video Link*"  Class="my-2 event-custom-textfield" @bind-Value="@youTubelink"/>
         }
         else{
             <MudAutocomplete T="DailyLivingArticleDto"

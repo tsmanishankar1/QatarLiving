@@ -127,6 +127,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
+        public bool _isDateRangeSelected = false;
         protected DateRange? _dateRange
         {
             get
@@ -145,6 +146,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
                     CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+                    _isDateRangeSelected = true;
                 }
             }
         }
@@ -180,13 +182,21 @@ namespace QLN.ContentBO.WebUI.Pages
             _editContext = new EditContext(CurrentEvent);
             Categories = await GetEventsCategories();
             var locationsResponse = await GetEventsLocations();
-            Locations = locationsResponse?.Locations ?? [];
+            Locations = locationsResponse ?? [];
         }
-        protected void OnCancelClicked()
+        protected async  void OnCancelClicked()
         {
-            Navigation.NavigateTo("/manage/events");
+             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
+            var result = await dialog.Result;
+            if (!result.Canceled)
+            {
+                ClearForm();
+                  await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                StateHasChanged();
+            }
         }
-
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -288,7 +298,6 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _showDatePicker = false;
             EventDate = null;
-            SelectedDateLabel = string.Empty;
             _confirmedDateRange = new();
             if (_dateRange?.Start != null || _dateRange?.End != null)
             {
@@ -330,6 +339,23 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
+        }
+        protected void ClearSelectedDate()
+        {
+            if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                SelectedDateLabel = null;
+            }
+            else
+            { 
+                _showDatePicker = !_showDatePicker;
+
+            if (_showDatePicker)
+            {
+                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+            }
+            }
+
         }
         protected void GenerateDayTimeList()
         {
@@ -406,6 +432,12 @@ namespace QLN.ContentBO.WebUI.Pages
                     Snackbar.Add("Please enter a valid start and end time.", severity: Severity.Error);
                     return;
                 }
+            }
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTimeText == null)
+            {
+                _timeError = "Free text time is required";
+                Snackbar.Add("Free text time is required", severity: Severity.Error);
+                return;
             }
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
@@ -514,22 +546,42 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
-        private async Task<LocationListResponseDto> GetEventsLocations()
+        private async Task<List<LocationEventDto>> GetEventsLocations()
         {
+            var flattenedList = new List<LocationEventDto>();
             try
             {
                 var apiResponse = await eventsService.GetEventLocations();
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
-                    return response ?? new LocationListResponseDto();
+                    if (response?.Locations != null)
+                    {
+                        foreach (var location in response.Locations)
+                        {
+                            flattenedList.Add(location);
+                            foreach (var area in location.Areas ?? Enumerable.Empty<AreaDto>())
+                            {
+                                var areaAsLocation = new LocationEventDto
+                                {
+                                    Id = area.Id,
+                                    Name = $"{area.Name} , {location.Name}",
+                                    Latitude = area.Latitude,
+                                    Longitude = area.Longitude,
+                                    Areas = new List<AreaDto>()
+                                };
+                                flattenedList.Add(areaAsLocation);
+                            }
+                        }
+                    }
                 }
+                return flattenedList;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetEventsLocations");
+                Logger.LogError(ex, "GetFlattenedLocations");
+                return new List<LocationEventDto>();
             }
-            return new LocationListResponseDto();
         }
         private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 

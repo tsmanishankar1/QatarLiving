@@ -15,6 +15,8 @@ namespace QLN.ContentBO.WebUI.Pages
         [Parameter] public EventCallback<DailyLivingArticleDto> AddItem { get; set; }
         [Parameter] public EventCallback<DailyLivingArticleDto> ReplaceItem { get; set; }
         [Parameter] public EventCallback RenameTopic { get; set; }
+        [Parameter]
+        public List<NewsCategory> NewsCategories { get; set; } = new();
         [Parameter] public int activeIndex { get; set; }
         [Parameter] public EventCallback UpdateEvent { get; set; }
         [Parameter] public EventCallback<string> OnDelete { get; set; }
@@ -43,27 +45,28 @@ namespace QLN.ContentBO.WebUI.Pages
 
 
         protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (articles != null && articles.Any())
         {
-            await base.OnParametersSetAsync();
-
-            if (articles != null && articles.Any())
-            {
-                ReplaceTopicsSlot = articles
-                    .Select(article => new TopicSlot
-                    {
-                        SlotNumber = article.SlotNumber,
-                        Article = article
-                    })
-                    .ToList();
-            }
-            else
-            {
-                ReplaceTopicsSlot = new();
-            }
-
-            // Flag JS reinitialization
-            shouldReinitializeSortable = true;
+            ReplaceTopicsSlot = articles
+                .Select(article => new TopicSlot
+                {
+                    SlotNumber = article.SlotNumber,
+                    Article = article
+                })
+                .ToList();
         }
+        else
+        {
+            ReplaceTopicsSlot = new();
+        }
+
+        // Flag JS reinitialization
+        shouldReinitializeSortable = true;
+    }
+
 
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

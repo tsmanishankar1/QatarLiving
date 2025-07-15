@@ -34,8 +34,6 @@ namespace QLN.ContentBO.WebUI.Pages
         protected override async Task OnParametersSetAsync()
         {
             await base.OnParametersSetAsync();
-
-            // Only trigger JS if data is loaded and has events
             if (FeaturedEventSlots != null && FeaturedEventSlots.Any(s => s.Event != null))
             {
                 shouldInitializeSortable = true;

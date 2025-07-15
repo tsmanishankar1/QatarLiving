@@ -10,6 +10,8 @@ namespace QLN.ContentBO.WebUI.Components
         public List<DailyLivingArticleDto> Articles { get; set; } = new();
         [Parameter]
         public bool IsLoadingEvent { get; set; }
+        [Parameter]
+        public List<NewsCategory> NewsCategories { get; set; } = new();
         [Parameter] public EventCallback<DailyLivingArticleDto> ReplaceItem { get; set; }
         public List<DailyLivingArticleDto> slotArticles = Enumerable.Range(1, 9)
                 .Select(i => new DailyLivingArticleDto

@@ -11,6 +11,7 @@ namespace QLN.ContentBO.WebUI.Models
         public int CategoryId { get; set; }
         public string? CategoryName { get; set; }
         public EventType EventType { get; set; }
+       [Range(0, 99999, ErrorMessage = "Please enter valid integer Number")]
         public int? Price { get; set; }
         [Required]
         public string Location { get; set; }
@@ -18,7 +19,6 @@ namespace QLN.ContentBO.WebUI.Models
         public string Venue { get; set; } = string.Empty;
         public string Longitude { get; set; }
         public string Latitude { get; set; }
-
         public string? RedirectionLink { get; set; } = string.Empty;
         public EventScheduleModel EventSchedule { get; set; }
 
@@ -35,6 +35,7 @@ namespace QLN.ContentBO.WebUI.Models
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public string? FreeTime { get; set; } 
     }
 }
 public enum EventStatus
