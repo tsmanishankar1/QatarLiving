@@ -164,7 +164,7 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 Categories = await GetEventsCategories();
                 var locationsResponse = await GetEventsLocations();
-                Locations = locationsResponse?.Locations ?? [];
+                Locations = locationsResponse ?? [];
 
                 CurrentEvent = await GetEventById(Id);
                 _editContext = new EditContext(CurrentEvent);
@@ -508,7 +508,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 return;
             }
 
-            if (CurrentEvent.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
+            if (CurrentEvent?.EventSchedule == null || CurrentEvent.EventSchedule.StartDate == default)
             {
                 _DateError = "Start date is required.";
                 Snackbar.Add("Start date is required.", severity: Severity.Error);
@@ -530,6 +530,13 @@ namespace QLN.ContentBO.WebUI.Pages
                     return;
                 }
             }
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTime == null)
+            {
+                _timeError = "Start and End time is required";
+                Snackbar.Add("Start and End time is required", severity: Severity.Error);
+                return;
+            }
+
 
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
@@ -594,23 +601,45 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
-        private async Task<LocationListResponseDto> GetEventsLocations()
+        private async Task<List<LocationEventDto>> GetEventsLocations()
+{
+    var flattenedList = new List<LocationEventDto>();
+
+    try
+    {
+        var apiResponse = await eventsService.GetEventLocations();
+        if (apiResponse.IsSuccessStatusCode)
         {
-            try
+            var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
+
+            if (response?.Locations != null)
             {
-                var apiResponse = await eventsService.GetEventLocations();
-                if (apiResponse.IsSuccessStatusCode)
+                foreach (var location in response.Locations)
                 {
-                    var response = await apiResponse.Content.ReadFromJsonAsync<LocationListResponseDto>();
-                    return response ?? new LocationListResponseDto();
+                    flattenedList.Add(location);
+                    foreach (var area in location.Areas ?? Enumerable.Empty<AreaDto>())
+                    {
+                        var areaAsLocation = new LocationEventDto
+                        {
+                            Id = area.Id,
+                            Name = $"{area.Name} , {location.Name}",
+                            Latitude = area.Latitude,
+                            Longitude = area.Longitude,
+                            Areas = new List<AreaDto>() 
+                        };
+                        flattenedList.Add(areaAsLocation);
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetEventsLocations");
-            }
-            return new LocationListResponseDto();
         }
+    }
+    catch (Exception ex)
+    {
+        Logger.LogError(ex, "GetFlattenedLocationsAsync");
+    }
+
+    return flattenedList;
+}
         private async Task<EventDTO> GetEventById(Guid Id)
         {
             try

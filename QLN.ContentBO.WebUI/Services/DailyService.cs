@@ -215,8 +215,8 @@ namespace QLN.ContentBO.WebUI.Services
                     {
                         slotType = article.SlotType,
                         title = string.IsNullOrWhiteSpace(article.Title) ? "unknown" : article.Title,
-                        category = string.IsNullOrWhiteSpace(article.Category) ? "unknown" : article.Category,
-                        subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? "unknown" : article.Subcategory,
+                        category = string.IsNullOrWhiteSpace(article.Category) ? null : article.Category,
+                        subcategory = string.IsNullOrWhiteSpace(article.Subcategory) ? null : article.Subcategory,
                         relatedContentId = string.IsNullOrWhiteSpace(article.Id) ? Guid.NewGuid().ToString() : article.Id,
                         contentType = article.ContentType,
                         publishedDate = article.PublishedDate == default ? DateTime.UtcNow : article.PublishedDate,

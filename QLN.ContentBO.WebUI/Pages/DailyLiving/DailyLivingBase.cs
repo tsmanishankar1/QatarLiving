@@ -45,7 +45,9 @@ public class DailyLivingBase : QLComponentBase
             {
                 await AuthorizedPage();
             }
-             AllEventsList = (await GetAllEvents())
+            var paginatedData = await GetEvents(1, 50,"","desc",1);
+            var allEvents = paginatedData.Items;
+             AllEventsList = allEvents
                     .Where(e => e.Status == EventStatus.Published)
                     .ToList();
             await OnTabChanged(0);
@@ -102,23 +104,18 @@ public class DailyLivingBase : QLComponentBase
                             .Where(a => a.SlotNumber == 2 && !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
                             .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
                             .ToList();
+                            var paginatedData = await GetEvents(1, 50,"","desc",1);
+                            AllEventsList = paginatedData.Items;
                         var removedEvents = AllEventsList
                             .Where(e => matchedArticleKeys.Any(x => x.Id == e.Id.ToString() && x.EventTitle == e.EventTitle))
                             .ToList();
                         AllEventsList.RemoveAll(e => removedEvents.Contains(e));
-                        AllEventsList = AllEventsList
-                            .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                            .ToList();
                         StateHasChanged();
                         break;
                     case 1:
                         featuredEventSlots = await GetFeaturedSlotsAsync();
-                         AllEventsList = (await GetAllEvents())
-                            .Where(e => e.Status == EventStatus.Published)
-                            .ToList();
-                        AllEventsList = AllEventsList
-                            .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                            .ToList();
+                        var paginatedEvents = await GetEvents(1, 50,"","desc",1);
+                            AllEventsList = paginatedEvents.Items;
                         var matchedFeaturedEvents = featuredEventSlots
                             .Where(fs => fs.Event != null)
                              .Select(fs => new { Id = fs.Event?.Id, Title = fs.Event?.EventTitle })
@@ -151,12 +148,8 @@ public class DailyLivingBase : QLComponentBase
                     AvailableArticles = allAvailable
                         .Where(av => !relatedContentIds.Contains(av.Id))
                         .ToList();
-                    AllEventsList = (await GetAllEvents())
-                       .Where(e => e.Status == EventStatus.Published)
-                       .ToList();
-                    AvailableArticles = AvailableArticles
-                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                        .ToList();
+                    var paginatedEvents = await GetEvents(1, 50,"","desc",1);
+                          var  allEventsList = paginatedEvents.Items;
                     var matchedArticleKeys = articles
                             .Where(a => !string.IsNullOrWhiteSpace(a.RelatedContentId) && !string.IsNullOrWhiteSpace(a.Title))
                             .Select(a => new { Id = a.RelatedContentId, EventTitle = a.Title })
@@ -165,9 +158,7 @@ public class DailyLivingBase : QLComponentBase
                         .Where(e => matchedArticleKeys.Any(x => x.Id == e.Id.ToString() && x.EventTitle == e.EventTitle))
                         .ToList();
                     AllEventsList.RemoveAll(e => removedEvents.Contains(e));
-                    AllEventsList = AllEventsList
-                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                        .ToList();
+
                 }
             }
             StateHasChanged();
@@ -584,27 +575,55 @@ public class DailyLivingBase : QLComponentBase
             Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
         }
     }
-    private async Task<List<EventDTO>> GetAllEvents()
-    {
-        try
+    private async Task<PaginatedEventResponse> GetEvents(
+              int page = 1,
+              int pageSize = 12,
+              string search = "",
+              string sortOrder = "desc",
+              int? status = null
+          )
         {
-            var apiResponse = await eventsService.GetAllEvents();
-            if (apiResponse.IsSuccessStatusCode)
+            try
             {
-                var response = await apiResponse.Content.ReadFromJsonAsync<List<EventDTO>>();
-                var json = JsonSerializer.Serialize(response, new JsonSerializerOptions
+                IsLoading = true;
+                var apiResponse = await eventsService.GetEventsByPagination(
+                    page: page,
+                    perPage: pageSize,
+                    search: search ?? "",
+                    categoryId: null,
+                    sortOrder: sortOrder,
+                    fromDate: null,
+                    toDate: null,
+                    filterType: "",
+                    status: status,
+                    location: null,
+                    freeOnly: false,
+                    featuredFirst: false
+                );
+
+                if (apiResponse.IsSuccessStatusCode)
                 {
-                    WriteIndented = true
-                });
-                return response ?? new List<EventDTO>();
+                    var result = await apiResponse.Content.ReadFromJsonAsync<PaginatedEventResponse>();
+                    if (result != null)
+                    {
+                        result.Items = result.Items
+                            .Where(e => e.IsActive)
+                            .ToList();
+                    }
+                    return result ?? new PaginatedEventResponse();
+                }
             }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error fetching paginated events");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+
+            return new PaginatedEventResponse();
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "GetEvents");
-        }
-        return new List<EventDTO>();
-    }
     private async Task<List<DailyTopic>> GetActiveTopics()
     {
         try
