@@ -70,13 +70,16 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 ? "Slot created successfully"
                 : "Slot updated successfully";
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
         {
+            int currentPage = page ?? 1;
+            int currentPageSize = pageSize ?? ConstantValues.DefaultPageSize;
+
             var allArticles = await _news.GetAllNewsFilterArticles(true, cancellationToken)
                            ?? new List<V2NewsArticleDTO>();
 
             var published = allArticles
-                .Where(a => a.Categories.Any(c => c.SlotId < 15))
+                .Where(a => a.Categories.Any(c => c.SlotId < 15) && a.IsActive == true)
                 .ToList();
 
             List<DailyTopSectionSlot> slots;
@@ -101,9 +104,15 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 .Select(s => s.RelatedContentId)
                 .ToHashSet();
 
-            return published
-                .Where(a => !usedIds.Contains(a.Id))
-                .ToList();
+            var unused = published
+            .Where(a => !usedIds.Contains(a.Id))
+            .OrderByDescending(a => a.PublishedDate ?? a.CreatedAt) 
+            .Skip((currentPage - 1) * currentPageSize)
+            .Take(currentPageSize)
+            .ToList();
+
+            return unused;
+
         }
         public async Task<List<DailyTopSectionSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
@@ -443,11 +452,14 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             return true;
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
         {
             if (topicId == Guid.Empty)
                 throw new ArgumentOutOfRangeException(
                     nameof(topicId), "TopicId cannot be empty.");
+
+            int currentPage = page ?? 1;
+            int currentPageSize = pageSize ?? ConstantValues.DefaultPageSize;
 
             var allArticles = await _news.GetAllNewsFilterArticles(true, cancellationToken);
 
@@ -469,10 +481,14 @@ namespace QLN.Content.MS.Service.DailyInternalService
                     responseBody: ex.Message);
             }
 
-            // 3) filter out used IDs
             var usedIds = new HashSet<Guid>(slotIndex.Values);
             var unused = allArticles
-                .Where(a => !usedIds.Contains(a.Id))
+                .Where(a => !usedIds.Contains(a.Id)
+                 && a.IsActive
+                 && a.Categories.Any(x => x.SlotId != 15))
+                .OrderByDescending(a => a.PublishedDate ?? a.CreatedAt)
+                .Skip((currentPage - 1) * currentPageSize)
+                .Take(currentPageSize)
                 .ToList();
 
             return unused;

@@ -93,9 +93,21 @@ namespace QLN.Backend.API.Service.V2ContentService
             return result ?? new List<DailyTopSectionSlot>();
 
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
         {
-            var path = $"/api/v2/dailyliving/topsection/unusedarticles";
+            var queryParams = new Dictionary<string, string>();
+
+            if (page.HasValue)
+                queryParams.Add("page", page.Value.ToString());
+
+            if (pageSize.HasValue)
+                queryParams.Add("pageSize", pageSize.Value.ToString());
+
+            var queryString = queryParams.Count > 0
+                ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
+                : string.Empty;
+
+            var path = $"/api/v2/dailyliving/topsection/unusedarticles{queryString}";
 
             try
             {
@@ -321,9 +333,25 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
         {
-            var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles";
+            if (topicId == Guid.Empty)
+                throw new ArgumentOutOfRangeException(nameof(topicId), "TopicId cannot be empty.");
+
+            var queryParams = new Dictionary<string, string>();
+
+            if (page.HasValue)
+                queryParams.Add("page", page.Value.ToString());
+
+            if (pageSize.HasValue)
+                queryParams.Add("pageSize", pageSize.Value.ToString());
+
+            var queryString = queryParams.Count > 0
+                ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
+                : string.Empty;
+
+
+            var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles{queryString}";
 
             try
             {

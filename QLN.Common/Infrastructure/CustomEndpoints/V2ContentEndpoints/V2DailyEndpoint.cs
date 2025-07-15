@@ -178,12 +178,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     ProblemHttpResult>>
                 (
                     [FromServices] IV2ContentDailyService service,
-                    CancellationToken ct
+                    CancellationToken ct,
+                    [FromQuery] int? page = null,
+                    [FromQuery] int? pageSize = null
                 ) =>
                 {
                     try
                     {
-                        var list = await service.GetUnusedDailyTopSectionArticlesAsync(ct);
+                        var list = await service.GetUnusedDailyTopSectionArticlesAsync(page, pageSize, ct);
 
                         if (list == null || list.Count == 0)
                             return TypedResults.NotFound(new ProblemDetails
@@ -941,7 +943,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 (
                     [FromRoute] Guid topicId,
                     [FromServices] IV2ContentDailyService service,
-                    CancellationToken ct
+                    CancellationToken ct,
+                    [FromQuery] int? page = null,
+                    [FromQuery] int? pageSize = null
                 ) =>
                 {
                     if (topicId == Guid.Empty)
@@ -953,7 +957,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
                     try
                     {
-                        var list = await service.GetUnusedNewsArticlesForTopicAsync(topicId, ct);
+                        var list = await service.GetUnusedNewsArticlesForTopicAsync(topicId, page, pageSize, ct);
 
                         if (list == null || !list.Any())
                             return TypedResults.NotFound(new ProblemDetails

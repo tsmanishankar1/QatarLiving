@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
@@ -191,12 +192,52 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
+            catch(InvalidOperationException e)
+            {
+                await CleanupUploadedFiles(FileName, cancellationToken);
+                _logger.LogError(e, "Invalid operation while updating event");
+                throw new InvalidOperationException("Invalid operation while updating event", e);
+            }
+            catch (InvocationException ex)
+            {
+                await CleanupUploadedFiles(FileName, cancellationToken);
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
+            }
             catch (Exception ex)
             {
                 await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating event");
                 throw;
             }
+
         }
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {
@@ -211,10 +252,37 @@ namespace QLN.Backend.API.Service.V2ContentService
                     cancellationToken
                 );
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Event with ID {id} not found.", id);
-                return null;
+            catch (InvocationException ex)
+            {               
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
             catch (Exception ex)
             {
