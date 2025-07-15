@@ -19,7 +19,7 @@
                 @if (IsEditingSubCategoryName)
                 {
                     <div class="d-inline-block" style="max-width: 180px;">
-                        <MudTextField Class="unstyled-input" @bind-Value="EditableSubCategoryName.SubCategoryName" Variant="Variant.Text" Margin="Margin.Dense" @ref="subCategoryInputRef"></MudTextField>
+                        <MudTextField Class="unstyled-input" @bind-Value="EditableSubCategoryName.SubCategoryName" Variant="Variant.Text" Margin="Margin.Dense" @ref="subCategoryInputRef" MaxLength="255"></MudTextField>
                     </div>
                 }
                 else
@@ -64,7 +64,8 @@
                                       Adornment="Adornment.Start"
                                       AdornmentIcon="@Icons.Material.Filled.Search"
                                       Class="search-field"
-                                      OnAdornmentClick="@(() => SearchArticles())" />
+                                      OnAdornmentClick="@(() => SearchArticles())"
+                                      MaxLength="255" />
                     </div>
                     <div class="custom-table">
                         <div class="toggle-tabs">
