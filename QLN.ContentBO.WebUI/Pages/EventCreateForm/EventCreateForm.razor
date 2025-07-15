@@ -26,7 +26,7 @@
                 }
             </MudSelect>
 
-            <MudTextField Variant="Variant.Outlined" Label="Event Title"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;"/>
+            <MudTextField Variant="Variant.Outlined" Label="Event Title" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;" MaxLength="255" />
             <MudRadioGroup Required="true" RequiredError="Event type is required." T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
                 <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
@@ -47,7 +47,7 @@
              { 
                 <div class="event-mud-error-text">@_PriceError</div>
             } 
-            <MudTextField  Variant="Variant.Outlined" Label="Redirection Link"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;"/>
+            <MudTextField Variant="Variant.Outlined" Label="Redirection Link" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;" MaxLength="255" />
 
 
        <MudSelect T="string"
@@ -72,7 +72,7 @@
         }
         </MudSelect>
          <ValidationMessage For="@(() => CurrentEvent.Location)" />
-            <MudTextField  Variant="Variant.Outlined" Label="Venue" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" />
+            <MudTextField Variant="Variant.Outlined" Label="Venue" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" MaxLength="255" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
             @* Date picker *@
