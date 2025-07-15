@@ -135,6 +135,22 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             ActiveRoutePaths = new() { "/manage/events", "/content/events/create", "/content/events/edit" }
         },
         new() {
+            Title = "Classified",
+            IconPath = "/qln-images/classified_icon.svg",
+            IsGroup = true,
+            ActiveRoutePaths = new() { "/manage/news/category", "/manage/news/addarticle", "/manage/news/editarticle" },
+            Children = new List<NavigationItem>
+            {
+                new() { Title = "Landing Page", Url = "/manage/classified/landing" },
+                new() { Title = "Items", Url = "/manage/classified/items" },
+                new() { Title = "Deals", Url = "/manage/classified/deals" },
+                new() { Title = "Stores", Url = "/manage/classified/stores" },
+                new() { Title = "Preloved", Url = "/manage/classified/preloved" },
+                new() { Title = "Collectibles", Url = "/manage/classified/collectibles" },
+
+            }
+        },
+        new() {
             Title = "Report",
             IconPath = "/qln-images/report_icon.svg",
             IsGroup = true,
