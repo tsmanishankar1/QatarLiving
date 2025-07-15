@@ -1,0 +1,20 @@
+﻿@page "/manage/classified/items"
+@inherits ItemsBase
+
+<h3>Items</h3>
+
+<MudTabs @bind-ActivePanelIndex="ActiveIndex"
+         Rounded="false"
+         Class="custom-tabs"
+         DisableSlideAnimation="true"
+         TabPanelClass="tab-panel-style"
+         TextColor="Color.Default"
+         IndicatorColor="Color.Primary">
+
+    @foreach (var tab in TabTitles)
+    {
+        <MudTabPanel Text="@tab">
+            @RenderTabContent()
+        </MudTabPanel>
+    }
+</MudTabs>
