@@ -470,6 +470,83 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw new Exception("Internal error occurred while creating banner.", ex);
             }
         }
+        public async Task<string> EditBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                Console.WriteLine("🔧 INTERNAL SERVICE - Editing Banner");
+
+                var existingBanner = await _dapr.GetStateAsync<V2BannerDto>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    dto.Id.ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (existingBanner == null)
+                    throw new ArgumentException("Banner not found.");
+
+                // Update mutable fields
+                existingBanner.Status = dto.Status;
+                existingBanner.BannerTypeId = dto.BannerTypeId;
+                existingBanner.AnalyticsTrackingId = dto.AnalyticsTrackingId;
+                existingBanner.AltText = dto.AltText;
+                existingBanner.LinkUrl = dto.LinkUrl;
+                existingBanner.Duration = dto.Duration;
+                existingBanner.BannerSize = dto.BannerSize;
+                existingBanner.IsDesktopAvailability = dto.IsDesktopAvailability;
+                existingBanner.IsMobileAvailability = dto.IsMobileAvailability;
+                existingBanner.DesktopImage = dto.DesktopImage;
+                existingBanner.MobileImage = dto.MobileImage;
+                existingBanner.UpdatedAt = DateTime.UtcNow;
+                existingBanner.Updatedby = uid;
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    existingBanner.Id.ToString(),
+                    existingBanner,
+                    cancellationToken: cancellationToken);
+
+                return "Banner updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ EXCEPTION in EditBannerAsync (INTERNAL)");
+                _logger.LogError(ex, "Error editing banner.");
+                throw new Exception("Internal error occurred while editing banner.", ex);
+            }
+        }
+        public async Task<string> DeleteBannerAsync(string uid, Guid bannerId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                Console.WriteLine("🔧 INTERNAL SERVICE - Deleting Banner");
+
+                var existingBanner = await _dapr.GetStateAsync<V2BannerDto>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    bannerId.ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (existingBanner == null)
+                    throw new ArgumentException("Banner not found.");
+
+                existingBanner.Status = false; // Soft delete
+                existingBanner.Updatedby = uid;
+                existingBanner.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    bannerId.ToString(),
+                    existingBanner,
+                    cancellationToken: cancellationToken);
+
+                return "Banner deleted (status set to false).";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ EXCEPTION in DeleteBannerAsync (INTERNAL)");
+                _logger.LogError(ex, "Error deleting banner.");
+                throw new Exception("Internal error occurred while deleting banner.", ex);
+            }
+        }
 
 
 

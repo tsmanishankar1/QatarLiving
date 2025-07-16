@@ -259,11 +259,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        private bool IsAllowedImageType(string ext)
-        {
-            return new[] { "jpeg", "png", "jpg", "svg", "webp" }.Contains(ext.ToLower());
-        }
-
+      
         private async Task CleanupUploadedFiles(string?[] files, CancellationToken cancellationToken)
         {
             foreach (var file in files)
@@ -274,6 +270,113 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
+        public async Task<string> EditBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default)
+        {
+            string? desktopFileName = null;
+            string? mobileFileName = null;
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(dto.DesktopImage))
+                {
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.DesktopImage);
+                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                        throw new ArgumentException("Desktop Image must be in Jpeg, PNG, Webp, svg or JPG format.");
+
+                    desktopFileName = $"{dto.AltText ?? "desktop"}_{uid}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, desktopFileName, "imageurl", cancellationToken);
+                    dto.DesktopImage = blobUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.MobileImage))
+                {
+                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.MobileImage);
+                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                        throw new ArgumentException("Mobile Image must be in Jpeg, PNG, Webp, svg or JPG format.");
+
+                    mobileFileName = $"{dto.AltText ?? "mobile"}_{uid}.{ext}";
+                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, mobileFileName, "imageurl", cancellationToken);
+                    dto.MobileImage = blobUrl;
+                }
+
+                dto.Updatedby = uid;
+
+                var url = "/api/v2/banner/editbyuserid";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = rawJson;
+                    }
+
+                    await CleanupUploadedFiles(new[] { desktopFileName, mobileFileName }, cancellationToken);
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                await CleanupUploadedFiles(new[] { desktopFileName, mobileFileName }, cancellationToken);
+                _logger.LogError(ex, "Error editing banner");
+                throw;
+            }
+        }
+        public async Task<string> DeleteBannerAsync(string uid, Guid bannerId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/banner/deletebyuserid";
+                var payload = new
+                {
+                    BannerId = bannerId,
+                    UpdatedBy = uid
+                };
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = rawJson;
+                    }
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting banner");
+                throw;
+            }
+        }
 
 
 

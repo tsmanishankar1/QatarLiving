@@ -80,6 +80,11 @@ namespace QLN.Common.DTO_s
         public Guid BannerTypeId { get; set; }
         public string BannerTypeName { get; set; }
     }
+    public class DeleteBannerRequest
+    {
+        public Guid BannerId { get; set; }
+        public string UpdatedBy { get; set; } = string.Empty;
+    }
 
 
 }

@@ -18,6 +18,8 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<List<BannerTypeDetailsDto>> GetBannerTypesBySubVerticalAsync(SubVertical subVertical, CancellationToken cancellationToken = default);
         Task<List<BannerTypeDetailsDto>> GetBannerTypesByPageIdAsync(Guid pageId, CancellationToken cancellationToken = default);
         Task<string> CreateBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default);
+        Task<string> EditBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default);
+        Task<string> DeleteBannerAsync(string uid, Guid bannerId, CancellationToken cancellationToken = default);
     }
        
 }
