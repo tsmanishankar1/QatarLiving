@@ -32,7 +32,12 @@
         </HeaderContent>
 
         <RowTemplate>
-            <MudTd><MudLink Href="#">@context.AdId</MudLink></MudTd>
+            <MudTd>
+                <div class="d-flex align-center">
+                    <img src="/qln-images/arrow_up_icon.svg" class="menu-icon-style me-1" alt="Ad Icon" />
+                    <span>@context.AdId</span>
+                </div>
+            </MudTd>
             <MudTd><MudLink Href="#">@context.OrderId</MudLink></MudTd>
             <MudTd>@context.ProductType</MudTd>
             <MudTd>@context.UserName</MudTd>
