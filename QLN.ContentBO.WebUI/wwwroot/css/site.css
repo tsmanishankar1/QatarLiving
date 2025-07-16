@@ -722,3 +722,106 @@ a, .btn-link {
     .capitalize-button {
         text-transform: capitalize !important;
     }
+
+
+/*classifeds*/
+.landing-action-section-container {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid var(--color-secondary-grey-container);
+    border-radius: 8px;
+    padding: 10px 14px;
+    width: 300px;
+    height: 44px;
+}
+
+.classified-table {
+    width: 500px;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    border: 1px solid var(--color-background-secondary-grey-medium);
+    overflow: hidden;
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+    /* Header styling */
+    .classified-table thead th {
+        background: var(--color-background-secondary-grey-medium);
+        font-weight: 500;
+        font-size: 14px;
+        padding: 16px;
+        text-align: left;
+        color: var(--color-background-grey);
+        border-bottom: none;
+    }
+
+    .classified-table tbody tr {
+        padding: 16px;
+        border-bottom: 1px solid var(var(--color-background-grey));
+        transition: background 0.2s ease;
+    }
+
+        .classified-table tbody tr:hover {
+            background: var(var(--color-background-grey));
+        }
+
+    .classified-table tbody td {
+        padding: 12px;
+        vertical-align: middle;
+        font-size: 14px;
+        color: #333;
+    }
+
+.classified-modal {
+    width: 400px;
+    height: 727px;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.classified-field {
+    width: 330px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px solid #D0D5DD;
+    justify-content: space-between;
+    padding-left: 10px;
+}
+
+.classified-image-container {
+    width: 330px;
+    height: 225px;
+    border: 1px dashed #ccc;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.classified-button-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.classified-button {
+    width: 330px;
+    height: 46px;
+    border-radius: 6px;
+    gap: 8px;
+    border: 1px solid #D0D5DD;
+}
