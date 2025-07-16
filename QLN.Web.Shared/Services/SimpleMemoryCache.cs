@@ -19,6 +19,7 @@ namespace QLN.Web.Shared.Services
         private readonly IMemoryCache _memoryCache;
         private const string BannerCacheKey = "BannerResponseCacheKey";
         private const string DailyCacheKey = "DailyNewsResponseCacheKey";
+        private const string DailyCacheKeyV2 = "DailyNewsResponseV2CacheKey";
         private const string NewsCachePrefix = "News";
         private static readonly TimeSpan BannerCacheDuration = TimeSpan.FromMinutes(3);
         private static readonly TimeSpan DailyCacheDuration = TimeSpan.FromMinutes(1);
@@ -44,6 +45,11 @@ namespace QLN.Web.Shared.Services
 
         public async Task<ContentsDailyPageResponse?> GetContentLandingAsync()
         {
+            var isV2 = _navigationPath.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase);
+
+            // Clear the other version's cache to avoid stale data conflict
+            _memoryCache.Remove(isV2 ? DailyCacheKey : DailyCacheKeyV2);
+
             if (_memoryCache.TryGetValue(DailyCacheKey, out ContentsDailyPageResponse? cachedDaily))
             {
                 return cachedDaily;
