@@ -1,7 +1,9 @@
-﻿using Dapr.Client;
+﻿using Amazon.Runtime.Internal.Util;
+using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IContentService;
 using System.Text;
 using System.Text.Json;
@@ -14,9 +16,11 @@ namespace QLN.Content.MS.Service.EventInternalService
     {
         private readonly DaprClient _dapr;
         private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
-        public V2InternalEventService(DaprClient dapr)
+        private readonly ILogger<IV2EventService> _log;
+        public V2InternalEventService(DaprClient dapr, ILogger<IV2EventService> log)
         {
             _dapr = dapr;
+            _log = log;
         }
         public async Task<string> CreateEvent(string userId, V2Events dto, CancellationToken cancellationToken = default)
         {
@@ -144,27 +148,49 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule == null)
                 throw new ArgumentException("EventSchedule is required.");
 
-            if (schedule.TimeSlotType == V2EventTimeType.PerDayTime)
+            switch (schedule.TimeSlotType)
             {
-                if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
-                    throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
+                case V2EventTimeType.PerDayTime:
+                    if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
 
-                if (schedule.StartTime != null || schedule.EndTime != null)
-                    throw new ArgumentException("StartTime, and EndTime must be null for 'PerDayTime' events.");
-            }
-            else
-            {
-                if (schedule.StartDate > schedule.EndDate)
-                    throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
+                    if (schedule.StartTime != null || schedule.EndTime != null)
+                        throw new ArgumentException("StartTime and EndTime must be null for 'PerDayTime' events.");
 
-                if (schedule.StartDate == null || schedule.EndDate == null)
-                    throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
+                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be null or empty for 'PerDayTime' events.");
+                    break;
 
-                if (schedule.StartTime == null || schedule.EndTime == null)
-                    throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
+                case V2EventTimeType.FreeTimeText:
+                    if (string.IsNullOrWhiteSpace(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be provided for 'FreeTimeText' events.");
 
-                if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                    throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
+                    if (schedule.StartTime != null || schedule.EndTime != null)
+                        throw new ArgumentException("StartTime and EndTime must be null for 'FreeTimeText' events.");
+
+                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be empty for 'FreeTimeText' events.");
+                    break;
+
+                case V2EventTimeType.GeneralTime:
+                    if (schedule.StartDate > schedule.EndDate)
+                        throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
+
+                    if (schedule.StartDate == null || schedule.EndDate == null)
+                        throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
+
+                    if (schedule.StartTime == null || schedule.EndTime == null)
+                        throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
+
+                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
+                        throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
+
+                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTextTime must be null or empty for 'GeneralTime' events.");
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid TimeSlotType value.");
             }
         }
         private string GenerateSlug(string title)
@@ -250,8 +276,10 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 if (string.IsNullOrWhiteSpace(dto.EventTitle))
                     throw new ArgumentException("Event title must not be empty.");
+
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Event ID is required for update.");
+
                 if (dto.EventType == V2EventType.FeePrice)
                 {
                     if (dto.Price == null)
@@ -262,8 +290,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
-                string categoryName = string.Empty;
 
+                string categoryName = string.Empty;
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.EventCategoryIndexKey,
@@ -281,16 +309,68 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (selectedCategory != null)
                         categoryName = selectedCategory.CategoryName;
                 }
+
                 ValidateEventSchedule(dto.EventSchedule);
+
                 var existing = await _dapr.GetStateAsync<V2Events>(
                     ConstantValues.V2Content.ContentStoreName,
                     dto.Id.ToString(),
                     cancellationToken: cancellationToken);
 
                 if (existing == null)
-                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");
+                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");                
+
+                if (existing.Status == EventStatus.Published && dto.Status == EventStatus.UnPublished)
+                {
+                    if(existing.IsFeatured == true)
+                    {
+                        throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is currently featured.");
+                    }
+                    existing.PublishedDate = null;
+                    var topSlotTasks = Enumerable.Range(1, 9)
+                        .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
+                            DailyStore,
+                            $"daily-slot-{i}",
+                            cancellationToken: cancellationToken))
+                        .ToArray();
+
+                    var topSlots = (await Task.WhenAll(topSlotTasks))
+                        .Where(s => s != null)
+                        .ToList();
+
+                    var usedInTop = topSlots.FirstOrDefault(s =>
+                        s.ContentType == DailyContentType.Event &&
+                        s.RelatedContentId == dto.Id);
+
+                    if (usedInTop != null)
+                    {
+                        _log.LogWarning("Attempt to unpublish Event {EventId} denied: Found in Daily Top Slot #{Slot}",
+                            dto.Id, usedInTop.SlotNumber);
+
+                        throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is used in Daily Top Section slot #{usedInTop.SlotNumber}");
+                    }
+                    
+                    var topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
+                    foreach (var topicId in topicIds)
+                    {
+                        var topicSlots = await GetSlotsByTopicIdAsync(topicId, cancellationToken);
+                        var usedInTopic = topicSlots.FirstOrDefault(ts =>
+                            ts.ContentType == DailyContentType.Event &&
+                            ts.RelatedContentId == dto.Id);
+
+                        if (usedInTopic != null)
+                        {
+                            _log.LogWarning("Attempt to unpublish Event {EventId} denied: Found in Topic Slot #{Slot} of TopicId {TopicId}",
+                                dto.Id, usedInTopic.SlotNumber, topicId);
+
+                            throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is used in Topic slot #{usedInTopic.SlotNumber}");
+                        }
+                    }
+                }
+
                 var slug = GenerateSlug(dto.EventTitle);
                 var shouldUpdatePublishedDate = existing.Status == EventStatus.UnPublished && dto.Status == EventStatus.Published;
+
                 var updated = new V2Events
                 {
                     Id = dto.Id,
@@ -314,8 +394,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                     Status = dto.Status,
                     PublishedDate = shouldUpdatePublishedDate ? DateTime.UtcNow : existing.PublishedDate,
                     IsActive = true,
-                    CreatedBy = existing.CreatedBy, 
-                    CreatedAt = existing.CreatedAt, 
+                    CreatedBy = existing.CreatedBy,
+                    CreatedAt = existing.CreatedAt,
                     UpdatedAt = DateTime.UtcNow,
                     UpdatedBy = userId
                 };
@@ -326,17 +406,28 @@ namespace QLN.Content.MS.Service.EventInternalService
                     updated,
                     cancellationToken: cancellationToken);
 
+                _log.LogInformation("Event {EventId} updated successfully by user {UserId}", dto.Id, userId);
+
                 return "Event updated successfully";
             }
             catch (ArgumentException ex)
             {
+                _log.LogError(ex, "Validation error while updating event {EventId}", dto.Id);
                 throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _log.LogWarning(ex, "Update blocked: {Message}", ex.Message);
+                throw;
             }
             catch (Exception ex)
             {
+                _log.LogError(ex, "Unhandled error while updating event {EventId}", dto.Id);
                 throw new Exception("Error updating events", ex);
             }
         }
+
+
         private async Task<List<Guid>> GetAllDailyTopicIdsAsync(CancellationToken ct)
         {
             try

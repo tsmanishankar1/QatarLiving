@@ -61,7 +61,15 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             currentStatus = status;
             currentPage = 1;
+            SortAscending = status == 1; 
             PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            if (status == 1)
+            {
+                var sortedList = PaginatedData.Items
+                 .OrderBy(e => e.EventSchedule.StartDate)
+                 .ToList();
+               PaginatedData.Items = sortedList;
+            }
             StateHasChanged();
         }
 
@@ -389,6 +397,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     Snackbar.Add("Event cannot be Deleted since it is configured in Daily Page", Severity.Error);
                 }
+                else if (apiResponse?.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add("Event cannot be Deleted since it is configured in Daily Top Section or Daily Topics or as Featured Event", Severity.Error);
+                }
                 else
                 {
                     Snackbar.Add("Failed to delete event", Severity.Error);
@@ -545,6 +557,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 }
                 PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
             }
+            else if (response?.StatusCode == HttpStatusCode.Conflict)
+            {
+                Snackbar.Add("Event cannot be UnPublished since it is configured in Daily Top Section or Daily Topics or as Featured Event", Severity.Error);
+            }
             else
             {
                 Snackbar.Add($"Failed to update status to {newStatus}.", Severity.Error);
@@ -560,7 +576,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await UnFeatureEvent(id))}
         };
         var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
         var result = await dialog.Result;
     }
     }

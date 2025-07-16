@@ -44,9 +44,24 @@ else if (articles is null || !articles.Any() || Categories == null)
                     </div>
                 </MudItem>
             </MudGrid>
-      <div class="empty-card-wrapper">
-        <EmptyCard Title="No Article or Event found" Subtitle="Please check back later or explore other categories." />
-    </div>
+      <div class="empty-card-wrapper d-flex flex-column align-items-center justify-content-center">
+    <img src="/qln-images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
+    <MudText Class="mx-6 py-4" Style="color: #242424; font-size: 15px;">
+        No items are live yet.
+    </MudText>
+    <MudButton 
+        Style="background-color: white; 
+               border: 1px solid #FF7F38; 
+               color: #FF7F38; 
+               text-transform: none; 
+               padding-left: 67px; 
+               padding-right: 67px;
+               margin-bottom: 300px ;" 
+        OnClick="OnAddItemClicked" 
+        Class="daily-compact-button mt-2">
+        Add Item
+    </MudButton>
+</div>
 }
 else
 {
@@ -169,7 +184,7 @@ else
                     <td>
                         @(context.Slot.Article?.CreatedAt != null 
                         ? context.Slot.Article?.CreatedAt.ToString("dd-MM-yyyy") 
-                        : "--")
+                        : "-")
                     </td>
                     <td>
                         <div class="d-flex align-center gap-2">

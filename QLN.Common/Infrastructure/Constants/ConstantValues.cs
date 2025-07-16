@@ -26,6 +26,8 @@ namespace QLN.Common.Infrastructure.Constants
         public const string LandingBackOffice = "landingbackoffice";
         public const string Analytics = "analytics";
         public const string PubSubName = "pubsub";
+
+        public const int DefaultPageSize = 50;
         public static class EntityTypes
         {
             public const string HeroBanner = "HeroBanner";
