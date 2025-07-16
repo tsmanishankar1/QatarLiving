@@ -1,4 +1,5 @@
-﻿using QLN.ContentBO.WebUI.Models;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.EventsPage;
 using QLN.ContentBO.WebUI.Services;
 
@@ -46,7 +47,10 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             }
         }
 
-
+        protected void NavigateToCreateBanner()
+        {
+            NavManager.NavigateTo($"/manage/banner/createbanner", true);
+        }
         public enum ManageBannerTab
         {
             Content = 0,
