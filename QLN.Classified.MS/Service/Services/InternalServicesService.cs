@@ -2,8 +2,8 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
-using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -131,6 +131,15 @@ namespace QLN.Classified.MS.Service.Services
         {
             var key = id.ToString();
 
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.IndexKey,
+                cancellationToken: cancellationToken
+            ) ?? new();
+            if (!indexKeys.Contains(key))
+            {
+                return null;
+            }
             var category = await _dapr.GetStateAsync<ServicesCategory>(
                 ConstantValues.Services.StoreName,
                 key,
@@ -139,39 +148,169 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-
-        public async Task<string> CreateServiceAd(ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
-            dto.Id = Guid.NewGuid();
-            dto.CreatedAt = DateTime.UtcNow;
-
-            var key = dto.Id.ToString();
-
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
-
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.ServicesIndexKey, cancellationToken : cancellationToken) ?? new();
-            if (!keys.Contains(key))
+            try
             {
-                keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.ServicesIndexKey, keys, cancellationToken : cancellationToken);
+                ValidateCommon(dto);
+                var id = Guid.NewGuid();
+                var entity = new ServicesDto
+                {
+                    Id = id,
+                    MainCategoryId = dto.MainCategoryId,
+                    L1CategoryId = dto.L1CategoryId,
+                    L2CategoryId = dto.L2CategoryId,
+                    Price = dto.Price,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                    WhatsappNumber = dto.WhatsappNumber,
+                    EmailAddress = dto.EmailAddress,
+                    Location = dto.Location,
+                    LocationId = dto.LocationId,
+                    Longitude = dto.Longitude,
+                    Latitude = dto.Latitude,
+                    PhotoUpload = dto.PhotoUpload,
+                    IsActive = true,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = null,
+                    UpdatedBy = null
+                };
+
+                var key = id.ToString();
+                await _dapr.SaveStateAsync(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    entity,
+                    cancellationToken: cancellationToken
+                );
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.Services.StoreName,
+                    ConstantValues.Services.ServicesIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                if (!keys.Contains(key))
+                {
+                    keys.Add(key);
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.Services.StoreName,
+                        ConstantValues.Services.ServicesIndexKey,
+                        keys,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad created successfully.";
             }
-
-            return "Service Ad Created Successfully";
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating service ad", ex);
+            }
         }
-
-        public async Task<string> UpdateServiceAd(ServicesDto dto, CancellationToken cancellationToken = default)
+        private static void ValidateCommon(ServicesDto dto)
         {
-            var key = dto.Id.ToString();
+            if (string.IsNullOrWhiteSpace(dto.Title))
+                throw new ArgumentException("Title is required.");
+            if (dto.Title.Length < 5 || dto.Title.Length > 70)
+                throw new ArgumentException("Title must be between 5 and 70 characters.");
 
-            var existing = await _dapr.GetStateAsync<ServicesDto>(ConstantValues.Services.StoreName, key, cancellationToken : cancellationToken);
-            if (existing == null)
-                throw new InvalidDataException("Ad not found.");
+            if (string.IsNullOrWhiteSpace(dto.Description))
+                throw new ArgumentException("Description is required.");
+            if (dto.Description.Length < 20)
+                throw new ArgumentException("Description must be at least 20 characters.");
 
-            dto.UpdatedAt = DateTime.UtcNow;
+            if (string.IsNullOrWhiteSpace(dto.PhoneNumberCountryCode) || string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                throw new ArgumentException("Phone number with country code is required.");
+            if (string.IsNullOrWhiteSpace(dto.WhatsappNumberCountryCode) || string.IsNullOrWhiteSpace(dto.WhatsappNumber))
+                throw new ArgumentException("WhatsApp number with country code is required.");
 
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
+            if (dto.MainCategoryId == Guid.Empty || dto.L1CategoryId == Guid.Empty || dto.L2CategoryId == Guid.Empty)
+                throw new ArgumentException("All category IDs must be provided.");
 
-            return "Service Ad Updated Successfully";
+            var phoneRegex = new Regex(@"^\d{6,15}$");
+
+            if (!phoneRegex.IsMatch(dto.PhoneNumber))
+                throw new ArgumentException("Invalid phone number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.WhatsappNumber) && !phoneRegex.IsMatch(dto.WhatsappNumber))
+                throw new ArgumentException("Invalid WhatsApp number format.");
+
+            if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
+                throw new ArgumentException("Invalid email format.");
+        }
+        public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                ValidateCommon(dto);
+                if (dto.Id == Guid.Empty)
+                    throw new ArgumentException("Service Ad ID is required for update.");
+                var key = dto.Id.ToString();
+
+                var existing = await _dapr.GetStateAsync<ServicesDto>(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    cancellationToken: cancellationToken
+                );
+
+                if (existing == null)
+                    throw new InvalidDataException("Service Ad not found for update.");
+                var entity = new ServicesDto
+                {
+                    Id = existing.Id,
+                    MainCategoryId = dto.MainCategoryId,
+                    L1CategoryId = dto.L1CategoryId,
+                    L2CategoryId = dto.L2CategoryId,
+                    Price = dto.Price,
+                    Title = dto.Title,
+                    Description = dto.Description,
+                    PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                    PhoneNumber = dto.PhoneNumber,
+                    WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                    WhatsappNumber = dto.WhatsappNumber,
+                    EmailAddress = dto.EmailAddress,
+                    Location = dto.Location,
+                    LocationId = dto.LocationId,
+                    Longitude = dto.Longitude,
+                    Latitude = dto.Latitude,
+                    PhotoUpload = dto.PhotoUpload,
+                    IsActive = dto.IsActive,
+                    CreatedBy = existing.CreatedBy,
+                    CreatedAt = existing.CreatedAt,
+                    UpdatedBy = userId,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    entity,
+                    cancellationToken: cancellationToken
+                );
+
+                return "Service Ad updated successfully.";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error updating service ad", ex);
+            }
+        }
+        private static bool IsValidEmail(string email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
         public async Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default)
         {
@@ -202,43 +341,57 @@ namespace QLN.Classified.MS.Service.Services
                 .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                 .Select(i =>
                 {
-                    try
-                    {
-                        return JsonSerializer.Deserialize<ServicesDto>(i.Value, options);
-                    }
-                    catch
-                    {
-                        return null;
-                    }
+                    return JsonSerializer.Deserialize<ServicesDto>(i.Value, options);
                 })
-                .Where(x => x != null && x.Id != Guid.Empty && !string.IsNullOrWhiteSpace(x.Title))!
+                .Where(x => x != null && x.Id != Guid.Empty && !string.IsNullOrWhiteSpace(x.Title) && x.IsActive)!
                 .ToList();
         }
-
         public async Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
         {
             var key = id.ToString();
-            return await _dapr.GetStateAsync<ServicesDto>(ConstantValues.Services.StoreName, key, cancellationToken : cancellationToken);
-        }
 
-        public async Task<string> DeleteServiceAdById(Guid id, CancellationToken cancellationToken = default)
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.ServicesIndexKey,
+                cancellationToken: cancellationToken
+            ) ?? new();
+
+            if (!indexKeys.Contains(key))
+                return null; 
+
+            var ad = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                key,
+                cancellationToken: cancellationToken
+            );
+
+            return ad?.IsActive == true ? ad : null;
+        }
+        public async Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default)
         {
             var key = id.ToString();
 
-            var existing = await _dapr.GetStateAsync<ServicesDto>(ConstantValues.Services.StoreName, key, cancellationToken : cancellationToken);
-            if (existing == null)
-                throw new InvalidDataException("Service Ad not found.");
+            var existing = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                key,
+                cancellationToken: cancellationToken
+            );
 
-            await _dapr.DeleteStateAsync(ConstantValues.Services.StoreName, key, cancellationToken : cancellationToken);
+            if (existing == null || !existing.IsActive)
+                throw new InvalidDataException("Active Service Ad not found.");
 
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.ServicesIndexKey, cancellationToken : cancellationToken) ?? new();
-            if (keys.Contains(key))
-            {
-                keys.Remove(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.ServicesIndexKey, keys, cancellationToken : cancellationToken);
-            }
+            existing.IsActive = false;
+            existing.UpdatedAt = DateTime.UtcNow;
+            existing.UpdatedBy = userId;
 
-            return "Service Ad Deleted Successfully";
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                key,
+                existing,
+                cancellationToken: cancellationToken
+            );
+
+            return "Service Ad soft-deleted successfully.";
         }
     }
 }

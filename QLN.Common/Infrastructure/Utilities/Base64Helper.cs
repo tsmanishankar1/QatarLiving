@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Utilities
 {
@@ -31,6 +27,7 @@ namespace QLN.Common.Infrastructure.Utilities
                     "image/bmp" => "bmp",
                     "image/svg+xml" => "svg",
                     "image/webp" => "webp",
+                    "image/heic" => "heic",
                     "application/pdf" => "pdf",
                     _ => throw new ArgumentException($"Unsupported MIME type: {mime}")
                 };
@@ -64,12 +61,19 @@ namespace QLN.Common.Infrastructure.Utilities
 
         private static string GetExtensionFromMagicBytes(byte[] bytes)
         {
-            if (bytes.Length < 4) return "bin";
+            if (bytes.Length < 12) return "bin";
             if (bytes[0] == 0xFF && bytes[1] == 0xD8) return "jpg";
             if (bytes[0] == 0x89 && bytes[1] == 0x50) return "png";
             if (bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) return "pdf";
             if (bytes[0] == 0x47 && bytes[1] == 0x49) return "gif";
             if (bytes[0] == 0x42 && bytes[1] == 0x4D) return "bmp";
+            var brand = Encoding.ASCII.GetString(bytes.Skip(4).Take(8).ToArray());
+            if (brand.StartsWith("ftypheic") || brand.StartsWith("ftypheix"))
+                return "heic";
+            if (Encoding.ASCII.GetString(bytes.Take(4).ToArray()) == "RIFF" &&
+                Encoding.ASCII.GetString(bytes.Skip(8).Take(4).ToArray()) == "WEBP")
+                return "webp";
+
             return "bin";
         }
     }

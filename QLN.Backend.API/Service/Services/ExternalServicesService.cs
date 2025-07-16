@@ -1,9 +1,11 @@
-﻿using Dapr;
-using Dapr.Client;
+﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -13,10 +15,12 @@ namespace QLN.Backend.API.Service.Services
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger)
+        private readonly IFileStorageBlobService _blobStorage;
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, IFileStorageBlobService blobStorage)
         {
             _dapr = dapr;
             _logger = logger;
+            _blobStorage = blobStorage;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -120,17 +124,45 @@ namespace QLN.Backend.API.Service.Services
                     cancellationToken
                 );
             }
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx &&
+                                          httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Service ad not found for ID: {Id}", id);
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error retrieving service category by ID");
                 throw;
             }
         }
-        public async Task<string> CreateServiceAd(ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
+            string? FileName = null;
             try
             {
-                var url = "/api/service/create";
+                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
+                {
+                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
+                    {
+                        var image = dto.PhotoUpload[i];
+
+                        if (!string.IsNullOrWhiteSpace(image?.Url))
+                        {
+                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url!);
+
+                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
+                                throw new ArgumentException("Only jpg, png, heic and webp images are allowed.");
+
+                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
+                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
+
+                            image.FileName = imageName;
+                            image.Url = blobUrl; 
+                        }
+                    }
+                }
+                var url = "/api/service/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -145,6 +177,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
+                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
@@ -153,15 +186,43 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating service ad");
                 throw;
             }
         }
-        public async Task<string> UpdateServiceAd(ServicesDto dto, CancellationToken cancellationToken = default)
+        private async Task CleanupUploadedFiles(string? file, CancellationToken cancellationToken)
         {
+            if (!string.IsNullOrWhiteSpace(file))
+                await _blobStorage.DeleteFile(file, "PhotoUpload", cancellationToken);
+        }
+        public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        {
+            string? FileName = null;
             try
             {
-                var url = "/api/service/update";
+                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
+                {
+                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
+                    {
+                        var image = dto.PhotoUpload[i];
+
+                        if (!string.IsNullOrWhiteSpace(image?.Url))
+                        {
+                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url!);
+
+                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
+                                throw new ArgumentException("Only heic, jpg, png, and webp images are allowed.");
+
+                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
+                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
+
+                            image.FileName = imageName;
+                            image.Url = blobUrl;
+                        }
+                    }
+                }
+                var url = "/api/service/updatebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -176,6 +237,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
+                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
@@ -184,6 +246,7 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
+                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating service ad");
                 throw;
             }
@@ -219,18 +282,31 @@ namespace QLN.Backend.API.Service.Services
                     cancellationToken
                 );
             }
+            catch (InvocationException ex) when (ex.InnerException is HttpRequestException httpEx &&
+                                          httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Service ad not found for ID: {Id}", id);
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unexpected error retrieving service ad by ID");
                 throw;
             }
         }
-        public async Task<string> DeleteServiceAdById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/service/delete/{id}";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Delete, ConstantValues.Services.ServiceAppId, url);
+                var dto = new DeleteServiceRequest
+                {
+                    Id = id,
+                    UpdatedBy = userId
+                };
+
+                var url = "/api/service/deletebyuserid";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"); 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -247,6 +323,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
+
                 return "Service ad deleted successfully.";
             }
             catch (Exception ex)
