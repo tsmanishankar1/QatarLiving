@@ -15,182 +15,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
     public static class V2BannerEndpoint
     {
-        public static RouteGroupBuilder MapCreateBannerTypeEndpoints(this RouteGroupBuilder group)
-        {
-            group.MapPost("/createbannertype", async Task<Results<
-    Ok<string>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    V2BannerTypeDto dto,
-    IV2BannerService service,
-    ILogger<IV2BannerService> logger,
-    CancellationToken ct
-) =>
-            {
-                try
-                {
-                    logger.LogInformation("CreateBannerType called");
 
-                    if (dto.VerticalId == 0 || dto.SubVerticalId == 0)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "VerticalId and SubVerticalId are required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.CreateBannerTypeAsync(dto, ct);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    logger.LogError(ex, "Validation failed");
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error while creating banner type");
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-            .WithName("createbannertype")
-            .WithTags("Banners")
-    .WithSummary("Create Banner Type")
-    .WithDescription("Creates a banner type with vertical and sub-vertical mapping.")
-   .Produces<string>(StatusCodes.Status200OK)
-   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            return group;
-
-        }
-
-        public static RouteGroupBuilder MapBannerLocationEndpoints(this RouteGroupBuilder group)
-        {
-            group.MapPost("/createlocation", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-
-                V2BannerLocationDto dto,
-                IV2BannerService service,
-                ILogger<IV2BannerService> logger,
-                CancellationToken ct) =>
-            {
-                try
-                {
-                    var result = await service.CreateBannerLocationAsync(dto, ct);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to create banner location");
-                    return TypedResults.Problem("Error creating banner location", ex.Message);
-                }
-            })
-            .WithName("createbannerlocation")
-            .WithTags("Banners")
-            .WithSummary("Create Banner Location")
-           .WithDescription("Creates a banner Location with vertical and sub-vertical mapping.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/createpagelocation", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-
-                    V2BannerPageLocationDto dto,
-                    IV2BannerService service,
-                    ILogger<IV2BannerService> logger,
-                    CancellationToken ct) =>
-            {
-                try
-                {
-                    var result = await service.CreateBannerPageLocationAsync(dto, ct);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to create banner location");
-                    return TypedResults.Problem("Error creating banner location", ex.Message);
-                }
-            })
-                .WithName("createbannerpagelocation")
-                .WithTags("Banners")
-               .WithSummary("Create Banner Page Location")
-              .WithDescription("Creates a banner Page Location with vertical and sub-vertical mapping.")
-               .Produces<string>(StatusCodes.Status200OK)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                  .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/getlocations", async (
-                    IV2BannerService service,
-                    CancellationToken ct) =>
-                {
-                    var result = await service.GetAllBannerLocationsAsync(ct);
-                    return TypedResults.Ok(result);
-                })
-                 .WithName("GetBannerLocation")
-     .WithTags("Banners")
-    .WithSummary("Get Banner Location")
-    .WithDescription("Get a banner Location with vertical and sub-vertical mapping.")
-   .Produces<string>(StatusCodes.Status200OK)
-   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/getbyvertical/{verticalId:int}", async (
-          [FromServices] IV2BannerService bannerService,
-         int verticalId,
-            CancellationToken cancellationToken) =>
-            {
-                if (!Enum.IsDefined(typeof(Vertical), verticalId))
-                    return Results.BadRequest("Invalid VerticalId");
-
-                var result = await bannerService.GetBannerTypesByVerticalAsync((Vertical)verticalId, cancellationToken);
-                return Results.Ok(result);
-            })
-       .WithName("GetBannerTypesByVertical")
-      .WithTags("Banners")
-      .WithDescription("Returns banner types with page and banner names for a given vertical.")
-      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/getbannertypesbysubvertical/{subVerticalId:int}", async (
-     int subVerticalId,
-     IV2BannerService service,
-     CancellationToken cancellationToken) =>
-            {
-                if (!Enum.IsDefined(typeof(SubVertical), subVerticalId))
-                    return Results.BadRequest("Invalid VerticalId");
-                var result = await service.GetBannerTypesBySubVerticalAsync((SubVertical)subVerticalId, cancellationToken);
-                return Results.Ok(result);
-            })
-          .WithName("GetDetailedBannerTypesBySubVerticalId")
-           .WithTags("Banners")
-      .WithDescription("Returns banner types with page and banner names for a given subvertical.")
-      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            group.MapGet("/getbannertypesbypageid/{pageId:guid}", async (
-     Guid pageId,
-     IV2BannerService service,
-     CancellationToken cancellationToken) =>
-            {
-                var result = await service.GetBannerTypesByPageIdAsync(pageId, cancellationToken);
-                return Results.Ok(result);
-            })
-
-            .WithName("GetDetailedBannerTypesByPageId")
-           .WithTags("Banners")
-      .WithDescription("Returns banner types with page and banner names for a given subvertical.")
-      .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-      .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-            return group;
-        }
         public static RouteGroupBuilder MapCreateBannerEndpoints(this RouteGroupBuilder group)
         {
             // Authenticated Create - Extracts userId from token
@@ -508,6 +333,41 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+             public static RouteGroupBuilder MapGetByidBannerEndpoints(this RouteGroupBuilder group)
+             {
+            group.MapGet("/getbyid/{id:guid}", async Task<Results<
+            Ok<V2BannerDto>,
+            NotFound,
+            ProblemHttpResult>>
+            (
+            Guid id,
+            IV2BannerService service,
+            CancellationToken cancellationToken
+            ) =>
+                        {
+                try
+                {
+                    var result = await service.GetBannerByIdAsync(id, cancellationToken);
+
+                    return result is not null
+                        ? TypedResults.Ok(result)
+                        : TypedResults.NotFound();
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetBannerById")
+            .WithTags("Banners")
+            .WithDescription("Retrieves a banner by its ID.")
+            .Produces<V2BannerDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+    }
     }
 }
+
 

@@ -13,6 +13,8 @@ namespace QLN.Common.DTO_s
         public string AltText { get; set; } 
         public string LinkUrl { get; set; } 
         public int Duration { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly EndDate { get; set; }
         public string BannerSize { get; set; } 
         public bool? IsDesktopAvailability { get; set; }
         public bool? IsMobileAvailability { get; set; }
@@ -28,22 +30,25 @@ namespace QLN.Common.DTO_s
         public Guid Id { get; set; }
         public Vertical VerticalId { get; set; }
         public SubVertical SubVerticalId { get; set; }
-        public Guid PageId { get; set; }
-        public string Dimensions { get; set; }
-        public string BannerslotId { get; set; }
-      
-        public List<Guid> BannerTypeIds { get; set; } = new(); 
+        public V2BannerPageLocationDto Pages { get; set; }
+       
+       
     }
 
     public class V2BannerLocationDto
     {
         public Guid Id { get; set; }
         public string BannerTypeName { get; set; }
+        public string Dimensions { get; set; }
+        public string BannerslotId { get; set; }
+        public V2BannerDto BannerDetails { get; set; } = new();
     }
     public class V2BannerPageLocationDto
     {
         public Guid Id { get; set; }
         public string BannerPageName { get; set; }
+       public List<V2BannerLocationDto> bannertypes { get; set; }
+
     }
     public class BannerTypeDetailsDto
     {

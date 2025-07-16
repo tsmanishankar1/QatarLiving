@@ -7,11 +7,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     {
         public static RouteGroupBuilder MapBannerPostEndpoints(this RouteGroupBuilder group)
         {
-            group.MapCreateBannerTypeEndpoints()
-            .MapBannerLocationEndpoints()
-            .MapCreateBannerEndpoints()
+            group.MapCreateBannerEndpoints()
             .MapUpdateBannerEndpoints()
-            .MapDeleteBannerEndpoints();
+            .MapDeleteBannerEndpoints()
+            .MapGetByidBannerEndpoints();
             return group;
 
         }

@@ -23,175 +23,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-        public async Task<string> CreateBannerTypeAsync(V2BannerTypeDto dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (dto == null)
-                    throw new InvalidDataException("Banner type data cannot be null.");
-
-                if (dto.VerticalId == 0 || dto.SubVerticalId == 0)
-                    throw new InvalidDataException("VerticalId and SubVerticalId are required.");
-
-                var url = "api/v2/banner/createbannertype";
-
-                _logger.LogInformation("Invoking Dapr method: AppId = {AppId}, URL = {Url}", ConstantValues.V2Content.ContentServiceAppId, url);
-
-                var request = _dapr.CreateInvokeMethodRequest(
-                    HttpMethod.Post,
-                    ConstantValues.V2Content.ContentServiceAppId,
-                    url
-                );
-
-                request.Content = new StringContent(
-                    JsonSerializer.Serialize(dto),
-                    Encoding.UTF8,
-                    "application/json"
-                );
-
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-                _logger.LogInformation("Dapr response status: {StatusCode}", response.StatusCode);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
-                    string errorMessage;
-
-                    if (!string.IsNullOrWhiteSpace(errorContent))
-                    {
-                        try
-                        {
-                            if (errorContent.TrimStart().StartsWith("{"))
-                            {
-                                var problem = JsonSerializer.Deserialize<ProblemDetails>(errorContent);
-                                errorMessage = problem?.Detail ?? "Unknown validation error.";
-                            }
-                            else
-                            {
-                                errorMessage = errorContent;
-                            }
-                        }
-                        catch
-                        {
-                            errorMessage = errorContent;
-                        }
-                    }
-                    else
-                    {
-                        errorMessage = $"Request failed with status code: {response.StatusCode}";
-                    }
-
-                    throw new InvalidDataException(errorMessage);
-                }
-
-                var result = await response.Content.ReadAsStringAsync(cancellationToken);
-                _logger.LogInformation("Dapr response body: {Result}", result);
-
-                return result;
-            }
-            catch (InvalidDataException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Dapr call to CreateBannerTypeAsync failed. AppId: {AppId}, Path: /api/v2/banner/createbannertype",
-                    ConstantValues.V2Content.ContentServiceAppId);
-                throw new InvalidDataException($"Failed to create banner type: {ex.Message}", ex);
-            }
-        }
-        public async Task<string> CreateBannerLocationAsync(V2BannerLocationDto dto, CancellationToken cancellationToken = default)
-        {
-            var request = _dapr.CreateInvokeMethodRequest(
-                HttpMethod.Post,
-                ConstantValues.V2Content.ContentServiceAppId,
-                "/api/v2/banner/createlocation"
-            );
-
-            request.Content = new StringContent(
-                JsonSerializer.Serialize(dto),
-                System.Text.Encoding.UTF8,
-                "application/json"
-            );
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new InvalidDataException($"Request failed: {error}");
-            }
-
-            return await response.Content.ReadAsStringAsync(cancellationToken);
-        }
-
-        public async Task<string> CreateBannerPageLocationAsync(V2BannerPageLocationDto dto, CancellationToken cancellationToken = default)
-        {
-            var request = _dapr.CreateInvokeMethodRequest(
-                HttpMethod.Post,
-                ConstantValues.V2Content.ContentServiceAppId,
-                "/api/v2/banner/createpagelocation"
-            );
-
-            request.Content = new StringContent(
-                JsonSerializer.Serialize(dto),
-                System.Text.Encoding.UTF8,
-                "application/json"
-            );
-
-            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var error = await response.Content.ReadAsStringAsync(cancellationToken);
-                throw new InvalidDataException($"Request failed: {error}");
-            }
-
-            return await response.Content.ReadAsStringAsync(cancellationToken);
-        }
-
-        public async Task<List<V2BannerLocationDto>> GetAllBannerLocationsAsync(CancellationToken cancellationToken = default)
-        {
-            return await _dapr.InvokeMethodAsync<List<V2BannerLocationDto>>(
-                HttpMethod.Get,
-                ConstantValues.V2Content.ContentServiceAppId,
-                "/api/v2/banner/getlocations",
-                cancellationToken);
-        }
-        public async Task<List<BannerTypeDetailsDto>> GetBannerTypesByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
-        {
-            var response = await _dapr.InvokeMethodAsync<List<BannerTypeDetailsDto>>(
-                HttpMethod.Get,
-                ConstantValues.V2Content.ContentServiceAppId,
-                $"/api/v2/banner/getbyvertical/{(int)vertical}",
-                cancellationToken
-            );
-
-            return response ?? new List<BannerTypeDetailsDto>();
-        }
-        public async Task<List<BannerTypeDetailsDto>> GetBannerTypesBySubVerticalAsync(SubVertical subVertical, CancellationToken cancellationToken = default)
-        {
-            var response = await _dapr.InvokeMethodAsync<List<BannerTypeDetailsDto>>(
-                HttpMethod.Get,
-                ConstantValues.V2Content.ContentServiceAppId,
-                $"api/v2/banner/getbannertypesbysubvertical/{(int)subVertical}",
-                cancellationToken
-            );
-
-            return response ?? new();
-        }
-        public async Task<List<BannerTypeDetailsDto>> GetBannerTypesByPageIdAsync(Guid pageId, CancellationToken cancellationToken = default)
-        {
-            var response = await _dapr.InvokeMethodAsync<List<BannerTypeDetailsDto>>(
-                HttpMethod.Get,
-                ConstantValues.V2Content.ContentServiceAppId,
-                $"api/v2/banner/getbannertypesbypageid/{pageId}",
-                cancellationToken
-            );
-
-            return response ?? new();
-        }
+      
         public async Task<string> CreateBannerAsync(string userId, V2BannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
@@ -374,6 +206,53 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting banner");
+                throw;
+            }
+        }
+        public async Task<V2BannerDto?> GetBannerByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/banner/getbyid/{id}";
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                _logger.LogInformation("🔽 Raw JSON from internal service:\n{RawJson}", rawJson);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = rawJson;
+                    }
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                // ✅ Case-insensitive deserialization
+                return JsonSerializer.Deserialize<V2BannerDto>(
+                    rawJson,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error fetching banner by ID");
                 throw;
             }
         }
