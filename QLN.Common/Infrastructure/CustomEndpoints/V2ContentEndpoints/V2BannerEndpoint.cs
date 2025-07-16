@@ -333,7 +333,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
-             public static RouteGroupBuilder MapGetByidBannerEndpoints(this RouteGroupBuilder group)
+         public static RouteGroupBuilder MapGetByidBannerEndpoints(this RouteGroupBuilder group)
              {
             group.MapGet("/getbyid/{id:guid}", async Task<Results<
             Ok<V2BannerDto>,
@@ -367,6 +367,66 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
     }
+        public static RouteGroupBuilder MapBannerTypeEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPost("/createbannertype", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                V2BannerTypeDto dto,
+                IV2BannerService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.CreateBannerTypeAsync(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("CreateBannerType")
+            .WithTags("BannerTypes")
+            .WithDescription("Creates a new banner type.");
+
+            group.MapGet("/getall", async Task<Results<
+                Ok<List<V2BannerTypeDto>>,
+                ProblemHttpResult>>
+            (
+                IV2BannerService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllBannerTypesAsync(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllBannerTypes")
+            .WithTags("BannerTypes")
+            .WithDescription("Returns all banner types.");
+
+            return group;
+        }
+
+
     }
 }
 

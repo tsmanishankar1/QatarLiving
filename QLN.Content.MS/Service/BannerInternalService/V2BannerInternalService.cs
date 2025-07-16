@@ -12,16 +12,12 @@ namespace QLN.Content.MS.Service.BannerInternalService
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<V2BannerInternalService> _logger;
-        private const string StoreName = ConstantValues.V2Content.ContentStoreName;
-        private const string IndexKey = "banner-location-index";
-        private const string IndexPageKey = "banner-page-index";
+       
         public V2BannerInternalService(DaprClient dapr, ILogger<V2BannerInternalService> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
-
-     
         public async Task<string> CreateBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -213,6 +209,58 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 Console.WriteLine("❌ Exception in GetBannerByIdAsync (INTERNAL)");
                 _logger.LogError(ex, "Error retrieving banner.");
                 throw new Exception("Error occurred while retrieving banner.", ex);
+            }
+        }
+        public async Task<string> CreateBannerTypeAsync(V2BannerTypeDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                Console.WriteLine("🔧 INTERNAL SERVICE - Creating BannerType");
+
+                var bannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.BannerTypeIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<V2BannerTypeDto>();
+
+                dto.Id = Guid.NewGuid();
+                bannerTypes.Add(dto);
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.BannerTypeIndexKey,
+                    bannerTypes,
+                    cancellationToken: cancellationToken
+                );
+
+                return "BannerType created successfully.";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ Error creating BannerType");
+                _logger.LogError(ex, "CreateBannerTypeAsync failed");
+                throw;
+            }
+        }
+        public async Task<List<V2BannerTypeDto>> GetAllBannerTypesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                Console.WriteLine("🔍 INTERNAL SERVICE - Fetching all BannerTypes");
+
+                var bannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.BannerTypeIndexKey,
+                    cancellationToken: cancellationToken
+                );
+
+                return bannerTypes ?? new List<V2BannerTypeDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("❌ Error fetching BannerTypes");
+                _logger.LogError(ex, "GetAllBannerTypesAsync failed");
+                throw;
             }
         }
 

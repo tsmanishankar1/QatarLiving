@@ -23,7 +23,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-      
         public async Task<string> CreateBannerAsync(string userId, V2BannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
@@ -89,9 +88,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
-
-      
         private async Task CleanupUploadedFiles(string?[] files, CancellationToken cancellationToken)
         {
             foreach (var file in files)
@@ -100,8 +96,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                     await _blobStorage.DeleteFile(file, "v2banners", cancellationToken);
             }
         }
-
-
         public async Task<string> EditBannerAsync(string uid, V2BannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
@@ -253,6 +247,58 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "❌ Error fetching banner by ID");
+                throw;
+            }
+        }
+        public async Task<string> CreateBannerTypeAsync(V2BannerTypeDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/banner/createbannertype";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                    throw new InvalidDataException(problem?.Detail ?? "Unknown error");
+                }
+
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Created";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating banner type");
+                throw;
+            }
+        }
+        public async Task<List<V2BannerTypeDto>> GetAllBannerTypesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/banner/getall";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.V2Content.ContentServiceAppId, url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                    throw new InvalidDataException(problem?.Detail ?? "Unknown error");
+                }
+
+                return JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<V2BannerTypeDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting banner types");
                 throw;
             }
         }

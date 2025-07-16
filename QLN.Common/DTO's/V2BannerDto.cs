@@ -41,7 +41,7 @@ namespace QLN.Common.DTO_s
         public string BannerTypeName { get; set; }
         public string Dimensions { get; set; }
         public string BannerslotId { get; set; }
-        public V2BannerDto BannerDetails { get; set; } = new();
+        public V2BannerDto? BannerDetails { get; set; } = new();
     }
     public class V2BannerPageLocationDto
     {

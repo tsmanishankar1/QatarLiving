@@ -10,7 +10,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             group.MapCreateBannerEndpoints()
             .MapUpdateBannerEndpoints()
             .MapDeleteBannerEndpoints()
-            .MapGetByidBannerEndpoints();
+            .MapGetByidBannerEndpoints()
+            .MapBannerTypeEndpoints();
             return group;
 
         }
