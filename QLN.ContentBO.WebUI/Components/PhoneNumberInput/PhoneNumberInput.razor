@@ -1,0 +1,375 @@
+@using System.Text.Json
+@inject HttpClient Http
+@using QLN.ContentBO.WebUI.Models;
+@using System.Linq.Expressions
+@inject NavigationManager Navigation
+@using MudBlazor
+
+@if (Countries?.Any() != true)
+{
+    <p>Loading countries...</p>
+}
+else
+{
+    <div  class="phone-input-wrapper @(IsOpen ? "active" : "")" @onfocusout="() => IsOpen = false" @onkeydown="HandleKeyDown" tabindex="0">
+       <div class="phone-input-container"> <!-- Column layout -->
+    <label class="phone-label">@Placeholder</label>
+
+    <div class="phone-input-row"> <!-- Row layout -->
+        <div class="phone-select-box" @onclick="ToggleDropdown">
+            <img class="flag-icon" src="@SelectedCountry.Flag" alt="@SelectedCountry.Name" />
+            <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" size="Size.Small" class="dropdown-arrow" />
+            <span class="country-code">@SelectedCountry.Code</span>
+        </div>
+
+     <MudTextField 
+          Class="phone-number-input"
+          Placeholder=" "
+          InputType="InputType.Text"
+          Immediate="true"
+          @bind-Value="PhoneNumber"
+          MaxLength="15"
+          Pattern="^\d*$"
+          HideSpinButtons="true" />
+
+
+    </div>
+</div>
+
+        <div class="dropdown-list @(IsOpen ? "show" : "")">
+            @foreach (var country in Countries)
+            {
+                <div class="phone-dropdown-item" @onclick="() => SelectCountry(country)">
+                    <div>
+                    <img class="flag-icon" src="@country.Flag" alt="@country.Name" />
+                    <span>@country.Name (@country.Code)</span>
+                    </div>
+                    @if (SelectedCountry.Code == country.Code)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Check" class="check-icon" />
+                    }
+                </div>
+            }
+        </div>
+ 
+    </div>
+
+}
+
+@code {
+    private List<CountryModel> Countries = new();
+    private bool IsOpen = false;
+
+
+    [Inject] private IJSRuntime JS { get; set; }
+
+        private List<CountryModel> GetFilteredCountries()
+    {
+        if (string.IsNullOrWhiteSpace(SearchBuffer))
+            return Countries;
+
+        var query = SearchBuffer.ToLowerInvariant();
+
+        return Countries
+            .OrderByDescending(c =>
+                c.Name.ToLowerInvariant().StartsWith(query) ||
+                c.Code.ToLowerInvariant().StartsWith(query))
+            .ThenBy(c => c.Name)
+            .ToList();
+    }
+    private void HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.Key) || e.Key.Length > 1 || char.IsControl(e.Key[0]))
+            return;
+
+        var now = DateTime.Now;
+        if ((now - LastKeyPressTime).TotalSeconds > 1)
+        {
+            SearchBuffer = "";
+        }
+
+        LastKeyPressTime = now;
+        SearchBuffer += e.Key;
+
+        StateHasChanged();
+    }
+
+    private string SearchBuffer = "";
+    private DateTime LastKeyPressTime;
+    private List<CountryModel> FilteredCountries => GetFilteredCountries();
+        [Parameter]
+    public string Placeholder { get; set; } = "Enter phone number";
+
+    [Parameter] public CountryModel SelectedCountry { get; set; }
+    [Parameter] public EventCallback<CountryModel> SelectedCountryChanged { get; set; }
+
+    [Parameter] public string PhoneNumber { get; set; }
+    [Parameter] public EventCallback<string> PhoneNumberChanged { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Countries = await FetchCountriesAsync();
+        if (SelectedCountry == null && Countries.Count > 0)
+        {
+             SelectedCountry = Countries.FirstOrDefault(c => c.Name == "Qatar")
+                      ?? Countries.FirstOrDefault(c => c.Code == "+974") // Qatar's code
+                      ?? Countries.First();
+            await SelectedCountryChanged.InvokeAsync(SelectedCountry);
+        }
+    }
+
+    private void ToggleDropdown() => IsOpen = !IsOpen;
+
+    private async Task SelectCountry(CountryModel country)
+    {
+        SelectedCountry = country;
+        await SelectedCountryChanged.InvokeAsync(country);
+        IsOpen = false;
+    }
+
+  
+
+
+private async Task<List<CountryModel>> FetchCountriesAsync()
+{
+    try
+    {
+        var baseUri = Navigation.BaseUri;
+        var json = await Http.GetStringAsync($"{baseUri}data/countries.json");
+
+        var countriesJson = JsonSerializer.Deserialize<List<JsonElement>>(json);
+
+        var countryList = new List<CountryModel>();
+
+        foreach (var country in countriesJson!)
+        {
+            if (country.TryGetProperty("name", out var nameDict) &&
+                nameDict.TryGetProperty("common", out var nameElement))
+            {
+                string name = nameElement.GetString() ?? "Unknown";
+                string code = "N/A";
+                string flag = "";
+
+                if (country.TryGetProperty("idd", out var idd))
+                {
+                    if (idd.TryGetProperty("root", out var rootElement) &&
+                        idd.TryGetProperty("suffixes", out var suffixesElement) &&
+                        suffixesElement.ValueKind == JsonValueKind.Array &&
+                        suffixesElement.GetArrayLength() > 0)
+                    {
+                        var root = rootElement.GetString();
+                        var suffix = suffixesElement[0].GetString();
+                        if (!string.IsNullOrWhiteSpace(root) && !string.IsNullOrWhiteSpace(suffix))
+                        {
+                            code = root + suffix;
+                        }
+                    }
+                }
+
+                if (country.TryGetProperty("flags", out var flags) &&
+                    flags.TryGetProperty("png", out var flagElement))
+                {
+                    flag = flagElement.GetString() ?? "";
+                }
+
+                countryList.Add(new CountryModel
+                {
+                    Name = name,
+                    Code = code,
+                    Flag = flag
+                });
+            }
+        }
+
+        return countryList;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error loading countries: {ex.Message}");
+        return new List<CountryModel>();
+    }
+}
+
+}
+<style>
+@@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.phone-input-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #D0D5DD;
+    border-radius: 10px;
+    height: 60px;
+    padding: 5px 10px;
+    position: relative;
+    background-color: #fff;
+    width: 100%;
+    transition: border-color 0.3s ease;
+}
+.phone-input-wrapper.error {
+    border-color: red !important;
+     box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
+}
+
+.phone-input-wrapper.active {
+    border-color: #FF7F38;
+}
+.phone-input-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.phone-input-row {
+    display: flex;
+    align-items: center;
+}
+
+
+.phone-select-box {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    min-width: 80px;
+}
+
+.flag-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.country-code {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--color-text-heading);
+}
+
+.arrow {
+    font-size: 14px;
+    color: var(--color-text-descripton);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dropdown Styles */
+.dropdown-list {
+    position: absolute;
+    top: calc(100% + 5px);
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 999;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.dropdown-list.show {
+    display: block;
+    animation: slideDown 0.2s ease-out forwards;
+}
+
+.dropdown-list.hide {
+    animation: slideUp 0.2s ease-in forwards;
+}
+.phone-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--color-text-descripton);
+}
+
+
+.phone-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.phone-dropdown-item:hover {
+    background-color: #f9f9f9;
+}
+
+.phone-dropdown-item img {
+    width: 22px;
+    height: 22px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.phone-dropdown-item span.check {
+    margin-left: auto;
+    color: #28a745;
+    font-size: 16px;
+}
+
+/* Input Styling */
+.phone-number-input {
+    flex-grow: 1;
+    border: none;
+    outline: none;
+    padding: 5px 5px 5px 1px;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--color-text-heading);
+}
+
+    .phone-number-input .mud-input-root {
+            border-bottom: none !important;
+            box-shadow: none !important;
+        }
+
+        .phone-number-input .mud-input-underline:before,
+        .phone-number-input .mud-input-underline:after {
+            display: none !important;
+        }
+      .phone-number-input input.mud-input-root {
+    height: 10px; /* or whatever height you want */
+}
+
+
+/* Responsive */
+@@media (max-width: 480px) {
+    .phone-input-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .phone-number-input {
+        width: 100%;
+        margin-top: 8px;
+    }
+}
+
+</style>

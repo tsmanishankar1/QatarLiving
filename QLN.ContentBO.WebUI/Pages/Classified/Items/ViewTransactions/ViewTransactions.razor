@@ -1,1 +1,34 @@
-<h3>View Transactions</h3>
+@inherits ViewTransactionsBase
+@using QLN.ContentBO.WebUI.Models;
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+              <div class="community-table">
+              <ViewTransactionsTable/>
+
+             </div> 
+    </MudItem>
+</MudGrid>
+
+<style>
+    .community-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+        }
+      .community-table {
+        margin-top: 20px;
+        }
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; /* stick to top of viewport */
+        z-index: 10; /* keep above table rows */
+        background-color: #FAFAFA; /* prevent content behind showing */
+        padding: 10px 0;
+    }
+</style>
