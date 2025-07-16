@@ -1,5 +1,5 @@
-@page "/create-form"
 @inherits CreateFormListBase
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
 
 <EditForm Model="Ad" OnValidSubmit="SubmitForm">
     <DataAnnotationsValidator />
@@ -28,11 +28,40 @@
             </MudSelect>
         }
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Certificate"
-                      @bind-Value="Ad.Certificate" For="@(() => Ad.Certificate)" FullWidth="true" />
-
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Battery %"
                       @bind-Value="Ad.BatteryPercentage" For="@(() => Ad.BatteryPercentage)" FullWidth="true" />
+                                  <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+                        <MudText Typo="Typo.body1">
+                            Certificate / Warranty*
+                            @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                            {
+
+                                <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
+                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               OnClick="ClearFile"
+                                               />
+                            }
+
+                        </MudText>
+                        <MudSpacer />
+                    <MudFileUpload T="IBrowserFile"
+                                Accept=".pdf,.png,.jpg,.jpeg"
+                                MaxFileSize="10485760"
+                                FilesChanged="OnCrFileSelected">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled"
+                                    Color="Color.Primary"
+                                    Class="upload-button">
+                                Upload
+                                <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+
+                    </MudPaper>
+                <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
 
         <h3 class="form-heading">Description and Features</h3>
 
@@ -45,18 +74,24 @@
                       @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
 
         <h3 class="form-heading">Contact Details</h3>
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Phone Code"
-                      @bind-Value="Ad.PhoneCode" For="@(() => Ad.PhoneCode)" FullWidth="true" />
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Phone Number"
-                      @bind-Value="Ad.PhoneNumber" For="@(() => Ad.PhoneNumber)" FullWidth="true" />
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="WhatsApp Code"
-                      @bind-Value="Ad.WhatsappCode" For="@(() => Ad.WhatsappCode)" FullWidth="true" />
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="WhatsApp Number"
-                      @bind-Value="Ad.WhatsappNumber" For="@(() => Ad.WhatsappNumber)" FullWidth="true" />
+        <div class="form-group">
+                <!-- Phone -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedPhoneCountry"
+                        Placeholder="Phone Number*"
+                        SelectedCountryChanged="@OnPhoneCountryChanged"
+                        PhoneNumber="@Ad.PhoneNumber"
+                        PhoneNumberChanged="@OnPhoneChanged" />
+                </div>
+                <div class="form-group">
+                    <!-- WhatsApp -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedWhatsappCountry"
+                        Placeholder="WhatsApp Number"
+                        SelectedCountryChanged="@OnWhatsappCountryChanged"
+                        PhoneNumber="@Ad.WhatsappNumber"
+                        PhoneNumberChanged="@OnWhatsappChanged" />
+                </div>
 
         <h3 class="form-heading">Location</h3>
 
@@ -74,10 +109,10 @@
         <MudCheckBox Color="Color.Primary" T="bool" Label="I agree to terms"
                       @bind-Value="Ad.IsAgreed" For="@(() => Ad.IsAgreed)" />
 
-        <MudStack Row Justify="Justify.SpaceBetween" Class="mt-4">
-            <MudButton Variant="Variant.Outlined" Color="Color.Secondary">Cancel</MudButton>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
-        </MudStack>
+        <div class="custom-button-group">
+            <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
+            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
+        </div>
     </div>
 </EditForm>
 
@@ -118,5 +153,22 @@
         font-size: 12px;
         padding: 0 0 5px 0;
         font-weight: 500;
+    }
+    .custom-button-group {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .custom-button{
+        width: 100%;
+        text-transform: capitalize;
+    }
+    .form-group {
+        margin-bottom: 1rem;
+    }
+     .upload-button {
+        gap: 8px;
+        text-transform: capitalize;
     }
 </style>

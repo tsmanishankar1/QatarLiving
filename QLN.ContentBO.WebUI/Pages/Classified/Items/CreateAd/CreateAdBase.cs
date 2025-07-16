@@ -8,6 +8,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
     {
         [Inject] public NavigationManager Navigation { get; set; }
 
+        protected void GoBack()
+        {
+            Navigation.NavigateTo("/manage/classified/items");
+        }
+
         protected string? UserEmail { get; set; }
 
         protected override void OnInitialized()
