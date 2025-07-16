@@ -3,7 +3,6 @@
 @using QLN.Web.Shared.Pages.Content.Daily
 @using QLN.Web.Shared.Pages.Content.DailyV2
 @using QLN.Web.Shared.Services
-@inject NavigationManager NavManager
 @layout ContentLayout
 @inject IOptions<NavigationPath> options
 
@@ -17,5 +16,5 @@ else
 }
 
 @code {
-    private bool ShouldRenderV2Component => NavManager.Uri.Contains("/v2", StringComparison.OrdinalIgnoreCase);
+    private bool ShouldRenderV2Component => options.Value.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase);
 }
