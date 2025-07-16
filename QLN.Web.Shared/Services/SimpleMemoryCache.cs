@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Services.Interface;
@@ -22,19 +23,23 @@ namespace QLN.Web.Shared.Services
         private static readonly TimeSpan BannerCacheDuration = TimeSpan.FromMinutes(3);
         private static readonly TimeSpan DailyCacheDuration = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan NewsCacheDuration = TimeSpan.FromMinutes(2);
+        private readonly NavigationPath _navigationPath;
 
         public SimpleMemoryCache(
             IEventService eventService,
             IContentService contentService,
             INewsService newsService,
             ILogger<SimpleMemoryCache> logger,
-            IMemoryCache memoryCache)
+            IMemoryCache memoryCache,
+            IOptions<NavigationPath> navigationPath
+            )
         {
             _eventService = eventService;
             _contentService = contentService;
             _newsService = newsService;
             _logger = logger;
             _memoryCache = memoryCache;
+            _navigationPath = navigationPath.Value;
         }
 
         public async Task<ContentsDailyPageResponse?> GetContentLandingAsync()
@@ -56,7 +61,15 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var result = await _contentService.GetDailyLPAsync();
+                HttpResponseMessage? result;
+                if (_navigationPath.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase))
+                {
+                    result = await _contentService.GetDailyLPV2Async();
+                }
+                else
+                {
+                    result = await _contentService.GetDailyLPAsync();
+                }
 
                 if (result != null && result.IsSuccessStatusCode && result.Content != null)
                 {
