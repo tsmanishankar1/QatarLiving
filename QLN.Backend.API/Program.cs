@@ -224,6 +224,8 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
+builder.Services.V2BannerConfiguration(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -273,8 +275,8 @@ var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-var bannerGroup = app.MapGroup("/api/banner");
-bannerGroup.MapBannerEndpoints();
+//var bannerGroup = app.MapGroup("/api/banner");
+//bannerGroup.MapBannerEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
@@ -301,6 +303,9 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
+
+var bannerPostGroup  = app.MapGroup("/api/v2/banner");
+bannerPostGroup.MapBannerPostEndpoints();
 //.RequireAuthorization();
 
 app.MapAllBackOfficeEndpoints();
