@@ -254,7 +254,25 @@ namespace QLN.Content.MS.Service.BannerInternalService
                     cancellationToken: cancellationToken
                 );
 
-                return bannerTypes ?? new List<V2BannerTypeDto>();
+                if (bannerTypes == null)
+                    return new List<V2BannerTypeDto>();
+
+                // ❌ Remove BannerDetails and ensure VerticalName/SubVerticalName are filled
+                foreach (var bannerType in bannerTypes)
+                {
+                    bannerType.VerticalName = bannerType.VerticalId.ToString();         // You can replace with actual mapping
+                    bannerType.SubVerticalName = bannerType.SubVerticalId.ToString();   // if you have lookup
+
+                    if (bannerType.Pages?.bannertypes != null)
+                    {
+                        foreach (var type in bannerType.Pages.bannertypes)
+                        {
+                            type.BannerDetails = null; // Remove banner details from response
+                        }
+                    }
+                }
+
+                return bannerTypes;
             }
             catch (Exception ex)
             {
@@ -263,6 +281,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw;
             }
         }
+
 
 
 

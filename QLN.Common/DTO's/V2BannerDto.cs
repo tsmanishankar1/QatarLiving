@@ -29,8 +29,10 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public Vertical VerticalId { get; set; }
-        public SubVertical SubVerticalId { get; set; }
-        public V2BannerPageLocationDto Pages { get; set; }
+        public SubVertical? SubVerticalId { get; set; }
+        public string? VerticalName { get; set; }  
+        public string? SubVerticalName { get; set; } 
+        public V2BannerPageLocationDto? Pages { get; set; }
        
        
     }
@@ -50,41 +52,10 @@ namespace QLN.Common.DTO_s
        public List<V2BannerLocationDto> bannertypes { get; set; }
 
     }
-    public class BannerTypeDetailsDto
-    {
-        public string VerticalName { get; set; }
-        public string SubVerticalName { get; set; }
-        public Guid PageId { get; set; }
-        public string PageName { get; set; }
-        public string Dimensions { get; set; }
-        public string BannerslotId { get; set; }
+   
 
 
-        public List<BannerTypeItemDto> BannerTypes { get; set; }
-    }
-    public class V2BannerTypeDetailedDto
-    {
-        public Guid Id { get; set; }
-
-        public int VerticalId { get; set; }
-        public string VerticalName { get; set; }
-
-        public int SubVerticalId { get; set; }
-        public string SubVerticalName { get; set; }
-
-        public List<Guid> BannerTypeIds { get; set; } = new();
-        public List<string> BannerTypeNames { get; set; } = new();
-
-        public Guid PageId { get; set; }
-        public string PageName { get; set; }
-    }
-
-
-    public class BannerTypeItemDto
-    {
-        public Guid BannerTypeId { get; set; }
-        public string BannerTypeName { get; set; }
-    }
+    
     public class DeleteBannerRequest
     {
         public Guid BannerId { get; set; }
