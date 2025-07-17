@@ -99,7 +99,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             return group;
         }
         public static RouteGroupBuilder MapServiceCategoryGetAllEndpoints(this RouteGroupBuilder group)
-        { 
+        {
             group.MapGet("/getallcategories", async (
                 IServices service,
                 CancellationToken cancellationToken
@@ -110,7 +110,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.GetAllCategories(cancellationToken);
                     return Results.Ok(result);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     return Results.Problem("Internal Server Error", ex.Message);
                 }
@@ -200,16 +200,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-                    if (uid == null)
+                    var userName = userData.GetProperty("name").GetString();
+                    if (uid == null && userName == null)
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
                     dto.CreatedBy = uid;
+                    dto.UserName = userName;
                     var result = await service.CreateServiceAd(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -281,7 +283,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             return group;
         }
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
-        { 
+        {
             group.MapPut("/update", async Task<Results<Ok<string>, NotFound, ProblemHttpResult>> (
                 ServicesDto dto,
                 HttpContext httpContext,
@@ -302,16 +304,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-                    if (uid == null)
+                    var userName = userData.GetProperty("name").GetString();
+                    if (uid == null && userName == null)
                     {
                         return TypedResults.Problem(new ProblemDetails
                         {
                             Title = "Unauthorized Access",
-                            Detail = "User ID could not be extracted from token.",
+                            Detail = "User ID or username could not be extracted from token.",
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
                     dto.UpdatedBy = uid;
+                    dto.UserName = userName;
                     var result = await service.UpdateServiceAd(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -500,8 +504,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             })
             .WithName("DeleteServiceAd")
             .WithTags("Service")
-            .WithSummary("Soft delete service ad with auth")
-            .WithDescription("Soft deletes a service ad. Auth required.")
+            .WithSummary("Soft delete service ad")
+            .WithDescription("Soft deletes a service ad.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
@@ -528,6 +532,154 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Soft delete service ad by user id")
             .WithDescription("Soft deletes a service ad directly by providing Id and UpdatedBy.")
             .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetServicesByStatusEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/getbystatus", async (
+                [FromBody] ServiceStatusQuery dto,
+                IServices service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    dto.PageNumber ??= 1;
+                    dto.PerPage ??= 12;
+                    if (dto.PageNumber <= 0 || dto.PerPage <= 0)
+                    {
+                        return Results.Problem(
+                            title: "Invalid pagination parameters",
+                            detail: "PageNumber and PerPage must be greater than zero.",
+                            statusCode: StatusCodes.Status400BadRequest
+                        );
+                    }
+                    if (dto.Status == null)
+                    {
+                        return Results.Problem(
+                            title: "Invalid request",
+                            detail: "Status is required.",
+                            statusCode: StatusCodes.Status400BadRequest
+                        );
+                    }
+                    var result = await service.GetServicesByStatusWithPagination(dto, cancellationToken);
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        title: "Failed to fetch services by status",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetServicesByStatus")
+            .WithTags("Service")
+            .WithSummary("Get services by status (with pagination)")
+            .WithDescription("Returns paged service ads matching the given status (Published, Unpublished, etc).")
+            .Produces<PagedResponse<ServicesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapPromoteEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/promote", async Task<IResult> (
+                PromoteServiceRequest request,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId == Guid.Empty)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.PromoteService(request, cancellationToken);
+
+                    if (resultMessage == "Service not found")
+                    {
+                        return Results.Problem(
+                            detail: resultMessage,
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("PromoteService")
+            .WithTags("Service")
+            .WithSummary("Promote a service ad")
+            .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapFeatureEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/feature", async Task<IResult> (
+                FeatureServiceRequest request,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId == Guid.Empty)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.FeatureService(request, cancellationToken);
+
+                    if (resultMessage == "Service not found")
+                    {
+                        return Results.Problem(
+                            detail: resultMessage,
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("FeatureService")
+            .WithTags("Service")
+            .WithSummary("Feature a service ad")
+            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

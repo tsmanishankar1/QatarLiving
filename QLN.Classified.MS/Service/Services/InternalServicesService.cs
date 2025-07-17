@@ -154,12 +154,35 @@ namespace QLN.Classified.MS.Service.Services
             {
                 ValidateCommon(dto);
                 var id = Guid.NewGuid();
+                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                  ConstantValues.Services.StoreName,
+                  dto.MainCategoryId.ToString(),
+                  cancellationToken : cancellationToken);
+                string? l1CategoryName = null;
+                string? l2CategoryName = null;
+
+                if (mainCategory != null)
+                {
+                    var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                    if (l1Category != null)
+                    {
+                        l1CategoryName = l1Category.Name;
+
+                        var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                        if (l2Category != null)
+                        {
+                            l2CategoryName = l2Category.Name;
+                        }
+                    }
+                }
                 var entity = new ServicesDto
                 {
                     Id = id,
                     MainCategoryId = dto.MainCategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
+                    L1CategoryName = l1CategoryName,
+                    L2CategoryName = l2CategoryName,
                     Price = dto.Price,
                     Title = dto.Title,
                     Description = dto.Description,
@@ -173,6 +196,12 @@ namespace QLN.Classified.MS.Service.Services
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
                     PhotoUpload = dto.PhotoUpload,
+                    IsFeatured = false,
+                    IsPromoted = false,
+                    AdType = dto.AdType,
+                    PublishedDate = dto.PublishedDate,
+                    Status = dto.Status,
+                    UserName = dto.UserName,
                     IsActive = true,
                     CreatedBy = userId,
                     CreatedAt = DateTime.UtcNow,
@@ -269,6 +298,8 @@ namespace QLN.Classified.MS.Service.Services
                     MainCategoryId = dto.MainCategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
+                    L1CategoryName = dto.L1CategoryName,
+                    L2CategoryName = dto.L2CategoryName,
                     Price = dto.Price,
                     Title = dto.Title,
                     Description = dto.Description,
@@ -282,6 +313,11 @@ namespace QLN.Classified.MS.Service.Services
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
                     PhotoUpload = dto.PhotoUpload,
+                    AdType = dto.AdType,
+                    IsFeatured = false,
+                    IsPromoted = false,
+                    PublishedDate = dto.PublishedDate,
+                    Status = dto.Status,
                     IsActive = dto.IsActive,
                     CreatedBy = existing.CreatedBy,
                     CreatedAt = existing.CreatedAt,
@@ -392,6 +428,108 @@ namespace QLN.Classified.MS.Service.Services
             );
 
             return "Service Ad soft-deleted successfully.";
+        }
+        public async Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.ServicesIndexKey,
+                cancellationToken: cancellationToken
+            ) ?? new();
+
+            if (indexKeys.Count == 0)
+            {
+                return new ServicesPagedResponse<ServicesDto>
+                {
+                    TotalCount = 0,
+                    PageNumber = dto.PageNumber,
+                    PerPage = dto.PerPage,
+                    Items = new()
+                };
+            }
+
+            var ads = await _dapr.GetBulkStateAsync(
+                ConstantValues.Services.StoreName,
+                indexKeys,
+                parallelism: 10,
+                cancellationToken: cancellationToken
+            );
+
+            var filtered = ads
+                .Where(e => !string.IsNullOrWhiteSpace(e.Value))
+                .Select(e => JsonSerializer.Deserialize<ServicesDto>(e.Value!, _jsonOptions))
+                .Where(e => e != null && e.Status == dto.Status && e.IsActive)
+                .ToList();
+
+            var totalCount = filtered.Count;
+            var skip = (dto.PageNumber - 1) * dto.PerPage;
+
+            var pagedItems = filtered
+                .Skip((int)skip)
+                .Take((int)dto.PerPage)
+                .ToList();
+
+            return new ServicesPagedResponse<ServicesDto>
+            {
+                TotalCount = totalCount,
+                PageNumber = dto.PageNumber,
+                PerPage = dto.PerPage,
+                Items = pagedItems
+            };
+        }
+        private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            WriteIndented = false
+        };
+        public async Task<string> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        {
+            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                cancellationToken: ct
+            );
+
+            if (serviceAd is null)
+                return "Service not found";
+
+            serviceAd.IsPromoted = request.IsPromoted;
+            serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                serviceAd,
+                cancellationToken: ct
+            );
+
+            return request.IsPromoted ? "Service promoted successfully" : "Service unpromoted successfully";
+        }
+        public async Task<string> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        {
+            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                cancellationToken: ct
+            );
+
+            if (serviceAd is null)
+                return "Service not found";
+
+            serviceAd.IsFeatured = request.IsFeature;
+            serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                serviceAd,
+                cancellationToken: ct
+            );
+
+            return request.IsFeature ? "Service featured successfully" : "Service unfeatured successfully";
         }
     }
 }

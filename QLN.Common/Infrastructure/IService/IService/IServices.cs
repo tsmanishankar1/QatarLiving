@@ -18,5 +18,8 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default);
         Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default);
         Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default);
+        Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default);        
+        Task<string> PromoteService(PromoteServiceRequest request, CancellationToken ct);
+        Task<string> FeatureService(FeatureServiceRequest request, CancellationToken ct);
     }
 }

@@ -158,7 +158,7 @@ namespace QLN.Backend.API.Service.Services
                             var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
 
                             image.FileName = imageName;
-                            image.Url = blobUrl; 
+                            image.Url = blobUrl;
                         }
                     }
                 }
@@ -306,7 +306,7 @@ namespace QLN.Backend.API.Service.Services
 
                 var url = "/api/service/deletebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
-                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json"); 
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
@@ -329,6 +329,87 @@ namespace QLN.Backend.API.Service.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting service ad");
+                throw;
+            }
+        }
+        public async Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/service/getbystatus";
+                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesDto>>(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error retrieving paged services by status");
+                throw;
+            }
+        }
+        public async Task<string> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var url = "/api/service/promote";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var message = await response.Content.ReadAsStringAsync(ct);
+                    return message;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return "Service not found";
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error promoting service");
+                throw;
+            }
+        }
+        public async Task<string> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var url = "/api/service/feature";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var message = await response.Content.ReadAsStringAsync(ct);
+                    return message;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return "Service not found";
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error featuring service");
                 throw;
             }
         }
