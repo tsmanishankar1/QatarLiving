@@ -4,13 +4,15 @@ using QLN.ContentBO.WebUI.Models;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using MudBlazor;
+using static QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores.ViewStoresBase;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
 {
     public class CreateStoreBase : ComponentBase
     {
         [Parameter]
-        public string? UserEmail { get; set; }
+        public string? CompanyName { get; set; }
+
         public string? Location { get; set; }
         public AdPost Ad { get; set; } = new();
         [Inject] private IJSRuntime JS { get; set; }
@@ -36,6 +38,76 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
         public DateTime? EndDay { get; set; }
         public TimeSpan? StartHour { get; set; }
         public TimeSpan? EndHour { get; set; }
+        public string _localLogoBase64 { get; set; }
+        public string CompanyLogo { get; set; }
+
+        protected override void OnInitialized()
+        {
+            // Simulated "get by company name" logic
+            if (!string.IsNullOrWhiteSpace(CompanyName))
+            {
+                var company = CompanyName.Trim().ToLower();
+
+                if (company == "lulu")
+                {
+                    PrepopulateForm(new SubscriptionOrder
+                    {
+                        CompanyName = "Lulu",
+                        Email = "lulu@example.com",
+                        WebUrl = "https://luluhypermarket.com",
+                        Mobile = "1234567890",
+                        Whatsapp = "9876543210",
+                        StartDate = new DateTime(2025, 7, 1),
+                        EndDate = new DateTime(2025, 12, 31)
+                    });
+                }
+                else if (company == "carrefour")
+                {
+                    PrepopulateForm(new SubscriptionOrder
+                    {
+                        CompanyName = "Carrefour",
+                        Email = "carrefour@example.com",
+                        WebUrl = "https://carrefour.com",
+                        Mobile = "2223334444",
+                        Whatsapp = "4443332222",
+                        StartDate = new DateTime(2025, 8, 1),
+                        EndDate = new DateTime(2025, 11, 30)
+                    });
+                }
+                else
+                {
+                    PrepopulateForm(new SubscriptionOrder
+                    {
+                        CompanyName = "Carrefour",
+                        Email = "carrefour@example.com",
+                        WebUrl = "https://carrefour.com",
+                        Mobile = "2223334444",
+                        Whatsapp = "4443332222",
+                        StartDate = new DateTime(2025, 8, 1),
+                        EndDate = new DateTime(2025, 11, 30)
+                    });
+                }
+            }
+        }
+
+        private void PrepopulateForm(SubscriptionOrder order)
+        {
+            Ad.Title = order.CompanyName;
+            Email = order.Email;
+            WebsiteUrl = order.WebUrl;
+            Ad.PhoneNumber = order.Mobile;
+            Ad.WhatsappNumber = order.Whatsapp;
+            Ad.PhoneCode = "+974"; // or parse from Mobile
+            Ad.WhatsappCode = "+974"; // or parse from Whatsapp
+
+            // Dummy mapping
+            StartDay = order.StartDate;
+            EndDay = order.EndDate;
+            UserDesignation = "Manager"; // Placeholder
+
+            // If you store more fields in SubscriptionOrder, map them here
+        }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -131,6 +203,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
         protected void EditImage()
         {
             CoverImage = null;
+        }
+        protected void ClearLogo()
+        {
+            CompanyLogo = null;
+        }
+        protected async Task OnLogoFileSelected(IBrowserFile file)
+        {
+            var allowedImageTypes = new[] { "image/png", "image/jpg" };
+
+            if (!allowedImageTypes.Contains(file.ContentType))
+            {
+                Snackbar.Add("Only image files (PNG, JPG) are allowed.", Severity.Warning);
+                return;
+            }
+            if (file != null)
+            {
+                if (file.Size > 10 * 1024 * 1024)
+                {
+                    Snackbar.Add("Logo must be less than 10MB", Severity.Warning);
+                    return;
+                }
+
+                using var ms = new MemoryStream();
+                await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
+                var base64 = Convert.ToBase64String(ms.ToArray());
+                _localLogoBase64 = base64;
+                 CompanyLogo = base64;
+            }
         }
     }
 }

@@ -28,6 +28,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected List<SubscriptionOrder> Listings { get; set; } = new();
         private SubscriptionOrder selectedOrder = new();
         protected HashSet<SubscriptionOrder> SelectedListings { get; set; } = new();
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
@@ -236,6 +238,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         {
             order.Status = "Cancelled";
             Console.WriteLine($"Cancelled Order ID: {order.OrderId}");
+        }
+        protected void OnViewClicked(SubscriptionOrder store)
+        {
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
         }
     }
 }

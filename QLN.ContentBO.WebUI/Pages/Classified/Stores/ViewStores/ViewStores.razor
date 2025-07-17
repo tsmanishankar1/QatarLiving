@@ -57,9 +57,12 @@
                             <MudTd>@context.StartDate.ToString("dd-MM-yyyy")</MudTd>
                             <MudTd>@context.EndDate.ToString("dd-MM-yyyy")</MudTd>
                             <MudTd>
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Visibility">View</MudMenuItem>
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Class="menu-icon-dark">
+                                    <MudMenuItem OnClick="@(() => OnViewClicked(context))">
+                                        <img src="/qln-images/eye_icon.svg"  alt="eye" />View
+                                    </MudMenuItem>
                                 </MudMenu>
+                               
                             </MudTd>
                         </RowTemplate>
                     </MudTable>
@@ -90,11 +93,14 @@
     .sticky-search-bar {
         position: sticky;
         top: 0;
-        /* stick to top of viewport */
         z-index: 10;
-        /* keep above table rows */
         background-color: #FAFAFA;
-        /* prevent content behind showing */
         padding: 10px 0;
     }
+
+
+    .menu-icon-dark .mud-icon-button svg {
+        fill: #242424 !important;
+    }
+
 </style>
