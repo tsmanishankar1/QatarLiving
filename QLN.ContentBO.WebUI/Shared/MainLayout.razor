@@ -2,18 +2,19 @@
 @using Microsoft.Extensions.Options
 @using QLN.ContentBO.WebUI.Handlers
 @using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.Sidebar
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
 @inject CookieAuthStateProvider CookieAuthenticationStateProvider;
 @inject IOptions<NavigationPath> options;
 
-<PageTitle>Qatar Living Content Back Office</PageTitle>
-@using QLN.ContentBO.WebUI.Components.Sidebar
+<PageTitle>QL Back Office</PageTitle>
+
 <MudThemeProvider Theme="defaultTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
-
+    
 <MudLayout>
    <Sidebar IsLoggedIn="@IsLoggedIn" Name="@Name" Email="@Email" />
     <MudMainContent class="main-content-style">
