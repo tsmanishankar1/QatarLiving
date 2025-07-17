@@ -1,0 +1,46 @@
+@code {
+    [Parameter] public string ImageUrl { get; set; }
+}
+
+<div class="user-image-container">
+    <h2 class="user-image-title">User Image</h2>
+    <div class="user-image-card">
+        <img src="@ImageUrl" alt="User Image" class="user-image" />
+    </div>
+</div>
+<style>
+    .user-image-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-image-title {
+    margin: 0;
+    font-family: 'Public Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.user-image-card {
+    width: 192px;
+    height: 192px;
+    padding: 5px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.user-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+</style>

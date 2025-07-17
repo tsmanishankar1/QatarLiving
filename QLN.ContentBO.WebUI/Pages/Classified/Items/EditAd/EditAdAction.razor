@@ -13,25 +13,37 @@
         </div>
 
         <div class="button-row">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Unfeature Ad", "Are you sure you want to unfeature this ad?", "Unfeature"))'>
                 <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
                 Unfeatured
             </MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn">
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Unpromote Ad", "Are you sure you want to unpromote this ad?", "Unpromote"))'>
                 <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
                 Unpromoted
             </MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn">
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Refresh Ad", "Do you want to refresh this ad?", "Refresh"))'>
                 <img src="/qln-images/refresh_icon.svg" class="btn-icon" />
                 Refresh
             </MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn" StartIcon="@Icons.Material.Outlined.RemoveRedEye">
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       StartIcon="@Icons.Material.Outlined.RemoveRedEye">
                 Preview
             </MudButton>
-            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn" StartIcon="@Icons.Material.Outlined.VisibilityOff">
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       StartIcon="@Icons.Material.Outlined.VisibilityOff"
+                       OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to unpublish this ad?", "Unpublish"))'>
                 Unpublish
             </MudButton>
-            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn">
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove"))'>
                 <img src="/qln-images/delete_icon.svg" class="btn-icon" />
                 Remove
             </MudButton>
@@ -41,7 +53,7 @@
     <!-- Right Column -->
     <div class="right-column">
         <div class="ad-info">
-            <div class="value"><span class="label" >Ad ID:</span> @AdId</div>
+            <div class="value"><span class="label">Ad ID:</span> @AdId</div>
             <div class="value"><span class="label">Order ID:</span> @OrderId</div>
         </div>
     </div>

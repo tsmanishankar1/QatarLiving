@@ -1,0 +1,59 @@
+@using MudBlazor
+@inherits VerificationActionsBase
+
+<div class="verification-preview-container">
+    <!-- Top section with icon and heading -->
+    <div class="verification-header">
+        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowLeft"  OnClick="GoBack"  Color="Color.Default" />
+        <h4 class="verification-title">Verification Preview</h4>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="verification-actions">
+        <MudButton Class="flat-btn" Color="Color.Primary" Variant="Variant.Filled" OnClick="@NeedChangesAsync">Need Changes</MudButton>
+        <MudButton Class="flat-btn" Color="Color.Error" Variant="Variant.Filled" OnClick="@RejectAsync">Reject</MudButton>
+        <MudButton Class="flat-btn" Color="Color.Success" Variant="Variant.Filled" OnClick="@ApproveAsync">Approve</MudButton>
+    </div>
+</div>
+
+
+<style>
+    .verification-preview-container {
+        padding: 16px 0;
+        background-color: #fff;
+    }
+
+    .verification-header {
+        display: flex;
+        align-items: center;
+        padding: 0;
+        gap:10px
+    }
+
+    .verification-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 24px;
+        padding: 0;
+        margin: 0;
+        font-weight: 600;
+        color: #242424;
+        margin-left: 5px;
+    }
+
+    .verification-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 16px;
+    }
+
+    .flat-btn {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 600;
+        text-transform: capitalize;
+        border-radius: 4px !important;      /* slightly rounded */
+        padding: 8px 20px !important;
+        min-width: 120px;
+    }
+</style>

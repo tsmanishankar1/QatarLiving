@@ -29,38 +29,6 @@
     {
     <MudText Typo="Typo.body2" Class="mb-3">Hold and drag to reorder.</MudText>
     }
-
- @if (selectedVertical == "deals")
-    {
-        <div class="photo-grid single-photo-grid">
-        <div class="photo-box add-box @(string.IsNullOrEmpty(PhotoUrls[0]) ? "" : "has-image")" style="height: 180px;">
-            @if (!string.IsNullOrEmpty(PhotoUrls[0]))
-            {
-                <div>
-                    <img src="@PhotoUrls[0]" class="uploaded-image" style="height: 100%; object-fit: cover;" />
-                    <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
-                                   OnClick="@(() => RemovePhoto(0))" />
-                </div>
-            }
-            else
-            {
-                <label class="upload-label">
-                    <InputFile OnChange="@(e => OnInputFileChanged(e, 0))" accept="image/*" class="file-input" />
-                    <div class="upload-content">
-                        <div class="upload-icon-box">
-                            <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
-                        </div>
-                        <div class="upload-text">Upload Cover Photo</div>
-                    </div>
-                </label>
-            }
-
-            <div class="cover-label">Cover Photo</div>
-        </div>
-        </div>
-    }
-    else
-    {
     <div id="sortable-grid" class="photo-grid">
         @for (int i = 0; i < PhotoUrls.Count; i++)
         {
@@ -77,7 +45,7 @@
                 else
                 {
                     <label class="upload-label">
-                        <InputFile OnChange="@(e => OnInputFileChanged(e, currentIndex))" accept="image/*" class="file-input" />
+                             <InputFile OnChange="OnMultipleInputFileChanged" accept="image/*" multiple class="file-input" />
                         <div class="upload-content">
                             <div class="upload-icon-box">
                                 <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
@@ -106,43 +74,52 @@
             </div>
         }
     </div>
-    }
 </div>
 
 @code {
     [Parameter]
     public List<string> PhotoUrls { get; set; } = new() { "", "", "", "", "", "" };
- [Parameter] public AdPost adPostModel { get; set; }
-        [Parameter] public string selectedVertical { get; set; } = "default";
-  protected override async Task OnAfterRenderAsync(bool firstRender)
-{
-    if (firstRender)
+    [Parameter] public AdPost adPostModel { get; set; }
+    [Parameter] public string selectedVertical { get; set; } = "default";
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await JS.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
-    }
-}
-
-    private async Task OnInputFileChanged(InputFileChangeEventArgs e, int index)
-    {
-        var imageFile = e.File;
-        if (imageFile != null)
+        if (firstRender)
         {
-            try
-            {
-                var resizedImageFile = await imageFile.RequestImageFileAsync("image/png", 600, 600);
-                using var stream = resizedImageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                PhotoUrls[index] = $"data:image/png;base64,{base64}";
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error uploading image: {ex.Message}");
-            }
+            await JS.InvokeVoidAsync("initSortable", "sortable-grid", DotNetObjectReference.Create(this));
         }
     }
+
+    private async Task OnMultipleInputFileChanged(InputFileChangeEventArgs e)
+    {
+        var files = e.GetMultipleFiles();
+
+        foreach (var file in files)
+        {
+            if (PhotoUrls.Count(p => !string.IsNullOrEmpty(p)) >= 9)
+                break;
+
+            var resizedImageFile = await file.RequestImageFileAsync("image/png", 600, 600);
+            using var stream = resizedImageFile.OpenReadStream(10 * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            var imageDataUrl = $"data:image/png;base64,{base64}";
+
+            // Add to first empty slot or append
+            var emptyIndex = PhotoUrls.FindIndex(p => string.IsNullOrEmpty(p));
+            if (emptyIndex >= 0)
+            {
+                PhotoUrls[emptyIndex] = imageDataUrl;
+            }
+            else if (PhotoUrls.Count < 9)
+            {
+                PhotoUrls.Add(imageDataUrl);
+            }
+        }
+
+        StateHasChanged();
+    }
+
   
     private void AddPhoto()
     {
