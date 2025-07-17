@@ -27,12 +27,15 @@ namespace QLN.SearchService.Service
             _logger = logger;
         }
 
-        public async Task<CommonSearchResponse> SearchAsync(string vertical, CommonSearchRequest req)
+        public async Task<CommonSearchResponse> SearchAsync(string vertical, string? subVertical, CommonSearchRequest req)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
-            bool hasPaging = req.PageNumber > 0 && req.PageSize > 0;
+            var indexKey = subVertical?.Trim().ToLowerInvariant()
+                          ?? vertical.Trim().ToLowerInvariant();
+
+            var hasPaging = req.PageNumber > 0 && req.PageSize > 0;
             var opts = new SearchOptions
             {
                 IncludeTotalCount = true,
@@ -41,102 +44,88 @@ namespace QLN.SearchService.Service
                 Size = hasPaging ? req.PageSize : int.MaxValue
             };
 
-            var response = new CommonSearchResponse { VerticalName = vertical };
-
-            switch (vertical.Trim().ToLowerInvariant())
+            var response = new CommonSearchResponse
             {
-                case "classifieds":
-                    {
-                        if (req.Filters?.Any() == true)
-                        {
-                            var clauses = req.Filters
-                                .Select(kv => BuildClause<ClassifiedsIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
-                        }
+                VerticalName = vertical,
+            };
 
-                        opts.OrderBy.Clear();
-                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
-                        {
-                            var expr = ParseOrderBy<ClassifiedsIndex>(req.OrderBy);
-                            opts.OrderBy.Add(expr);
-                            _logger.LogInformation("Appended client sort for classifieds: {OrderBy}", expr);
-                        }
+            switch (indexKey)
+            {
+                case "classifiedsitems":
+                    {
+                        var clauses = BuildFilter<ClassifiedsItemsIndex>(req.Filters);
+                        opts.Filter = string.Join(" and ", clauses);
                         opts.OrderBy.Add("IsPromoted desc");
                         opts.OrderBy.Add("PromotedExpiryDate desc");
                         opts.OrderBy.Add("IsRefreshed desc");
                         opts.OrderBy.Add("RefreshExpiryDate desc");
                         opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeatureExpiryDate desc");
+                        opts.OrderBy.Add("FeaturedExpiryDate desc");
                         opts.OrderBy.Add("CreatedDate desc");
 
-                        var pageCls = await _repo.SearchAsync<ClassifiedsIndex>(vertical, opts, req.Text);
-                        response.TotalCount = pageCls.TotalCount;
-                        response.ClassifiedsItems = pageCls.Items.ToList();
-                        response.SubVertical = response.ClassifiedsItems
-                                                    .FirstOrDefault()?
-                                                    .SubVertical
-                                                    ?? string.Empty;
+                        var page = await _repo.SearchAsync<ClassifiedsItemsIndex>(indexKey, opts, req.Text);
+                        response.TotalCount = page.TotalCount;
+                        response.Items = page.Items.ToList();
+                        break;
+                    }
+
+                case "classifiedspre":
+                    {
+                        var clauses = BuildFilter<ClassifiedsPrelovedIndex>(req.Filters);
+                        opts.Filter = string.Join(" and ", clauses);
+                        opts.OrderBy.Add("IsPromoted desc");
+                        opts.OrderBy.Add("PromotedExpiryDate desc");
+                        opts.OrderBy.Add("IsRefreshed desc");
+                        opts.OrderBy.Add("RefreshExpiryDate desc");
+                        opts.OrderBy.Add("IsFeatured desc");
+                        opts.OrderBy.Add("FeaturedExpiryDate desc");
+                        opts.OrderBy.Add("CreatedDate desc");
+
+                        var page = await _repo.SearchAsync<ClassifiedsPrelovedIndex>(indexKey, opts, req.Text);
+                        response.TotalCount = page.TotalCount;
+                        response.Preloved = page.Items.ToList();
+                        break;
+                    }
+
+                case "classifiedscollect":
+                    {
+                        var clauses = BuildFilter<ClassifiedsCollectiblesIndex>(req.Filters);
+                        opts.Filter = string.Join(" and ", clauses);
+                        opts.OrderBy.Add("CreatedDate desc");
+
+                        var page = await _repo.SearchAsync<ClassifiedsCollectiblesIndex>(indexKey, opts, req.Text);
+                        response.TotalCount = page.TotalCount;
+                        response.Collectibles = page.Items.ToList();
+                        break;
+                    }
+
+                case "classifiedsdeals":
+                    {
+                        var clauses = BuildFilter<ClassifiedsDealsIndex>(req.Filters);
+                        opts.Filter = string.Join(" and ", clauses);
+                        opts.OrderBy.Add("StartDate desc");
+
+                        var page = await _repo.SearchAsync<ClassifiedsDealsIndex>(indexKey, opts, req.Text);
+                        response.TotalCount = page.TotalCount;
+                        response.Deals = page.Items.ToList();
                         break;
                     }
 
                 case "services":
                     {
-                        if (req.Filters?.Any() == true)
-                        {
-                            var clauses = req.Filters
-                                .Select(kv => BuildClause<ServicesIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for services: {Filter}", opts.Filter);
-                        }
-
-                        opts.OrderBy.Clear();
-                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
-                        {
-                            var expr = ParseOrderBy<ServicesIndex>(req.OrderBy);
-                            opts.OrderBy.Add(expr);
-                            _logger.LogInformation("Appended client sort for services: {OrderBy}", expr);
-                        }
+                        var clauses = BuildFilter<ServicesIndex>(req.Filters);
+                        opts.Filter = string.Join(" and ", clauses);
                         opts.OrderBy.Add("IsPromoted desc");
-                        opts.OrderBy.Add("PromotedExpiryDate desc");
-                        opts.OrderBy.Add("IsRefreshed desc");
-                        opts.OrderBy.Add("RefreshExpiryDate desc");
-                        opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeatureExpiryDate desc");
                         opts.OrderBy.Add("CreatedDate desc");
 
-                        var pageSvc = await _repo.SearchAsync<ServicesIndex>(vertical, opts, req.Text);
-                        response.TotalCount = pageSvc.TotalCount;
-                        response.ServicesItems = pageSvc.Items.ToList();
-                        break;
-                    }
-
-                case "landingbackoffice":
-                    {
-                        if (req.Filters?.Any() == true)
-                        {
-                            var clauses = req.Filters
-                                .Select(kv => BuildClause<LandingBackOfficeIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for backoffice: {Filter}", opts.Filter);
-                        }
-
-                        opts.OrderBy.Clear();
-                        if (!string.IsNullOrWhiteSpace(req.OrderBy))
-                        {
-                            var expr = ParseOrderBy<LandingBackOfficeIndex>(req.OrderBy);
-                            opts.OrderBy.Add(expr);
-                            _logger.LogInformation("Applied client sort for backoffice: {OrderBy}", expr);
-                        }
-
-                        var pageBo = await _repo.SearchAsync<LandingBackOfficeIndex>(vertical, opts, req.Text);
-                        response.TotalCount = pageBo.TotalCount;
-                        response.MasterItems = pageBo.Items.ToList();
+                        var page = await _repo.SearchAsync<ServicesIndex>(indexKey, opts, req.Text);
+                        response.TotalCount = page.TotalCount;
+                        response.ServicesItems = page.Items.ToList();
                         break;
                     }
 
                 default:
-                    throw new NotSupportedException($"Unknown vertical '{vertical}'");
+                    throw new NotSupportedException($"Unknown or unsupported vertical/subVertical: '{indexKey}'");
             }
 
             return response;
@@ -147,31 +136,51 @@ namespace QLN.SearchService.Service
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var vertical = request.VerticalName?
-                              .ToLowerInvariant()
-                          ?? throw new ArgumentException("VerticalName is required", nameof(request.VerticalName));
-            switch (vertical.Trim().ToLowerInvariant())
+            var indexKey = request.SubVertical?.Trim().ToLowerInvariant()
+                           ?? request.VerticalName?.Trim().ToLowerInvariant()
+                           ?? throw new ArgumentException("VerticalName or SubVertical is required");
+
+            switch (indexKey)
             {
-                case "classifieds":
-                    var classifieds = request.ClassifiedsItem
-                           ?? throw new ArgumentException("ClassifiedsItem is required for classifieds.", nameof(request.ClassifiedsItem));
-                    _logger.LogInformation("Uploading ClassifiedIndex Id={Id} to '{Vertical}'", classifieds.Id, vertical);
-                    return await _repo.UploadAsync<ClassifiedsIndex>(vertical, classifieds);
+                case "classifiedsitems":
+                    var items = request.Items as ClassifiedsItemsIndex
+                        ?? throw new ArgumentException("ClassifiedsItem is required for classifiedsitems.");
+                    _logger.LogInformation("Uploading ClassifiedsItemsIndex Id={Id} to '{Vertical}'", items.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, items);
+
+                case "classifiedspre":
+                    var pre = request.Preloved as ClassifiedsPrelovedIndex
+                        ?? throw new ArgumentException("PrelovedItem is required for classifieds-preloved.");
+                    _logger.LogInformation("Uploading ClassifiedsPrelovedIndex Id={Id} to '{Vertical}'", pre.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, pre);
+
+                case "classifiedscollect":
+                    var collect = request.Collectibles as ClassifiedsCollectiblesIndex
+                        ?? throw new ArgumentException("CollectiblesItem is required for classifieds-collectibles.");
+                    _logger.LogInformation("Uploading ClassifiedsCollectiblesIndex Id={Id} to '{Vertical}'", collect.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, collect);
+
+                case "classifiedsdeals":
+                    var deal = request.Deals as ClassifiedsDealsIndex
+                        ?? throw new ArgumentException("DealsItem is required for classifieds-deals.");
+                    _logger.LogInformation("Uploading ClassifiedsDealsIndex Id={Id} to '{Vertical}'", deal.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, deal);
 
                 case "services":
                     var svc = request.ServicesItem
-                           ?? throw new ArgumentException("ServicesItem is required for services.", nameof(request.ServicesItem));
-                    _logger.LogInformation("Uploading ServicesIndex Id={Id} to '{Vertical}'",
-                        svc.Id, vertical);
-                    return await _repo.UploadAsync<ServicesIndex>(vertical, svc);
+                        ?? throw new ArgumentException("ServicesItem is required for services.");
+                    _logger.LogInformation("Uploading ServicesIndex Id={Id} to '{Vertical}'", svc.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, svc);
 
                 case "landingbackoffice":
                     var master = request.MasterItem
-                           ?? throw new ArgumentException("Backoffice item.", nameof(request.MasterItem));
-                    _logger.LogInformation("Uploading LandingBackoffice Id={Id} to '{Vertical}'", master.Id, vertical);
-                    return await _repo.UploadAsync<LandingBackOfficeIndex>(vertical, master);
+                        ?? throw new ArgumentException("MasterItem is required for backoffice.");
+                    _logger.LogInformation("Uploading LandingBackOfficeIndex Id={Id} to '{Vertical}'", master.Id, indexKey);
+                    return await _repo.UploadAsync(indexKey, master);
+
+                default:
+                    throw new ArgumentException($"Unsupported vertical or subVertical: '{indexKey}'");
             }
-            throw new ArgumentException($"Unsupported vertical: '{vertical}'", nameof(request.VerticalName));
         }
 
         public Task<T?> GetByIdAsync<T>(string vertical, string key)
