@@ -425,6 +425,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetByFilterBannerEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyfilter", async Task<Results<Ok<List<V2BannerTypeDto>>, NotFound>> (
+                [FromQuery] Vertical verticalId,
+                [FromQuery] SubVertical? subVerticalId,
+                [FromQuery] Guid pageId,
+                IV2BannerService service,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await service.GetBannerTypesByFilterAsync(verticalId, subVerticalId, pageId, cancellationToken);
+                return result is { Count: > 0 }
+                    ? TypedResults.Ok(result)
+                    : TypedResults.NotFound();
+            })
+            .WithName("GetBannerTypesByFilter")
+            .WithTags("Banners")
+            .WithDescription("Gets banner types filtered by vertical, sub-vertical, and page ID.")
+            .Produces<List<V2BannerTypeDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+
+
+
 
 
     }

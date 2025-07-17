@@ -303,6 +303,68 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(
+    Vertical verticalId,
+    SubVertical? subVerticalId,
+    Guid pageId,
+    CancellationToken cancellationToken)
+        {
+            try
+            {
+                var queryParams = new List<string> { $"verticalId={(int)verticalId}" };
+
+                if (subVerticalId.HasValue)
+                    queryParams.Add($"subVerticalId={(int)subVerticalId.Value}");
+
+                if (pageId != Guid.Empty)
+                    queryParams.Add($"pageId={pageId}");
+
+                var url = $"/api/v2/banner/getbyfilter?" + string.Join("&", queryParams);
+
+                _logger.LogInformation("🔍 Constructed URL: {Url}", url);
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                _logger.LogInformation("📥 Raw JSON from internal: {RawJson}", rawJson);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = rawJson;
+                    }
+                    throw new InvalidDataException($"Internal API error: {errorMessage}");
+                }
+
+                var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Exception in external GetBannerTypesByFilterAsync");
+                throw;
+            }
+        }
+
+
+
+
+
 
 
     }

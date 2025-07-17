@@ -4,10 +4,12 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.Common.DTO_s
 {
+
     public class V2BannerDto
     {
         public Guid Id { get; set; }
         public bool Status { get; set; }
+        public int slotId { get; set; }
         public Guid BannerTypeId { get; set; } 
         public string AnalyticsTrackingId { get; set; } 
         public string AltText { get; set; } 
@@ -32,7 +34,7 @@ namespace QLN.Common.DTO_s
         public SubVertical? SubVerticalId { get; set; }
         public string? VerticalName { get; set; }  
         public string? SubVerticalName { get; set; } 
-        public V2BannerPageLocationDto? Pages { get; set; }
+        public List<V2BannerPageLocationDto>? Pages { get; set; }
        
        
     }
@@ -43,7 +45,7 @@ namespace QLN.Common.DTO_s
         public string BannerTypeName { get; set; }
         public string Dimensions { get; set; }
         public string BannerslotId { get; set; }
-        public V2BannerDto? BannerDetails { get; set; } = new();
+        public List<V2BannerDto>? BannerDetails { get; set; } = [];
     }
     public class V2BannerPageLocationDto
     {
