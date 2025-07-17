@@ -34,33 +34,33 @@
         ContentEventsDetail = NavigationPathOptions.Value.ContentEventsDetail;
         ContentCommunityPostDetails = NavigationPathOptions.Value.ContentCommunityPostDetails;
 
-        tabItems = new () {
+        tabItems = new() {
             new()
             {
                 Text = "Daily",
                 Route = ContentDaily,
-                ActiveRoutePaths = new List<string> { ContentDaily, "/", $"{ContentNewsDailyDetail}" },
+                ActiveRoutePaths = new List<string> { "/content/daily", "/", "/content/v2/daily/", "/content/v2/daily","/content/daily/article/details/" },
                 ImagePath = "/qln-images/content/daily_icon.svg"
             },
             new()
             {
                 Text = "News",
                 Route = ContentNews,
-                ActiveRoutePaths = new List<string> { ContentNews, $"{ContentNewsDetail}" },
+                ActiveRoutePaths = new List<string> { "/content/news", "/content/article/details/", "/content/v2/news","/content/v2/article/"},
                 ImagePath = "/qln-images/content/news_icon.svg"
             },
             new()
             {
                 Text = "Events",
                 Route = ContentEvents,
-                ActiveRoutePaths = new List<string> { ContentEvents, $"{ContentEventsDetail}" },
+                ActiveRoutePaths = new List<string> { "/content/events", "/content/events/details/","/content/v2/events","/content/v2/event/" },
                 ImagePath = "/qln-images/content/events_icon.svg"
             },
             new()
             {
                 Text = "Community",
                 Route = ContentCommunity,
-                ActiveRoutePaths = new List<string> { ContentCommunity, $"{ContentCommunityPostDetails}" },
+                ActiveRoutePaths = new List<string> { "/content/community","/content/community/post/detail/","/content/v2/community", "/content/v2/community/post/detail/" },
                 ImagePath = "/qln-images/content/community_icon.svg"
             }
         };
