@@ -1,3 +1,4 @@
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using QLN.ContentBO.WebUI.Components.EmptyCard
@@ -38,27 +39,8 @@ else
             </MudTd>
             <MudTd DataLabel="Category">@context.Category</MudTd>
             <MudTd DataLabel="User Name">@context.UserName</MudTd>
-            <MudTd DataLabel="Date Created">@context.DateCreated.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd >
-                @{
-                    var liveSince = context.DateCreated;
-
-                    if (liveSince != null)
-                    {
-                        var duration = DateTime.Now - liveSince;
-
-                        string liveFor = duration.TotalHours < 24
-                        ? $"{Math.Floor(duration.TotalHours)} hour{(Math.Floor(duration.TotalHours) == 1 ? "" : "s")}"
-                        : $"{duration.Days} day{(duration.Days == 1 ? "" : "s")}";
-
-                        @liveFor
-                    }
-                    else
-                    {
-                        <span>--</span>
-                    }
-                }
-            </MudTd>
+            <MudTd DataLabel="Date Created">@context.DateCreated.ToQatarTime("dd-MM-yyyy")</MudTd>
+            <MudTd> @context.DateCreated.ToString("dd-MM-yyyy")         </MudTd>
 
             <MudTd>
                 <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Id))">

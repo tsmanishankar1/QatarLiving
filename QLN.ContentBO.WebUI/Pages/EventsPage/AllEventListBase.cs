@@ -1,17 +1,18 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.WebUtilities;
-using MudBlazor;
 using Microsoft.AspNetCore.Components.Routing;
-using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
-using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Components;
-using System.Text.Json;
-using MudBlazor;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
-using QLN.ContentBO.WebUI.Components.ToggleTabs;
-using QLN.ContentBO.WebUI.Components.PaginationFooter;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
+using MudBlazor;
+using MudBlazor;
+using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components.PaginationFooter;
+using QLN.ContentBO.WebUI.Components.ToggleTabs;
+using QLN.ContentBO.WebUI.Extensions;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.EventsPage
 {
@@ -141,8 +142,8 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             try
             {
-                var now = DateTime.UtcNow;
-                var diff = now - givenUtcTime;
+                var now = DateTime.UtcNow.ToQatarTime();
+                var diff = now - givenUtcTime.ToQatarTime();
                 var isFuture = diff.TotalSeconds < 0;
                 var absDiff = diff.Duration();
 
