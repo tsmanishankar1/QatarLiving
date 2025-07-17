@@ -1,1 +1,44 @@
-<h1>User Verification Profile</h1>
+@inherits UserVerificationProfileBase
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Components.ToggleTabs;
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <div class="community-tab">
+            <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+                </div>
+              <div class="community-table">
+              <UserVerificationProfileTable/>
+             </div> 
+    </MudItem>
+</MudGrid>
+
+<style>
+    .community-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+        }
+       .community-tab{
+         display: flex;
+         width: 100%;
+         padding: 10px 0;
+         background-color: #FFFFFF;
+      }
+      .community-table {
+        margin-top: 20px;
+        }
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; /* stick to top of viewport */
+        z-index: 10; /* keep above table rows */
+        background-color: #FAFAFA; /* prevent content behind showing */
+        padding: 10px 0;
+    }
+</style>
