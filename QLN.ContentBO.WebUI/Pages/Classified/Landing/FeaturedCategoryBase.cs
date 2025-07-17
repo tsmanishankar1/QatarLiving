@@ -6,7 +6,7 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudBlazor;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified
+namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
     public class FeaturedCategoryBase : QLComponentBase
     {

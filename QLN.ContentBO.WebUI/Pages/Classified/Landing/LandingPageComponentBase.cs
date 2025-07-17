@@ -6,7 +6,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified
+namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
     public class LandingPageComponentBase : QLComponentBase
     {
