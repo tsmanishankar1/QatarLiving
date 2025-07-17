@@ -223,6 +223,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             NotFound<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2Events dto,
@@ -278,6 +279,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
+                catch (InvalidOperationException iex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict – cannot update",
+                        Detail = iex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -295,6 +305,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             group.MapPut("/updatebyuserid", async Task<Results<Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2Events dto,
@@ -316,6 +327,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     }
                     var result = await service.UpdateEvent(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidOperationException iex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict – cannot update",
+                        Detail = iex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {

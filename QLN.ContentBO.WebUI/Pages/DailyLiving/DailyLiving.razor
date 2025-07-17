@@ -57,7 +57,7 @@
         }
         else if(SelectedTab == DailyLivingTab.TopSection)
         {
-            <MudArticleTable Articles="articles" ReplaceItem="ReplaceTopSectionItem" IsLoadingEvent="isTabLoading"/>
+            <MudArticleTable Articles="articles" ReplaceItem="ReplaceTopSectionItem" IsLoadingEvent="isTabLoading" NewsCategories="NewsCategories"/>
         }
         else if(SelectedTab != DailyLivingTab.TopSection){
             <DailyTopicsTable 
@@ -72,6 +72,7 @@
                 selectedTopic="selectedTopic"
                 activeIndex="activeIndex"
                 ReplaceItem="ReplaceItem"
+                NewsCategories="NewsCategories"
                 />
         }
     </MudItem>

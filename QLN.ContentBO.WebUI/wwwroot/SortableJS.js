@@ -5,6 +5,8 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
     if (!tbody) return;
 
     let dragStarted = false;
+    // Store original rows in order
+    const originalOrder = Array.from(tbody.children).map(row => row.cloneNode(true));
 
     const updateSlotNumbers = () => {
         tbody.querySelectorAll("tr").forEach((tr, index) => {
@@ -43,6 +45,13 @@ window.initializeSortable = (tableSelector, dotNetHelper) => {
     }, true);
 
     updateSlotNumbers(); // Set initial numbers on load
+
+    // Attach reset function to window
+    window.resetTableOrder = () => {
+        tbody.innerHTML = ""; // Clear current
+        originalOrder.forEach(row => tbody.appendChild(row.cloneNode(true)));
+        updateSlotNumbers();
+    };
 };
 
 
@@ -62,6 +71,8 @@ window.initializeArticleSortable = (tableSelector, dotNetHelper) => {
 
 
     let dragStarted = false;
+    // Store original rows in order
+    const originalOrder = Array.from(tbody.children).map(row => row.cloneNode(true));
 
     const updateSlotNumbers = () => {
         tbody.querySelectorAll("tr").forEach((tr, index) => {
@@ -100,4 +111,12 @@ window.initializeArticleSortable = (tableSelector, dotNetHelper) => {
     }, true);
 
     updateSlotNumbers(); // Set initial numbers on load
+
+    // Attach reset function to window
+    window.resetArticleTableOrder = () => {
+        tbody.innerHTML = ""; // Clear current
+        originalOrder.forEach(row => tbody.appendChild(row.cloneNode(true)));
+        updateSlotNumbers();
+    };
+
 };

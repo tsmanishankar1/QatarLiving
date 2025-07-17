@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -523,113 +524,237 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
+        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
+         int categoryId,
+         int subCategoryId,
+         string? status,
+         int? page,
+         int? pageSize,
+         CancellationToken cancellationToken)
         {
             try
             {
-                var ids = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey) ?? new();
+                var ids = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
+                          ?? new List<string>();
 
-                var stateItems = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, ids, parallelism: null, metadata: null, cancellationToken);
-                return stateItems
+                var stateItems = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    ids,
+                    parallelism: null,
+                    metadata: null,
+                    cancellationToken);
+
+                var articles = stateItems
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
-                    .Where(a => a?.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId) == true)
+                    .Select(i =>
+                    {
+                        try
+                        {
+                            return JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to deserialize article with key {Key}", i.Key);
+                            return null;
+                        }
+                    })
+                    .Where(a => a != null &&
+                                a.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId))
                     .ToList();
+
+                // Filter by SlotId
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    status = status.Trim().ToLower();
+                    if (status == "published")
+                    {
+                        articles = articles
+                            .Where(a => a.Categories.Any(c => c.SlotId == 14))
+                            .ToList();
+                    }
+                    else if (status == "unpublished")
+                    {
+                        articles = articles
+                            .Where(a => a.Categories.Any(c => c.SlotId == 15))
+                            .ToList();
+                    }
+                }
+
+                // Pagination
+                int currentPage = page ?? 1;
+                int currentPageSize = pageSize ?? 50;
+
+                var pagedArticles = articles
+                    .Skip((currentPage - 1) * currentPageSize)
+                    .Take(currentPageSize)
+                    .ToList();
+
+                return pagedArticles;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching articles by subcategory");
+                _logger.LogError(ex, "Error occurred while getting articles by subcategoryId {SubcategoryId} in category {CategoryId}", subCategoryId, categoryId);
                 throw;
             }
         }
 
         public async Task<string> UpdateNewsArticleAsync(
-            V2NewsArticleDTO dto,
-            CancellationToken cancellationToken = default)
+      V2NewsArticleDTO dto,
+      CancellationToken cancellationToken = default)
         {
             const int MaxLiveSlot = 13;
             const int UnpublishedId = (int)Slot.UnPublished;
             const int PublishedId = (int)Slot.Published;
 
             var store = V2Content.ContentStoreName;
-            if (dto.Id == Guid.Empty)
-                throw new InvalidDataException("Id is required for update");
+            var articleId = dto.Id;
 
-            var key = dto.Id.ToString();
-            var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
-                store, key, cancellationToken: cancellationToken);
+            try
+            {
+                if (dto.Id == Guid.Empty)
+                    throw new InvalidDataException("Id is required for update");
 
-            if (existing == null)
-                throw new KeyNotFoundException("News article not found");
+                var key = dto.Id.ToString();
+                var existing = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                    store, key, cancellationToken: cancellationToken);
 
-            var oldCat = existing.Categories.First();
-            var oldSlot = oldCat.SlotId;
+                if (existing == null)
+                    throw new KeyNotFoundException("News article not found");
 
-            var newCat = dto.Categories.First();
-            var newSlot = newCat.SlotId;
-            if (oldSlot == 15 && (newSlot >= 1 && newSlot <= 14))
-            {
-                dto.PublishedDate = DateTime.UtcNow;
-            }
-            if (newSlot == UnpublishedId)
-            {
-                dto.PublishedDate = null; 
-            }
-            if (newSlot >= 1 && newSlot <= MaxLiveSlot)
-            {
-                await HandleSlotShiftAsync(
-                    newCat.CategoryId,
-                    newCat.SubcategoryId,
-                    newSlot,
-                    dto,
-                    cancellationToken);
-            }
-            else
-            {
-                if (oldSlot >= 1 && oldSlot <= MaxLiveSlot)
+                var oldCat = existing.Categories.First();
+                var oldSlot = oldCat.SlotId;
+
+                var newCat = dto.Categories.First();
+                var newSlot = newCat.SlotId;
+
+                // BLOCK UNPUBLISHING IF USED IN DAILY SECTIONS
+                if (newSlot == UnpublishedId)
                 {
-                    var oldSlotKey = GetSlotKey(
-                        oldCat.CategoryId,
-                        oldCat.SubcategoryId,
-                        oldSlot);
-                    await _dapr.DeleteStateAsync(
-                        store,
-                        oldSlotKey,
-                        cancellationToken: cancellationToken);
+                    // Check Daily Top Slots
+                    var topSlotTasks = Enumerable.Range(1, 9)
+                        .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
+                            DailyStore,
+                            $"daily-slot-{i}",
+                            cancellationToken: cancellationToken))
+                        .ToArray();
+
+                    var topSlots = (await Task.WhenAll(topSlotTasks))
+                        .Where(s => s != null)
+                        .ToList();
+
+                    foreach (var slot in topSlots)
+                    {
+                        _logger.LogInformation("Top Slot#{SlotNumber}: Type={ContentType}, RelatedId={RelatedId}",
+                            slot.SlotNumber, slot.ContentType, slot.RelatedContentId);
+                    }
+
+                    var usedInTop = topSlots
+                        .FirstOrDefault(s => s.ContentType == DailyContentType.Article
+                                          && s.RelatedContentId == dto.Id);
+
+                    if (usedInTop != null)
+                    {
+                        _logger.LogWarning("Cannot unpublish news article {ArticleId}: It’s used in Daily Top Section slot #{SlotNumber}",
+                            dto.Id, usedInTop.SlotNumber);
+
+                        throw new InvalidOperationException(
+                            $"Cannot unpublish news {dto.Id}: it’s used in Daily Top Section slot #{usedInTop.SlotNumber}");
+                    }
+
+                    // Check Topic Slots
+                    var topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
+                    foreach (var topicId in topicIds)
+                    {
+                        var topicSlots = await GetSlotsByTopicIdAsync(topicId, cancellationToken);
+
+                        foreach (var slot in topicSlots)
+                        {
+                            _logger.LogInformation("Topic {TopicId} Slot#{SlotNumber}: Type={ContentType}, RelatedId={RelatedId}",
+                                topicId, slot.SlotNumber, slot.ContentType, slot.RelatedContentId);
+                        }
+
+                        var usedInTopic = topicSlots
+                            .FirstOrDefault(ts => ts.ContentType == DailyContentType.Article
+                                               && ts.RelatedContentId == dto.Id);
+
+                        if (usedInTopic != null)
+                        {
+                            _logger.LogWarning("Cannot unpublish news article {ArticleId}: It’s used in Topic {TopicId}, Slot #{SlotNumber}",
+                                dto.Id, topicId, usedInTopic.SlotNumber);
+
+                            throw new InvalidOperationException(
+                                $"Cannot unpublish news {dto.Id}: it’s used in Topic '{topicId}' slot #{usedInTopic.SlotNumber}");
+                        }
+                    }
+
+                    dto.PublishedDate = null; // Only if safe to unpublish
+                }
+                else if (oldSlot == UnpublishedId && (newSlot >= 1 && newSlot <= MaxLiveSlot))
+                {
+                    dto.PublishedDate = DateTime.UtcNow;
                 }
 
-                if (oldSlot == UnpublishedId || oldSlot == PublishedId)
+                // Handle Slot Change
+                if (newSlot >= 1 && newSlot <= MaxLiveSlot)
                 {
-                    var oldStatusKey = GetStatusSlotKey(
-                        oldCat.CategoryId,
-                        oldCat.SubcategoryId,
-                        oldSlot);
-                    await _dapr.DeleteStateAsync(
-                        store,
-                        oldStatusKey,
-                        cancellationToken: cancellationToken);
+                    await HandleSlotShiftAsync(
+                        newCat.CategoryId,
+                        newCat.SubcategoryId,
+                        newSlot,
+                        dto,
+                        cancellationToken);
+                }
+                else
+                {
+                    if (oldSlot >= 1 && oldSlot <= MaxLiveSlot)
+                    {
+                        var oldSlotKey = GetSlotKey(oldCat.CategoryId, oldCat.SubcategoryId, oldSlot);
+                        await _dapr.DeleteStateAsync(store, oldSlotKey, cancellationToken: cancellationToken);
+                    }
+
+                    if (oldSlot == UnpublishedId || oldSlot == PublishedId)
+                    {
+                        var oldStatusKey = GetStatusSlotKey(oldCat.CategoryId, oldCat.SubcategoryId, oldSlot);
+                        await _dapr.DeleteStateAsync(store, oldStatusKey, cancellationToken: cancellationToken);
+                    }
+
+                    var statusKey = GetStatusSlotKey(newCat.CategoryId, newCat.SubcategoryId, newSlot);
+                    await _dapr.SaveStateAsync(store, statusKey, dto.Id.ToString(), cancellationToken: cancellationToken);
                 }
 
-                var statusKey = GetStatusSlotKey(
-                    newCat.CategoryId,
-                    newCat.SubcategoryId,
-                    newSlot);
-                await _dapr.SaveStateAsync(
-                    store,
-                    statusKey,
-                    dto.Id.ToString(),
-                    cancellationToken: cancellationToken);
+                dto.UpdatedAt = DateTime.UtcNow;
+                await _dapr.SaveStateAsync(store, key, dto, cancellationToken: cancellationToken);
+
+                _logger.LogInformation("News article {ArticleId} updated successfully.", dto.Id);
+
+                return "News article updated successfully.";
             }
-
-            dto.UpdatedAt = DateTime.UtcNow;
-            await _dapr.SaveStateAsync(
-                store,
-                key,
-                dto,
-                cancellationToken: cancellationToken);
-
-            return "News article updated successfully.";
+            catch (InvalidDataException ex)
+            {
+                _logger.LogError(ex, "Validation failed while updating news article {ArticleId}", articleId);
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Blocked update for news article {ArticleId} due to slot constraint", articleId);
+                throw;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "News article not found for update: {ArticleId}", articleId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error while updating news article {ArticleId}", articleId);
+                throw new Exception("Something went wrong while updating the news article.", ex);
+            }
         }
+
+
         public async Task<string> ReorderSlotsAsync(
             NewsSlotReorderRequest request,
             CancellationToken cancellationToken = default)
@@ -1198,8 +1323,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 var subKey = subDto.SubCategoryName.ToLowerInvariant().Replace(" ", "_");
                 var pageName = $"qln_{catKey}_{subKey}";
-
-                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
+                var status = string.Empty;
+                var page = 1;
+                var pageSize = 50;
+                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status,page, pageSize, cancellationToken);
                 _logger.LogInformation("Fetched {Count} articles for CategoryId={CategoryId} and SubCategoryId={SubCategoryId}", dtos.Count, categoryId, subCategoryId);
 
                 var articlesInSlot1to4 = dtos

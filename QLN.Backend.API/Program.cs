@@ -16,6 +16,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
@@ -206,6 +207,7 @@ builder.Services.AddResponseCompression(options =>
 
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ClassifiedLandingBo(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
@@ -307,6 +309,11 @@ communityPostGroup.MapCommunityPostEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 //.RequireAuthorization();
+
+
+var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
+ClassifiedBo.MapClassifiedboEndpoints();
+
 
 app.MapAllBackOfficeEndpoints();
 app.MapLandingPageEndpoints();

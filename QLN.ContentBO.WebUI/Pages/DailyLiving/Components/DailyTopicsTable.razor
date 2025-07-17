@@ -44,9 +44,24 @@ else if (articles is null || !articles.Any() || Categories == null)
                     </div>
                 </MudItem>
             </MudGrid>
-      <div class="empty-card-wrapper">
-        <EmptyCard Title="No Article or Event found" Subtitle="Please check back later or explore other categories." />
-    </div>
+      <div class="empty-card-wrapper d-flex flex-column align-items-center justify-content-center">
+    <img src="/qln-images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
+    <MudText Class="mx-6 py-4" Style="color: #242424; font-size: 15px;">
+        No items are live yet.
+    </MudText>
+    <MudButton 
+        Style="background-color: white; 
+               border: 1px solid #FF7F38; 
+               color: #FF7F38; 
+               text-transform: none; 
+               padding-left: 67px; 
+               padding-right: 67px;
+               margin-bottom: 300px ;" 
+        OnClick="OnAddItemClicked" 
+        Class="daily-compact-button mt-2">
+        Add Item
+    </MudButton>
+</div>
 }
 else
 {
@@ -129,20 +144,47 @@ else
                             )
                             </a>
                     </td>
-                    <td>
-                         <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
-                        @(string.IsNullOrWhiteSpace(@context.Slot.Article?.Category) ? "-" : @context.Slot.Article.Category)
-                        </span>
-                    </td>
-                     <td>
-                         <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
-                        @(string.IsNullOrWhiteSpace(@context.Slot.Article?.Subcategory) ? "-" : @context.Slot.Article.Subcategory)
-                        </span>
-                    </td>
+                    @if (context.Slot.Article?.ContentType == 1)
+                    {
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @{
+                                var categoryName = NewsCategories
+                                    ?.FirstOrDefault(c => c.Id.ToString() == context.Slot.Article.Category)
+                                    ?.CategoryName ?? "-";
+                            }
+                            @categoryName
+                            </span>
+                        </td>
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @{
+                                var subcategoryName = NewsCategories
+                                .SelectMany(c => c.SubCategories)
+                                .FirstOrDefault(sc => sc.Id.ToString() == context.Slot.Article.Subcategory)
+                                ?.SubCategoryName ?? "-";
+                            }
+                            @subcategoryName
+                            </span>
+                        </td>
+                    }
+                    else
+                    { 
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @(string.IsNullOrWhiteSpace(context.Slot.Article?.Category) ? "-" : context.Slot.Article.Category)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="placeholder-text" style="color: #FF7F38; cursor: pointer;">
+                            @(string.IsNullOrWhiteSpace(context.Slot.Article?.Subcategory) ? "-" : context.Slot.Article.Subcategory)
+                            </span>
+                        </td>
+                    } 
                     <td>
                         @(context.Slot.Article?.CreatedAt != null 
                         ? context.Slot.Article?.CreatedAt.ToString("dd-MM-yyyy") 
-                        : "--")
+                        : "-")
                     </td>
                     <td>
                         <div class="d-flex align-center gap-2">

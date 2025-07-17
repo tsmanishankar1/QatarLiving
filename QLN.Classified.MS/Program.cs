@@ -14,6 +14,8 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,7 +49,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -64,8 +65,15 @@ app.UseHttpsRedirection();
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
 
+
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
+
+
+
+var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
+ClassifiedBo.MapClassifiedboEndpoints();
+
 app.MapAllBackOfficeEndpoints();
 
 app.Run();

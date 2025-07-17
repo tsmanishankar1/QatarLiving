@@ -264,22 +264,61 @@ public static class V2NewsEndpoints
         .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/categories/{categoryId:int}/sub/{subCategoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
-            int categoryId,
-            int subCategoryId,
-            IV2NewsService service,
-            CancellationToken cancellationToken
-        ) =>
+        group.MapGet("/categories/{categoryId}/sub/{subCategoryId}", async Task<Results<
+              Ok<List<V2NewsArticleDTO>>,
+              BadRequest<ProblemDetails>,
+              NotFound<ProblemDetails>,
+              ProblemHttpResult>>
+          (
+              int categoryId,
+              int subCategoryId,
+              string? status,
+              int? page,
+              int? pageSize,
+              IV2NewsService service,
+              CancellationToken cancellationToken
+          ) =>
         {
             try
             {
-                var result = await service.GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
-                return TypedResults.Ok(result);
+                if (categoryId <= 0 || subCategoryId <= 0)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid request",
+                        Detail = "Both categoryId and subCategoryId must be greater than zero"
+                    });
+                }
+
+                var articles = await service.GetArticlesBySubCategoryIdAsync(
+                    categoryId,
+                    subCategoryId,
+                    status,
+                    page,
+                    pageSize,
+                    cancellationToken);
+
+                if (articles == null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No articles found",
+                        Detail = $"No articles found for category {categoryId}, subcategory {subCategoryId}"
+                    });
+                }
+
+                return TypedResults.Ok(articles);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Detail = ex.Message
+                });
             }
+           
+
         })
         .WithName("GetArticlesBySubCategory")
         .WithTags("News")
@@ -288,11 +327,14 @@ public static class V2NewsEndpoints
 
 
 
+
+
         group.MapPut("/updatenews", async Task<Results<
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             NotFound<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
         (
             V2NewsArticleDTO dto,
@@ -352,6 +394,15 @@ public static class V2NewsEndpoints
                            Status = 400
                        });
                    }
+                   catch (InvalidOperationException iex)
+                   {
+                       return TypedResults.Conflict(new ProblemDetails
+                       {
+                           Title = "Conflict – cannot update",
+                           Detail = iex.Message,
+                           Status = StatusCodes.Status409Conflict
+                       });
+                   }
                    catch (Exception ex)
                    {
                        return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -369,7 +420,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
+        group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>,Conflict<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
         (
             V2NewsArticleDTO dto,
             IV2NewsService service,
@@ -398,6 +449,15 @@ public static class V2NewsEndpoints
                                 Title = "Not Found",
                                 Detail = ex.Message,
                                 Status = 404
+                            });
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            return TypedResults.Conflict(new ProblemDetails
+                            {
+                                Title = "Conflict – cannot update",
+                                Detail = ex.Message,
+                                Status = StatusCodes.Status409Conflict
                             });
                         }
                         catch (InvalidDataException ex)
