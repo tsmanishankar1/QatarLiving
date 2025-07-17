@@ -1,0 +1,44 @@
+@inherits AdHistoryDialogBase
+
+<MudDialog Class="pa-2 ad-history-dialog">
+    <DialogContent>
+            <MudTable Items="@AdHistoryList"
+                      FixedHeader="true"
+                      Hover="true"
+                      Bordered="true"
+                      Elevation="0"
+                      Class="mud-table event-custom-table"
+                      >
+                <HeaderContent>
+                    <MudTh class="header-cell">Ad ID</MudTh>
+                    <MudTh class="header-cell">Date Used</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Ad ID">@context.AdId</MudTd>
+                    <MudTd DataLabel="Date Used">@context.UsedOn.ToString("dd-MM-yyyy HH:mm")</MudTd>
+                </RowTemplate>
+            </MudTable>
+    </DialogContent>
+</MudDialog>
+<style>
+    .ad-history-dialog {
+        width: 400px;
+        height: 400px;
+        max-width: 90vw;
+        border-radius: 12px;
+        overflow: hidden;
+        padding: 0;
+        background-color: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .table-scroll-wrapper {
+        max-height: 600px;
+        overflow: hidden;
+    }
+
+    .ad-history-dialog .mud-dialog .mud-dialog-title {
+        padding: 0;
+    }
+
+</style>

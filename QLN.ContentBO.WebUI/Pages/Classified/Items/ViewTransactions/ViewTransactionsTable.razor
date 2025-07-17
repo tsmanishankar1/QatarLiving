@@ -1,0 +1,61 @@
+@inherits ViewTransactionsTableBase
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+
+<MudPaper Class="pa-4">
+    <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+
+    <MudTable Items="Listings"
+              Hover="true"
+              Bordered="true"
+              Elevation="0"
+              Class="mud-table event-custom-table">
+
+        <HeaderContent>
+            <MudTh class="header-cell">Ad ID</MudTh>
+            <MudTh class="header-cell">Order ID</MudTh>
+            <MudTh class="header-cell">Product type</MudTh>
+            <MudTh class="header-cell">User Name</MudTh>
+            <MudTh class="header-cell">Status</MudTh>
+            <MudTh class="header-cell">Email</MudTh>
+            <MudTh class="header-cell">Mobile</MudTh>
+            <MudTh class="header-cell">WhatsApp</MudTh>
+            <MudTh class="header-cell">Amount</MudTh>
+            <MudTh class="header-cell">Creation Date</MudTh>
+            <MudTh class="header-cell">Date Published</MudTh>
+            <MudTh class="header-cell">Start Date</MudTh>
+            <MudTh class="header-cell">End Date</MudTh>
+            <MudTh class="header-cell">Actions</MudTh>
+        </HeaderContent>
+
+        <RowTemplate>
+            <MudTd><MudLink Href="#">@context.AdId</MudLink></MudTd>
+            <MudTd><MudLink Href="#">@context.OrderId</MudLink></MudTd>
+            <MudTd>@context.ProductType</MudTd>
+            <MudTd>@context.UserName</MudTd>
+            <MudTd>@context.Status</MudTd>
+            <MudTd><MudLink Href="#">@context.Email</MudLink></MudTd>
+            <MudTd>@context.Mobile</MudTd>
+            <MudTd>@context.WhatsApp</MudTd>
+            <MudTd>@context.Amount</MudTd>
+            <MudTd>@context.CreationDate?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>@context.PublishedDate?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>@context.StartDate?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>@context.EndDate?.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>
+                <div @onclick="@(() => OnPreview(context))">
+                  <img src="/qln-images/preview_icon.svg" class="menu-icon-style" alt="Ignore" />
+                </div>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <PaginationFooter TotalItems="@TotalCount"
+                      CurrentPage="@currentPage"
+                      PageSize="@pageSize"
+                      OnPageChange="@HandlePageChange"
+                      OnPageSizeChange="@HandlePageSizeChange" />
+</MudPaper>

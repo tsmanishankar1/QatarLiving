@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
-using MudExRichTextEditor;
 using Microsoft.JSInterop;
+using Microsoft.AspNetCore.Components.Forms;
+using MudBlazor;
+using MudExRichTextEditor;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 {
@@ -9,11 +11,63 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
     {
         [Parameter]
         public string? UserEmail { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+
         public AdPost Ad { get; set; } = new();
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
         private DotNetObjectReference<CreateFormListBase>? _dotNetRef;
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
+        protected CountryModel SelectedPhoneCountry;
+        protected CountryModel SelectedWhatsappCountry;
+
+        protected async Task OnCrFileSelected(IBrowserFile file)
+        {
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
+                return;
+            }
+
+            using var stream = file.OpenReadStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+             Ad.CertificateFileName = file.Name;
+             Ad.Certificate = Convert.ToBase64String(ms.ToArray());
+        }
+        protected void ClearFile()
+        {
+            Ad.CertificateFileName = null;
+            Ad.Certificate = null;
+        }
+
+        protected Task OnPhoneCountryChanged(CountryModel model)
+        {
+            SelectedPhoneCountry = model;
+            Ad.PhoneCode = model.Code;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappCountryChanged(CountryModel model)
+        {
+            SelectedWhatsappCountry = model;
+            Ad.WhatsappCode = model.Code;
+            return Task.CompletedTask;
+        }
+         protected Task OnPhoneChanged(string phone)
+        {
+            Ad.PhoneNumber = phone;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappChanged(string phone)
+        {
+            Ad.WhatsappNumber = phone;
+            return Task.CompletedTask;
+        }
+
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
