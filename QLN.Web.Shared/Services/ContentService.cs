@@ -7,15 +7,11 @@ namespace QLN.Web.Shared.Services
     public class ContentService : IContentService
     {
         private readonly HttpClient _httpClient;
-        private readonly NavigationPath _navigationPath;
 
         public ContentService(
-            HttpClient httpClient,
-            IOptions<NavigationPath> navigationPath
-            )
+            HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _navigationPath = navigationPath.Value;
         }
 
         /// <inheritdoc />
@@ -23,7 +19,7 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync(_navigationPath.ContentDailyBackEnd);
+                var response = await _httpClient.GetAsync("/api/content/qln_contents_daily/landing");
 
 
                 return response;
@@ -74,12 +70,26 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync(_navigationPath.ContentDailyVideosBackEnd);
+                var response = await _httpClient.GetAsync("/api/content/qln_videos/landing");
                 return response;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("GetVideosLPAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> GetDailyLPV2Async()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/v2/dailyliving/landing");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetDailyLPV2Async" + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

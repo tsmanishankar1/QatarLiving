@@ -334,6 +334,7 @@ public static class V2NewsEndpoints
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             NotFound<ProblemDetails>,
+            Conflict<ProblemDetails>,
             ProblemHttpResult>>
         (
             V2NewsArticleDTO dto,
@@ -393,6 +394,15 @@ public static class V2NewsEndpoints
                            Status = 400
                        });
                    }
+                   catch (InvalidOperationException iex)
+                   {
+                       return TypedResults.Conflict(new ProblemDetails
+                       {
+                           Title = "Conflict – cannot update",
+                           Detail = iex.Message,
+                           Status = StatusCodes.Status409Conflict
+                       });
+                   }
                    catch (Exception ex)
                    {
                        return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -410,7 +420,7 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-        group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
+        group.MapPut("/updateNewsarticleByUserId", async Task<Results<Ok<string>, BadRequest<ProblemDetails>,Conflict<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>>
         (
             V2NewsArticleDTO dto,
             IV2NewsService service,
@@ -439,6 +449,15 @@ public static class V2NewsEndpoints
                                 Title = "Not Found",
                                 Detail = ex.Message,
                                 Status = 404
+                            });
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            return TypedResults.Conflict(new ProblemDetails
+                            {
+                                Title = "Conflict – cannot update",
+                                Detail = ex.Message,
+                                Status = StatusCodes.Status409Conflict
                             });
                         }
                         catch (InvalidDataException ex)

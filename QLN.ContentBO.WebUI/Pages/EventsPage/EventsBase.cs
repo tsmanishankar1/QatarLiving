@@ -61,7 +61,15 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             currentStatus = status;
             currentPage = 1;
+            SortAscending = status == 1; 
             PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+            if (status == 1)
+            {
+                var sortedList = PaginatedData.Items
+                 .OrderBy(e => e.EventSchedule.StartDate)
+                 .ToList();
+               PaginatedData.Items = sortedList;
+            }
             StateHasChanged();
         }
 
@@ -88,12 +96,13 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             await HandleStatusChange(1);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
-            var allEvents = await GetAllEvents();
             var featuredEventIds = featuredEventSlots
                 .Where(slot => slot.Event != null)
                 .Select(slot => slot.Event.Id)
                 .ToHashSet();
 
+            var paginatedData = await GetEvents(1, 50,"","desc",1);
+            var allEvents = paginatedData.Items;
             AllEventsList = allEvents
                  .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
                   .ToList();
@@ -130,7 +139,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             var parameters = new DialogParameters
             {
                 { nameof(MessageBoxBase.Title), "Featured Event" },
-                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
+                { nameof(MessageBoxBase.Placeholder), "Event Title*" },
                 { nameof(MessageBoxBase.events), AllEventsList },
                 { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
             };
@@ -388,6 +397,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     Snackbar.Add("Event cannot be Deleted since it is configured in Daily Page", Severity.Error);
                 }
+                else if (apiResponse?.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add("Event cannot be Deleted since it is configured in Daily Top Section or Daily Topics or as Featured Event", Severity.Error);
+                }
                 else
                 {
                     Snackbar.Add("Failed to delete event", Severity.Error);
@@ -435,6 +448,42 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
             }
         }
+        protected async Task UnFeatureEvent(string eventId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(eventId))
+                {
+                    Snackbar.Add("Invalid event ID.", Severity.Warning);
+                    return;
+                }
+                var slot = featuredEventSlots.FirstOrDefault(s => s.Event?.Id.ToString() == eventId);
+                if (slot == null)
+                {
+                    Snackbar.Add("No featured event found with the given ID.", Severity.Warning);
+                    return;
+                }
+                var apiResponse = await eventsService.UnFeatureEvent(eventId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    slot.Event = new EventDTO
+                    {
+                        EventTitle = "Feature an Event"
+                    };
+                    Snackbar.Add($"Featured event deleted successfully", Severity.Success);
+                    featuredEventSlots = await GetFeaturedSlotsAsync();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to delete featured event.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "DeleteFeatureEvent");
+                Snackbar.Add("Something went wrong while deleting the featured event.", Severity.Error);
+            }
+        }
         protected async Task ReplaceFeaturedEvent()
         {
             try
@@ -462,6 +511,19 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     await ShowSuccessModal("Event replaced successfully!");
                     PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
+                    var featuredEventIds = featuredEventSlots
+                            .Where(slot => slot.Event != null)
+                            .Select(slot => slot.Event.Id)
+                            .ToHashSet();
+
+                    var paginatedData = await GetEvents(1, 50,"","desc",1);
+                    var allEvents = paginatedData.Items;
+                    AllEventsList = allEvents
+                        .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
+                        .ToList();
+                    AllEventsList = AllEventsList
+                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                        .ToList();
                     StateHasChanged();
                 }
                 else
@@ -495,6 +557,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 }
                 PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
             }
+            else if (response?.StatusCode == HttpStatusCode.Conflict)
+            {
+                Snackbar.Add("Event cannot be UnPublished since it is configured in Daily Top Section or Daily Topics or as Featured Event", Severity.Error);
+            }
             else
             {
                 Snackbar.Add($"Failed to update status to {newStatus}.", Severity.Error);
@@ -507,10 +573,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             { "Title", "Delete Confirmation" },
             { "Descrption", "Do you want to delete this Event?" },
             { "ButtonTitle", "Delete" },
-            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent(id))}
+            { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await UnFeatureEvent(id))}
         };
         var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
         var result = await dialog.Result;
     }
     }

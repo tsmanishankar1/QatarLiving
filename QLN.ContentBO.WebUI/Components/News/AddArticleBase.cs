@@ -277,7 +277,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             article = new();
             TempCategoryList = [];
-            if (CategoryId != 0 && SubCategoryId != 0)
+            if (CategoryId is not null && SubCategoryId is not null)
             {
                 TempCategoryList.Add(new()
                 {

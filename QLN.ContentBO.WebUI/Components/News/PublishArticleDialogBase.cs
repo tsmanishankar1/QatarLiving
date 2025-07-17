@@ -100,11 +100,15 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     MudDialog.Close();
                 }
-                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                else if (response?.StatusCode == HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add("Article cannot be UnPublished since it is configured in Daily Top Section or Daily Topics", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Snackbar.Add("You are unauthorized to perform this action");
                 }
-                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
                 {
                     Snackbar.Add("Internal API Error");
                 }

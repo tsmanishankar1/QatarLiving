@@ -24,5 +24,7 @@
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetVideosLPAsync();
+
+        Task<HttpResponseMessage?> GetDailyLPV2Async();
     }
 }

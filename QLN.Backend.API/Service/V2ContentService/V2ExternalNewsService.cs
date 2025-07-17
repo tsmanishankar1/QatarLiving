@@ -179,25 +179,77 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl) && !dto.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(dto.CoverImageUrl) &&
+                    !dto.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var imageName = $"{dto.Title}_{dto.Id}.png";
                     var blobUrl = await _blobStorage.SaveBase64File(dto.CoverImageUrl, imageName, "imageurl", cancellationToken);
                     dto.CoverImageUrl = blobUrl;
                 }
+
                 var url = "/api/v2/news/updateNewsarticleByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                response.EnsureSuccessStatusCode();
+                var content = await response.Content.ReadAsStringAsync();
 
-                return await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    string detail = content;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(content, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        detail = problem?.Detail ?? content;
+                    }
+                    catch
+                    {
+                        // fallback to raw content
+                    }
+
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                        throw new InvalidOperationException(detail);
+
+                    if (response.StatusCode == HttpStatusCode.NotFound)
+                        return null;
+
+                    throw new DaprServiceException((int)response.StatusCode, detail);
+                }
+
+                return content;
             }
-            catch (Exception ex)
+            catch (InvocationException ex)
             {
-                _logger.LogError(ex, "Failed to update article via external service");
-                throw;
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+
+                throw new DaprServiceException((int)status, detail);
             }
         }
 

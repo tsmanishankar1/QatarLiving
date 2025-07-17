@@ -120,7 +120,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 _ => null
             };
 
-            await OnStatusChanged.InvokeAsync(status);  // Notify parent of new status
+            await OnStatusChanged.InvokeAsync(status); 
         }
         protected string GetEmptyTitle()
         {
