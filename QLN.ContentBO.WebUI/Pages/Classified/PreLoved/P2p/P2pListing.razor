@@ -1,0 +1,218 @@
+﻿@inherits P2pListingBase
+
+<div style="margin-top:10px">
+    <div class="search-sort-container">
+        <div class="left-section">
+
+
+            <div class="search-wrapper">
+                <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+                <input type="text"
+                       placeholder="Search for Preloved"
+                       class="search-input"
+                       @oninput="OnSearchChanged" />
+            </div>
+        </div>
+
+        <div class="right-section">
+            <button class="sort-button">
+                <img src="/qln-images/file_icon.svg" />
+                Export data
+            </button>
+            <button class="sort-button" @onclick="ToggleSort">
+                <MudIcon Icon="@SortIcon" />
+                Sort by
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter row -->
+    <div class="filter-row">
+        <div class="filter-button @(showCreatedPopover ? "active-filter" : "")" @onclick="ToggleCreatedPopover">
+            <img src="/qln-images/date_icon.svg" class="filter-icon @(showCreatedPopover ? "active-icon" : "")" style="width:16px;" />
+            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Date Created")</span>
+            <MudPopover Open="@showCreatedPopover"
+                        AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter"
+                        Elevation="6"
+                        Class="popover-container">
+                <div class="popover-content">
+                    <MudDatePicker @bind-Date="tempCreatedDate"
+                                   DisableToolbar="true"
+                                   ShowToolbar="false"
+                                   PickerVariant="PickerVariant.Static" />
+                    <div class="popover-footer">
+                        <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelCreatedPopover">Cancel</MudButton>
+                        <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmCreatedPopover">OK</MudButton>
+                    </div>
+                </div>
+            </MudPopover>
+        </div>
+
+        <div class="filter-button @(showPublishedPopover ? "active-filter" : "")" @onclick="TogglePublishedPopover">
+            <img src="/qln-images/date_icon.svg" class="filter-icon @(showPublishedPopover ? "active-icon" : "")" style="width:16px;" />
+            <span>@(datePublished.HasValue ? datePublished.Value.ToString("dd MMM yyyy") : "Date Published")</span>
+            <!-- Popover for Date Published -->
+            <MudPopover Open="@showPublishedPopover"
+                        AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter"
+                        Elevation="6"
+                        Class="popover-container">
+                <div class="popover-content">
+                    <MudDatePicker @bind-Date="tempPublishedDate"
+                                   DisableToolbar="true"
+                                   ShowToolbar="false"
+                                   PickerVariant="PickerVariant.Static" />
+                    <div class="popover-footer">
+                        <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelPublishedPopover">Cancel</MudButton>
+                        <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmPublishedPopover">OK</MudButton>
+                    </div>
+                </div>
+            </MudPopover>
+        </div>
+
+        <button class="filter-button" @onclick="ClearFilters">Clear Filters</button>
+    </div>
+
+</div>
+<div style="margin-top:10px">
+<PreLovedTable />
+</div>
+
+<style>
+    .search-sort-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+
+    .left-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .right-section {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .search-wrapper {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 8px;
+        padding: 10px 14px;
+        width: 300px;
+        height: 44px;
+    }
+
+        .search-wrapper:focus-within {
+            border-color: var(--color-accent);
+        }
+
+    .search-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+        color: #A1A1A1;
+    }
+
+    .search-input {
+        border: none;
+        outline: none;
+        width: 100%;
+        font-size: 14px;
+        color: #333;
+    }
+
+    .sort-button {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 8px;
+        background: #fff;
+        padding: 6px 14px;
+        height: 44px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--color-text-descripton);
+        font-weight: 500;
+    }
+
+        .sort-button:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
+
+    .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .filter-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 8px;
+        padding: 6px 14px;
+        height: 44px;
+        font-size: 14px;
+        cursor: pointer;
+        background-color: white;
+        color: #333;
+    }
+
+    .clear-filters {
+        background: none;
+        border: none;
+        color: #FF7F38;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .popover-content {
+        background-color: white;
+        border-radius: 20px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .popover-footer {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .add-button {
+        text-transform: capitalize;
+        height: 44px;
+    }
+
+    .popover-button {
+        width: 100%;
+        text-transform: capitalize;
+    }
+
+    .active-filter {
+        border-color: #FF7F38 !important;
+        color: #FF7F38;
+    }
+
+    .active-icon {
+        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+    }
+
+</style>
+
+

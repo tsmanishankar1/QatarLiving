@@ -795,9 +795,9 @@ a, .btn-link {
     width: 330px;
     height: 60px;
     border-radius: 6px;
-    border: 1px solid #D0D5DD;
+    border: 1px solid #D0D5DD !important;
     justify-content: space-between;
-    padding-left: 10px;
+    padding-left: 10px !important;
 }
 
 .classified-image-container {
