@@ -10,6 +10,7 @@ using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Content.MS.Service.CommunityInternalService;
 using QLN.Content.MS.Service.ReportInternalService;
 using QLN.Content.MS.Service.DailyInternalService;
+using QLN.Content.MS.Service.BannerInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
@@ -24,6 +25,7 @@ builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
 builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
 builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
 builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
+builder.Services.AddScoped<IV2BannerService,V2BannerInternalService>();
 builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
 {
@@ -71,5 +73,10 @@ var CommunityGroup = app.MapGroup("/api/v2/location");
 CommunityGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
+
+var bannerPostGroup = app.MapGroup("/api/v2/banner");
+bannerPostGroup.MapBannerPostEndpoints();
+
+
 app.UseHttpsRedirection();
 app.Run();
