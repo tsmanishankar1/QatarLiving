@@ -138,6 +138,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             Navigation.NavigateTo($"/content/events/edit/{id}");
         }
+
         public string GetTimeDifferenceFromNowUtc(DateTime givenUtcTime)
         {
             try

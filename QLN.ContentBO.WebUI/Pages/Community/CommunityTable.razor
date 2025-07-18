@@ -40,7 +40,16 @@ else
             <MudTd DataLabel="Category">@context.Category</MudTd>
             <MudTd DataLabel="User Name">@context.UserName</MudTd>
             <MudTd DataLabel="Date Created">@context.DateCreated.ToQatarTime("dd-MM-yyyy")</MudTd>
-            <MudTd> @context.DateCreated.ToString("dd-MM-yyyy")         </MudTd>
+            <MudTd>
+                @if (context?.DateCreated is not null)
+                {
+                    @GetTimeDifferenceFromNowUtc(context.DateCreated)
+                }
+                else
+                {
+                    @("-")
+                }
+            </MudTd>
 
             <MudTd>
                 <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Id))">
