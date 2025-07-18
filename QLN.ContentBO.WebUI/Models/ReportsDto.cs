@@ -9,7 +9,7 @@ namespace QLN.ContentBO.WebUI.Models
 public class ReportDto
 {
     public Guid Id { get; set; }
-    public Guid PostId { get; set; }
+    public Guid? PostId { get; set; }
     public string Post { get; set; }
     public Guid CommentId { get; set; }
     public string Reporter { get; set; }

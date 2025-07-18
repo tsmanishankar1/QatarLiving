@@ -1,6 +1,7 @@
 @page "/manage/news/category/{CategoryId:int}"
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models;
 @inherits NewsBase
 
@@ -124,7 +125,7 @@
 
                                     <!-- Creation Date -->
                                     <PropertyColumn Title="Creation Date"
-                                                    Property="x => x.CreatedAt"
+                                                    Property="x => x.CreatedAt.ToQatarTime()"
                                                     Format="dd-MM-yyyy"
                                                     Width="150px" />
 
@@ -233,7 +234,7 @@
 
                                     <!-- Creation Date -->
                                     <PropertyColumn Title="Creation Date"
-                                                    Property="x => x.CreatedAt"
+                                                    Property="x => x.CreatedAt.ToQatarTime()"
                                                     Format="dd-MM-yyyy"
                                                     Width="150px" />
 
@@ -341,7 +342,7 @@
                                                 <td>
                                                     @if (context.Article?.CreatedAt is not null)
                                                     {
-                                                        @context.Article?.CreatedAt.ToString("dd-MM-yyyy")
+                                                        @context.Article?.CreatedAt.ToQatarTime("dd-MM-yyyy")
                                                     }
                                                     else
                                                     {
