@@ -108,7 +108,17 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ReportsArticleCommentsIndexKey = "reportarticlecomments-category-index";
             public const string DailyTopBOIndexKey = "daily-top-bo-index";
             public const string DailyTopicIndexKey = "daily-topic-index";
+            public const string BannerTypeIndexKey = "banner-type-index";
+            public const string BannerIndexKey = "banner-index";
         }
+
+        public static class V2ClassifiedBo
+        {
+            public const string ClassifiedBoStoreName = "contentstatestore";
+            public const string ClassifiedBoServiceAppId = "qln-classifiedBo-ms";
+        
+           
+        }                  
     }
     }
 
