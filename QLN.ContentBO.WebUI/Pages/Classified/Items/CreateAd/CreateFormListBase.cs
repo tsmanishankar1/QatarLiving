@@ -4,11 +4,13 @@ using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using MudExRichTextEditor;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 {
     public class CreateFormListBase : ComponentBase
     {
+        [Inject] public IClassifiedService classifiedservice { get; set; }
         [Parameter]
         public string? UserEmail { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
