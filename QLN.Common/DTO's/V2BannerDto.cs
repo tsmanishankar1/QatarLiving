@@ -1,7 +1,6 @@
 ﻿
 using QLN.Common.Infrastructure.Subscriptions;
 
-
 namespace QLN.Common.DTO_s
 {
     public class V2CreateBannerDto
@@ -44,6 +43,7 @@ namespace QLN.Common.DTO_s
         public string BannerTypeName { get; set; }
         public string Dimensions { get; set; }
         public string BannerslotId { get; set; }
+        public List<Guid>? BannerIds { get; set; } = [];
         public List<V2BannerDto>? BannerDetails { get; set; } = [];
     }
     public class V2BannerPageLocationDto
@@ -75,8 +75,6 @@ namespace QLN.Common.DTO_s
         public string Updatedby { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
-
-
 
     public class DeleteBannerRequest
     {
