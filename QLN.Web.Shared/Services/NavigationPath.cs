@@ -91,11 +91,5 @@
         public string ContentCommunity { get; set; } = "/content/v2/community";
         public string ContentCommunityPostCreate { get; set; } = "/content/v2/community/post/create";
         public string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/detail/";
-
-        public string ContentDailyBackEnd { get; set; } = "/api/content/qln_contents_daily/landing"; // new one is "/api/v2/dailyliving/landing"
-
-        public string ContentDailyVideosBackEnd { get; set; } = "/api/content/qln_videos/landing";
-        public string ContentAPINewsLanding { get; set; } = "api/v2/news/landing";
-        public string ContentAPINewsGetBySlug { get; set; } = "api/v2/news/getbyslug";
     }
 }

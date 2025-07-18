@@ -58,7 +58,6 @@ namespace QLN.ContentBO.WebUI.Components
                     else
                     {
                         NavManager.NavigateTo($"{NavigationPath.Value.Login}?destination={NavigationPath.Value.BORedirectPrefix}{destination}", forceLoad: true);
-
                     }
                 }
             }
