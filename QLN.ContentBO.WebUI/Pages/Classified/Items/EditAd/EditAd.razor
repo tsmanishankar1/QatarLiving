@@ -6,15 +6,15 @@
      <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
         Back
 </button>
-<EditAdAction/>
+<EditAdAction AdModel="@adPostModel"/>
 <div class="create-form-container">
     <MudGrid GutterSize="24px">
         <MudItem xs="12" md="5">
-            <CreateFormList  />
+            <CreateFormList Ad="@adPostModel" />
         </MudItem>
 
         <MudItem xs="12" md="7">
-            <UploadPhotos />
+            <UploadPhotos AdModel="@adPostModel" />
         </MudItem>
     </MudGrid>
 </div>

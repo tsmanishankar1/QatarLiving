@@ -8,7 +8,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class EditAdBase : ComponentBase
     {
         [Inject] public NavigationManager Navigation { get; set; }
-        protected AdPost adPostModel { get; set; } = new();
+        protected EditAdPost adPostModel { get; set; } = new();
         [Parameter]
         public int AdId { get; set; }
 

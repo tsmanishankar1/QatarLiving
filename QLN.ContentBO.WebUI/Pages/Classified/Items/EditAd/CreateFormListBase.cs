@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     {
         [Inject] ISnackbar Snackbar { get; set; }
 
-        public AdPost Ad { get; set; } = new();
+        [Parameter] public EditAdPost Ad { get; set; } = new();
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
         private DotNetObjectReference<CreateFormListBase>? _dotNetRef;

@@ -3,12 +3,11 @@ using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Models
 {
-    public class AdPost
+    public class EditAdPost
     {
         // ----------------------------
         // Category Selection
         // ----------------------------
-
         [Required(ErrorMessage = "Vertical is required.")]
         public string SelectedVertical { get; set; } = string.Empty;
 
@@ -19,13 +18,11 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Dynamic Fields
         // ----------------------------
-
         public Dictionary<string, string> DynamicFields { get; set; } = new();
 
         // ----------------------------
         // Description and Features
         // ----------------------------
-
         [Required(ErrorMessage = "Title is required.")]
         [StringLength(100, ErrorMessage = "Title must be less than 100 characters.")]
         public string? Title { get; set; }
@@ -52,7 +49,6 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Contact Details
         // ----------------------------
-
         [Required(ErrorMessage = "Phone code is required.")]
         [StringLength(5, ErrorMessage = "Phone code must be less than 5 characters.")]
         public string? PhoneCode { get; set; }
@@ -70,7 +66,6 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Location
         // ----------------------------
-
         [StringLength(50, ErrorMessage = "Zone must be less than 50 characters.")]
         public string? Zone { get; set; }
 
@@ -86,7 +81,6 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Agreement
         // ----------------------------
-
         [Required(ErrorMessage = "You must agree to the terms.")]
         [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the terms.")]
         public bool IsAgreed { get; set; }
@@ -101,7 +95,32 @@ namespace QLN.ContentBO.WebUI.Models
             new AdImage { Order = 2 }
         };
 
-    }
-       
+        // ----------------------------
+        // NEW FIELDS
+        // ----------------------------
+        public bool IsFeatured { get; set; }
+        public bool IsPromoted { get; set; }
+        public string? Status { get; set; }
 
+        [StringLength(100)]
+        public string? Location { get; set; }
+
+        [StringLength(100)]
+        public string? Coverage { get; set; }
+
+        [StringLength(100)]
+        public string? Processor { get; set; }
+
+        [StringLength(100)]
+        public string? Storage { get; set; }
+
+        [StringLength(100)]
+        public string? Colour { get; set; }
+
+        [StringLength(100)]
+        public string? Model { get; set; }
+
+        [StringLength(100)]
+        public string? Brand { get; set; }
+    }
 }

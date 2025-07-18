@@ -61,9 +61,9 @@
 
         <h3 class="form-heading">Description and Features</h3>
 
-        <MudExRichTextEdit @bind-Value="Ad.ItemDescription" @ref="Editor"
+        <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
                            Height="350" Placeholder="Start Typing"
-                           For="@(() => Ad.ItemDescription)">
+                           For="@(() => Ad.Description)">
         </MudExRichTextEdit>
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
