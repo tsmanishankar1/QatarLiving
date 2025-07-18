@@ -46,7 +46,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine($"Reordering BannerTypes by filter: Vertical={verticalId}, SubVertical={subVerticalId}, PageId={pageId}");
+               
 
                 var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
                    V2Content.ContentStoreName,
@@ -55,7 +55,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                     if (allBannerTypes == null)
                     {
-                        Console.WriteLine(" No banner types found in storage.");
+                        
                         return null;
                     }
 
@@ -64,13 +64,13 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                     if (bannerType == null)
                     {
-                        Console.WriteLine("No matching banner type found.");
+                      
                         return null;
                     }
                     var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
                     if (matchingPage == null)
                     {
-                        Console.WriteLine(" No matching page found.");
+                        
                         return null;
                     }
                 var banner = await _dapr.GetStateAsync<V2BannerDto>(
@@ -79,12 +79,12 @@ namespace QLN.Content.MS.Service.BannerInternalService
                cancellationToken: cancellationToken);
 
                 if (banner == null) {
-                    Console.WriteLine("⚠️ No matching banner found.");
+                   
                     return null;
                 }
                 if (matchingPage.bannertypes != null)
                     {
-                    Console.WriteLine("bannertypes " +  JsonSerializer.Serialize(allBannerTypes));
+                   
                     foreach (var location in matchingPage.bannertypes)
                         {
                             if (location.Id == banner.BannerTypeId)
@@ -93,17 +93,12 @@ namespace QLN.Content.MS.Service.BannerInternalService
                             {
                                 location?.BannerIds?.Clear();
                                 location?.BannerIds?.AddRange(banners);
-                                Console.WriteLine("An Match Found");
                             }
-                            else
-                            {
-                                Console.WriteLine("⚠️ Reordering falied");
-                            }
+                           
                                 break;
                         }
                         }
                     };
-                Console.WriteLine(JsonSerializer.Serialize(allBannerTypes));
                     await _dapr.SaveStateAsync(
                             V2Content.ContentStoreName,
                  V2Content.BannerTypeIndexKey,
@@ -115,20 +110,15 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ EXCEPTION in CreateBannerAsync (INTERNAL)");
-                Console.WriteLine(ex.ToString());
                 _logger.LogError(ex, "Error creating banner.");
                 throw new Exception("Internal error occurred while creating banner.", ex);
             }
 
         }
-        public async Task<string> CreateBannerAsync(Vertical verticalId,
-     SubVertical? subVerticalId,
-     Guid pageId, string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateBannerAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId, string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                Console.WriteLine("🔧 INTERNAL SERVICE - Creating Banner");
                 foreach (var bannerTypeId in dto.BannerTypeIds)
                 {
                     var id = Guid.NewGuid();
@@ -167,7 +157,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                     if (allBannerTypes == null)
                     {
-                        Console.WriteLine("⚠️ No banner types found in storage.");
                         return null;
                     }
 
@@ -176,13 +165,11 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                     if (bannerType == null)
                     {
-                        Console.WriteLine("⚠️ No matching banner type found.");
                         return null;
                     }
                     var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
                     if (matchingPage == null)
                     {
-                        Console.WriteLine("⚠️ No matching page found.");
                         return null;
                     }
                     if (matchingPage.bannertypes != null)
@@ -207,13 +194,10 @@ namespace QLN.Content.MS.Service.BannerInternalService
                             cancellationToken: cancellationToken
                         );
                 }
-                Console.WriteLine("✅ Banner created successfully.");
                 return "Banner created successfully.";
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ EXCEPTION in CreateBannerAsync (INTERNAL)");
-                Console.WriteLine(ex.ToString());
                 _logger.LogError(ex, "Error creating banner.");
                 throw new Exception("Internal error occurred while creating banner.", ex);
             }
@@ -222,7 +206,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine("🔧 INTERNAL SERVICE - Editing Banner");
 
                 var existingBanner = await _dapr.GetStateAsync<V2BannerDto>(
                     ConstantValues.V2Content.ContentStoreName,
@@ -231,8 +214,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                 if (existingBanner == null)
                     throw new ArgumentException("Banner not found.");
-
-                // Update mutable fields
                 existingBanner.Status = dto.Status;
                 existingBanner.BannerTypeId = dto.BannerTypeId;
                 existingBanner.AnalyticsTrackingId = dto.AnalyticsTrackingId;
@@ -259,7 +240,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ EXCEPTION in EditBannerAsync (INTERNAL)");
                 _logger.LogError(ex, "Error editing banner.");
                 throw new Exception("Internal error occurred while editing banner.", ex);
             }
@@ -268,8 +248,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine("🔧 INTERNAL SERVICE - Deleting Banner");
-
                 var existingBanner = await _dapr.GetStateAsync<V2BannerDto>(
                     ConstantValues.V2Content.ContentStoreName,
                     bannerId.ToString(),
@@ -292,7 +270,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ EXCEPTION in DeleteBannerAsync (INTERNAL)");
                 _logger.LogError(ex, "Error deleting banner.");
                 throw new Exception("Internal error occurred while deleting banner.", ex);
             }
@@ -301,9 +278,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine($"🔍 INTERNAL SERVICE - Fetching Banner ID: {id}");
-
-                // Step 1: Check if ID is in index
                 var indexKeys = await _dapr.GetStateAsync<List<string>>(
                     storeName: ConstantValues.V2Content.ContentStoreName,
                     key: ConstantValues.V2Content.BannerIndexKey,
@@ -312,31 +286,23 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                 if (indexKeys == null || !indexKeys.Contains(id.ToString()))
                 {
-                    Console.WriteLine("⚠️ Banner ID not found in index.");
                     return null;
                 }
-
-                // Step 2: Retrieve banner from state store
                 var banner = await _dapr.GetStateAsync<V2BannerDto>(
                     storeName: ConstantValues.V2Content.ContentStoreName,
                     key: id.ToString(),
                     cancellationToken: cancellationToken);
-
-                // Step 3: Validate result and filter out soft-deleted banners
                 if (banner == null || banner.Id == Guid.Empty || banner.Status == false)
                 {
-                    Console.WriteLine("⚠️ Banner not found or marked as inactive.");
                     return null;
                 }
 
-                Console.WriteLine("✅ Banner Retrieved:");
-                Console.WriteLine(JsonSerializer.Serialize(banner, new JsonSerializerOptions { WriteIndented = true }));
+               
 
                 return banner;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Exception in GetBannerByIdAsync (INTERNAL)");
                 _logger.LogError(ex, "Error retrieving banner.");
                 throw new Exception("Error occurred while retrieving banner.", ex);
             }
@@ -345,8 +311,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine(" INTERNAL SERVICE - Creating BannerType");
-
                 var bannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.BannerTypeIndexKey,
@@ -367,7 +331,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Error creating BannerType");
                 _logger.LogError(ex, "CreateBannerTypeAsync failed");
                 throw;
             }
@@ -376,8 +339,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine("🔍 INTERNAL SERVICE - Fetching all BannerTypes");
-
                 var bannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.BannerTypeIndexKey,
@@ -389,11 +350,8 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
                 foreach (var bannerType in bannerTypes)
                 {
-                    // Add vertical and subvertical name as string
                     bannerType.VerticalName = bannerType.VerticalId.ToString();
                     bannerType.SubVerticalName = bannerType.SubVerticalId?.ToString();
-
-                    // Iterate over Pages (which is a list)
                     if (bannerType.Pages != null)
                     {
                         foreach (var page in bannerType.Pages)
@@ -402,7 +360,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                             {
                                 foreach (var location in page.bannertypes)
                                 {
-                                    location.BannerDetails = null; // Remove banner details
+                                    location.BannerDetails = null; 
                                 }
                             }
                         }
@@ -413,7 +371,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Error fetching BannerTypes");
                 _logger.LogError(ex, "GetAllBannerTypesAsync failed");
                 throw;
             }
@@ -427,21 +384,15 @@ namespace QLN.Content.MS.Service.BannerInternalService
         {
             try
             {
-                Console.WriteLine($"Fetching BannerTypes by filter: Vertical={verticalId}, SubVertical={subVerticalId}, PageId={pageId}");
-                
-                // Get all banner types from Dapr
                 var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
                     V2Content.ContentStoreName,
                     V2Content.BannerTypeIndexKey,
                     cancellationToken: cancellationToken);
-
                 if (allBannerTypes == null)
                 {
                     Console.WriteLine("⚠️ No banner types found in storage.");
                     return null;
                 }
-
-                // Match by vertical + subvertical
                 var bannerType = allBannerTypes
                     .FirstOrDefault(x => x.VerticalId == verticalId && x.SubVerticalId == subVerticalId);
 
@@ -452,20 +403,14 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 }
 
                 var bannerKeys = await _dapr.GetStateAsync<List<string>>(
-     V2Content.ContentStoreName,
-     V2Content.BannerIndexKey,
-     cancellationToken: cancellationToken) ?? new List<string>();
-
-                // Filter just the page we want
-                Console.WriteLine(JsonSerializer.Serialize(bannerType));
+                 V2Content.ContentStoreName,
+                 V2Content.BannerIndexKey,
+                 cancellationToken: cancellationToken) ?? new List<string>();
                 var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
                 if (matchingPage == null)
                 {
-                    Console.WriteLine("⚠️ No matching page found.");
                     return null;
                 }
-
-                // Fill in banners for that page
                 if (matchingPage.bannertypes != null)
                 {
                     foreach (var location in matchingPage.bannertypes)
@@ -473,16 +418,14 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         foreach (var item in location.BannerIds ?? [])
                         {
                             var banner = await _dapr.GetStateAsync<V2BannerDto>(
-    V2Content.ContentStoreName,
-    item.ToString(),
-    cancellationToken: cancellationToken);
+                        V2Content.ContentStoreName,
+                        item.ToString(),
+                        cancellationToken: cancellationToken);
                             location?.BannerDetails?.Add(banner);
                         }
 
                     }
                 }
-
-                // Wrap back into the full structure
                 var result = new V2BannerTypeDto
                 {
                     Id = bannerType.Id,
@@ -501,126 +444,8 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw new Exception("Error occurred while retrieving banner types by filter.", ex);
             }
         }
-        //    public async Task<List<V2BannerTypeDto>?> GetBOBannerTypesByFilterAsync(
-        //Vertical verticalId,
-        //SubVertical? subVerticalId,
-        //string sortOrder = "desc", string? searchTerm = null,
-        //CancellationToken cancellationToken)
-        //    {
-        //        try
-        //        {
-        //            Console.WriteLine($"Fetching BannerTypes by filter: Vertical={verticalId}, SubVertical={subVerticalId}, SortOrder={sortOrder} ,SearchTerm={searchTerm}");
 
-        //            // Get all banner types from Dapr
-        //            var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
-        //                V2Content.ContentStoreName,
-        //                V2Content.BannerTypeIndexKey,
-        //                cancellationToken: cancellationToken);
-
-        //            if (allBannerTypes == null)
-        //            {
-        //                Console.WriteLine("⚠️ No banner types found in storage.");
-        //                return null;
-        //            }
-
-        //            // Match by vertical + subvertical
-        //            var bannerType = allBannerTypes
-        //                .FirstOrDefault(x => x.VerticalId == verticalId && x.SubVerticalId == subVerticalId);
-
-        //            if (bannerType == null)
-        //            {
-        //                Console.WriteLine("⚠️ No matching banner type found.");
-        //                return null;
-        //            }
-
-        //            var bannerKeys = await _dapr.GetStateAsync<List<string>>(
-        // V2Content.ContentStoreName,
-        // V2Content.BannerIndexKey,
-        // cancellationToken: cancellationToken) ?? new List<string>();
-
-
-        //            // Get all active banners
-        //            var allBanners = new List<V2BannerDto>();
-        //            foreach (var bannerKey in bannerKeys)
-        //            {
-        //                var banner = await _dapr.GetStateAsync<V2BannerDto>(
-        // V2Content.ContentStoreName,
-        // bannerKey,
-        // cancellationToken: cancellationToken);
-
-
-        //                if (banner?.Status == true)
-        //                {
-        //                    allBanners.Add(banner);
-        //                }
-        //            }
-
-        //            // Filter just the page we want
-        //            Console.WriteLine(JsonSerializer.Serialize(bannerType));
-        //            var bannerPages = bannerType.Pages;
-        //            if (!string.IsNullOrWhiteSpace(searchTerm))
-        //            {
-        //                string lowerSearch = searchTerm.ToLower();
-        //                bannerType.Pages = bannerPages.Where(r =>
-        //                    (!string.IsNullOrEmpty(r.) && r.Post.ToLower().Contains(lowerSearch)) ||
-        //                    (!string.IsNullOrEmpty(r.Comment) && r.Comment.ToLower().Contains(lowerSearch)) ||
-        //                    (!string.IsNullOrEmpty(r.Reporter) && r.Reporter.ToLower().Contains(lowerSearch)) ||
-        //                    (!string.IsNullOrEmpty(r.UserName) && r.UserName.ToLower().Contains(lowerSearch))
-        //                ).ToList();
-        //            }
-
-        //            // Apply sorting
-        //            var sortedResult = sortOrder?.ToLower() switch
-        //            {
-        //                "asc" => bannerPages.OrderBy(r => r.ReportDate),
-        //                "desc" => bannerPages.OrderByDescending(r => r.ReportDate),
-        //                _ => bannerPages.OrderByDescending(r => r.ReportDate)
-        //            };
-
-        //            if (matchingPage == null)
-        //            {
-        //                Console.WriteLine("⚠️ No matching page found.");
-        //                return null;
-        //            }
-
-        //            // Fill in banners for that page
-        //            if (matchingPage.bannertypes != null)
-        //            {
-        //                foreach (var location in matchingPage.bannertypes)
-        //                {
-        //                    var matchingBanner = allBanners.FirstOrDefault(b => b.BannerTypeId == location.Id);
-        //                    location.BannerDetails = matchingBanner;
-
-        //                    Console.WriteLine(matchingBanner != null
-        //                        ? $"✅ Found banner for location {location.Id}"
-        //                        : $"⚠️ No banner for location {location.Id}");
-        //                }
-        //            }
-
-        //            // Wrap back into the full structure
-        //            var result = new V2BannerTypeDto
-        //            {
-        //                Id = bannerType.Id,
-        //                VerticalId = bannerType.VerticalId,
-        //                VerticalName = bannerType.VerticalName,
-        //                SubVerticalId = bannerType.SubVerticalId,
-        //                SubVerticalName = bannerType.SubVerticalName,
-        //                Pages = new List<V2BannerPageLocationDto> { matchingPage }
-        //            };
-
-        //            return new List<V2BannerTypeDto> { result };
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, "❌ Exception in GetBannerTypesByFilterAsync");
-        //            throw new Exception("Error occurred while retrieving banner types by filter.", ex);
-        //        }
-        //    }
-
-        public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync(
-       Vertical? verticalId,
-       bool? status,
-       CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync( Vertical? verticalId, bool? status, CancellationToken cancellationToken)
         {
             try
             {

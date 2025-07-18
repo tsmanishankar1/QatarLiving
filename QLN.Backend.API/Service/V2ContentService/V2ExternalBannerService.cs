@@ -218,7 +218,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                _logger.LogInformation("🔽 Raw JSON from internal service:\n{RawJson}", rawJson);
+                _logger.LogInformation(" Raw JSON from internal service:\n{RawJson}", rawJson);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -235,8 +235,6 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                     throw new InvalidDataException(errorMessage);
                 }
-
-                // ✅ Case-insensitive deserialization
                 return JsonSerializer.Deserialize<V2BannerDto>(
                     rawJson,
                     new JsonSerializerOptions
@@ -321,7 +319,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 var url = $"/api/v2/banner/getbyfilter?" + string.Join("&", queryParams);
 
-                _logger.LogInformation("🔍 Constructed URL: {Url}", url);
+                _logger.LogInformation("Constructed URL: {Url}", url);
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Get,
@@ -332,7 +330,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                _logger.LogInformation("📥 Raw JSON from internal: {RawJson}", rawJson);
+                _logger.LogInformation(" Raw JSON from internal: {RawJson}", rawJson);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -346,7 +344,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = rawJson;
                     }
-                    throw new InvalidDataException($"Internal API error: {errorMessage}");
+                    throw new InvalidDataException("Internal API error: {errorMessage}");
                 }
 
                 var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
@@ -356,7 +354,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in external GetBannerTypesByFilterAsync");
+                _logger.LogError(ex, "Exception in external GetBannerTypesByFilterAsync");
                 throw;
             }
         }
@@ -403,7 +401,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = rawJson;
                     }
-                    throw new InvalidDataException($"Internal API error: {errorMessage}");
+                    throw new InvalidDataException("Internal API error: {errorMessage}");
                 }
 
                 var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
@@ -439,7 +437,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 var url = $"/api/v2/banner/reorder?" + string.Join("&", queryParams);
 
-                _logger.LogInformation("🌐 Reorder URL: {Url}", url);
+                _logger.LogInformation(" Reorder URL: {Url}", url);
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
@@ -454,14 +452,14 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Reorder failed with status {StatusCode}: {Content}", response.StatusCode, resultString);
-                    throw new InvalidOperationException($"Reorder failed: {resultString}");
+                    throw new InvalidOperationException("Reorder failed: {resultString}");
                 }
 
                 return resultString;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ Exception in external ReorderBannersAsync");
+                _logger.LogError(ex, " Exception in external ReorderBannersAsync");
                 throw;
             }
         }

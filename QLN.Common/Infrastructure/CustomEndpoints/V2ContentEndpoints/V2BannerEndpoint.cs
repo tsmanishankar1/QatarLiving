@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
         public static RouteGroupBuilder MapCreateBannerEndpoints(this RouteGroupBuilder group)
         {
-            // Authenticated Create - Extracts userId from token
+            
             group.MapPost("/create", async Task<Results<
                 Ok<string>,
                 UnauthorizedHttpResult,
@@ -71,7 +71,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithTags("Banners")
             .WithDescription("Creates banner with authenticated user.")
             .Produces<string>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status401Unauthorized) // Added 401
+            .Produces(StatusCodes.Status401Unauthorized) 
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -183,8 +183,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 .Produces(StatusCodes.Status401Unauthorized)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            // Internal endpoint
             group.MapPost("/editbyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
