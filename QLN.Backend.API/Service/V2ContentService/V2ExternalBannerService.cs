@@ -23,7 +23,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-        public async Task<string> CreateBannerAsync(string userId, V2BannerDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateBannerAsync(string userId, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
             string? mobileFileName = null;
@@ -361,6 +361,55 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
+
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesWithBannersByStatusAsync(
+       Vertical verticalId,
+       bool status,
+       CancellationToken cancellationToken)
+        {
+            try
+            {
+                var url = $"/api/v2/banner/getbyverticalandstatus?verticalId={(int)verticalId}&status={status.ToString().ToLower()}";
+
+                _logger.LogInformation("🌐 Calling internal banner hierarchy API: {Url}", url);
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                _logger.LogInformation("📥 Response: {RawJson}", rawJson);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(rawJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = rawJson;
+                    }
+                    throw new InvalidDataException($"Internal API error: {errorMessage}");
+                }
+
+                var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ External error in GetBannerTypesWithBannersByStatusAsync");
+                throw;
+            }
+        }
 
 
 

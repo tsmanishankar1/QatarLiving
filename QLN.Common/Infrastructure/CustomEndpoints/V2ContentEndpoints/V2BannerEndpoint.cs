@@ -3,12 +3,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Text.Json;
-using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
@@ -25,7 +23,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                V2BannerDto dto,
+                V2CreateBannerDto dto,
                 IV2BannerService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -80,7 +78,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                V2BannerDto dto,
+                V2CreateBannerDto dto,
                 IV2BannerService service,
                 CancellationToken cancellationToken
             ) =>
@@ -448,6 +446,29 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapGetByVerticalStatusBannerEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyverticalandstatus", async Task<Results<Ok<List<V2BannerTypeDto>>, NotFound>> (
+                [FromQuery] Vertical verticalId,
+                [FromQuery] bool status,
+                IV2BannerService service,
+                CancellationToken cancellationToken) =>
+            {
+                var result = await service.GetBannerTypesWithBannersByStatusAsync(verticalId, status, cancellationToken);
+                return result is { Count: > 0 }
+                    ? TypedResults.Ok(result)
+                    : TypedResults.NotFound();
+            })
+            .WithName("GetBannerTypesWithBannersByStatus")
+            .WithTags("Banners")
+            .WithDescription("Gets banner hierarchy by vertical and active/inactive status.")
+            .Produces<List<V2BannerTypeDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
 
 
 
