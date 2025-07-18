@@ -23,6 +23,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
+                Vertical verticalId,
+    SubVertical? subVerticalId,
+    Guid pageId,
                 V2CreateBannerDto dto,
                 IV2BannerService service,
                 HttpContext httpContext,
@@ -47,7 +50,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     dto.Createdby = uid;
                     httpContext.Request.Headers["X-User-Id"] = uid;
 
-                    var result = await service.CreateBannerAsync(uid, dto, cancellationToken);
+                    var result = await service.CreateBannerAsync(verticalId,subVerticalId,pageId, uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentException ex)
@@ -78,7 +81,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                V2CreateBannerDto dto,
+                 Vertical verticalId,
+    SubVertical? subVerticalId,
+    Guid pageId, V2CreateBannerDto dto,
                 IV2BannerService service,
                 CancellationToken cancellationToken
             ) =>
@@ -95,7 +100,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         });
                     }
 
-                    var result = await service.CreateBannerAsync(dto.Createdby, dto, cancellationToken);
+                    var result = await service.CreateBannerAsync(verticalId, subVerticalId, pageId, dto.Createdby, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentException ex)
@@ -449,8 +454,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapGetByVerticalStatusBannerEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyverticalandstatus", async Task<Results<Ok<List<V2BannerTypeDto>>, NotFound>> (
-                [FromQuery] Vertical verticalId,
-                [FromQuery] bool status,
+                [FromQuery] Vertical? verticalId,
+                [FromQuery] bool? status,
                 IV2BannerService service,
                 CancellationToken cancellationToken) =>
             {
@@ -461,9 +466,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             })
             .WithName("GetBannerTypesWithBannersByStatus")
             .WithTags("Banners")
-            .WithDescription("Gets banner hierarchy by vertical and active/inactive status.")
+            .WithDescription("Gets banner hierarchy by optional vertical and active/inactive status.")
             .Produces<List<V2BannerTypeDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+        public static RouteGroupBuilder MapReorderBannerEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPost("/reorder", async Task<Results<Ok<string>, BadRequest<string>>> (
+                [FromQuery] Vertical verticalId,
+                [FromQuery] SubVertical? subVerticalId,
+                [FromQuery] Guid pageId,
+                [FromBody] List<Guid> banners,
+                IV2BannerService service,
+                CancellationToken cancellationToken) =>
+            {
+                if (banners == null || banners.Count == 0)
+                    return TypedResults.BadRequest("Banner ID list is required.");
+
+                var result = await service.ReorderAsync(verticalId, subVerticalId, pageId, banners, cancellationToken);
+                return TypedResults.Ok(result);
+            })
+            .WithName("ReorderBanners")
+            .WithTags("Banners")
+            .WithDescription("Reorders banners for a given page and location.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

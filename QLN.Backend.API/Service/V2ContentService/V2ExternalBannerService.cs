@@ -23,7 +23,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-        public async Task<string> CreateBannerAsync(string userId, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateBannerAsync(Vertical verticalId, SubVertical? subVerticalId, Guid pageId, string userId, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
             string? mobileFileName = null;
@@ -54,7 +54,7 @@ namespace QLN.Backend.API.Service.V2ContentService
 
                 dto.Createdby = userId;
 
-                var url = "/api/v2/banner/createbyuserid";
+                var url = $"/api/v2/banner/createbyuserid?verticalId={verticalId}&subVerticalId={subVerticalId}&pageId={pageId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -362,16 +362,23 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<List<V2BannerTypeDto>?> GetBannerTypesWithBannersByStatusAsync(
-       Vertical verticalId,
-       bool status,
-       CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync(
+      Vertical? verticalId,
+      bool? status,
+      CancellationToken cancellationToken)
         {
             try
             {
-                var url = $"/api/v2/banner/getbyverticalandstatus?verticalId={(int)verticalId}&status={status.ToString().ToLower()}";
+                var queryParams = new List<string>();
+                if (verticalId.HasValue)
+                    queryParams.Add($"verticalId={(int)verticalId.Value}");
+                if (status.HasValue)
+                    queryParams.Add($"status={status.Value.ToString().ToLower()}");
 
-                _logger.LogInformation("🌐 Calling internal banner hierarchy API: {Url}", url);
+                var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
+                var url = $"/api/v2/banner/getbyverticalandstatus{query}";
+
+                _logger.LogInformation("Calling internal banner hierarchy API: {Url}", url);
 
                 var request = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Get,
@@ -382,7 +389,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                _logger.LogInformation("📥 Response: {RawJson}", rawJson);
+                _logger.LogInformation("Response: {RawJson}", rawJson);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -402,19 +409,62 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var result = JsonSerializer.Deserialize<List<V2BannerTypeDto>>(rawJson,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                return result;
+                return result ?? [];
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "❌ External error in GetBannerTypesWithBannersByStatusAsync");
+                _logger.LogError(ex, "Error in GetBannerTypesWithBannersByStatusAsync (external)");
                 throw;
             }
         }
 
 
+        public async Task<string> ReorderAsync(Vertical verticalId,
+      SubVertical? subVerticalId,
+      Guid pageId, List<Guid> banners, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (banners == null || banners.Count == 0)
+                    throw new ArgumentException("Banners list cannot be empty.");
 
+                var queryParams = new List<string>
+        {
+            $"verticalId={(int)verticalId}",
+            $"pageId={pageId}"
+        };
 
+                if (subVerticalId.HasValue)
+                    queryParams.Add($"subVerticalId={(int)subVerticalId.Value}");
 
+                var url = $"/api/v2/banner/reorder?" + string.Join("&", queryParams);
+
+                _logger.LogInformation("🌐 Reorder URL: {Url}", url);
+
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url);
+
+                request.Content = JsonContent.Create(banners);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                var resultString = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError("Reorder failed with status {StatusCode}: {Content}", response.StatusCode, resultString);
+                    throw new InvalidOperationException($"Reorder failed: {resultString}");
+                }
+
+                return resultString;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Exception in external ReorderBannersAsync");
+                throw;
+            }
+        }
 
     }
 }
