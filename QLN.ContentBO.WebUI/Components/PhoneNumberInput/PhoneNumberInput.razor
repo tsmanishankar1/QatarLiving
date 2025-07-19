@@ -22,17 +22,13 @@ else
             <span class="country-code">@SelectedCountry.Code</span>
         </div>
 
-     <MudTextField 
-          Class="phone-number-input"
-          Placeholder=" "
-          InputType="InputType.Text"
-          Immediate="true"
-          @bind-Value="PhoneNumber"
-          MaxLength="15"
-          Pattern="^\d*$"
-          HideSpinButtons="true" />
-
-
+        <input class="phone-number-input"
+               type="tel"
+               maxlength="15"
+                inputmode="numeric"
+                pattern="[0-9]*"
+               @bind="PhoneNumber"
+               @oninput="ValidateNumber" />
     </div>
 </div>
 
@@ -54,12 +50,12 @@ else
  
     </div>
 
+
 }
 
 @code {
     private List<CountryModel> Countries = new();
     private bool IsOpen = false;
-
 
     [Inject] private IJSRuntime JS { get; set; }
 
@@ -97,8 +93,6 @@ else
     private string SearchBuffer = "";
     private DateTime LastKeyPressTime;
     private List<CountryModel> FilteredCountries => GetFilteredCountries();
-        [Parameter]
-    public string Placeholder { get; set; } = "Enter phone number";
 
     [Parameter] public CountryModel SelectedCountry { get; set; }
     [Parameter] public EventCallback<CountryModel> SelectedCountryChanged { get; set; }
@@ -117,6 +111,8 @@ else
             await SelectedCountryChanged.InvokeAsync(SelectedCountry);
         }
     }
+    [Parameter]
+    public string Placeholder { get; set; } = "Enter phone number";
 
     private void ToggleDropdown() => IsOpen = !IsOpen;
 
@@ -127,7 +123,13 @@ else
         IsOpen = false;
     }
 
-  
+    private async Task ValidateNumber(ChangeEventArgs e)
+    {
+    var input = e.Value?.ToString() ?? "";
+        PhoneNumber = new string(input.Where(char.IsDigit).Take(15).ToArray());
+        await PhoneNumberChanged.InvokeAsync(PhoneNumber);
+        StateHasChanged();
+    }
 
 
 private async Task<List<CountryModel>> FetchCountriesAsync()
@@ -344,20 +346,6 @@ private async Task<List<CountryModel>> FetchCountriesAsync()
     font-size: 15px;
     color: var(--color-text-heading);
 }
-
-    .phone-number-input .mud-input-root {
-            border-bottom: none !important;
-            box-shadow: none !important;
-        }
-
-        .phone-number-input .mud-input-underline:before,
-        .phone-number-input .mud-input-underline:after {
-            display: none !important;
-        }
-      .phone-number-input input.mud-input-root {
-    height: 10px; /* or whatever height you want */
-}
-
 
 /* Responsive */
 @@media (max-width: 480px) {

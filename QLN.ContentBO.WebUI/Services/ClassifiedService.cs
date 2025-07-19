@@ -16,7 +16,18 @@ namespace QLN.ContentBO.WebUI.Services
         {
             _httpClient = httpClient;
         }
-
+       public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/category/{vertical}/all-trees");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetAllCategoryTreesAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
 
     }
