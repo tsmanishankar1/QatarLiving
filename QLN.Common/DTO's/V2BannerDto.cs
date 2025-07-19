@@ -7,7 +7,7 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public bool Status { get; set; }
-        public int slotId { get; set; }
+        public int? slotId { get; set; }
         public List<Guid> BannerTypeIds { get; set; } = [];
         public string AnalyticsTrackingId { get; set; }
         public string AltText { get; set; }
@@ -57,7 +57,7 @@ namespace QLN.Common.DTO_s
     {
         public Guid Id { get; set; }
         public bool Status { get; set; }
-        public int slotId { get; set; }
+        public int? slotId { get; set; }
         public Guid BannerTypeId { get; set; }
         public string AnalyticsTrackingId { get; set; }
         public string AltText { get; set; }

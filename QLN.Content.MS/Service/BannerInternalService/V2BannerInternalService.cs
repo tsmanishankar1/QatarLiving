@@ -39,10 +39,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
 
             return string.Empty;
         }
-
-        public async Task<string> ReorderAsync(Vertical verticalId,
-     SubVertical? subVerticalId,
-     Guid pageId, List<Guid> banners,CancellationToken cancellationToken = default)
+        public async Task<string> ReorderAsync(Vertical verticalId, SubVertical? subVerticalId,Guid pageId, List<Guid> banners,CancellationToken cancellationToken = default)
         {
             try
             {
@@ -274,37 +271,27 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw new Exception("Internal error occurred while deleting banner.", ex);
             }
         }
-        public async Task<V2BannerDto?> GetBannerByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<V2BannerDto?> GetBannerByIdAsync(Guid id, CancellationToken cancellationToken=default)
         {
             try
             {
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    storeName: ConstantValues.V2Content.ContentStoreName,
-                    key: ConstantValues.V2Content.BannerIndexKey,
-                    cancellationToken: cancellationToken
-                );
-
-                if (indexKeys == null || !indexKeys.Contains(id.ToString()))
-                {
-                    return null;
-                }
                 var banner = await _dapr.GetStateAsync<V2BannerDto>(
                     storeName: ConstantValues.V2Content.ContentStoreName,
                     key: id.ToString(),
                     cancellationToken: cancellationToken);
-                if (banner == null || banner.Id == Guid.Empty || banner.Status == false)
+
+                if (banner == null)
                 {
+                    _logger.LogWarning("No banner found with ID: {BannerId}", id);
                     return null;
                 }
-
-               
 
                 return banner;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving banner.");
-                throw new Exception("Error occurred while retrieving banner.", ex);
+                _logger.LogError(ex, "Error retrieving banner with ID: {BannerId}", id);
+                throw new Exception("Internal error occurred while retrieving banner.", ex);
             }
         }
         public async Task<string> CreateBannerTypeAsync(V2BannerTypeDto dto, CancellationToken cancellationToken = default)
@@ -375,12 +362,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw;
             }
         }
-
-        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(
-     Vertical verticalId,
-     SubVertical? subVerticalId,
-     Guid pageId,
-     CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync( Vertical verticalId, SubVertical? subVerticalId, Guid pageId,CancellationToken cancellationToken)
         {
             try
             {
@@ -444,7 +426,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw new Exception("Error occurred while retrieving banner types by filter.", ex);
             }
         }
-
         public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync( Vertical? verticalId, bool? status, CancellationToken cancellationToken)
         {
             try
