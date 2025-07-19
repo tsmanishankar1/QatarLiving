@@ -69,7 +69,7 @@
                 }
 
                 <div class="mt-2">
-                    @if (field.Type == "dropdown")
+                      @if (field.Type == "dropdown" || field.Type == "Dropdown")
                     {
                         <MudSelect T="string"
                                 Label="@field.Name"

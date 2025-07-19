@@ -31,7 +31,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         protected string[] AllowedFields => new[]
     {
         "Condition", "Ram", "Model", "Capacity", "Processor", "Brand",
-        "Storage", "Colour", "Gender", "Resolution", "Coverage",
+        "Storage", "Colour", "Gender", "Resolution", "Coverage","Battery Life",
         "Size" // <== Add these here
     };
 

@@ -8,10 +8,9 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Category Selection
         // ----------------------------
-        [Required(ErrorMessage = "Vertical is required.")]
-        public string SelectedVertical { get; set; } = string.Empty;
-
+        [Required(ErrorMessage = "Category is required.")]
         public string? SelectedCategoryId { get; set; }
+
         public string? SelectedSubcategoryId { get; set; }
         public string? SelectedSubSubcategoryId { get; set; }
 
@@ -100,27 +99,9 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
-        public string? Status { get; set; }
 
         [StringLength(100)]
         public string? Location { get; set; }
 
-        [StringLength(100)]
-        public string? Coverage { get; set; }
-
-        [StringLength(100)]
-        public string? Processor { get; set; }
-
-        [StringLength(100)]
-        public string? Storage { get; set; }
-
-        [StringLength(100)]
-        public string? Colour { get; set; }
-
-        [StringLength(100)]
-        public string? Model { get; set; }
-
-        [StringLength(100)]
-        public string? Brand { get; set; }
     }
 }

@@ -2,7 +2,11 @@
 @using MudBlazor
 
 <div  class="custom-card-info">
-    <span class="status-text">@Item?.Status</span>
+    <span class="status-text">
+        @(string.IsNullOrWhiteSpace(Item?.DynamicFields.GetValueOrDefault("Condition")) 
+            ? "N/A" 
+            : Item.DynamicFields["Condition"])
+    </span>
     <h3  class="title-text">@Item?.Title</h3>
        <div class="item-detail-price-text">
             <span>@Item.Price</span>
