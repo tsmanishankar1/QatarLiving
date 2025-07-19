@@ -13,7 +13,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .MapGetByidBannerEndpoints()
             .MapBannerTypeEndpoints()
             .MapGetByFilterBannerEndpoints()
-            .MapGetByVerticalStatusBannerEndpoints();
+            .MapGetByVerticalStatusBannerEndpoints()
+            .MapReorderBannerEndpoints();
             return group;
 
         }
