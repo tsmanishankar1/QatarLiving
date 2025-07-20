@@ -23,38 +23,38 @@ namespace QLN.Backend.API.Service.V2ContentService
             _blobStorage = blobStorage;
         }
 
-        public async Task<string> CreateBannerAsync(Vertical verticalId, SubVertical? subVerticalId, Guid pageId, string userId, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateBannerAsync(string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
             string? mobileFileName = null;
-
             try
             {
+               
                 if (!string.IsNullOrWhiteSpace(dto.DesktopImage))
                 {
                     var (ext, base64Data) = Base64Helper.ParseBase64(dto.DesktopImage);
                     if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
                         throw new ArgumentException("Desktop Image must be in Jpeg, PNG, Webp, svg or JPG format.");
-
-                    desktopFileName = $"{dto.AltText ?? "desktop"}_{userId}.{ext}";
+                    desktopFileName = $"{dto.AltText ?? "desktop"}_{uid}_{Guid.NewGuid()}.{ext}";
                     var blobUrl = await _blobStorage.SaveBase64File(base64Data, desktopFileName, "imageurl", cancellationToken);
                     dto.DesktopImage = blobUrl;
                 }
 
+               
                 if (!string.IsNullOrWhiteSpace(dto.MobileImage))
                 {
                     var (ext, base64Data) = Base64Helper.ParseBase64(dto.MobileImage);
                     if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
                         throw new ArgumentException("Mobile Image must be in Jpeg, PNG, Webp, svg or JPG format.");
-
-                    mobileFileName = $"{dto.AltText ?? "mobile"}_{userId}.{ext}";
+                    mobileFileName = $"{dto.AltText ?? "mobile"}_{uid}_{Guid.NewGuid()}.{ext}";
                     var blobUrl = await _blobStorage.SaveBase64File(base64Data, mobileFileName, "imageurl", cancellationToken);
                     dto.MobileImage = blobUrl;
                 }
 
-                dto.Createdby = userId;
+                dto.Createdby = uid;
 
-                var url = $"/api/v2/banner/createbyuserid?verticalId={verticalId}&subVerticalId={subVerticalId}&pageId={pageId}";
+                
+                var url = "/api/v2/banner/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -73,13 +73,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = rawJson;
                     }
-
                     await CleanupUploadedFiles(new[] { desktopFileName, mobileFileName }, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
 
                 response.EnsureSuccessStatusCode();
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Banners created successfully";
             }
             catch (Exception ex)
             {
@@ -88,6 +87,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         private async Task CleanupUploadedFiles(string?[] files, CancellationToken cancellationToken)
         {
             foreach (var file in files)
@@ -100,37 +100,46 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             string? desktopFileName = null;
             string? mobileFileName = null;
-
             try
             {
+                
                 if (!string.IsNullOrWhiteSpace(dto.DesktopImage))
                 {
-                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.DesktopImage);
-                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
-                        throw new ArgumentException("Desktop Image must be in Jpeg, PNG, Webp, svg or JPG format.");
-
-                    desktopFileName = $"{dto.AltText ?? "desktop"}_{uid}.{ext}";
-                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, desktopFileName, "imageurl", cancellationToken);
-                    dto.DesktopImage = blobUrl;
+                    if (IsBase64Image(dto.DesktopImage))
+                    {
+                        
+                        var (ext, base64Data) = Base64Helper.ParseBase64(dto.DesktopImage);
+                        if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                            throw new ArgumentException("Desktop Image must be in JPEG, PNG, WebP, SVG or JPG format.");
+                        desktopFileName = $"{dto.AltText ?? "desktop"}_{uid}.{ext}";
+                        var blobUrl = await _blobStorage.SaveBase64File(base64Data, desktopFileName, "imageurl", cancellationToken);
+                        dto.DesktopImage = blobUrl;
+                    }
+                    
                 }
 
+                
                 if (!string.IsNullOrWhiteSpace(dto.MobileImage))
                 {
-                    var (ext, base64Data) = Base64Helper.ParseBase64(dto.MobileImage);
-                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
-                        throw new ArgumentException("Mobile Image must be in Jpeg, PNG, Webp, svg or JPG format.");
-
-                    mobileFileName = $"{dto.AltText ?? "mobile"}_{uid}.{ext}";
-                    var blobUrl = await _blobStorage.SaveBase64File(base64Data, mobileFileName, "imageurl", cancellationToken);
-                    dto.MobileImage = blobUrl;
+                    if (IsBase64Image(dto.MobileImage))
+                    {
+                        
+                        var (ext, base64Data) = Base64Helper.ParseBase64(dto.MobileImage);
+                        if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                            throw new ArgumentException("Mobile Image must be in JPEG, PNG, WebP, SVG or JPG format.");
+                        mobileFileName = $"{dto.AltText ?? "mobile"}_{uid}.{ext}";
+                        var blobUrl = await _blobStorage.SaveBase64File(base64Data, mobileFileName, "imageurl", cancellationToken);
+                        dto.MobileImage = blobUrl;
+                    }
+                    
                 }
 
                 dto.Updatedby = uid;
+                dto.UpdatedAt = DateTime.UtcNow; 
 
                 var url = "/api/v2/banner/editbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
@@ -146,7 +155,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = rawJson;
                     }
-
                     await CleanupUploadedFiles(new[] { desktopFileName, mobileFileName }, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
@@ -159,6 +167,30 @@ namespace QLN.Backend.API.Service.V2ContentService
                 await CleanupUploadedFiles(new[] { desktopFileName, mobileFileName }, cancellationToken);
                 _logger.LogError(ex, "Error editing banner");
                 throw;
+            }
+        }
+        private bool IsBase64Image(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+            if (input.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+                return true;
+            try
+            {
+               
+                string base64Data = input;
+                if (input.Contains(","))
+                {
+                    base64Data = input.Split(',')[1];
+                }
+
+               
+                Convert.FromBase64String(base64Data);
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
         public async Task<string> DeleteBannerAsync(string uid, Guid bannerId, CancellationToken cancellationToken = default)
@@ -301,11 +333,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
         }
 
-        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(
-    Vertical verticalId,
-    SubVertical? subVerticalId,
-    Guid pageId,
-    CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>?> GetBannerTypesByFilterAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId,CancellationToken cancellationToken)
         {
             try
             {
@@ -360,10 +388,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync(
-      Vertical? verticalId,
-      bool? status,
-      CancellationToken cancellationToken)
+        public async Task<List<V2BannerTypeDto>> GetBannerTypesWithBannersByStatusAsync(Vertical? verticalId,bool? status,CancellationToken cancellationToken)
         {
             try
             {
@@ -417,9 +442,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
 
-        public async Task<string> ReorderAsync(Vertical verticalId,
-      SubVertical? subVerticalId,
-      Guid pageId, List<Guid> banners, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId, List<Guid> banners, CancellationToken cancellationToken = default)
         {
             try
             {
