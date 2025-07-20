@@ -6,13 +6,13 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
+namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 {
     public partial class DealsSubscriptionTableBase : ComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
-
-
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
         protected override void OnInitialized()
         {
             Listings = GetSampleData();
@@ -135,7 +135,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         protected void OnEdit(SubscriptionListing item)
         {
-            Console.WriteLine($"Edit clicked: {item.AdTitle}");
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
         }
 
         protected void OnPreview(SubscriptionListing item)
