@@ -4,7 +4,7 @@ using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 {
-    public class P2pListingBase :QLComponentBase
+    public class DealsListingBase :QLComponentBase
     {
         protected string SearchText { get; set; } = string.Empty;
 

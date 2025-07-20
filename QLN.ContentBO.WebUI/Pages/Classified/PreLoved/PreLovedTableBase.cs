@@ -8,7 +8,7 @@ using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
-    public partial class PreLovedTableBase : ComponentBase
+    public partial class DealsTableBase : ComponentBase
     {
         protected List<ListingItem> Listings { get; set; } = new();
         protected HashSet<ListingItem> SelectedListings { get; set; } = new();
