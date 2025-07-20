@@ -1,0 +1,70 @@
+﻿@page "/cv-analyzer"
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+    <MudCard>
+        <MudCardHeader>
+            <MudText Typo="Typo.h5">CV Document Analyzer</MudText>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Class="mb-4">Upload a CV document to extract key information.</MudText>
+            
+            <MudFileUpload T="IBrowserFile" FilesChanged="OnFileSelected" Accept=".pdf,.doc,.docx">
+                <ActivatorContent>
+                    <MudButton HtmlTag="label"
+                              Variant="Variant.Filled"
+                              Color="Color.Primary"
+                              StartIcon="@Icons.Material.Filled.CloudUpload"
+                              Disabled="@_isLoading">
+                        Upload CV
+                    </MudButton>
+                </ActivatorContent>
+                <SelectedTemplate>
+                    <MudChip T="string" Color="Color.Dark" Text="@context?.Name" />
+                </SelectedTemplate>
+            </MudFileUpload>
+            
+            @if (_isLoading)
+            {
+                <div class="d-flex align-center mt-4">
+                    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+                    <MudText Class="ml-2">Analyzing document...</MudText>
+                </div>
+            }
+            
+            @if (_cvData != null)
+            {
+                <MudPaper Class="pa-4 mt-4">
+                    <MudText Typo="Typo.h6" Class="mb-2">CV Analysis Results</MudText>
+                    <MudDivider Class="mb-4"/>
+                    
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Label="First Name" 
+                                         Value="@(_cvData.FirstName ?? "-")" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Label="Surname" 
+                                         Value="@(_cvData.Surname ?? "-")" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Label="Email" 
+                                         Value="@(_cvData.Email ?? "-")" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Label="Contact Number" 
+                                         Value="@(_cvData.ContactNumber?? "-")" 
+                                         ReadOnly="true" 
+                                         Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+                </MudPaper>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudContainer>

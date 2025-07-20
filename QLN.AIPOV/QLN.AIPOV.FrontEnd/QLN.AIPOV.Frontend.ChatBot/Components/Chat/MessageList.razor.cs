@@ -6,7 +6,12 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
     public partial class MessageList
     {
         [Parameter]
+        public EventCallback<ChatMessageModel> SelectedValueChanged { get; set; }
+
+        [Parameter]
         public IEnumerable<ChatMessageModel>? Messages { get; set; }
+
+        public ChatMessageModel? SelectedValue { get; set; }
 
         private string GetRoleColor(string role)
         {
@@ -24,7 +29,7 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
                 return string.Empty;
 
             // Replace actual newlines AND escaped newlines with proper HTML line breaks
-            string formatted = content
+            var formatted = content
                 .Replace("\r\n", "<br>")  // Windows newlines
                 .Replace("\n", "<br>")     // Unix newlines
                 .Replace("\\n\\n", "<br><br>")  // Escaped double newlines  
@@ -42,11 +47,15 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
 
             // Rest of table formatting logic...
             var lines = formatted.Split("<br>");
-            // ... (existing table code)
 
             return formatted;
         }
 
-
+        private async Task OnSelectedValueChanged(ChatMessageModel? message)
+        {
+            if (message == null) return;
+            SelectedValue = message;
+            await SelectedValueChanged.InvokeAsync(message);
+        }
     }
 }

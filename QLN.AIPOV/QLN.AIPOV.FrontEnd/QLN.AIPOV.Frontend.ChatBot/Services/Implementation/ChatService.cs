@@ -6,13 +6,13 @@ namespace QLN.AIPOV.FrontEnd.ChatBot.Services.Implementation
 {
     public class ChatService(HttpClient httpClient) : ServiceBase(httpClient), IChatService
     {
-        public async Task<ChatCompletionResponse> GetMessagesAsync(string prompt)
+        public async Task<JobDescriptionsResponse> GetMessagesAsync(string prompt)
         {
             var request = new ChatRequest
             {
                 Message = prompt
             };
-            var response = await PostAsync<ChatRequest, ChatCompletionResponse>("api/chat", request);
+            var response = await PostAsync<ChatRequest, JobDescriptionsResponse>("api/chat", request);
 
             return response ?? new();
         }

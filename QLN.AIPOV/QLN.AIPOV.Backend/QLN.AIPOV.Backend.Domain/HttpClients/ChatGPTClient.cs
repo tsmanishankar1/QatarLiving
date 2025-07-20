@@ -4,6 +4,8 @@ using OpenAI.Chat;
 using QLN.AIPOV.Backend.Application.Interfaces;
 using QLN.AIPOV.Backend.Application.Models.Chat;
 using QLN.AIPOV.Backend.Application.Models.Config;
+using QLN.AIPOV.Backend.Infrastructure.Extensions;
+using System.Text.Json;
 
 namespace QLN.AIPOV.Backend.Domain.HttpClients
 {
@@ -11,9 +13,16 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
     {
         private readonly OpenAISettingsModel _openAISettings = openAISettings.Value;
 
-        public async Task<ChatSessionModel> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
+        public async Task<JobDescriptions> GetChatResponseAsync(string prompt, CancellationToken cancellationToken = default)
         {
             var chatClient = openAIClient.GetChatClient(_openAISettings.Model);
+
+            var schema = JsonExtensions.GenerateJsonSchema<JobDescriptions>();
+
+            var requestOptions = new ChatCompletionOptions
+            {
+                ResponseFormat = ChatResponseFormat.CreateJsonSchemaFormat(nameof(JobDescriptions), BinaryData.FromString(schema), null, true)
+            };
 
             var messages = new List<ChatMessage>()
             {
@@ -21,23 +30,13 @@ namespace QLN.AIPOV.Backend.Domain.HttpClients
                 new UserChatMessage(prompt)
             };
 
-            var chatCompletion = await chatClient.CompleteChatAsync(messages.ToArray());
+            var chatCompletion = await chatClient.CompleteChatAsync(messages, requestOptions, cancellationToken);
 
-            var session = new ChatSessionModel();
-            // Add user message
-            session.Messages.Add(new ChatMessageModel { Role = "user", Content = prompt });
+            var data = chatCompletion.Value.Content[0].Text;
 
-            // Add assistant responses
-            foreach (var choice in chatCompletion.Value.Content)
-            {
-                session.Messages.Add(new ChatMessageModel
-                {
-                    Role = "assistant",
-                    Content = choice.Text
-                });
-            }
+            var jobDescriptions = JsonSerializer.Deserialize<JobDescriptions>(data);
 
-            return session;
+            return jobDescriptions ?? new JobDescriptions { Descriptions = new List<JobDescription>() }; // or handle the error as needed
         }
     }
 }
