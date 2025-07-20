@@ -153,6 +153,26 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    "api/v2/classifiedbo/getSeasonalPicks",
+                    cancellationToken
+                );
+
+                return response ?? new List<SeasonalPicksDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetSeasonalPicksAsync.");
+                throw new InvalidOperationException("Error fetching seasonal picks.", ex);
+            }
+        }
+
 
     }
 }

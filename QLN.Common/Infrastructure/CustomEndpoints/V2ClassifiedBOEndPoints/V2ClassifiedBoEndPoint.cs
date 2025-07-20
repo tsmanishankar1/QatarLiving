@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using System;
 using System.Collections.Generic;
@@ -263,9 +264,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+            group.MapGet("/getSeasonalPicks", async Task<Results<
+                Ok<List<SeasonalPicksDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                V2IClassifiedBoLandingService service,
+                HttpContext context,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetSeasonalPicks(cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("GetSeasonalPicks")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Get all active seasonal picks")
+                .WithDescription("Fetches all active seasonal picks sorted by latest updated date.")
+                .Produces<List<SeasonalPicksDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
             return group;
-            }
         }
-
-
+    }
 }

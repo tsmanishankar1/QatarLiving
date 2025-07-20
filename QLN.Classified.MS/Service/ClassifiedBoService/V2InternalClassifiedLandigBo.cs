@@ -113,6 +113,44 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
+        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                const string StoreName = "contentstatestore";
+                const string IndexKey = "seasonal-picks-index";
+
+                _logger.LogInformation("Fetching seasonal picks from state store...");
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey)
+                            ?? new List<string>();
+
+                if (!index.Any())
+                {
+                    _logger.LogInformation("No seasonal picks found in the index.");
+                    return new List<SeasonalPicksDto>();
+                }
+
+                var stateTasks = index.Select(id =>
+                    _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id)).ToList();
+
+                var seasonalPicks = await Task.WhenAll(stateTasks);
+
+                var activePicks = seasonalPicks
+                    .Where(p => p != null && p.IsActive)
+                    .OrderByDescending(p => p.UpdatedAt)
+                    .ToList();
+
+                _logger.LogInformation("Fetched active seasonal picks.", activePicks.Count);
+
+                return activePicks;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch seasonal picks.");
+                throw;
+            }
+        }
 
 
     }

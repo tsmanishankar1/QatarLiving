@@ -61,7 +61,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             return await Task.FromResult(slots);
         }
 
-
         private string GenerateNewsSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
