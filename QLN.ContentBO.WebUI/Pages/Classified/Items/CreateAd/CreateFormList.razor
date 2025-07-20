@@ -4,7 +4,7 @@
 <EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
     <DataAnnotationsValidator />
 
-    <div>
+    <div class="create-form-list">
         <h3 class="form-heading-f1">Ad Form</h3>
         <h4 class="form-heading-f2">User can edit this ad in their dashboard</h4>
         <div class="user-email-display">
@@ -197,6 +197,9 @@
 </EditForm>
 
 <style>
+    .create-form-list {
+         font-family: 'Public Sans', sans-serif;
+    }
     .form-heading {
         color: var(--color-primary);
         font-size: 18px;

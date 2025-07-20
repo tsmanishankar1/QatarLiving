@@ -1,34 +1,82 @@
-@using MudBlazor 
+@using MudBlazor
+@inherits UserProfileFieldsBase
 
 <div class="user-profile-fields-container">
-            <MudTextField T="string" Class="white-bg" Label="Company Name" Variant="Variant.Outlined" Text="Lulu Hypermarket" ReadOnly="true" />
 
-            <MudTextField T="string" Class="white-bg" Label="Country" Variant="Variant.Outlined"Text="Qatar" ReadOnly="true" />
+    <!-- SECTION: Basic Info -->
+    <MudTextField T="string" Class="white-bg" Label="Company Name" Variant="Variant.Outlined" Text="@CompanyName" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Country" Variant="Variant.Outlined" Text="@Country" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="City" Variant="Variant.Outlined" Text="@City" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Location" Variant="Variant.Outlined" Text="@Location" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Phone Number" Variant="Variant.Outlined" Text="@PhoneNumber" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="WhatsApp Number" Variant="Variant.Outlined" Text="@WhatsAppNumber" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="@WebsiteUrl" ReadOnly="true" />
 
-            <MudTextField T="string"  Class="white-bg"Label="City" Variant="Variant.Outlined"Text="Doha" ReadOnly="true" />
+    <!-- SECTION: Operating Hours -->
+    <h3 class="form-heading form-padding">Operating Hours</h3>
+    <MudGrid GutterSize="8px" Class="compact-grid">
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" Label="Start Day" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event" Class="white-bg custom-icon-style" Text="@StartDay" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField T="string" Label="End Day" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Event" Class="white-bg custom-icon-style" Text="@EndDay" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="Start Hour" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Schedule" Class="white-bg custom-icon-style" Text="@StartHour" ReadOnly="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudTextField T="string" Label="End Hour" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.Schedule" Class="white-bg custom-icon-style" Text="@EndHour" ReadOnly="true" />
+        </MudItem>
+    </MudGrid>
 
-            <MudTextField T="string" Class="white-bg" Label="Location" Variant="Variant.Outlined"Text="West Bay" ReadOnly="true" />
+    <!-- SECTION: Company Profile -->
+    <h3 class="form-heading">Company Profile</h3>
+    <MudTextField T="string" Class="white-bg" Label="Nature of Business" Variant="Variant.Outlined" Text="@BusinessNature" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Company Size" Variant="Variant.Outlined" Text="@CompanySize" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Company Type" Variant="Variant.Outlined" Text="@CompanyType" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="User Designation" Variant="Variant.Outlined" Text="@UserDesignation" ReadOnly="true" />
+    <MudTextField T="string" Class="white-bg" Label="Business Description" Variant="Variant.Outlined" Text="@BusinessDescription" ReadOnly="true" Lines="3" />
 
-            <MudTextField T="string" Class="white-bg" Label="Phone Number" Variant="Variant.Outlined"Text="+974 2234 5675" ReadOnly="true" />
+    <!-- SECTION: License & Visibility -->
+    <h3 class="form-heading">License & Visibility</h3>
+    <MudTextField T="string" Class="white-bg" Label="CR Number" Variant="Variant.Outlined" Text="@CRNumber" ReadOnly="true" />
 
-            <MudTextField T="string" Class="white-bg" Label="WhatsApp Number" Variant="Variant.Outlined" Text="+974 2234 5675" ReadOnly="true" />
-
-            <MudTextField T="string" Class="white-bg" Label="Website URL" Variant="Variant.Outlined" Text="www.website.com" ReadOnly="true" />
-
-            <MudTextField T="string"  Class="white-bg"Label="Operating Hours" Variant="Variant.Outlined"Text="Sunday - Thursday, 8:00 AM - 5:00 PM" ReadOnly="true" />
-            <MudTextField T="string"Class="white-bg" Label="Nature of Business" Variant="Variant.Outlined" Text="Hypermarket" ReadOnly="true" />
-
-            <MudTextField T="string" Class="white-bg" Label="Company Size" Variant="Variant.Outlined" Text="500+" ReadOnly="true" />
-
-            <MudTextField T="string" Class="white-bg" Label="Company Type" Variant="Variant.Outlined" Text="MNC" ReadOnly="true" />
+    <!-- Company Reference File Display -->
+    <div class="file-display-box">
+        <a class="file-name-link" href="@CompanyReferenceUrl" target="_blank">
+            @CompanyReferenceFileName
+        </a>
+    </div>
 
 </div>
 
 <style>
-    .user-profile-fields-container{
+    .user-profile-fields-container {
         width: 100%;
         max-width: 472px;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Public Sans', sans-serif;
     }
+
+    .form-heading {
+        color: var(--color-primary);
+        font-size: 18px;
+        padding: 10px 0;
+        font-weight: 600;
+    }
+
+    .form-padding {
+        margin-bottom: 30px;
+    }
+
+    .compact-grid .mud-grid-item {
+        padding-top: 0 !important;
+        padding-bottom: 4px !important;
+    }
+
     .white-bg input,
     .white-bg textarea,
     .white-bg .mud-input,
@@ -36,5 +84,51 @@
     .white-bg .mud-select-input,
     .white-bg .mud-input-slot {
         background-color: white !important;
+        color: var(--color-text-heading);
     }
+
+    .custom-icon-style .mud-icon-default {
+        color: #787878 !important;
+    }
+
+    .clickable-link {
+        margin-top: 8px;
+        font-size: 14px;
+    }
+
+    .clickable-link a {
+        color: var(--mud-palette-primary);
+        text-decoration: underline;
+    }
+
+    .section-heading {
+        margin-top: 24px;
+        font-weight: 600;
+        color: #333;
+    }
+    .file-display-box {
+        display: flex;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        padding: 15px 12px;
+        background-color: #fff;
+        margin: 10px 0;
+        max-width: 472px;
+    }
+    .file-name-link {
+        color: var(--color-text-heading);
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 400;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
+    .file-name-link:hover {
+        text-decoration: underline;
+        color: var(--color-accent);
+    }
+
 </style>
