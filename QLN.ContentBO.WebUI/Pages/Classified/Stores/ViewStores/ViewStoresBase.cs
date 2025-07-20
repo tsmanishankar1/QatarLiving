@@ -244,5 +244,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             var name = "Rashid";
             NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
         }
+      
     }
 }

@@ -14,6 +14,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected List<ListingItem> Listings { get; set; } = new();
         protected HashSet<ListingItem> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected int TotalCount => Listings.Count;
@@ -139,6 +141,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             Console.WriteLine($"Requested changes for: {item.AdId}");
             OpenRejectDialog();
             return Task.CompletedTask;
+        }
+        protected void OnEdit(SubscriptionListing item)
+        {
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
         }
     }
 }

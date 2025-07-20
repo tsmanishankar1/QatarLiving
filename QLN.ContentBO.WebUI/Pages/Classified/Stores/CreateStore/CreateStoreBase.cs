@@ -24,6 +24,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
         public string? CoverImage { get; set; }
         private DotNetObjectReference<CreateStoreBase>? _dotNetRef;
         [Inject] ILogger<CreateStoreBase> Logger { get; set; }
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
+
         public string? PhoneCode { get; set; }
         public string? PhoneNumber { get; set; }
         public string? WhatsappCode { get; set; }
@@ -231,6 +234,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
                 _localLogoBase64 = base64;
                  CompanyLogo = base64;
             }
+        }
+        protected void onNavigationBack()
+        {
+            NavigationManager.NavigateTo("/manage/classified/stores");
         }
     }
 }

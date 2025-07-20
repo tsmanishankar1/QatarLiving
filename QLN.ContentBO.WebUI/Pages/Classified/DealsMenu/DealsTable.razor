@@ -121,40 +121,12 @@
 
             <MudTd>
                 <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                   
-                    @if (selectedTab == "published")
-                    {
-                        <MudMenuItem OnClick='() => ShowConfirmation("Unpublish Item", "Are you sure you want to unpublish this item?", "Unpublish", () => Unpublish(context))'>
-                            <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Unpublish</span>
-                        </MudMenuItem>
-                        <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context))'
-                                     Class="mud-text-error">
-                             <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Remove</span>
-                        </MudMenuItem>
-                    }
-                    else if (selectedTab == "unpublished")
-                    {
-                        <MudMenuItem OnClick='() => ShowConfirmation("Publish Item", "Are you sure you want to publish this item?", "Publish", () => Publish(context))'>
-                             <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
-                             <span class="menu-text">Publish</span>
-                        </MudMenuItem>
-                        <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context))'
-                                     Class="mud-text-error">
-                            <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Remove</span>
-                        </MudMenuItem>
-                    }
-                    else if (selectedTab == "p2p" || selectedTab == "promoted" || selectedTab == "featured")
-                    {
-                        <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context))'
-                                     Class="mud-text-error">
-                            <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Remove</span>
-                        </MudMenuItem>
-                    }
-                </MudMenu>
+                    <MudMenuItem OnClick="() => OnEdit(context)">
+                                 Class="mud-text-error">
+                        <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
+                        <span class="menu-text">Edit</span>
+                    </MudMenuItem>
+                  </MudMenu>
             </MudTd>
         </RowTemplate>
     </MudTable>
