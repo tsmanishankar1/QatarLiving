@@ -112,19 +112,32 @@ namespace QLN.Content.MS.Service.BannerInternalService
             }
 
         }
-        public async Task<string> CreateBannerAsync(Vertical verticalId,SubVertical? subVerticalId,Guid pageId, string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateBannerAsync(string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                foreach (var bannerTypeId in dto.BannerTypeIds)
+                var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
+                    V2Content.ContentStoreName,
+                    V2Content.BannerTypeIndexKey,
+                    cancellationToken: cancellationToken);
+
+                if (allBannerTypes == null)
+                {
+                    _logger.LogWarning("No banner types found in storage.");
+                    return "No banner types configuration found.";
+                }
+
+                var createdBanners = new List<string>();
+                bool hasUpdates = false;
+
+                foreach (var bannerTypeRequest in dto.BannerTypeIds)
                 {
                     var id = Guid.NewGuid();
-
                     var banner = new V2BannerDto
                     {
                         Id = id,
                         Status = dto.Status,
-                        BannerTypeId = bannerTypeId,
+                        BannerTypeId = bannerTypeRequest.BannerTypeId,
                         AnalyticsTrackingId = dto.AnalyticsTrackingId,
                         AltText = dto.AltText,
                         LinkUrl = dto.LinkUrl,
@@ -140,6 +153,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         CreatedAt = DateTime.Now
                     };
 
+                   
                     await _dapr.SaveStateAsync(
                         storeName: ConstantValues.V2Content.ContentStoreName,
                         key: banner.Id.ToString(),
@@ -147,51 +161,61 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         metadata: null,
                         cancellationToken: cancellationToken
                     );
-                    var allBannerTypes = await _dapr.GetStateAsync<List<V2BannerTypeDto>>(
-                   V2Content.ContentStoreName,
-                   V2Content.BannerTypeIndexKey,
-                   cancellationToken: cancellationToken);
 
-                    if (allBannerTypes == null)
-                    {
-                        return null;
-                    }
-
+                   
                     var bannerType = allBannerTypes
-                        .FirstOrDefault(x => x.VerticalId == verticalId && x.SubVerticalId == subVerticalId);
+                        .FirstOrDefault(x => x.VerticalId == bannerTypeRequest.VerticalId &&
+                                           x.SubVerticalId == bannerTypeRequest.SubVerticalId);
 
                     if (bannerType == null)
                     {
-                        return null;
+                        _logger.LogWarning("No matching banner type found for Vertical: {VerticalId}, SubVertical: {SubVerticalId}",
+                            bannerTypeRequest.VerticalId, bannerTypeRequest.SubVerticalId);
+                        continue;
                     }
-                    var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == pageId);
+
+                  
+                    var matchingPage = bannerType.Pages?.FirstOrDefault(p => p.Id == bannerTypeRequest.PageId);
                     if (matchingPage == null)
                     {
-                        return null;
+                        _logger.LogWarning("No matching page found for PageId: {PageId}", bannerTypeRequest.PageId);
+                        continue;
                     }
+
+                  
                     if (matchingPage.bannertypes != null)
                     {
                         foreach (var location in matchingPage.bannertypes)
                         {
-                            if (location.Id == bannerTypeId)
+                            if (location.Id == bannerTypeRequest.BannerTypeId)
                             {
-                                location.BannerIds
-                                    ?.Add(id);
+                                location.BannerIds ??= new List<Guid>();
+                                location.BannerIds.Add(id);
+                                hasUpdates = true;
+                                createdBanners.Add($"Banner {id} added to BannerType {bannerTypeRequest.BannerTypeId}");
                                 break;
                             }
                         }
                     }
-
-
-                    await _dapr.SaveStateAsync(
-                            V2Content.ContentStoreName,
-                 V2Content.BannerTypeIndexKey,
-                            allBannerTypes,
-                            metadata: null,
-                            cancellationToken: cancellationToken
-                        );
                 }
-                return "Banner created successfully.";
+
+                
+                if (hasUpdates)
+                {
+                    await _dapr.SaveStateAsync(
+                        V2Content.ContentStoreName,
+                        V2Content.BannerTypeIndexKey,
+                        allBannerTypes,
+                        metadata: null,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                var successMessage = createdBanners.Any()
+                    ? $"Banners created successfully. Details: {string.Join(", ", createdBanners)}"
+                    : "Banners were created but no valid banner type configurations were found to associate them with.";
+
+                return successMessage;
             }
             catch (Exception ex)
             {
@@ -253,7 +277,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 if (existingBanner == null)
                     throw new ArgumentException("Banner not found.");
 
-                existingBanner.Status = false; // Soft delete
+                existingBanner.Status = false; 
                 existingBanner.Updatedby = uid;
                 existingBanner.UpdatedAt = DateTime.UtcNow;
 

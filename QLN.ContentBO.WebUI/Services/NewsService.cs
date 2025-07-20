@@ -144,11 +144,30 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId, int subCategoryId)
+        public async Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId,
+                                                                        int subCategoryId,
+                                                                        string? status = null,
+                                                                        int? page = null,
+                                                                        int? pageSize = null)
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}");
+                var query = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(status))
+                    query.Add($"status={Uri.EscapeDataString(status)}");
+
+                if (page.HasValue)
+                    query.Add($"page={page.Value}");
+
+                if (pageSize.HasValue)
+                    query.Add($"pageSize={pageSize.Value}");
+
+                var queryString = query.Count > 0 ? "?" + string.Join("&", query) : string.Empty;
+
+                var requestUrl = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}{queryString}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
                 var response = await _httpClient.SendAsync(request);
 
@@ -160,6 +179,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
 
         public async Task<HttpResponseMessage> GetArticleBySlug(string slug)
         {

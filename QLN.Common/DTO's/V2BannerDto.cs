@@ -3,21 +3,31 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.Common.DTO_s
 {
+
+
+    public class V2BannerTypeRequest
+    {
+        public Guid BannerTypeId { get; set; }
+        public Vertical VerticalId { get; set; }
+        public SubVertical? SubVerticalId { get; set; }
+        public Guid PageId { get; set; }
+    }
     public class V2CreateBannerDto
     {
-        public Guid Id { get; set; }
+        // Banner type requests with location information
+        public List<V2BannerTypeRequest> BannerTypeIds { get; set; } = new();
+
+        // Banner properties
         public bool Status { get; set; }
-        public int? slotId { get; set; }
-        public List<Guid> BannerTypeIds { get; set; } = [];
-        public string AnalyticsTrackingId { get; set; }
-        public string AltText { get; set; }
-        public string LinkUrl { get; set; }
-        public int Duration { get; set; }
+        public string? AnalyticsTrackingId { get; set; }
+        public string? AltText { get; set; }
+        public string? LinkUrl { get; set; }
+        public int? Duration { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
-        public string BannerSize { get; set; }
-        public bool? IsDesktopAvailability { get; set; }
-        public bool? IsMobileAvailability { get; set; }
+        public string? BannerSize { get; set; }
+        public bool IsDesktopAvailability { get; set; }
+        public bool IsMobileAvailability { get; set; }
         public string? DesktopImage { get; set; }
         public string? MobileImage { get; set; }
         public string Createdby { get; set; }
@@ -25,7 +35,7 @@ namespace QLN.Common.DTO_s
         public string Updatedby { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
-  
+
     public class V2BannerTypeDto
     {
         public Guid Id { get; set; }
@@ -62,7 +72,7 @@ namespace QLN.Common.DTO_s
         public string AnalyticsTrackingId { get; set; }
         public string AltText { get; set; }
         public string LinkUrl { get; set; }
-        public int Duration { get; set; }
+        public int? Duration { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
         public string BannerSize { get; set; }
