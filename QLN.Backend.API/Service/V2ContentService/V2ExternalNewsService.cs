@@ -148,14 +148,19 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-         int categoryId,
-         int subCategoryId,
-         string? status,
-         int? page,
-         int? pageSize,
-         CancellationToken cancellationToken)
+   int categoryId,
+   int subCategoryId,
+   string? status,
+   int? page,
+   int? pageSize,
+   CancellationToken cancellationToken)
         {
-            var query = $"?status={status}&page={page}&pageSize={pageSize}";
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(status)) queryParams.Add($"status={status}");
+            if (page.HasValue) queryParams.Add($"page={page.Value}");
+            if (pageSize.HasValue) queryParams.Add($"pageSize={pageSize.Value}");
+
+            var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}{query}";
 
             try
@@ -175,6 +180,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
         public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken)
         {
             try
