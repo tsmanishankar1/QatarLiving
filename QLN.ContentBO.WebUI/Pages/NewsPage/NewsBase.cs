@@ -421,10 +421,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                             {
                                 IndexedLiveArticles.Clear();
                             }
-
                             ResetSearch();
                             IndexedLiveArticles = await GetLiveArticlesAsync();
-
                             break;
                         case 2:
                             ResetSearch();
@@ -617,15 +615,16 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-        protected async Task SearchArticles()
+        protected async void SearchArticles()
         {
             try
             {
                 IsSearchEnabled = true;
                 IsLoadingDataGrid = true;
                 selectedTab = string.Empty;
-                SearchListOfNewsArticles = await SearchArticlesAsync();
+                SearchListOfNewsArticles = await SearchArticlesAsync(SearchString);
                 IsLoadingDataGrid = false;
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -633,12 +632,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 IsLoadingDataGrid = false;
             }
         }
-
-        private async Task<List<NewsArticleDTO>> SearchArticlesAsync()
+                
+        private async Task<List<NewsArticleDTO>> SearchArticlesAsync(string searchString)
         {
             try
             {
-                var response = await newsService.SearchArticles(SearchString);
+                var response = await newsService.SearchArticles(searchString);
                 if (response != null)
                 {
                     var content = await response.Content.ReadAsStringAsync();
@@ -672,65 +671,80 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
+       
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
             try
             {
-                // Convert to integers: newOrder contains original SlotNumbers in new order
-                var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
-
-                // Map of original slot numbers to their article IDs
-                var articleSlotMap = IndexedLiveArticles
-                    .Where(x => x.Article != null)
-                    .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
-
-                // Prepare 13-slot list (1 to 13)
-                var totalSlots = Enumerable.Range(1, 13).ToList();
-
-                // Create ArticleSlotAssignments based on reordering
-                var slotAssignments = totalSlots.Select(slotNumber =>
+                var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
+                var result = await dialog.Result;
+                if(result is not null)
                 {
-                    // Find the index of this slot in the reordered list
-                    var newIndex = reorderedSlotNumbers.IndexOf(slotNumber);
-
-                    // If this slot was part of the newOrder list, use its new index + 1
-                    var newSlotNumber = newIndex >= 0 ? newIndex + 1 : slotNumber;
-
-                    // Lookup the articleId for this original slot number
-                    var articleId = articleSlotMap.TryGetValue(slotNumber, out var id) ? (Guid?)id : null;
-
-                    return new ArticleSlotAssignment
+                    if (result.Canceled)
                     {
-                        SlotNumber = newSlotNumber,
-                        ArticleId = articleId
-                    };
-                })
-                .OrderBy(x => x.SlotNumber) // optional: keep the output ordered
-                .ToList();
+                        // Reset the List
+                        await ResetOrder();
+                    }
+                    if (!result.Canceled)
+                    {
+                        // Convert to integers: newOrder contains original SlotNumbers in new order
+                        var reorderedSlotNumbers = newOrder.Select(int.Parse).ToList();
+
+                        // Map of original slot numbers to their article IDs
+                        var articleSlotMap = IndexedLiveArticles
+                            .Where(x => x.Article != null)
+                            .ToDictionary(x => x.SlotNumber, x => x.Article!.Id);
+
+                        // Prepare 13-slot list (1 to 13)
+                        var totalSlots = Enumerable.Range(1, 13).ToList();
+
+                        // Create ArticleSlotAssignments based on reordering
+                        var slotAssignments = totalSlots.Select(slotNumber =>
+                        {
+                            // Find the index of this slot in the reordered list
+                            var newIndex = reorderedSlotNumbers.IndexOf(slotNumber);
+
+                            // If this slot was part of the newOrder list, use its new index + 1
+                            var newSlotNumber = newIndex >= 0 ? newIndex + 1 : slotNumber;
+
+                            // Lookup the articleId for this original slot number
+                            var articleId = articleSlotMap.TryGetValue(slotNumber, out var id) ? (Guid?)id : null;
+
+                            return new ArticleSlotAssignment
+                            {
+                                SlotNumber = newSlotNumber,
+                                ArticleId = articleId
+                            };
+                        })
+                        .OrderBy(x => x.SlotNumber) // optional: keep the output ordered
+                        .ToList();
 
 
-                var request = new ReorderRequest
-                {
-                    SlotAssignments = slotAssignments,
-                    CategoryId = CategoryId,
-                    SubCategoryId = SelectedSubcategory.Id,
-                    UserId = CurrentUserId.ToString()
-                };
+                        var request = new ReorderRequest
+                        {
+                            SlotAssignments = slotAssignments,
+                            CategoryId = CategoryId,
+                            SubCategoryId = SelectedSubcategory.Id,
+                            UserId = CurrentUserId.ToString()
+                        };
 
-                var response = await newsService.ReOrderNews(request, CurrentUserId.ToString());
-                var content = await response.Content.ReadAsStringAsync();
-                if (response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Slots Reordered Successfully", Severity.Success);
+                        var response = await newsService.ReOrderNews(request, CurrentUserId.ToString());
+                        var content = await response.Content.ReadAsStringAsync();
+                        if (response.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add("Slot reordered successfully", Severity.Success);
+                        }
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add("Failed to Reorder slots", Severity.Error);
+                            Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
+                        }
+                        StateHasChanged();
+                    }
                 }
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Failed to Reorder slots", Severity.Error);
-                    Logger.LogError("Reorder API failed: {StatusCode}", response.StatusCode);
-                }
-                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -742,6 +756,19 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             IsSearchEnabled = false;
             SearchString = string.Empty;
+        }
+
+        protected async Task ResetOrder()
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("resetArticleTableOrder");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ResetOrder");
+                throw;
+            }      
         }
     }
 }

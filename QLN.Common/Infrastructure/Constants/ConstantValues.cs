@@ -23,9 +23,20 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         //Index constants
-        public const string LandingBackOffice = "landingbackoffice";
-        public const string Analytics = "analytics";
+        public static class IndexNames
+        {
+            public const string ClassifiedsItemsIndex = "classifiedsitems";
+            public const string ClassifiedsPrelovedIndex = "classifiedspreloved";
+            public const string ClassifiedsCollectiblesIndex = "classifiedscollectibles";
+            public const string ClassifiedsDealsIndex = "classifiedsdeals";
+            public const string ServicesIndex = "services";
+            public const string LandingBackOfficeIndex = "landingbackoffice";
+            public const string AnalyticsIndex = "analytics";
+        }
+
         public const string PubSubName = "pubsub";
+
+        public const int DefaultPageSize = 50;
         public static class EntityTypes
         {
             public const string HeroBanner = "HeroBanner";

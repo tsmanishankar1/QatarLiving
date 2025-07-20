@@ -19,7 +19,8 @@
                  ResetValueOnEmptyText="true"
                  CoerceText="true"
                  Clearable="true"
-                 OnSearchTextChanged="ValidateTypedText">
+                 OnSearchTextChanged="ValidateTypedText"
+                 MaxLength="255">
     <ItemTemplate Context="eventItem">
         <MudText>@eventItem.EventTitle</MudText>
     </ItemTemplate>
