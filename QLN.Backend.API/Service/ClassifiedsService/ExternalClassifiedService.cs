@@ -2099,6 +2099,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
                 Status = dto.Status.ToString(),
+                Lattitude = dto.Latitude,
+                Longitude = dto.Longitude,
                 UserId = dto.UserId,
                 UserName = dto.UserName,
                 IsActive = true,
@@ -2117,21 +2119,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 IsRefreshed = dto.IsRefreshed,
                 RefreshExpiryDate = dto.RefreshExpiryDate
             };
-            if (dto.Latitude.HasValue && dto.Longitude.HasValue)
-            {
-                try
-                {
-                    indexDoc.GeoLocation = GeographyPoint.Create(dto.Latitude.Value, dto.Longitude.Value);
-                }
-                catch (ArgumentException ex)
-                {
-                    indexDoc.GeoLocation = null;
-                }
-            }
-            else
-            {
-                indexDoc.GeoLocation = null;
-            }
 
             var indexRequest = new CommonIndexRequest
             {
