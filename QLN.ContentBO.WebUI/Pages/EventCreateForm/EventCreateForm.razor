@@ -140,84 +140,44 @@
                 <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType"  Disabled="@string.IsNullOrWhiteSpace(SelectedDateLabel)" Class="my-2">
                 <MudRadio  Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
-                <MudRadio T="EventTimeType" Color="Color.Primary"Value="EventTimeType.FreeTextTime">Free Text time</MudRadio>
                 </MudRadioGroup>
             }
-            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
+            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime && !string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?" 
-                       Label="Start Time"
-                       Time="@StartTimeSpan"
-                       Class="event-custom-textfield"
-                       Style="background-color: #FFFFFF;"
-                       Variant="Variant.Outlined"
-                       TimeChanged="@((TimeSpan? t) => StartTimeSpan = t)" />
-                        <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
-                    </div>
-
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?" 
-                       Label="End Time"
-                       Time="@EndTimeSpan"
-                       Class="event-custom-textfield"
-                       Style="background-color: #FFFFFF;"
-                       Variant="Variant.Outlined"
-                       TimeChanged="@((TimeSpan? t) => EndTimeSpan = t)" />
-                        <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
-                    </div>
+                    <MudTextField  @bind-Value="@StartTimeSpan" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                 </div>
                 @if (!string.IsNullOrEmpty(_timeError))
-            {
-                <div class="mud-error-text">@_timeError</div>
-            }
+                {
+                    <div class="mud-error-text">@_timeError</div>
+                }
 
             }
-            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
+            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime && !string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
                @foreach (var entry in DayTimeList.Take(7))
                 {
                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-                             <div >
-                            <input type="checkbox"
-                            checked="@entry.IsSelected"
-                            disabled="@(!IsValidTimeFormat(entry.StartTime, entry.EndTime))"
-                            @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
-                            style="transform: scale(1.5); margin-right: 8px;" />
-                            <label style="font-size: 1rem;">@entry.Day</label>
+                             <div style="width: 135px;">
+                                <input type="checkbox"
+                                checked="@entry.IsSelected"
+                                @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
+                                style="margin-left: 10px;transform: scale(1.5); margin-right: 8px;" />
+                                <label style="font-size: 1rem;">@entry.Day</label>
                             </div>
-                            <div style="display: flex; gap: 16px; align-items: center;">
-                                <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                                    <MudTimePicker T="TimeSpan?" 
-                                    Label="Start Time"
-                                    @bind-Time="entry.StartTime"
-                                    Class="event-custom-textfield"
-                                    Style="background-color: #FFFFFF;"
-                                    Variant="Variant.Outlined"/>
-                                    <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
+                            <div style="display: flex; flex-direction: column;  align-items: flex-start; justify-content: center; flex-grow: 1;">
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <MudTextField ReadOnly="!entry.IsSelected" @bind-Value="@entry.StartTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                                 </div>
-                                <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                                    <MudTimePicker T="TimeSpan?" 
-                                    Label="End Time"
-                                    @bind-Time="entry.EndTime"
-                                    Class="event-custom-textfield"
-                                    Style="background-color: #FFFFFF;"
-                                    Variant="Variant.Outlined" />
-                                     <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
-                                </div>
+                                @if (!string.IsNullOrEmpty(entry.ErrorMsg))
+                                {
+                                    <div class="mud-error-text">@entry.ErrorMsg</div>
+                                }
                             </div>
                         </div>
                     </MudPaper>
-                    @if(!IsValidTimeFormat(entry.StartTime, entry.EndTime)){
-                        <div class="mud-error-text">Enter Valid Time format</div>
-                    }
                 }
-            }
-            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.FreeTextTime)
-            {
-                <MudTextField  Variant="Variant.Outlined" Label="Time" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;"/>
             }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
                                    Height="444"

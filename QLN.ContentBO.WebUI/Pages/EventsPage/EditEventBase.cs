@@ -53,44 +53,7 @@ namespace QLN.ContentBO.WebUI.Pages
         "Option 4"
     };
  
-        protected TimeSpan? StartTimeSpan
-        {
-            get => CurrentEvent.EventSchedule.StartTime.HasValue
-                ? CurrentEvent.EventSchedule.StartTime.Value.ToTimeSpan()
-                : (TimeSpan?)null;
-            set
-            {
-                if (value.HasValue)
-                {
-                    CurrentEvent.EventSchedule.StartTime = TimeOnly.FromTimeSpan(value.Value);
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.StartTime = null;
-                }
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.StartTime));
-            }
-        }
- 
- 
-        protected TimeSpan? EndTimeSpan
-        {
-            get => CurrentEvent.EventSchedule.EndTime.HasValue
-                ? CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()
-                    : (TimeSpan?)null;
-            set
-            {
-                if (value.HasValue)
-                {
-                    CurrentEvent.EventSchedule.EndTime = TimeOnly.FromTimeSpan(value.Value);
-                }
-                else
-                {
-                    CurrentEvent.EventSchedule.EndTime = null;
-                }
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.EventSchedule.EndTime));
-            }
-        }
+        protected string? StartTimeSpan { get; set; }
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
         protected MudExRichTextEdit Editor;
@@ -98,14 +61,14 @@ namespace QLN.ContentBO.WebUI.Pages
         protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
         protected string SelectedTimeOption = "General";
         protected string GeneralTime;
- 
+
         public class DayTimeEntry
         {
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public TimeSpan? StartTime { get; set; }
-            public TimeSpan? EndTime { get; set; }
+            public string? StartTime { get; set; }
+            public string? ErrorMsg { get; set; }
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -299,8 +262,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 {
                     Date = date,
                     IsSelected = matchingSlot != null,
-                    StartTime = matchingSlot?.StartTime?.ToTimeSpan(),
-                    EndTime = matchingSlot?.EndTime?.ToTimeSpan()
+                    StartTime = matchingSlot?.StartTime,
                 });
             }
     }
@@ -319,19 +281,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 Logger.LogError(ex, "OnInitializedAsync");
                 throw;
             }
-        }
-
-        protected void ApplyTimeRange()
-        {
-            if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
-            {
-                _timeRangeDisplay = $"{DateTime.Today.Add(CurrentEvent.EventSchedule.StartTime.Value.ToTimeSpan()):h:mm tt} to {DateTime.Today.Add(CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()):h:mm tt}";
-            }
-            else
-            {
-                _timeRangeDisplay = string.Empty;
-            }
-            _isTimeDialogOpen = false;
         }
         protected void AddLocation()
         {
@@ -450,12 +399,10 @@ namespace QLN.ContentBO.WebUI.Pages
                 });
             }
         }
-        protected bool IsValidTimeFormat(TimeSpan? start, TimeSpan? end)
+        protected bool IsValidTimeFormat(string? start)
         {
-            if (!start.HasValue || !end.HasValue)
-                return false;
-            return end > start;
-        }  
+            return !string.IsNullOrWhiteSpace(start);
+        }   
          private async Task ShowSuccessModal(string title)
         {
             var parameters = new DialogParameters
@@ -514,30 +461,40 @@ namespace QLN.ContentBO.WebUI.Pages
                 Snackbar.Add("Start date is required.", severity: Severity.Error);
                 return;
             }
-            else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime &&
-             (CurrentEvent.EventSchedule.StartTime == null || CurrentEvent.EventSchedule.EndTime == null))
+            else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
             {
-                _timeError = "Start Time and End Time are required.";
-                Snackbar.Add("Start Time and End Time are required.", severity: Severity.Error);
-                return;
-            }
-            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
-            {
-                if (!IsValidTimeFormat(StartTimeSpan, EndTimeSpan))
+                if (!DayTimeList.Any(slot => slot.IsSelected))
                 {
-                    _timeError = "Please enter a valid start and end time.";
-                    Snackbar.Add("Please enter a valid start and end time.", severity: Severity.Error);
+                    Snackbar.Add("Time are required.", severity: Severity.Error);
+                    return;
+                }
+                foreach (var slot in DayTimeList)
+                {
+                    if (string.IsNullOrEmpty(slot.StartTime) && slot.IsSelected)
+                    {
+                        slot.ErrorMsg = "Time are required.";
+                        hasError = true;
+                    }
+                    else
+                    {
+                        slot.ErrorMsg = null;
+                    }
+                }
+                if (hasError)
+                {
+                    Snackbar.Add("Time are required.", severity: Severity.Error);
                     return;
                 }
             }
-            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.FreeTextTime && CurrentEvent.EventSchedule.FreeTimeText == null)
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
-                _timeError = "Free text time is required";
-                Snackbar.Add("Free text time is required", severity: Severity.Error);
-                return;
+                if (!IsValidTimeFormat(StartTimeSpan))
+                {
+                    _timeError = "Time are required.";
+                    Snackbar.Add("Time are required.", severity: Severity.Error);
+                    return;
+                }
             }
-
-
             if (string.IsNullOrWhiteSpace(CurrentEvent.EventDescription))
             {
                 _descriptionerror = "Event description is required.";
@@ -554,6 +511,18 @@ namespace QLN.ContentBO.WebUI.Pages
             try
             {
                 IsLoading = true;
+                CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
+                foreach (var entry in DayTimeList)
+                {
+                    if (entry.IsSelected)
+                    {
+                        CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
+                        {
+                            DayOfWeek = entry.Date.DayOfWeek,
+                            StartTime = entry.StartTime,
+                        });
+                    }
+                }
                 var response = await eventsService.UpdateEvents(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -678,22 +647,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         protected void OnDaySelectionChanged(DayTimeEntry entry, object? value)
         {
-            var existingSlot = CurrentEvent.EventSchedule.TimeSlots
-                 .FirstOrDefault(ts => ts.DayOfWeek == entry.Date.DayOfWeek);
- 
-            if (existingSlot != null)
-            {
-                CurrentEvent.EventSchedule.TimeSlots.Remove(existingSlot);
-            }
-            else
-            {
-                CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
-                {
-                    DayOfWeek = entry.Date.DayOfWeek,
-                    StartTime = entry.StartTime.HasValue ? TimeOnly.FromTimeSpan(entry.StartTime.Value) : null,
-                    EndTime = entry.EndTime.HasValue ? TimeOnly.FromTimeSpan(entry.EndTime.Value) : null
-                });
-            }
+            entry.IsSelected = (bool)value;
         }
         private void ClearForm()
         {
@@ -707,7 +661,6 @@ namespace QLN.ContentBO.WebUI.Pages
  
             SelectedDateLabel = string.Empty;
             StartTimeSpan = null;
-            EndTimeSpan = null;
             _dateRange = null;
             DayTimeList.Clear();
             _descriptionerror = string.Empty;
