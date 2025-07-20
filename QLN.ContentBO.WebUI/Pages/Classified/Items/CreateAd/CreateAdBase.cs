@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using QLN.ContentBO.WebUI.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Web;
 
@@ -12,6 +13,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         {
             Navigation.NavigateTo("/manage/classified/items");
         }
+        protected AdPost adPostModel { get; set; } = new();
 
         protected string? UserEmail { get; set; }
 

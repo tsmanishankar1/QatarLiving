@@ -39,7 +39,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             int adId = int.TryParse(item.AdId, out var parsedId) ? parsedId : 0;
 
             var adHistoryList = new List<AdHistoryModel>();
-            for (int i = 0; i < 8; i++)
+            for (int i = 0; i < 20; i++)
             {
                 adHistoryList.Add(new AdHistoryModel
                 {

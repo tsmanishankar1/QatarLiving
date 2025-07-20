@@ -2,43 +2,82 @@
 
 <MudDialog Class="pa-2 ad-history-dialog">
     <DialogContent>
-            <MudTable Items="@AdHistoryList"
-                      FixedHeader="true"
-                      Hover="true"
-                      Bordered="true"
-                      Elevation="0"
-                      Class="mud-table event-custom-table"
-                      >
-                <HeaderContent>
-                    <MudTh class="header-cell">Ad ID</MudTh>
-                    <MudTh class="header-cell">Date Used</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Ad ID">@context.AdId</MudTd>
-                    <MudTd DataLabel="Date Used">@context.UsedOn.ToString("dd-MM-yyyy HH:mm")</MudTd>
-                </RowTemplate>
-            </MudTable>
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Ad ID</th>
+                        <th>Date Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ad in AdHistoryList)
+                    {
+                        <tr>
+                            <td>@ad.AdId</td>
+                            <td>@ad.UsedOn.ToString("dd-MM-yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </DialogContent>
 </MudDialog>
 <style>
     .ad-history-dialog {
-        width: 400px;
-        height: 400px;
-        max-width: 90vw;
-        border-radius: 12px;
-        overflow: hidden;
-        padding: 0;
-        background-color: white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
+    width: 400px;
+    height: 400px;
+    max-width: 90vw;
+    border-radius: 12px;
+    padding: 0;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.ad-history-dialog .mud-dialog-title {
+    display: none;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.ad-history-dialog .mud-dialog-content {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.ad-history-dialog  {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid var(--color-accent);
+}
 
-    .table-scroll-wrapper {
-        max-height: 600px;
-        overflow: hidden;
-    }
+.table-container {
+    height: 100%;
+    overflow-y: auto;
+}
 
-    .ad-history-dialog .mud-dialog .mud-dialog-title {
-        padding: 0;
-    }
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.custom-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: #F0F0F0;
+    color: #535862;
+    font-weight: 500;
+    font-size: 14px;
+    z-index: 1;
+    border-bottom: 1px solid #F0F0F0;
+    padding: 8px 20px;
+    text-align: left;
+}
+
+.custom-table tbody td {
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 400;
+    border-bottom: 1px solid #F0F0F0;
+    color: #787878;
+}
 
 </style>

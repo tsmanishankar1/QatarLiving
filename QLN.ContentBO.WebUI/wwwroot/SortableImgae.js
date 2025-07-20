@@ -1,17 +1,13 @@
-// SortableImgae.js
-// This script initializes a sortable list using the Sortable.js library.
-          window.initSortable = (elementId, dotNetHelper) => {
-            const el = document.getElementById(elementId);
-            if (!el) return;
-
-            new Sortable(el, {
-                animation: 150,
-                onEnd: function (evt) {
-                    const oldIndex = evt.oldIndex;
-                    const newIndex = evt.newIndex;
-
-                    // Call Blazor C# method
-                    dotNetHelper.invokeMethodAsync('OnReorder', oldIndex, newIndex);
-                }
-            });
-        };
+  function initSortable(dotNetHelper) {
+        const container = document.getElementById('image-upload-container');
+        new Sortable(container, {
+            animation: 150,
+            draggable: ".upload-box",
+            onEnd: function (evt) {
+                const newOrder = Array.from(container.children)
+                    .filter(el => el.dataset.id)
+                    .map(el => el.dataset.id);
+                dotNetHelper.invokeMethodAsync('UpdateOrder', newOrder);
+            }
+        });
+    }

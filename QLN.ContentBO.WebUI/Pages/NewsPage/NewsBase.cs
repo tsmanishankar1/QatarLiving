@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
+using QLN.ContentBO.WebUI.Extensions;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services;
@@ -307,8 +308,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var now = DateTime.UtcNow;
-                var diff = now - givenUtcTime;
+                var now = DateTime.UtcNow.ToQatarTime();
+                var diff = now - givenUtcTime.ToQatarTime();
 
                 // Check if the given time is in the future
                 var isFuture = diff.TotalSeconds < 0;

@@ -264,27 +264,68 @@ public static class V2NewsEndpoints
         .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-        group.MapGet("/categories/{categoryId:int}/sub/{subCategoryId:int}", async Task<Results<Ok<List<V2NewsArticleDTO>>, ProblemHttpResult>> (
-            int categoryId,
-            int subCategoryId,
-            IV2NewsService service,
-            CancellationToken cancellationToken
-        ) =>
+        group.MapGet("/categories/{categoryId}/sub/{subCategoryId}", async Task<Results<
+              Ok<List<V2NewsArticleDTO>>,
+              BadRequest<ProblemDetails>,
+              NotFound<ProblemDetails>,
+              ProblemHttpResult>>
+          (
+              int categoryId,
+              int subCategoryId,
+              string? status,
+              int? page,
+              int? pageSize,
+              IV2NewsService service,
+              CancellationToken cancellationToken
+          ) =>
         {
             try
             {
-                var result = await service.GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
-                return TypedResults.Ok(result);
+                if (categoryId <= 0 || subCategoryId <= 0)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid request",
+                        Detail = "Both categoryId and subCategoryId must be greater than zero"
+                    });
+                }
+
+                var articles = await service.GetArticlesBySubCategoryIdAsync(
+                    categoryId,
+                    subCategoryId,
+                    status,
+                    page,
+                    pageSize,
+                    cancellationToken);
+
+                if (articles == null)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "No articles found",
+                        Detail = $"No articles found for category {categoryId}, subcategory {subCategoryId}"
+                    });
+                }
+
+                return TypedResults.Ok(articles);
             }
             catch (Exception ex)
             {
-                return TypedResults.Problem("Internal Server Error", ex.Message);
+                return TypedResults.Problem(new ProblemDetails
+                {
+                    Title = "Internal Server Error",
+                    Detail = ex.Message
+                });
             }
+           
+
         })
         .WithName("GetArticlesBySubCategory")
         .WithTags("News")
         .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
 
 

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Models
 {
@@ -8,9 +9,7 @@ namespace QLN.ContentBO.WebUI.Models
         // Category Selection
         // ----------------------------
 
-        [Required(ErrorMessage = "Vertical is required.")]
-        public string SelectedVertical { get; set; } = string.Empty;
-
+        [Required(ErrorMessage = "Category is required.")]
         public string? SelectedCategoryId { get; set; }
         public string? SelectedSubcategoryId { get; set; }
         public string? SelectedSubSubcategoryId { get; set; }
@@ -38,12 +37,11 @@ namespace QLN.ContentBO.WebUI.Models
         public int BatteryPercentage { get; set; }
 
         [Required(ErrorMessage = "Description is required.")]
-        public string? ItemDescription { get; set; }
+        public string? Description { get; set; }
 
         [Url(ErrorMessage = "Invalid XML link URL.")]
         public string? XmlLink { get; set; }
 
-        public string? FlyerLocation { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Price must be greater than zero.")]
         public int Price { get; set; }
@@ -57,7 +55,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string? PhoneCode { get; set; }
 
         [Required(ErrorMessage = "Phone number is required.")]
-        [Phone(ErrorMessage = "Invalid phone number.")]
+        [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Invalid phone number (7-15 digits only).")]
         public string? PhoneNumber { get; set; }
 
         [StringLength(5, ErrorMessage = "WhatsApp code must be less than 5 characters.")]
@@ -93,7 +91,14 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // Images
         // ----------------------------
+        public List<AdImage> Images { get; set; } = new()
+        {
+            new AdImage { Order = 0 },
+            new AdImage { Order = 1 },
+            new AdImage { Order = 2 }
+        };
 
-        public List<string> PhotoUrls { get; set; } = new() { "", "", "", "", "", "" };
     }
+       
+
 }

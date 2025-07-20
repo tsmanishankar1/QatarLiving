@@ -12,6 +12,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
     public partial class ViewListingTableBase : ComponentBase
     {
         protected List<ListingItem> Listings { get; set; } = new();
+        [Inject] public NavigationManager Navigation { get; set; }
         protected HashSet<ListingItem> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
@@ -37,7 +38,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         }
         protected string selectedTab = "pendingApproval";
 
-       protected List<ToggleTabs.TabOption> tabOptions = new()
+        protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pending Approval", Value = "pendingApproval" },
             new() { Label = "Published", Value = "published" },
@@ -46,7 +47,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             new() { Label = "Promoted", Value = "promoted" },
             new() { Label = "Featured", Value = "featured" }
         };
-         protected async Task OnTabChanged(string newTab)
+        protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
 
@@ -89,13 +90,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 { "ButtonTitle", "Reject" },
                 { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRejection) }
             };
-             var options = new DialogOptions
+            var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
         private List<ListingItem> GetSampleData()
         {
@@ -108,10 +109,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 new ListingItem { AdId = 23415, UserId = 23415, AdTitle = "Candlelight: T...", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl }
             };
         }
-
         protected void OnEdit(ListingItem item)
         {
-            Console.WriteLine($"Edit clicked: {item.AdTitle}");
+            var targetUrl = $"/manage/classified/items/edit/ad/{item.AdId}";
+            Navigation.NavigateTo(targetUrl);
+
         }
 
         protected void OnPreview(ListingItem item)
@@ -141,5 +143,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRejectDialog();
             return Task.CompletedTask;
         }
+     
     }
 }

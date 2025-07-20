@@ -115,7 +115,11 @@
             <MudTd>@context.PublishedDate.ToString("dd-MM-yyyy")</MudTd>
             <MudTd>@context.ExpiryDate.ToString("dd-MM-yyyy")</MudTd>
             <MudTd>
-                <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
+                <MudMenu Class="mud-table-menu"
+                    Icon="@Icons.Material.Filled.MoreVert"
+                    Dense="true"
+                    AnchorOrigin="Origin.BottomLeft"
+                    TransformOrigin="Origin.TopRight">
                      @if (selectedTab != "pendingApproval")
                     {
                     <MudMenuItem OnClick="() => OnEdit(context)">
