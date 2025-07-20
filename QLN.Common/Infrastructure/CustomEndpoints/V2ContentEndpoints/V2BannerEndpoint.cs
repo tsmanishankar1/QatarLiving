@@ -23,9 +23,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                Vertical verticalId,
-    SubVertical? subVerticalId,
-    Guid pageId,
+               
                 V2CreateBannerDto dto,
                 IV2BannerService service,
                 HttpContext httpContext,
@@ -50,7 +48,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     dto.Createdby = uid;
                     httpContext.Request.Headers["X-User-Id"] = uid;
 
-                    var result = await service.CreateBannerAsync(verticalId,subVerticalId,pageId, uid, dto, cancellationToken);
+                    var result = await service.CreateBannerAsync( uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentException ex)
@@ -81,9 +79,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                 Vertical verticalId,
-    SubVertical? subVerticalId,
-    Guid pageId, V2CreateBannerDto dto,
+                  V2CreateBannerDto dto,
                 IV2BannerService service,
                 CancellationToken cancellationToken
             ) =>
@@ -100,7 +96,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                         });
                     }
 
-                    var result = await service.CreateBannerAsync(verticalId, subVerticalId, pageId, dto.Createdby, dto, cancellationToken);
+                    var result = await service.CreateBannerAsync( dto.Createdby, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentException ex)
