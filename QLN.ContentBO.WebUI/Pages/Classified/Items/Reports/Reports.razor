@@ -1,1 +1,20 @@
-<h1>Reports</h1>
+@using QLN.ContentBO.WebUI.Models;
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <div class="reports">
+              <ReportsForm/>
+             </div> 
+    </MudItem>
+</MudGrid>
+
+<style>
+       .reports {
+         display: flex;
+         width: 100%;
+         padding: 10px 0;
+         background-color: var(--color-background-secondary-grey-light);
+      }
+
+</style>
