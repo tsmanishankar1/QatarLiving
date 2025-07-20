@@ -1,9 +1,11 @@
 ﻿using Dapr;
 using Dapr.Client;
+using Microsoft.AspNetCore.Http.HttpResults;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using System.Net;
+using System.Text.Json;
 
 namespace QLN.Backend.API.Service.SearchService
 {
@@ -22,18 +24,18 @@ namespace QLN.Backend.API.Service.SearchService
         }
 
         /// <summary>
-        /// Calls SearchService’s POST /api/{vertical}/search
+        /// Calls SearchService's POST /api/indexes/search?index={indexName}
         /// </summary>
-        public async Task<CommonSearchResponse> SearchAsync(string vertical, CommonSearchRequest request)
+        public async Task<CommonSearchResponse> SearchAsync(string indexName, CommonSearchRequest request)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
 
             ArgumentNullException.ThrowIfNull(request);
 
             try
             {
-                var methodName = $"/api/{vertical}/search";
+                var methodName = $"/api/indexes/search?index={indexName}";
                 var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
@@ -50,18 +52,18 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (DaprException ex)
             {
-                _logger.LogError(ex, "Dapr invocation failed in SearchAsync: vertical={Vertical}", vertical);
+                _logger.LogError(ex, "Dapr invocation failed in SearchAsync: indexName={IndexName}", indexName);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in SearchAsync: vertical={Vertical}", vertical);
+                _logger.LogError(ex, "Unexpected error in SearchAsync: indexName={IndexName}", indexName);
                 throw;
             }
         }
 
         /// <summary>
-        /// Calls SearchService’s POST /api/{vertical}/upload
+        /// Calls SearchService's POST /api/indexes/upload
         /// </summary>
         public async Task<string> UploadAsync(CommonIndexRequest request)
         {
@@ -69,16 +71,17 @@ namespace QLN.Backend.API.Service.SearchService
 
             try
             {
-                var vertical = request.VerticalName;
-                var methodName = $"/api/{vertical}/upload";
-                var result = await _dapr.InvokeMethodAsync<CommonIndexRequest, string>(
+                var methodName = "/api/indexes/upload";
+
+                // Use HttpRequestMessage to handle the response properly
+                await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     appId: SERVICE_APP_ID,
                     methodName: methodName,
                     request
                 );
 
-                return result ?? string.Empty;
+                return "Document indexed successfully";
             }
             catch (ArgumentNullException ex)
             {
@@ -98,18 +101,18 @@ namespace QLN.Backend.API.Service.SearchService
         }
 
         /// <summary>
-        /// Calls SearchService’s GET /api/{vertical}/{key}
+        /// Calls SearchService's GET /api/indexes/{indexName}/{key}
         /// </summary>
-        public async Task<T?> GetByIdAsync<T>(string vertical, string key)
+        public async Task<T?> GetByIdAsync<T>(string indexName, string key)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
             try
             {
-                var methodName = $"/api/{vertical}/{key}";
+                var methodName = $"/api/indexes/{indexName}/{key}";
                 var doc = await _dapr.InvokeMethodAsync<T?>(
                     HttpMethod.Get,
                     appId: SERVICE_APP_ID,
@@ -127,38 +130,38 @@ namespace QLN.Backend.API.Service.SearchService
             {
                 if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
-                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                    _logger.LogWarning("Remote returned 404 for {IndexName}/{Key}", indexName, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{indexName}'.");
                 }
-                _logger.LogError(ex, "Dapr invocation failed in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Dapr invocation failed in GetByIdAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetByIdAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Unexpected error in GetByIdAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
         }
 
         /// <summary>
-        /// Calls SearchService’s Delete /api/{vertical}/{key}
+        /// Calls SearchService's DELETE /api/indexes/{indexName}/{key}
         /// </summary>
-        public async Task DeleteAsync(string vertical, string key)
+        public async Task DeleteAsync(string indexName, string key)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
             try
             {
-                var methodName = $"/api/{vertical}/{key}";
+                var methodName = $"/api/indexes/{indexName}/{key}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     appId: SERVICE_APP_ID,
                     methodName: methodName
                 );
-                _logger.LogInformation("Deleted document '{Key}' from vertical '{Vertical}'", key, vertical);
+                _logger.LogInformation("Deleted document '{Key}' from indexName '{IndexName}'", key, indexName);
             }
             catch (ArgumentNullException ex)
             {
@@ -167,36 +170,33 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (DaprException ex)
             {
-                _logger.LogError(ex, "Dapr invocation failed in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Dapr invocation failed in DeleteAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Unexpected error in DeleteAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
         }
-        /// <summary>
-        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}
-        /// </summary>
 
         /// <summary>  
-        /// Calls SearchService’s GET /api/{vertical}/details/{key}?similarPageSize={n}  
+        /// Calls SearchService's GET /api/indexes/{indexName}/{key}/details?similarPageSize={n}  
         /// </summary>  
         public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
-            string vertical,
+            string indexName,
             string key,
             int similarPageSize = 10
         ) where T : class
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
             try
             {
-                var methodName = $"/api/{vertical}/details/{key}?similarPageSize={similarPageSize}";
+                var methodName = $"/api/indexes/{indexName}/{key}/details?similarPageSize={similarPageSize}";
                 return await _dapr.InvokeMethodAsync<GetWithSimilarResponse<T>>(
                     HttpMethod.Get,
                     appId: SERVICE_APP_ID,
@@ -207,10 +207,10 @@ namespace QLN.Backend.API.Service.SearchService
             {
                 if (ex.InnerException is HttpRequestException httpEx && httpEx.StatusCode == HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning("Remote returned 404 for {Vertical}/{Key}", vertical, key);
-                    throw new KeyNotFoundException($"Document '{key}' not found in '{vertical}'.");
+                    _logger.LogWarning("Remote returned 404 for {IndexName}/{Key}", indexName, key);
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{indexName}'.");
                 }
-                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Dapr invocation failed in GetByIdWithSimilarAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
             catch (ArgumentNullException ex)
@@ -220,10 +220,9 @@ namespace QLN.Backend.API.Service.SearchService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Unexpected error in GetByIdWithSimilarAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
         }
-
     }
 }

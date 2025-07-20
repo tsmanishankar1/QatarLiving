@@ -10,12 +10,12 @@ namespace QLN.Common.Infrastructure.IService.ISearchService
 {
     public interface ISearchService
     {
-        Task<CommonSearchResponse> SearchAsync(string vertical, CommonSearchRequest request);
+        Task<CommonSearchResponse> SearchAsync(string indexName, CommonSearchRequest request);
         Task<string> UploadAsync(CommonIndexRequest request);
-        Task<T?> GetByIdAsync<T>(string vertical, string key);
-        Task DeleteAsync(string vertical, string key);
+        Task<T?> GetByIdAsync<T>(string indexName, string key);
+        Task DeleteAsync(string indexName, string key);
         Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
-           string vertical,
+           string indexName,
            string key,
            int similarPageSize = 10
        ) where T : class;

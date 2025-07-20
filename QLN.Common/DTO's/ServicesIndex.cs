@@ -11,89 +11,120 @@ namespace QLN.Common.DTO_s
     public class ServicesIndex
     {
         [SimpleField(IsKey = true, IsFilterable = true)]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Id { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true)]
+        public string CategoryId { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true)]
+        public string L1CategoryId { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true)]
+        public string L2CategoryId { get; set; } = string.Empty;
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? CategoryName { get; set; }
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? L1CategoryName { get; set; }
+
+        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        public string? L2CategoryName { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public double? Price { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
         public string Title { get; set; } = string.Empty;
 
         [SearchableField(IsFilterable = true)]
-        public string? Section { get; set; }
+        public string Description { get; set; } = string.Empty;
 
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public string? CategoryId { get; set; }
+        [SimpleField(IsFilterable = true)]
+        public string PhoneNumberCountryCode { get; set; } = string.Empty;
+
+        [SearchableField(IsFilterable = true)]
+        public string PhoneNumber { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true)]
+        public string WhatsappNumberCountryCode { get; set; } = string.Empty;
+
+        [SearchableField(IsFilterable = true)]
+        public string WhatsappNumber { get; set; } = string.Empty;
+
+        [SearchableField(IsFilterable = true)]
+        public string? EmailAddress { get; set; }
 
         [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Category { get; set; } = string.Empty;
+        public string? Location { get; set; } = string.Empty;
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? SubCategory { get; set; } = string.Empty;
+        [SimpleField(IsFilterable = true)]
+        public int? LocationId { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public GeographyPoint? GeoLocation { get; set; }
+
+        public IList<ImageInfo>? Images { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? UserName { get; set; }
+
+        [SimpleField(IsFilterable = true, IsFacetable = true)]
+        public string? Status { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool? IsFeatured { get; set; }
+        public bool IsFeatured { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? FeatureExpiryDate { get; set; }
+        public DateTime? FeaturedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool? IsPromoted { get; set; }
+        public bool IsPromoted { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? PromotedExpiryDate { get; set; }
 
+        [SimpleField(IsFilterable = true, IsFacetable = true)]
+        public string AdType { get; set; } = string.Empty;
+
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public bool? IsRefreshed { get; set; }
+        public DateTime? PublishedDate { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? ExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsActive { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string CreatedBy { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime CreatedAt { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? UpdatedBy { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? UpdatedAt { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? RefreshExpiryDate { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
-        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
-        public double? Price { get; set; }
+    }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? AcceptOffers { get; set; }
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? LicenseDocument { get; set; }
+    public class ServiceImageInfo
+    {
+        [SearchableField(IsFilterable = true)]
+        public string? FileName { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string? Description { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true)]
-        public string? PhoneNumber { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? WhatsappNumber { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? Email { get; set; }
+        public string Url { get; set; } = string.Empty;
 
         [SimpleField(IsFilterable = true)]
-        public string? UserId { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? Zone { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? StreetNumber { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? BuildingNumber { get; set; } = string.Empty;
-
-        [JsonConverter(typeof(MicrosoftSpatialGeoJsonConverter))]
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public GeographyPoint? GeoLocation { get; set; }
-
-        [SimpleField(IsFilterable = false, IsFacetable = false)]
-        public IList<ImageInfo>? Images { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? CreatedDate { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? ModifiedDate { get; set; }
-
-        [SimpleField(IsFilterable = true, IsFacetable = true)]
-        public string? Status { get; set; }
+        public int Order { get; set; }
     }
 }

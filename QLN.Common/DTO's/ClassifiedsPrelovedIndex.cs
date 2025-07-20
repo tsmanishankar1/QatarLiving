@@ -9,19 +9,19 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsPrelovedIndex : ClassifiedsIndexBase
     {
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsFeatured { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime FeaturedExpiryDate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPromoted { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime PromotedExpiryDate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]

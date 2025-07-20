@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
@@ -193,6 +194,7 @@ builder.Services.AddActors(options =>
 });
 builder.Services.ConfigureHttpJsonOptions(opts =>
 {
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
 });

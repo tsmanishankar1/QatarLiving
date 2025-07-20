@@ -11,6 +11,11 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IRepository.ISearchServiceRepository;
 using System.Reflection;
+using Microsoft.AspNetCore.Identity;
+using QLN.Common.Infrastructure.Constants;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using JsonException = Newtonsoft.Json.JsonException;
 
 namespace QLN.SearchService.Service
 {
@@ -27,15 +32,12 @@ namespace QLN.SearchService.Service
             _logger = logger;
         }
 
-        public async Task<CommonSearchResponse> SearchAsync(string vertical, string? subVertical, CommonSearchRequest req)
+        public async Task<CommonSearchResponse> SearchAsync(string indexName, CommonSearchRequest req)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
 
-            var indexKey = subVertical?.Trim().ToLowerInvariant()
-                          ?? vertical.Trim().ToLowerInvariant();
-
-            var hasPaging = req.PageNumber > 0 && req.PageSize > 0;
+            bool hasPaging = req.PageNumber > 0 && req.PageSize > 0;
             var opts = new SearchOptions
             {
                 IncludeTotalCount = true,
@@ -44,91 +46,399 @@ namespace QLN.SearchService.Service
                 Size = hasPaging ? req.PageSize : int.MaxValue
             };
 
-            var response = new CommonSearchResponse
+            var (regularFilters, jsonFilters) = await SeparateFiltersAsync(req.Filters, indexName);
+
+            var response = new CommonSearchResponse();
+
+            switch (indexName.Trim().ToLowerInvariant())
             {
-                VerticalName = vertical,
-            };
-
-            switch (indexKey)
-            {
-                case "classifiedsitems":
+                case ConstantValues.IndexNames.ClassifiedsItemsIndex:
                     {
-                        var clauses = BuildFilter<ClassifiedsItemsIndex>(req.Filters);
-                        opts.Filter = string.Join(" and ", clauses);
-                        opts.OrderBy.Add("IsPromoted desc");
-                        opts.OrderBy.Add("PromotedExpiryDate desc");
-                        opts.OrderBy.Add("IsRefreshed desc");
-                        opts.OrderBy.Add("RefreshExpiryDate desc");
-                        opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeaturedExpiryDate desc");
-                        opts.OrderBy.Add("CreatedDate desc");
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<ClassifiedsItemsIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                        }
 
-                        var page = await _repo.SearchAsync<ClassifiedsItemsIndex>(indexKey, opts, req.Text);
-                        response.TotalCount = page.TotalCount;
-                        response.Items = page.Items.ToList();
+                        BuildOrderBy<ClassifiedsItemsIndex>(opts, req.OrderBy);
+
+                        var pageCls = await _repo.SearchAsync<ClassifiedsItemsIndex>(indexName, opts, req.Text);
+                        var filteredItems = ApplyJsonFilters(pageCls.Items, jsonFilters);
+
+                        response.TotalCount = pageCls.TotalCount;
+                        response.ClassifiedsItem = filteredItems.ToList();
                         break;
                     }
 
-                case "classifiedspre":
+                case ConstantValues.IndexNames.ClassifiedsPrelovedIndex:
                     {
-                        var clauses = BuildFilter<ClassifiedsPrelovedIndex>(req.Filters);
-                        opts.Filter = string.Join(" and ", clauses);
-                        opts.OrderBy.Add("IsPromoted desc");
-                        opts.OrderBy.Add("PromotedExpiryDate desc");
-                        opts.OrderBy.Add("IsRefreshed desc");
-                        opts.OrderBy.Add("RefreshExpiryDate desc");
-                        opts.OrderBy.Add("IsFeatured desc");
-                        opts.OrderBy.Add("FeaturedExpiryDate desc");
-                        opts.OrderBy.Add("CreatedDate desc");
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<ClassifiedsPrelovedIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                        }
 
-                        var page = await _repo.SearchAsync<ClassifiedsPrelovedIndex>(indexKey, opts, req.Text);
-                        response.TotalCount = page.TotalCount;
-                        response.Preloved = page.Items.ToList();
+                        BuildOrderBy<ClassifiedsPrelovedIndex>(opts, req.OrderBy);
+
+                        var pageCls = await _repo.SearchAsync<ClassifiedsPrelovedIndex>(indexName, opts, req.Text);
+                        var filteredItems = ApplyJsonFilters(pageCls.Items, jsonFilters);
+
+                        response.TotalCount = pageCls.TotalCount;
+                        response.ClassifiedsPrelovedItem = filteredItems.ToList();
                         break;
                     }
 
-                case "classifiedscollect":
+                case ConstantValues.IndexNames.ClassifiedsCollectiblesIndex:
                     {
-                        var clauses = BuildFilter<ClassifiedsCollectiblesIndex>(req.Filters);
-                        opts.Filter = string.Join(" and ", clauses);
-                        opts.OrderBy.Add("CreatedDate desc");
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<ClassifiedsCollectiblesIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                        }
 
-                        var page = await _repo.SearchAsync<ClassifiedsCollectiblesIndex>(indexKey, opts, req.Text);
-                        response.TotalCount = page.TotalCount;
-                        response.Collectibles = page.Items.ToList();
+                        BuildOrderBy<ClassifiedsCollectiblesIndex>(opts, req.OrderBy);
+
+                        var pageCls = await _repo.SearchAsync<ClassifiedsCollectiblesIndex>(indexName, opts, req.Text);
+                        var filteredItems = ApplyJsonFilters(pageCls.Items, jsonFilters);
+
+                        response.TotalCount = pageCls.TotalCount;
+                        response.ClassifiedsCollectiblesItem = filteredItems.ToList();
                         break;
                     }
 
-                case "classifiedsdeals":
+                case ConstantValues.IndexNames.ClassifiedsDealsIndex:
                     {
-                        var clauses = BuildFilter<ClassifiedsDealsIndex>(req.Filters);
-                        opts.Filter = string.Join(" and ", clauses);
-                        opts.OrderBy.Add("StartDate desc");
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<ClassifiedsDealsIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                        }
 
-                        var page = await _repo.SearchAsync<ClassifiedsDealsIndex>(indexKey, opts, req.Text);
-                        response.TotalCount = page.TotalCount;
-                        response.Deals = page.Items.ToList();
+                        BuildOrderBy<ClassifiedsDealsIndex>(opts, req.OrderBy);
+
+                        var pageCls = await _repo.SearchAsync<ClassifiedsDealsIndex>(indexName, opts, req.Text);
+                        var filteredItems = ApplyJsonFilters(pageCls.Items, jsonFilters);
+
+                        response.TotalCount = pageCls.TotalCount;
+                        response.ClassifiedsDealsItem = filteredItems.ToList();
                         break;
                     }
 
-                case "services":
+                case ConstantValues.IndexNames.ServicesIndex:
                     {
-                        var clauses = BuildFilter<ServicesIndex>(req.Filters);
-                        opts.Filter = string.Join(" and ", clauses);
-                        opts.OrderBy.Add("IsPromoted desc");
-                        opts.OrderBy.Add("CreatedDate desc");
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<ServicesIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for services: {Filter}", opts.Filter);
+                        }
 
-                        var page = await _repo.SearchAsync<ServicesIndex>(indexKey, opts, req.Text);
-                        response.TotalCount = page.TotalCount;
-                        response.ServicesItems = page.Items.ToList();
+                        BuildOrderBy<ServicesIndex>(opts, req.OrderBy);
+
+                        var pageSvc = await _repo.SearchAsync<ServicesIndex>(indexName, opts, req.Text);
+                        var filteredItems = ApplyJsonFilters(pageSvc.Items, jsonFilters);
+
+                        response.TotalCount = pageSvc.TotalCount;
+                        response.ServicesItems = filteredItems.ToList();
+                        break;
+                    }
+
+                case ConstantValues.IndexNames.LandingBackOfficeIndex:
+                    {
+                        if (regularFilters?.Any() == true)
+                        {
+                            var clauses = regularFilters
+                                .Select(kv => BuildClause<LandingBackOfficeIndex>(kv.Key, kv.Value));
+                            opts.Filter = string.Join(" and ", clauses);
+                            _logger.LogInformation("Applied filter for backoffice: {Filter}", opts.Filter);
+                        }
+
+                        BuildOrderBy<LandingBackOfficeIndex>(opts, req.OrderBy);
+
+                        var pageBo = await _repo.SearchAsync<LandingBackOfficeIndex>(indexName, opts, req.Text);
+                        response.TotalCount = pageBo.TotalCount;
+                        response.MasterItems = pageBo.Items.ToList();
                         break;
                     }
 
                 default:
-                    throw new NotSupportedException($"Unknown or unsupported vertical/subVertical: '{indexKey}'");
+                    throw new NotSupportedException($"Unknown indexName '{indexName}'");
             }
 
             return response;
+        }
+
+        // ✅ Keep all your existing methods exactly as they were
+        private async Task<(Dictionary<string, object> regularFilters, Dictionary<string, object> jsonFilters)>
+            SeparateFiltersAsync(Dictionary<string, object> filters, string indexName)
+        {
+            if (filters == null || !filters.Any())
+                return (new Dictionary<string, object>(), new Dictionary<string, object>());
+
+            var regularFilters = new Dictionary<string, object>();
+            var jsonFilters = new Dictionary<string, object>();
+
+            var knownJsonKeys = await GetKnownJsonKeysFromSampleData(indexName);
+
+            foreach (var filter in filters)
+            {
+                if (IsKnownModelProperty(filter.Key, indexName))
+                {
+                    regularFilters[filter.Key] = filter.Value;
+                }
+                else if (knownJsonKeys.Contains(filter.Key, StringComparer.OrdinalIgnoreCase))
+                {
+                    jsonFilters[filter.Key] = filter.Value;
+                }
+                else
+                {
+                    jsonFilters[filter.Key] = filter.Value;
+                    _logger.LogDebug("Unknown filter key '{Key}' assumed to be JSON attribute", filter.Key);
+                }
+            }
+
+            return (regularFilters, jsonFilters);
+        }
+
+        private bool IsKnownModelProperty(string key, string indexName)
+        {
+            var modelType = GetModelTypeForVertical(indexName);
+            if (modelType == null) return false;
+
+            if (key.Equals("minPrice", StringComparison.OrdinalIgnoreCase) ||
+                key.Equals("maxPrice", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            var properties = modelType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            return properties.Any(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private Type GetModelTypeForVertical(string indexName)
+        {
+            return indexName.ToLowerInvariant() switch
+            {
+                ConstantValues.IndexNames.ClassifiedsItemsIndex => typeof(ClassifiedsItemsIndex),
+                ConstantValues.IndexNames.ClassifiedsPrelovedIndex => typeof(ClassifiedsPrelovedIndex),
+                ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => typeof(ClassifiedsCollectiblesIndex),
+                ConstantValues.IndexNames.ClassifiedsDealsIndex => typeof(ClassifiedsDealsIndex),
+                ConstantValues.IndexNames.ServicesIndex => typeof(ServicesIndex),
+                ConstantValues.IndexNames.LandingBackOfficeIndex => typeof(LandingBackOfficeIndex),
+                _ => null
+            };
+        }
+
+        private async Task<HashSet<string>> GetKnownJsonKeysFromSampleData(string indexName)
+        {
+            var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                var opts = new SearchOptions
+                {
+                    Size = 10,
+                    IncludeTotalCount = false
+                };
+
+                dynamic sampleResults = indexName.ToLowerInvariant() switch
+                {
+                    ConstantValues.IndexNames.ClassifiedsItemsIndex =>
+                        await _repo.SearchAsync<ClassifiedsItemsIndex>(indexName, opts, "*"),
+                    ConstantValues.IndexNames.ClassifiedsPrelovedIndex =>
+                        await _repo.SearchAsync<ClassifiedsPrelovedIndex>(indexName, opts, "*"),
+                    ConstantValues.IndexNames.ClassifiedsCollectiblesIndex =>
+                        await _repo.SearchAsync<ClassifiedsCollectiblesIndex>(indexName, opts, "*"),
+                    ConstantValues.IndexNames.ClassifiedsDealsIndex =>
+                        await _repo.SearchAsync<ClassifiedsDealsIndex>(indexName, opts, "*"),
+                    ConstantValues.IndexNames.ServicesIndex =>
+                        await _repo.SearchAsync<ServicesIndex>(indexName, opts, "*"),
+                    _ => null
+                };
+
+                if (sampleResults?.Items != null)
+                {
+                    foreach (var item in sampleResults.Items)
+                    {
+                        var attributesJson = GetAttributesJsonFromItem(item);
+                        if (!string.IsNullOrEmpty(attributesJson))
+                        {
+                            try
+                            {
+                                var jsonObj = JObject.Parse(attributesJson);
+                                foreach (var property in jsonObj.Properties())
+                                {
+                                    knownKeys.Add(property.Name);
+                                }
+                            }
+                            catch (JsonException)
+                            {
+                                // Ignore invalid JSON
+                            }
+                        }
+                    }
+                }
+
+                _logger.LogDebug("Discovered {Count} JSON keys for indexName {IndexName}: {Keys}",
+                    knownKeys.Count, indexName, string.Join(", ", knownKeys));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to discover JSON keys for indexName {IndexName}", indexName);
+            }
+
+            return knownKeys;
+        }
+
+        private string GetAttributesJsonFromItem(object item)
+        {
+            if (item == null) return null;
+
+            var type = item.GetType();
+            var attributesJsonProperty = type.GetProperty("AttributesJson", BindingFlags.Public | BindingFlags.Instance);
+            return attributesJsonProperty?.GetValue(item)?.ToString();
+        }
+
+        private void BuildOrderBy<T>(SearchOptions opts, string clientOrderBy)
+        {
+            opts.OrderBy.Clear();
+            var addedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(clientOrderBy))
+            {
+                var expr = ParseOrderBy<T>(clientOrderBy);
+                var fieldName = ExtractFieldName(expr);
+
+                if (!addedFields.Contains(fieldName))
+                {
+                    opts.OrderBy.Add(expr);
+                    addedFields.Add(fieldName);
+                    _logger.LogInformation("Added client sort: {OrderBy}", expr);
+                }
+            }
+
+            var defaultOrderFields = GetDefaultOrderFields<T>();
+            foreach (var orderField in defaultOrderFields)
+            {
+                var fieldName = ExtractFieldName(orderField);
+                if (!addedFields.Contains(fieldName))
+                {
+                    opts.OrderBy.Add(orderField);
+                    addedFields.Add(fieldName);
+                }
+            }
+        }
+
+        private List<string> GetDefaultOrderFields<T>()
+        {
+            var typeName = typeof(T).Name;
+
+            return typeName switch
+            {
+                "ClassifiedsItemsIndex" or "ClassifiedsPrelovedIndex" or "ClassifiedsCollectiblesIndex" =>
+                    new List<string>
+                    {
+                        "IsPromoted desc",
+                        "PromotedExpiryDate desc",
+                        "IsRefreshed desc",
+                        "RefreshExpiryDate desc",
+                        "IsFeatured desc",
+                        "FeaturedExpiryDate desc",
+                        "CreatedDate desc"
+                    },
+
+                "ClassifiedsDealsIndex" => new List<string> { "CreatedDate desc" },
+
+                "ServicesIndex" => new List<string>
+                {
+                    "IsPromoted desc",
+                    "PromotedExpiryDate desc",
+                    "IsRefreshed desc",
+                    "RefreshExpiryDate desc",
+                    "IsFeatured desc",
+                    "FeatureExpiryDate desc",
+                    "CreatedDate desc"
+                },
+
+                _ => new List<string> { "CreatedDate desc" }
+            };
+        }
+
+        private string ExtractFieldName(string orderByExpression)
+        {
+            if (string.IsNullOrWhiteSpace(orderByExpression))
+                return string.Empty;
+
+            var parts = orderByExpression.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length > 0 ? parts[0] : orderByExpression;
+        }
+
+        private IEnumerable<T> ApplyJsonFilters<T>(IEnumerable<T> items, Dictionary<string, object> jsonFilters) where T : class
+        {
+            if (jsonFilters == null || !jsonFilters.Any())
+                return items;
+
+            var type = typeof(T);
+            var attributesJsonProperty = type.GetProperty("AttributesJson");
+
+            if (attributesJsonProperty == null)
+                return items;
+
+            return items.Where(item =>
+            {
+                var attributesJson = attributesJsonProperty.GetValue(item)?.ToString();
+                if (string.IsNullOrEmpty(attributesJson))
+                    return false;
+
+                try
+                {
+                    var attributes = JObject.Parse(attributesJson);
+
+                    foreach (var filter in jsonFilters)
+                    {
+                        var jsonValue = attributes[filter.Key];
+                        var filterValue = filter.Value;
+
+                        if (!MatchesJsonFilter(jsonValue, filterValue))
+                        {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "Failed to parse AttributesJson for item filtering");
+                    return false;
+                }
+            });
+        }
+
+        private bool MatchesJsonFilter(JToken jsonValue, object filterValue)
+        {
+            if (jsonValue == null || jsonValue.Type == JTokenType.Null)
+                return false;
+
+            var filterStr = filterValue?.ToString();
+            if (string.IsNullOrEmpty(filterStr))
+                return false;
+
+            if (jsonValue.Type == JTokenType.Array)
+            {
+                var arrayValues = jsonValue.ToObject<string[]>() ?? Array.Empty<string>();
+                return arrayValues.Any(val => string.Equals(val, filterStr, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var jsonStr = jsonValue.ToString();
+            return string.Equals(jsonStr, filterStr, StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<string> UploadAsync(CommonIndexRequest request)
@@ -136,61 +446,53 @@ namespace QLN.SearchService.Service
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            var indexKey = request.SubVertical?.Trim().ToLowerInvariant()
-                           ?? request.VerticalName?.Trim().ToLowerInvariant()
-                           ?? throw new ArgumentException("VerticalName or SubVertical is required");
+            var index = request.IndexName?
+                              .ToLowerInvariant()
+                          ?? throw new ArgumentException("IndexName is required", nameof(request.IndexName));
 
-            switch (indexKey)
+            switch (index.Trim().ToLowerInvariant())
             {
-                case "classifiedsitems":
-                    var items = request.Items as ClassifiedsItemsIndex
-                        ?? throw new ArgumentException("ClassifiedsItem is required for classifiedsitems.");
-                    _logger.LogInformation("Uploading ClassifiedsItemsIndex Id={Id} to '{Vertical}'", items.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, items);
+                case ConstantValues.IndexNames.ClassifiedsItemsIndex:
+                    var item = request.ClassifiedsItem
+                               ?? throw new ArgumentException("ClassifiedsItem is required for classifiedsitems.");
+                    return await _repo.UploadAsync<ClassifiedsItemsIndex>(index, item);
 
-                case "classifiedspre":
-                    var pre = request.Preloved as ClassifiedsPrelovedIndex
-                        ?? throw new ArgumentException("PrelovedItem is required for classifieds-preloved.");
-                    _logger.LogInformation("Uploading ClassifiedsPrelovedIndex Id={Id} to '{Vertical}'", pre.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, pre);
+                case ConstantValues.IndexNames.ClassifiedsPrelovedIndex:
+                    var preloved = request.ClassifiedsPrelovedItem
+                                   ?? throw new ArgumentException("ClassifiedsItem is required for classifiedspreloved.");
+                    return await _repo.UploadAsync<ClassifiedsPrelovedIndex>(index, preloved);
 
-                case "classifiedscollect":
-                    var collect = request.Collectibles as ClassifiedsCollectiblesIndex
-                        ?? throw new ArgumentException("CollectiblesItem is required for classifieds-collectibles.");
-                    _logger.LogInformation("Uploading ClassifiedsCollectiblesIndex Id={Id} to '{Vertical}'", collect.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, collect);
+                case ConstantValues.IndexNames.ClassifiedsCollectiblesIndex:
+                    var collect = request.ClassifiedsCollectiblesItem
+                                  ?? throw new ArgumentException("ClassifiedsItem is required for classifiedscollectibles.");
+                    return await _repo.UploadAsync<ClassifiedsCollectiblesIndex>(index, collect);
 
-                case "classifiedsdeals":
-                    var deal = request.Deals as ClassifiedsDealsIndex
-                        ?? throw new ArgumentException("DealsItem is required for classifieds-deals.");
-                    _logger.LogInformation("Uploading ClassifiedsDealsIndex Id={Id} to '{Vertical}'", deal.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, deal);
+                case ConstantValues.IndexNames.ClassifiedsDealsIndex:
+                    var deals = request.ClassifiedsDealsItem
+                                ?? throw new ArgumentException("ClassifiedsItem is required for classifiedsdeals.");
+                    return await _repo.UploadAsync<ClassifiedsDealsIndex>(index, deals);
 
-                case "services":
+                case ConstantValues.IndexNames.ServicesIndex:
                     var svc = request.ServicesItem
-                        ?? throw new ArgumentException("ServicesItem is required for services.");
-                    _logger.LogInformation("Uploading ServicesIndex Id={Id} to '{Vertical}'", svc.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, svc);
+                           ?? throw new ArgumentException("ServicesItem is required for services.", nameof(request.ServicesItem));
+                    return await _repo.UploadAsync<ServicesIndex>(index, svc);
 
-                case "landingbackoffice":
+                case ConstantValues.IndexNames.LandingBackOfficeIndex:
                     var master = request.MasterItem
-                        ?? throw new ArgumentException("MasterItem is required for backoffice.");
-                    _logger.LogInformation("Uploading LandingBackOfficeIndex Id={Id} to '{Vertical}'", master.Id, indexKey);
-                    return await _repo.UploadAsync(indexKey, master);
-
-                default:
-                    throw new ArgumentException($"Unsupported vertical or subVertical: '{indexKey}'");
+                           ?? throw new ArgumentException("Backoffice item.", nameof(request.MasterItem));
+                    return await _repo.UploadAsync<LandingBackOfficeIndex>(index, master);
             }
+            throw new ArgumentException($"Unsupported Index: '{index}'", nameof(request.IndexName));
         }
 
-        public Task<T?> GetByIdAsync<T>(string vertical, string key)
+        public Task<T?> GetByIdAsync<T>(string indexName, string key)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
-            return _repo.GetByIdAsync<T>(vertical, key);
+            return _repo.GetByIdAsync<T>(indexName, key);
         }
 
         private string BuildClause<T>(string key, object val)
@@ -202,6 +504,7 @@ namespace QLN.SearchService.Service
                     parts.Add(BuildClause<T>(key, item!));
                 return "(" + string.Join(" or ", parts) + ")";
             }
+
             if (val is JsonElement jeArr && jeArr.ValueKind == JsonValueKind.Array)
             {
                 var parts = jeArr.EnumerateArray()
@@ -212,16 +515,17 @@ namespace QLN.SearchService.Service
 
             var isMin = key.Equals("minPrice", StringComparison.OrdinalIgnoreCase);
             var isMax = key.Equals("maxPrice", StringComparison.OrdinalIgnoreCase);
+
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+
             var field = prop?.Name ?? key;
+
             if (isMin || isMax)
             {
                 var raw = FormatRawValue(val);
-                return isMin
-                    ? $"Price ge {raw}"
-                    : $"Price le {raw}";
+                return isMin ? $"Price ge {raw}" : $"Price le {raw}";
             }
 
             switch (val)
@@ -261,13 +565,14 @@ namespace QLN.SearchService.Service
             var parts = orderBy.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var key = parts[0];
             var dir = parts.Length > 1 ? parts[1] : null;
+
             var prop = typeof(T)
                 .GetProperties()
                 .FirstOrDefault(p => p.Name.Equals(key, StringComparison.OrdinalIgnoreCase));
+
             var field = prop?.Name ?? key;
-            return dir != null
-                ? $"{field} {dir}"
-                : field;
+
+            return dir != null ? $"{field} {dir}" : field;
         }
 
         private string FormatRawValue(object val)
@@ -279,18 +584,19 @@ namespace QLN.SearchService.Service
             }
             return Convert.ToString(val, CultureInfo.InvariantCulture)!;
         }
-        public async Task DeleteAsync(string vertical, string key)
+
+        public async Task DeleteAsync(string indexName, string key)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
             try
             {
-                _logger.LogInformation("Service: deleting '{Key}' from '{Vertical}'", key, vertical);
-                await _repo.DeleteAsync(vertical, key);
-                _logger.LogInformation("Service: deleted '{Key}' from '{Vertical}'", key, vertical);
+                _logger.LogInformation("Service: deleting '{Key}' from '{IndexName}'", key, indexName);
+                await _repo.DeleteAsync(indexName, key);
+                _logger.LogInformation("Service: deleted '{Key}' from '{IndexName}'", key, indexName);
             }
             catch (ArgumentException ex)
             {
@@ -299,26 +605,25 @@ namespace QLN.SearchService.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in DeleteAsync: vertical={Vertical}, key={Key}", vertical, key);
+                _logger.LogError(ex, "Unexpected error in DeleteAsync: indexName={IndexName}, key={Key}", indexName, key);
                 throw;
             }
         }
+
         public async Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
-           string vertical,
+           string indexName,
            string key,
            int similarPageSize = 10
        ) where T : class
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
-            // 1) fetch the primary document
-            var detail = await _repo.GetByIdAsync<T>(vertical, key)
-                         ?? throw new KeyNotFoundException($"No '{key}' in '{vertical}'.");
+            var detail = await _repo.GetByIdAsync<T>(indexName, key)
+                         ?? throw new KeyNotFoundException($"No '{key}' in '{indexName}'.");
 
-            // 2) reflect out L2Category or fallback to L1Category
             var type = typeof(T);
             var propL2 = type.GetProperty("L2Category", BindingFlags.Public | BindingFlags.Instance);
             var propL1 = type.GetProperty("L1Category", BindingFlags.Public | BindingFlags.Instance);
@@ -329,13 +634,11 @@ namespace QLN.SearchService.Service
             var filterField = useL2 ? "L2Category" : "L1Category";
             var filterValue = useL2 ? l2Value! : l1Value;
 
-            // if no category at all, return detail only
             if (string.IsNullOrWhiteSpace(filterValue))
             {
                 return new GetWithSimilarResponse<T> { Detail = detail };
             }
 
-            // 3) build a small search to fetch “similar” items
             var opts = new SearchOptions
             {
                 SearchMode = SearchMode.All,
@@ -344,9 +647,8 @@ namespace QLN.SearchService.Service
             };
             opts.Filter = $"{filterField} eq '{filterValue.Replace("'", "''")}'";
 
-            var simResults = await _repo.SearchAsync<T>(vertical, opts, "*");
+            var simResults = await _repo.SearchAsync<T>(indexName, opts, "*");
 
-            // 4) exclude the original item
             var idProp = type.GetProperty("Id", BindingFlags.Public | BindingFlags.Instance);
             var similar = simResults.Items
                 .Where(item =>

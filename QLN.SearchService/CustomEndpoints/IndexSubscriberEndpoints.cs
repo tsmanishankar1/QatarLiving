@@ -35,7 +35,7 @@ namespace QLN.SearchService.CustomEndpoints
                         if (msg.Action == "Upsert" && msg.UpsertRequest?.MasterItem != null)
                         {
                             var id = msg.UpsertRequest.MasterItem.Id;
-                            var vertical = msg.UpsertRequest.VerticalName;
+                            var vertical = msg.UpsertRequest.IndexName;
                             logger.LogInformation("Processing upsert for item Id={Id}, Vertical={Vertical}", id, vertical);
 
                             await svc.UploadAsync(msg.UpsertRequest);

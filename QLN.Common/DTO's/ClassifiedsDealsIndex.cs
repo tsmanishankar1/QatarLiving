@@ -9,6 +9,9 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsDealsIndex
     {
+        [SimpleField(IsKey = true, IsFilterable = true)]
+        public string Id { get; set; }
+
         [SearchableField(IsFilterable = true)]
         public string? BusinessName { get; set; }
 
@@ -47,5 +50,20 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? SocialMediaLinks { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string CreatedBy { get; set; } = string.Empty;
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime CreatedAt { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? UpdatedBy { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? UpdatedAt { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsActive { get; set; }
     }
 }

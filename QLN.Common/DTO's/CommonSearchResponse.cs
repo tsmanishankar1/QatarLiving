@@ -1,20 +1,19 @@
-﻿using QLN.Common.DTO_s;
+﻿
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 
 namespace QLN.Common.DTO_s
 {
     /// <summary>
-    /// Wrapper for a search response: vertical name + result list.
+    /// Wrapper for a search response: vertical name + list of ClassifiedIndex items.
     /// </summary>
     public class CommonSearchResponse
     {
-        public string VerticalName { get; set; } = string.Empty;
-        public string? SubVertical { get; set; } = string.Empty;
         public long? TotalCount { get; set; }
-        public List<ClassifiedsItemsIndex>? Items { get; set; }
-        public List<ClassifiedsPrelovedIndex>? Preloved { get; set; }
-        public List<ClassifiedsCollectiblesIndex>? Collectibles { get; set; }
-        public List<ClassifiedsDealsIndex>? Deals { get; set; }
+        public List<ClassifiedsItemsIndex>? ClassifiedsItem { get; set; }
+        public List<ClassifiedsPrelovedIndex>? ClassifiedsPrelovedItem { get; set; }
+        public List<ClassifiedsCollectiblesIndex>? ClassifiedsCollectiblesItem { get; set; }
+        public List<ClassifiedsDealsIndex>? ClassifiedsDealsItem { get; set; }
         public List<ServicesIndex>? ServicesItems { get; set; }
         public List<LandingBackOfficeIndex>? MasterItems { get; set; }
     }
@@ -24,13 +23,11 @@ namespace QLN.Common.DTO_s
     /// </summary>
     public class CommonIndexRequest
     {
-        public string VerticalName { get; set; } = string.Empty;
-        public string? SubVertical { get; set; }
-        public ClassifiedsItemsIndex? Items { get; set; }
-        public ClassifiedsPrelovedIndex? Preloved { get; set; }
-        public ClassifiedsCollectiblesIndex? Collectibles { get; set; }
-        public ClassifiedsDealsIndex? Deals { get; set; }
-
+        public string IndexName { get; set; } = string.Empty;
+        public ClassifiedsItemsIndex? ClassifiedsItem { get; set; }
+        public ClassifiedsPrelovedIndex? ClassifiedsPrelovedItem { get; set; }
+        public ClassifiedsCollectiblesIndex? ClassifiedsCollectiblesItem { get; set; }
+        public ClassifiedsDealsIndex? ClassifiedsDealsItem { get; set; }
         public ServicesIndex? ServicesItem { get; set; }
         public LandingBackOfficeIndex? MasterItem { get; set; }
     }
