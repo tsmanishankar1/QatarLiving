@@ -525,17 +525,20 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-         int categoryId,
-         int subCategoryId,
-         string? status,
-         int? page,
-         int? pageSize,
-         CancellationToken cancellationToken)
+            int categoryId,
+            int subCategoryId,
+            string? status,
+            int? page,
+            int? pageSize,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var ids = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
-                          ?? new List<string>();
+                var ids = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
                 var stateItems = await _dapr.GetBulkStateAsync(
                     V2Content.ContentStoreName,
@@ -565,34 +568,38 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 a.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId))
                     .ToList();
 
-                // Filter by SlotId
+                // ✅ Apply status filter only if valid
                 if (!string.IsNullOrWhiteSpace(status))
                 {
-                    status = status.Trim().ToLower();
-                    if (status == "published")
+                    switch (status.Trim().ToLower())
                     {
-                        articles = articles
-                            .Where(a => a.Categories.Any(c => c.SlotId == 14))
-                            .ToList();
-                    }
-                    else if (status == "unpublished")
-                    {
-                        articles = articles
-                            .Where(a => a.Categories.Any(c => c.SlotId == 15))
-                            .ToList();
+                        case "published":
+                            articles = articles
+                                .Where(a => a.Categories.Any(c => c.SlotId == 14))
+                                .ToList();
+                            break;
+
+                        case "unpublished":
+                            articles = articles
+                                .Where(a => a.Categories.Any(c => c.SlotId == 15))
+                                .ToList();
+                            break;
+
+                        // Optional: ignore invalid statuses
+                        default:
+                            _logger.LogWarning("Unknown status filter: {Status}", status);
+                            break;
                     }
                 }
 
-                // Pagination
-                int currentPage = page ?? 1;
-                int currentPageSize = pageSize ?? 50;
+                // ✅ Apply pagination only if page and pageSize are provided
+                int currentPage = page.HasValue && page.Value > 0 ? page.Value : 1;
+                int currentPageSize = pageSize.HasValue && pageSize.Value > 0 ? pageSize.Value : 50;
 
-                var pagedArticles = articles
+                return articles
                     .Skip((currentPage - 1) * currentPageSize)
                     .Take(currentPageSize)
                     .ToList();
-
-                return pagedArticles;
             }
             catch (Exception ex)
             {
@@ -600,6 +607,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
 
         public async Task<string> UpdateNewsArticleAsync(
       V2NewsArticleDTO dto,

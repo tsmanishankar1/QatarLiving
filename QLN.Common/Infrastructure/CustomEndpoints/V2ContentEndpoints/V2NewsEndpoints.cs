@@ -265,19 +265,19 @@ public static class V2NewsEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/categories/{categoryId}/sub/{subCategoryId}", async Task<Results<
-              Ok<List<V2NewsArticleDTO>>,
-              BadRequest<ProblemDetails>,
-              NotFound<ProblemDetails>,
-              ProblemHttpResult>>
-          (
-              int categoryId,
-              int subCategoryId,
-              string? status,
-              int? page,
-              int? pageSize,
-              IV2NewsService service,
-              CancellationToken cancellationToken
-          ) =>
+         Ok<List<V2NewsArticleDTO>>,
+         BadRequest<ProblemDetails>,
+         NotFound<ProblemDetails>,
+         ProblemHttpResult>>
+   (
+       int categoryId,
+       int subCategoryId,
+       string? status,
+       int? page,
+       int? pageSize,
+       IV2NewsService service,
+       CancellationToken cancellationToken
+   ) =>
         {
             try
             {
@@ -293,12 +293,12 @@ public static class V2NewsEndpoints
                 var articles = await service.GetArticlesBySubCategoryIdAsync(
                     categoryId,
                     subCategoryId,
-                    status,
+                    string.IsNullOrWhiteSpace(status) ? null : status,
                     page,
                     pageSize,
                     cancellationToken);
 
-                if (articles == null)
+                if (articles == null || !articles.Any())
                 {
                     return TypedResults.NotFound(new ProblemDetails
                     {
@@ -317,13 +317,13 @@ public static class V2NewsEndpoints
                     Detail = ex.Message
                 });
             }
-           
-
         })
-        .WithName("GetArticlesBySubCategory")
-        .WithTags("News")
-        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+   .WithName("GetArticlesBySubCategory")
+   .WithTags("News")
+   .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
