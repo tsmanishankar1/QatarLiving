@@ -28,15 +28,18 @@ namespace QLN.Common.DTO_s
         [EmailAddress]
         public string? EmailAddress { get; set; }
         public string Location { get; set; }
+        public int? LocationId { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
         public List<ImageDto>? PhotoUpload { get; set; }
         public string? UserName { get; set; }
         public ServiceStatus? Status { get; set; }
-        public bool? IsFeatured { get; set; }
-        public bool? IsPromoted { get; set; }
+        public bool IsFeatured { get; set; }
+        public bool IsPromoted { get; set; }
+        public bool IsRefreshed { get; set; }
         public DateTime? PromotedExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; }
+        public DateTime? RefreshExpiryDate { get; set; }
         public ServiceAdType AdType { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }

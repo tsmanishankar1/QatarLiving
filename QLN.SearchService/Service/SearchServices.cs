@@ -363,8 +363,8 @@ namespace QLN.SearchService.Service
                     "IsRefreshed desc",
                     "RefreshExpiryDate desc",
                     "IsFeatured desc",
-                    "FeatureExpiryDate desc",
-                    "CreatedDate desc"
+                    "FeaturedExpiryDate desc",
+                    "CreatedAt desc"
                 },
 
                 _ => new List<string> { "CreatedDate desc" }

@@ -2115,7 +2115,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 IsPromoted = dto.IsPromoted,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsRefreshed = dto.IsRefreshed,
-
                 RefreshExpiryDate = dto.RefreshExpiryDate
             };
             if (dto.Latitude.HasValue && dto.Longitude.HasValue)

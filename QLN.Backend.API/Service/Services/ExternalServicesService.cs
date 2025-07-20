@@ -1,8 +1,10 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Spatial;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Utilities;
 using System.Net;
@@ -16,11 +18,14 @@ namespace QLN.Backend.API.Service.Services
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
         private readonly IFileStorageBlobService _blobStorage;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, IFileStorageBlobService blobStorage)
+        private readonly ISearchService _searchService;
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, 
+            IFileStorageBlobService blobStorage, ISearchService searchService)
         {
             _dapr = dapr;
             _logger = logger;
             _blobStorage = blobStorage;
+            _searchService = searchService;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -164,6 +169,7 @@ namespace QLN.Backend.API.Service.Services
                 }
                 var url = "/api/service/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                await IndexClassifiedItemToAzureSearch(dto, cancellationToken);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -188,6 +194,64 @@ namespace QLN.Backend.API.Service.Services
             {
                 await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating service ad");
+                throw;
+            }
+        }
+        private async Task IndexClassifiedItemToAzureSearch(ServicesDto dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ServicesIndex
+            {
+                Id = dto.Id.ToString(),
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                Price = dto.Price,
+                CategoryId = dto.CategoryId.ToString(),
+                CategoryName = dto.CategoryName,
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L1CategoryName = dto.L1CategoryName,
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                L2CategoryName = dto.L2CategoryName,
+                PhoneNumber = dto.PhoneNumber,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                WhatsappNumber = dto.WhatsappNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                EmailAddress = dto.EmailAddress,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                CreatedAt = dto.CreatedAt,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Status = dto.Status.ToString(),
+                UserName = dto.UserName,
+                IsActive = true,
+                Images = dto.PhotoUpload.Select(i => new ImageInfo
+                {
+                    AdImageFileNames = i.FileName,
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList(),
+                IsFeatured = dto.IsFeatured,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsRefreshed = dto.IsRefreshed,
+
+                RefreshExpiryDate = dto.RefreshExpiryDate
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ServicesIndex,
+                ServicesItem = indexDoc
+            };
+
+            try
+            {
+                await _searchService.UploadAsync(indexRequest);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
                 throw;
             }
         }
