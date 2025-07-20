@@ -8,16 +8,32 @@ public class AttributesJsonConverter : JsonConverter<object>
 {
     public override bool CanConvert(Type typeToConvert)
     {
+        if (typeToConvert.IsAbstract || typeToConvert.IsInterface)
+            return false;
+
+        if (typeToConvert.FullName?.StartsWith("Microsoft.Spatial.") == true)
+            return false;
+
         return typeToConvert.IsClass && typeToConvert.GetProperty("AttributesJson") != null;
     }
 
+
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var defaultOptions = new JsonSerializerOptions(options);
-        defaultOptions.Converters.Remove(this);
-        return JsonSerializer.Deserialize(ref reader, typeToConvert, defaultOptions)
-               ?? Activator.CreateInstance(typeToConvert)!;
+        try
+        {
+            var defaultOptions = new JsonSerializerOptions(options);
+            defaultOptions.Converters.Remove(this);
+
+            return JsonSerializer.Deserialize(ref reader, typeToConvert, defaultOptions)
+                   ?? Activator.CreateInstance(typeToConvert)!;
+        }
+        catch (NotSupportedException ex) when (ex.Message.Contains("Microsoft.Spatial.GeographyPoint"))
+        {
+            throw new JsonException($"Cannot deserialize type {typeToConvert.Name}: {ex.Message}");
+        }
     }
+
 
     public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
     {

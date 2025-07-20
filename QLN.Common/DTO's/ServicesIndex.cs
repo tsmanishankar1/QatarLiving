@@ -62,8 +62,10 @@ namespace QLN.Common.DTO_s
         public int? LocationId { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public GeographyPoint? GeoLocation { get; set; }
+        public double? Lattitude { get; set; }
 
+        [SimpleField(IsFilterable = true)]
+        public double? Longitude { get; set; }
         public IList<ImageInfo>? Images { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -108,7 +110,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? UpdatedAt { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]

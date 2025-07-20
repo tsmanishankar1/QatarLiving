@@ -194,7 +194,6 @@ builder.Services.AddActors(options =>
 });
 builder.Services.ConfigureHttpJsonOptions(opts =>
 {
-    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
 });

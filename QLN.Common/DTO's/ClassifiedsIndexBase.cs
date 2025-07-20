@@ -69,7 +69,10 @@ namespace QLN.Common.DTO_s
         public string UserName { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public GeographyPoint? GeoLocation { get; set; }
+        public double? Lattitude { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public double? Longitude { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string CreatedBy { get; set; } = string.Empty;
