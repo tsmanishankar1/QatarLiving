@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using System.Web;
 using QLN.ContentBO.WebUI.Models;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
+namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
     public class EditDealsBase : ComponentBase
     {

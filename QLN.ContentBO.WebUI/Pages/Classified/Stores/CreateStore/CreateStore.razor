@@ -18,7 +18,8 @@
                         <MudButton Variant="Variant.Outlined"
                                    Color="Color.Warning"
                                    StartIcon="@Icons.Material.Filled.ArrowBack"
-                                   Style="width: 100px; text-transform:none;">
+                                   Style="width: 100px; text-transform:none;"
+                                   OnClick="onNavigationBack">
                             Back
                         </MudButton>
 
@@ -214,9 +215,9 @@
 
 
 
-                    <MudExRichTextEdit @bind-Value="Ad.ItemDescription" @ref="Editor"
+                    <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
                                        Height="350" Placeholder="Start Typing"
-                                       For="@(() => Ad.ItemDescription)">
+                                       For="@(() => Ad.Description)">
                     </MudExRichTextEdit>
                     <h3 class="form-heading">License & Visibility</h3>
                     <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="CR Number"

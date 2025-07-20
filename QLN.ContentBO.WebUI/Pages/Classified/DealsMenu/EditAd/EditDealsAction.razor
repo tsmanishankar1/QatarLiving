@@ -1,0 +1,142 @@
+@inherits EditDealsActionBase
+@using MudBlazor
+
+<div class="ad-preview-container">
+    <!-- Left Column -->
+    <div class="left-column">
+        <div class="user-info">
+            <div class="label">Username</div>
+            <div class="value">@($"{UserName} {Category}")</div>
+            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
+                <span class="dot"></span> Active
+            </MudChip>
+        </div>
+
+        <div class="button-row">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Unfeature Ad", "Are you sure you want to unfeature this ad?", "Unfeature"))'>
+                <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                Unfeatured
+            </MudButton>
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Unpromote Ad", "Are you sure you want to unpromote this ad?", "Unpromote"))'>
+                <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                Unpromoted
+            </MudButton>
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Refresh Ad", "Do you want to refresh this ad?", "Refresh"))'>
+                <img src="/qln-images/refresh_icon.svg" class="btn-icon" />
+                Refresh
+            </MudButton>
+
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       StartIcon="@Icons.Material.Outlined.RemoveRedEye" OnClick="OpenPreviewDialog">
+                Preview
+            </MudButton>
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       StartIcon="@Icons.Material.Outlined.VisibilityOff"
+                       OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to unpublish this ad?", "Unpublish"))'>
+                Unpublish
+            </MudButton>
+
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove"))'>
+                <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+                Remove
+            </MudButton>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+        <div class="ad-info">
+            <div class="value"><span class="label">Ad ID:</span> @AdId</div>
+            <div class="value"><span class="label">Order ID:</span> @OrderId</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ad-preview-container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding: 15px 0;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .left-column {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .right-column {
+        text-align: right;
+        min-width: 200px;
+    }
+
+    .user-info .label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .user-info .value {
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--color-text-heading);
+        margin-bottom: 4px;
+    }
+
+    .ad-info .label {
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+    }
+
+    .ad-info .value {
+        font-weight: 600;
+        font-size: 18px;
+        color: var(--color-text-heading);
+        margin-bottom: 4px;
+    }
+
+    .status-chip {
+        margin-top: 6px;
+    }
+
+    .status-chip .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #53B47B;
+        display: inline-block;
+        margin-right: 6px;
+    }
+
+    .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .action-btn {
+        text-transform: none;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 6px 14px;
+    }
+
+    .btn-icon {
+        height: 20px;
+        margin-right: 6px;
+    }
+
+    .ad-info {
+        font-size: 16px;
+    }
+</style>

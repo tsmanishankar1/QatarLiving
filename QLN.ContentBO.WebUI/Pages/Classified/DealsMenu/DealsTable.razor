@@ -121,8 +121,7 @@
 
             <MudTd>
                 <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                    <MudMenuItem OnClick="() => OnEdit(context)">
-                                 Class="mud-text-error">
+                    <MudMenuItem OnClick="@(() => NavigateToEdit(context))">
                         <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
                         <span class="menu-text">Edit</span>
                     </MudMenuItem>

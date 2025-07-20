@@ -110,11 +110,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             };
         }
 
-        protected void OnEdit(ListingItem item)
-        {
-            Console.WriteLine($"Edit clicked: {item.AdTitle}");
-        }
-
+       
         protected void OnPreview(ListingItem item)
         {
             Console.WriteLine($"Preview clicked: {item.AdTitle}");
@@ -142,10 +138,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             OpenRejectDialog();
             return Task.CompletedTask;
         }
-        protected void OnEdit(SubscriptionListing item)
+        protected void NavigateToEdit(ListingItem item)
         {
-            var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
+            var id = item.AdId;
+            NavigationManager.NavigateTo($"/manage/classified/deals/edit/ad/{id}");
         }
+
     }
 }
