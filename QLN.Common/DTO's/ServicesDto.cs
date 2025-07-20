@@ -6,12 +6,13 @@ namespace QLN.Common.DTO_s
     public class ServicesDto
     {
         public Guid Id { get; set; }
-        public Guid MainCategoryId { get; set; }
+        public Guid CategoryId { get; set; }
         public Guid L1CategoryId { get; set; }
         public Guid L2CategoryId { get; set; }
+        public string? CategoryName { get; set; }
         public string? L1CategoryName { get; set; }
         public string? L2CategoryName { get; set; }
-        public string? Price { get; set; }
+        public double? Price { get; set; }
         [Required]
         public string Title { get; set; }
         [Required]
@@ -27,7 +28,6 @@ namespace QLN.Common.DTO_s
         [EmailAddress]
         public string? EmailAddress { get; set; }
         public string Location { get; set; }
-        public int? LocationId { get; set; }
         public string Longitude { get; set; }
         public string Latitude { get; set; }
         public List<ImageDto>? PhotoUpload { get; set; }

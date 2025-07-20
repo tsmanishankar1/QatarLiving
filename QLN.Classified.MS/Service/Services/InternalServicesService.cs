@@ -16,7 +16,7 @@ namespace QLN.Classified.MS.Service.Services
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(dto.MainCategory))
+            if (string.IsNullOrWhiteSpace(dto.Category))
                 throw new InvalidDataException("MainCategory is required.");
 
             if (dto.L1Categories == null || dto.L1Categories.Count == 0)
@@ -156,13 +156,15 @@ namespace QLN.Classified.MS.Service.Services
                 var id = Guid.NewGuid();
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
-                  dto.MainCategoryId.ToString(),
+                  dto.CategoryId.ToString(),
                   cancellationToken : cancellationToken);
+                string? categoryName = null;
                 string? l1CategoryName = null;
                 string? l2CategoryName = null;
 
                 if (mainCategory != null)
                 {
+                    categoryName = mainCategory.Category;
                     var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
                     if (l1Category != null)
                     {
@@ -178,9 +180,10 @@ namespace QLN.Classified.MS.Service.Services
                 var entity = new ServicesDto
                 {
                     Id = id,
-                    MainCategoryId = dto.MainCategoryId,
+                    CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
+                    CategoryName = categoryName,
                     L1CategoryName = l1CategoryName,
                     L2CategoryName = l2CategoryName,
                     Price = dto.Price,
@@ -192,7 +195,6 @@ namespace QLN.Classified.MS.Service.Services
                     WhatsappNumber = dto.WhatsappNumber,
                     EmailAddress = dto.EmailAddress,
                     Location = dto.Location,
-                    LocationId = dto.LocationId,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
                     PhotoUpload = dto.PhotoUpload,
@@ -261,7 +263,7 @@ namespace QLN.Classified.MS.Service.Services
             if (string.IsNullOrWhiteSpace(dto.WhatsappNumberCountryCode) || string.IsNullOrWhiteSpace(dto.WhatsappNumber))
                 throw new ArgumentException("WhatsApp number with country code is required.");
 
-            if (dto.MainCategoryId == Guid.Empty || dto.L1CategoryId == Guid.Empty || dto.L2CategoryId == Guid.Empty)
+            if (dto.CategoryId == Guid.Empty || dto.L1CategoryId == Guid.Empty || dto.L2CategoryId == Guid.Empty)
                 throw new ArgumentException("All category IDs must be provided.");
 
             var phoneRegex = new Regex(@"^\d{6,15}$");
@@ -295,9 +297,10 @@ namespace QLN.Classified.MS.Service.Services
                 var entity = new ServicesDto
                 {
                     Id = existing.Id,
-                    MainCategoryId = dto.MainCategoryId,
+                    CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
+                    CategoryName = dto.CategoryName,
                     L1CategoryName = dto.L1CategoryName,
                     L2CategoryName = dto.L2CategoryName,
                     Price = dto.Price,
@@ -309,7 +312,6 @@ namespace QLN.Classified.MS.Service.Services
                     WhatsappNumber = dto.WhatsappNumber,
                     EmailAddress = dto.EmailAddress,
                     Location = dto.Location,
-                    LocationId = dto.LocationId,
                     Longitude = dto.Longitude,
                     Latitude = dto.Latitude,
                     PhotoUpload = dto.PhotoUpload,

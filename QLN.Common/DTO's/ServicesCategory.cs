@@ -9,7 +9,7 @@ namespace QLN.Common.DTO_s
     public class ServicesCategory
     {
         public Guid? Id { get; set; }
-        public string MainCategory { get; set; } = default!;
+        public string Category { get; set; } = default!;
         public List<L1Category> L1Categories { get; set; } = new();
     }
     public class L1Category
