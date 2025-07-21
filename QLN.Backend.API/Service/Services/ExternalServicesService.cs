@@ -169,7 +169,6 @@ namespace QLN.Backend.API.Service.Services
                 }
                 var url = "/api/service/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
-                await IndexClassifiedItemToAzureSearch(dto, cancellationToken);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -188,6 +187,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
+                await IndexServiceToAzureSearch(dto, cancellationToken);
                 return "Service ad created successfully.";
             }
             catch (Exception ex)
@@ -197,47 +197,68 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        private async Task IndexClassifiedItemToAzureSearch(ServicesDto dto, CancellationToken cancellationToken)
+        private async Task IndexServiceToAzureSearch(ServicesDto dto, CancellationToken cancellationToken)
         {
+            var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                 ConstantValues.Services.StoreName,
+                 dto.CategoryId.ToString(),
+                 cancellationToken: cancellationToken);
+            string? categoryName = null;
+            string? l1CategoryName = null;
+            string? l2CategoryName = null;
+
+            if (mainCategory != null)
+            {
+                categoryName = mainCategory.Category;
+                var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                if (l1Category != null)
+                {
+                    l1CategoryName = l1Category.Name;
+
+                    var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                    if (l2Category != null)
+                    {
+                        l2CategoryName = l2Category.Name;
+                    }
+                }
+            }
             var indexDoc = new ServicesIndex
             {
                 Id = dto.Id.ToString(),
-                AdType = dto.AdType.ToString(),
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                CategoryName = categoryName,
+                L1CategoryName = l1CategoryName,
+                L2CategoryName = l2CategoryName,
+                Price = dto.Price,
                 Title = dto.Title,
                 Description = dto.Description,
-                Price = dto.Price,
-                CategoryId = dto.CategoryId.ToString(),
-                CategoryName = dto.CategoryName,
-                L1CategoryId = dto.L1CategoryId.ToString(),
-                L1CategoryName = dto.L1CategoryName,
-                L2CategoryId = dto.L2CategoryId.ToString(),
-                L2CategoryName = dto.L2CategoryName,
-                PhoneNumber = dto.PhoneNumber,
                 PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                WhatsappNumber = dto.WhatsappNumber,
+                PhoneNumber = dto.PhoneNumber,
                 WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsappNumber = dto.WhatsappNumber,
                 EmailAddress = dto.EmailAddress,
                 Location = dto.Location,
                 LocationId = dto.LocationId,
-                CreatedAt = dto.CreatedAt,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
+                Longitude = dto.Longitude,
+                Lattitude = dto.Lattitude,
+                AdType = dto.AdType.ToString(),
+                IsFeatured = false,
+                IsPromoted = false,
                 Status = dto.Status.ToString(),
                 UserName = dto.UserName,
-                IsActive = true,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
                 Images = dto.PhotoUpload.Select(i => new ImageInfo
                 {
                     AdImageFileNames = i.FileName,
                     Url = i.Url,
                     Order = i.Order
-                }).ToList(),
-                IsFeatured = dto.IsFeatured,
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                IsPromoted = dto.IsPromoted,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-
-                RefreshExpiryDate = dto.RefreshExpiryDate
+                }).ToList()
             };
             var indexRequest = new CommonIndexRequest
             {
@@ -271,9 +292,16 @@ namespace QLN.Backend.API.Service.Services
                     {
                         var image = dto.PhotoUpload[i];
 
-                        if (!string.IsNullOrWhiteSpace(image?.Url))
+                        if (string.IsNullOrWhiteSpace(image?.Url))
+                            throw new ArgumentException("Image URL is required.");
+
+                        if (image.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                         {
-                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url!);
+                            image.FileName = Path.GetFileName(new Uri(image.Url).AbsolutePath);
+                        }
+                        else
+                        {
+                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url);
 
                             if (ext is not ("heic" or "png" or "jpg" or "webp"))
                                 throw new ArgumentException("Only heic, jpg, png, and webp images are allowed.");
@@ -306,6 +334,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
+                await IndexServiceToAzureSearch(dto, cancellationToken);
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)

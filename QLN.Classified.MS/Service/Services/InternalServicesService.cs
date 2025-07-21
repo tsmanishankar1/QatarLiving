@@ -153,7 +153,6 @@ namespace QLN.Classified.MS.Service.Services
             try
             {
                 ValidateCommon(dto);
-                var id = Guid.NewGuid();
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -179,7 +178,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
                 var entity = new ServicesDto
                 {
-                    Id = id,
+                    Id = dto.Id,
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
@@ -197,12 +196,11 @@ namespace QLN.Classified.MS.Service.Services
                     Location = dto.Location,
                     LocationId = dto.LocationId,
                     Longitude = dto.Longitude,
-                    Latitude = dto.Latitude,
+                    Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
                     IsFeatured = false,
                     IsPromoted = false,
                     AdType = dto.AdType,
-                    PublishedDate = dto.PublishedDate,
                     Status = dto.Status,
                     UserName = dto.UserName,
                     IsActive = true,
@@ -212,7 +210,7 @@ namespace QLN.Classified.MS.Service.Services
                     UpdatedBy = null
                 };
 
-                var key = id.ToString();
+                var key = dto.Id.ToString();
                 await _dapr.SaveStateAsync(
                     ConstantValues.Services.StoreName,
                     key,
@@ -315,7 +313,7 @@ namespace QLN.Classified.MS.Service.Services
                     Location = dto.Location,
                     LocationId = dto.LocationId,
                     Longitude = dto.Longitude,
-                    Latitude = dto.Latitude,
+                    Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
                     AdType = dto.AdType,
                     IsFeatured = false,

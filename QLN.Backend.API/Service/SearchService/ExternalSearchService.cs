@@ -62,6 +62,38 @@ namespace QLN.Backend.API.Service.SearchService
             }
         }
 
+        public async Task<CommonSearchResponse> GetAllAsync(string indexName, CommonSearchRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var methodName = $"/api/indexes/getAll?index={indexName}";
+                var commonResp = await _dapr.InvokeMethodAsync<CommonSearchRequest, CommonSearchResponse>(
+                    HttpMethod.Post,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName,
+                    request
+                );
+
+                return commonResp;
+            }
+            catch (DaprException ex)
+            {
+                _logger.LogError(ex, "Dapr invocation failed in GetAllAsync: indexName={IndexName}", indexName);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAllAsync: indexName={IndexName}", indexName);
+                throw;
+            }
+        }
+
+
         /// <summary>
         /// Calls SearchService's POST /api/indexes/upload
         /// </summary>

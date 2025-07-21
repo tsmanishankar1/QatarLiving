@@ -62,10 +62,10 @@ namespace QLN.Common.DTO_s
         public int? LocationId { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public double? Lattitude { get; set; }
+        public double Lattitude { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public double? Longitude { get; set; }
+        public double Longitude { get; set; }
         public IList<ImageInfo>? Images { get; set; }
 
         [SearchableField(IsFilterable = true)]

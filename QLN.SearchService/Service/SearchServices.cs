@@ -177,7 +177,65 @@ namespace QLN.SearchService.Service
             return response;
         }
 
-        // ✅ Keep all your existing methods exactly as they were
+        public async Task<CommonSearchResponse> GetAllAsync(string indexName, CommonSearchRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+
+            bool hasPaging = req.PageNumber > 0 && req.PageSize > 0;
+            var opts = new SearchOptions
+            {
+                IncludeTotalCount = true,
+                SearchMode = SearchMode.All,
+                Skip = hasPaging ? (req.PageNumber - 1) * req.PageSize : 0,
+                Size = hasPaging ? req.PageSize : int.MaxValue
+            };
+
+            var (regularFilters, jsonFilters) = await SeparateFiltersAsync(req.Filters, indexName);
+            var response = new CommonSearchResponse();
+
+            async Task Handle<T>(Action<List<T>> assign) where T : class
+            {
+                if (regularFilters?.Any() == true)
+                    opts.Filter = string.Join(" and ", regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value)));
+
+                var result = await _repo.SearchAsync<T>(indexName, opts, req.Text);
+                var filtered = ApplyJsonFilters(result.Items, jsonFilters).ToList();
+
+                assign(filtered);
+                response.TotalCount = result.TotalCount;
+            }
+
+            switch (indexName.Trim().ToLowerInvariant())
+            {
+                case ConstantValues.IndexNames.ClassifiedsItemsIndex:
+                    await Handle<ClassifiedsItemsIndex>(x => response.ClassifiedsItem = x); break;
+
+                case ConstantValues.IndexNames.ClassifiedsPrelovedIndex:
+                    await Handle<ClassifiedsPrelovedIndex>(x => response.ClassifiedsPrelovedItem = x); break;
+
+                case ConstantValues.IndexNames.ClassifiedsCollectiblesIndex:
+                    await Handle<ClassifiedsCollectiblesIndex>(x => response.ClassifiedsCollectiblesItem = x); break;
+
+                case ConstantValues.IndexNames.ClassifiedsDealsIndex:
+                    await Handle<ClassifiedsDealsIndex>(x => response.ClassifiedsDealsItem = x); break;
+
+                case ConstantValues.IndexNames.ServicesIndex:
+                    await Handle<ServicesIndex>(x => response.ServicesItems = x); break;
+
+                case ConstantValues.IndexNames.LandingBackOfficeIndex:
+                    var raw = await _repo.SearchAsync<LandingBackOfficeIndex>(indexName, opts, req.Text);
+                    response.TotalCount = raw.TotalCount;
+                    response.MasterItems = raw.Items.ToList();
+                    break;
+
+                default:
+                    throw new NotSupportedException($"Unknown indexName '{indexName}'");
+            }
+
+            return response;
+        }
+
         private async Task<(Dictionary<string, object> regularFilters, Dictionary<string, object> jsonFilters)>
             SeparateFiltersAsync(Dictionary<string, object> filters, string indexName)
         {

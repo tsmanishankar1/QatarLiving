@@ -29,8 +29,8 @@ namespace QLN.Common.DTO_s
         public string? EmailAddress { get; set; }
         public string Location { get; set; }
         public int? LocationId { get; set; }
-        public string Longitude { get; set; }
-        public string Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Lattitude { get; set; }
         public List<ImageDto>? PhotoUpload { get; set; }
         public string? UserName { get; set; }
         public ServiceStatus? Status { get; set; }

@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Builder;
 using QLN.Common.Infrastructure.IService.IService;
 using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.Constants;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -210,8 +212,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
+                    var id = Guid.NewGuid();
+                    dto.Id = id;
                     dto.CreatedBy = uid;
+                    dto.CreatedAt = DateTime.UtcNow;
                     dto.UserName = userName;
+                    dto.UpdatedBy = null;
+                    dto.UpdatedAt = null;
                     var result = await service.CreateServiceAd(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -315,6 +322,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
                     dto.UpdatedBy = uid;
+                    dto.UpdatedAt = DateTime.UtcNow;
                     dto.UserName = userName;
                     var result = await service.UpdateServiceAd(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -378,16 +386,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceGetAllEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getall", static async Task<Results<Ok<List<ServicesDto>>, ProblemHttpResult>>
+            group.MapPost("/getall", static async Task<Results<Ok<List<ServicesIndex>>, ProblemHttpResult>>
             (
-                IServices service,
+                [FromServices] ISearchService service,
+                [FromBody] CommonSearchRequest request,
                 CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllServiceAds(cancellationToken);
-                    return TypedResults.Ok(result);
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ServicesIndex,request);
+                    return TypedResults.Ok(result.ServicesItems);
                 }
                 catch (Exception ex)
                 {
@@ -413,7 +422,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 try
                 {
                     var result = await service.GetServiceAdById(id, cancellationToken);
-
                     if (result == null)
                     {
                         return TypedResults.NotFound(new ProblemDetails

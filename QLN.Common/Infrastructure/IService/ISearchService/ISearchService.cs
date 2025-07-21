@@ -11,6 +11,7 @@ namespace QLN.Common.Infrastructure.IService.ISearchService
     public interface ISearchService
     {
         Task<CommonSearchResponse> SearchAsync(string indexName, CommonSearchRequest request);
+        Task<CommonSearchResponse> GetAllAsync(string indexName, CommonSearchRequest request);
         Task<string> UploadAsync(CommonIndexRequest request);
         Task<T?> GetByIdAsync<T>(string indexName, string key);
         Task DeleteAsync(string indexName, string key);

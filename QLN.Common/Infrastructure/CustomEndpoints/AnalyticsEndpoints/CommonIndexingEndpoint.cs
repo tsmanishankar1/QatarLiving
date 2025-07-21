@@ -21,7 +21,6 @@ public static class CommonIndexingEndpoints
 {
     public static RouteGroupBuilder MapCommonIndexingEndpoints(this RouteGroupBuilder group)
     {
-        // ✅ Global search endpoint - /api/indexes/search?index=classifiedsitems
         group.MapPost("/search", async (
                 [FromQuery] string index,
                 [FromBody] CommonSearchRequest req,
@@ -71,7 +70,38 @@ public static class CommonIndexingEndpoints
         .WithSummary("Search documents in any index")
         .WithDescription("Search for documents using ?index=classifiedsitems. Supports both regular property filters and JSON attribute filters.");
 
-        // ✅ Upload endpoint - /api/indexes/upload
+        group.MapPost("/getAll", async (
+            [FromQuery] string index,
+            [FromBody] CommonSearchRequest req,
+            [FromServices] ISearchService svc,
+            [FromServices] ILoggerFactory logFac
+        ) =>
+        {
+            var logger = logFac.CreateLogger("CommonIndexing");
+
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index parameter required", Status = 400 });
+
+            if (req is null)
+                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Payload required", Status = 400 });
+
+            try
+            {
+                var response = await svc.GetAllAsync(index, req);
+                return Results.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "GetAll error for '{Index}'", index);
+                return Results.Problem("GetAll Error", ex.Message, 500);
+            }
+        })
+        .WithName("GetAllIndexDocuments")
+        .WithTags("Search")
+        .WithSummary("Get all documents with filters, no default sorting")
+        .WithDescription("Returns all documents using filters, but skips internal default sorting logic.");
+
+
         group.MapPost("/upload", async (
                 [FromBody] CommonIndexRequest req,
                 [FromServices] ISearchService svc,
