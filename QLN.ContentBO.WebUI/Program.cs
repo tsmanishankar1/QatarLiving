@@ -1,11 +1,12 @@
-using MudBlazor.Services;
-using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Services;
-using QLN.ContentBO.WebUI.Handlers;
 using Microsoft.AspNetCore.Components.Authorization;
-using QLN.ContentBO.WebUI.Models;
+using MudBlazor.Extensions;
+using MudBlazor.Services;
 using NLog;
 using NLog.Web;
+using QLN.ContentBO.WebUI.Handlers;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
 
 // Early init of NLog to allow startup and exception logging, before host is built
 var logger = LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
@@ -26,6 +27,7 @@ try
     builder.Services.AddServerSideBlazor();
 
     builder.Services.AddMudServices();
+    builder.Services.AddMudServicesWithExtensions();
 
     builder.Services.AddAuthentication();
 

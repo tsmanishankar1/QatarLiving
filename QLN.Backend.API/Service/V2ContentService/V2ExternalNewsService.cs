@@ -147,17 +147,40 @@ namespace QLN.Backend.API.Service.V2ContentService
             return response;
         }
 
-        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
+        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
+   int categoryId,
+   int subCategoryId,
+   string? status,
+   int? page,
+   int? pageSize,
+   CancellationToken cancellationToken)
         {
-            var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}";
-            var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
-                HttpMethod.Get,
-                V2Content.ContentServiceAppId,
-                url,
-                cancellationToken
-            );
-            return response;
+            var queryParams = new List<string>();
+            if (!string.IsNullOrWhiteSpace(status)) queryParams.Add($"status={status}");
+            if (page.HasValue) queryParams.Add($"page={page.Value}");
+            if (pageSize.HasValue) queryParams.Add($"pageSize={pageSize.Value}");
+
+            var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+            var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}{query}";
+
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
+                    HttpMethod.Get,
+                    V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                );
+
+                return response ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error invoking method from content service");
+                throw;
+            }
         }
+
         public async Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO dto, CancellationToken cancellationToken)
         {
             try

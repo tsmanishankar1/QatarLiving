@@ -6,6 +6,7 @@ using QLN.Common.Infrastructure;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
+using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -523,25 +524,90 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
-        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken)
+        public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
+            int categoryId,
+            int subCategoryId,
+            string? status,
+            int? page,
+            int? pageSize,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var ids = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey) ?? new();
+                var ids = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
-                var stateItems = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, ids, parallelism: null, metadata: null, cancellationToken);
-                return stateItems
+                var stateItems = await _dapr.GetBulkStateAsync(
+                    V2Content.ContentStoreName,
+                    ids,
+                    parallelism: null,
+                    metadata: null,
+                    cancellationToken);
+
+                var articles = stateItems
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }))
-                    .Where(a => a?.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId) == true)
+                    .Select(i =>
+                    {
+                        try
+                        {
+                            return JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to deserialize article with key {Key}", i.Key);
+                            return null;
+                        }
+                    })
+                    .Where(a => a != null &&
+                                a.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId))
+                    .ToList();
+
+                // ✅ Apply status filter only if valid
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    switch (status.Trim().ToLower())
+                    {
+                        case "published":
+                            articles = articles
+                                .Where(a => a.Categories.Any(c => c.SlotId == 14))
+                                .ToList();
+                            break;
+
+                        case "unpublished":
+                            articles = articles
+                                .Where(a => a.Categories.Any(c => c.SlotId == 15))
+                                .ToList();
+                            break;
+
+                        // Optional: ignore invalid statuses
+                        default:
+                            _logger.LogWarning("Unknown status filter: {Status}", status);
+                            break;
+                    }
+                }
+
+                // ✅ Apply pagination only if page and pageSize are provided
+                int currentPage = page.HasValue && page.Value > 0 ? page.Value : 1;
+                int currentPageSize = pageSize.HasValue && pageSize.Value > 0 ? pageSize.Value : 50;
+
+                return articles
+                    .Skip((currentPage - 1) * currentPageSize)
+                    .Take(currentPageSize)
                     .ToList();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching articles by subcategory");
+                _logger.LogError(ex, "Error occurred while getting articles by subcategoryId {SubcategoryId} in category {CategoryId}", subCategoryId, categoryId);
                 throw;
             }
         }
+
 
         public async Task<string> UpdateNewsArticleAsync(
       V2NewsArticleDTO dto,
@@ -1265,8 +1331,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 var subKey = subDto.SubCategoryName.ToLowerInvariant().Replace(" ", "_");
                 var pageName = $"qln_{catKey}_{subKey}";
-
-                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, cancellationToken);
+                var status = string.Empty;
+                var page = 1;
+                var pageSize = 50;
+                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status,page, pageSize, cancellationToken);
                 _logger.LogInformation("Fetched {Count} articles for CategoryId={CategoryId} and SubCategoryId={SubCategoryId}", dtos.Count, categoryId, subCategoryId);
 
                 var articlesInSlot1to4 = dtos
