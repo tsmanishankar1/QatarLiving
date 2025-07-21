@@ -341,16 +341,34 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             return "Slots updated successfully.";
         }
 
-        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, CancellationToken cancellationToken = default)
+        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(pickId))
                 throw new ArgumentException("Pick ID must be provided.", nameof(pickId));
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID must be provided.", nameof(userId));
+
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
             try
             {
                 _logger.LogInformation("Attempting delete for seasonal pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
+
+                string indexKey = vertical.ToLower() switch
+                {
+                    Verticals.Classifieds => ItemsIndexKey,
+                    Verticals.Services => ItemsServiceIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+
+                if (!index.Contains(pickId))
+                {
+                    _logger.LogWarning("PickId {PickId} not found in vertical index: {Vertical}", pickId, vertical);
+                    throw new UnauthorizedAccessException($"PickId '{pickId}' does not belong to vertical '{vertical}'.");
+                }
 
                 var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, pickId);
                 if (pick == null)
