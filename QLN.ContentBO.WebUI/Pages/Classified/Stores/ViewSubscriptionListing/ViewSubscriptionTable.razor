@@ -67,10 +67,12 @@
                             <MudTd>
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true"AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight"Class="menu-icon-dark">
                                     <MudMenuItem OnClick="@(() => EditOrder(context))">
-                                        <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" /> Edit
+                                        <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" /> 
+                                         <span class="menu-text">Edit</span>
                                     </MudMenuItem>
                                     <MudMenuItem OnClick="@(() => CancelOrder(context))">
-                                        <img src="/qln-images/cancel.svg" alt="cancel" />Cancel
+                                        <img src="/qln-images/cancel.svg" alt="cancel" />
+                                        <span class="menu-text">Cancel</span>
                                     </MudMenuItem>
                                 </MudMenu>
                             </MudTd>
