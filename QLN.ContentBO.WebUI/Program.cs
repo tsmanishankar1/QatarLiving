@@ -77,12 +77,14 @@ try
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
-
-       builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
+    builder.Services.AddHttpClient<IClassifiedsService, ClassifiedsService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
-
+    builder.Services.AddHttpClient<IBannerService, BannerService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     var app = builder.Build();
 

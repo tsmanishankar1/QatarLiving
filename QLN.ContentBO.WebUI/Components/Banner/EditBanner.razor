@@ -1,0 +1,312 @@
+@page "/manage/banner/editbanner/{Id:guid}"
+@using MudBlazor
+@inherits EditBannerBase
+<MudText Class="mb-1 pt-4" Style="font-weight: 600; font-size: 24px;">Edit Banner</MudText>
+<EditForm Model="@bannerModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <MudPaper Elevation="0" Class="pa-4" Style="background-color: #FAFAFA;">
+        <MudGrid>
+            <MudItem xs="6">
+                <MudText Class="field-heading">Banner Location *
+                </MudText>
+                <MudMenu @ref="_menu"
+        Class=""
+         AnchorOrigin="Origin.BottomCenter"
+         TransformOrigin="Origin.BottomCenter"
+         OffsetY="true"
+         Style="width: 100%;">
+
+    <ActivatorContent>
+        <MudTextField T="string"
+                      @bind-Value="_displayText"
+                      Placeholder="Select Banners"
+                      FullWidth=true
+                      ReadOnly="true"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@Icons.Material.Filled.ArrowDropDown"
+                      Style="width: 100%; background-color: white;" />
+    </ActivatorContent>
+
+    <ChildContent>
+        <MudPaper Class="pa-3" Style="width: 480px; overflow-y: auto;">
+            @foreach (var group in bannerPageTypes)
+            {
+                <MudText Typo="Typo.body1" Class="mt-2 mb-1" Color="Color.Primary">
+                    @group.BannerPageName
+                </MudText>
+
+                @foreach (var item in group.bannertypes)
+                {
+                    <MudCheckBox T="bool"
+                                Color="Color.Primary"
+                                 Label="@item.BannerTypeName"
+                                 Value="@IsChecked(item)"
+                                 ValueChanged="val => OnCheckedChanged(item, val, group.VerticalId, group.SubVerticalId, group.Id)" />
+                }
+            }
+        </MudPaper>
+    </ChildContent>
+
+</MudMenu>
+
+                <MudText Class="field-heading pt-2">Analytics Tracking ID</MudText>
+                <MudTextField MaxLength="255" @bind-Value="bannerModel.AnalyticsTrackingId" Placeholder="Analytics Tracking ID"
+                    Variant="Variant.Outlined" Style="background-color: white;" />
+                <div class="py-2">
+                 <ValidationMessage For="@(() => bannerModel.AnalyticsTrackingId)" />
+                 </div>
+                     <MudText Class="field-heading">Status
+                </MudText>
+                <MudRadioGroup T="bool" @bind-Value="bannerModel.Status" Required="true"
+                    RequiredError="Status is required." For="@(() => bannerModel.Status )" Class="mb-2">
+                    <MudRadio T="bool" Value="true" Color="Color.Primary">Active</MudRadio>
+                    <MudRadio T="bool" Value="false" Color="Color.Primary">Inactive</MudRadio>
+                </MudRadioGroup>
+                <MudText Class="field-heading">Alt Text *
+                </MudText>
+                <MudTextField MaxLength="255" @bind-Value="bannerModel.AltText" Placeholder="Image Alt Text" Variant="Variant.Outlined"
+                    Style="background-color: white;" />
+                <div class="py-2">
+                 <ValidationMessage For="@(() => bannerModel.AltText)" />
+                 </div>
+
+       
+                <MudText Class="field-heading">Link URL *
+                </MudText>
+                <MudTextField MaxLength="255" @bind-Value="bannerModel.LinkUrl" Placeholder="Link URL" Variant="Variant.Outlined"
+                    Style="background-color: white;" />
+                    <div class="py-2">
+                 <ValidationMessage For="@(() => bannerModel.LinkUrl)" />
+                 </div>
+
+                <MudText Class="field-heading">Date
+                </MudText>
+
+                 <MudGrid GutterSize="20px">
+                    <MudItem xs="12" sm="6">
+                       <MudDatePicker Label="Start date"
+                       Variant="Variant.Outlined"
+                       Style="background-color: white;"
+                       @bind-Date="_startDate" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker Label="End date"
+                       Variant="Variant.Outlined"
+                       Style="background-color: white;"
+                       @bind-Date="_endDate" />
+                    </MudItem>
+                </MudGrid> 
+                  @if (!string.IsNullOrEmpty(_DateError))
+                { 
+                    <div class="mud-error-text">@_DateError</div>
+                } 
+            
+                <MudText Class="field-heading pt-2">Duration
+                    (in seconds)</MudText>
+                <MudNumericField T="int" @bind-Value="bannerModel.Duration" Placeholder="Duration"
+                    Variant="Variant.Outlined" Min="1" Style="background-color: white;" />
+                
+                <MudText Class="field-heading pt-2">Banner Size *</MudText>
+                <MudSelect T="string" Placeholder="Select Banner Size" @bind-Value="bannerModel.BannerSize" Variant="Variant.Outlined" Style="background-color: white;">
+                @foreach (var size in BannerSizes)
+                {
+                    <MudSelectItem Value="@size">@size</MudSelectItem>
+                }
+                </MudSelect>
+                <div class="py-2">
+                 <ValidationMessage For="@(() => bannerModel.BannerSize)" />
+                 </div>
+            
+                <MudText Class="field-heading">
+                    Availability</MudText>
+              <div class="d-flex align-center gap-4">
+                <MudCheckBox @bind-Value="bannerModel.IsDesktopAvailability" Label="Desktop Availability" Color="Color.Primary"></MudCheckBox>
+                <MudCheckBox @bind-Value="bannerModel.IsMobileAvailability" Label="Mobile Availability" Color="Color.Primary"></MudCheckBox>
+            </div>
+                 @if (!string.IsNullOrEmpty(_AvailabilityError))
+                { 
+                    <div class="mud-error-text">@_AvailabilityError</div>
+                } 
+                 </MudItem>
+   
+
+ <MudItem xs="6">
+    <div class="d-flex flex-column">
+        <div>
+            <MudText Class="field-heading">Desktop Banner
+                Image</MudText>
+            <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="HandleDesktopImageChanged" Disabled="@(bannerModel.IsDesktopAvailability == false)"
+                MaximumFileCount="1" MaxFileSize="10485760">
+                <ActivatorContent>
+                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center"
+                        Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
+                        @if (!string.IsNullOrEmpty(bannerModel.DesktopImage))
+                        {
+                            <img src="@bannerModel.DesktopImage" alt="Desktop Cover Image Preview"
+                                style="width: 100%; max-height: 200px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center">
+                                <div class="event-icon-circle">
+                                    <img src="/qln-images/upload_icon.svg" class="event-file-upload-style" alt="Upload" />
+                                </div>
+                                <div class="mt-1" style="color: #FF7F38;">Desktop Cover Image</div>
+                            </div>
+                        }
+                    </MudPaper>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @if (!string.IsNullOrEmpty(bannerModel.DesktopImage))
+            {
+                <MudPaper Elevation="0" Class="event-image-picker-style mt-2">
+                    <div class="event-upload-action-style">
+                        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="HandleDesktopImageChanged" Disabled="@(bannerModel.IsMobileAvailability == false)"
+                            MaximumFileCount="1" MaxFileSize="10485760">
+                            <ActivatorContent>
+                                <MudButton>
+                                    <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        <MudButton OnClick="() => DeleteImage(nameof(bannerModel.DesktopImage))">
+                            <img src="/qln-images/delete_icon.svg" alt="Delete" class="event-action-icon-style" />
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
+                 @if (!string.IsNullOrEmpty(_DesktopImageError))
+                { 
+                    <div class="mud-error-text">@_DesktopImageError</div>
+                } 
+        </div>
+
+        <MudText Class="field-heading pt-6">Mobile Banner
+            Image</MudText>
+            <MudFileUpload  T="IBrowserFile" Accept="image/png,image/jpeg"
+                OnFilesChanged="HandleMobileImageChanged" MaximumFileCount="1" MaxFileSize="10485760">
+                <ActivatorContent>
+                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center"
+                        Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
+                        @if (!string.IsNullOrEmpty(bannerModel.MobileImage))
+                        {
+                            <img src="@bannerModel.MobileImage" alt="Mobile Cover Image Preview"
+                                style="width: 100%; max-height: 200px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column align-center">
+                                <div class="event-icon-circle">
+                                    <img src="/qln-images/upload_icon.svg" class="event-file-upload-style" alt="Upload" />
+                                </div>
+                                <div class="mt-1" style="color: #FF7F38;">Mobile Cover Image</div>
+                            </div>
+                        }
+                    </MudPaper>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @if (!string.IsNullOrEmpty(bannerModel.MobileImage))
+            {
+                <MudPaper Elevation="0" Class="event-image-picker-style mt-2" Style="">
+                    <div class="event-upload-action-style">
+                        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="HandleMobileImageChanged"
+                            MaximumFileCount="1" MaxFileSize="10485760">
+                            <ActivatorContent>
+                                <MudButton>
+                                    <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                                </MudButton>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                        <MudButton OnClick="() => DeleteImage(nameof(bannerModel.MobileImage))">
+                            <img src="/qln-images/delete_icon.svg" alt="Delete" class="event-action-icon-style" />
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
+            @if (!string.IsNullOrEmpty(_MobileImageError))
+                { 
+                    <div class="mud-error-text">@_MobileImageError</div>
+                } 
+    </div>
+    </MudItem>
+        </MudGrid>
+         </MudPaper>
+    <MudGrid Style="padding-top: 30px; padding-bottom: 20px;">
+        <MudItem xs="6">
+            <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
+                <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
+                <button type="submit" class="event-custom-add full-width">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Color="Color.Inherit" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
+                </button>
+            </MudStack>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+<Style>
+    .field-heading {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: #00426d;
+        padding-bottom: 16px;
+    }
+
+    .title-heading {
+        font-size: 24px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: #00426d;
+        padding-bottom: 16px;
+    }
+
+
+    .event-custom-close {
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 8px;
+        border: 1px solid #D5D7DA;
+        color: #242424;
+        text-transform: none;
+        background-color: transparent;
+        background-color: white;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .event-image-picker-style {
+        background-color: #000000CC;
+        width: 100%;
+        height: 39px;
+    }
+
+    .event-custom-add {
+        background-color: #FF7F38;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 4px;
+        color: white;
+        text-transform: none;
+        border: none;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+
+    
+</Style>
