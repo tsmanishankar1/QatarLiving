@@ -1,48 +1,13 @@
-@page "/manage/classified/stores/createform/{CompanyName}"
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
 
 @using QLN.ContentBO.WebUI.Models;
-@inherits CreateStoreBase
+@inherits EditFormListBase
 
-<div class="create-form-container">
-    <MudGrid GutterSize="24px">
-        <MudItem xs="12" md="5">
-            <EditForm Model="Ad" OnValidSubmit="SubmitForm">
+<div class="create-form-list">
+            <EditForm Model="Company" OnValidSubmit="SubmitForm">
                 <DataAnnotationsValidator />
-                <div>
-                  
-                    <h3 class="form-heading-f2">Company Name</h3>
-                    <h3 class="form-heading-f1">Lulu</h3>
-                    <div style="display: flex; gap: 16px; align-items: center;">
-                        <!-- Back Button -->
-                        <MudButton Variant="Variant.Outlined"
-                                   Color="Color.Warning"
-                                   StartIcon="@Icons.Material.Filled.ArrowBack"
-                                   Style="width: 100px; text-transform:none;"
-                                   OnClick="onNavigationBack">
-                            Back
-                        </MudButton>
-
-                        <!-- Hold Button -->
-                        <MudButton StartIcon="@Icons.Material.Filled.Pause"
-                                   Style="background-color: #FF7F38; color: white; width: 100px; text-transform:none;">
-                            Hold
-                        </MudButton>
-
-                        <!-- Need Changes Button -->
-                        <MudButton Style="background-color: #FF7F38; color:white; width:130px;font-size:12px;  text-transform:none;white-space: nowrap;">
-                            Need Changes
-                        </MudButton>
-
-                        <!-- Cancel Button -->
-                        <MudButton StartIcon="@Icons.Material.Filled.Delete"
-                                   Style="background-color: red; color: white; width:110px;text-transform:none;">
-                            Cancel
-                        </MudButton>
-                    </div>
-
                     <MudTextField Class="white-bg mt-4" Variant="Variant.Outlined" T="string" Label="Company Name"
-                                  @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
+                                  @bind-Value="Company.Title" For="@(() => Company.Title)" FullWidth="true" />
 
                     @foreach (var field in FieldOptions)
                     {
@@ -58,16 +23,16 @@
                                   Placeholder="Location"
                                   Class="white-bg mt-2"
                                   FullWidth="true"
-                                  @bind-Value="Location"
-                                  For="@(() => Location)"
+                                  @bind-Value="Company.Location"
+                                  For="@(() => Company.Location)"
                                   Adornment="Adornment.End"
                                   AdornmentIcon="@Icons.Material.Filled.LocationOn" />
                     <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" Class="py-3" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
                         <ActivatorContent>
                             <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                                @if (!string.IsNullOrEmpty(CoverImage))
+                                @if (!string.IsNullOrEmpty(Company.CoverImageBase64))
                                 {
-                                    <img src="@CoverImage" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
+                                    <img src="@Company.CoverImageBase64" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
                                 }
                                 else
                                 {
@@ -87,7 +52,7 @@
                     {
                         <div class="mud-error-text">@_coverImageError</div>
                     }
-                    @if (!string.IsNullOrEmpty(CoverImage))
+                    @if (!string.IsNullOrEmpty(Company.CoverImageBase64))
                     {
                         <MudPaper Elevation="0" Class="event-image-picker-style">
                             <div class="event-upload-action-style">
@@ -111,7 +76,7 @@
                         <PhoneNumberInput SelectedCountry="@SelectedPhoneCountry"
                                           Placeholder="Phone Number*"
                                           SelectedCountryChanged="@OnPhoneCountryChanged"
-                                          PhoneNumber="@Ad.PhoneNumber"
+                                          PhoneNumber="@Company.PhoneNumber"
                                           PhoneNumberChanged="@OnPhoneChanged" />
                     </div>
                     <div class="form-group mt-2">
@@ -119,39 +84,39 @@
                         <PhoneNumberInput SelectedCountry="@SelectedWhatsappCountry"
                                           Placeholder="WhatsApp Number"
                                           SelectedCountryChanged="@OnWhatsappCountryChanged"
-                                          PhoneNumber="@Ad.WhatsappNumber"
+                                          PhoneNumber="@Company.WhatsappNumber"
                                           PhoneNumberChanged="@OnWhatsappChanged" />
                     </div>
                     <MudTextField Class="white-bg mt-2"
                                   Variant="Variant.Outlined"
                                   T="string"
                                   Label="Email"
-                                  @bind-Value="Email"
-                                  For="@(() => Email)"
+                                  @bind-Value="Company.Email"
+                                  For="@(() => Company.Email)"
                                   FullWidth="true" />
 
                     <MudTextField Class="white-bg mt-2"
                                   Variant="Variant.Outlined"
                                   T="string"
                                   Placeholder="Website URL"
-                                  @bind-Value="WebsiteUrl"
-                                  For="@(() => WebsiteUrl)"
+                                  @bind-Value="Company.WebsiteUrl"
+                                  For="@(() => Company.WebsiteUrl)"
                                   FullWidth="true" />
 
                     <MudTextField Class="white-bg mt-2"
                                   Variant="Variant.Outlined"
                                   T="string"
                                   Placeholder="Facebook URL"
-                                  @bind-Value="FacebookUrl"
-                                  For="@(() => FacebookUrl)"
+                                  @bind-Value="Company.FacebookUrl"
+                                  For="@(() => Company.FacebookUrl)"
                                   FullWidth="true" />
 
                     <MudTextField Class="white-bg mt-2"
                                   Variant="Variant.Outlined"
                                   T="string"
                                   Placeholder="Instagram URL"
-                                  @bind-Value="InstagramUrl"
-                                  For="@(() => InstagramUrl)"
+                                  @bind-Value="Company.InstagramUrl"
+                                  For="@(() => Company.InstagramUrl)"
                                   FullWidth="true" />
 
                     <h3 class="form-heading">Operating Hours</h3>
@@ -159,7 +124,7 @@
                         <MudItem xs="12" sm="6">
                             <MudDatePicker Label="Start day"
                                            T="DateTime?"
-                                           @bind-Date="StartDay"
+                                           @bind-Date="Company.StartDay"
                                            Placeholder="eg: Sunday"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Filled.Event"
@@ -170,7 +135,7 @@
                         <MudItem xs="12" sm="6">
                             <MudDatePicker Label="End day"
                                            T="DateTime?"
-                                           @bind-Date="EndDay"
+                                           @bind-Date="Company.EndDay"
                                            Placeholder="eg: Thursday"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Filled.Event"
@@ -181,7 +146,7 @@
                         <MudItem xs="12" sm="6">
                             <MudTimePicker Label="Start hour"
                                            T="TimeSpan?"
-                                           @bind-Time="StartHour"
+                                           @bind-Time="Company.StartHour"
                                            Placeholder="eg: 8:00 AM"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Filled.AccessTime"
@@ -192,7 +157,7 @@
                         <MudItem xs="12" sm="6">
                             <MudTimePicker Label="End hour"
                                            T="TimeSpan?"
-                                           @bind-Time="EndHour"
+                                           @bind-Time="Company.EndHour"
                                            Placeholder="eg: 5:00 PM"
                                            Adornment="Adornment.End"
                                            AdornmentIcon="@Icons.Material.Filled.AccessTime"
@@ -211,25 +176,25 @@
                     }
 
                     <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="User Designation*"
-                                  @bind-Value="UserDesignation" For="@(() => UserDesignation)" FullWidth="true" />
+                                  @bind-Value="Company.UserDesignation" For="@(() => Company.UserDesignation)" FullWidth="true" />
 
 
 
-                    <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
+                    <MudExRichTextEdit @bind-Value="Company.Description" @ref="Editor"
                                        Height="350" Placeholder="Start Typing"
-                                       For="@(() => Ad.Description)">
+                                       For="@(() => Company.Description)">
                     </MudExRichTextEdit>
                     <h3 class="form-heading">License & Visibility</h3>
                     <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="CR Number"
-                                  @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
+                                  @bind-Value="Company.XmlLink" For="@(() => Company.XmlLink)" FullWidth="true" />
 
                     <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
                         <MudText Typo="Typo.body1">
                             Certificate / Warranty*
-                            @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                            @if (!string.IsNullOrEmpty(Company.CertificateFileName))
                             {
 
-                                <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
+                                <MudText Typo="Typo.caption" Class="ml-2">@Company.CertificateFileName</MudText>
                                 <MudIconButton Icon="@Icons.Material.Outlined.Close"
                                                Size="Size.Small"
                                                Color="Color.Error"
@@ -260,86 +225,13 @@
                     <MudStack Row Justify="Justify.SpaceBetween" Class="mt-4" Style="width:100%">
                         <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Style="width:100%">Submit</MudButton>
                     </MudStack>
-                </div>
             </EditForm>
-        </MudItem>
-         <MudItem xs="12" md="4" Style="margin-left:4px;margin-top:10px">
-            <!-- Contact Information -->
-
-            <MudText Class="heading-style mt-2 ml-14">Contact Information</MudText>
-
-            <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
-                <ActivatorContent>
-                    <MudPaper Elevation="1"
-                              Class="d-flex flex-column align-center justify-center mt-4 p-2"
-                              Style="height: 240px; width:240px; border: 2px dashed #ccc; cursor: pointer;">
-                        @if (!string.IsNullOrEmpty(_localLogoBase64))
-                        {
-                            <img src="@($"data:image/*;base64,{_localLogoBase64}")"
-                                 alt="Company Logo"
-                                 style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-
-                            <div style="position: absolute; bottom: 0; color:white; width:240px; height: 24px; background-color: #000000CC; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                <MudIconButton Icon="@Icons.Material.Outlined.Edit"
-                                               Style="color: white; padding: 0;" />
-                                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
-                                               Style="color: white; padding: 0;"
-                                               OnClick="ClearLogo" />
-                            </div>
-                        }
-                        else if (!string.IsNullOrEmpty(CompanyLogo))
-                        {
-                            <img src="@CompanyLogo"
-                                 alt="Company Logo"
-                                 style="max-height: 100%; max-width: 100%; object-fit: contain;" />
-
-                            <div style="position: absolute; bottom: 0; color:white; width:240px; height: 24px; background-color: #000000CC; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                                <MudIconButton Icon="@Icons.Material.Outlined.Edit"
-                                               Style="color: white; padding: 0;" />
-                                <MudIconButton Icon="@Icons.Material.Outlined.Delete"
-                                               Style="color: white; padding: 0;"
-                                               OnClick="ClearLogo" />
-                            </div>
-                        }
-                        else
-                        {
-                            <div style="width: 64px; height: 64px; background-color: #E0E0E0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <img src="/qln-images/upload_icon.svg" alt="Upload" style="height: 24px;" />
-                            </div>
-                            <MudText style="margin-top: 8px; color: #FF7F38; font-size: 14px; font-weight: 500;">Upload image</MudText>
-                        }
-
-                    </MudPaper>
-                </ActivatorContent>
-            </MudFileUpload>
-
-
-            <MudText Typo="Typo.caption" Class="mt-1">Recommended size: 1920�1200, Max: 10MB</MudText>
-           
-        </MudItem>
-     
-    </MudGrid>
 </div>
 
 <style>
-    .back-button {
-        display: flex;
-        align-items: center;
-        border: 1px solid var(--color-accent);
-        color: var(--color-accent);
-        background-color: transparent;
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-weight: 500;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background-color 0.2s ease-in-out;
+    .create-form-list {
+         font-family: 'Public Sans', sans-serif;
     }
-
-    .back-icon {
-        margin-right: 6px;
-    }
-
     .form-heading {
         color: var(--color-primary);
         font-size: 18px;

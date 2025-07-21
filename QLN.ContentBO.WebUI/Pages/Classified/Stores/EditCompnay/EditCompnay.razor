@@ -1,0 +1,43 @@
+@page "/manage/classified/edit/compnay/{CompanyName}"
+@using QLN.ContentBO.WebUI.Models
+@inherits EditCompnayBase
+
+ <button class="back-button" @onclick="GoBack">
+     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+        Back
+</button>
+<EditAdAction Company="@Company"/>
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <EditFormList Company="@Company" />
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <CompanyLogo Company="@Company" />
+        </MudItem>
+    </MudGrid>
+</div>
+
+<style>
+    .create-form-container {
+        padding: 20px 0;
+    }
+    .back-button {
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--color-accent); 
+        color: var(--color-accent);            
+        background-color: transparent;
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .back-icon {
+        margin-right: 6px;
+    }
+</style>

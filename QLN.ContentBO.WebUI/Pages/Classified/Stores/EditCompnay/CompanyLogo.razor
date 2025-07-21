@@ -1,0 +1,124 @@
+@inherits CompanyLogoBase
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="company-logo-section">
+<h3 class="section-title">Company Logo</h3>
+
+<MudFileUpload T="IBrowserFile"
+               Accept="image/*"
+               MaxFileSize="10485760"
+               FilesChanged="HandleLogoFileSelected">
+    <ActivatorContent>
+        <MudPaper Class="upload-box">
+
+            @if (HasLogo)
+            {
+                <img src="@LogoSource" alt="Company Logo" class="logo-image" />
+
+                <div class="logo-overlay">
+                    <MudIconButton Icon="@Icons.Material.Outlined.Edit" Class="logo-action" />
+                    <MudIconButton Icon="@Icons.Material.Outlined.Delete" Class="logo-action" OnClick="ClearLogo" />
+                </div>
+            }
+            else
+            {
+                <div class="upload-placeholder">
+                    <img src="/qln-images/upload_icon.svg" alt="Upload" class="upload-icon" />
+                </div>
+                <MudText Class="upload-text">Upload image</MudText>
+            }
+
+        </MudPaper>
+    </ActivatorContent>
+</MudFileUpload>
+
+<MudText Typo="Typo.caption" Class="recommendation-text">
+    Recommended image size:  Minimum 1920 x 1200 pixels
+</MudText>
+</div>
+
+<style>
+    .company-logo-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 240px;
+    }
+    .section-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--color-text-heading);
+        margin-bottom: 16px;
+        text-align: center;
+    }
+
+    .upload-box {
+        height: 240px;
+        width: 240px;
+        border: 2px dashed #ccc;
+        cursor: pointer;
+        position: relative;
+        padding: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .logo-image {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .logo-overlay {
+        position: absolute;
+        bottom: 0;
+        width: 240px;
+        height: 24px;
+        background-color: #000000CC;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .logo-action {
+        color: white;
+        padding: 0;
+    }
+
+    .upload-placeholder {
+        width: 64px;
+        height: 64px;
+        background-color: var(--color-background-secondary-grey-light);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-icon {
+        height: 24px;
+    }
+
+    .upload-text {
+        margin-top: 8px;
+        color: var(--color-accent);
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .recommendation-text {
+        margin-top: 0.5rem;
+        color: var(--color-text-descripton);
+        max-width: 180px;
+        text-align: center;
+        font-weight:400;
+        font-size: 12px;
+    }
+</style>
