@@ -158,12 +158,12 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetBannerTypes");
+                Logger.LogError(ex, "ReOrderBanners");
             }
         }
         protected void NavigateToCreateBanner(Guid bannerTypeId)
         {
-            Navigation.NavigateTo($"/manage/banner/createbanner/{bannerTypeId}");
+            Navigation.NavigateTo($"/manage/banner/createbanner/{bannerTypeId}",forceLoad: true);
         }
 
 
