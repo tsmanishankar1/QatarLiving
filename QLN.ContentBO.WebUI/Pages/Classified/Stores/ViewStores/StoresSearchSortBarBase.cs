@@ -3,7 +3,7 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.StoresSearchSortBar
+namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
 {
 
     public class StoresSearchSortBarBase : ComponentBase

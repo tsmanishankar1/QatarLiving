@@ -53,7 +53,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
 
                 if (company == "lulu")
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Lulu",
                         Email = "lulu@example.com",
@@ -66,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
                 }
                 else if (company == "carrefour")
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Carrefour",
                         Email = "carrefour@example.com",
@@ -79,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
                 }
                 else
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Carrefour",
                         Email = "carrefour@example.com",
@@ -93,7 +93,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.CreateStore
             }
         }
 
-        private void PrepopulateForm(SubscriptionOrder order)
+        private void PrepopulateForm(ViewStoreList order)
         {
             Ad.Title = order.CompanyName;
             Email = order.Email;

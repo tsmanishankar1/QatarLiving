@@ -1,96 +1,20 @@
 @inherits ViewSubscriptionListingBase
-@using QLN.ContentBO.WebUI.Components.PaginationFooter
 @using QLN.ContentBO.WebUI.Models;
-@using QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing;
-@using QLN.ContentBO.WebUI.Pages.Classified.Stores.StoresSearchSortBar;
-@using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
-@using QLN.ContentBO.WebUI.Components.PaginationFooter
+
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
         <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
         <div class="community-table">
-            <MudPaper Class="pa-4">
-                @if (Listings == null || !Listings.Any())
-                {
-                    <div class="empty-card-wrapper d-flex flex-column align-items-center justify-content-center">
-                        <img src="/qln-images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
-                        <MudText Class="mx-6 py-4" Style="color: #242424; font-size: 15px;">
-                            No Deals Subscriptions yet.
-                        </MudText>
-                        <MudButton Style="background-color: white;
-                          border: 1px solid #FF7F38;
-                          color: #FF7F38;
-                          text-transform: none;
-                          padding-left: 67px;
-                          padding-right: 67px;
-                          margin-bottom: 300px ;" Class="daily-compact-button mt-2">
-                            Add Subscription
-                        </MudButton>
-                    </div>
-
-
-
-                }
-                else
-                {
-                    <MudTable Items="Listings" Hover="true" Bordered="true" Elevation="0" Class="mud-table event-custom-table"
-                              Style="border-radius: 12px; overflow: hidden; padding:20px border: 1px solid #F0F0F0; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); ">
-                        <HeaderContent>
-                            <MudTh class="header-cell">Order ID</MudTh>
-                            <MudTh class="header-cell">Subscription Type</MudTh>
-                            <MudTh class="header-cell">User Name</MudTh>
-                            <MudTh class="header-cell">Email</MudTh>
-                            <MudTh class="header-cell">Mobile</MudTh>
-                            <MudTh class="header-cell">Whatsapp</MudTh>
-                            <MudTh class="header-cell">Web Url</MudTh>
-                            <MudTh class="header-cell">Amount</MudTh>
-                            <MudTh class="header-cell">Status</MudTh>
-                            <MudTh class="header-cell">Start Date</MudTh>
-                            <MudTh class="header-cell">End Date</MudTh>
-                            <MudTh class="header-cell">Web Leads</MudTh>
-                            <MudTh class="header-cell">Email Leads</MudTh>
-                            <MudTh class="header-cell">WhatsApp Leads</MudTh>
-                            <MudTh class="header-cell">Phone Leads</MudTh>
-                            <MudTh class="header-cell">Actions</MudTh>
-                        </HeaderContent>
-
-                        <RowTemplate>
-                            <MudTd>@context.OrderId</MudTd>
-                            <MudTd>@context.SubscriptionType</MudTd>
-                            <MudTd>@context.UserName</MudTd>
-                            <MudTd>@context.Email</MudTd>
-                            <MudTd>@context.Mobile</MudTd>
-                            <MudTd>@context.Whatsapp</MudTd>
-                            <MudTd>@context.WebUrl</MudTd>
-                            <MudTd>@context.Amount</MudTd>
-                            <MudTd>@context.Status</MudTd>
-                            <MudTd>@context.StartDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-                            <MudTd>@context.EndDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-                            <MudTd>@context.WebLeads</MudTd>
-                            <MudTd>@context.EmailLeads</MudTd>
-                            <MudTd>@context.WhatsappLeads</MudTd>
-                            <MudTd>@context.PhoneLeads</MudTd>
-                            <MudTd>
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Class="menu-icon-dark">
-                                    <MudMenuItem OnClick="@(() => EditOrder(context))">
-                                        <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" /> Edit
-                                    </MudMenuItem>
-                                    <MudMenuItem OnClick="@(() => CancelOrder(context))">
-                                        <img src="/qln-images/cancel.svg" alt="cancel" />Cancel
-                                    </MudMenuItem>
-                                </MudMenu>
-                            </MudTd>
-                        </RowTemplate>
-
-                    </MudTable>
-                    <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
-                                      OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
-                }
-            </MudPaper>
-
-
+           <ViewSubscriptionTable 
+            Listings="@Listings"
+            TotalCount="@TotalCount"
+            CurrentPage="@currentPage"
+            PageSize="@pageSize"
+            OnPageChange="HandlePageChange"
+            OnPageSizeChange="HandlePageSizeChange"
+             />
         </div>
     </MudItem>
 </MudGrid>
