@@ -4,14 +4,39 @@
 @using QLN.ContentBO.WebUI.Components.EmptyCard
 @inherits BannerPreviewCardBase
 <div class="d-flex justify-end" style="padding-bottom: 20px;">
+   @if (!isReordering)
+{
     <MudButton 
-    Variant="Variant.Outlined" 
-    Color="@(!isReordering ? Color.Primary : Color.Error)" 
-    StartIcon="@(!isReordering ? Icons.Material.Filled.SwapVert : Icons.Material.Filled.Close)" 
-    Size="Size.Small"
-    OnClick="ToggleReorder">
-    @(!isReordering ? "Reorder Banners" : "Cancel Reorder")
-</MudButton>
+        Variant="Variant.Outlined" 
+        Color="Color.Primary" 
+        StartIcon="@Icons.Material.Filled.SwapVert" 
+        Size="Size.Small"
+        OnClick="ToggleReorder">
+        Reorder Banners
+    </MudButton>
+}
+else
+{
+    <div class="d-flex" style="gap: 8px;">
+        <MudButton 
+            Variant="Variant.Filled" 
+            Color="Color.Primary" 
+            StartIcon="@Icons.Material.Filled.Save" 
+            Size="Size.Small"
+            OnClick="SaveReorder">
+            Save
+        </MudButton>
+
+        <MudButton 
+            Variant="Variant.Outlined" 
+            Color="Color.Error" 
+            StartIcon="@Icons.Material.Filled.Close" 
+            Size="Size.Small"
+            OnClick="ResetOrder">
+            Cancel
+        </MudButton>
+    </div>
+}
 </div>
 @if (true)
 {

@@ -19,6 +19,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
         [Inject] protected IDialogService DialogService { get; set; }
         [Parameter]
         public int verticalId { get; set; }
+        protected List<string> updatedOrder = new();
         protected bool isReordering = false;
         [Parameter]
         public int subVerticalId { get; set; }
@@ -86,40 +87,51 @@ namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
-            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-            var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
-            var result = await dialog.Result;
-            if (result is not null)
-            {
-                if (result.Canceled)
-                {
-                    isReordering = false;
-                    StateHasChanged();
-                    await ResetOrder();
-                }
-                if (!result.Canceled)
-                {
-                    isReordering = false;
-                    if (OnReorderCallBack.HasDelegate)
-                    {
-                        await OnReorderCallBack.InvokeAsync((newOrder, verticalId, subVerticalId, pageId));
-                    }
-                }
-            }
+           updatedOrder = newOrder; 
         }
         protected void ToggleReorder()
         {
             isReordering = !isReordering;
+            if (isReordering) { 
+                shouldInitializeSortable = true;
+            }
+            StateHasChanged();
         }
 
         protected void NavigateToEditBanner(Guid id)
         {
             Navigation.NavigateTo($"/manage/banner/editbanner/{id}");
         }
+        protected async Task SaveReorder()
+        {
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
+            var result = await dialog.Result;
+
+            if (result is not null && !result.Canceled)
+            {
+                isReordering = false;
+
+                if (OnReorderCallBack.HasDelegate && updatedOrder.Any())
+                {
+                    await OnReorderCallBack.InvokeAsync((updatedOrder, verticalId, subVerticalId, pageId));
+                }
+            }
+            else
+            {
+                isReordering = false;
+                await ResetOrder(); 
+            }
+            shouldInitializeSortable = true;
+            StateHasChanged();
+        }
+
         protected async Task ResetOrder()
         {
             try
             {
+                isReordering = false;
+                StateHasChanged();
                 await JS.InvokeVoidAsync("resetTableOrder");
             }
             catch (Exception ex)
