@@ -116,7 +116,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         //clasified bo
         public static IServiceCollection ClassifiedLandingBo(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<V2IClassifiedBoLandingService, V2ExternslClassifiedLandingService>();
+            services.AddTransient<IClassifiedBoLandingService, ExternalClassifiedLandingService>();
             return services;
         }
     }

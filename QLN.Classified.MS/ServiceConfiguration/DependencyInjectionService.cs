@@ -14,7 +14,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
     {
         public static IServiceCollection ClassifiedInternalServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<V2IClassifiedBoLandingService, V2InternalClassifiedLandigBo>();
+            services.AddScoped<IClassifiedBoLandingService, InternalClassifiedLandigBo>();
 
             services.AddTransient<IClassifiedService, ClassifiedService>();
             services.AddTransient<IServicesService, ServicesAdService>();
