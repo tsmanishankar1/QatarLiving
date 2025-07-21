@@ -138,8 +138,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
                 };
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey)
-                            ?? new List<string>();
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
 
                 if (!index.Any())
                 {
@@ -153,7 +152,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
                 var activePicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6))
+                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6))
                     .OrderByDescending(p => p.UpdatedAt)
                     .ToList();
 
@@ -199,7 +198,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
                 var slottedPicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive && p.SlotOrder >= 1 && p.SlotOrder <= 6)
+                    .Where(p => p != null && p.IsActive == true && p.SlotOrder >= 1 && p.SlotOrder <= 6)
                     .OrderBy(p => p.SlotOrder) 
                     .ToList();
 
@@ -214,7 +213,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithSeasonalPick(string vertical, string userId, Guid newPickId, int targetSlot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithSeasonalPick(string vertical, string? userId, Guid newPickId, int targetSlot, CancellationToken cancellationToken = default)
         {
             if (targetSlot < 1 || targetSlot > 6)
                 throw new ArgumentOutOfRangeException(nameof(targetSlot), "Slot must be between 1 and 6.");
@@ -276,14 +275,14 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(string vertical, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;           
 
             if (string.IsNullOrWhiteSpace(request.UserId))
                 throw new ArgumentException("UserId is required.");
 
-            if (string.IsNullOrWhiteSpace(vertical))
+            if (string.IsNullOrWhiteSpace(request.Vertical))
                 throw new ArgumentException("Vertical is required.");
 
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
@@ -293,11 +292,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
-            string indexKey = vertical.ToLower() switch
+            string indexKey = request.Vertical.ToLower() switch
             {
                 Verticals.Classifieds => ItemsIndexKey,
                 Verticals.Services => ItemsServiceIndexKey,
-                _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
             };
 
             var seasonalIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();

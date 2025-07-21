@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IContentService;
@@ -272,12 +273,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 IClassifiedBoLandingService service,
                 HttpContext context,
+                string vertical,
                 CancellationToken cancellationToken
                 ) =>
             {
                 try
                 {
-                    var result = await service.GetSeasonalPicks(Verticals.Classifieds, cancellationToken);
+                    var result = await service.GetSeasonalPicks(vertical, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -304,12 +306,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 IClassifiedBoLandingService service,
+                string vertical,
                 CancellationToken cancellationToken
                 ) =>
             {
                 try
                 {
-                    var result = await service.GetSlottedSeasonalPicks(Verticals.Classifieds, cancellationToken);
+                    var result = await service.GetSlottedSeasonalPicks(vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -334,6 +337,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 Guid pickId,
                 int slot,
+                string vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -351,7 +355,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(Verticals.Classifieds, userId, pickId, slot, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(vertical, userId, pickId, slot, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -376,6 +380,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 Guid pickId,
                 int slot,
                 string userId,
+                string vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -393,7 +398,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(Verticals.Classifieds, userId, pickId, slot, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(vertical, userId, pickId, slot, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -437,7 +442,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     if (string.IsNullOrWhiteSpace(request.UserId))
                         throw new ArgumentException("UserId is required...");
 
-                    var result = await service.ReorderSeasonalPickSlots(Verticals.Classifieds, request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -477,7 +482,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReorderSeasonalPickSlots(Verticals.Classifieds, request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
