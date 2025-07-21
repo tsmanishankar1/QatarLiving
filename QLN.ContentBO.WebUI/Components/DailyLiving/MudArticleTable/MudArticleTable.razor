@@ -1,5 +1,6 @@
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Extensions
 @inherits MudArticleTableBase
 @if (IsLoadingEvent)
 {
@@ -80,7 +81,7 @@ else{
                 }
             </MudTd>
         }
-        <MudTd DataLabel="Creation Date">@context.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Creation Date">@context.CreatedAt.ToQatarTime("dd-MM-yyyy")</MudTd>
         <MudTd>
              @if (context.Title == "Add Item")
                     {

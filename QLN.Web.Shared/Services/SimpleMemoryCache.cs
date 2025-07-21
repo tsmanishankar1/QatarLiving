@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Services.Interface;
@@ -18,27 +19,37 @@ namespace QLN.Web.Shared.Services
         private readonly IMemoryCache _memoryCache;
         private const string BannerCacheKey = "BannerResponseCacheKey";
         private const string DailyCacheKey = "DailyNewsResponseCacheKey";
+        private const string DailyCacheKeyV2 = "DailyNewsResponseV2CacheKey";
         private const string NewsCachePrefix = "News";
         private static readonly TimeSpan BannerCacheDuration = TimeSpan.FromMinutes(3);
         private static readonly TimeSpan DailyCacheDuration = TimeSpan.FromMinutes(1);
         private static readonly TimeSpan NewsCacheDuration = TimeSpan.FromMinutes(2);
+        private readonly NavigationPath _navigationPath;
 
         public SimpleMemoryCache(
             IEventService eventService,
             IContentService contentService,
             INewsService newsService,
             ILogger<SimpleMemoryCache> logger,
-            IMemoryCache memoryCache)
+            IMemoryCache memoryCache,
+            IOptions<NavigationPath> navigationPath
+            )
         {
             _eventService = eventService;
             _contentService = contentService;
             _newsService = newsService;
             _logger = logger;
             _memoryCache = memoryCache;
+            _navigationPath = navigationPath.Value;
         }
 
         public async Task<ContentsDailyPageResponse?> GetContentLandingAsync()
         {
+            var isV2 = _navigationPath.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase);
+
+            // Clear the other version's cache to avoid stale data conflict
+            _memoryCache.Remove(isV2 ? DailyCacheKey : DailyCacheKeyV2);
+
             if (_memoryCache.TryGetValue(DailyCacheKey, out ContentsDailyPageResponse? cachedDaily))
             {
                 return cachedDaily;
@@ -56,7 +67,15 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var result = await _contentService.GetDailyLPAsync();
+                HttpResponseMessage? result;
+                if (_navigationPath.ContentDaily.Contains("v2", StringComparison.OrdinalIgnoreCase))
+                {
+                    result = await _contentService.GetDailyLPV2Async();
+                }
+                else
+                {
+                    result = await _contentService.GetDailyLPAsync();
+                }
 
                 if (result != null && result.IsSuccessStatusCode && result.Content != null)
                 {

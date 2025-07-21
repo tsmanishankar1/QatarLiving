@@ -1,3 +1,4 @@
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using QLN.ContentBO.WebUI.Components.EmptyCard
@@ -182,9 +183,9 @@ else
                         </td>
                     } 
                     <td>
-                        @(context.Slot.Article?.CreatedAt != null 
-                        ? context.Slot.Article?.CreatedAt.ToString("dd-MM-yyyy") 
-                        : "-")
+                        @(context.Slot.Article?.CreatedAt != null
+                                    ? context.Slot.Article?.CreatedAt.ToQatarTime("dd-MM-yyyy")
+                                    : "-")
                     </td>
                     <td>
                         <div class="d-flex align-center gap-2">
