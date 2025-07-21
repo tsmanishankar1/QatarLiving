@@ -152,8 +152,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
                 var activePicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
-                    (p.EndDate == null || p.EndDate <= DateTime.UtcNow))
+                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6))
                     .OrderByDescending(p => p.UpdatedAt)
                     .ToList();
 
@@ -199,8 +198,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
                 var slottedPicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder >= 1 && p.SlotOrder <= 6) &&
-                    (p.EndDate == null || p.EndDate <= DateTime.UtcNow))
+                    .Where(p => p != null && p.IsActive == true && p.SlotOrder >= 1 && p.SlotOrder <= 6)
                     .OrderBy(p => p.SlotOrder) 
                     .ToList();
 
