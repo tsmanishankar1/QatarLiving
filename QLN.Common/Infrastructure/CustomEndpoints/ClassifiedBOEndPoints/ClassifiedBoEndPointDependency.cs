@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 {
-    public static class V2ClassifiedBoEndPointDependency
+    public static class ClassifiedBoEndPointDependency
     {
         public static RouteGroupBuilder MapClassifiedboEndpoints(this RouteGroupBuilder group)
         {

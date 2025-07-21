@@ -16,14 +16,14 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 {
-    public static class V2ClassifiedBoEndPoint
+    public static class ClassifiedBoEndPoint
     {
         public static RouteGroupBuilder MapClassifiedBoEndpoints(this RouteGroupBuilder group)
         {
 
             group.MapGet("lookup/l1-categories/{vertical}", async Task<IResult> (
       string vertical,
-      [FromServices]V2IClassifiedBoLandingService service,
+      [FromServices]IClassifiedBoLandingService service,
       CancellationToken token) =>
             {
                 try
@@ -65,7 +65,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
  ProblemHttpResult>>
 (
  V2ClassifiedLandingBoDto dto,
- [FromServices] V2IClassifiedBoLandingService service,
+ [FromServices] IClassifiedBoLandingService service,
  HttpContext httpContext,
  CancellationToken cancellationToken
 ) =>
@@ -118,7 +118,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
     ProblemHttpResult>>
 (
     V2ClassifiedLandingBoDto dto,
-    [FromServices] V2IClassifiedBoLandingService service,
+    [FromServices] IClassifiedBoLandingService service,
     CancellationToken cancellationToken
 ) =>
             {
@@ -161,7 +161,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 SeasonalPicksDto dto,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
                 ) =>
@@ -217,7 +217,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 SeasonalPicksDto dto,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -269,7 +269,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
                 (
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 HttpContext context,
                 CancellationToken cancellationToken
                 ) =>
@@ -302,7 +302,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 Ok<List<SeasonalPicksDto>>,
                 ProblemHttpResult>>
                 (
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -333,7 +333,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 Guid pickId,
                 int slot,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
                 ) =>
@@ -375,7 +375,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 Guid pickId,
                 int slot,
                 string userId,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -417,7 +417,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 SeasonalPickSlotReorderRequest request,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
                 ) =>
@@ -459,7 +459,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 SeasonalPickSlotReorderRequest request,                
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -501,7 +501,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
     ProblemHttpResult>>
 (
     [FromQuery] string pickId,    
-    V2IClassifiedBoLandingService service,
+    IClassifiedBoLandingService service,
     HttpContext httpContext,
     CancellationToken cancellationToken
 ) =>
@@ -550,7 +550,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string pickId,
                 [FromQuery] string userId,
-                V2IClassifiedBoLandingService service,
+                IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
             {

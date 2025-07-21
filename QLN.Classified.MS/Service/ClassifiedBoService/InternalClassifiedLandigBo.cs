@@ -7,16 +7,16 @@ using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 
 namespace QLN.Content.MS.Service.ClassifiedBoService
 {
-    public class V2InternalClassifiedLandigBo : V2IClassifiedBoLandingService
+    public class InternalClassifiedLandigBo : IClassifiedBoLandingService
     {
         private readonly Dapr.Client.DaprClient _dapr;
-        private readonly ILogger<V2IClassifiedBoLandingService> _logger;
+        private readonly ILogger<IClassifiedBoLandingService> _logger;
         private readonly IClassifiedService _classified;
 
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
 
-        public V2InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<V2IClassifiedBoLandingService> logger)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger)
         {
             _classified = classified;
             _dapr = dapr;

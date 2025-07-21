@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 {
-    public interface V2IClassifiedBoLandingService
+    public interface IClassifiedBoLandingService
     {
         Task<List<L1CategoryDto>> GetL1CategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default);
 

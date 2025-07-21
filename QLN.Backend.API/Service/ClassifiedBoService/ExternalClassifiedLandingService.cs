@@ -11,23 +11,23 @@ using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
-using static QLN.Backend.API.Service.V2ClassifiedBoService.V2ExternslClassifiedLandingService;
+using static QLN.Backend.API.Service.V2ClassifiedBoService.ExternalClassifiedLandingService;
 
 namespace QLN.Backend.API.Service.V2ClassifiedBoService
 {
-    public class V2ExternslClassifiedLandingService : V2IClassifiedBoLandingService
+    public class ExternalClassifiedLandingService : IClassifiedBoLandingService
     {
 
         private const string SERVICE_APP_ID = ConstantValues.ServiceAppIds.ClassifiedServiceApp;
         private readonly DaprClient _dapr;
-        private readonly ILogger<V2ExternslClassifiedLandingService> _logger;
+        private readonly ILogger<ExternalClassifiedLandingService> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IFileStorageBlobService _fileStorageBlob;
         private readonly ISearchService _searchService;
 
-        public V2ExternslClassifiedLandingService(
+        public ExternalClassifiedLandingService(
             DaprClient dapr,
-            ILogger<V2ExternslClassifiedLandingService> logger,
+            ILogger<ExternalClassifiedLandingService> logger,
             IHttpContextAccessor httpContextAccessor,
             IFileStorageBlobService fileStorageBlob,
             ISearchService searchService)
