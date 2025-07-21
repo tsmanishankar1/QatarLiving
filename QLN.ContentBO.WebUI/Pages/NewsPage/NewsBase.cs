@@ -247,7 +247,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
+                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId, 0, null, null);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var rawJson = await apiResponse.Content.ReadAsStringAsync();
@@ -272,7 +272,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         protected async Task<List<NewsArticleDTO>> GetNewsBySubCategories(
                                                                             int categoryId,
                                                                             int subCategoryId,
-                                                                            string? status = null,
+                                                                            int? status = 0,
                                                                             int? page = null,
                                                                             int? pageSize = null)
         {
@@ -580,7 +580,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, "Published", 1, 1000) ?? [];
+                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 1, 1, 1000) ?? [];
 
                 var indexed = Enumerable.Range(1, 13)
                     .Select(slotNumber => new IndexedArticle
@@ -608,7 +608,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, "Published", 1, 1000);
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 2, 1, 1000);
 
                 return articles?
                     .Where(a => a.IsActive &&
@@ -631,7 +631,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, "UnPublished", 1, 1000);
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 3, 1, 1000);
 
                 return articles?
                     .Where(a => a.IsActive &&
