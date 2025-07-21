@@ -22,7 +22,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceAdDeleteEndpoint()
                  .MapGetServicesByStatusEndpoint()
                  .MapPromoteEndpoint()
-                 .MapFeatureEndpoint();
+                 .MapFeatureEndpoint()
+                 .MapRefreshEndpoint();
             return group;
         }
     }

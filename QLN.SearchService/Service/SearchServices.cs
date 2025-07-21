@@ -198,6 +198,7 @@ namespace QLN.SearchService.Service
             {
                 if (regularFilters?.Any() == true)
                     opts.Filter = string.Join(" and ", regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value)));
+                BuildOrderBy<T>(opts, req.OrderBy);
 
                 var result = await _repo.SearchAsync<T>(indexName, opts, req.Text);
                 var filtered = ApplyJsonFilters(result.Items, jsonFilters).ToList();

@@ -148,7 +148,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -234,7 +234,7 @@ namespace QLN.Classified.MS.Service.Services
                     );
                 }
 
-                return "Service Ad created successfully.";
+                return entity;
             }
             catch (ArgumentException ex)
             {
@@ -485,17 +485,13 @@ namespace QLN.Classified.MS.Service.Services
             PropertyNameCaseInsensitive = true,
             WriteIndented = false
         };
-        public async Task<string> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct)
         {
             var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 cancellationToken: ct
             );
-
-            if (serviceAd is null)
-                return "Service not found";
-
             serviceAd.IsPromoted = request.IsPromoted;
             serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedAt = DateTime.UtcNow;
@@ -506,19 +502,15 @@ namespace QLN.Classified.MS.Service.Services
                 serviceAd,
                 cancellationToken: ct
             );
-
-            return request.IsPromoted ? "Service promoted successfully" : "Service unpromoted successfully";
+            return serviceAd;
         }
-        public async Task<string> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct)
         {
             var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 cancellationToken: ct
             );
-
-            if (serviceAd is null)
-                return "Service not found";
 
             serviceAd.IsFeatured = request.IsFeature;
             serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
@@ -531,7 +523,29 @@ namespace QLN.Classified.MS.Service.Services
                 cancellationToken: ct
             );
 
-            return request.IsFeature ? "Service featured successfully" : "Service unfeatured successfully";
+            return serviceAd;
         }
+        public async Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        {
+            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                cancellationToken: ct
+            );
+
+            serviceAd.IsRefreshed = request.IsRefreshed;
+            serviceAd.RefreshExpiryDate = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                request.ServiceId.ToString(),
+                serviceAd,
+                cancellationToken: ct
+            );
+
+            return serviceAd;
+        }
+
     }
 }

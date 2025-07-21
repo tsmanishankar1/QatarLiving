@@ -82,6 +82,11 @@ namespace QLN.Common.DTO_s
         public Guid ServiceId { get; set; }
         public bool IsFeature { get; set; }
     }
+    public class RefreshServiceRequest
+    {
+        public Guid ServiceId { get; set; }
+        public bool IsRefreshed { get; set; }
+    }
     public class ServicesPagedResponse<T>
     {
         public int TotalCount { get; set; }
@@ -94,5 +99,10 @@ namespace QLN.Common.DTO_s
         public ServiceStatus? Status { get; set; }
         public int? PageNumber { get; set; }
         public int? PerPage { get; set; } 
+    }
+    public class AllServices
+    {
+        public long? TotalCount { get; set; }
+        public List<ServicesIndex>? ServicesItems { get; set; }
     }
 }

@@ -274,7 +274,8 @@ eventGroup.MapEventEndpoints()
 var foEventGroup = app.MapGroup("/api/v2/fo/event");
 foEventGroup.MapFOEventEndpoints();
 var ServiceGroup = app.MapGroup("/api/service");
-ServiceGroup.MapAllServiceConfiguration();
+ServiceGroup.MapAllServiceConfiguration()
+    .RequireAuthorization();
 var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");

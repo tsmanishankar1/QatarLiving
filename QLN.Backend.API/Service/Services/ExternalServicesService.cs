@@ -1,6 +1,5 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Spatial;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -141,7 +140,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
@@ -187,8 +186,17 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                await IndexServiceToAzureSearch(dto, cancellationToken);
-                return "Service ad created successfully.";
+                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                var createdDto = JsonSerializer.Deserialize<ServicesDto>(responseJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (createdDto is null)
+                    throw new InvalidDataException("Invalid service returned from creation.");
+
+                await IndexServiceToAzureSearch(createdDto, cancellationToken);
+                return createdDto;
             }
             catch (Exception ex)
             {
@@ -244,9 +252,15 @@ namespace QLN.Backend.API.Service.Services
                 Longitude = dto.Longitude,
                 Lattitude = dto.Lattitude,
                 AdType = dto.AdType.ToString(),
-                IsFeatured = false,
-                IsPromoted = false,
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
                 Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                RefreshExpiryDate = dto.RefreshExpiryDate,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
                 UserName = dto.UserName,
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
@@ -416,7 +430,7 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-
+                await _searchService.DeleteAsync(ConstantValues.IndexNames.ServicesIndex, id.ToString());
                 return "Service ad deleted successfully.";
             }
             catch (Exception ex)
@@ -444,7 +458,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -456,12 +470,21 @@ namespace QLN.Backend.API.Service.Services
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    var message = await response.Content.ReadAsStringAsync(ct);
-                    return message;
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    await IndexServiceToAzureSearch(serviceDto, ct);
+                    return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    return "Service not found";
+                    throw new KeyNotFoundException("Service not found");
                 }
                 else
                 {
@@ -475,7 +498,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -487,12 +510,21 @@ namespace QLN.Backend.API.Service.Services
 
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    var message = await response.Content.ReadAsStringAsync(ct);
-                    return message;
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    await IndexServiceToAzureSearch(serviceDto, ct);
+                    return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    return "Service not found";
+                    throw new KeyNotFoundException("Service not found");
                 }
                 else
                 {
@@ -506,5 +538,46 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+        public async Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var url = "/api/service/refresh";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    await IndexServiceToAzureSearch(serviceDto, ct);
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException(errorJson);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refresh service");
+                throw;
+            }
+        }
+
     }
 }
