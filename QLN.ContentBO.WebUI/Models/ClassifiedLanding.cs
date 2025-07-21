@@ -10,6 +10,8 @@
             public string Category { get; set; }
             public string Subcategory { get; set; }
             public string Section { get; set; }
+            public int SlotOrder {  get; set; }
+            public bool IsPlaceholder {  get; set; }
             public DateTime? EndDate { get; set; }
             public string ImageUrl { get; set; }
         }
@@ -19,5 +21,13 @@
             public int SlotNumber { get; set; }
             public LandingPageItem? Event { get; set; }
         }
+        public class SeasonalPickDto
+        {
+            public string Id { get; set; } = "";
+            public string CategoryName { get; set; } = "";
+            public DateTime EndDate { get; set; }
+            public int SlotOrder { get; set; }
+        }
+
     }
 }

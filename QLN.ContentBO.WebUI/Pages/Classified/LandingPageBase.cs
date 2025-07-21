@@ -2,9 +2,10 @@
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Pages.Classified.Modal;
-
+using System.Text.Json;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 public class LandingPageBase : QLComponentBase
@@ -21,7 +22,8 @@ public class LandingPageBase : QLComponentBase
     protected LandingPageItemType currentItemType;
     [Inject]
     public IDialogService DialogService { get; set; } = default!;
-
+    [Inject]
+    public IClassifiedService ClassifiedService { get; set; }
     protected override async Task OnInitializedAsync()
     {
         try
@@ -119,23 +121,52 @@ public class LandingPageBase : QLComponentBase
 
     private async Task<List<LandingPageItem>> LoadSeasonalPicks()
     {
-        await Task.Delay(500);
-        return new List<LandingPageItem>
+        var picks = new List<LandingPageItem>();
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks();
+
+        if (response?.IsSuccessStatusCode == true)
         {
-            new LandingPageItem
+            var content = await response.Content.ReadAsStringAsync();
+            var apiItems = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
             {
-                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Seasonal 1",
-                EndDate = DateTime.Now.AddMonths(3),
-            },
-            new LandingPageItem
+                PropertyNameCaseInsensitive = true
+            });
+
+            // Map real items to slot positions
+            var realItemsBySlot = apiItems?
+                .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
+                .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
+                {
+                    Id = Guid.Parse(x.Id),
+                    Category = x.CategoryName,
+                    EndDate = x.EndDate,
+                    SlotOrder = x.SlotOrder,
+                    IsPlaceholder = false
+                }) ?? new Dictionary<int, LandingPageItem>();
+
+            for (int slot = 1; slot <= 6; slot++)
             {
-                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Seasonal 2",
-                EndDate = DateTime.Now.AddMonths(6),
+                if (realItemsBySlot.ContainsKey(slot))
+                {
+                    picks.Add(realItemsBySlot[slot]);
+                }
+                else
+                {
+                    picks.Add(new LandingPageItem
+                    {
+                        Id = Guid.NewGuid(),
+                        Category = "Select a Seasonal Pick",
+                        EndDate = null,
+                        SlotOrder = slot,
+                        IsPlaceholder = true
+                    });
+                }
             }
-        };
+        }
+
+        return picks;
     }
+
 
     private async Task<List<LandingPageItem>> LoadFeaturedStores()
     {

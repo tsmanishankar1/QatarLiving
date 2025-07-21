@@ -10,11 +10,12 @@ namespace QLN.ContentBO.WebUI.Services
     public class ClassifiedService : ServiceBase<ClassifiedService>, IClassifiedService
     {
         private readonly HttpClient _httpClient;
-
+        private readonly ILogger _logger;
         public ClassifiedService(HttpClient httpClient, ILogger<ClassifiedService> Logger)
             : base(httpClient, Logger)
         {
             _httpClient = httpClient;
+            _logger = Logger;
         }
        public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
         {
@@ -24,11 +25,49 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetAllCategoryTreesAsync Error: " + ex);
+                _logger.LogError("GetAllCategoryTreesAsync Error: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
 
+        public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks()
+        {
+            try
+            {
+                return await _httpClient.GetAsync("/api/v2/classifiedbo/seasonal-picks/slotted");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetFeaturedSeasonalPicks"+ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllSeasonalPicks()
+        {
+            try
+            {
+                return await _httpClient.GetAsync("/api/v2/classifiedbo/getSeasonalPicks");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetFeaturedSeasonalPicks" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
+        public Task<HttpResponseMessage?> CreateSeasonalPicks()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage?> ReplaceSeasonalPicks()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage?> DeleteSeasonalPicks()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
