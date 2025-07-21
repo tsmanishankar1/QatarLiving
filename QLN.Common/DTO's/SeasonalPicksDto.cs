@@ -8,6 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class SeasonalPicksDto
     {
+        public string Vertical { get; set; }
         public Guid Id { get; set; }
         public string CategoryId { get; set; }
         public string CategoryName { get; set; }

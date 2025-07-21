@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 {
@@ -276,7 +277,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var result = await service.GetSeasonalPicks(cancellationToken);
+                    var result = await service.GetSeasonalPicks(Verticals.Classifieds, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -308,7 +309,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             {
                 try
                 {
-                    var result = await service.GetSlottedSeasonalPicks(cancellationToken);
+                    var result = await service.GetSlottedSeasonalPicks(Verticals.Classifieds, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -350,7 +351,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(userId, pickId, slot, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(Verticals.Classifieds, userId, pickId, slot, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -392,7 +393,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(userId, pickId, slot, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(Verticals.Classifieds, userId, pickId, slot, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -436,7 +437,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     if (string.IsNullOrWhiteSpace(request.UserId))
                         throw new ArgumentException("UserId is required...");
 
-                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(Verticals.Classifieds, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -476,7 +477,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(Verticals.Classifieds, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

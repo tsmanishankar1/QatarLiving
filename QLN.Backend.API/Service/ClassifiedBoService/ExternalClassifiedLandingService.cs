@@ -153,7 +153,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -173,7 +173,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -193,7 +193,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, Guid pickId, int slot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithSeasonalPick(string vertical, string userId, Guid pickId, int slot, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
@@ -221,7 +221,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(string vertical, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request cannot be null.");
