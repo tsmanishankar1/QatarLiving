@@ -99,7 +99,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Title = dto.Title,
                         Content = dto.Content,
                         WriterTag = dto.WriterTag,
-                        Slug = $"{slugBase}-{cat.CategoryId}-{cat.SubcategoryId}",
+                        Slug = slugBase,
                         IsActive = true,
                         Categories = new List<V2ArticleCategory> {
             new V2ArticleCategory {
