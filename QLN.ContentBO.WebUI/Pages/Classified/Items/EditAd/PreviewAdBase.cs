@@ -4,7 +4,7 @@ using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
-    public class PreviewDealsBase : ComponentBase
+    public class PreviewAdBase : ComponentBase
     {
         [CascadingParameter] protected IMudDialogInstance MudDialog { get; set; } = default!;
         [Parameter] public EditAdPost AdModel { get; set; } = new();

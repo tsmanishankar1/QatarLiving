@@ -53,7 +53,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
 
                 if (company == "lulu")
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Lulu",
                         Email = "lulu@example.com",
@@ -66,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
                 }
                 else if (company == "carrefour")
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Carrefour",
                         Email = "carrefour@example.com",
@@ -79,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
                 }
                 else
                 {
-                    PrepopulateForm(new SubscriptionOrder
+                    PrepopulateForm(new ViewStoreList
                     {
                         CompanyName = "Carrefour",
                         Email = "carrefour@example.com",
@@ -93,7 +93,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
             }
         }
 
-        private void PrepopulateForm(SubscriptionOrder order)
+        private void PrepopulateForm(ViewStoreList order)
         {
             Ad.Title = order.CompanyName;
             Email = order.Email;
@@ -108,7 +108,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
             EndDay = order.EndDate;
             UserDesignation = "Manager"; // Placeholder
 
-            // If you store more fields in SubscriptionOrder, map them here
+            // If you store more fields in ViewStoreList, map them here
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

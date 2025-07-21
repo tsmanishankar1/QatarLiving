@@ -11,10 +11,10 @@ using System.Threading.Tasks;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
-    public partial class UploadDealsPhotosBase : ComponentBase
+    public partial class UploadPhotosBase : ComponentBase
     {
         [Inject] private IJSRuntime JS { get; set; }
-        [Inject] private ILogger<UploadDealsPhotosBase> Logger { get; set; }
+        [Inject] private ILogger<UploadPhotosBase> Logger { get; set; }
 
         [Parameter] public EditAdPost AdModel { get; set; } = new();
 
