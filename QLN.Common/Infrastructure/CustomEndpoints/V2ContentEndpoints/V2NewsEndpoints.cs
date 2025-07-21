@@ -272,7 +272,7 @@ public static class V2NewsEndpoints
    (
        int categoryId,
        int subCategoryId,
-       string? status,
+       ArticleStatus status,
        int? page,
        int? pageSize,
        IV2NewsService service,
@@ -293,7 +293,7 @@ public static class V2NewsEndpoints
                 var articles = await service.GetArticlesBySubCategoryIdAsync(
                     categoryId,
                     subCategoryId,
-                    string.IsNullOrWhiteSpace(status) ? null : status,
+                    status,
                     page,
                     pageSize,
                     cancellationToken);
