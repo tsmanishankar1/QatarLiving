@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
@@ -12,8 +13,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly ILogger<V2IClassifiedBoLandingService> _logger;
         private readonly IClassifiedService _classified;
 
-        private const string StoreName = "contentstatestore";
-        private const string ItemsIndexKey = "qln-classifiedBo-ms";
+        private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
+        private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
 
         public V2InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<V2IClassifiedBoLandingService> logger)
         {
@@ -79,9 +80,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
-                const string StoreName = "contentstatestore";
-                const string IndexKey = "seasonal-picks-index";
-
+               
                 dto.Id = Guid.NewGuid();
                 dto.CreatedAt = DateTime.UtcNow;
                 dto.UpdatedAt = DateTime.UtcNow;
@@ -93,11 +92,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation("Saved seasonal pick state successfully. ID: {Id}", dto.Id);
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey) ?? new List<string>();
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, ItemsIndexKey) ?? new List<string>();
                 if (!index.Contains(dto.Id.ToString()))
                 {
                     index.Add(dto.Id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, IndexKey, index);
+                    await _dapr.SaveStateAsync(StoreName, ItemsIndexKey, index);
                     _logger.LogInformation("Updated seasonal pick index with new ID: {Id}", dto.Id);
                 }
 
@@ -116,13 +115,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(CancellationToken cancellationToken = default)
         {
             try
-            {
-                const string StoreName = "contentstatestore";
-                const string IndexKey = "seasonal-picks-index";
-
+            {               
                 _logger.LogInformation("Fetching seasonal picks from state store...");
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey)
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, ItemsIndexKey)
                             ?? new List<string>();
 
                 if (!index.Any())
@@ -137,7 +133,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
                 var activePicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive)
+                    .Where(p => p != null && p.IsActive && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6))
                     .OrderByDescending(p => p.UpdatedAt)
                     .ToList();
 
@@ -152,6 +148,189 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
+        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(CancellationToken cancellationToken = default)
+        {            
+            try
+            {
+                _logger.LogInformation("Fetching slotted seasonal picks from state store...");
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, ItemsIndexKey)
+                            ?? new List<string>();
+
+                if (!index.Any())
+                {
+                    _logger.LogInformation("No seasonal picks found in the index.");
+                    return new List<SeasonalPicksDto>();
+                }
+
+                var stateTasks = index.Select(id =>
+                    _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id)).ToList();
+
+                var seasonalPicks = await Task.WhenAll(stateTasks);
+
+                var slottedPicks = seasonalPicks
+                    .Where(p => p != null && p.IsActive && p.SlotOrder >= 1 && p.SlotOrder <= 6)
+                    .OrderBy(p => p.SlotOrder) 
+                    .ToList();
+
+                _logger.LogInformation("Fetched {Count} slotted seasonal picks.", slottedPicks.Count);
+
+                return slottedPicks;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch slotted seasonal picks.");
+                throw new InvalidOperationException("Error fetching slotted seasonal picks.", ex);
+            }
+        }
+
+        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, Guid newPickId, int targetSlot, CancellationToken cancellationToken = default)
+        {
+            if (targetSlot < 1 || targetSlot > 6)
+                throw new ArgumentOutOfRangeException(nameof(targetSlot), "Slot must be between 1 and 6.");
+           
+            try
+            {
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, ItemsIndexKey) ?? new List<string>();
+
+                if (!index.Contains(newPickId.ToString()))
+                    throw new InvalidOperationException("Selected pick ID not found.");
+
+                SeasonalPicksDto? newPick = null;
+
+                foreach (var id in index)
+                {
+                    var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id);
+                    if (pick == null) continue;
+
+                    // Case 1: Slot is currently occupied by someone else — clear it
+                    if (pick.SlotOrder == targetSlot && pick.Id != newPickId)
+                    {
+                        pick.SlotOrder = 0;
+                        pick.UpdatedAt = DateTime.UtcNow;
+                        await _dapr.SaveStateAsync(StoreName, id, pick);
+                    }
+
+                    // Case 2: The new pick is already slotted somewhere else — clear it before reassign
+                    if (pick.Id == newPickId)
+                    {
+                        newPick = pick;
+                    }
+                }
+
+                if (newPick == null)
+                    throw new InvalidOperationException("New pick data not found in state.");
+
+                // Update the selected pick with new slot
+                newPick.SlotOrder = targetSlot;
+                newPick.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, newPick.Id.ToString(), newPick);
+
+                return $"Successfully replaced slot {targetSlot} with seasonal pick '{newPick.CategoryName}'.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error replacing slot {Slot} with pick {PickId}", targetSlot, newPickId);
+                throw new InvalidOperationException("Failed to replace slot with selected seasonal pick.", ex);
+            }
+        }
+
+        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        {
+            const int MaxSlot = 6;           
+
+            if (string.IsNullOrWhiteSpace(request.UserId))
+                throw new ArgumentException("UserId is required.");
+
+            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
+
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
+
+            var seasonalIndex = await _dapr.GetStateAsync<List<string>>(StoreName, ItemsIndexKey) ?? new();
+            var loadedPicks = new Dictionary<string, SeasonalPicksDto>();
+
+            foreach (var assignment in request.SlotAssignments)
+            {
+                if (string.IsNullOrWhiteSpace(assignment.PickId))
+                    continue;
+
+                if (!seasonalIndex.Contains(assignment.PickId))
+                    continue;
+
+                var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, assignment.PickId);
+                if (pick == null)
+                    throw new InvalidDataException($"Pick with ID '{assignment.PickId}' not found.");
+
+                if (pick.UserId != request.UserId)
+                    throw new UnauthorizedAccessException("You are not authorized to update this pick.");
+
+                loadedPicks[assignment.PickId] = pick;
+            }
+
+            foreach (var assignment in request.SlotAssignments)
+            {
+                var slotKey = $"seasonal-pick-slot-{assignment.SlotNumber}";
+
+                if (string.IsNullOrWhiteSpace(assignment.PickId))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
+                    continue;
+                }
+
+                var pick = loadedPicks[assignment.PickId];
+                pick.SlotOrder = assignment.SlotNumber;
+                pick.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, slotKey, pick);
+                await _dapr.SaveStateAsync(StoreName, pick.Id.ToString(), pick);
+            }
+
+            return "Slots updated successfully.";
+        }
+
+        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(pickId))
+                throw new ArgumentException("Pick ID must be provided.", nameof(pickId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must be provided.", nameof(userId));
+            try
+            {
+                _logger.LogInformation("Attempting delete for seasonal pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
+
+                var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, pickId);
+                if (pick == null)
+                {
+                    _logger.LogWarning("Pick not found for delete. PickId: {PickId}", pickId);
+                    throw new KeyNotFoundException($"Pick with ID '{pickId}' not found.");
+                }
+
+                if (pick.UserId != userId)
+                {
+                    _logger.LogWarning("Unauthorized attempt to delete pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
+                    throw new UnauthorizedAccessException("You are not authorized to delete this pick.");
+                }
+
+                pick.IsActive = false;
+                pick.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, pickId, pick);
+
+                _logger.LogInformation("Successfully deleted pick. PickId: {PickId}", pickId);
+
+                return $"Pick '{pick.CategoryName}' has been deleted.";
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error performing soft delete on pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
+                throw;
+            }
+        }
 
     }
 }

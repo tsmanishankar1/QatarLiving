@@ -173,6 +173,123 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    "api/v2/classifiedbo/seasonal-picks/slotted",
+                    cancellationToken
+                );
+
+                return response ?? new List<SeasonalPicksDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetSlottedSeasonalPicks.");
+                throw new InvalidOperationException("Error fetching slotted seasonal picks.", ex);
+            }
+        }
+
+        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, Guid pickId, int slot, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            if (slot < 1 || slot > 6)
+                throw new ArgumentOutOfRangeException(nameof(slot), "Slot number must be between 1 and 6.");
+
+            try
+            {
+                var queryParams = $"?pickId={pickId}&slot={slot}&userId={userId}";
+
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/replaceSeasonalPickSlot{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? "Slot updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ReplaceSlotWithSeasonalPick (external call).");
+                throw new InvalidOperationException("Error replacing slot with seasonal pick.", ex);
+            }
+        }
+
+        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Request cannot be null.");
+
+            if (string.IsNullOrWhiteSpace(request.UserId))
+                throw new ArgumentException("UserId is required in the request payload.", nameof(request.UserId));
+
+            if (request.SlotAssignments == null || !request.SlotAssignments.Any())
+                throw new ArgumentException("SlotAssignments list cannot be empty.", nameof(request.SlotAssignments));
+
+            var invalidSlots = request.SlotAssignments
+                .Where(x => x.SlotNumber < 1 || x.SlotNumber > 6)
+                .ToList();
+
+            if (invalidSlots.Any())
+            {
+                var invalidDetails = string.Join(", ", invalidSlots.Select(x => $"[PickId: {x.PickId}, Slot: {x.SlotNumber}]"));
+                throw new ArgumentOutOfRangeException(nameof(request.SlotAssignments), $"SlotNumber must be between 1 and 6. Invalid entries: {invalidDetails}");
+            }
+
+            try
+            {
+                var queryParams = $"?userId={request.UserId}";
+
+                var response = await _dapr.InvokeMethodAsync<SeasonalPickSlotReorderRequest, string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/reorderSeasonalPickSlots{queryParams}",
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? "Slot reordering completed successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in ReorderSeasonalPickSlots (external call).");
+                throw new InvalidOperationException("Error during slot reordering.", ex);
+            }
+        }
+
+        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(pickId))
+                throw new ArgumentException("PickId is required.", nameof(pickId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            try
+            {
+                var queryParams = $"?pickId={pickId}&userId={userId}";
+
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/softDeleteSeasonalPick{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? $"Soft delete triggered for pick ID '{pickId}'.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SoftDeleteSeasonalPick (external call). PickId: {PickId}, UserId: {UserId}", pickId, userId);
+                throw new InvalidOperationException("Error while soft deleting seasonal pick.", ex);
+            }
+        }
 
     }
 }

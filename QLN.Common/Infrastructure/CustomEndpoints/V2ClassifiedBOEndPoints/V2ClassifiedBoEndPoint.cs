@@ -298,6 +298,294 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/seasonal-picks/slotted", async Task<Results<
+                Ok<List<SeasonalPicksDto>>,
+                ProblemHttpResult>>
+                (
+                V2IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetSlottedSeasonalPicks(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("GetSlottedSeasonalPicks")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Get all slotted seasonal picks")
+                .WithDescription("Returns only seasonal picks that are assigned to slot positions (1–6).")
+                .Produces<List<SeasonalPicksDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapPut("/seasonal-picks/replace-slot", async Task<Results<
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                Guid pickId,
+                int slot,
+                V2IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await service.ReplaceSlotWithSeasonalPick(userId, pickId, slot, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("ReplaceSeasonalPickSlot")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Add seasonal pick into slot and Replace a seasonal pick into a slot (auth required)")
+                .WithDescription("Replaces a seasonal pick into a slot using authenticated user info. Clears any previous slot content.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/replaceSeasonalPickSlot", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                Guid pickId,
+                int slot,
+                string userId,
+                V2IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                Console.WriteLine("Hit endpoint: /replaceSeasonalPickSlot");
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided in the query or payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.ReplaceSlotWithSeasonalPick(userId, pickId, slot, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception inside /internal/replaceSeasonalPickSlot: {ex.Message}");
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("ReplaceSlotWithSeasonalPickByUserId")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Replace pick slot by UserId")
+                .WithDescription("Add seasonal pick into slot and Replaces a seasonal pick into a slot using explicitly passed userId (no auth).")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/seasonal-picks/reorder-slots", async Task<Results<
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                SeasonalPickSlotReorderRequest request,
+                V2IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+
+                    request.UserId = userId;
+
+                    if (string.IsNullOrWhiteSpace(request.UserId))
+                        throw new ArgumentException("UserId is required...");
+
+                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("ReorderSeasonalPickSlots")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Reorder slots for seasonal picks (auth required)")
+                .WithDescription("Drag-and-drop reordering of seasonal picks, requires authenticated user.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/reorderSeasonalPickSlots", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                SeasonalPickSlotReorderRequest request,                
+                V2IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                Console.WriteLine("Hit endpoint: /reorderSeasonalPickSlots");
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(request.UserId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "UserId must be provided in the query or payload.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.ReorderSeasonalPickSlots(request, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception in /internal/reorderSeasonalPickSlots: {ex.Message}");
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("ReorderSlotWithUserId")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Reorder slots by userId (internal)")
+                .WithDescription("Allows slot reordering by explicitly passing userId. Used for Dapr/internal tools.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapDelete("/seasonal-picks/soft-delete", async Task<Results<
+    Ok<string>,
+    ForbidHttpResult,
+    BadRequest<ProblemDetails>,
+    ProblemHttpResult>>
+(
+    [FromQuery] string pickId,    
+    V2IClassifiedBoLandingService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken
+) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim)) return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+
+                    if (string.IsNullOrWhiteSpace(pickId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "PickId must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("SoftDeleteSeasonalPick")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Soft delete a seasonal pick (auth required)")
+                .WithDescription("Marks the seasonal pick as inactive, preserving history. Requires authenticated user.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapDelete("/softDeleteSeasonalPick", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                [FromQuery] string pickId,
+                [FromQuery] string userId,
+                V2IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                Console.WriteLine("Hit endpoint: /softDeleteSeasonalPick");
+
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(pickId) || string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Both PickId and UserId must be provided.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception in /softDeleteSeasonalPick: {ex.Message}");
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("SoftDeleteSeasonalPickInternal")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Soft delete seasonal pick by PickId + UserId (internal)")
+                .WithDescription("Internal tool support for seasonal pick soft delete. Requires explicit PickId and UserId.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
 
             return group;
