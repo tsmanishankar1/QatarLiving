@@ -97,5 +97,14 @@ namespace QLN.Common.DTO_s
         UnPublished = 15
     }
 
+    public enum ArticleStatus
+    {
+        None = 0,
+        Live = 1,
+        Published = 2,
+        Unpublished = 3
+    }
+
+
 
 }

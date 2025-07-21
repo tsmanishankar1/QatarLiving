@@ -37,6 +37,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("news")]
         public GenericNewsPage? News { get; set; }
     }
+
+
 }
 
 
