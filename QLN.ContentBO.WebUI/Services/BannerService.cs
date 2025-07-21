@@ -146,14 +146,11 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(newOrder);
-
                 var url = $"api/v2/banner/reorder?verticalId={verticalId}&subVerticalId={subVerticalId}&pageId={pageId}";
-
                 var request = new HttpRequestMessage(HttpMethod.Post, url)
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
                 var response = await _httpClient.SendAsync(request);
                 return response;
             }

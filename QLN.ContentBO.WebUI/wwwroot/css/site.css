@@ -747,3 +747,14 @@ a, .btn-link {
         cursor: pointer;
     }
  
+
+    /* manage banner component */
+
+     .active-tab-style {
+    background-color: #FF7F38 !important;
+    color: white !important;
+    border-radius: 4px;
+}
+.mud-tab.mud-tab-active::after {
+    display: none !important;
+}

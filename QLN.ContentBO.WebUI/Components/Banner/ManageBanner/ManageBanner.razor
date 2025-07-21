@@ -85,7 +85,7 @@
                         BannerDetailsList="@Page.BannerDetails" 
                         verticalId="@(location.VerticalId ?? 0)" 
                         subVerticalId="@(location.SubVerticalId ?? 0)" 
-                        pageId="@Page.Id.ToString()" 
+                        pageId="@location.Id.ToString()" 
                         OnReorderCallBack="ReOrderBanners" />
                     }
                     else

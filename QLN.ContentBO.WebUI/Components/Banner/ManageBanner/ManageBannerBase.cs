@@ -143,7 +143,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         protected async Task ReOrderBanners((List<string> NewOrder, int Vertical, int SubVertical, string PageId) args)
         {
             var (newOrder, vertical, subVertical, pageId) = args;
-
             try
             {
                 var apiResponse = await bannerService.ReorderBanner(newOrder, vertical, subVertical, pageId);

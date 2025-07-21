@@ -12,13 +12,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         public Guid BannerId { get; set; }
         protected string selectedTab = "daily";
         protected ManageBannerTab SelectedTab => (ManageBannerTab)activeIndex;
-        protected List<TabOption> tabOptions = new()
-        {
-            new() { Label = "Daily", Value = "daily" },
-            new() { Label = "News", Value = "news" },
-            new() { Label = "Events", Value = "events" },
-            new() { Label = "Community", Value = "community" }
-        };
         public class BannerSlot
         {
             public int Slot { get; set; }
@@ -27,13 +20,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             public DateTime StartDate { get; set; }
             public DateTime EndDate { get; set; }
         }
- protected List<BannerSlot> slots = new()
-    {
-        new BannerSlot { Slot = 1, ImageUrl = "sample-image-1.jpg", RedirectLink = "link.lik.com", StartDate = new DateTime(2025, 5, 12), EndDate = new DateTime(2025, 5, 12) },
-        new BannerSlot { Slot = 2, ImageUrl = "sample-image-2.jpg", RedirectLink = "link.lik.com", StartDate = new DateTime(2025, 5, 12), EndDate = new DateTime(2025, 5, 12) },
-        new BannerSlot { Slot = 3, ImageUrl = "sample-image-3.jpg", RedirectLink = "link.lik.com", StartDate = new DateTime(2025, 5, 12), EndDate = new DateTime(2025, 5, 12) }
-    };
-
         protected void EditBanner(Guid id)
         {
             BannerId = id;
@@ -59,18 +45,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             try
             {
                 activeIndex = index;
-
-                switch (activeIndex)
-                {
-                    case 0:
-
-                        StateHasChanged();
-                        break;
-                    case 1:
-
-                        StateHasChanged();
-                        break;
-                }
+                StateHasChanged();
             }
             catch (Exception ex)
             {

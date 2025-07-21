@@ -15,13 +15,6 @@
 </div>
 @if (true)
 {
-    var indexedFeatured = BannerDetailsList
-    .OrderBy(s => s.slotId)
-    .Select((e, i) => new { Slot = e, Index = i + 1 })
-    .ToList();
-
-
-
     <table class="table table-hover featured-table" style="width: 100%;">
         <tbody>
             @foreach (var banner in BannerDetailsList)
@@ -51,7 +44,7 @@
                         else
                         {
                             <MudChip T="string" Color="Color.Default" Size="Size.Small">
-                                Active
+                                InActive
                             </MudChip>
                         }
                     </div>
