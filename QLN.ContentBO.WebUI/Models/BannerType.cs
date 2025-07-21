@@ -2,11 +2,12 @@
 {
     public class BannerType
     {
-        public string VerticalName { get; set; }
-        public string SubVerticalName { get; set; }
-        public Guid PageId { get; set; }
-        public string PageName { get; set; }
-        public string Dimensions { get; set; }
-        public string BannerslotId { get; set; }
+     public Guid Id { get; set; }
+     public Vertical VerticalId { get; set; }
+     public SubVertical? SubVerticalId { get; set; }
+     public string? VerticalName { get; set; }  
+     public string? SubVerticalName { get; set; } 
+     public List<BannerPageLocationDto>? Pages { get; set; }
+
     }
 }

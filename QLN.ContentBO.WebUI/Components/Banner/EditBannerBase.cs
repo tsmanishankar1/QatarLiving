@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using MudBlazor;
 using Microsoft.AspNetCore.Components.Forms;
 using QLN.ContentBO.WebUI.Models;
 using Microsoft.AspNetCore.Components;
+using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using System.Text.Json;
 using System.Net;
@@ -13,28 +13,27 @@ using System.Net;
 
 namespace QLN.ContentBO.WebUI.Components.Banner
 {
-    public class CreateBannerBase : QLComponentBase
+    public class EditBannerBase : QLComponentBase
     {
+        [Parameter]
+        public Guid Id { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
         protected BannerDTO bannerModel = new();
-        [Parameter]
-        public Guid? BannerTypeId { get; set; }
         [Inject] IBannerService bannerService { get; set; }
         [Inject]
         public IDialogService DialogService { get; set; }
         protected List<string> BannerSizes = new()
         {
-            "340 x 384",
-            "300 x 250",
-            "1170 x 150",
-            "1200 x 250",
-            "1210 x 150",
-            "1170 x 250",
-            "970 x 250"
-        };
+    "340 x 384",
+    "300 x 250",
+    "1170 x 150",
+    "1200 x 250",
+    "1210 x 150",
+    "1170 x 250",
+    "970 x 250"
+    };
         protected string? selectedPage;
         protected string? _DateError;
-        protected string? _BannerError;
         protected string? _DesktopImageError;
         protected string? _MobileImageError;
         protected string? _AvailabilityError;
@@ -50,8 +49,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         protected HashSet<Guid> _selectedBannerIds = new();
         protected List<BannerTypeRequest> _selectedBannerTypeRequests = new();
         protected bool IsChecked(BannerLocationDto item) => _selectedBannerIds.Contains(item.Id);
-
-
         protected void OnCheckedChanged(BannerLocationDto item, bool isChecked, int? verticalId, int? subVerticalId, Guid pageId)
         {
             if (!verticalId.HasValue)
@@ -91,7 +88,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
 
             UpdateDisplayText();
         }
-
         protected void UpdateDisplayText()
         {
             var selectedNames = bannerPageTypes
@@ -112,7 +108,41 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             get => _selectedOptions;
             set => _selectedOptions = value.ToList();
         }
+
         protected List<Guid> _selectedOptions = new();
+
+        protected List<GroupedOption> _groupedOptions = new()
+{
+    new GroupedOption
+    {
+        Title = "VEHICLES",
+        Options = new List<string>
+        {
+            "Landing Hero (1170 x 250)",
+            "Detail Side (300 x 250)",
+            "Detail Hero (1170 x 150)",
+            "Search Hero (1170 x 150)",
+            "Payment Hero (1170 x 150)"
+        }
+    },
+    new GroupedOption
+    {
+        Title = "PROPERTIES",
+        Options = new List<string>
+        {
+            "Banner Top (970 x 90)",
+            "Sidebar Ad (300 x 600)"
+        }
+    }
+};
+
+        protected List<string> _selectedValues = new();
+
+        protected HashSet<string> selectedOptions = new()
+    {
+        "Search Hero (1170 x 150)",
+        "Payment Hero (1170 x 150)"
+    };
         protected bool IsLoading = false;
         public enum Status
         {
@@ -128,14 +158,22 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 .Where(bt => bt.Pages != null)
                 .SelectMany(bt => bt.Pages!)
                 .ToList();
-            if (BannerTypeId is Guid id)
-            {
-                _selectedBannerIds.Add(id);
-                UpdateDisplayText();
-            }
-
-
+            bannerModel = await GetBannerById();
+             _selectedBannerTypeRequests = GetBannerTypeRequestsByBannerTypeId(bannerPageTypes, bannerModel.BannerTypeId);
+            var selectedNames = bannerPageTypes
+                .SelectMany(g => g.bannertypes)
+                .Where(b => _selectedBannerTypeRequests.Any(r => r.BannerTypeId == b.Id))
+                .Select(b => b.BannerTypeName);
+            _displayText = string.Join(", ", selectedNames);
+            ConvertDateOnlyToDateTime(bannerModel.StartDate, bannerModel.EndDate);
         }
+        
+        protected void ConvertDateOnlyToDateTime(DateOnly? startDate, DateOnly? endDate)
+        {
+            _startDate = startDate?.ToDateTime(TimeOnly.MinValue);
+            _endDate = endDate?.ToDateTime(TimeOnly.MinValue);
+        }
+
         private async Task ShowSuccessModal(string title)
         {
             var parameters = new DialogParameters
@@ -166,6 +204,38 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 bannerModel.DesktopImage = $"data:{file.ContentType};base64,{base64}";
             }
         }
+        public List<BannerTypeRequest> GetBannerTypeRequestsByBannerTypeId(List<BannerPageLocationDto> bannerPages, string targetBannerTypeIdStr)
+        {
+            var bannerTypeRequests = new List<BannerTypeRequest>();
+
+            if (!Guid.TryParse(targetBannerTypeIdStr, out Guid targetBannerTypeId))
+            {
+                return bannerTypeRequests;
+            }
+
+            foreach (var page in bannerPages)
+            {
+                foreach (var bannerType in page.bannertypes)
+                {
+                    if (bannerType.Id == targetBannerTypeId)
+                    {
+                        var bannerTypeRequest = new BannerTypeRequest
+                        {
+                            BannerTypeId = bannerType.Id,
+                            VerticalId = (Vertical)(page.VerticalId ?? 0),
+                            SubVerticalId = page.SubVerticalId.HasValue ? (SubVertical?)page.SubVerticalId.Value : null,
+                            PageId = page.Id
+                        };
+
+                        bannerTypeRequests.Add(bannerTypeRequest);
+                    }
+                }
+            }
+
+            return bannerTypeRequests;
+        }
+
+
         protected async Task HandleMobileImageChanged(InputFileChangeEventArgs e)
         {
             var file = e.File;
@@ -180,10 +250,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         }
         protected async void OnCancelClicked()
         {
-            await ShowConfirmation(
-            "Discard Banner",
-            "Are you sure you want to Discard this Banner?",
-            "Discard", async () => ClearForm());
+
         }
 
 
@@ -202,12 +269,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             _MobileImageError = null;
             _AvailabilityError = null;
             bannerModel.BannerTypeIds = _selectedBannerTypeRequests;
-            if (bannerModel.BannerTypeIds == null || !bannerModel.BannerTypeIds.Any())
-            {
-                _BannerError = "Select Atleast One banner Location";
-                Snackbar.Add("Select Atleast One banner Location", severity: Severity.Error);
-                return;
-            }
             if (_startDate == null)
             {
                 _DateError = "Start date is required.";
@@ -254,11 +315,10 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             try
             {
                 IsLoading = true;
-                var response = await bannerService.CreateBanner(bannerModel);
+                var response = await bannerService.UpdateBanner(bannerModel);
                 if (response != null && response.IsSuccessStatusCode)
                 {
-                    ClearForm();
-                    await ShowSuccessModal("Banner Created successfully!");
+                    await ShowSuccessModal("Banner Edited successfullly");
                 }
                 else if (response?.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -283,6 +343,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         {
             try
             {
+                var selectedVertical = 5;
                 var apiResponse = await bannerService.GetBannerTypes();
                 if (apiResponse.IsSuccessStatusCode)
                 {
@@ -304,8 +365,14 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                             }
                         }
                     }
+
                     return bannerTypes;
                 }
+                else
+                {
+                    Snackbar.Add("Internal API Error");
+                }
+
                 return [];
             }
             catch (Exception ex)
@@ -314,51 +381,32 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 return [];
             }
         }
-        private void ClearForm()
+        private async Task<BannerDTO> GetBannerById()
         {
-            bannerModel = new BannerDTO
+            try
             {
-                Id = Guid.Empty,
-                Status = true,
-                slotId = null,
-                BannerTypeIds = new List<BannerTypeRequest>(),
-                BannerTypeId = string.Empty,
-                AnalyticsTrackingId = string.Empty,
-                AltText = string.Empty,
-                LinkUrl = string.Empty,
-                Duration = 5,
-                StartDate = DateOnly.FromDateTime(DateTime.Today),
-                EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
-                BannerSize = string.Empty,
-                IsDesktopAvailability = null,
-                IsMobileAvailability = null,
-                DesktopImage = null,
-                MobileImage = null,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-            };
-            StateHasChanged();
-        }
-        protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
-        {
-            var parameters = new DialogParameters
-        {
-            { "Title", title },
-            { "Descrption", description },
-            { "ButtonTitle", buttonTitle },
-            { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
-        };
-
-            var options = new DialogOptions
+                var apiResponse = await bannerService.GetBannerById(Id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var responseContent = await apiResponse.Content.ReadAsStringAsync();
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    return JsonSerializer.Deserialize<BannerDTO>(responseContent, options) ?? new BannerDTO();
+                }
+                return new BannerDTO();
+            }
+            catch (Exception ex)
             {
-                CloseButton = false,
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true
-            };
-
-            var dialog = DialogService.Show<ConfirmationDialog.ConfirmationDialog>("", parameters, options);
-            var result = await dialog.Result;
+                Logger.LogError(ex, "GetBannerById");
+                return new BannerDTO();
+            }
         }
-    
+
+
+
+
+
     }
 }

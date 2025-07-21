@@ -1,0 +1,136 @@
+@using QLN.ContentBO.WebUI.Pages.Community
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
+@inherits BannerPreviewCardBase
+<div class="d-flex justify-end" style="padding-bottom: 20px;">
+    <MudButton 
+    Variant="Variant.Outlined" 
+    Color="@(!isReordering ? Color.Primary : Color.Error)" 
+    StartIcon="@(!isReordering ? Icons.Material.Filled.SwapVert : Icons.Material.Filled.Close)" 
+    Size="Size.Small"
+    OnClick="ToggleReorder">
+    @(!isReordering ? "Reorder Banners" : "Cancel Reorder")
+</MudButton>
+</div>
+@if (true)
+{
+    var indexedFeatured = BannerDetailsList
+    .OrderBy(s => s.slotId)
+    .Select((e, i) => new { Slot = e, Index = i + 1 })
+    .ToList();
+
+
+
+    <table class="table table-hover featured-table" style="width: 100%;">
+        <tbody>
+            @foreach (var banner in BannerDetailsList)
+            {
+                <tr data-slot-id="@banner.Id">
+                    <td>
+                        <MudPaper Class="mb-4" Style="border: 1px solid #e0e0e0;">
+                            <MudGrid>
+                                <MudItem xs="12" Class="d-flex justify-between align-center w-100">
+                                    <div class="d-flex justify-between align-center w-100 p-2"
+                                        style="background-color: #FAFAFA; justify-content: space-between;">
+                                        <div class="d-flex align-center flex-wrap" style="justify-content: space-between">
+                                         @if(isReordering){
+                                            <img src="/qln-images/arrow_icon.svg" class="drag-handle" style="cursor: grab; margin-right: 20px; background-color: white; border-radius: 50%; padding: 10px; width: 40px; height: 40px;" alt="drag" />
+                                        }   
+
+                        <MudText Typo="Typo.body1" Class="mr-2">@banner.AnalyticsTrackingId</MudText>
+                        <MudChip T="string" Color="Color.Primary" Class="mr-1" Size="Size.Small">
+                            @banner.AltText
+                        </MudChip>
+                        @if (banner.Status)
+                        {
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small">
+                                Active
+                            </MudChip>
+                        }
+                        else
+                        {
+                            <MudChip T="string" Color="Color.Default" Size="Size.Small">
+                                Active
+                            </MudChip>
+                        }
+                    </div>
+                    <div class="d-flex align-center">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Style="background-color: white; border-radius: 50%; padding: 10px; width: 40px; height: 40px;" Color="Color.Primary" Size="Size.Small" OnClick="@(() => NavigateToEditBanner(@banner.Id))" />
+                    </div>
+                    </div>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <div class="d-flex px-4 pb-2">
+                            <div class="mr-2" style="flex: 1;">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Desktop Preview</MudText>
+                                <a href="@banner.LinkUrl" target="_blank" rel="noopener noreferrer">
+                                    <img src="@banner.DesktopImage" alt="Desktop Banner" style="width: 100%;" />
+                                </a>
+                            </div>
+                            <div style="flex: 1;">
+                                <MudText Typo="Typo.subtitle2" Class="mb-1">Mobile Preview</MudText>
+                                <a href="@banner.LinkUrl" target="_blank" rel="noopener noreferrer">
+                                    <img src="@banner.MobileImage" alt="Mobile Banner" style="width: 100%;" />
+                                </a>
+                            </div>
+                        </div>
+                    </MudItem>
+                    </MudGrid>
+                    </MudPaper>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<style>
+    .banner-chip {
+        margin-right: 0.5rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

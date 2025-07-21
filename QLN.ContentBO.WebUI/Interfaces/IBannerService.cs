@@ -18,14 +18,14 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// </summary>
         /// <param name="banner">The banner to create.</param>
         /// <returns>An HTTP response indicating the result of the operation.</returns>
-        Task<HttpResponseMessage> CreateBanner(Banner banner);
+        Task<HttpResponseMessage> CreateBanner(BannerDTO banner);
 
         /// <summary>
         /// Updates an existing banner.
         /// </summary>
         /// <param name="banner">The banner with updated information.</param>
         /// <returns>An HTTP response indicating the result of the operation.</returns>
-        Task<HttpResponseMessage> UpdateBanner(Banner banner);
+        Task<HttpResponseMessage> UpdateBanner(BannerDTO banner);
 
         /// <summary>
         /// Retrieves a banner by its unique identifier.
@@ -40,5 +40,8 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <param name="bannerId">The unique identifier of the banner to delete.</param>
         /// <returns>An HTTP response indicating the result of the operation.</returns>
         Task<HttpResponseMessage> DeleteBanner(Guid bannerId);
+        Task<HttpResponseMessage> GetBannerByVerticalAndStatus(int? verticalId, bool? status);
+        Task<HttpResponseMessage> ReorderBanner(List<string> newOrder, int verticalId, int subVerticalId, string pageId);
+        
     }
 }

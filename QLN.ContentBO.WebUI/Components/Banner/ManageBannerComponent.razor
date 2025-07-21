@@ -1,32 +1,38 @@
 ﻿@page "/manage/banner"
-@inherits ManageBannerBase
-<MudGrid Style="padding-top: 18px">
-    <MudItem xs="12" md="12">
-        <h2 class="main-title-name-style">Manage Banner</h2>
-        <MudTabs ActivePanelIndex="@activeIndex"
-                 ActivePanelIndexChanged="OnTabChanged"
-                 Rounded="false"
-                 Centered="false"
-                 ScrollButtons="ScrollButtons.Auto"
-                 Scrollable="true"
-                 Class="daily-custom-tabs"
-                 Style="background-color: #FAFAFA;"
-                 DisableSlideAnimation="true">
+@using QLN.ContentBO.WebUI.Pages.Community
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.Banner
+@using QLN.ContentBO.WebUI.Components.Banner.ManageBanner
+@inherits ManageBannerComponentBase
+<MudTabs Elevation="1" Rounded="true" Class="pt-4"
+         ActiveTabClass="active-tab-style">
+    <MudTabPanel>
+        <ChildContent>
+            <ManageBanner/>
+        </ChildContent>
+        <TabContent>
+            <MudText>Manage Banners</MudText>
+        </TabContent>
+    </MudTabPanel>
+    <MudTabPanel>
+        <ChildContent>
+            <CreateBannerComponent />
+        </ChildContent>
+        <TabContent>
+            <MudText>Create Banner</MudText>
+        </TabContent>
+    </MudTabPanel>
+</MudTabs>
 
-            <MudTabPanel Text="Content" />
-            <MudTabPanel Text="Classifieds" />
-            @if (SelectedTab == ManageBannerTab.Content)
-            {
-                @("Manage Content Banner")
-            }
-            else if (SelectedTab == ManageBannerTab.Classifieds)
-            {
-                @("Manage Classifieds Banner")
-            }
-        </MudTabs>
 
-        <MudButton StartIcon="@Icons.Material.Outlined.Add" Style="background-color: #FF7F38; color: white; text-transform: none;" Class="compact-button" OnClick="NavigateToCreateBanner">
-            Create Banner Article
-        </MudButton>
-    </MudItem>
-</MudGrid>
+
+<Style>
+    .active-tab-style {
+    background-color: #FF7F38 !important;
+    color: white !important;
+    border-radius: 4px;
+}
+.mud-tab.mud-tab-active::after {
+    display: none !important;
+}
+</Style>
