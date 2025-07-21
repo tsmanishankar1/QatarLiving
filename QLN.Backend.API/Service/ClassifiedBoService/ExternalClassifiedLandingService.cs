@@ -160,7 +160,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/getSeasonalPicks",
+                    $"api/v2/classifiedbo/getSeasonalPicks?vertical={vertical}",
                     cancellationToken
                 );
 
@@ -180,7 +180,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/seasonal-picks/slotted",
+                    $"api/v2/classifiedbo/seasonal-picks/slotted?vertical={vertical}",
                     cancellationToken
                 );
 
@@ -203,7 +203,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             try
             {
-                var queryParams = $"?pickId={pickId}&slot={slot}&userId={userId}";
+                var queryParams = $"?pickId={pickId}&slot={slot}&userId={userId}&vertical={vertical}";
 
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Put,
@@ -221,7 +221,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(string vertical, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request cannot be null.");

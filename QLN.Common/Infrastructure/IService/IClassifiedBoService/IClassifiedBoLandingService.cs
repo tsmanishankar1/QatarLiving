@@ -21,7 +21,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> ReplaceSlotWithSeasonalPick(string vertical, string userId, Guid newPickId, int targetSlot, CancellationToken cancellationToken = default);
 
-        Task<string> ReorderSeasonalPickSlots(string vertical, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default);
+        Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default);
         Task<string> SoftDeleteSeasonalPick(string pickId, string userId, CancellationToken cancellationToken = default);
     }
 }

@@ -16,5 +16,6 @@ namespace QLN.Common.DTO_s
     {
         public List<SeasonalPickSlotAssignment> SlotAssignments { get; set; } = new();
         public string? UserId { get; set; }
+        public string Vertical { get; set; }
     }
 }
