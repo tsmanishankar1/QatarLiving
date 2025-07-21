@@ -54,13 +54,17 @@ namespace QLN.SearchService.Service
             {
                 case ConstantValues.IndexNames.ClassifiedsItemsIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<ClassifiedsItemsIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
 
                         BuildOrderBy<ClassifiedsItemsIndex>(opts, req.OrderBy);
 
@@ -74,13 +78,17 @@ namespace QLN.SearchService.Service
 
                 case ConstantValues.IndexNames.ClassifiedsPrelovedIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<ClassifiedsPrelovedIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
 
                         BuildOrderBy<ClassifiedsPrelovedIndex>(opts, req.OrderBy);
 
@@ -94,13 +102,17 @@ namespace QLN.SearchService.Service
 
                 case ConstantValues.IndexNames.ClassifiedsCollectiblesIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<ClassifiedsCollectiblesIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
 
                         BuildOrderBy<ClassifiedsCollectiblesIndex>(opts, req.OrderBy);
 
@@ -114,13 +126,17 @@ namespace QLN.SearchService.Service
 
                 case ConstantValues.IndexNames.ClassifiedsDealsIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<ClassifiedsDealsIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for classifieds: {Filter}", opts.Filter);
 
                         BuildOrderBy<ClassifiedsDealsIndex>(opts, req.OrderBy);
 
@@ -134,13 +150,17 @@ namespace QLN.SearchService.Service
 
                 case ConstantValues.IndexNames.ServicesIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<ServicesIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for services: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for services: {Filter}", opts.Filter);
 
                         BuildOrderBy<ServicesIndex>(opts, req.OrderBy);
 
@@ -154,13 +174,17 @@ namespace QLN.SearchService.Service
 
                 case ConstantValues.IndexNames.LandingBackOfficeIndex:
                     {
+                        var filterClauses = new List<string> { "IsActive eq true" };
+
                         if (regularFilters?.Any() == true)
                         {
                             var clauses = regularFilters
                                 .Select(kv => BuildClause<LandingBackOfficeIndex>(kv.Key, kv.Value));
-                            opts.Filter = string.Join(" and ", clauses);
-                            _logger.LogInformation("Applied filter for backoffice: {Filter}", opts.Filter);
+                            filterClauses.AddRange(clauses);
                         }
+
+                        opts.Filter = string.Join(" and ", filterClauses);
+                        _logger.LogInformation("Applied filter for backoffice: {Filter}", opts.Filter);
 
                         BuildOrderBy<LandingBackOfficeIndex>(opts, req.OrderBy);
 
@@ -196,8 +220,15 @@ namespace QLN.SearchService.Service
 
             async Task Handle<T>(Action<List<T>> assign) where T : class
             {
+                var filterClauses = new List<string> { "IsActive eq true" };
+
                 if (regularFilters?.Any() == true)
-                    opts.Filter = string.Join(" and ", regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value)));
+                {
+                    var clauses = regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value));
+                    filterClauses.AddRange(clauses);
+                }
+
+                opts.Filter = string.Join(" and ", filterClauses);
 
                 var result = await _repo.SearchAsync<T>(indexName, opts, req.Text);
                 var filtered = ApplyJsonFilters(result.Items, jsonFilters).ToList();
@@ -224,6 +255,14 @@ namespace QLN.SearchService.Service
                     await Handle<ServicesIndex>(x => response.ServicesItems = x); break;
 
                 case ConstantValues.IndexNames.LandingBackOfficeIndex:
+                    // Add IsActive filter for LandingBackOfficeIndex as well
+                    opts.Filter = "IsActive eq true";
+                    if (regularFilters?.Any() == true)
+                    {
+                        var clauses = regularFilters.Select(kv => BuildClause<LandingBackOfficeIndex>(kv.Key, kv.Value));
+                        opts.Filter = "IsActive eq true and " + string.Join(" and ", clauses);
+                    }
+
                     var raw = await _repo.SearchAsync<LandingBackOfficeIndex>(indexName, opts, req.Text);
                     response.TotalCount = raw.TotalCount;
                     response.MasterItems = raw.Items.ToList();
@@ -303,7 +342,8 @@ namespace QLN.SearchService.Service
                 var opts = new SearchOptions
                 {
                     Size = 10,
-                    IncludeTotalCount = false
+                    IncludeTotalCount = false,
+                    Filter = "IsActive eq true" // Only sample from active records
                 };
 
                 dynamic sampleResults = indexName.ToLowerInvariant() switch
@@ -400,7 +440,7 @@ namespace QLN.SearchService.Service
 
             return typeName switch
             {
-                "ClassifiedsItemsIndex" or "ClassifiedsPrelovedIndex" or "ClassifiedsCollectiblesIndex" =>
+                "ClassifiedsItemsIndex" or "ClassifiedsPrelovedIndex" or "ClassifiedsCollectiblesIndex" or "ServicesIndex" =>
                     new List<string>
                     {
                         "IsPromoted desc",
@@ -409,23 +449,12 @@ namespace QLN.SearchService.Service
                         "RefreshExpiryDate desc",
                         "IsFeatured desc",
                         "FeaturedExpiryDate desc",
-                        "CreatedDate desc"
+                        "CreatedAt desc"
                     },
 
-                "ClassifiedsDealsIndex" => new List<string> { "CreatedDate desc" },
+                "ClassifiedsDealsIndex" => new List<string> { "CreatedAt desc" },
 
-                "ServicesIndex" => new List<string>
-                {
-                    "IsPromoted desc",
-                    "PromotedExpiryDate desc",
-                    "IsRefreshed desc",
-                    "RefreshExpiryDate desc",
-                    "IsFeatured desc",
-                    "FeatureExpiryDate desc",
-                    "CreatedDate desc"
-                },
-
-                _ => new List<string> { "CreatedDate desc" }
+                _ => new List<string> { "CreatedAt desc" }
             };
         }
 
@@ -543,14 +572,32 @@ namespace QLN.SearchService.Service
             throw new ArgumentException($"Unsupported Index: '{index}'", nameof(request.IndexName));
         }
 
-        public Task<T?> GetByIdAsync<T>(string indexName, string key)
+        public async Task<T?> GetByIdAsync<T>(string indexName, string key)
         {
             if (string.IsNullOrWhiteSpace(indexName))
                 throw new ArgumentException("IndexName is required.", nameof(indexName));
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
-            return _repo.GetByIdAsync<T>(indexName, key);
+            var item = await _repo.GetByIdAsync<T>(indexName, key);
+
+            if (item != null)
+            {
+                var type = typeof(T);
+                var isActiveProp = type.GetProperty("IsActive", BindingFlags.Public | BindingFlags.Instance);
+
+                if (isActiveProp != null)
+                {
+                    var isActiveValue = isActiveProp.GetValue(item);
+
+                    if (isActiveValue is bool isActive && !isActive)
+                    {
+                        return default(T);
+                    }
+                }
+            }
+
+            return item;
         }
 
         private string BuildClause<T>(string key, object val)
@@ -652,18 +699,39 @@ namespace QLN.SearchService.Service
 
             try
             {
-                _logger.LogInformation("Service: deleting '{Key}' from '{IndexName}'", key, indexName);
-                await _repo.DeleteAsync(indexName, key);
-                _logger.LogInformation("Service: deleted '{Key}' from '{IndexName}'", key, indexName);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "DeleteAsync called with invalid argument: {Param}", ex.ParamName);
-                throw;
+                _logger.LogInformation("Soft-deleting '{Key}' from '{IndexName}'", key, indexName);
+
+                var modelType = GetModelTypeForVertical(indexName);
+                if (modelType == null)
+                    throw new NotSupportedException($"Unknown index: {indexName}");
+
+                var method = typeof(ISearchRepository).GetMethod(nameof(ISearchRepository.GetByIdAsync))!
+                                                        .MakeGenericMethod(modelType);
+
+                var task = (Task)method.Invoke(_repo, new object[] { indexName, key })!;
+                await task.ConfigureAwait(false);
+                var resultProp = task.GetType().GetProperty("Result")!;
+                var doc = resultProp.GetValue(task);
+                if (doc == null)
+                    throw new KeyNotFoundException($"Document '{key}' not found in '{indexName}'.");
+
+                var prop = modelType.GetProperty("IsActive");
+                if (prop == null)
+                    throw new InvalidOperationException($"'{modelType.Name}' does not have IsActive property.");
+
+                prop.SetValue(doc, false);
+
+                var uploadMethod = typeof(ISearchRepository).GetMethod(nameof(ISearchRepository.UploadAsync))!
+                                                             .MakeGenericMethod(modelType);
+
+                var uploadTask = (Task)uploadMethod.Invoke(_repo, new object[] { indexName, doc! })!;
+                await uploadTask.ConfigureAwait(false);
+
+                _logger.LogInformation("Soft-deleted '{Key}' from '{IndexName}'", key, indexName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in DeleteAsync: indexName={IndexName}, key={Key}", indexName, key);
+                _logger.LogError(ex, "Error during soft-delete for {Key} in {IndexName}", key, indexName);
                 throw;
             }
         }
@@ -679,8 +747,27 @@ namespace QLN.SearchService.Service
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Key is required.", nameof(key));
 
-            var detail = await _repo.GetByIdAsync<T>(indexName, key)
-                         ?? throw new KeyNotFoundException($"No '{key}' in '{indexName}'.");
+            var detail = await _repo.GetByIdAsync<T>(indexName, key);
+
+            // Check if the detail item exists and is active
+            if (detail != null)
+            {
+                var types = typeof(T);
+                var isActiveProp = types.GetProperty("IsActive", BindingFlags.Public | BindingFlags.Instance);
+
+                if (isActiveProp != null)
+                {
+                    var isActiveValue = isActiveProp.GetValue(detail);
+
+                    if (isActiveValue is bool isActive && !isActive)
+                    {
+                        throw new KeyNotFoundException($"No active record with key '{key}' found in '{indexName}'.");
+                    }
+                }
+            }
+
+            if (detail == null)
+                throw new KeyNotFoundException($"No '{key}' in '{indexName}'.");
 
             var type = typeof(T);
             var propL2 = type.GetProperty("L2Category", BindingFlags.Public | BindingFlags.Instance);
@@ -703,7 +790,9 @@ namespace QLN.SearchService.Service
                 IncludeTotalCount = false,
                 Size = similarPageSize
             };
-            opts.Filter = $"{filterField} eq '{filterValue.Replace("'", "''")}'";
+
+            // Add IsActive filter along with category filter
+            opts.Filter = $"IsActive eq true and {filterField} eq '{filterValue.Replace("'", "''")}'";
 
             var simResults = await _repo.SearchAsync<T>(indexName, opts, "*");
 

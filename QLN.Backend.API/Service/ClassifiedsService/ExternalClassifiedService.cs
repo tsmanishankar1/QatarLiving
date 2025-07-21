@@ -2095,7 +2095,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 L2CategoryId = dto.L2CategoryId,
                 L2Category = dto.L2Category,
                 Location = dto.Location,
-                CreatedDate = dto.CreatedDate,
+                CreatedAt = dto.CreatedAt,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
                 Status = dto.Status.ToString(),

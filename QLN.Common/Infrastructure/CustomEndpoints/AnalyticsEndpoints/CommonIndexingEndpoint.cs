@@ -66,7 +66,7 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("GlobalSearch")
-        .WithTags("Search")
+        .WithTags("Indexes")
         .WithSummary("Search documents in any index")
         .WithDescription("Search for documents using ?index=classifiedsitems. Supports both regular property filters and JSON attribute filters.");
 
@@ -97,7 +97,7 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("GetAllIndexDocuments")
-        .WithTags("Search")
+        .WithTags("Indexes")
         .WithSummary("Get all documents with filters, no default sorting")
         .WithDescription("Returns all documents using filters, but skips internal default sorting logic.");
 
@@ -131,11 +131,10 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("UploadDocument")
-        .WithTags("Documents")
+        .WithTags("Indexes")
         .WithSummary("Upload a document to search index")
         .WithDescription("Upload/upsert a document. Specify indexName in payload.");
 
-        // ✅ Update endpoint - /api/indexes/update
         group.MapPut("/update", async (
                 [FromBody] CommonIndexRequest req,
                 [FromServices] ISearchService svc,
@@ -165,11 +164,10 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("UpdateDocument")
-        .WithTags("Documents")
+        .WithTags("Indexes")
         .WithSummary("Update a document in search index")
         .WithDescription("Update/upsert a document. Same as upload operation.");
 
-        // ✅ Get document by ID - /api/indexes/{index}/{id}
         group.MapGet("/{index}/{id}", async (
                 [FromRoute] string index,
                 [FromRoute] string id,
@@ -222,11 +220,10 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("GetDocumentById")
-        .WithTags("Documents")
+        .WithTags("Indexes")
         .WithSummary("Get a document by index and ID")
         .WithDescription("Examples: /api/indexes/classifiedsitems/test_001");
 
-        // ✅ Delete document by ID - /api/indexes/{index}/{id}
         group.MapDelete("/{index}/{id}", async (
                [FromRoute] string index,
                [FromRoute] string id,
@@ -259,11 +256,10 @@ public static class CommonIndexingEndpoints
             }
         })
        .WithName("DeleteDocumentById")
-       .WithTags("Documents")
+       .WithTags("Indexes")
        .WithSummary("Delete a document by index and ID")
        .WithDescription("Examples: DELETE /api/indexes/classifiedsitems/test_001");
 
-        // ✅ Get details with similar - /api/indexes/{index}/{id}/details
         group.MapGet("/{index}/{id}/details", async (
             [FromServices] ISearchService svc,
             [FromServices] ILoggerFactory logFac,
@@ -343,11 +339,10 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("GetDocumentWithSimilar")
-        .WithTags("Documents")
+        .WithTags("Indexes")
         .WithSummary("Get a document plus similar items")
         .WithDescription("Examples: /api/indexes/classifiedsitems/test_001/details?similarPageSize=10");
 
-        // ✅ Health check - /api/indexes/{index}/health
         group.MapGet("/{index}/health", async (
                 [FromRoute] string index,
                 [FromServices] ISearchService svc,
@@ -388,11 +383,10 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("IndexHealthCheck")
-        .WithTags("Management")
+        .WithTags("Indexes")
         .WithSummary("Check health of a specific index")
         .WithDescription("Examples: /api/indexes/classifiedsitems/health");
 
-        // ✅ Index statistics - /api/indexes/{index}/stats
         group.MapGet("/{index}/stats", async (
                 [FromRoute] string index,
                 [FromServices] ISearchService svc,
@@ -426,7 +420,7 @@ public static class CommonIndexingEndpoints
             }
         })
         .WithName("IndexStats")
-        .WithTags("Management")
+        .WithTags("Indexes")
         .WithSummary("Get index statistics")
         .WithDescription("Examples: /api/indexes/classifiedsitems/stats");
 
