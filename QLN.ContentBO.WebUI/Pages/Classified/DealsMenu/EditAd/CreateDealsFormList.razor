@@ -5,15 +5,15 @@
     <DataAnnotationsValidator />
 
      <div class="create-form-list">
-        <h3 class="form-heading-f1">Ad Information</h3>
+        <h3 class="form-heading-f1">Ad Category</h3>
  
         @* <h3 class="form-heading">Ad Information</h3> *@
-            <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+            <MudSelect T="string" Class="white-bg" Label="Sub Vertical" Variant="Variant.Outlined"
                 Value="@Ad.SelectedCategoryId"
                 ValueChanged="@OnCategoryChanged"
                 For="@(() => Ad.SelectedCategoryId)"
                 FullWidth="true">
-             @if (IsLoadingCategories)
+          @*    @if (IsLoadingCategories)
             {
                   <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
             }
@@ -23,7 +23,9 @@
                 {
                     <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
                 }
-            }
+            } *@
+            <MudSelectItem T="string" Value="@CategoryTrees.FirstOrDefault()?.Id.ToString()">Deals</MudSelectItem>
+
         </MudSelect>
 
 
@@ -101,53 +103,55 @@
                 </div>
             }
         }
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Price"
-                      @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
-
+      
         <h3 class="form-heading">Description and Features</h3>
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Offer Title"
                       @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
 
-        <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
-                           Height="350" Placeholder="Start Typing"
-                           For="@(() => Ad.Description)">
-        </MudExRichTextEdit>
+        <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+            <MudText Typo="Typo.body1">
+                Flyer File
+                @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                {
 
+                    <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
+                    <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="ClearFile" />
+                }
+
+            </MudText>
+            <MudSpacer />
+            <MudFileUpload T="IBrowserFile"
+                           Accept=".pdf,.png,.jpg,.jpeg"
+                           MaxFileSize="10485760"
+                           FilesChanged="OnCrFileSelected">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Class="upload-button">
+                        Upload
+                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+        </MudPaper>
+        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+
+
+     
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
                       @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
-           <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
-                        <MudText Typo="Typo.body1">
-                            Certificate / Warranty*
-                            @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
-                            {
 
-                                <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
-                                               Size="Size.Small"
-                                               Color="Color.Error"
-                                               OnClick="ClearFile"
-                                               />
-                            }
-
-                        </MudText>
-                        <MudSpacer />
-                    <MudFileUpload T="IBrowserFile"
-                                Accept=".pdf,.png,.jpg,.jpeg"
-                                MaxFileSize="10485760"
-                                FilesChanged="OnCrFileSelected">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                    Color="Color.Primary"
-                                    Class="upload-button">
-                                Upload
-                                <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
-
-                    </MudPaper>
-        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
-
+        <MudDatePicker Label="Expiry Date"
+                       T="DateTime?"
+                       @bind-Date="EndDay"
+                       Adornment="Adornment.End"
+                       AdornmentIcon="@Icons.Material.Filled.Event"
+                       Class="white-bg"
+                       Variant="Variant.Outlined" />
         <h3 class="form-heading">Contact Details</h3>
         <div class="form-group">
                 <!-- Phone -->

@@ -14,7 +14,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected void GoBack()
         {
-            Navigation.NavigateTo("/manage/classified/items");
+            Navigation.NavigateTo("/manage/classified/deals");
         }
         
     }

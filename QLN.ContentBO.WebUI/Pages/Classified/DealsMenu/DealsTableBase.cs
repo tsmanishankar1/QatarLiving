@@ -140,7 +140,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         }
         protected void NavigateToEdit(ListingItem item)
         {
-            var id = item.AdId;
+            var id = item.AdId; 
             NavigationManager.NavigateTo($"/manage/classified/deals/edit/ad/{id}");
         }
 

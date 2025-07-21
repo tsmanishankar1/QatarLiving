@@ -136,7 +136,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected void OnEdit(SubscriptionListing item)
         {
             var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
+            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
         protected void OnPreview(SubscriptionListing item)

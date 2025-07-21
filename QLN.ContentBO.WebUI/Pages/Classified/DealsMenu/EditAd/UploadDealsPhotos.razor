@@ -3,29 +3,30 @@
 @using QLN.ContentBO.WebUI.Models;
 @inherits UploadDealsPhotosBase
 
-<h3 class="Upload-heder">Upload Photos</h3>
+<h3 class="Upload-heder">Upload Cover</h3>
 
 <div class="Upload-container">
     <div class="d-flex align-items-center mb-2">
         <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
         <span class="photo-guidelines">
-            Upload at least 4 photos (maximum 9 photos) to attract shoppers to your offer.
-            Use landscape orientation (horizontal) for optimal photo display.
-            <MudLink href="#">View Photo Suggestions</MudLink>
+            Upload a high quality cover for the flyer to attract shoppers to your offer. Use portrait orientation (vertical) for optimal photo display.
         </span>
     </div>
 
-    <MudText Typo="Typo.body2" Class="mb-3 drag-instruction-text">
+   @*  <MudText Typo="Typo.body2" Class="mb-3 drag-instruction-text">
         Hold and drag 
         <img src="/qln-images/classifieds/openwith_icon.svg" alt="Drag Icon" class="inline-drag-icon" />
         to reorder.
-    </MudText>
+    </MudText> *@
 
     <div id="image-upload-container" class="image-grid">
-        @foreach (var image in AdModel.Images.OrderBy(img => img.Order))
+        @if (AdModel.Images?.Any() == true)
         {
-            <div class="upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
+            var image = AdModel.Images.OrderBy(img => img.Order).First();
+
+            <div class="deals-upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
                 <label class="upload-label">
+
                     @if (string.IsNullOrEmpty(image.Url))
                     {
                         <div class="upload-content">
@@ -36,32 +37,30 @@
                         </div>
                     }
 
-                    <InputFile OnChange="@(e => OnMultipleFilesSelected(e, image.Id))" multiple class="file-input" />
+                    <InputFile OnChange="@(e => OnMultipleFilesSelected(e, image.Id))"
+                               multiple
+                               class="file-input" />
 
                     @if (!string.IsNullOrEmpty(image.Url))
                     {
                         <img src="@image.Url" alt="Uploaded Image" class="preview-image" />
-                        <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
+
+                        <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline"
+                                       Class="delete-icon"
                                        OnClick="@(() => RemoveImage(image.Id))" />
                     }
 
                     @if (image.Order == 0)
                     {
-                        <div class="cover-photo-label">Cover Photo</div>
+                        <div class="cover-photo-label">Flyer Cover</div>
                     }
+
                 </label>
             </div>
         }
 
-        @if (AdModel.Images.Count < MaxImages)
-        {
-            <div class="upload-box add-more-box" @onclick="AddImageBox">
-                <div class="upload-content">
-                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
-                    <div class="upload-text">Add More<br />Photos</div>
-                </div>
-            </div>
-        }
+
+      
     </div>
 </div>
 <style>
@@ -125,7 +124,7 @@
     gap: 16px;
 }
 
-.upload-box {
+.deals-upload-box {
     position: relative;
         border: 1px dashed #d1d5db;
         border-radius: 2px;
@@ -136,6 +135,8 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        height: 180px;
+        width: 120px;
 }
 
 .upload-label {

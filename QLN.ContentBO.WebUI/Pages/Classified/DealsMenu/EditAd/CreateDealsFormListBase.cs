@@ -44,6 +44,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
         [Inject] ILogger<CreateDealsFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
+        public DateTime? EndDay { get; set; }
 
         protected async Task OnCrFileSelected(IBrowserFile file)
         {
