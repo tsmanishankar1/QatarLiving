@@ -125,14 +125,9 @@
                 <MudText Class="banner-field-heading">
                     Availability</MudText>
               <div class="d-flex align-center gap-4">
-    <div class="form-check">
-        <MudCheckBox @bind-Value="bannerModel.IsDesktopAvailability" Label="Desktop Availability" Color="Color.Primary"></MudCheckBox>
-    </div>
-
-    <div class="form-check">
-        <MudCheckBox @bind-Value="bannerModel.IsMobileAvailability" Label="Mobile Availability" Color="Color.Primary"></MudCheckBox>
-    </div>
-</div>
+                <MudCheckBox @bind-Value="bannerModel.IsDesktopAvailability" Label="Desktop Availability" Color="Color.Primary"></MudCheckBox>
+                <MudCheckBox @bind-Value="bannerModel.IsMobileAvailability" Label="Mobile Availability" Color="Color.Primary"></MudCheckBox>
+             </div>
                  @if (!string.IsNullOrEmpty(_AvailabilityError))
                 { 
                     <div class="mud-error-text">@_AvailabilityError</div>
@@ -141,7 +136,7 @@
    
 
  <MudItem xs="6">
-    <div class="d-flex flex-column gap-6">
+    <div class="d-flex flex-column">
         <div>
             <MudText Class="banner-field-heading">Desktop Banner
                 Image</MudText>
@@ -192,9 +187,9 @@
                 } 
         </div>
 
-        <MudText Class="banner-field-heading">Mobile Banner
+        <MudText Class="banner-field-heading pt-6">Mobile Banner
             Image</MudText>
-            <MudFileUpload  T="IBrowserFile" Accept="image/png,image/jpeg"
+            <MudFileUpload  T="IBrowserFile" Accept="image/png,image/jpeg" Disabled="@(bannerModel.IsMobileAvailability == false)"
                 OnFilesChanged="HandleMobileImageChanged" MaximumFileCount="1" MaxFileSize="10485760">
                 <ActivatorContent>
                     <MudPaper Class="pa-6 d-flex flex-column align-center justify-center"
@@ -221,7 +216,7 @@
             {
                 <MudPaper Elevation="0" Class="banner-image-picker-style mt-2" Style="">
                     <div class="event-upload-action-style">
-                        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="HandleMobileImageChanged"
+                        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="HandleMobileImageChanged" Disabled="@(bannerModel.IsMobileAvailability == false)"
                             MaximumFileCount="1" MaxFileSize="10485760">
                             <ActivatorContent>
                                 <MudButton>

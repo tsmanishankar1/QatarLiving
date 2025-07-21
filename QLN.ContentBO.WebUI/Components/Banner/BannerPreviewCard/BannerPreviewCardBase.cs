@@ -7,6 +7,7 @@ using QLN.ContentBO.WebUI.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Interfaces;
+using Azure.Storage.Blobs.Models;
 
 
 namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
@@ -92,13 +93,15 @@ namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
             {
                 if (result.Canceled)
                 {
+                    isReordering = false;
+                    StateHasChanged();
                     await ResetOrder();
                 }
                 if (!result.Canceled)
                 {
+                    isReordering = false;
                     if (OnReorderCallBack.HasDelegate)
                     {
-                        isReordering = false;
                         await OnReorderCallBack.InvokeAsync((newOrder, verticalId, subVerticalId, pageId));
                     }
                 }
@@ -118,7 +121,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
             try
             {
                 await JS.InvokeVoidAsync("resetTableOrder");
-                isReordering = false;
             }
             catch (Exception ex)
             {

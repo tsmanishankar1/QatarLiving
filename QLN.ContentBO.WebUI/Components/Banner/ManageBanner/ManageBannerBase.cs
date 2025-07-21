@@ -28,7 +28,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         [Inject] IBannerService bannerService { get; set; }
         protected string? SelectedStatus { get; set; }
         protected bool? isActive { get; set; }
-        protected int SelectedVertical;
+        protected int SelectedVertical = -1;
         public List<BannerType> bannerTypes { get; set; } = new();
         public List<BannerPageLocationDto> bannerPageTypes { get; set; } = new();
 
@@ -103,7 +103,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         {
             try
             {
-                var selectedVertical = 5;
+                int? selectedVertical = SelectedVertical == -1 ? null : SelectedVertical;
                 var apiResponse = await bannerService.GetBannerByVerticalAndStatus(selectedVertical, isActive);
                 if (apiResponse.IsSuccessStatusCode)
                 {

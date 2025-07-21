@@ -18,6 +18,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         [Parameter]
         public Guid Id { get; set; }
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
+         [Inject] protected NavigationManager Navigation { get; set; }
         protected BannerDTO bannerModel = new();
         [Inject] IBannerService bannerService { get; set; }
         [Inject]
@@ -228,6 +229,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                         };
 
                         bannerTypeRequests.Add(bannerTypeRequest);
+                        return bannerTypeRequests;
                     }
                 }
             }
@@ -250,7 +252,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         }
         protected async void OnCancelClicked()
         {
-
+            Navigation.NavigateTo("/manage/banner");
         }
 
 

@@ -122,14 +122,9 @@
                 <MudText Class="field-heading">
                     Availability</MudText>
               <div class="d-flex align-center gap-4">
-     <div class="form-check">
-        <MudCheckBox @bind-Value="bannerModel.IsDesktopAvailability" Label="Desktop Availability" Color="Color.Primary"></MudCheckBox>
-    </div>
-
-    <div class="form-check">
-        <MudCheckBox @bind-Value="bannerModel.IsMobileAvailability" Label="Mobile Availability" Color="Color.Primary"></MudCheckBox>
-    </div>
-</div>
+                <MudCheckBox @bind-Value="bannerModel.IsDesktopAvailability" Label="Desktop Availability" Color="Color.Primary"></MudCheckBox>
+                <MudCheckBox @bind-Value="bannerModel.IsMobileAvailability" Label="Mobile Availability" Color="Color.Primary"></MudCheckBox>
+            </div>
                  @if (!string.IsNullOrEmpty(_AvailabilityError))
                 { 
                     <div class="mud-error-text">@_AvailabilityError</div>
@@ -138,7 +133,7 @@
    
 
  <MudItem xs="6">
-    <div class="d-flex flex-column gap-6">
+    <div class="d-flex flex-column">
         <div>
             <MudText Class="field-heading">Desktop Banner
                 Image</MudText>
@@ -189,7 +184,7 @@
                 } 
         </div>
 
-        <MudText Class="field-heading">Mobile Banner
+        <MudText Class="field-heading pt-6">Mobile Banner
             Image</MudText>
             <MudFileUpload  T="IBrowserFile" Accept="image/png,image/jpeg"
                 OnFilesChanged="HandleMobileImageChanged" MaximumFileCount="1" MaxFileSize="10485760">

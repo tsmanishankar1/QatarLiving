@@ -1,6 +1,7 @@
 @using QLN.ContentBO.WebUI.Pages.Community
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.Banner.BannerPreviewCard
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @inherits BannerPreviewCardBase
 <div class="d-flex justify-end" style="padding-bottom: 20px;">
     <MudButton 
@@ -64,15 +65,31 @@
                         <div class="d-flex px-4 pb-2">
                             <div class="mr-2" style="flex: 1;">
                                 <MudText Typo="Typo.subtitle2" Class="mb-1">Desktop Preview</MudText>
+                                @if (!string.IsNullOrEmpty(banner.DesktopImage))
+                                {
                                 <a href="@banner.LinkUrl" target="_blank" rel="noopener noreferrer">
                                     <img src="@banner.DesktopImage" alt="Desktop Banner" style="width: 100%;" />
                                 </a>
+                                }
+                                else{
+                                    <div>
+                                        <EmptyCard Title="No Desktop Image Added" Subtitle="" />
+                                    </div>
+                                }
                             </div>
                             <div style="flex: 1;">
                                 <MudText Typo="Typo.subtitle2" Class="mb-1">Mobile Preview</MudText>
-                                <a href="@banner.LinkUrl" target="_blank" rel="noopener noreferrer">
-                                    <img src="@banner.MobileImage" alt="Mobile Banner" style="width: 100%;" />
-                                </a>
+                                @if (!string.IsNullOrEmpty(banner.MobileImage))
+                                {
+                                    <a href="@banner.LinkUrl" target="_blank" rel="noopener noreferrer">
+                                        <img src="@banner.MobileImage" alt="Mobile Banner" style="width: 100%;" />
+                                    </a>
+                                }
+                                else{
+                                    <div>
+                                        <EmptyCard Title="No Mobile Image Added" Subtitle="" />
+                                    </div>
+                                }
                             </div>
                         </div>
                     </MudItem>

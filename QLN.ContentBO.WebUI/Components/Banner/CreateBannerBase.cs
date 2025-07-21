@@ -164,6 +164,8 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 await stream.CopyToAsync(memoryStream);
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
                 bannerModel.DesktopImage = $"data:{file.ContentType};base64,{base64}";
+                Snackbar.Add("Desktop Image Uploaded Successfully", severity: Severity.Success);
+
             }
         }
         protected async Task HandleMobileImageChanged(InputFileChangeEventArgs e)
@@ -176,6 +178,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 await stream.CopyToAsync(memoryStream);
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
                 bannerModel.MobileImage = $"data:{file.ContentType};base64,{base64}";
+                Snackbar.Add("Mobile Image Uploaded Successfully", severity: Severity.Success);
             }
         }
         protected async void OnCancelClicked()
@@ -201,6 +204,8 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             _DesktopImageError = null;
             _MobileImageError = null;
             _AvailabilityError = null;
+            _DateError = null;
+            _BannerError = null;
             bannerModel.BannerTypeIds = _selectedBannerTypeRequests;
             if (bannerModel.BannerTypeIds == null || !bannerModel.BannerTypeIds.Any())
             {
