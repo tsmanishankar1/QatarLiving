@@ -150,13 +150,14 @@ namespace QLN.Backend.API.Service.V2ContentService
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
    int categoryId,
    int subCategoryId,
-   string? status,
+   ArticleStatus status,
    int? page,
    int? pageSize,
    CancellationToken cancellationToken)
         {
             var queryParams = new List<string>();
-            if (!string.IsNullOrWhiteSpace(status)) queryParams.Add($"status={status}");
+            if (status != ArticleStatus.None)
+                queryParams.Add($"status={(int)status}");
             if (page.HasValue) queryParams.Add($"page={page.Value}");
             if (pageSize.HasValue) queryParams.Add($"pageSize={pageSize.Value}");
 
