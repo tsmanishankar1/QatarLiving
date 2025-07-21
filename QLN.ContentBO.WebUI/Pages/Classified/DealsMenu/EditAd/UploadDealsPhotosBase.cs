@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
+namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
 {
     public partial class UploadDealsPhotosBase : ComponentBase
     {

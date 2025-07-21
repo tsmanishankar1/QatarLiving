@@ -1,0 +1,107 @@
+
+@inherits ViewStoresBase
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing;
+@using QLN.ContentBO.WebUI.Pages.Classified.Stores.StoresSearchSortBar;
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+        <div class="community-table">
+            <MudPaper Class="pa-4">
+
+                @if (Listings == null || !Listings.Any())
+                {
+                    <div class="empty-card-wrapper d-flex flex-column align-items-center justify-content-center">
+                        <img src="/qln-images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
+                        <MudText Class="mx-6 py-4" Style="color: #242424; font-size: 15px;">
+                            No Stores yet.
+                        </MudText>
+                        <MudButton Style="background-color: white; 
+                              border: 1px solid #FF7F38; 
+                              color: #FF7F38; 
+                              text-transform: none; 
+                              padding-left: 67px; 
+                              padding-right: 67px;
+                              margin-bottom: 300px ;" Class="daily-compact-button mt-2">
+                            Add Stores
+                        </MudButton>
+                    </div>
+                }
+                else
+                {
+                    <MudTable Items="@Listings" Hover="true" Bordered="true" Elevation="1"
+                        Class="mud-table event-custom-table"
+                        Style="border-radius: 12px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #E0E0E0;">
+                        <HeaderContent>
+                            <MudTh class="header-cell">Company name</MudTh>
+                            <MudTh class="header-cell">Email</MudTh>
+                            <MudTh class="header-cell">Mobile</MudTh>
+                            <MudTh class="header-cell">Whatsapp</MudTh>
+                            <MudTh class="header-cell">Web Url</MudTh>
+                            <MudTh class="header-cell">Status</MudTh>
+                            <MudTh class="header-cell">Start Date</MudTh>
+                            <MudTh class="header-cell">End Date</MudTh>
+                            <MudTh class="header-cell">Actions</MudTh>
+                        </HeaderContent>
+
+                        <RowTemplate>
+                            <MudTd>@context.CompanyName</MudTd>
+                            <MudTd>@context.Email</MudTd>
+                            <MudTd>@context.Mobile</MudTd>
+                            <MudTd>@context.Whatsapp</MudTd>
+                            <MudTd>@context.WebUrl</MudTd>
+                            <MudTd>@context.Status</MudTd>
+                            <MudTd>@context.StartDate.ToString("dd-MM-yyyy")</MudTd>
+                            <MudTd>@context.EndDate.ToString("dd-MM-yyyy")</MudTd>
+                            <MudTd>
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Class="menu-icon-dark">
+                                    <MudMenuItem OnClick="@(() => OnViewClicked(context))">
+                                        <img src="/qln-images/eye_icon.svg"  alt="eye" />View
+                                    </MudMenuItem>
+                                </MudMenu>
+                               
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                        OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+                }
+            </MudPaper>
+
+
+        </div>
+    </MudItem>
+</MudGrid>
+
+<style>
+    .community-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+    }
+
+    .community-table {
+        margin-top: 20px;
+    }
+
+    .sticky-search-bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background-color: #FAFAFA;
+        padding: 10px 0;
+    }
+
+
+    .menu-icon-dark .mud-icon-button svg {
+        fill: #242424 !important;
+    }
+
+</style>

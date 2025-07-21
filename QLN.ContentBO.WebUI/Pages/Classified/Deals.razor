@@ -1,5 +1,20 @@
 ﻿@page "/manage/classified/deals"
+@inherits DealsBase
 
-<h3>Deals Page</h3>
+<h2 class="main-title-name-style">Preloved</h2>
+<MudTabs @bind-ActivePanelIndex="ActiveIndex"
+         Rounded="false"
+         Class="custom-tabs"
+         DisableSlideAnimation="true"
+         TabPanelClass="tab-panel-style"
+         TextColor="Color.Default"
+         IndicatorColor="Color.Primary">
 
+    @foreach (var tab in TabTitles)
+    {
+        <MudTabPanel Text="@tab">
+            @RenderTabContent()
+        </MudTabPanel>
+    }
+</MudTabs>
 

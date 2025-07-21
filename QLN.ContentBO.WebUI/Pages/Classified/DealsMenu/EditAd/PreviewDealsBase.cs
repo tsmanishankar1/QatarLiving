@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
+namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
 {
     public class PreviewDealsBase : ComponentBase
     {
