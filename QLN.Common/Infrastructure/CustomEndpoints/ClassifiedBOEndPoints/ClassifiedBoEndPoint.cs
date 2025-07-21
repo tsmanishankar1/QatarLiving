@@ -501,16 +501,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapDelete("/seasonal-picks/soft-delete", async Task<Results<
-    Ok<string>,
-    ForbidHttpResult,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    [FromQuery] string pickId,    
-    IClassifiedBoLandingService service,
-    HttpContext httpContext,
-    CancellationToken cancellationToken
-) =>
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                [FromQuery] string pickId,  
+                string Vertical,
+                IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+                ) =>
             {
                 try
                 {
@@ -531,7 +532,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, Vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -556,6 +557,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string pickId,
                 [FromQuery] string userId,
+                [FromQuery] string Vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -574,7 +576,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, Vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

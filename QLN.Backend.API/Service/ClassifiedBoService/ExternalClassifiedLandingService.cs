@@ -263,7 +263,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, CancellationToken cancellationToken = default)
+        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(pickId))
                 throw new ArgumentException("PickId is required.", nameof(pickId));
@@ -271,9 +271,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
 
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+
             try
             {
-                var queryParams = $"?pickId={pickId}&userId={userId}";
+                var queryParams = $"?pickId={pickId}&userId={userId}&vertical={vertical}";
 
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
