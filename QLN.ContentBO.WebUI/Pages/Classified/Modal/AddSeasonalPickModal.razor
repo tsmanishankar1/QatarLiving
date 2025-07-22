@@ -19,79 +19,101 @@
 
             <!-- Category -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Category" 
-                           @bind-Value="SelectedCategory"
+                <MudSelect T="string" Label="Category"
+                           Value="SelectedCategoryId"
                            Class="classified-field no-underline"
-                           Required="true" RequiredError="Category is required">
-                    <MudSelectItem T="string" Value=null>Choose</MudSelectItem>
-                    @foreach (var category in Categories)
+                           Required="true"
+                           RequiredError="Category is required"
+                           ValueChanged="OnCategoryChanged">
+                    @if (IsLoadingCategories)
                     {
-                        <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                        <MudSelectItem T="string" Value=null Disabled="true">
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
+                            Loading categories...
+                        </MudSelectItem>
+                    }
+                    else
+                    {
+                        <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                        @foreach (var category in _categoryTree)
+                        {
+                            <MudSelectItem T="string" Value="@category.Id">@category.Name</MudSelectItem>
+                        }
                     }
                 </MudSelect>
+
+
             </div>
 
             <!-- Subcategory -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Subcategory" 
-                           @bind-Value="SelectedSubcategory "
-                           Disabled="@string.IsNullOrEmpty(SelectedCategory)"
+                <MudSelect T="string" Label="Subcategory"
+                           Value="SelectedSubcategoryId"
+                           Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
                            Class="classified-field no-underline"
-                           Required="true" RequiredError="Subcategory is required">
-                    <MudSelectItem T="string" Value=null>Choose</MudSelectItem>
-                    @foreach (var sub in GetSubcategories(SelectedCategory))
+                           Required="true"
+                           RequiredError="Subcategory is required"
+                           ValueChanged="OnSubcategoryChanged">
+                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                    @foreach (var sub in _subcategories)
                     {
-                        <MudSelectItem T="string" Value="@sub">@sub</MudSelectItem>
+                        <MudSelectItem T="string" Value="@sub.Id">@sub.Name</MudSelectItem>
                     }
                 </MudSelect>
+
             </div>
 
             <!-- Section -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Section" 
-                           @bind-Value="SelectedSection"
-                           Disabled="@string.IsNullOrEmpty(SelectedSubcategory)"
+                <MudSelect T="string" Label="Section"
+                           @bind-Value="SelectedSectionId"
+                           Disabled="@string.IsNullOrEmpty(SelectedSubcategoryId)"
                            Class="classified-field no-underline"
-                           Required="true" RequiredError="Section is required">
-                    <MudSelectItem T="string" Value=null>Choose</MudSelectItem>
-                    @foreach (var sec in GetSections(SelectedSubcategory))
+                           Required="true"
+                           RequiredError="Section is required">
+                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                    @foreach (var sec in _sections)
                     {
-                        <MudSelectItem T="string" Value="@sec">@sec</MudSelectItem>
+                        <MudSelectItem T="string" Value="@sec.Id">@sec.Name</MudSelectItem>
                     }
                 </MudSelect>
+
             </div>
 
             <!-- Image Upload -->
             <div class="mx-auto">
+              <MudFileUpload T="IBrowserFile" Accept="image/*" FilesChanged="OnLogoFileSelected" MaxFileSize="10485760">
+                <ActivatorContent>
                 <MudPaper Elevation="0" Class="classified-image-container mt-2">
                     @if (!string.IsNullOrEmpty(ImagePreviewUrl))
                     {
                         <img src="@ImagePreviewUrl" style="max-width: 100%; max-height: 200px;" />
-                        <MudButton Variant="Variant.Text" Color="Color.Error" OnClick="() => ImagePreviewUrl = null" Class="mt-2">
-                            Remove Image
-                        </MudButton>
+                       
                     }
                     else
                     {
-                        <img src="/qln-images/upload_icon.svg" alt="upload"/>
+                        <img src="/qln-images/upload_icon.svg" alt="upload" />
                         <MudButton Variant="Variant.Text">
                             Upload
                         </MudButton>
                         <input type="file" @ref="fileInput" style="display: none;" accept="image/*" />
                     }
                 </MudPaper>
+                    </ActivatorContent>
+
+                </MudFileUpload>
                 <MudText Typo="Typo.caption" Align="Align.Center" Class="mt-1">Recommended image size: 330 x 200 pixels</MudText>
             </div>
 
             <!-- Footer Buttons -->
-            <div class=" classified-button-wrappermx-auto mt-2">
+            <div class=" classified-button-wrapper mx-auto mt-2">
                 <MudButton Color="Color.Primary" OnClick="Save" Disabled="@(!IsFormValid())" Class="classified-button">
                     Add
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
                     Close
                 </MudButton>
-               
+
             </div>
 
         </div>
