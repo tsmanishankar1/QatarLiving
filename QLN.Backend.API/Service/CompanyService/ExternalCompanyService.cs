@@ -34,7 +34,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
-
+            string? cerBlobFileName = null;
             try
             {
                 var id = Guid.NewGuid();
@@ -63,7 +63,20 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
+                if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
+                {
+                    string cerExtension;
+                    string cerBase64Data;
 
+                    (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
+
+                    if (cerExtension is not ("png" or "jpg" or "pdf"))
+                        throw new ArgumentException("Certificate must be in PDF, PNG or JPG format.");
+
+                    cerBlobFileName = $"{dto.BusinessName}_{id}.{cerExtension}";
+                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
+                    dto.TherapeuticCertificate = cerBlobUrl;
+                }
                 var url = "/api/companyprofile/createByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -85,14 +98,14 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
                 if (response.StatusCode == HttpStatusCode.Conflict)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
@@ -103,18 +116,22 @@ namespace QLN.Backend.API.Service.CompanyService
 
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
             }
         }
-        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, CancellationToken cancellationToken)
+
+        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, string? cerFile, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrWhiteSpace(crFile))
                 await _blobStorage.DeleteFile(crFile, "crdocument", cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(logoFile))
                 await _blobStorage.DeleteFile(logoFile, "companylogo", cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(cerFile))
+                await _blobStorage.DeleteFile(cerFile, "therapeuticcertificate", cancellationToken);
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -159,6 +176,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
+            string? cerBlobFileName = null;
             try
             {
                 var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
@@ -185,6 +203,20 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
+                if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate) && !dto.TherapeuticCertificate.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    string cerExtension;
+                    string cerBase64Data;
+
+                    (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
+
+                    if (cerExtension is not ("png" or "jpg" or "pdf"))
+                        throw new ArgumentException("Certificat must be in PDF, PNG or JPG format.");
+
+                    cerBlobFileName = $"{dto.BusinessName}_{id}.{cerExtension}";
+                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
+                    dto.TherapeuticCertificate = cerBlobUrl;
+                }
                 var url = $"/api/companyprofile/updateByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
@@ -208,7 +240,7 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
 
@@ -216,7 +248,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
@@ -226,7 +258,7 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cancellationToken);
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error updating company profile");
                 throw;
             }
