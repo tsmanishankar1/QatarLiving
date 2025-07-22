@@ -133,7 +133,7 @@ namespace QLN.Common.Infrastructure.Constants
         }                  
         public static class Services
         {
-            public const string StoreName = "statestore";
+            public const string StoreName = "servicestatestore";
             public const string IndexKey = "service-category-index";
             public const string ServiceAppId = "qln-classified-ms";
             public const string ServicesIndexKey = "services-index";

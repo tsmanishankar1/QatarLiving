@@ -18,7 +18,7 @@ namespace QLN.Backend.API.Service.Services
         private readonly ILogger<ExternalServicesService> _logger;
         private readonly IFileStorageBlobService _blobStorage;
         private readonly ISearchService _searchService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, 
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger,
             IFileStorageBlobService blobStorage, ISearchService searchService)
         {
             _dapr = dapr;
@@ -240,6 +240,7 @@ namespace QLN.Backend.API.Service.Services
                 L1CategoryName = l1CategoryName,
                 L2CategoryName = l2CategoryName,
                 Price = (double)dto.Price,
+                IsPriceOnRequest = dto.IsPriceOnRequest,
                 Title = dto.Title,
                 Description = dto.Description,
                 PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
@@ -578,6 +579,48 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
+        public async Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/service/moderatebulkbyuserid";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var moderatedAds = JsonSerializer.Deserialize<List<ServicesDto>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (moderatedAds != null && moderatedAds.Any())
+                {
+                    foreach (var dto in moderatedAds)
+                    {
+                        await IndexServiceToAzureSearch(dto, cancellationToken);
+                    }
+                }
+                return moderatedAds ?? new List<ServicesDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error moderating bulk services");
+                throw;
+            }
+        }
     }
 }
