@@ -2,8 +2,7 @@
 @inherits ReportsFormBase
 
 <div class="report-form-container">
-    <MudText Typo="Typo.h6" Class="form-title">Report Form</MudText>
-
+     <h3 class="form-heading">Report Form</h3>
     <MudSelect T="string" Label="Category*" Variant="Variant.Outlined" Class="form-field" Required="true" @bind-Value="_selectedCategory">
         @foreach (var category in _categories)
         {
@@ -79,7 +78,48 @@
     </MudSelect>
 
     <MudSelect T="string" Label="Section" Variant="Variant.Outlined" Class="form-field disabled-field" Disabled="true"></MudSelect>
-    <MudSelect T="string" Label="More Filters" Variant="Variant.Outlined" Class="form-field disabled-field" Disabled="true"></MudSelect>
+    <!-- More Filters Popover Trigger -->
+    <div class="report-date-input @(showFilterPopover ? "active-report" : "")" @onclick="ToggleFilterPopover">
+        <span class="report-date-placeholder">More Filters</span>
+    <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Class="@FilterIconClass" />
+    <MudPopover Open="@showFilterPopover"
+                AnchorOrigin="Origin.BottomCenter"
+                TransformOrigin="Origin.TopCenter"
+                Elevation="6"
+                Class="popover-container"
+                Style="padding:0;">
+            <div class="filter-popover-container">
+                <!-- Header -->
+                <div class="filter-popover-header">
+                    More Filters
+                </div>
+                <!-- Filter content like in the image -->
+                <div class="filter-scroll-area">
+                    <!-- Example Sections -->
+                    <div class="filter-section">
+                        <strong>Brand</strong>
+                        <MudCheckBox  T="bool"Label="Apple" @bind-Checked="_brandApple" />
+                        <MudCheckBox  T="bool"Label="Samsung" @bind-Checked="_brandSamsung" />
+                    </div>
+
+                    <div class="filter-section">
+                        <strong>Condition</strong>
+                        <MudCheckBox T="bool" Label="Used" @bind-Checked="_conditionUsed" />
+                        <MudCheckBox  T="bool"Label="New" @bind-Checked="_conditionNew" />
+                    </div>
+
+                    <!-- Add other sections (Model, Capacity, etc.) here -->
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="filter-footer">
+                    <MudButton Variant="Variant.Text" OnClick="CancelFilters" Class="popover-button">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters" Class="popover-button">Apply</MudButton>
+                </div>
+            </div>
+        </MudPopover>
+
+     </div>
 
     <MudButton Variant="Variant.Filled" Color="Color.Primary"  Class="download-btn" FullWidth="true">
         <img src="/qln-images/upload_white_icon.svg" class="image-upload" width="20" height="20" />
@@ -153,10 +193,10 @@
       display: flex;
         align-items: center;
         flex-direction: row;
-        justify-content: space-between;  /* pushes text left and icon right */
+        justify-content: space-between;  
         border: 1px solid var(--color-secondary-grey-container);
         border-radius: 8px;
-        padding: 0 16px;                 /* horizontal padding for balance */
+        padding: 0 16px;                
         height: 50px;
         font-size: 14px;
         cursor: pointer;
@@ -182,8 +222,6 @@
         height: 20px;
         margin-left: 12px;
     }
-
-
     .form-title {
         color: var(--color-primary);
         font-weight: 600;
@@ -216,6 +254,45 @@
 
     .active-icon {
         filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+    }
+    .filter-popover-container {
+        width: 460px;
+        max-height: 350px;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .filter-popover-header {
+        background-color: var(--color-secondary-grey-container);
+        padding: 12px 16px;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-text-heading); 
+    }
+    .filter-scroll-area {
+        overflow-y: auto;
+        padding: 16px;
+        flex: 1;
+    }
+
+    .filter-section {
+        margin-bottom: 16px;
+    }
+
+    .filter-footer {
+        display: flex;
+        flex-direction: row;
+        padding: 12px 16px;
+        border-top: 1px solid #eee;
+        gap: 8px;
+        background: #fff;
+    }
+      .form-heading {
+        color: var(--color-primary);
+        font-size: 18px;
+        font-weight: 600;
     }
 
 </style>

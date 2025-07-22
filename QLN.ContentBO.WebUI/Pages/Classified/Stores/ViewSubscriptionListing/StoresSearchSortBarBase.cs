@@ -16,16 +16,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
-
-        protected DateTime? dateCreated;
-        protected DateTime? datePublished;
-
-        protected bool showCreatedPopover = false;
-        protected bool showPublishedPopover = false;
-
-        protected DateTime? tempCreatedDate;
-        protected DateTime? tempPublishedDate;
-
         protected async Task OnSearchChanged(ChangeEventArgs e)
         {
             if (e?.Value != null)
@@ -38,39 +28,37 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             await OnSort.InvokeAsync(ascending);
         }
 
-        protected void ToggleCreatedPopover()
-        {
-            showPublishedPopover = false;
-            tempCreatedDate = dateCreated;
-            showCreatedPopover = true;
-        }
+  
 
-        protected void TogglePublishedPopover()
-        {
-            showCreatedPopover = false;
-            tempPublishedDate = datePublished;
-            showPublishedPopover = true;
-        }
 
-        protected void CancelCreatedPopover() => showCreatedPopover = false;
-        protected void CancelPublishedPopover() => showPublishedPopover = false;
-
-        protected void ConfirmCreatedPopover()
-        {
-            dateCreated = tempCreatedDate;
-            showCreatedPopover = false;
-        }
-
-        protected void ConfirmPublishedPopover()
-        {
-            datePublished = tempPublishedDate;
-            showPublishedPopover = false;
-        }
+        // Date range logic
+        protected DateRange _dateRange = new(); // both Start and End are null by default
+        protected DateRange _tempDateRange = new();
 
         protected void ClearFilters()
         {
-            dateCreated = null;
-            datePublished = null;
+            _dateRange = new();
+            _tempDateRange = new();
+        }
+
+        protected bool showDatePopover = false;
+
+        protected void ToggleDatePopover()
+        {
+            _tempDateRange = new DateRange(_dateRange.Start, _dateRange.End);
+            showDatePopover = !showDatePopover;
+        }
+
+        protected void CancelDatePopover()
+        {
+            showDatePopover = false;
+        }
+
+        protected void ApplyDatePopover()
+        {
+            _dateRange = new DateRange(_tempDateRange.Start, _tempDateRange.End);
+            showDatePopover = false;
+            StateHasChanged();
         }
 
         protected async Task AddEventCallback()
@@ -105,11 +93,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 
             return Task.CompletedTask;
         }
-
-        protected void ClearDateFilters()
+        protected List<string> SubscriptionTypes = new()
         {
-            dateCreated = null;
-            datePublished = null;
+            "Free",
+            "Basic",
+            "Pro",
+            "Enterprise"
+        };
+
+        protected string SelectedSubscriptionType { get; set; } = null;
+
+        protected Task OnSubscriptionChanged(string selected)
+        {
+            SelectedSubscriptionType = selected;
+            // Handle logic like filtering, etc.
+            return Task.CompletedTask;
         }
 
     }

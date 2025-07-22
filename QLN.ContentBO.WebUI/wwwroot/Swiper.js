@@ -192,3 +192,16 @@
                  }
              };
          };
+
+
+   window.getDropdownSpace = (element) => {
+    if (!element) return { spaceAbove: 0, spaceBelow: 9999 };
+
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+
+    return {
+        spaceAbove: rect.top,
+        spaceBelow: viewportHeight - rect.bottom
+    };
+};
