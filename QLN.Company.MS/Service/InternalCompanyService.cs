@@ -441,6 +441,7 @@ namespace QLN.Company.MS.Service
                     throw new InvalidOperationException("Cannot approve an inactive company profile.");
                 if (company.IsVerified == true)
                     throw new InvalidOperationException("This company is already approved.");
+
                 var wasPreviouslyVerified = company.IsVerified;
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;

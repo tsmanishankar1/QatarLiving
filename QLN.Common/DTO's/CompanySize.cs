@@ -37,7 +37,10 @@ namespace QLN.Common.DTO_s
         Active = 1,
         Blocked = 2,
         Suspended = 3,
-        Unblocked = 4
+        Unblocked = 4,
+        PendingLicenseApproval = 5,
+        NeedChanges =6,
+        Rejected = 7
     }
     public enum SubVertical
     {

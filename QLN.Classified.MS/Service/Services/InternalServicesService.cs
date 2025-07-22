@@ -185,6 +185,7 @@ namespace QLN.Classified.MS.Service.Services
                     CategoryName = categoryName,
                     L1CategoryName = l1CategoryName,
                     L2CategoryName = l2CategoryName,
+                    IsPriceOnRequest = dto.IsPriceOnRequest,
                     Price = dto.Price,
                     Title = dto.Title,
                     Description = dto.Description,
@@ -275,6 +276,17 @@ namespace QLN.Classified.MS.Service.Services
 
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
+
+            if (dto.IsPriceOnRequest)
+            {
+                if (dto.Price is not null && dto.Price.Value > 0)
+                    throw new ArgumentException("Price should not be set when 'Price on request' is selected.");
+            }
+            else
+            {
+                if (dto.Price is null || dto.Price <= 0)
+                    throw new ArgumentException("Price must be provided and greater than 0 unless marked as 'Price on request'.");
+            }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
@@ -302,6 +314,7 @@ namespace QLN.Classified.MS.Service.Services
                     CategoryName = dto.CategoryName,
                     L1CategoryName = dto.L1CategoryName,
                     L2CategoryName = dto.L2CategoryName,
+                    IsPriceOnRequest = dto.IsPriceOnRequest,
                     Price = dto.Price,
                     Title = dto.Title,
                     Description = dto.Description,

@@ -62,6 +62,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public Guid? CompanyId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; }
+        public string? RejectionReason { get; set; }
     }
     public class CompanyApprovalResponseDto
     {

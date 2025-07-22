@@ -6,13 +6,17 @@ namespace QLN.Common.DTO_s
     public class ServicesDto
     {
         public Guid Id { get; set; }
+        [Required]
         public Guid CategoryId { get; set; }
+        [Required]
         public Guid L1CategoryId { get; set; }
+        [Required]
         public Guid L2CategoryId { get; set; }
         public string? CategoryName { get; set; }
         public string? L1CategoryName { get; set; }
         public string? L2CategoryName { get; set; }
-        public double? Price { get; set; }
+        public bool IsPriceOnRequest { get; set; }
+        public decimal? Price { get; set; }
         [Required]
         public string Title { get; set; }
         [Required]
@@ -27,10 +31,11 @@ namespace QLN.Common.DTO_s
         public string WhatsappNumber { get; set; }
         [EmailAddress]
         public string? EmailAddress { get; set; }
+        [Required]
         public string Location { get; set; }
         public int? LocationId { get; set; }
-        public double Longitude { get; set; }
-        public double Lattitude { get; set; }
+        public decimal Longitude { get; set; }
+        public decimal Lattitude { get; set; }
         public List<ImageDto>? PhotoUpload { get; set; }
         public string? UserName { get; set; }
         public ServiceStatus? Status { get; set; }
@@ -62,10 +67,11 @@ namespace QLN.Common.DTO_s
     }
     public enum ServiceStatus
     {
-        PendingApproval = 1,
-        Published = 2,
-        Unpublished = 3,
-        Rejected = 4
+        Draft = 1,
+        PendingApproval = 2,
+        Published = 3,
+        Unpublished = 4,
+        Rejected = 5
     }
     public enum ServiceAdType
     {
