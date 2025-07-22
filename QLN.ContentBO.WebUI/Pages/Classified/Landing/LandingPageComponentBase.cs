@@ -10,7 +10,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
     public class LandingPageComponentBase : QLComponentBase
     {
-        // Parameters exactly matching parent component usage
         [Parameter]
         public bool IsLoading { get; set; }
 

@@ -46,7 +46,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getSeasonalPicks/vertical={vertical}");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getSeasonalPicks?vertical={vertical}");
             }
             catch (Exception ex)
             {
@@ -60,9 +60,20 @@ namespace QLN.ContentBO.WebUI.Services
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseMessage?> ReplaceSeasonalPicks()
+        public async Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put,
+                    $"/api/v2/classifiedbo/seasonal-picks/replace-slot?pickId={pickId}&slot={slot}&vertical={vertical}");
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReplaceSeasonalPickAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public Task<HttpResponseMessage?> DeleteSeasonalPicks()

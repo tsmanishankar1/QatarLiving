@@ -24,6 +24,9 @@ public class LandingPageBase : QLComponentBase
     public IDialogService DialogService { get; set; } = default!;
     [Inject]
     public IClassifiedService ClassifiedService { get; set; }
+
+    private List<SeasonalPickDto> _seasonalPicks = new();
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -36,6 +39,8 @@ public class LandingPageBase : QLComponentBase
             }
 
             await LoadDataForCurrentTab();
+            await LoadAllSeasonalPicks();
+
         }
         catch (Exception ex)
         {
@@ -188,6 +193,23 @@ public class LandingPageBase : QLComponentBase
         };
     }
 
+    private async Task LoadAllSeasonalPicks()
+    {
+        var response = await ClassifiedService.GetAllSeasonalPicks("classifieds");
+
+        if (response?.IsSuccessStatusCode == true)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            _seasonalPicks = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new List<SeasonalPickDto>();
+        }
+        else
+        {
+            Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
+        }
+    }
     protected async Task SearchItems()
     {
         try
@@ -247,10 +269,24 @@ public class LandingPageBase : QLComponentBase
 
     protected async Task ReplaceItem(LandingPageItem item)
     {
-        currentItem = item;
-        OpenDialogAsync();
-        await Task.CompletedTask;
+        var parameters = new DialogParameters
+    {
+        { nameof(MessageBoxBase.Title), "Replace Seasonal Pick" },
+        { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
+        { nameof(ReplaceDialogModal.events), _seasonalPicks },
+        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
+    };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
     }
+
     protected Task OpenDialogAsync()
     {
         var parameters = new DialogParameters
