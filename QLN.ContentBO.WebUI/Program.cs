@@ -28,6 +28,7 @@ try
 
     builder.Services.AddMudServices();
     builder.Services.AddMudServicesWithExtensions();
+    builder.Services.AddMudExtensions();
 
     builder.Services.AddAuthentication();
 
