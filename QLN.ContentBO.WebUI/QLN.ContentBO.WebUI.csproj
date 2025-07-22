@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.2.4" />
     <PackageReference Include="MudBlazor" Version="8.8.0" />
-    <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.1" />
   </ItemGroup>
 
@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MudExRichTextEditor\MudExRichTextEditor.csproj" />
     <ProjectReference Include="..\QLN.Common\QLN.Common.csproj" />
   </ItemGroup>
 
