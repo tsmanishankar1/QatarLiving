@@ -1248,7 +1248,7 @@ a, .btn-link {
         color: #98A2B3;       
     }
     .form-heading-f1 {
-        color: var(--color-primary);
+        color: var(--color-primary) !important;
         font-size: 20px;
         padding: 0 0 5px 0;
         font-weight: 600;
@@ -1554,7 +1554,7 @@ a, .btn-link {
     gap: 16px;
 }
 
-.upload-box {
+.item-upload-box {
     position: relative;
         border: 1px dashed #d1d5db;
         border-radius: 2px;
@@ -1637,14 +1637,14 @@ a, .btn-link {
         right: 6px;
     }
 
-   .upload-icon {
-        color: var(--color-accent);
-        font-size: 24px;
+   .item-upload-icon {
+        color: var(--color-accent) !important;
+        font-size: 24px !important;
     }
-      .upload-text {
-        color: var(--color-text-heading);
+      .item-upload-text {
+        color: var(--color-text-heading) !important;
         font-weight: 500;
-        font-size: 11px;
+        font-size: 11px !important;
     }
 .file-input {
     position: absolute;
@@ -1987,15 +1987,6 @@ a, .btn-link {
             font-size: 16px;
             color: #98A2B3;
         }
-
-    .form-heading-f1 {
-        font-size: 20px;
-        padding: 0 0 5px 0;
-        font-weight: 600;
-        font-family: Public Sans;
-        font-size: 20px;
-        color: #242424
-    }
 
     .form-heading-f2 {
         color: #454545;

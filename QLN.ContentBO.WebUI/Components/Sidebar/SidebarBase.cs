@@ -142,7 +142,7 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
                 Children = new List<NavigationItem>
                 {
                     new() { Title = "Landing Page", Url = "/manage/classified/landing" },
-                    new() { Title = "Items", Url = "/manage/classified/items" },
+                    new() { Title = "Items", Url = "/manage/classified/items/view/listing" },
                     new() { Title = "Deals", Url = "/manage/classified/deals" },
                     new() { Title = "Stores", Url = "/manage/classified/stores" },
                     new() { Title = "Preloved", Url = "/manage/classified/preloved" },

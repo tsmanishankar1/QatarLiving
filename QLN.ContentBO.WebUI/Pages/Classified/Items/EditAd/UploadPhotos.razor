@@ -24,15 +24,15 @@
     <div id="image-upload-container" class="image-grid">
         @foreach (var image in AdModel.Images.OrderBy(img => img.Order))
         {
-            <div class="upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
+            <div class="item-upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
                 <label class="upload-label">
                     @if (string.IsNullOrEmpty(image.Url))
                     {
                         <div class="upload-content">
                             <div class="upload-icon-box">
-                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="item-upload-icon" />
                             </div>
-                            <div class="upload-text">Upload</div>
+                            <div class="item-upload-text">Upload</div>
                         </div>
                     }
 
@@ -55,10 +55,10 @@
 
         @if (AdModel.Images.Count < MaxImages)
         {
-            <div class="upload-box add-more-box" @onclick="AddImageBox">
+            <div class="item-upload-box add-more-box" @onclick="AddImageBox">
                 <div class="upload-content">
-                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
-                    <div class="upload-text">Add More<br />Photos</div>
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="item-upload-icon" />
+                    <div class="item-upload-text">Add More<br />Photos</div>
                 </div>
             </div>
         }
