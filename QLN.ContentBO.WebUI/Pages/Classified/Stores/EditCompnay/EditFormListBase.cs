@@ -114,14 +114,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
                 _coverImageError = null;
             }
         }
-        protected void EditImage()
+        protected void RemoveCoverImage()
         {
             Company.CoverImageBase64 = null;
+            StateHasChanged(); // ensure UI refreshes
         }
-        protected void ClearLogo()
-        {
-            Company.CompanyLogoBase64 = null;
-        }
+
         protected async Task OnLogoFileSelected(IBrowserFile file)
         {
             var allowedImageTypes = new[] { "image/png", "image/jpg" };

@@ -27,48 +27,45 @@
                                   For="@(() => Company.Location)"
                                   Adornment="Adornment.End"
                                   AdornmentIcon="@Icons.Material.Filled.LocationOn" />
-                    <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" Class="py-3" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
-                        <ActivatorContent>
-                            <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                                @if (!string.IsNullOrEmpty(Company.CoverImageBase64))
-                                {
-                                    <img src="@Company.CoverImageBase64" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <div class="d-flex flex-column align-center">
-                                        <div class="event-icon-circle">
-                                            <img src="/qln-images/upload_icon.svg"
-                                                 class="event-file-upload-style"
-                                                 alt="Upload" />
-                                        </div>
-                                        <div class="mt-2" style="color: #FF7F38;">Banner Image</div>
-                                    </div>
-                                }
-                            </MudPaper>
-                        </ActivatorContent>
-                    </MudFileUpload>
-                    @if (!string.IsNullOrEmpty(_coverImageError))
-                    {
-                        <div class="mud-error-text">@_coverImageError</div>
-                    }
+
+        <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" Class="py-3"
+                OnFilesChanged="@(e => HandleFilesChanged(e))"
+                MaximumFileCount="1" >
+        <ActivatorContent>
+            <div class="cover-upload-wrapper">
+                <div class="cover-upload-box">
                     @if (!string.IsNullOrEmpty(Company.CoverImageBase64))
                     {
-                        <MudPaper Elevation="0" Class="event-image-picker-style">
-                            <div class="event-upload-action-style">
-                                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
-                                    <ActivatorContent>
-                                        <MudButton>
-                                            <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
-                                        </MudButton>
-                                    </ActivatorContent>
-                                </MudFileUpload>
-                                <MudButton OnClick="EditImage">
-                                    <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
-                                </MudButton>
-                            </div>
-                        </MudPaper>
+                        <img src="@Company.CoverImageBase64"
+                            alt="Cover Image Preview"
+                            class="cover-image-preview" />
                     }
+                    else
+                    {
+                      <div class="upload-placeholder">
+                            <img src="/qln-images/upload_icon.svg" alt="Upload" class="upload-icon" />
+                        </div>
+                        <MudText Class="upload-text">Upload image</MudText>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Company.CoverImageBase64))
+                    {
+                        <div class="cover-logo-overlay">
+                            <MudIconButton Class="logo-action">
+                                <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                            </MudIconButton>
+                            <MudIconButton Class="logo-action"
+                                OnClick="RemoveCoverImage"
+                            >
+
+                                <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
+                            </MudIconButton>
+                        </div>
+                    }
+                </div>
+            </div>
+        </ActivatorContent>
+    </MudFileUpload>
 
 
                     <div class="form-group mt-2">
@@ -120,7 +117,7 @@
                                   FullWidth="true" />
 
                     <h3 class="form-heading">Operating Hours</h3>
-                    <MudGrid>
+                    <MudGrid GutterSize="8px" Class="compact-grid">
                         <MudItem xs="12" sm="6">
                             <MudDatePicker Label="Start day"
                                            T="DateTime?"
@@ -246,6 +243,7 @@
     .white-bg .mud-select-input,
     .white-bg .mud-input-slot {
         background-color: white !important;
+         color: var(--color-text-heading);
     }
 
     .user-email-display {
@@ -280,4 +278,45 @@
         font-size: 18px;
        
     }
+.cover-upload-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.cover-upload-box {
+    position: relative;
+    width:  100%; /* fixed width to match both default and image */
+    height: 174px;
+    border: 1px solid #D0D5DD;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.cover-image-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.cover-logo-overlay {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 36px;
+    background-color: #000000CC;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
 </style>
