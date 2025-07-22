@@ -18,6 +18,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
+        private const string ClassifiedsFeaturedStoresIndexKey = ConstantValues.StateStoreNames.FeaturedStoreClassifiedsIndexKey;
+        private const string ServicesFeaturedStoresIndexKey = ConstantValues.StateStoreNames.FeaturedStoreServicesIndexKey;
 
         public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger)
         {
@@ -401,6 +403,331 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
+        public async Task<string> CreateFeaturedStore(FeaturedStoreDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                dto.Id = Guid.NewGuid();
+                dto.CreatedAt = DateTime.UtcNow;
+                dto.UpdatedAt = DateTime.UtcNow;
+                dto.IsActive = true;
+
+                _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, dto.UserId, dto.Id);
+
+                await _dapr.SaveStateAsync(StoreName, dto.Id.ToString(), dto);
+
+                _logger.LogInformation("Saved featured store state successfully. ID: {Id}", dto.Id);
+
+                string indexKey = dto.Vertical?.ToLower() switch
+                {
+                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                    Verticals.Services => ServicesFeaturedStoresIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
+                if (!index.Contains(dto.Id.ToString()))
+                {
+                    index.Add(dto.Id.ToString());
+                    await _dapr.SaveStateAsync(StoreName, indexKey, index);
+                    _logger.LogInformation("Updated featured store index with new ID: {Id}", dto.Id);
+                }
+
+                var result = $"Featured store '{dto.StoreName}' created successfully.";
+                _logger.LogInformation("Successfully completed featured store creation: {Message}", result);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, dto.UserId);
+                throw;
+            }
+        }
+
+        public async Task<List<FeaturedStoreDto>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(vertical))
+                    throw new ArgumentException("Vertical is required to retrieve featured stores.", nameof(vertical));
+
+                _logger.LogInformation("Fetching featured stores from state store...");
+
+                string indexKey = vertical.ToLower() switch
+                {
+                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                    Verticals.Services => ServicesFeaturedStoresIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+
+                if (!index.Any())
+                {
+                    _logger.LogInformation("No featured stores found in the index.");
+                    return new List<FeaturedStoreDto>();
+                }
+
+                var stateTasks = index.Select(id =>
+                    _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id)).ToList();
+
+                var featuredStores = await Task.WhenAll(stateTasks);
+
+                var activeStores = featuredStores
+                    .Where(p =>
+                        p != null &&
+                        p.IsActive == true &&
+                        (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
+                        (p.EndDate == null || p.EndDate > DateTime.UtcNow)
+                    )
+                    .OrderByDescending(p => p.UpdatedAt)
+                    .ToList();
+
+                _logger.LogInformation("Retrieved {Count} active featured stores for vertical: {Vertical}", activeStores.Count, vertical);
+
+                return activeStores;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch featured stores.");
+                throw;
+            }
+        }
+
+        public async Task<List<FeaturedStoreDto>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(vertical))
+                    throw new ArgumentException("Vertical is required to retrieve slotted featured stores.", nameof(vertical));
+
+                _logger.LogInformation("Fetching slotted featured stores from state store...");
+
+                string indexKey = vertical.ToLower() switch
+                {
+                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                    Verticals.Services => ServicesFeaturedStoresIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
+
+                if (!index.Any())
+                {
+                    _logger.LogInformation("No featured stores found in the index.");
+                    return new List<FeaturedStoreDto>();
+                }
+
+                var stateTasks = index.Select(id =>
+                    _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id)).ToList();
+
+                var featuredStores = await Task.WhenAll(stateTasks);
+
+                var slottedStores = featuredStores
+                    .Where(p =>
+                        p != null &&
+                        p.IsActive == true &&
+                        p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
+                        (p.EndDate == null || p.EndDate > DateTime.UtcNow)
+                    )
+                    .OrderBy(p => p.SlotOrder)
+                    .ToList();
+
+                _logger.LogInformation("Fetched {Count} slotted featured stores.", slottedStores.Count);
+
+                return slottedStores;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch slotted featured stores.");
+                throw new InvalidOperationException("Error fetching slotted featured stores.", ex);
+            }
+        }
+
+        public async Task<string> ReplaceSlotWithFeaturedStore(string vertical, string? userId, Guid newStoreId, int targetSlot, CancellationToken cancellationToken = default)
+        {
+            if (targetSlot < 1 || targetSlot > 6)
+                throw new ArgumentOutOfRangeException(nameof(targetSlot), "Slot must be between 1 and 6.");
+
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+
+            try
+            {
+                string indexKey = vertical.ToLower() switch
+                {
+                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                    Verticals.Services => ServicesFeaturedStoresIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
+
+                if (!index.Contains(newStoreId.ToString()))
+                    throw new InvalidOperationException("Selected featured store ID not found.");
+
+                FeaturedStoreDto? newStore = null;
+
+                foreach (var id in index)
+                {
+                    var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id);
+                    if (store == null) continue;
+
+                    if (store.SlotOrder == targetSlot && store.Id != newStoreId)
+                    {
+                        store.SlotOrder = 0;
+                        store.UpdatedAt = DateTime.UtcNow;
+                        await _dapr.SaveStateAsync(StoreName, id, store);
+                    }
+
+                    if (store.Id == newStoreId)
+                    {
+                        newStore = store;
+                    }
+                }
+
+                if (newStore == null)
+                    throw new InvalidOperationException("New featured store data not found in state.");
+
+                newStore.SlotOrder = targetSlot;
+                newStore.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, newStore.Id.ToString(), newStore);
+
+                return $"Successfully replaced slot {targetSlot} with featured store '{newStore.StoreName}' under vertical '{vertical}'.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error replacing slot {Slot} with featured store {StoreId} in vertical: {Vertical}", targetSlot, newStoreId, vertical);
+                throw new InvalidOperationException("Failed to replace slot with selected featured store.", ex);
+            }
+        }
+
+        public async Task<string> ReorderFeaturedStoreSlots(FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
+        {
+            const int MaxSlot = 6;
+
+            if (string.IsNullOrWhiteSpace(request.UserId))
+                throw new ArgumentException("UserId is required.");
+
+            if (string.IsNullOrWhiteSpace(request.Vertical))
+                throw new ArgumentException("Vertical is required.");
+
+            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
+
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
+
+            string indexKey = request.Vertical.ToLower() switch
+            {
+                Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                Verticals.Services => ServicesFeaturedStoresIndexKey,
+                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
+            };
+
+            var storeIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+            var loadedStores = new Dictionary<string, FeaturedStoreDto>();
+
+            foreach (var assignment in request.SlotAssignments)
+            {
+                if (string.IsNullOrWhiteSpace(assignment.StoreId))
+                    continue;
+
+                if (!storeIndex.Contains(assignment.StoreId))
+                    continue;
+
+                var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, assignment.StoreId);
+                if (store == null)
+                    throw new InvalidDataException($"Store with ID '{assignment.StoreId}' not found.");
+
+                if (store.UserId != request.UserId)
+                    throw new UnauthorizedAccessException("You are not authorized to update this store.");
+
+                loadedStores[assignment.StoreId] = store;
+            }
+
+            foreach (var assignment in request.SlotAssignments)
+            {
+                var slotKey = $"featured-store-slot-{assignment.SlotNumber}";
+
+                if (string.IsNullOrWhiteSpace(assignment.StoreId))
+                {
+                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
+                    continue;
+                }
+
+                var store = loadedStores[assignment.StoreId];
+                store.SlotOrder = assignment.SlotNumber;
+                store.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, slotKey, store);
+                await _dapr.SaveStateAsync(StoreName, store.Id.ToString(), store);
+            }
+
+            return "Slots updated successfully.";
+        }
+
+        public async Task<string> SoftDeleteFeaturedStore(string storeId, string userId, string vertical, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(storeId))
+                throw new ArgumentException("Store ID must be provided.", nameof(storeId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must be provided.", nameof(userId));
+
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
+
+            try
+            {
+                _logger.LogInformation("Attempting delete for featured store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
+
+                string indexKey = vertical.ToLower() switch
+                {
+                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
+                    Verticals.Services => ServicesFeaturedStoresIndexKey,
+                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                };
+
+                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+
+                if (!index.Contains(storeId))
+                {
+                    _logger.LogWarning("StoreId {StoreId} not found in vertical index: {Vertical}", storeId, vertical);
+                    throw new UnauthorizedAccessException($"StoreId '{storeId}' does not belong to vertical '{vertical}'.");
+                }
+
+                var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, storeId);
+                if (store == null)
+                {
+                    _logger.LogWarning("Featured store not found for delete. StoreId: {StoreId}", storeId);
+                    throw new KeyNotFoundException($"Featured store with ID '{storeId}' not found.");
+                }
+
+                if (store.UserId != userId)
+                {
+                    _logger.LogWarning("Unauthorized attempt to delete store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
+                    throw new UnauthorizedAccessException("You are not authorized to delete this featured store.");
+                }
+
+                store.IsActive = false;
+                store.UpdatedAt = DateTime.UtcNow;
+
+                await _dapr.SaveStateAsync(StoreName, storeId, store);
+
+                _logger.LogInformation("Successfully deleted featured store. StoreId: {StoreId}", storeId);
+
+                return $"Featured store '{store.StoreName}' has been deleted.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing soft delete on featured store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
+                throw;
+            }
+        }
 
     }
 }
