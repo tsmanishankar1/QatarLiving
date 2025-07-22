@@ -81,8 +81,10 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string LandingBackOfficeStore = "landingbackofficestore";
             public const string LandingBackOfficeKey = "landing-backoffice-keys";
-            public const string LandingBOIndex = "qln-classifiedLandingBo";
-            public const string LandingServiceBOIndex = "qln-ServiceLandingBo";
+            public const string LandingBOIndex = "seasonal-pic-classified-index";
+            public const string LandingServiceBOIndex = "seasonal-pic-Services-index";
+            public const string FeaturedStoreClassifiedsIndexKey = "featured-store-classifieds-index";
+            public const string FeaturedStoreServicesIndexKey = "featured-store-services-index";
             public const string UnifiedStore = "adstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
