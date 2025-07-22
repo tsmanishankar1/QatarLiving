@@ -889,6 +889,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception($"Error occurred while retrieving expired events: {ex.Message}", ex);
             }
         }
+
         public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;

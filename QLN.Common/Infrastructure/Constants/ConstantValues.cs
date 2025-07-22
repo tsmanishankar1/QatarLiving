@@ -81,6 +81,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string LandingBackOfficeStore = "landingbackofficestore";
             public const string LandingBackOfficeKey = "landing-backoffice-keys";
+            public const string LandingBOIndex = "qln-classifiedLandingBo";
+            public const string LandingServiceBOIndex = "qln-ServiceLandingBo";
             public const string UnifiedStore = "adstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
@@ -117,7 +119,16 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ReportsArticleCommentsIndexKey = "reportarticlecomments-category-index";
             public const string DailyTopBOIndexKey = "daily-top-bo-index";
             public const string DailyTopicIndexKey = "daily-topic-index";
+            public const string BannerTypeIndexKey = "banner-type-index";
+            public const string BannerIndexKey = "banner-index";
         }
+
+        public static class V2ClassifiedBo
+        {
+            public const string ClassifiedBoStoreName = "contentstatestore";
+            public const string ClassifiedBoServiceAppId = "qln-classifiedBo-ms";
+
+        }                  
         public static class Services
         {
             public const string StoreName = "statestore";

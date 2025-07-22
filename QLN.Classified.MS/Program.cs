@@ -2,6 +2,8 @@ using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,6 +57,12 @@ var ServiceGroup = app.MapGroup("/api/service");
 ServiceGroup.MapAllServiceConfiguration();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
+
+
+
+var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
+ClassifiedBo.MapClassifiedboEndpoints();
+
 app.MapAllBackOfficeEndpoints();
 
 app.Run();
