@@ -785,7 +785,6 @@ a, .btn-link {
     width: 400px;
     height: 727px;
     border-radius: 12px;
-    padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -800,6 +799,13 @@ a, .btn-link {
     padding-left: 10px !important;
 }
 
+.classified-add-title {
+    font-family: Public Sans;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 26px;
+    text-align: center;
+}
 .classified-image-container {
     width: 330px;
     height: 225px;

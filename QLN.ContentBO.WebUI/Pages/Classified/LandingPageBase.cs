@@ -122,7 +122,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadSeasonalPicks()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks();
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
 
         if (response?.IsSuccessStatusCode == true)
         {

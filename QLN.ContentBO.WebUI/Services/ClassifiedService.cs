@@ -30,11 +30,11 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks()
+        public async Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(string vertical)
         {
             try
             {
-                return await _httpClient.GetAsync("/api/v2/classifiedbo/seasonal-picks/slotted");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/seasonal-picks/slotted?vertical={vertical}");
             }
             catch (Exception ex)
             {
@@ -42,11 +42,11 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> GetAllSeasonalPicks()
+        public async Task<HttpResponseMessage?> GetAllSeasonalPicks(string vertical)
         {
             try
             {
-                return await _httpClient.GetAsync("/api/v2/classifiedbo/getSeasonalPicks");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getSeasonalPicks/vertical={vertical}");
             }
             catch (Exception ex)
             {

@@ -11,8 +11,8 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <param name="vertical">Classifieds CategoryTrees</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
-        Task<HttpResponseMessage?> GetFeaturedSeasonalPicks();
-        Task<HttpResponseMessage?> GetAllSeasonalPicks();
+        Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(string vertical);
+        Task<HttpResponseMessage?> GetAllSeasonalPicks(string vertical);
         Task<HttpResponseMessage?> CreateSeasonalPicks();
         Task<HttpResponseMessage?> ReplaceSeasonalPicks();
         Task<HttpResponseMessage?> DeleteSeasonalPicks();
