@@ -151,6 +151,12 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
                 }
             },
             new() {
+                Title = "Services",
+                Url = "/manage/services",
+                IconPath = "/qln-images/services_icon.svg",
+                ActiveRoutePaths = new() { "/manage/services" },  
+            },
+            new() {
                 Title = "Report",
                 IconPath = "/qln-images/report_icon.svg",
                 IsGroup = true,

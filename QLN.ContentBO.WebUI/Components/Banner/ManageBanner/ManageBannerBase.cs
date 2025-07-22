@@ -82,7 +82,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             }).ToList();
         protected void ResetFilters()
         {
-            SelectedVertical = 0;
+            SelectedVertical = -1;
             SelectedStatus = "All";
         }
 
