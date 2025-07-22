@@ -34,7 +34,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         {
             await base.OnParametersSetAsync();
 
-            // Only trigger JS if data is loaded and has events
             if (FeaturedEventSlots != null && FeaturedEventSlots.Any(s => s.Event != null))
             {
                 shouldInitializeSortable = true;

@@ -17,7 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
         protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
         protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
         protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubSubcategoryId);
-
+        protected string selectedCategory = "deals";
         protected List<CategoryField> AvailableFields => 
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??

@@ -55,10 +55,25 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> CreateSeasonalPicks()
+        public async Task<HttpResponseMessage?> CreateSeasonalPicksAsync(object payload)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/seasonal-picks")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("CreateSeasonalPicksAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
+
 
         public async Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical)
         {

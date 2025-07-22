@@ -53,7 +53,10 @@ else
                             @("-")
                         }
                         > *@
-                        @if (context.Item.Category == "Select a Seasonal Pick")
+                        @if (context.Item.Category == "Select a Seasonal Pick"
+                       || context.Item.Category == "Select a store to feature"
+                       || context.Item.Category == "Select a Featured Category")
+
                         {
                             <span class="placeholder-text"
                                   style="color: #FF7F38; cursor: pointer;"

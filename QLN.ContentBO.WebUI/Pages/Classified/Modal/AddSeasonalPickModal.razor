@@ -66,7 +66,8 @@
             <!-- Section -->
             <div class="mx-auto">
                 <MudSelect T="string" Label="Section"
-                           @bind-Value="SelectedSectionId"
+                           Value="SelectedSectionId"
+                           ValueChanged="OnSectionChanged"
                            Disabled="@string.IsNullOrEmpty(SelectedSubcategoryId)"
                            Class="classified-field no-underline"
                            Required="true"
@@ -77,6 +78,16 @@
                         <MudSelectItem T="string" Value="@sec.Id">@sec.Name</MudSelectItem>
                     }
                 </MudSelect>
+
+            </div>
+            <div class="mx-auto">
+                <MudDatePicker Class="classified-field no-underline" Label="Start Date" @bind-Date="StartDate" Required="true" DisableToolbar="true"
+                               MinDate="@DateTime.Today" />
+
+            </div>
+            <div class="mx-auto">
+                <MudDatePicker Class="classified-field no-underline" Label="End Date" @bind-Date="EndDate" Required="true" DisableToolbar="true"
+                               MinDate="@DateTime.Today" />
 
             </div>
 
@@ -107,7 +118,7 @@
 
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
-                <MudButton Color="Color.Primary" OnClick="Save" Disabled="@(!IsFormValid())" Class="classified-button">
+                <MudButton Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
                     Add
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">

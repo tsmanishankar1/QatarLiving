@@ -32,7 +32,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         protected string SelectedSubcategory { get; set; } = string.Empty;
         protected string SelectedSection { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
+        protected string ImagePreviewWithoutBase64 { get; set; }
+
         protected ElementReference fileInput;
+
+        protected DateTime? StartDate { get; set; } = DateTime.Today;
+        protected DateTime? EndDate { get; set; } = DateTime.Today;
+
+        protected bool IsSubmitting { get; set; } = false;
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -73,6 +81,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             SelectedSectionId = null;
 
             var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = category?.Name ?? string.Empty;
+
             _subcategories = category?.Children ?? new();
 
             Console.WriteLine($"Subcategories Count: {_subcategories.Count}");
@@ -90,12 +100,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             SelectedSectionId = null;
 
             var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
+            SelectedSubcategory = sub?.Name ?? string.Empty;
+
             _sections = sub?.Children ?? new();
 
             Console.WriteLine($"Sections Count: {_sections.Count}");
             foreach (var sec in _sections)
                 Console.WriteLine($" - {sec.Name} ({sec.Id})");
         }
+        protected void OnSectionChanged(string? sectionId)
+        {
+            Console.WriteLine($"➡️ Section Selected: {sectionId}");
+            SelectedSectionId = sectionId;
+
+            var section = _sections.FirstOrDefault(c => c.Id == sectionId);
+            SelectedSection = section?.Name ?? string.Empty;
+        }
+
 
 
         protected bool IsFormValid()
@@ -122,28 +143,78 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             MudDialog.Close(DialogResult.Ok(newItem));
         }
-        protected async Task OnLogoFileSelected(IBrowserFile file)
-        {
-            var allowedImageTypes = new[] { "image/png", "image/jpg" };
 
-            if (!allowedImageTypes.Contains(file.ContentType))
+        protected async Task SaveAsync()
+        {
+            if (!IsFormValid())
             {
-                Snackbar.Add("Only image files (PNG, JPG) are allowed.", Severity.Warning);
+                Snackbar.Add("Please complete all required fields.", Severity.Warning);
                 return;
             }
-            if (file != null)
-            {
-                if (file.Size > 10 * 1024 * 1024)
-                {
-                    Snackbar.Add("Logo must be less than 10MB", Severity.Warning);
-                    return;
-                }
 
-                using var ms = new MemoryStream();
-                await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
-                var base64 = Convert.ToBase64String(ms.ToArray());
-                ImagePreviewUrl = $"data:{file.ContentType};base64,{base64}";
+            IsSubmitting = true;
+
+            var payload = new
+            {
+                vertical = "classifieds",
+                categoryId = SelectedCategoryId,
+                categoryName = SelectedCategory,
+                l1CategoryId = SelectedSubcategoryId,
+                l1categoryName = SelectedSubcategory,
+                l2categoryId = SelectedSectionId,
+                l2categoryName = SelectedSection,
+                startDate = StartDate?.ToUniversalTime().ToString("o"),
+                endDate = EndDate?.ToUniversalTime().ToString("o"),
+                slotOrder = 0,
+                imageUrl = ImagePreviewWithoutBase64
+            };
+
+            try
+            {
+                var response = await ClassifiedService.CreateSeasonalPicksAsync(payload);
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add("Failed to add seasonal pick.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                IsSubmitting = false;
             }
         }
+
+        protected async Task OnLogoFileSelected(IBrowserFile file)
+        {
+            if (file == null)
+                return;
+
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                Snackbar.Add("Only image files are allowed.", Severity.Warning);
+                return;
+            }
+
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                Snackbar.Add("Image must be less than 10MB.", Severity.Warning);
+                return;
+            }
+
+            using var ms = new MemoryStream();
+            await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(ms);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+            ImagePreviewUrl = $"data:{file.ContentType};base64,{base64}";
+            ImagePreviewWithoutBase64 = base64;
+        }
+
     }
 }

@@ -4,7 +4,6 @@ using QLN.ContentBO.WebUI.Models;
 using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using MudBlazor;
-using static QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores.ViewStoresBase;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
 {
@@ -46,7 +45,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
 
         protected override void OnInitialized()
         {
-            // Simulated "get by company name" logic
             if (!string.IsNullOrWhiteSpace(CompanyName))
             {
                 var company = CompanyName.Trim().ToLower();
@@ -100,15 +98,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
             WebsiteUrl = order.WebUrl;
             Ad.PhoneNumber = order.Mobile;
             Ad.WhatsappNumber = order.Whatsapp;
-            Ad.PhoneCode = "+974"; // or parse from Mobile
-            Ad.WhatsappCode = "+974"; // or parse from Whatsapp
+            Ad.PhoneCode = "+974"; 
+            Ad.WhatsappCode = "+974"; 
 
-            // Dummy mapping
             StartDay = order.StartDate;
             EndDay = order.EndDate;
-            UserDesignation = "Manager"; // Placeholder
-
-            // If you store more fields in ViewStoreList, map them here
+            UserDesignation = "Manager";
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)

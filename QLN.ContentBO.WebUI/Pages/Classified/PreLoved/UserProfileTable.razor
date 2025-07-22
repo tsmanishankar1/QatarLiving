@@ -4,125 +4,46 @@
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 
 <MudPaper Class="pa-4">
-    <ToggleTabs Options="@tabOptions"
-                ActiveValue="@selectedTab"
-                OnChange="@OnTabChanged" />
 
-    <div class="tab-content">
-        @if (SelectedListings.Count > 0)
-        {
-            <div class="action-buttons">
-                @if (selectedTab == "verificationRequest")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
-                               OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
-                        Approve
-                    </MudButton>
-                }
-                else if (selectedTab == "published")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
-                               OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", UnpublishSelected)'>
-                        Unpublish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-                else if (selectedTab == "unpublished")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
-                               OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", PublishSelected)'>
-                        Publish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-
-                @if (selectedTab == "promoted")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unpromote Items", "Are you sure you want to unpromote selected Items?", "Unpromote", UnpromoteSelected)'>
-                        Unpromote
-                    </MudButton>
-                }
-
-                @if (selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unfeature Items", "Are you sure you want to unfeature selected Items?", "Unfeature", UnfeatureSelected)'>
-                        Unfeature
-                    </MudButton>
-                }
-
-                @if (selectedTab == "p2p" || selectedTab == "promoted" || selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-            </div>
-
-        }
-    </div>
-
-    <MudTable Items="Listings"
+    <MudTable Items="@Listings"
               Hover="true"
-              Bordered="true"
               Elevation="0"
-              @bind-SelectedItems="SelectedListings"
+              Bordered="true"
+              Dense="true"
               Class="mud-table event-custom-table">
 
         <HeaderContent>
-            <MudTh class="header-cell">User Id</MudTh>
+            <MudTh class="header-cell">Business Name</MudTh>
             <MudTh class="header-cell">User Name</MudTh>
-            <MudTh class="header-cell">Creation Date</MudTh>
-            <MudTh class="header-cell">Date Published</MudTh>
-            <MudTh class="header-cell">Date Expiry</MudTh>
+            <MudTh class="header-cell">CR File</MudTh>
+            <MudTh class="header-cell">CR License</MudTh>
+            <MudTh class="header-cell">End Date</MudTh>
             <MudTh class="header-cell">Actions</MudTh>
         </HeaderContent>
 
         <RowTemplate>
-         
-            <MudTd>@context.UserId</MudTd>
+            <MudTd>@context.BusinessName</MudTd>
             <MudTd>@context.UserName</MudTd>
-            <MudTd>@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@context.PublishedDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@context.ExpiryDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd>@context.CRFile</MudTd>
+            <MudTd>@context.CRLicense</MudTd>
+            <MudTd>@context.EndDate.ToString("dd-MM-yyyy")</MudTd>
             <MudTd>
-                <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                    @if (selectedTab != "verificationRequest")
-                    {
-                   
-                    <MudMenuItem OnClick="() => OnPreview(context)">
+                <MudMenu Class="mud-table-menu"
+                         Icon="@Icons.Material.Filled.MoreVert"
+                         Dense="true"
+                         AnchorOrigin="Origin.BottomLeft"
+                         TransformOrigin="Origin.TopRight">
+                    <MudMenuItem OnClick="@(() => ShowPreview(context))">
                         <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                         <span class="menu-text">View</span>
                     </MudMenuItem>
-                    }
-                    @if (selectedTab == "rejected")
-                    {
-                        <MudMenuItem OnClick='() => ShowConfirmation("Approve", "Are you sure you want to approve this request?", "Approve", () => Approve(context))'>
-                            <img src="/qln-images/approve_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Approve</span>
-                        </MudMenuItem>
-                        
-                    }
-                    @if (selectedTab == "approved")
-                    {  
-                        <MudMenuItem OnClick='() => ShowConfirmation("Remove", "Are you sure you want to remove this request?", "Remove", () => OnRemove(context))'
-                                     Class="mud-text-error">
-                             <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
-                            <span class="menu-text">Reject</span>
-                        </MudMenuItem>
-                    }
                 </MudMenu>
             </MudTd>
         </RowTemplate>
     </MudTable>
-     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
-                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    <PaginationFooter TotalItems="@TotalCount"
+                      CurrentPage="@currentPage"
+                      PageSize="@pageSize"
+                      OnPageChange="@HandlePageChange"
+                      OnPageSizeChange="@HandlePageSizeChange" />
 </MudPaper>

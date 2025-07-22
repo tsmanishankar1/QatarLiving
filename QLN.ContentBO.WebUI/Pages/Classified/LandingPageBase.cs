@@ -16,7 +16,6 @@ public class LandingPageBase : QLComponentBase
     protected bool showItemModal = false;
     protected string modalTitle = string.Empty;
 
-    // Current data based on tab
     protected List<LandingPageItem> currentItems = new();
     protected LandingPageItem currentItem = new();
     protected LandingPageItemType currentItemType;
@@ -107,21 +106,49 @@ public class LandingPageBase : QLComponentBase
 
     private async Task<List<LandingPageItem>> LoadFeaturedCategories()
     {
-        await Task.Delay(500);
-        return new List<LandingPageItem>
+        var picks = new List<LandingPageItem>();
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+
+        if (response?.IsSuccessStatusCode == true)
         {
-            new LandingPageItem
+            var content = await response.Content.ReadAsStringAsync();
+            var apiItems = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
             {
-                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Electronics",
-                EndDate = DateTime.Now.AddDays(30),            },
-            new LandingPageItem
+                PropertyNameCaseInsensitive = true
+            });
+
+            var realItemsBySlot = apiItems?
+                .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
+                .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
+                {
+                    Id = Guid.Parse(x.Id),
+                    Category = x.CategoryName,
+                    EndDate = x.EndDate,
+                    SlotOrder = x.SlotOrder,
+                    IsPlaceholder = false
+                }) ?? new Dictionary<int, LandingPageItem>();
+
+            for (int slot = 1; slot <= 6; slot++)
             {
-                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Fashion",
-                EndDate = DateTime.Now.AddDays(60),
+                if (realItemsBySlot.ContainsKey(slot))
+                {
+                    picks.Add(realItemsBySlot[slot]);
+                }
+                else
+                {
+                    picks.Add(new LandingPageItem
+                    {
+                        Id = Guid.NewGuid(),
+                        Category = "Select a Featured Category",
+                        EndDate = null,
+                        SlotOrder = slot,
+                        IsPlaceholder = true
+                    });
+                }
             }
-        };
+        }
+
+        return picks;
     }
 
     private async Task<List<LandingPageItem>> LoadSeasonalPicks()
@@ -137,7 +164,6 @@ public class LandingPageBase : QLComponentBase
                 PropertyNameCaseInsensitive = true
             });
 
-            // Map real items to slot positions
             var realItemsBySlot = apiItems?
                 .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
@@ -175,22 +201,49 @@ public class LandingPageBase : QLComponentBase
 
     private async Task<List<LandingPageItem>> LoadFeaturedStores()
     {
-        await Task.Delay(500);
-        return new List<LandingPageItem>
+        var picks = new List<LandingPageItem>();
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+
+        if (response?.IsSuccessStatusCode == true)
         {
-            new LandingPageItem
+            var content = await response.Content.ReadAsStringAsync();
+            var apiItems = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
             {
-               Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Electronics",
-                EndDate = DateTime.Now.AddYears(1),
-            },
-            new LandingPageItem
+                PropertyNameCaseInsensitive = true
+            });
+
+            var realItemsBySlot = apiItems?
+                .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
+                .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
+                {
+                    Id = Guid.Parse(x.Id),
+                    Category = x.CategoryName,
+                    EndDate = x.EndDate,
+                    SlotOrder = x.SlotOrder,
+                    IsPlaceholder = false
+                }) ?? new Dictionary<int, LandingPageItem>();
+
+            for (int slot = 1; slot <= 6; slot++)
             {
-                Id = Guid.Parse("d5d89b0b-eaae-4853-90c3-238d4531bd1a"),
-                Category = "Fashion",
-                EndDate = DateTime.Now.AddYears(1),
+                if (realItemsBySlot.ContainsKey(slot))
+                {
+                    picks.Add(realItemsBySlot[slot]);
+                }
+                else
+                {
+                    picks.Add(new LandingPageItem
+                    {
+                        Id = Guid.NewGuid(),
+                        Category = "Select a store to feature",
+                        EndDate = null,
+                        SlotOrder = slot,
+                        IsPlaceholder = true
+                    });
+                }
             }
-        };
+        }
+
+        return picks;
     }
 
     private async Task LoadAllSeasonalPicks()
@@ -269,9 +322,17 @@ public class LandingPageBase : QLComponentBase
 
     protected async Task ReplaceItem(LandingPageItem item)
     {
+        var title = activeIndex switch
+        {
+            0 => "Replace Featured Category",
+            1 => "Replace Seasonal Pick",
+            2 => "Replace Featured Store",
+            _ => "Replace Item"
+        };
+
         var parameters = new DialogParameters
     {
-        { nameof(MessageBoxBase.Title), "Replace Seasonal Pick" },
+        { nameof(MessageBoxBase.Title), title },
         { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
         { nameof(ReplaceDialogModal.events), _seasonalPicks },
         { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
@@ -366,10 +427,12 @@ public class LandingPageBase : QLComponentBase
 
     private async Task ShowConfirmationDialog()
     {
+        var title = $"{GetCurrentTabAddButtonText()}";
+
         var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
-            { "Descrption", "Do you want to delete this Event?" },
+            { "Descrption",$"Do you want to delete this {title}?" },
             { "ButtonTitle", "Delete" },
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await DeleteFeatureEvent("d5d89b0b-eaae-4853-90c3-238d4531bd1a"))}
         };
