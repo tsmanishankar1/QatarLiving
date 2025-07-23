@@ -11,6 +11,7 @@
             <MudItem xs="12" md="7">
                 <MudText Class="mb-4 title-style">Article Form</MudText>
 
+                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px">Required Category</MudText>
                 <MudGrid GutterSize="16px" Class="mb-4">
                     <MudItem xs="4">
                         <MudSelect T="int" Value="Category.CategoryId" ValueChanged="OnCategoryChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => Category.CategoryId)">
@@ -43,7 +44,8 @@
                         </MudSelect>
                     </MudItem>
                 </MudGrid>
-
+                
+                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px;font-style: italic;">Optional Category</MudText>
                     <MudGrid GutterSize="16px" Class="mb-4">
                         <MudItem xs="4">
                             <MudSelect T="int" Value="CategoryTwo.CategoryId" ValueChanged="OnCategoryTwoChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => CategoryTwo.CategoryId)">
@@ -87,7 +89,7 @@
 
                 <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
-                <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
+                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:6px">Article content</MudText>
                 <MudExRichTextEdit @bind-Value="article.Content" @ref="@Editor"
                                    Height="444"
                                    Class="m-2"

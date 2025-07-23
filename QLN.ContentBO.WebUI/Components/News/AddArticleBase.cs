@@ -99,7 +99,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                 // Assign Category to article.Categories and add CategoryTwo if it has value
                 article.Categories = [Category];
-                if (IsValidCategory(CategoryTwo))
+                if (IsValidOptionalCategory(CategoryTwo))
                 {
                     CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
 
@@ -112,6 +112,12 @@ namespace QLN.ContentBO.WebUI.Components.News
                     }
 
                     article.Categories.Add(CategoryTwo);
+                }
+                else
+                {
+                    ShowError("Optional Category and Sub Category is required");
+                    article.Categories = [];
+                    return;
                 }
 
                 if (article.Categories.Count == 0)
@@ -144,6 +150,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                     await DialogService.ShowAsync<ArticleDialog>("", parameters, options);
                     ResetForm();
+                    StateHasChanged();
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -159,6 +166,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Logger.LogError(ex, "HandleValidSubmit");
                 ResetForm();
                 Snackbar.Add("Article could not be created", Severity.Error);
+                StateHasChanged();
             }
             finally
             {
@@ -189,6 +197,7 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Logger.LogError(ex, "HandleFilesChanged");
                 ResetForm();
+                StateHasChanged();
             }
         }
 
@@ -275,10 +284,13 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected void ResetForm()
         {
             article = new();
+            Category.CategoryId = 0;
+            Category.SubcategoryId = 0;
+            Category.SlotId = 0;
+            FilteredSubCategories = [];
             CategoryTwo.CategoryId = 0;
             CategoryTwo.SubcategoryId = 0;
             CategoryTwo.SlotId = 0;
-            FilteredSubCategories = [];
             FilteredSubCategoriesTwo = [];
             if (CategoryId is not null && SubCategoryId is not null)
             {
@@ -343,6 +355,20 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             Snackbar.Add(message, Severity.Error);
             IsBtnDisabled = false;
+        }
+
+        private bool IsValidOptionalCategory(ArticleCategory category)
+        {
+            if (category.CategoryId > 0 && category.SubcategoryId == 0)
+            {
+                return false;
+            }
+            else if (category.CategoryId > 0 && category.SubcategoryId > 0)
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }
