@@ -31,8 +31,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         public bool IsBtnDisabled { get; set; } = false;
 
         protected ArticleCategory CategoryTwo { get; set; } = new();
-        public bool IsAddingCategoryTwo { get; set; } = false;
-
         protected List<NewsSubCategory> FilteredSubCategories = [];
         protected List<NewsSubCategory> FilteredSubCategoriesTwo = [];
 
@@ -99,25 +97,23 @@ namespace QLN.ContentBO.WebUI.Components.News
                 }
                 Category.SlotId = Category.SlotId == 0 ? 15 : Category.SlotId;
 
-                if (IsAddingCategoryTwo)
+                // Assign Category to article.Categories and add CategoryTwo if it has value
+                article.Categories = [Category];
+                if (IsValidCategory(CategoryTwo))
                 {
-                    if (!IsValidCategory(CategoryTwo))
+                    CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
+
+                    if (IsDuplicate(Category, CategoryTwo))
                     {
-                        ShowError("Category and Sub Category is required");
+                        ShowError("This Category and Sub Category combination already exists");
+                        // Reset article.Categories
+                        article.Categories = [];
                         return;
                     }
 
-                    CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
+                    article.Categories.Add(CategoryTwo);
                 }
 
-                if (IsDuplicate(Category, CategoryTwo))
-                {
-                    ShowError("This Category and Sub Category combination already exists");
-                    return;
-                }
-
-
-                //article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
                     ShowError("Select atleast one category");
@@ -312,7 +308,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
             await InvokeAsync(StateHasChanged);
         }
-        
+
         protected async Task OnCategoryTwoChanged(int newCategoryId)
         {
             CategoryTwo.CategoryId = newCategoryId;
