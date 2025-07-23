@@ -14,11 +14,11 @@ namespace QLN.Common.DTO_s
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("user")]
-        public User User { get; set; }
+        public User? User { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("token")]
-        public string Token { get; set; }
+        public string? Token { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("expiry")]
@@ -30,11 +30,11 @@ namespace QLN.Common.DTO_s
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("messages")]
-        public List<string> Messages { get; set; }
+        public List<string>? Messages { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("message")]
-        public string Message { get; set; }
+        public string? Message { get; set; }
     }
 
     public class User
@@ -100,6 +100,6 @@ namespace QLN.Common.DTO_s
         public int BuyNow { get; set; }
 
         [JsonPropertyName("sub")]
-        public object Sub { get; set; }
+        public object? Sub { get; set; }
     }
 }

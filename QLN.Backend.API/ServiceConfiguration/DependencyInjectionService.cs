@@ -28,6 +28,13 @@ namespace QLN.Backend.API.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {
+        public static IServiceCollection FileServiceConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddScoped<IFileStorageBlobService, FileStorageBlobService>(); // need to inject in the Conenction string here rather
+
+            return services;
+        }
+
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();

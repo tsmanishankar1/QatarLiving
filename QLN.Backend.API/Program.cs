@@ -14,6 +14,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
@@ -210,6 +211,7 @@ builder.Services.AddResponseCompression(options =>
     });
 
 
+builder.Services.FileServiceConfiguration(builder.Configuration);
 builder.Services.ServicesConfiguration(builder.Configuration);
 builder.Services.ServiceConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
@@ -266,6 +268,8 @@ app.UseAuthorization();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var filesGroup = app.MapGroup("/files");
+filesGroup.MapFileUploadEndpoint();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
