@@ -1,21 +1,11 @@
-using System.Text;
-using Dapr.Client;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using QLN.Classified.MS.Service;
-using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
-using Microsoft.EntityFrameworkCore;
-using System;
-using QLN.Common.Infrastructure.DbContext;
-using Microsoft.AspNetCore.Identity;
-using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints;
-using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
+using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,8 +54,8 @@ app.UseHttpsRedirection();
 
 app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
-
-
+var ServiceGroup = app.MapGroup("/api/service");
+ServiceGroup.MapAllServiceConfiguration();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
 
@@ -73,6 +63,9 @@ servicesGroup.MapServicesEndpoints();
 
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
+
+var ServicesBo = app.MapGroup("/api/servicebo");
+ServicesBo.MapAllServiceBoConfiguration();
 
 app.MapAllBackOfficeEndpoints();
 

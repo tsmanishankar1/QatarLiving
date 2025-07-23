@@ -57,7 +57,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         Id = detail.Id,
                         Title = detail.Title,
                         Description = detail.Description,
-                        Category = detail.Category,
+                        Category = detail.CategoryName,
                         Price = detail.Price,
                         Order = ix.Order,
                         IsFeatured = true,
@@ -136,7 +136,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
                         Color = detail.Colour,
                         Location = detail.Location,
                         IsFeatured = detail.IsFeatured,
-                        ImageURLs = detail.Images
+                        //ImageURLs = detail.Images
                     });
                 }
 
@@ -181,7 +181,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints
 
             return FetchDocsFromIndexAsync(
                 searchSvc,
-                ConstantValues.LandingBackOffice,
+                ConstantValues.IndexNames.LandingBackOfficeIndex,
                 sr,
                 vertical,
                 entityType

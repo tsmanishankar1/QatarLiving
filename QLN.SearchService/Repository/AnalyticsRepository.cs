@@ -24,7 +24,7 @@ namespace QLN.SearchService.Repository
             var settings = opts.Value;
             _searchClient = new SearchClient(
                 new Uri(settings.Endpoint),
-                settings.Indexes[ConstantValues.Analytics],
+                settings.Indexes[ConstantValues.IndexNames.AnalyticsIndex],
                 new AzureKeyCredential(settings.ApiKey)
             );
             _logger = logger;

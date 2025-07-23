@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using QLN.Common.DTO_s;
+
 
 namespace QLN.Common.Infrastructure.IService.IServiceBoService
 {
-    internal class IServicesBoService
+    public interface  IServicesBoService
     {
+        Task<List<ServiceAdSummaryDto>> GetAllServiceBoAds(CancellationToken cancellationToken = default);
     }
 }
