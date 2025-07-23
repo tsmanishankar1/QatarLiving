@@ -1,0 +1,54 @@
+@inherits PreviewAdBase
+@using QLN.ContentBO.WebUI.Components.ItemDetailsImage;
+@using QLN.ContentBO.WebUI.Components.ItemInfo; 
+@using QLN.ContentBO.WebUI.Components.OverviewCard;
+@using QLN.ContentBO.WebUI.Components.DescriptionBox;   
+@using MudBlazor
+
+<MudDialog Class="full-preview-dialog">
+    <DialogContent >
+      <div class="item-main-details">
+        <div class="row-container">
+            <div class="icon-label-container">
+            <h3 class="title-item-name">@AdModel.Title</h3>
+            </div>
+            <div class="icon-label-container">
+                     <div class="icon-label">
+                        <img src="/qln-images/classifieds/share.svg" alt="Share Icon" class="icon-image" />
+                        <span class="icon-text">Share</span>
+                    </div>
+
+                <div id="saveButton" class="icon-label">
+                    <img src="/qln-images/classifieds/liked_heart.svg" alt="Save Icon" class="icon-image" />
+                    <span class="icon-text">Saved</span>
+                </div>
+            </div>
+        </div>
+
+    <MudGrid Class="py-4" GutterSize="16px" >
+        <!-- Main Content -->
+        <MudItem xs="12" md="7">
+                <ItemDetailsImage Item="AdModel"/>
+                <OverviewCard Item="AdModel"/>
+                <DescriptionBox Item="AdModel"/>
+            </MudItem>
+
+            <MudItem xs="12" md="5">
+        <div class="info-container">
+            <div class="info-ad-container">
+                <div class="info-desktop-container">
+                <ItemInfo Item="AdModel" />
+                </div>
+                <div class="item-main-image-container">
+                <img src="/qln-images/classifieds/ad_image.svg" alt="Product Image" class="main-image" />
+                </div>
+            </div>
+            <div class="info-side-container">
+                <img src="/qln-images/classifieds/side_banner.svg" alt="Side Banner" />
+            </div>
+        </div>
+    </MudItem>
+    </MudGrid>
+</div>
+ </DialogContent>
+</MudDialog>
