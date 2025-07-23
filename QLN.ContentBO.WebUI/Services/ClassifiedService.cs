@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using static MudBlazor.CategoryTypes;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -91,9 +92,20 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> DeleteSeasonalPicks()
+        public async Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Put,
+                    $"/api/v2/classifiedbo/seasonal-picks/soft-delete?pickId={pickId}&Vertical={vertical}");
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("DeleteSeasonalPicks: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
     }
 }

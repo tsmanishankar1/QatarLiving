@@ -15,7 +15,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetAllSeasonalPicks(string vertical);
         Task<HttpResponseMessage?> CreateSeasonalPicksAsync(object payload);
         Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical);
-        Task<HttpResponseMessage?> DeleteSeasonalPicks();
+        Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical);
 
     }
 }
