@@ -87,8 +87,8 @@ else
                                      alt="replace" 
                                      class="action-icon-style" />
                             </div>
-                            <div class="custom-delete-button" 
-                                 @onclick="@(() => OnDelete.InvokeAsync(context.Item.Id.ToString()))">
+                            <div class="custom-delete-button"
+                                 @onclick="@(() => DeleteItemAsync(context.Item.Id.ToString()))">
                                 <img src="/qln-images/delete_icon.svg" 
                                      alt="delete" 
                                      class="action-icon-style" />
