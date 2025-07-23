@@ -5,9 +5,9 @@
     <DataAnnotationsValidator />
 
      <div class="create-form-list">
-        <h3 class="form-heading-f1">Ad Category</h3>
+        <h3 class="form-heading">Ad Category</h3>
  
-        @* <h3 class="form-heading">Ad Information</h3> *@
+       @* <h3 class="form-heading">Ad Information</h3> 
             <MudSelect T="string" Class="white-bg" Label="Sub Vertical" Variant="Variant.Outlined"
                 Value="@Ad.SelectedCategoryId"
                 ValueChanged="@OnCategoryChanged"
@@ -24,10 +24,18 @@
                     <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
                 }
             } *@
-            <MudSelectItem T="string" Value="@CategoryTrees.FirstOrDefault()?.Id.ToString()">Deals</MudSelectItem>
+          @*   <MudSelectItem T="string" Value="@CategoryTrees.FirstOrDefault()?.Id.ToString()">Deals</MudSelectItem>
 
+        </MudSelect>  *@
+
+        <MudSelect T="string"
+                   Label="Sub Vertical"
+                   Variant="Variant.Outlined"
+                   Class="white-bg"
+                   @bind-Value="selectedCategory"
+                   FullWidth="true">
+            <MudSelectItem T="string" Value="@("deals")">Deals</MudSelectItem>
         </MudSelect>
-
 
         @if (!string.IsNullOrEmpty(Ad.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
         {
@@ -198,15 +206,7 @@
 </EditForm>
 
 <style>
-    .create-form-list {
-         font-family: 'Public Sans', sans-serif;
-    }
-    .form-heading {
-        color: var(--color-primary);
-        font-size: 18px;
-        padding: 10px 0;
-        font-weight: 600;
-    }
+   
 
     .white-bg input,
     .white-bg textarea,
@@ -216,49 +216,4 @@
     .white-bg .mud-input-slot {
         background-color: white !important;
     }
-    .user-email-display{
-        padding: 10px 18px;
-        border-radius: 6px;
-        background-color: #F2F4F7;
-    }
-    .user-email-display span {
-        font-weight: 600;   
-        font-size: 16px;          
-        color: #98A2B3;       
-    }
-    .form-heading-f1 {
-        color: var(--color-primary);
-        font-size: 20px;
-        padding: 0 0 5px 0;
-        font-weight: 600;
-    }
-    .form-heading-f2 {
-        color: var( --color-text-heading);
-        font-size: 12px;
-        padding: 0 0 5px 0;
-        font-weight: 500;
-    }
-    .custom-button-group {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        margin-top: 10px;
-    }
-    .custom-button{
-        width: 100%;
-        text-transform: capitalize;
-    }
-    .form-group {
-        margin-bottom: 1rem;
-    }
-     .upload-button {
-        gap: 8px;
-        text-transform: capitalize;
-    }
-    .mud-input-error {
-        color: var(--mud-palette-error, #f44336);
-        font-size: 0.75rem;
-        font-weight: 400;
-    }
-
 </style>

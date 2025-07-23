@@ -29,7 +29,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
             // SEARCH
-            group.MapPost("/search", async (
+            group.MapPost("/items/search", async (
                     [FromBody] CommonSearchRequest req,
                     [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
@@ -49,13 +49,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Validation Failed",
                         Detail = errorMessages,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/search"
+                        Instance = $"/api/items/search"
                     });
                 }
 
                 try
                 {
-                    var results = await svc.SearchAsync(ConstantValues.ClassifiedsVertical, req);
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, req);
                     return Results.Ok(results);
                 }
                 catch (ArgumentException ex)
@@ -66,7 +66,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/search"
+                        Instance = $"/api/items/search"
                     });
                 }
                 catch (Exception ex)
@@ -76,18 +76,250 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         title: "Search Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classified/search"
+                        instance: $"/api/items/search"
                     );
                 }
             })
-            .WithName("SearchClassified")
+            .WithName("SearchClassifiedsItems")
             .WithTags("Classified")
-            .WithSummary("Search classifieds")
-            .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
+            .WithSummary("Search classifieds Items")
+            .Produces<IEnumerable<ClassifiedsItemsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
-            
-            
+
+            group.MapPost("/preloved/search", async (
+        [FromBody] CommonSearchRequest req,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/preloved/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/preloved/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/preloved/search"
+                    );
+                }
+            })
+.WithName("SearchClassifiedsPreloved")
+.WithTags("Classified")
+.WithSummary("Search classifieds Preloved")
+.Produces<IEnumerable<ClassifiedsPrelovedIndex>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/collectibles/search", async (
+        [FromBody] CommonSearchRequest req,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/collectibles/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/collectibles/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/collectibles/search"
+                    );
+                }
+            })
+.WithName("SearchClassifiedsCollectibles")
+.WithTags("Classified")
+.WithSummary("Search classifieds Collectibles")
+.Produces<IEnumerable<ClassifiedsCollectiblesIndex>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/deals/search", async (
+        [FromBody] CommonSearchRequest req,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/deals/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/deals/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/deals/search"
+                    );
+                }
+            })
+.WithName("SearchClassifiedsDeals")
+.WithTags("Classified")
+.WithSummary("Search classifieds Deals")
+.Produces<IEnumerable<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/search", async (
+        [FromBody] CommonSearchRequest req,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ServicesEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ServicesIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/services/search"
+                    );
+                }
+            })
+.WithName("SearchServicesItems")
+.WithTags("Service")
+.WithSummary("Search Services Items")
+.Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.ProducesProblem(StatusCodes.Status500InternalServerError);
+
+
             // GET BY ID
             group.MapGet("/{id}", async (
                     [FromRoute] string id,
@@ -241,7 +473,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             // UPLOAD
             group.MapPost("/upload", async (
-                    [FromBody] ClassifiedsIndex doc,
+                    [FromBody] ClassifiedsItemsIndex doc,
                     [FromServices] ISearchService svc,
                     [FromServices] ILoggerFactory logFac
                 ) =>
@@ -260,7 +492,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 }
                 var indexDocument = new CommonIndexRequest
                 {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
+                    IndexName = ConstantValues.Verticals.Classifieds,
                     ClassifiedsItem = doc
                 };
                 try
@@ -882,7 +1114,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // itemsAd post
             group.MapPost("items/post", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedItems dto,
+                ClassifiedsItems dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -893,13 +1125,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     {
                         return Results.Unauthorized();
                     }
-
-                    // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
+                    var name = userData.GetProperty("name").GetString();
 
-                    if (uid == null)
+                    if (uid == null && name == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -909,6 +1139,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
                     dto.UserId = uid;
+                    dto.UserName = name;
                     var response = await service.CreateClassifiedItemsAd(dto, token);
 
                   
@@ -962,7 +1193,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPost("items/post-by-id", async Task<IResult> (
-                ClassifiedItems dto,
+                ClassifiedsItems dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -5133,7 +5364,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         searchReq
                     );
 
-                    var list = response.ClassifiedsItems ?? new List<ClassifiedsIndex>();
+                    var list = response.ClassifiedsItem ?? new List<ClassifiedsItemsIndex>();
 
                     return TypedResults.Ok(list);
                 }
@@ -5164,7 +5395,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-           
+
 
             return group;
         }

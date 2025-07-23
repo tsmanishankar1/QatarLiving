@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile.Ver
         [Inject] public NavigationManager NavigationManager { get; set; }
         protected void GoBack()
         {
-            NavigationManager.NavigateTo("/manage/classified/items");
+            NavigationManager.NavigateTo("/manage/classified/items/user/verification/profile");
         }
 
 

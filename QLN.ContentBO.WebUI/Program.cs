@@ -28,6 +28,7 @@ try
 
     builder.Services.AddMudServices();
     builder.Services.AddMudServicesWithExtensions();
+    builder.Services.AddMudExtensions();
 
     builder.Services.AddAuthentication();
 
@@ -77,14 +78,17 @@ try
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
-    builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
-    {
-        client.BaseAddress = new Uri(contentBOAPIURL);
-    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
     builder.Services.AddHttpClient<IBannerService, BannerService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+       builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
 
     var app = builder.Build();
 

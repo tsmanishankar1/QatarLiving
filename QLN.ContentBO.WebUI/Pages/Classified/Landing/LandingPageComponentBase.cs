@@ -10,7 +10,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 {
     public class LandingPageComponentBase : QLComponentBase
     {
-        // Parameters exactly matching parent component usage
         [Parameter]
         public bool IsLoading { get; set; }
 
@@ -21,7 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         public LandingPageItemType ItemType { get; set; }
 
         [Parameter]
-        public EventCallback<LandingPageItem> OnReplace { get; set; }
+        public EventCallback<LandingPageItem> ReplaceItem { get; set; }
 
         [Parameter]
         public EventCallback<string> OnDelete { get; set; }

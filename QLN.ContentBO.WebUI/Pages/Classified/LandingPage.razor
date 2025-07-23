@@ -1,6 +1,5 @@
 ﻿@page "/manage/classified/landing"
 @inherits LandingPageBase
-@using QLN.ContentBO.WebUI.Components.Classifieds.ClassifiedTable
 @using QLN.ContentBO.WebUI.Pages.Classified.Landing
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
@@ -26,14 +25,14 @@
                     Add @GetCurrentTabAddButtonText()
                 </MudButton>
             @* } *@
-            <div class="search-wrapper">
+            @* <div class="search-wrapper">
                 <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
                 <input type="text"
                        placeholder="Search"
                        class="search-input"
                        @bind="searchTerm"
                        @oninput="async () => await SearchItems()" />
-            </div>
+            </div> *@
         </div>
         
         <div style="margin-top:10px">
@@ -41,7 +40,7 @@
                 IsLoading="IsLoading"   
                 Items="currentItems" 
                 ItemType="@currentItemType"
-                OnReplace="ReplaceItem"
+                ReplaceItem="ReplaceItem"
                 OnDelete="DeleteItem" />
         </div>
     </MudItem>

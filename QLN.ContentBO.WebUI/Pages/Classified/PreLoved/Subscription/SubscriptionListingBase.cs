@@ -62,28 +62,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
         public bool _isDateRangeSelected = false;
-        protected DateRange? _dateRange
-        {
-            get
-            {
-                if (CurrentEvent?.EventSchedule == null)
-                    return null;
-
-                return new DateRange(
-                    CurrentEvent.EventSchedule.StartDate.ToDateTime(TimeOnly.MinValue),
-                    CurrentEvent.EventSchedule.EndDate.ToDateTime(TimeOnly.MinValue)
-                );
-            }
-            set
-            {
-                if (value != null && CurrentEvent?.EventSchedule != null)
-                {
-                    CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
-                    CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
-                    _isDateRangeSelected = true;
-                }
-            }
-        }
+      
         protected ElementReference _popoverDiv;
 
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
@@ -144,6 +123,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             dateCreated = null;
             datePublished = null;
             SearchText = string.Empty;
+            _dateRange = new();
+            _tempDateRange = new();
         }
         protected async void CancelDatePicker()
         {
@@ -227,5 +208,46 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
                 });
             }
         }
+        protected List<string> SubscriptionTypes = new()
+        {
+            "Free",
+            "Basic",
+            "Pro",
+            "Enterprise"
+        };
+
+        protected string SelectedSubscriptionType { get; set; } = null;
+
+        protected Task OnSubscriptionChanged(string selected)
+        {
+            SelectedSubscriptionType = selected;
+            return Task.CompletedTask;
+        }
+        // Date range logic
+        protected DateRange _dateRange = new();
+        protected DateRange _tempDateRange = new();
+
+      
+
+        protected bool showDatePopover = false;
+
+        protected void ToggleDatePopover()
+        {
+            _tempDateRange = new DateRange(_dateRange.Start, _dateRange.End);
+            showDatePopover = !showDatePopover;
+        }
+
+        protected void CancelDatePopover()
+        {
+            showDatePopover = false;
+        }
+
+        protected void ApplyDatePopover()
+        {
+            _dateRange = new DateRange(_tempDateRange.Start, _tempDateRange.End);
+            showDatePopover = false;
+            StateHasChanged();
+        }
+
     }
 }

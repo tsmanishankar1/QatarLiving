@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
         protected void GoBack()
         {
-            Navigation.NavigateTo("/manage/classified/items");
+            Navigation.NavigateTo("/manage/classified/items/view/listing");
         }
         protected AdPost adPostModel { get; set; } = new();
 

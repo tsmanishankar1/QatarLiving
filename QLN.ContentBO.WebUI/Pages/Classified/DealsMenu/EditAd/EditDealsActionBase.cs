@@ -40,7 +40,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
                 { "Descrption", message },
                 { "ButtonTitle", buttonTitle },
                 { "OnConfirmed", EventCallback.Factory.Create(this, async () => {
-                    // Placeholder: handle actual action logic here.
                     Console.WriteLine($"{buttonTitle} confirmed.");
                 })}
             };
