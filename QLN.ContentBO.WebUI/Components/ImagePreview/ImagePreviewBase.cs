@@ -43,6 +43,8 @@ namespace QLN.ContentBO.WebUI.Components.ImagePreview
         protected readonly string _uniqueId = $"ImageGallery-{Guid.NewGuid()}";
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
         {
             if (!_categoriesSwiperInitialized && ShowImageModal && Item?.Images?.Any() == true)
             {
@@ -50,6 +52,17 @@ namespace QLN.ContentBO.WebUI.Components.ImagePreview
                 await JS.InvokeVoidAsync("initializeSwiperImagePreview", DotNetObjectReference.Create(this), _uniqueId);
             }
         }
+        catch (JSException jsEx)
+        {
+            Console.Error.WriteLine($"JavaScript interop error in OnAfterRenderAsync: {jsEx.Message}");
+            // Optionally log this to a service or display a message
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Unexpected error in OnAfterRenderAsync: {ex.Message}");
+        }
+    }
+
 
         [JSInvokable]
         public void UpdateActiveIndex(int index)
