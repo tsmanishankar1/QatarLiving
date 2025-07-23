@@ -18,9 +18,11 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.IService.IService;
-using QLN.Common.Infrastructure.IService.IServiceBoService;
+<<<<<<<<< Temporary merge branch 1
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+=========
+using QLN.Common.Infrastructure.IService.IService;
+>>>>>>>>> Temporary merge branch 2
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
 

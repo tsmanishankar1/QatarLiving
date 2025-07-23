@@ -8,6 +8,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
+using System.Net.Http;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -744,6 +745,110 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ServicesDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/moderatebulk", async Task<Results<
+                    Ok<List<ServicesDto>>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult
+                >> (
+                    BulkModerationRequest req,
+                    HttpContext httpContext,
+                    IServices service,
+                    CancellationToken ct
+                ) =>
+            {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (uid == null && userName == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID or username could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    if (!req.AdIds.Any())
+                        return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+
+                    if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                        return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+                req.UpdatedBy = uid;
+                    try
+                    {
+                        var result = await service.ModerateBulkService(req, ct);
+                        return TypedResults.Ok(result);
+                    }
+                    catch (Exception ex)
+                    {
+                        return TypedResults.Problem(ex.Message);
+                    }
+                })
+                .WithName("BulkModerateServices")
+                .WithTags("Service")
+                .WithSummary("Bulk moderate service ads")
+                .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, remove) on selected service ads. " +
+                                 "Requires a list of ad IDs and the action to perform. " +
+                                 "If removing, a reason must be provided.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/moderatebulkbyuserid", async Task<Results<
+               Ok<List<ServicesDto>>,
+               BadRequest<ProblemDetails>,
+               ProblemHttpResult
+           >> (
+               BulkModerationRequest req,
+               HttpContext httpContext,
+               IServices service,
+               CancellationToken ct
+           ) =>
+            {
+                try
+                {
+                    if (req.UpdatedBy == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "UpdatedBy cannot be null.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var result = await service.ModerateBulkService(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .ExcludeFromDescription()
+           .WithName("BulkModerateServicesbyuserid")
+           .WithTags("Service")
+           .WithSummary("Bulk moderate service ads")
+           .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, remove) on selected service ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }

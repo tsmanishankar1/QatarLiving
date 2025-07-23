@@ -73,6 +73,13 @@ namespace QLN.Common.DTO_s
         Unpublished = 4,
         Rejected = 5
     }
+    public enum BulkModerationAction
+    {
+        Approve = 1,
+        Publish = 2,
+        Unpublish = 3,
+        Remove = 4
+    }
     public enum ServiceAdType
     {
         PayToPublish = 1,
@@ -110,5 +117,12 @@ namespace QLN.Common.DTO_s
     {
         public long? TotalCount { get; set; }
         public List<ServicesIndex>? ServicesItems { get; set; }
+    }
+    public class BulkModerationRequest
+    {
+        public List<Guid> AdIds { get; set; } = new();
+        public BulkModerationAction Action { get; set; }
+        public string? Reason { get; set; } 
+        public string? UpdatedBy { get; set; } 
     }
 }

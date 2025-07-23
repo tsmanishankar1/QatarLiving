@@ -276,17 +276,6 @@ namespace QLN.Classified.MS.Service.Services
 
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
-
-            if (dto.IsPriceOnRequest)
-            {
-                if (dto.Price is not null && dto.Price.Value > 0)
-                    throw new ArgumentException("Price should not be set when 'Price on request' is selected.");
-            }
-            else
-            {
-                if (dto.Price is null || dto.Price <= 0)
-                    throw new ArgumentException("Price must be provided and greater than 0 unless marked as 'Price on request'.");
-            }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
@@ -559,6 +548,80 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
+        public async Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.ServicesIndexKey,
+                cancellationToken: ct
+            ) ?? new();
 
+            var updated = new List<ServicesDto>();
+
+            foreach (var id in request.AdIds)
+            {
+                if (!indexKeys.Contains(id.ToString()))
+                    continue;
+
+                var ad = await _dapr.GetStateAsync<ServicesDto>(
+                    ConstantValues.Services.StoreName,
+                    id.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                    continue;
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkModerationAction.Approve:
+                        if (ad.Status == ServiceStatus.PendingApproval)
+                        {
+                            ad.Status = ServiceStatus.Published;
+                            ad.PublishedDate = DateTime.UtcNow;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkModerationAction.Publish:
+                        if (ad.Status == ServiceStatus.Unpublished)
+                        {
+                            ad.Status = ServiceStatus.Published;
+                            ad.PublishedDate = DateTime.UtcNow;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkModerationAction.Unpublish:
+                        if (ad.Status == ServiceStatus.Published)
+                        {
+                            ad.Status = ServiceStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkModerationAction.Remove:
+                        ad.Status = ServiceStatus.Rejected;
+                        ad.UpdatedBy = request.UpdatedBy;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = request.UpdatedBy;
+                    await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, id.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);
+                }
+            }
+
+            return updated;
+        }
     }
 }

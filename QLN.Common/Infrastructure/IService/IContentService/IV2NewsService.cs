@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
             Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
                 int categoryId,
                 int subCategoryId,
-                string? status,
+                ArticleStatus status,
                 int? page,
                 int? pageSize,
                 CancellationToken cancellationToken);

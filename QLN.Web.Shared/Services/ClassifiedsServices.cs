@@ -1,7 +1,7 @@
 using QLN.Web.Shared.Services.Interface;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;                  // For JsonSerializer and JsonSerializerOptions
+using System.Text.Json;                  
 
 namespace QLN.Web.Shared.Services
 {
