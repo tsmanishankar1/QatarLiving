@@ -117,7 +117,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                         Action = "Upsert",
                         UpsertRequest = new CommonIndexRequest
                         {
-                            VerticalName = LandingBackOffice,
+                            IndexName = IndexNames.LandingBackOfficeIndex,
                             MasterItem = doc
                         }
                     };
@@ -181,7 +181,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 try
                 {
                     logger.LogInformation("Searching for {EntityType} under {Vertical}", entityType, vertical);
-                    var resp = await searchSvc.SearchAsync(LandingBackOffice, searchReq);
+                    var resp = await searchSvc.SearchAsync(IndexNames.LandingBackOfficeIndex, searchReq);
                     var items = resp.MasterItems ?? new List<LandingBackOfficeIndex>();
 
                     static CommonSearchRequest? ParsePayload(string? raw) =>
@@ -291,7 +291,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
                 try
                 {
                     logger.LogInformation("Retrieving {Id}", id);
-                    var doc = await searchSvc.GetByIdAsync<LandingBackOfficeIndex>(LandingBackOffice, id);
+                    var doc = await searchSvc.GetByIdAsync<LandingBackOfficeIndex>(IndexNames.LandingBackOfficeIndex, id);
 
                     if (doc == null || doc.Vertical != vertical || doc.EntityType != entityType)
                     {
@@ -356,7 +356,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints
 
                     var msg = new IndexMessage
                     {
-                        Vertical = LandingBackOffice,
+                        Vertical = IndexNames.LandingBackOfficeIndex,
                         Action = "Delete",
                         DeleteKey = id
                     };

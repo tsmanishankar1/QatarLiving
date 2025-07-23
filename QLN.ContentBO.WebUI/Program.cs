@@ -28,6 +28,7 @@ try
 
     builder.Services.AddMudServices();
     builder.Services.AddMudServicesWithExtensions();
+    builder.Services.AddMudExtensions();
 
     builder.Services.AddAuthentication();
 
@@ -74,6 +75,11 @@ try
 
 
     builder.Services.AddHttpClient<IDailyLivingService, DailyService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+    builder.Services.AddHttpClient<IBannerService, BannerService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
