@@ -13,7 +13,7 @@ namespace QLN.Common.Infrastructure.Subscriptions
         Classifieds = 3,
         [JsonPropertyName("Services")]
         Services = 4,
-            [JsonPropertyName("Content")]
+        [JsonPropertyName("Content")]
         Content = 5
     }
     public enum SubscriptionCategory
