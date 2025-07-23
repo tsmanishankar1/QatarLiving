@@ -78,13 +78,13 @@ namespace QLN.Common.DTO_s
         public string CreatedBy { get; set; } = string.Empty;
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime CreatedDate { get; set; }
+        public DateTime CreatedAt { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? UpdatedBy { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? UpdatedDate { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public bool IsActive { get; set; }

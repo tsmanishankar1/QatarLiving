@@ -115,6 +115,9 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? RefreshExpiryDate { get; set; }
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public bool IsPriceOnRequest { get; set; }
+
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPriceOnRequest { get; set; }

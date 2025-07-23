@@ -13,13 +13,13 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime FeaturedExpiryDate { get; set; }
+        public DateTime? FeaturedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPromoted { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime PromotedExpiryDate { get; set; }
+        public DateTime? PromotedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public bool HasAuthenticityCertificate { get; set; }
@@ -34,5 +34,6 @@ namespace QLN.Common.DTO_s
         public bool IsHandmade { get; set; }
         [SearchableField(IsFilterable = true, IsSortable = true)]
         public string? YearOrEra { get; set; }
+
     }
 }

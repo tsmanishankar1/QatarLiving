@@ -61,7 +61,7 @@ namespace QLN.Backend.API.Service.AddonService
                 .Select(q => new QuantityResponse
                 {
                     QuantitiesId = q.QuantitiesId,
-                    QuantitiesName = q.QuantitiesName
+                    Quantity = q.Quantity
                 }).ToList() ?? new List<QuantityResponse>();
 
             _logger.LogInformation("Retrieved {Count} quantities (excluding CreatedAt)", response.Count);
@@ -78,7 +78,7 @@ namespace QLN.Backend.API.Service.AddonService
             var quantity = new Quantities
             {
                 QuantitiesId = Guid.NewGuid(),
-                QuantitiesName = request.QuantitiesName,
+                Quantity = request.Quantity,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -88,7 +88,7 @@ namespace QLN.Backend.API.Service.AddonService
             await SaveAddonDataAsync(data);
 
             _logger.LogInformation("Created quantity with ID: {QuantitiesId}, Name: {QuantitiesName}",
-                quantity.QuantitiesId, quantity.QuantitiesName);
+                quantity.QuantitiesId, quantity.Quantity);
 
             return quantity;
         }
@@ -101,7 +101,7 @@ namespace QLN.Backend.API.Service.AddonService
             var currency = new Currency
             {
                 CurrencyId = Guid.NewGuid(),
-                CurrencyName = request.CurrencyName,
+                CurrencyValue = request.CurrencyValue,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -111,7 +111,7 @@ namespace QLN.Backend.API.Service.AddonService
             await SaveAddonDataAsync(data);
 
             _logger.LogInformation("Created currency with ID: {CurrencyId}, Name: {CurrencyName}",
-                currency.CurrencyId, currency.CurrencyName);
+                currency.CurrencyId, currency.CurrencyValue);
 
             return currency;
         }
@@ -152,10 +152,10 @@ namespace QLN.Backend.API.Service.AddonService
                 {
                     Id = uc.Id,
                     QuantityId = uc.QuantityId,
-                    QuantityName = data.Quantities.FirstOrDefault(q => q.QuantitiesId == uc.QuantityId)?.QuantitiesName,
+                    Quantity = (int)(data.Quantities.FirstOrDefault(q => q.QuantitiesId == uc.QuantityId)?.Quantity),
                     CurrencyId = uc.CurrencyId,
                     Currency = uc.currency,
-                    CurrencyName = data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyName,
+                    CurrencyValue = (decimal)(data.Currencies.FirstOrDefault(c => c.CurrencyId == uc.CurrencyId)?.CurrencyValue),
                     durationId = (int)uc.Duration,
                     durationName = System.Enum.GetName(typeof(DurationType), uc.Duration) ?? "Unknown"
                 }).ToList() ?? new List<UnitCurrencyResponse>();
@@ -178,10 +178,10 @@ namespace QLN.Backend.API.Service.AddonService
 
             var endDate = GetEndDateByAddonDuration(startDate, unitCurrency.Duration);
             var quantityName = addonData.Quantities
-    .FirstOrDefault(q => q.QuantitiesId == unitCurrency.QuantityId)?.QuantitiesName ?? "Unknown";
+    .FirstOrDefault(q => q.QuantitiesId == unitCurrency.QuantityId)?.Quantity ?? 0;
 
             var currencyName = addonData.Currencies
-                .FirstOrDefault(c => c.CurrencyId == unitCurrency.CurrencyId)?.CurrencyName ?? "Unknown";
+                .FirstOrDefault(c => c.CurrencyId == unitCurrency.CurrencyId)?.CurrencyValue ?? 0;
             var dto = new AddonPaymentDto
             {
                 Id = id,
@@ -227,8 +227,8 @@ namespace QLN.Backend.API.Service.AddonService
                 QuantityId = unitCurrency.QuantityId,
                 CurrencyId = unitCurrency.CurrencyId,
                 Currency = unitCurrency.currency,
-                QuantityName = quantityName,
-                CurrencyName = currencyName,
+                Quantity = quantityName,
+                CurrencyValue = currencyName,
                 Duration = unitCurrency.Duration,
                 CreatedAt = unitCurrency.CreatedAt
             };

@@ -1,7 +1,11 @@
-﻿using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Actors.Runtime;
 using Dapr.Client;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
+using System.Security.Cryptography.X509Certificates;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -24,6 +28,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _daprClient = dapr;
+        }
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            return ActorProxy.Create<IUserQuotaActor>(new ActorId(userId), "UserQuotaActor");
         }
         public class UserPaymentDetailsCollection
         {
@@ -60,23 +68,38 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
 
 
-        public async Task<bool> StorePaymentDetailsAsync(UserPaymentDetailsResponseDto paymentDetails, CancellationToken cancellationToken = default)
+        public async Task<bool> StorePaymentDetailsAsync(UserPaymentDetailsResponseDto dto, CancellationToken cancellationToken = default)
         {
-            var existing = await _daprClient.GetStateAsync<UserPaymentDetailsCollection>(
-                StateStoreName, GlobalPaymentDetailsKey, cancellationToken: cancellationToken);
+            var quota = new GenericUserQuotaDto
+            {
+                UserId = dto.UserId,
+                SourceType = "Subscription",
+                PaymentTransactionId = dto.PaymentTransactionId,
+                SubscriptionId = dto.SubscriptionId,
+                SubscriptionName = dto.SubscriptionName,
+                VerticalTypeId = dto.VerticalTypeId,
+                VerticalName = dto.VerticalName,
+                SubVerticalId = dto.CategoryId,
+                SubVerticalName = dto.CategoryName,
+                TotalAdBudget = dto.AdsBudgetTotal ?? 0,
+                UsedAdBudget = 0,
+                TotalPromoteBudget = dto.PromoteBudgetTotal ?? 0,
+                UsedPromoteBudget = 0,
+                TotalRefreshBudget = dto.RefreshBudgetTotal ?? 0,
+                UsedRefreshToday = 0,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Currency = dto.Currency,
+                Price = dto.Price,
+                CardHolderName = dto.CardHolderName,
+                TransactionDate = dto.TransactionDate,
+                CreatedAt = DateTime.UtcNow
+            };
 
-            existing ??= new UserPaymentDetailsCollection();
-
-            existing.Details.RemoveAll(d => d.UserId == paymentDetails.UserId);
-            existing.Details.Add(paymentDetails);
-
-            await _daprClient.SaveStateAsync(StateStoreName, GlobalPaymentDetailsKey, existing, cancellationToken: cancellationToken);
+            var userQuotaActor = GetUserQuotaActorProxy(dto.UserId);
+            await userQuotaActor.UpsertQuotaAsync(quota, cancellationToken);
             return true;
         }
-
-
-
-
 
         public async Task<UserPaymentDetailsResponseDto?> GetPaymentDetailsAsync(CancellationToken cancellationToken = default)
         {
