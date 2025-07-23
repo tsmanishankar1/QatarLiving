@@ -50,6 +50,20 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         protected HashSet<Guid> _selectedBannerIds = new();
         protected List<BannerTypeRequest> _selectedBannerTypeRequests = new();
         protected bool IsChecked(BannerLocationDto item) => _selectedBannerIds.Contains(item.Id);
+        protected List<BannerPageLocationDto> FilteredGroups =>
+        bannerPageTypes
+            .Select(group => new BannerPageLocationDto
+            {
+                Id = group.Id,
+                VerticalId = group.VerticalId,
+                SubVerticalId = group.SubVerticalId,
+                BannerPageName = group.BannerPageName,
+                bannertypes = group.bannertypes
+                    .Where(x => string.IsNullOrEmpty(bannerModel.BannerSize) || x.Dimensions == bannerModel.BannerSize)
+                    .ToList()
+            })
+            .Where(g => g.bannertypes.Any())
+            .ToList();
 
 
         protected void OnCheckedChanged(BannerLocationDto item, bool isChecked, int? verticalId, int? subVerticalId, Guid pageId)
