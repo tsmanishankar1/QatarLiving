@@ -1,0 +1,317 @@
+@using MudBlazor
+@inherits ReportsFormBase
+@using QLN.ContentBO.WebUI.Models;
+
+<div class="report-form-container">
+    
+<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
+     <h3 class="form-heading">Report Form</h3>
+       <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+                Value="@reports.SelectedCategoryId"
+                ValueChanged="@OnCategoryChanged"
+                For="@(() => reports.SelectedCategoryId)"
+                FullWidth="true">
+             @if (IsLoadingCategories)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var cat in CategoryTrees)
+                {
+                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+
+        @if (!string.IsNullOrEmpty(reports.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
+        {
+          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
+                    Value="@reports.SelectedSubcategoryId"
+                    ValueChanged="@OnSubCategoryChanged"
+                    For="@(() => reports.SelectedSubcategoryId)"
+                    FullWidth="true">
+                @foreach (var sub in SelectedCategory.Children)
+                {
+                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+        }
+
+        @if (!string.IsNullOrEmpty(reports.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        {
+            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
+                Value="@reports.SelectedSubSubcategoryId"
+                ValueChanged="@OnSubSubCategoryChanged"
+                For="@(() => reports.SelectedSubSubcategoryId)"
+                FullWidth="true">
+            @foreach (var subsub in SelectedSubcategory.Children)
+            {
+                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+    }
+    <!-- Date Range Selector -->
+    <div class="report-date-input @(showDatePopover ? "active-report" : "")" @onclick="ToggleDatePopover">
+           <span class="report-date-placeholder">
+            @{
+                if (_dateRange.Start.HasValue && _dateRange.End.HasValue)
+                {
+                    <text>@_dateRange.Start.Value.ToString("dd MMM yyyy") - @_dateRange.End.Value.ToString("dd MMM yyyy")</text>
+                }
+                else
+                {
+                    <text>Date Range*</text>
+                }
+            }
+        </span>
+        <img src="/qln-images/date_icon.svg" class="report-date-icon @(showDatePopover ? "active-icon" : "")" style="width:16px;" />
+        <MudPopover Open="@showDatePopover"
+                    AnchorOrigin="Origin.BottomCenter"
+                    TransformOrigin="Origin.TopCenter"
+                    Elevation="6"
+                    Class="popover-container"
+                    Style="padding:0;">
+            <div class="custom-range-picker-container">
+                <!-- Left: Calendar -->
+                <div class="range-calendar">
+                    <MudDateRangePicker 
+                        @bind-DateRange="_tempDateRange"
+                        PickerVariant="PickerVariant.Static"
+                        DisableToolbar="true"
+                        ShowToolbar="false"
+                        DisplayMonths="1"
+                        Class="event-custom-date-range"
+                        Style="min-width: 300px;" 
+                    />
+                </div>
+                <!-- Right: Range Info + Controls -->
+                <div class="range-sidebar">
+                <div class="range-header-col">
+                        <span class="date-value">
+                            @( _tempDateRange?.Start?.ToString("dd MMM yyyy") ?? "Start date" )
+                        </span>
+                        <span class="date-value">
+                            @( _tempDateRange?.End?.ToString("dd MMM yyyy") ?? "End date" )
+                       </span>
+                </div>
+                    <div class="range-footer">
+                        <MudButton Variant="Variant.Filled" Class="popover-button" OnClick="CancelDatePopover">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="popover-button" OnClick="ApplyDatePopover">Apply</MudButton>
+                    </div>
+                </div>
+            </div>
+        </MudPopover>
+    </div>
+    <MudSelect T="string" Label="Section" Variant="Variant.Outlined" Class="form-field disabled-field" Disabled="true"></MudSelect>
+    <!-- More Filters Popover Trigger -->
+    <div class="report-date-input @(showFilterPopover ? "active-report" : "")" @onclick="ToggleFilterPopover">
+        <span class="report-date-placeholder">More Filters</span>
+    <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Class="@FilterIconClass" />
+    <MudPopover Open="@showFilterPopover"
+                AnchorOrigin="Origin.BottomCenter"
+                TransformOrigin="Origin.TopCenter"
+                Elevation="6"
+                Class="popover-container"
+                Style="padding:0;">
+            <div class="filter-popover-container">
+                <!-- Header -->
+                <div class="filter-popover-header">
+                    More Filters
+                </div>
+                <!-- Filter content like in the image -->
+                <div class="filter-scroll-area">
+                    <!-- Example Sections -->
+                  
+                    <!-- Add other sections (Model, Capacity, etc.) here -->
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="filter-footer">
+                    <MudButton Variant="Variant.Text" OnClick="CancelFilters" Class="popover-button">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilters" Class="popover-button">Apply</MudButton>
+                </div>
+            </div>
+        </MudPopover>
+
+     </div>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"  Class="download-btn" FullWidth="true">
+        <img src="/qln-images/upload_white_icon.svg" class="image-upload" width="20" height="20" />
+        Download Report
+    </MudButton>
+</EditForm>
+</div>
+
+<style>
+      .report-form-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 480px;
+        padding: 10px;
+        font-family: 'Public Sans', sans-serif;
+    }
+    .custom-range-picker-container {
+        display: flex;
+        flex-direction: row;
+        min-width: 480px;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .range-calendar {
+        border-right: 1px solid #f0f0f0;
+        padding: 12px 12px 12px 0;
+        background: #fff;
+    }
+    .range-header-col {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 8px;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .date-value {
+        font-size: 14px;
+        color: var(--color-text-heading);
+        font-weight: 500;
+        border: 1px solid var(--color-captcha-box);
+        padding: 6px 16px;
+        border-radius: 6px;
+        width: 100%;
+        text-align: left;
+        box-shadow: 0px 1px 2px 0px #1018280D;
+    }
+
+    .range-sidebar {
+        min-width: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 14px 10px;
+        background: #fff;
+    }
+    .range-header {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 12px;
+    }
+    .range-footer {
+        display: flex;
+        gap: 8px;
+        flex-direction: column;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+    .report-date-input {
+      display: flex;
+        align-items: center;
+        flex-direction: row;
+        justify-content: space-between;  
+        border: 1px solid var(--color-secondary-grey-container);
+        border-radius: 8px;
+        padding: 0 16px;                
+        height: 50px;
+        font-size: 14px;
+        cursor: pointer;
+        background-color: white;
+        color: #333;
+        gap: 0;               
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+
+    .report-date-input.active-report {
+        border-color: var(--color-accent) !important;
+        color: var(--color-accent);
+    }
+
+    .report-date-placeholder {
+        flex: 1;
+        color: inherit;
+    }
+
+    .report-date-icon {
+        width: 20px;
+        height: 20px;
+        margin-left: 12px;
+    }
+    .form-title {
+        color: var(--color-primary);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .popover-button {
+        width: 100%;
+        text-transform: capitalize;
+    }
+      .form-field  .mud-input,
+      .form-field  .mud-select {
+        width: 100%;
+        background-color: white !important;
+        color: var(--color-text-heading);   
+    }
+    .image-upload {
+        width: 20px;
+        height: 20px;
+        margin-right: 8px;
+    }
+    .download-btn {
+        text-transform: capitalize;
+        margin-top: 12px;
+        font-weight: 500;
+    }
+
+    .disabled-field {
+        background-color: #F4F6F8;
+    }
+
+    .active-icon {
+        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+    }
+    .filter-popover-container {
+        width: 460px;
+        max-height: 350px;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .filter-popover-header {
+        background-color: var(--color-secondary-grey-container);
+        padding: 12px 16px;
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--color-text-heading); 
+    }
+    .filter-scroll-area {
+        overflow-y: auto;
+        padding: 16px;
+        flex: 1;
+    }
+
+    .filter-section {
+        margin-bottom: 16px;
+    }
+
+    .filter-footer {
+        display: flex;
+        flex-direction: row;
+        padding: 12px 16px;
+        border-top: 1px solid #eee;
+        gap: 8px;
+        background: #fff;
+    }
+      .form-heading {
+        color: var(--color-primary);
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+</style>

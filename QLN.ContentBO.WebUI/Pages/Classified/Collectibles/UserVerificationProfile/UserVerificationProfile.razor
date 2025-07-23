@@ -1,0 +1,19 @@
+@page "/manage/classified/collectibles/user/verification/profile"
+@inherits UserVerificationProfileBase
+@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Components.ToggleTabs;
+@layout CollectiblesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+            <div class="community-tab">
+            <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+                </div>
+              <div class="community-table">
+              <UserVerificationProfileTable/>
+             </div> 
+    </MudItem>
+</MudGrid>
