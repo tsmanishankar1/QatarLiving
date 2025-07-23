@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @using MudBlazor
 
-@if (Countries?.Any() != true)
+@if (Countries == null || Countries.Count == 0)
 {
     <p>Loading countries...</p>
 }
