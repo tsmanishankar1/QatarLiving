@@ -138,7 +138,7 @@ public class LandingPageBase : QLComponentBase
                 {
                     picks.Add(new LandingPageItem
                     {
-                        Id = Guid.NewGuid(),
+                        Id = null,
                         Category = "Select a Featured Category",
                         EndDate = null,
                         SlotOrder = slot,
@@ -185,7 +185,7 @@ public class LandingPageBase : QLComponentBase
                 {
                     picks.Add(new LandingPageItem
                     {
-                        Id = Guid.NewGuid(),
+                        Id = null,
                         Category = "Select a Seasonal Pick",
                         EndDate = null,
                         SlotOrder = slot,
@@ -216,7 +216,7 @@ public class LandingPageBase : QLComponentBase
                 .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
-                    Id = Guid.Parse(x.Id),
+                    Id = null,
                     Category = x.CategoryName,
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
