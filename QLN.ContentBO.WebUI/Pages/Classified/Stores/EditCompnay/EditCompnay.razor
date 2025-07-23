@@ -1,20 +1,20 @@
-@page "/manage/classified/items/edit/ad/{AdId:int}"
+@page "/manage/classified/edit/compnay/{CompanyName}"
 @using QLN.ContentBO.WebUI.Models
-@inherits EditAdBase
+@inherits EditCompnayBase
 
  <button class="back-button" @onclick="GoBack">
      <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
         Back
 </button>
-<EditAdAction AdModel="@adPostModel"/>
+<EditAdAction Company="@Company"/>
 <div class="create-form-container">
     <MudGrid GutterSize="24px">
         <MudItem xs="12" md="5">
-            <CreateFormList Ad="@adPostModel" />
+            <EditFormList Company="@Company" />
         </MudItem>
 
-        <MudItem xs="12" md="7">
-            <UploadPhotos AdModel="@adPostModel" />
+        <MudItem xs="12" md="6">
+            <CompanyLogo Company="@Company" />
         </MudItem>
     </MudGrid>
 </div>

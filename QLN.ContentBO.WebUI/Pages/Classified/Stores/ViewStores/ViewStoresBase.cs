@@ -8,7 +8,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
 {
     public partial class ViewStoresBase : ComponentBase
     {
-
         protected List<ViewStoreList> Listings { get; set; } = new();
         [Inject]
         public NavigationManager NavigationManager { get; set; } = default!;

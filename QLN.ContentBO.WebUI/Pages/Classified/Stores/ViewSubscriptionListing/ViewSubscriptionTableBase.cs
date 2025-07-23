@@ -17,7 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
     {
         if (!string.IsNullOrEmpty(order?.UserName))
         {
-            NavigationManager.NavigateTo($"/manage/classified/stores/createform/{order.UserName}");
+            NavigationManager.NavigateTo($"/manage/classified/edit/compnay/{order.UserName}");
         }
     }
 

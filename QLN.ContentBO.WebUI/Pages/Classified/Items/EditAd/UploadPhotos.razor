@@ -24,15 +24,15 @@
     <div id="image-upload-container" class="image-grid">
         @foreach (var image in AdModel.Images.OrderBy(img => img.Order))
         {
-            <div class="upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
+            <div class="item-upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
                 <label class="upload-label">
                     @if (string.IsNullOrEmpty(image.Url))
                     {
                         <div class="upload-content">
                             <div class="upload-icon-box">
-                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Class="item-upload-icon" />
                             </div>
-                            <div class="upload-text">Upload</div>
+                            <div class="item-upload-text">Upload</div>
                         </div>
                     }
 
@@ -55,176 +55,12 @@
 
         @if (AdModel.Images.Count < MaxImages)
         {
-            <div class="upload-box add-more-box" @onclick="AddImageBox">
+            <div class="item-upload-box add-more-box" @onclick="AddImageBox">
                 <div class="upload-content">
-                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
-                    <div class="upload-text">Add More<br />Photos</div>
+                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="item-upload-icon" />
+                    <div class="item-upload-text">Add More<br />Photos</div>
                 </div>
             </div>
         }
     </div>
 </div>
-<style>
-      .Upload-heder {
-        font-size: 18px;
-        font-weight: 600;
-        font-family: 'Public Sans', sans-serif;
-        color: var(--color-primary);
-    }
- .Upload-container {
-        padding: 20px;
-        background-color: var(--color-background);
-        border-radius: 6px;
-        margin-top: 10px;
-        font-family: 'Public Sans', sans-serif;
-        boder: 1px solid var(--color-background-secondary-grey-medium);
-    }
-     .photo-guidelines {
-        font-size: 12px;
-        font-weight: 400;
-        color: var(--color-text-secondary);
-        /* slate-700 */
-    }
-
-    .photo-guidelines a {
-        color: var(--color-accent);
-        /* Material Indigo */
-        font-weight: 400;
-        margin-left: 4px;
-        font-size: 12px;
-        cursor: pointer;
-    }
-.inline-drag-icon {
-    font-size: 16px;
-    vertical-align: middle;
-    margin: 0 4px;
-    color: var(--color-text-secondary);
-    cursor: grab;
-}
-
-.drag-instruction-text {
-    font-size: 14px;
-    font-weight: 400;
-    color: var(--color-text-secondary);
-}
-
-
-.add-more-box {
-    border: 1px dashed #d1d5db;
-    background-color: var(--color-secondary-background);
-    aspect-ratio: 4/3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-}
-
-.image-grid {
-   display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-}
-
-.upload-box {
-    position: relative;
-        border: 1px dashed #d1d5db;
-        border-radius: 2px;
-        background-color: var(--color-secondary-background);
-        overflow: hidden;
-        aspect-ratio: 4/3;
-        /* Landscape ratio */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-}
-
-.upload-label {
-    position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-}
-
-.cover-photo-label {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: var(--color-accent);
-    color: white;
-    font-size: 12px;
-    padding: 4px 0;
-    text-align: center;
-    font-weight: 500;
-}
-
-.plus-icon {
-    font-size: 24px;
-    color: orange;
-}
-
-.add-more-text {
-    font-size: 12px;
-    color: #555;
-    text-align: center;
-    margin-top: 5px;
-}
-
-.preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-}
- .delete-icon {
-       position: absolute !important;
-        top: 8px !important;
-        right: 8px !important;
-        background-color: var(--color-accent) !important;
-        border-radius: 50% !important;
-        color: white !important;
-        width: 28px !important;
-        height: 28px !important;
-        z-index: 10 !important;
-    }
-    .upload-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
-
-    
-    .upload-icon-box {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-    }
-
-   .upload-icon {
-        color: var(--color-accent);
-        font-size: 24px;
-    }
-      .upload-text {
-        color: var(--color-text-heading);
-        font-weight: 500;
-        font-size: 11px;
-    }
-.file-input {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-    z-index: 10;
-}
-</style>

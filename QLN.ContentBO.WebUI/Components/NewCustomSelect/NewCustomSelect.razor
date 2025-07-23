@@ -1,7 +1,8 @@
 @typeparam TItem
+@inject IJSRuntime JS
 @using System.Linq.Expressions
 
-<div class="custom-select-wrapper @(IsDisabled ? "disabled" : "")" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
+<div @ref="wrapperRef" class="custom-select-wrapper @(IsDisabled ? "disabled" : "")" @onfocusout="HandleFocusOut" tabindex="0" @onkeydown="HandleKeyDown">
 
     <div class="select-display @(IsOpen ? "focused" : "")" @onclick="() => { if (!IsDisabled) ToggleDropdown(); }"
         style="@($"border-radius:{BorderRadius}; border-color:{GetBorderColor()}; padding:{Padding};")">
@@ -34,7 +35,7 @@
 
     @if (IsOpen && !IsDisabled)
     {
-        <div class="new-select-dropdown animate-dropdown">
+        <div class="new-select-dropdown animate-dropdown @DropdownPosition">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
                 <div class="dropdown-item-placeholder disabled">@Placeholder</div>
@@ -80,13 +81,44 @@
     : Placeholder;
 
 
-    private void ToggleDropdown() => IsOpen = !IsOpen;
+    private string DropdownPosition => OpenUpwards ? "dropdown-up" : "dropdown-down";
+    private bool OpenUpwards = false;
+
+    private void ToggleDropdown()
+    {
+        IsOpen = !IsOpen;
+
+        if (IsOpen)
+        {
+            // Defer to allow DOM to render
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(10); // Let Blazor render first
+                await CheckDropdownDirection();
+                StateHasChanged();
+            });
+        }
+    }
+
 
     private async Task SelectItem(TItem item)
     {
         SelectedId = GetId(item);
         IsOpen = false;
         await SelectedIdChanged.InvokeAsync(SelectedId);
+    }
+    private ElementReference wrapperRef;
+
+    private async Task CheckDropdownDirection()
+    {
+        var space = await JS.InvokeAsync<DropdownSpace>("getDropdownSpace", wrapperRef);
+        OpenUpwards = space.SpaceBelow < 150 && space.SpaceAbove > space.SpaceBelow;
+    }
+
+    class DropdownSpace
+    {
+        public double SpaceAbove { get; set; }
+        public double SpaceBelow { get; set; }
     }
 
     private void HandleFocusOut(FocusEventArgs e) => IsOpen = false;
@@ -113,12 +145,11 @@
         pointer-events: none;
         opacity: 0.6;
     }
-.validation-message {
-    color: red;
-    font-size: 12px;
-    margin-top: 4px;
-}
-
+    .validation-message {
+        color: red;
+        font-size: 12px;
+        margin-top: 4px;
+    }
     .custom-select-wrapper.disabled .select-display {
           box-shadow: 0 0 0 1px rgba(255, 0, 0, 0.15);
         background-color: var(--color-background-secondary-grey-light);
@@ -201,19 +232,28 @@
     }
 
 
-    .new-select-dropdown {
-        position: absolute;
-        width: 100%;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        margin-top: 4px;
-        z-index: 10000;
-        padding: 10px 5px;
-        max-height: 200px; 
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
+ .new-select-dropdown {
+    position: absolute;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    padding: 10px 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dropdown-down {
+    top: 100%;
+    margin-top: 4px;
+}
+
+.dropdown-up {
+    bottom: 100%;
+    margin-bottom: 4px;
+}
 
     .animate-dropdown {
         animation: slideDown 0.25s ease-out;

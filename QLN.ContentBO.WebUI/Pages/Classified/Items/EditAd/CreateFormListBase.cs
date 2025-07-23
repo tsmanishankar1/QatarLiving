@@ -44,6 +44,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
+         protected string ShortFileName(string name, int max)
+         {
+                if (string.IsNullOrEmpty(name)) return "";
+                return name.Length <= max ? name : name.Substring(0, max) + "...";
+        }
 
         protected async Task OnCrFileSelected(IBrowserFile file)
         {
@@ -57,8 +62,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
 
-             Ad.CertificateFileName = file.Name;
-             Ad.Certificate = Convert.ToBase64String(ms.ToArray());
+            Ad.CertificateFileName = file.Name;
+            Ad.Certificate = Convert.ToBase64String(ms.ToArray());
         }
         protected void ClearFile()
         {
