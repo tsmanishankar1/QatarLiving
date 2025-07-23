@@ -118,37 +118,39 @@
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
                       @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
-           <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
-                        <MudText Typo="Typo.body1">
-                            Certificate / Warranty*
-                            @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
-                            {
+        <MudPaper Class="catification-upload-section">
+            <div class="catification-upload-info">
+                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
 
-                                <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
-                                               Size="Size.Small"
-                                               Color="Color.Error"
-                                               OnClick="ClearFile"
-                                               />
-                            }
+                @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                {
+                    <div class="catification-file-info">
+                        <span class="catification-file-name">
+                            @ShortFileName(Ad.CertificateFileName, 10)
+                        </span>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                    Size="Size.Small"
+                                    Color="Color.Error"
+                                    OnClick="ClearFile"
+                                    />
+                    </div>
+                }
+            </div>
 
-                        </MudText>
-                        <MudSpacer />
-                    <MudFileUpload T="IBrowserFile"
-                                Accept=".pdf,.png,.jpg,.jpeg"
-                                MaxFileSize="10485760"
-                                FilesChanged="OnCrFileSelected">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                    Color="Color.Primary"
-                                    Class="upload-button">
-                                Upload
-                                <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
-                            </MudButton>
-                        </ActivatorContent>
-                    </MudFileUpload>
-
-                    </MudPaper>
+            <MudFileUpload T="IBrowserFile"
+                        Accept=".pdf,.png,.jpg,.jpeg"
+                        MaxFileSize="10485760"
+                        FilesChanged="OnCrFileSelected">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="catification-upload-button">
+                        Upload
+                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+        </MudPaper>
         <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
 
         <h3 class="form-heading">Contact Details</h3>
@@ -186,8 +188,20 @@
 
         <div id="map" style="height: 300px; width: 100%;"></div>
 
-        <MudCheckBox Color="Color.Primary" T="bool" Label="I agree to terms"
-                      @bind-Value="Ad.IsAgreed" For="@(() => Ad.IsAgreed)" />
+         <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="Ad.IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the
+                    <a href="https://www.qatarliving.com/rules-advertising" target="_blank">Rules for Advertising</a>
+                    and the
+                    <a href="https://www.qatarliving.com/terms-of-use" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
+        </div>
+        <ValidationMessage For="@(() => Ad.IsAgreed)" />
 
         <div class="custom-button-group">
             <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>

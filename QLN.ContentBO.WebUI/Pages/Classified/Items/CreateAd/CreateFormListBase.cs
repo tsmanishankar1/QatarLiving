@@ -127,8 +127,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
         }
-
-
+        protected string ShortFileName(string name, int max)
+         {
+                if (string.IsNullOrEmpty(name)) return "";
+                return name.Length <= max ? name : name.Substring(0, max) + "...";
+        }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
