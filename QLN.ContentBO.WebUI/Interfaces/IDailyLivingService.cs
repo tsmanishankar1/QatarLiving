@@ -9,6 +9,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<List<DailyLivingArticleDto>> GetContentByTopicIdAsync(string topicId);
         Task<List<DailyTopic>> GetActiveTopicsAsync();
         Task<HttpResponseMessage> UpdateTopicAsync(DailyTopic topic);
+        Task<HttpResponseMessage> UpdateTopicRenameAsync(DailyTopic topic);
         Task<HttpResponseMessage> DeleteArticleAsync(string id);
         Task<HttpResponseMessage> ReorderFeaturedSlots(DailySlotAssignmentRequest request);
         Task<HttpResponseMessage> GetAvailableArticles(string topicId);

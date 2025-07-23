@@ -1,3 +1,4 @@
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
 @using MudBlazor
 @namespace QLN.ContentBO.WebUI.Pages.EventsPage
@@ -54,9 +55,9 @@ else
                     </MudLink>
                     </MudTd>
                     <MudTd>@Categories.FirstOrDefault(c => c.Id == context.Event.CategoryId)?.CategoryName</MudTd>
-                    <MudTd>@context.Event.CreatedAt.ToString("dd-MM-yyyy")</MudTd>
+                    <MudTd>@context.Event.CreatedAt.ToQatarTime("dd-MM-yyyy")</MudTd>
                     <MudTd>@context.Event.EventSchedule?.EndDate.ToString("dd-MM-yyyy")</MudTd>
-                    <MudTd Class="date-cell">
+                    <MudTd>
                         @if (context.Event?.PublishedDate is not null)
                         {
                             @GetTimeDifferenceFromNowUtc(context.Event?.PublishedDate ?? new())

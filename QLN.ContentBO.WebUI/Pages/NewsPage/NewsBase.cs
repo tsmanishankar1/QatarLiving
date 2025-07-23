@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.News;
+using QLN.ContentBO.WebUI.Extensions;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services;
@@ -246,7 +247,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId);
+                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId, 0, null, null);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var rawJson = await apiResponse.Content.ReadAsStringAsync();
@@ -266,6 +267,40 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 return [];
             }
         }
+
+
+        protected async Task<List<NewsArticleDTO>> GetNewsBySubCategories(
+                                                                            int categoryId,
+                                                                            int subCategoryId,
+                                                                            int? status = 0,
+                                                                            int? page = null,
+                                                                            int? pageSize = null)
+        {
+            try
+            {
+                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId, status, page, pageSize);
+
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var rawJson = await apiResponse.Content.ReadAsStringAsync();
+
+                    var result = JsonSerializer.Deserialize<List<NewsArticleDTO>>(rawJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return result ?? [];
+                }
+
+                return [];
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetNewsBySubCategories");
+                return [];
+            }
+        }
+
 
         protected async void LoadCategory(int categoryId, NewsSubCategory subCategory)
         {
@@ -307,8 +342,8 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var now = DateTime.UtcNow;
-                var diff = now - givenUtcTime;
+                var now = DateTime.UtcNow.ToQatarTime();
+                var diff = now - givenUtcTime.ToQatarTime();
 
                 // Check if the given time is in the future
                 var isFuture = diff.TotalSeconds < 0;
@@ -545,7 +580,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id) ?? [];
+                var liveArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 1, 1, 1000) ?? [];
 
                 var indexed = Enumerable.Range(1, 13)
                     .Select(slotNumber => new IndexedArticle
@@ -573,7 +608,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 2, 1, 1000);
 
                 return articles?
                     .Where(a => a.IsActive &&
@@ -596,7 +631,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
-                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id);
+                var articles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: 3, 1, 1000);
 
                 return articles?
                     .Where(a => a.IsActive &&
@@ -632,7 +667,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 IsLoadingDataGrid = false;
             }
         }
-                
+
         private async Task<List<NewsArticleDTO>> SearchArticlesAsync(string searchString)
         {
             try
@@ -671,7 +706,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             }
         }
 
-       
+
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)
         {
@@ -680,7 +715,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                 var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
                 var result = await dialog.Result;
-                if(result is not null)
+                if (result is not null)
                 {
                     if (result.Canceled)
                     {
@@ -768,7 +803,7 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
             {
                 Logger.LogError(ex, "ResetOrder");
                 throw;
-            }      
+            }
         }
     }
 }

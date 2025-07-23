@@ -1,0 +1,20 @@
+
+@inherits ViewStoresBase
+@using QLN.ContentBO.WebUI.Models;
+@using MudBlazor
+
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+        <div class="community-table">
+        <ViewStoreTable 
+            Listings="@Listings"
+            TotalCount="@TotalCount"
+            CurrentPage="@currentPage"
+            PageSize="@pageSize"
+            OnPageChange="HandlePageChange"
+            OnPageSizeChange="HandlePageSizeChange"
+            OnViewClicked="OnViewClicked" />
+        </div>
+    </MudItem>
+</MudGrid>

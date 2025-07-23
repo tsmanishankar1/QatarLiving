@@ -37,7 +37,10 @@ namespace QLN.Common.DTO_s
         Active = 1,
         Blocked = 2,
         Suspended = 3,
-        Unblocked = 4
+        Unblocked = 4,
+        PendingLicenseApproval = 5,
+        NeedChanges =6,
+        Rejected = 7
     }
     public enum SubVertical
     {
@@ -46,7 +49,11 @@ namespace QLN.Common.DTO_s
         Stores = 3,
         Preloved = 4,
         Collectibles = 5,
-        Services = 6
+        Services = 6,
+        News=7,
+        Daily=8,
+        Events=9,
+        Community=10
     }
     public enum NatureOfBusiness
     {
