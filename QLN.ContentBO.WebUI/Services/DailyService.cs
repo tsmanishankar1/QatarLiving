@@ -150,6 +150,7 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     payload = new
                     {
+                        slotType = 0,
                         contentType = article.ContentType,
                         topicId = article.TopicId,
                         contentUrl = article.ContentURL
@@ -203,6 +204,7 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     payload = new
                     {
+                        slotType = 0,
                         contentType = article.ContentType,
                         topicId = article.TopicId,
                         slotNumber = article.SlotNumber,

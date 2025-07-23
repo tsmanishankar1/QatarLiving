@@ -146,16 +146,16 @@ namespace QLN.ContentBO.WebUI.Services
 
         public async Task<HttpResponseMessage> GetArticlesBySubCategory(int categoryId,
                                                                         int subCategoryId,
-                                                                        string? status = null,
+                                                                        int? status = 0,
                                                                         int? page = null,
                                                                         int? pageSize = null)
         {
             try
             {
-                var query = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(status))
-                    query.Add($"status={Uri.EscapeDataString(status)}");
+                var query = new List<string>
+                {
+                    $"status={status}"
+                };
 
                 if (page.HasValue)
                     query.Add($"page={page.Value}");

@@ -304,7 +304,7 @@ namespace QLN.Classified.MS.Service
             }
         }     
         
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
@@ -312,11 +312,8 @@ namespace QLN.Classified.MS.Service
 
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
+            if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
-
-            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
-                throw new ArgumentException("Certificate URL must be provided.");
 
             var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
 
@@ -329,60 +326,12 @@ namespace QLN.Classified.MS.Service
                 {
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
                 }
-
-                var adItem = new ClassifiedItems
-                {
-                    Id = adId,
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId,
-                    Category = dto.Category,
-                    L2CategoryId = dto.L2CategoryId,
-                    L2Category = dto.L2Category,
-                    L1CategoryId = dto.L1CategoryId,
-                    L1Category = dto.L1Category,                   
-                    Brand = dto.Brand,
-                    Model = dto.Model,
-                    Price = dto.Price,
-                    PriceType = dto.PriceType,
-                    Condition = dto.Condition,
-                    Color = dto.Color,
-                    AcceptsOffers = dto.AcceptsOffers,
-                    MakeType = dto.MakeType,
-                    Capacity = dto.Capacity,
-                    Processor = dto.Processor,
-                    Coverage = dto.Coverage,
-                    Ram = dto.Ram,
-                    Resolution = dto.Resolution,
-                    BatteryPercentage = dto.BatteryPercentage,
-                    Size = dto.Size,
-                    SizeValue = dto.SizeValue,
-                    Gender = dto.Gender,
-                    CertificateFileName = dto.CertificateFileName,
-                    CertificateUrl = dto.CertificateUrl,
-                    ImageUrls = dto.ImageUrls,
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsAppNumber = dto.WhatsAppNumber,
-                    Zone = dto.Zone,
-                    StreetNumber = dto.StreetNumber,
-                    BuildingNumber = dto.BuildingNumber,
-                    Latitude = dto.Latitude,
-                    Longitude = dto.Longitude,
-                    UserId = dto.UserId,   
-                    IsFeatured = dto.IsFeatured,
-                    IsPromoted = dto.IsPromoted,
-                    TearmsAndCondition = dto.TearmsAndCondition,
-                    CreatedAt = DateTime.UtcNow,
-                    ExpiryDate = dto.ExpiryDate,
-                    RefreshExpiry = dto.RefreshExpiry,
-                    Status = AdStatus.Draft
-                };
+                dto.Status = AdStatus.PendingApproval;
                 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
                 index.Add(key);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, adItem);
+                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
                       
                 return new AdCreatedResponseDto

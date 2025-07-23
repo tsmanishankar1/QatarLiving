@@ -124,6 +124,14 @@ namespace QLN.Company.MS.Service
 
             if (!IsValidEmail(dto.Email))
                 throw new ArgumentException("Invalid email format.");
+
+            if (dto.IsTherapeuticService == true)
+            {
+                if (string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
+                    throw new ArgumentException("Therapeutic certificate is required when therapeutic service is selected.");
+
+                return; 
+            }
         }
         private CompanyProfileDto EntityForCreate(CompanyProfileDto dto, Guid id)
         {
@@ -150,6 +158,8 @@ namespace QLN.Company.MS.Service
                 StartHour = dto.StartHour,
                 EndHour = dto.EndHour,
                 NatureOfBusiness = dto.NatureOfBusiness,
+                IsTherapeuticService = dto.IsTherapeuticService,
+                TherapeuticCertificate = dto.TherapeuticCertificate,
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
                 UserDesignation = dto.UserDesignation,
@@ -298,6 +308,8 @@ namespace QLN.Company.MS.Service
                 NatureOfBusiness = dto.NatureOfBusiness,
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
+                IsTherapeuticService = dto.IsTherapeuticService,
+                TherapeuticCertificate = dto.TherapeuticCertificate,
                 UserDesignation = dto.UserDesignation,
                 BusinessDescription = dto.BusinessDescription,
                 CRNumber = dto.CRNumber,
@@ -429,6 +441,7 @@ namespace QLN.Company.MS.Service
                     throw new InvalidOperationException("Cannot approve an inactive company profile.");
                 if (company.IsVerified == true)
                     throw new InvalidOperationException("This company is already approved.");
+
                 var wasPreviouslyVerified = company.IsVerified;
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;

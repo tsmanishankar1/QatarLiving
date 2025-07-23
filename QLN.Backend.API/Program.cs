@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
@@ -14,6 +15,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
@@ -206,6 +209,7 @@ builder.Services.AddResponseCompression(options =>
 
 
 builder.Services.ServicesConfiguration(builder.Configuration);
+builder.Services.ServiceConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
 builder.Services.ClassifiedLandingBo(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
@@ -273,6 +277,9 @@ eventGroup.MapEventEndpoints()
     .RequireAuthorization();
 var foEventGroup = app.MapGroup("/api/v2/fo/event");
 foEventGroup.MapFOEventEndpoints();
+var ServiceGroup = app.MapGroup("/api/service");
+ServiceGroup.MapAllServiceConfiguration()
+    .RequireAuthorization();
 var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");

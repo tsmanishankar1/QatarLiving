@@ -10,7 +10,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string StateKey = "paytofeature-payment-data";
         private const string BackupStateKey = "transaction-data";
         private const string StoreName = "statestore";
-        private const string GlobalPaymentDetailsKey = "paytopublish-payment-details-collection";
+        private const string GlobalPaymentDetailsKey = "paytofeature-payment-details-collection";
         private const string PaymentIdsStateKey = "payment-ids-collection";
         private const string DailyTimerName = "paytofeature-daily-timer";
         private const string SpecificTimerName = "paytofeature-specific-timer";

@@ -27,6 +27,8 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string? FacebookUrl { get; set; } 
         [Url]
         public string? InstagramUrl { get; set; }
+        public bool? IsTherapeuticService { get; set; }
+        public string? TherapeuticCertificate { get; set; }
         [Required]
         public string StartDay { get; set; } = string.Empty;
         [Required]
@@ -60,6 +62,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public Guid? CompanyId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; }
+        public string? RejectionReason { get; set; }
     }
     public class CompanyApprovalResponseDto
     {

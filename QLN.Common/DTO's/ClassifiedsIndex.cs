@@ -247,15 +247,6 @@ namespace QLN.Common.DTO_s
         [SearchableField(IsFilterable = true)]
         public string? UserName { get; set; }
 
-        public class ImageInfo
-        {
-            public string AdImageFileNames { get; set; }
-
-            [SearchableField(IsFilterable = true)]
-            public string Url { get; set; } = string.Empty;
-
-            [SimpleField(IsFilterable = true)]
-            public int Order { get; set; }
-        }
+       
     }
 }

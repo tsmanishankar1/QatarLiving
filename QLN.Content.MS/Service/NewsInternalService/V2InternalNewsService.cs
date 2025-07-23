@@ -62,7 +62,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
             return await Task.FromResult(slots);
         }
 
-
         private string GenerateNewsSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
@@ -100,7 +99,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         Title = dto.Title,
                         Content = dto.Content,
                         WriterTag = dto.WriterTag,
-                        Slug = $"{slugBase}-{cat.CategoryId}-{cat.SubcategoryId}",
+                        Slug = slugBase,
                         IsActive = true,
                         Categories = new List<V2ArticleCategory> {
             new V2ArticleCategory {
@@ -525,17 +524,20 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-         int categoryId,
-         int subCategoryId,
-         string? status,
-         int? page,
-         int? pageSize,
-         CancellationToken cancellationToken)
+            int categoryId,
+            int subCategoryId,
+            ArticleStatus status,
+            int? page,
+            int? pageSize,
+            CancellationToken cancellationToken)
         {
             try
             {
-                var ids = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
-                          ?? new List<string>();
+                var ids = await _dapr.GetStateAsync<List<string>>(
+                    V2Content.ContentStoreName,
+                    V2Content.NewsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
                 var stateItems = await _dapr.GetBulkStateAsync(
                     V2Content.ContentStoreName,
@@ -565,34 +567,70 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 a.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId))
                     .ToList();
 
-                // Filter by SlotId
-                if (!string.IsNullOrWhiteSpace(status))
+                // ✅ Apply status filter only if valid
+                if (status != ArticleStatus.None)
                 {
-                    status = status.Trim().ToLower();
-                    if (status == "published")
+                    switch (status)
                     {
-                        articles = articles
-                            .Where(a => a.Categories.Any(c => c.SlotId == 14))
-                            .ToList();
-                    }
-                    else if (status == "unpublished")
-                    {
-                        articles = articles
-                            .Where(a => a.Categories.Any(c => c.SlotId == 15))
-                            .ToList();
+                        case ArticleStatus.Published:
+                            articles = articles
+                                .Where(a => a.Categories.Any(c =>
+                                    c.CategoryId == categoryId &&
+                                    c.SubcategoryId == subCategoryId &&
+                                    c.SlotId == 14))
+                                .ToList();
+                            break;
+
+                        case ArticleStatus.Unpublished:
+                            articles = articles
+                                .Where(a => a.Categories.Any(c =>
+                                    c.CategoryId == categoryId &&
+                                    c.SubcategoryId == subCategoryId &&
+                                    c.SlotId == 15))
+                                .ToList();
+                            break;
+
+                        case ArticleStatus.Live:
+                            var liveSlots = Enumerable.Range(1, 13).ToHashSet();
+                            articles = articles
+                                .Where(a => a.Categories.Any(c =>
+                                    c.CategoryId == categoryId &&
+                                    c.SubcategoryId == subCategoryId &&
+                                    liveSlots.Contains(c.SlotId)))
+                                .ToList();
+                            break;
+
+                        // Optional: ignore invalid statuses
+                        default:
+                            _logger.LogWarning("Unknown status filter: {Status}", status);
+                            break;
                     }
                 }
 
-                // Pagination
-                int currentPage = page ?? 1;
-                int currentPageSize = pageSize ?? 50;
+                foreach (var article in articles)
+                {
+                    article.Categories = article.Categories
+                        .Where(c =>
+                        c.CategoryId == categoryId &&
+                        c.SubcategoryId == subCategoryId &&
+                        (
+                        status == ArticleStatus.None ||
+                        (status == ArticleStatus.Published && c.SlotId == 14) ||
+                        (status == ArticleStatus.Unpublished && c.SlotId == 15) ||
+                        (status == ArticleStatus.Live && Enumerable.Range(1, 13).Contains(c.SlotId))
+                        )
+                        )
+                        .ToList();
+                }
 
-                var pagedArticles = articles
+                // ✅ Apply pagination only if page and pageSize are provided
+                int currentPage = page.HasValue && page.Value > 0 ? page.Value : 1;
+                int currentPageSize = pageSize.HasValue && pageSize.Value > 0 ? pageSize.Value : 50;
+
+                return articles
                     .Skip((currentPage - 1) * currentPageSize)
                     .Take(currentPageSize)
                     .ToList();
-
-                return pagedArticles;
             }
             catch (Exception ex)
             {
@@ -600,6 +638,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
+
 
         public async Task<string> UpdateNewsArticleAsync(
       V2NewsArticleDTO dto,
@@ -1323,7 +1362,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 var subKey = subDto.SubCategoryName.ToLowerInvariant().Replace(" ", "_");
                 var pageName = $"qln_{catKey}_{subKey}";
-                var status = string.Empty;
+                var status = ArticleStatus.None;
                 var page = 1;
                 var pageSize = 50;
                 var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status,page, pageSize, cancellationToken);
