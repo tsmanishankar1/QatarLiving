@@ -18,7 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.Reports
 
         protected ReportsFormDto reports { get; set; } = new ReportsFormDto();
         protected EditContext editContext;
-        protected ValidationMessageStore messageStore;
+        private ValidationMessageStore messageStore;
 
         protected override async Task OnInitializedAsync()
         {
