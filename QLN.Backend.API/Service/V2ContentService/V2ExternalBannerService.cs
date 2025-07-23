@@ -22,7 +22,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-
         public async Task<string> CreateBannerAsync(string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
             string? desktopFileName = null;
