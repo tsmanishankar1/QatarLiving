@@ -383,16 +383,25 @@ public class LandingPageBase : QLComponentBase
     {
         try
         {
-            await Task.Delay(500); 
-            Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
-            await LoadDataForCurrentTab();
+            var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+
+            if (response?.IsSuccessStatusCode == true)
+            {
+                Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
+                await LoadDataForCurrentTab();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Error deleting {currentItemType}");
-            Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+            Snackbar.Add($"Error occurred while deleting {currentItemType}", Severity.Error);
         }
     }
+
 
     protected void CloseModal()
     {

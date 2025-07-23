@@ -21,9 +21,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
 
         [Parameter]
         public EventCallback<LandingPageItem> ReplaceItem { get; set; }
-
-        [Parameter]
-        public EventCallback<string> OnDelete { get; set; }
+        [Inject]
+        public IDialogService DialogService { get; set; } = default!;
+        [Inject]
+        public IClassifiedService ClassifiedService { get; set; }
 
         // Services and injections
         [Inject] public ISnackbar Snackbar { get; set; }
@@ -151,6 +152,46 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
             };
         }
         protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
+        protected async Task DeleteItem(string id)
+        {
+            var title = $"{GetItemTypeName()}";
+
+            var parameters = new DialogParameters
+        {
+            { "Title", "Delete Confirmation" },
+            { "Description", $"Do you want to delete this {title}?" },
+            { "ButtonTitle", "Delete" },
+            { "OnConfirmed", EventCallback.Factory.Create(this, async () => await DeleteItemAsync(id)) }
+        };
+
+        }
+        protected async Task DeleteItemAsync(string id)
+        {
+            try
+            {
+                var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
+
+                    // Reload or update UI as needed
+                    var deletedItem = Items.FirstOrDefault(i => i.Id.ToString() == id);
+                    if (deletedItem != null)
+                        Items.Remove(deletedItem);
+                }
+                else
+                {
+                    Snackbar.Add($"Failed to delete {GetItemTypeName()}", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, $"Error deleting {GetItemTypeName()}");
+                Snackbar.Add($"Error occurred while deleting {GetItemTypeName()}", Severity.Error);
+            }
+        }
+       
 
     }
 }

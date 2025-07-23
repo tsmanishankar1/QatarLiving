@@ -96,7 +96,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Put,
+                var request = new HttpRequestMessage(HttpMethod.Delete,
                     $"/api/v2/classifiedbo/seasonal-picks/soft-delete?pickId={pickId}&Vertical={vertical}");
 
                 return await _httpClient.SendAsync(request);
