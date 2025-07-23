@@ -39,30 +39,70 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             _searchService = searchService;
         }
 
+        public async Task<string> CreateFeaturedCategory(string userId, V2ClassifiedLandingBoDto dto, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
 
+            if (string.IsNullOrWhiteSpace(dto.ImageUrl))
+                throw new ArgumentException("Image is required.");
 
-        public async Task<List<L1CategoryDto>> GetL1CategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
+            if (string.IsNullOrWhiteSpace(dto.UserId))
+                throw new ArgumentException("UserId is required.");
+
+            var uploadedBlobKeys = new List<string>();
+
+            try
+            {
+                var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
+                var uniqueName = $"featured_{dto.UserId}_{Guid.NewGuid():N}".Substring(0, 10) + $".{imgExt}";
+                var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
+                uploadedBlobKeys.Add(uniqueName);
+
+                dto.ImageUrl = imageUrl;
+
+                var response = await _dapr.InvokeMethodAsync<V2ClassifiedLandingBoDto, string>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    "api/v2/classifiedbo/create-category",
+                    dto,
+                    cancellationToken
+                );
+
+                return response ?? "Featured category created";
+            }
+            catch (Exception ex)
+            {
+                foreach (var key in uploadedBlobKeys)
+                {
+                    try
+                    {
+                        await _fileStorageBlob.DeleteFile(key, "classifieds-images", cancellationToken);
+                    }
+                    catch (Exception rollbackEx)
+                    {
+                        _logger.LogError(rollbackEx, "Failed to rollback uploaded blob file: {BlobName}", key);
+                    }
+                }
+
+                _logger.LogError(ex, "Unexpected error in Create Featured Category.");
+                throw new InvalidOperationException("Error creating featured category.", ex);
+            }
+        }
+
+        public async Task<List<V2ClassifiedLandingBoDto>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
             try
             {
-                var trees = await _dapr.InvokeMethodAsync<List<CategoryTreeDto>>(
+                var trees = await _dapr.InvokeMethodAsync<List<V2ClassifiedLandingBoDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/lookup/l1-categories/{vertical}",
+                    $"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync/{vertical}",
                     cancellationToken);
 
-                var l1s = trees?
-                    .Select(t => new L1CategoryDto
-                    {
-                        Id = t.Id,
-                        Name = t.Name,
-                        Fields = t.Fields,
-                        Vertical = vertical
-                    })
-                    .ToList() ?? new List<L1CategoryDto>();
+                var l1s = trees?.ToList() ?? new List<V2ClassifiedLandingBoDto>();
 
                 return l1s;
             }
@@ -73,18 +113,91 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-
-        public async Task<string> CreateLandingBoItemAsync(string userId,V2ClassifiedLandingBoDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedCategorySlots(LandingBoSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (dto == null) throw new ArgumentNullException(nameof(dto));
-
-                var response = await _dapr.InvokeMethodAsync<V2ClassifiedLandingBoDto, string>(
-                    HttpMethod.Post,
+                var response = await _dapr.InvokeMethodAsync<LandingBoSlotReorderRequest, string>(
+                    HttpMethod.Put,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/classified-landing/slotbyid",
+                    "/api/v2/classifiedbo/ReorderFeaturedCategorySlots",
                     dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                var errorJson = await ex.Response.Content.ReadAsStringAsync(cancellationToken);
+                string errorMessage = errorJson;
+
+                try
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    errorMessage = problem?.Detail ?? ex.Message;
+                }
+                catch
+                {
+                    // Use raw message
+                }
+
+                _logger.LogError(ex, "Failed to reorder landing BO slots via Dapr.");
+                throw new InvalidDataException(errorMessage, ex);
+            }
+        }
+
+        public async Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<LandingBoSlotReplaceRequest, string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    "/api/v2/classifiedbo/replace-slot",
+                    dto,
+                    cancellationToken);
+
+                return response;
+            }
+            catch (InvocationException ex)
+            {
+                var errorJson = await ex.Response.Content.ReadAsStringAsync(cancellationToken);
+                string errorMessage = errorJson;
+
+                try
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    errorMessage = problem?.Detail ?? ex.Message;
+                }
+                catch
+                {
+                    // Use raw message
+                }
+
+                _logger.LogError(ex, "Failed to reorder landing BO slots via Dapr.");
+                throw new InvalidDataException(errorMessage, ex);
+            }
+        }
+
+        public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(categoryId))
+                throw new ArgumentException("StoreId is required.", nameof(categoryId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            if (string.IsNullOrWhiteSpace(vertical))
+                throw new ArgumentException("Vertical is required.", nameof(vertical));
+
+            try
+            {
+                var queryParams = $"?categoryId={categoryId}&userId={userId}&vertical={vertical}";
+
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/deletefeaturedcategory{queryParams}",
                     cancellationToken
                 );
 
@@ -92,13 +205,53 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
             catch (InvocationException ex)
             {
-                _logger.LogError(ex, "Dapr invocation failed while creating featured category.");
-                throw new InvalidOperationException("Failed to create featured category from external service.", ex);
+                var errorJson = await ex.Response.Content.ReadAsStringAsync(cancellationToken);
+                string errorMessage = errorJson;
+
+                try
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    errorMessage = problem?.Detail ?? ex.Message;
+                }
+                catch
+                {
+                    // Use raw message
+                }
+
+                _logger.LogError(ex, "Failed to delete featured category via Dapr.");
+                throw new InvalidDataException(errorMessage, ex);
             }
-            catch (Exception ex)
+        }
+
+        public async Task<List<V2ClassifiedLandingBoDto>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        {
+            try
             {
-                _logger.LogError(ex, "Unexpected error in CreateFeaturedCategoryAsync.");
-                throw;
+                var response = await _dapr.InvokeMethodAsync<List<V2ClassifiedLandingBoDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"/api/v2/classifiedbo/GetSlottedFeaturedCategory?vertical={vertical}",
+                    cancellationToken);
+
+                return response ?? new List<V2ClassifiedLandingBoDto>();
+            }
+            catch (InvocationException ex)
+            {
+                var errorJson = await ex.Response.Content.ReadAsStringAsync(cancellationToken);
+                string errorMessage = errorJson;
+
+                try
+                {
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    errorMessage = problem?.Detail ?? ex.Message;
+                }
+                catch
+                {
+                    // Use raw message
+                }
+
+                _logger.LogError(ex, "Failed to get slotted featured category via Dapr.");
+                throw new InvalidDataException(errorMessage, ex);
             }
         }
 

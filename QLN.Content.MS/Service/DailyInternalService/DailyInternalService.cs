@@ -141,6 +141,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
 
             dto.Category = string.IsNullOrWhiteSpace(dto.Category) ? null : dto.Category;
             dto.Subcategory = string.IsNullOrWhiteSpace(dto.Subcategory) ? null : dto.Subcategory;
+            dto.SlotType = 0;
 
             if (dto.Id != Guid.Empty)
             {
