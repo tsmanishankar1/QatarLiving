@@ -22,11 +22,11 @@ namespace QLN.Common.DTO_s
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("expiry")]
-        public int Expiry { get; set; }
+        public int? Expiry { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("errorCode")]
-        public int ErrorCode { get; set; }
+        public int? ErrorCode { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("messages")]
