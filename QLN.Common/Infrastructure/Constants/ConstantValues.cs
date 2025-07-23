@@ -23,8 +23,17 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         //Index constants
-        public const string LandingBackOffice = "landingbackoffice";
-        public const string Analytics = "analytics";
+        public static class IndexNames
+        {
+            public const string ClassifiedsItemsIndex = "classifiedsitems";
+            public const string ClassifiedsPrelovedIndex = "classifiedspreloved";
+            public const string ClassifiedsCollectiblesIndex = "classifiedscollectibles";
+            public const string ClassifiedsDealsIndex = "classifiedsdeals";
+            public const string ServicesIndex = "services";
+            public const string LandingBackOfficeIndex = "landingbackoffice";
+            public const string AnalyticsIndex = "analytics";
+        }
+
         public const string PubSubName = "pubsub";
 
         public const int DefaultPageSize = 50;
@@ -100,8 +109,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ContentStoreName = "contentstatestore";
             public const string ContentServiceAppId = "qln-content-ms";
-            public const string NewsCommentPrefix = "news-comment"; // used to build individual comment key
-            public const string NewsCommentIndexPrefix = "news-comment-index-"; // + nid
+            public const string NewsCommentPrefix = "news-comment"; 
+            public const string NewsCommentIndexPrefix = "news-comment-index-"; 
             public const string NewsIndexKey = "news-index";
             public const string NewsCategoryIndexKey = "newscategory-index";
             public const string EventIndexKey = "event-index";
@@ -120,9 +129,15 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ClassifiedBoStoreName = "contentstatestore";
             public const string ClassifiedBoServiceAppId = "qln-classifiedBo-ms";
-        
-           
+
         }                  
+        public static class Services
+        {
+            public const string StoreName = "servicestatestore";
+            public const string IndexKey = "service-category-index";
+            public const string ServiceAppId = "qln-classified-ms";
+            public const string ServicesIndexKey = "services-index";
+        }
     }
-    }
+}
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -10,15 +11,11 @@ using Azure.Search.Documents.Indexes.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
-using QLN.Common.DTOs;
 
 namespace QLN.SearchService
 {
     public interface ISearchIndexInitializer
     {
-        /// <summary>
-        /// Ensures that all configured search indexes are created (recreated if outdated).
-        /// </summary>
         Task InitializeAsync();
     }
 
@@ -37,7 +34,7 @@ namespace QLN.SearchService
             _indexClient = indexClient ?? throw new ArgumentNullException(nameof(indexClient));
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _modelsAssembly = typeof(ClassifiedsIndex).Assembly;
+            _modelsAssembly = typeof(ClassifiedsIndexBase).Assembly;
         }
 
         public async Task InitializeAsync()
@@ -83,20 +80,55 @@ namespace QLN.SearchService
             {
                 _logger.LogInformation("Index '{IndexName}' not found, creating...", indexName);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error checking index '{IndexName}'", indexName);
-                throw;
-            }
 
             try
             {
                 var modelType = ResolveModelType(vertical);
                 var fields = new FieldBuilder().Build(modelType);
-                var definition = new SearchIndex(indexName, fields);
+
+                // ✅ Configure AttributesJson field properly (no ParsingMode)
+                var attributesField = fields.FirstOrDefault(f => f.Name == "AttributesJson");
+                if (attributesField != null)
+                {
+                    // Just make it searchable - no parsing mode needed
+                    _logger.LogInformation("Found AttributesJson field, configured for search");
+                }
+
+                // ✅ Add vector field if needed
+                var vectorField = new SearchField("ContentVector", SearchFieldDataType.Collection(SearchFieldDataType.Single))
+                {
+                    IsSearchable = true,
+                    VectorSearchDimensions = 1536,
+                    VectorSearchProfileName = "default-vector-profile"
+                };
+
+                var fieldsList = fields.ToList();
+                fieldsList.Add(vectorField);
+
+                var indexDefinition = new SearchIndex(indexName, fieldsList)
+                {
+                    VectorSearch = new VectorSearch
+                    {
+                        Profiles =
+                        {
+                            new VectorSearchProfile("default-vector-profile", "hnsw-config")
+                        },
+                        Algorithms =
+                        {
+                            new HnswAlgorithmConfiguration("hnsw-config")
+                            {
+                                Parameters = new HnswParameters
+                                {
+                                    M = 4,
+                                    EfConstruction = 400
+                                }
+                            }
+                        }
+                    }
+                };
 
                 _logger.LogInformation("Creating index '{IndexName}' for vertical '{Vertical}'", indexName, vertical);
-                await _indexClient.CreateIndexAsync(definition);
+                await _indexClient.CreateIndexAsync(indexDefinition);
                 _logger.LogInformation("Index '{IndexName}' created successfully.", indexName);
             }
             catch (RequestFailedException ex)
@@ -120,27 +152,20 @@ namespace QLN.SearchService
                 throw new ArgumentException(msg, nameof(vertical));
             }
 
-            // 1) Clean out non-alphanumeric: "backoffice-master" → "backofficemaster"
             var cleaned = Regex.Replace(vertical, @"[^A-Za-z0-9]", "");
-
-            // 2) Pascal-case + "Index": "BackofficemasterIndex"
-            var pascal = CultureInfo.InvariantCulture.TextInfo
-                                 .ToTitleCase(cleaned.ToLowerInvariant());
+            var pascal = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(cleaned.ToLowerInvariant());
             var candidate = pascal + "Index";
 
             _logger.LogDebug("Looking for any type named '{Candidate}' in loaded DTO assemblies", candidate);
 
-            // 3) Scan every loaded type in the DTO assembly for a matching class name
             var type = _modelsAssembly
                 .GetTypes()
                 .FirstOrDefault(t =>
-                    string.Equals(t.Name, candidate, StringComparison.OrdinalIgnoreCase)
-                );
+                    string.Equals(t.Name, candidate, StringComparison.OrdinalIgnoreCase));
 
             if (type == null)
             {
-                var msg = $"No index model found for vertical '{vertical}'. " +
-                          $"Expected a class named '{candidate}' in DTO assemblies.";
+                var msg = $"No index model found for vertical '{vertical}'. Expected a class named '{candidate}' in DTO assemblies.";
                 _logger.LogError(msg);
                 throw new InvalidOperationException(msg);
             }
@@ -148,4 +173,5 @@ namespace QLN.SearchService
             return type;
         }
     }
+    
 }
