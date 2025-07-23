@@ -1,0 +1,126 @@
+﻿@page "/manage/classified/deals/subscription/listing"
+@inherits SubscriptionListingBase
+@using QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
+@layout DealsLayout
+
+<div style="margin-top:10px">
+    <div class="search-sort-container">
+        <div class="left-section">
+
+
+            <div class="search-wrapper">
+                <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+                <input type="text"
+                       placeholder="Search for Username"
+                       class="search-input"
+                       @oninput="OnSearchChanged" />
+            </div>
+        </div>
+
+        <div class="right-section">
+            <button class="sort-button">
+                <img src="/qln-images/file_icon.svg" />
+                Export data
+            </button>
+            <button class="sort-button" @onclick="ToggleSort">
+                <MudIcon Icon="@SortIcon" />
+                Sort by
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter row -->
+    <div class="filter-row">
+
+        <div>
+            <MudSelect T="string" Label="Subsctiption Type"
+               
+                       @bind-Value="SelectedCategory"
+                       Class="preloved-select no-underline"
+                       LabelClass="custom-label"
+                       RequiredError="Category is required">
+                <MudSelectItem T="string" Value=null>Choose</MudSelectItem>
+                @foreach (var category in Categories)
+                {
+                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        @* Date picker *@
+        <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
+            <MudTextField Label="Date"
+                          Value="@SelectedDateLabel"
+                          ReadOnly="true"
+                          DisableUnderLine="true"
+                          Variant="Variant.Outlined"
+                          Style="background-color: #FFFFFF;"
+                          Class="event-cursor-pointer event-custom-textfield"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
+                          OnAdornmentClick="@ClearSelectedDate"
+                          OnClick="ToggleDatePicker" />
+            <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
+                <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
+                    <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+                        <MudDateRangePicker @bind-DateRange="_dateRange"
+                                            PickerVariant="PickerVariant.Static"
+                                            DisableToolbar="true"
+                                            ShowToolbar="false"
+                                            DisplayMonths="1"
+                                            Class="event-custom-date-range"
+                                            Style="min-width: 300px;"
+                                            MinDate="@DateTime.Today" />
+
+                        <!-- Start and End Summary -->
+                        <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
+                            <div>
+                                <div class="event-summary-box">
+                                    @(_dateRange?.Start != null ? _dateRange.Start?.ToString("dd-MM-yyyy") : "Start date")
+                                </div>
+                            </div>
+                            <div>
+                                <div class="event-summary-box">
+                                    @(_dateRange?.End != null ? _dateRange.End?.ToString("dd-MM-yyyy") : "End date")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Actions -->
+                    <div class="event-picker-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
+                        <button class="event-cancel-button" @onclick="CancelDatePicker">Cancel</button>
+                        <button class="event-apply-button"
+                                @onclick="ApplyDatePicker"
+                                disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+            </MudPopover>
+        </div>
+
+        <button class="preloved-filter-button " @onclick="ClearFilters">Clear Filters</button>
+    </div>
+
+</div>
+<div style="margin-top:10px">
+    <DealsSubscriptionTable />
+</div>
+
+<style>
+   
+
+    .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+
+    
+    .preloved-select.mud-input-label {
+        color: #A1A1A1 !important;
+    }
+</style>
+
+

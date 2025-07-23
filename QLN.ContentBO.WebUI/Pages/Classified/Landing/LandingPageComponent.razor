@@ -1,0 +1,102 @@
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@inherits LandingPageComponentBase
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (Items == null || !Items.Any())
+{
+    <div class="empty-card-wrapper">
+        <EmptyCard Title="@EmptyCardTitle"
+                  Subtitle="Please check back later or explore other categories." />
+    </div>
+}
+else
+{
+    var indexedItems = Items
+        .Select((item, index) => new { Item = item, Index = index + 1 })
+        .ToList();
+
+    <table class="table table-hover classified-table" >
+        <thead>
+            <tr>
+                <th >Slot</th>
+                <th>Category</th>
+                <th>End Date</th>
+                <th >Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var context in indexedItems)
+            {
+                <tr data-slot-id="@context.Index">
+                   
+                    <td>
+                        <img src="/qln-images/arrow_icon.svg"
+                             class="drag-handle"
+                             style="cursor: grab; width: 20px;"
+                             alt="drag" />
+                        <span class="slot-position">
+                          
+                        </span>
+                    </td>
+                    <td>
+                       @*  @if(context.Item.Category is not null)
+                        {
+                            <span >@context.Item.Category</span>
+                        }
+                        else
+                        {
+                            @("-")
+                        }
+                        > *@
+                        @if (context.Item.Category == "Select a Seasonal Pick"
+                       || context.Item.Category == "Select a store to feature"
+                       || context.Item.Category == "Select a Featured Category")
+
+                        {
+                            <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;"
+                                  @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))">
+                                @context.Item.Category
+                            </span>
+                        }
+                        else
+                        {
+                            <a href="@($"{EventDetailBaseURL}{@context.Item.Category}")"
+                               class="event-link"
+                               style="text-decoration: none; color: #787878;"
+                               target="_blank">
+                                @context.Item.Category
+                            </a>
+                        }
+                    </td>
+                    <td>
+                        @(context.Item.EndDate != null 
+                            ? context.Item.EndDate.Value.ToShortDateString() 
+                            : "-")
+                    </td>
+                    <td>
+                        <div class="d-flex align-center gap-2">
+                            <div class="custom-delete-button">
+                                <img src="/qln-images/replace_icon.svg"
+                                     @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))"
+                                     alt="replace" 
+                                     class="action-icon-style" />
+                            </div>
+                            <div class="custom-delete-button" 
+                                 @onclick="@(() => OnDelete.InvokeAsync(context.Item.Id.ToString()))">
+                                <img src="/qln-images/delete_icon.svg" 
+                                     alt="delete" 
+                                     class="action-icon-style" />
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
