@@ -549,7 +549,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
+             
             group.MapDelete("/softDeleteSeasonalPick", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
