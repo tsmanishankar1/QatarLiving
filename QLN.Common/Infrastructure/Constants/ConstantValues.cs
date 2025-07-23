@@ -85,6 +85,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string LandingServiceBOIndex = "seasonal-pic-Services-index";
             public const string FeaturedStoreClassifiedsIndexKey = "featured-store-classifieds-index";
             public const string FeaturedStoreServicesIndexKey = "featured-store-services-index";
+            public const string FeaturedCategoryClassifiedIndex = "featured-category-classified-index";
+            public const string FeaturedCategoryServiceIndex = "featured-category-services-index";
             public const string UnifiedStore = "adstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
