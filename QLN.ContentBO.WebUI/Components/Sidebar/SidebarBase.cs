@@ -143,9 +143,9 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             {
                 new() { Title = "Landing Page", Url = "/manage/classified/landing" },
                 new() { Title = "Items", Url = "/manage/classified/items" },
-                new() { Title = "Deals", Url = "/manage/classified/deals" },
+                new() { Title = "Deals", Url = "/manage/classified/deals/subscription/listing" },
                 new() { Title = "Stores", Url = "/manage/classified/stores" },
-                new() { Title = "Preloved", Url = "/manage/classified/preloved" },
+                new() { Title = "Preloved", Url = "/manage/classified/preloved/subscription/listing" },
                 new() { Title = "Collectibles", Url = "/manage/classified/collectibles" },
 
             }

@@ -232,7 +232,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.CreateDeals
         }
         protected void onNavigationBack()
         {
-            NavigationManager.NavigateTo("/manage/classified/deals");
+            NavigationManager.NavigateTo("/manage/classified/deals/subscription/listing",forceLoad:true);
         }
     }
 }
