@@ -1239,6 +1239,7 @@ a, .btn-link {
 
 .custom-label {
     color: #A1A1A1 !important;
+}
 .hover-filled-button:hover {
     background-color: var(--mud-palette-primary);
     color: white;
