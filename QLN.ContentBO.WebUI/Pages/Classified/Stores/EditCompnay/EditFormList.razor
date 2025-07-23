@@ -184,36 +184,38 @@
                     <h3 class="form-heading">License & Visibility</h3>
                     <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="CR Number"
                                   @bind-Value="Company.XmlLink" For="@(() => Company.XmlLink)" FullWidth="true" />
+                <MudPaper Class="catification-upload-section">
+                        <div class="catification-upload-info">
+                            <h3 class="catification-upload-label">Certificate / Warranty*</h3>
 
-                    <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
-                        <MudText Typo="Typo.body1">
-                            Certificate / Warranty*
                             @if (!string.IsNullOrEmpty(Company.CertificateFileName))
                             {
-
-                                <MudText Typo="Typo.caption" Class="ml-2">@Company.CertificateFileName</MudText>
-                                <MudIconButton Icon="@Icons.Material.Outlined.Close"
-                                               Size="Size.Small"
-                                               Color="Color.Error"
-                                               OnClick="ClearFile" />
+                                <div class="catification-file-info">
+                                    <span class="catification-file-name">
+                                        @ShortFileName(Company.CertificateFileName, 10)
+                                    </span>
+                                    <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                                Size="Size.Small"
+                                                Color="Color.Error"
+                                                OnClick="ClearFile"
+                                                />
+                                </div>
                             }
+                        </div>
 
-                        </MudText>
-                        <MudSpacer />
                         <MudFileUpload T="IBrowserFile"
-                                       Accept=".pdf,.png,.jpg,.jpeg"
-                                       MaxFileSize="10485760"
-                                       FilesChanged="OnCrFileSelected">
+                                    Accept=".pdf,.png,.jpg,.jpeg"
+                                    MaxFileSize="10485760"
+                                    FilesChanged="OnCrFileSelected">
                             <ActivatorContent>
                                 <MudButton Variant="Variant.Filled"
-                                           Color="Color.Primary"
-                                           Class="upload-button">
+                                        Color="Color.Primary"
+                                        Class="catification-upload-button">
                                     Upload
                                     <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
                                 </MudButton>
                             </ActivatorContent>
                         </MudFileUpload>
-
                     </MudPaper>
                     <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
 
