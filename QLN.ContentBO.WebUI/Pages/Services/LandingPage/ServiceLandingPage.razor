@@ -1,6 +1,5 @@
 ﻿@page "/manage/services/landing"
 @inherits ServiceLandingPageBase
-@using QLN.ContentBO.WebUI.Components.Classifieds.ClassifiedTable
 @using QLN.ContentBO.WebUI.Pages.Services.LandingPage
 <MudGrid Style="padding-top: 18px">
     <MudItem xs="12" md="12">
@@ -40,7 +39,6 @@
                 IsLoading="IsLoading"   
                 Items="currentItems" 
                 ItemType="@currentItemType"
-                OnReplace="ReplaceItem"
                 OnDelete="DeleteItem" />
         </div>
     </MudItem>

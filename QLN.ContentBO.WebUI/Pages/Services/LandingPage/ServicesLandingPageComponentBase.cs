@@ -10,7 +10,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
 {
     public class ServicesLandingPageComponentBase : QLComponentBase
     {
-        // Parameters exactly matching parent component usage
         [Parameter]
         public bool IsLoading { get; set; }
 
@@ -18,10 +17,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         public List<LandingPageItem> Items { get; set; } = new();
 
         [Parameter]
-        public ServicesLandingPageItemType ItemType { get; set; }
+        public ServiceLandingPageItemType ItemType { get; set; }
 
         [Parameter]
-        public EventCallback<LandingPageItem> OnReplace { get; set; }
+        public EventCallback<LandingPageItem> ReplaceItem { get; set; }
 
         [Parameter]
         public EventCallback<string> OnDelete { get; set; }
@@ -134,9 +133,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         {
             return ItemType switch
             {
-                ServicesLandingPageItemType.FeaturedCategory => "Featured Categories",
-                ServicesLandingPageItemType.SeasonalPick => "Seasonal Picks",
-                ServicesLandingPageItemType.FeaturedServices => "Featured Services",
+                ServiceLandingPageItemType.FeaturedCategory => "Featured Categories",
+                ServiceLandingPageItemType.SeasonalPick => "Seasonal Picks",
+                ServiceLandingPageItemType.FeaturedStore => "Featured Stores",
                 _ => "Items"
             };
         }
@@ -145,14 +144,13 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         {
             return ItemType switch
             {
-                ServicesLandingPageItemType.FeaturedCategory => "Featured Category",
-                ServicesLandingPageItemType.SeasonalPick => "Seasonal Pick",
-                ServicesLandingPageItemType.FeaturedServices => "Featured Services",
+                ServiceLandingPageItemType.FeaturedCategory => "Featured Category",
+                ServiceLandingPageItemType.SeasonalPick => "Seasonal Pick",
+                ServiceLandingPageItemType.FeaturedStore => "Featured Store",
                 _ => "Item"
             };
         }
         protected string EmptyCardTitle => $"No {GetItemTypeName()} found";
-
 
     }
 }

@@ -44,13 +44,34 @@ else
                         </span>
                     </td>
                     <td>
-                        @if(context.Item.Category is not null)
+                       @*  @if(context.Item.Category is not null)
                         {
                             <span >@context.Item.Category</span>
                         }
                         else
                         {
                             @("-")
+                        }
+                        > *@
+                        @if (context.Item.Category == "Select a Seasonal Pick"
+                       || context.Item.Category == "Select a store to feature"
+                       || context.Item.Category == "Select a Featured Category")
+
+                        {
+                            <span class="placeholder-text"
+                                  style="color: #FF7F38; cursor: pointer;"
+                                  @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))">
+                                @context.Item.Category
+                            </span>
+                        }
+                        else
+                        {
+                            <a href="@($"{EventDetailBaseURL}{@context.Item.Category}")"
+                               class="event-link"
+                               style="text-decoration: none; color: #787878;"
+                               target="_blank">
+                                @context.Item.Category
+                            </a>
                         }
                     </td>
                     <td>
@@ -61,8 +82,8 @@ else
                     <td>
                         <div class="d-flex align-center gap-2">
                             <div class="custom-delete-button">
-                                <img src="/qln-images/replace_icon.svg"  
-                                     @onclick="@(() => OnReplace.InvokeAsync(context.Item))" 
+                                <img src="/qln-images/replace_icon.svg"
+                                     @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))"
                                      alt="replace" 
                                      class="action-icon-style" />
                             </div>
