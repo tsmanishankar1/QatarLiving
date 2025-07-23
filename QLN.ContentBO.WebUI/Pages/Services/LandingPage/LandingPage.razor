@@ -1,0 +1,47 @@
+﻿@page "/manage/services/landing"
+@inherits ServiceLandingPageBase
+@using QLN.ContentBO.WebUI.Components.Classifieds.ClassifiedTable
+@using QLN.ContentBO.WebUI.Pages.Services.LandingPage
+<MudGrid Style="padding-top: 18px">
+    <MudItem xs="12" md="12">
+        <h2 class="main-title-name-style">Services Landing Page</h2>
+        <MudTabs ActivePanelIndex="@activeIndex"
+                 ActivePanelIndexChanged="OnTabChanged"
+                 Rounded="false"
+                 Centered="false"
+                 Class="daily-custom-tabs"
+                 Style="background-color: #FAFAFA;"
+                 DisableSlideAnimation="true">
+            <MudTabPanel Text="Featured Categories" />
+            <MudTabPanel Text="Seasonal Picks" />
+        </MudTabs>
+        <div class="landing-action-section-container">
+            @* @if (activeIndex == (int)LandingPageItemType.SeasonalPick || activeIndex == (int)LandingPageItemType.FeaturedStore)
+            { *@
+                <MudButton StartIcon="@Icons.Material.Outlined.Add"
+                           Style="background-color: #FF7F38; color: white; text-transform: none;"
+                           Class="compact-button"
+                           OnClick="NavigateToAddItem">
+                    Add @GetCurrentTabAddButtonText()
+                </MudButton>
+            @* } *@
+            <div class="search-wrapper">
+                <img src="/qln-images/search_icon.svg" alt="search" class="search-icon" />
+                <input type="text"
+                       placeholder="Search"
+                       class="search-input"
+                       @bind="searchTerm"
+                       @oninput="async () => await SearchItems()" />
+            </div>
+        </div>
+        
+        <div style="margin-top:10px">
+            <ServicesLandingPageComponent 
+                IsLoading="IsLoading"   
+                Items="currentItems" 
+                ItemType="@currentItemType"
+                OnReplace="ReplaceItem"
+                OnDelete="DeleteItem" />
+        </div>
+    </MudItem>
+</MudGrid>
