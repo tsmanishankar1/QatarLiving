@@ -75,12 +75,12 @@ namespace QLN.Common.DTOs
         public string VerticalName { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
-        public decimal? AdsBudgetTotal { get; set; }
-        public decimal? AdsBudgetUsage { get; set; }
-        public decimal? PromoteBudgetTotal { get; set; }
-        public decimal? PromoteBudgetUsage { get; set; }
-        public decimal? RefreshBudgetTotal { get; set; }
-        public decimal? RefreshBudgetUsage { get; set; }
+        public int? AdsBudgetTotal { get; set; }
+        public int? AdsBudgetUsage { get; set; }
+        public int? PromoteBudgetTotal { get; set; }
+        public int? PromoteBudgetUsage { get; set; }
+        public int? RefreshBudgetTotal { get; set; }
+        public int? RefreshBudgetUsage { get; set; }
 
 
 

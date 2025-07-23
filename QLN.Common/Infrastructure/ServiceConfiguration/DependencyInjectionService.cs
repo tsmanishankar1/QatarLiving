@@ -4,12 +4,14 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Service.Auth;
 using QLN.Common.Infrastructure.Service.AuthService;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Service.JwtTokenService;
@@ -31,6 +33,7 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddScoped<IEventlogger, Eventlogger>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
             services.AddScoped<IWishlistService, WishlistService>();
+            services.AddScoped<IUserInfoService, UserInfoService>();
 
             return services;
         }

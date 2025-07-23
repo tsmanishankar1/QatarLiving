@@ -290,6 +290,8 @@ app.MapGroup("/api/paytopublish")
 
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();
+var quotaGroup = app.MapGroup("/api/userquota");
+quotaGroup.MapUserQuotaEndpoints();
 
 
 var newsGroup = app.MapGroup("/api/v2/news");

@@ -229,7 +229,7 @@ namespace QLN.SearchService.Service
                 }
 
                 opts.Filter = string.Join(" and ", filterClauses);
-
+                BuildOrderBy<T>(opts, req.OrderBy);
                 var result = await _repo.SearchAsync<T>(indexName, opts, req.Text);
                 var filtered = ApplyJsonFilters(result.Items, jsonFilters).ToList();
 

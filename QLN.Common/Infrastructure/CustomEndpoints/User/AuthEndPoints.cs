@@ -13,6 +13,7 @@ using QLN.Common.Infrastructure.Utilities;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.Constants;
+using System.Text.Json;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.User
@@ -728,5 +729,5 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
 
             return group;
         }
-}
+    }
 }

@@ -1,7 +1,10 @@
-﻿using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Actors.Runtime;
 using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -23,6 +26,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _daprClient = daprClient;
+        }
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            return ActorProxy.Create<IUserQuotaActor>(new ActorId(userId), "UserQuotaActor");
         }
         public class GlobalP2PPaymentDetailsCollection
         {
@@ -62,25 +69,37 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
-        public async Task StorePaymentDetailsAsync(UserP2PPaymentDetailsResponseDto details, CancellationToken cancellationToken = default)
+        public async Task StorePaymentDetailsAsync(UserP2PPaymentDetailsResponseDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var existing = await _daprClient.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
-                    StoreName,
-                    GlobalPaymentDetailsKey,
-                    cancellationToken: cancellationToken);
+                var quota = new GenericUserQuotaDto
+                {
+                    UserId = dto.UserId,
+                    SourceType = "P2P",
+                    PaymentTransactionId = dto.PaymentTransactionId,
+                    AdId = dto.AddId,
+                    VerticalTypeId = dto.VerticalTypeId,
+                    VerticalName = dto.VerticalName,
+                    SubVerticalId = dto.CategoryId,
+                    SubVerticalName = dto.CategoryName,
+                    TotalPromoteBudget = dto.IsPromoteAd ? 1 : 0,
+                    UsedPromoteBudget = 0,
+                    TotalFeatureBudget = dto.IsFeatureAd ? 1 : 0,
+                    UsedFeatureBudget = 0,
+                    TotalAdBudget = dto.IsAdFree ? 1 : 0,
+                    UsedAdBudget = 0,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    Currency = dto.Currency,
+                    Price = dto.Price,
+                    CardHolderName = dto.CardHolderName,
+                    TransactionDate = dto.TransactionDate,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-                existing ??= new GlobalP2PPaymentDetailsCollection();
-
-                // Optional: remove old entry if exists for same user
-                existing.Details.RemoveAll(x => x.UserId == details.UserId);
-
-                existing.Details.Add(details);
-
-                await _daprClient.SaveStateAsync(StoreName, GlobalPaymentDetailsKey, existing, cancellationToken: cancellationToken);
-
-                _logger.LogInformation("[Global] Stored payment detail for user {UserId}", details.UserId);
+                var userQuotaActor = GetUserQuotaActorProxy(dto.UserId);
+                await userQuotaActor.UpsertQuotaAsync(quota, cancellationToken);
             }
             catch (Exception ex)
             {

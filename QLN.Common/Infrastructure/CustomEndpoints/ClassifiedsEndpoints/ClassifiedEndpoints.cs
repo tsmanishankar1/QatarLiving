@@ -21,6 +21,7 @@ using Azure;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 using System.Net.Http;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -1128,7 +1129,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
                     var name = userData.GetProperty("name").GetString();
-
                     if (uid == null && name == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
