@@ -135,6 +135,119 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetFeaturedCategory(string vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync?vertical={vertical}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetFeaturedCategory" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync/classifieds?{vertical}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetAllFeatureCategory" + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> CreateFeaturedCategoryAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/CreateFeaturedCategory")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("CreateFeaturedCategoryAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+
+        public async Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical)
+        {
+            try
+            {
+                var body = new
+                {
+                    PickId = pickId,
+                    Slot = slot,
+                    Vertical = vertical
+                };
+
+                var content = new StringContent(
+                    JsonSerializer.Serialize(body),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                return await _httpClient.PutAsync("/api/v2/classifiedbo/featured-category/reorder-slots", content);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReplaceSeasonalPickAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Delete,
+                    $"/api/v2/classifiedbo/featured-category-delete?categoryId={pickId}&Vertical={vertical}");
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("DeleteFeaturedCategory: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string userId, string vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    slotAssignments = slotAssignments,
+                    userId = userId,
+                    vertical = vertical
+                };
+
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
+
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-category/reorder-slots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReorderFeaturedCategoryAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

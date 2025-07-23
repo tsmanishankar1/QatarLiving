@@ -17,6 +17,12 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical);
         Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical);
         Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string userId, string vertical);
+        Task<HttpResponseMessage?> GetFeaturedCategory(string vertical);
+        Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical);
+        Task<HttpResponseMessage?> CreateFeaturedCategoryAsync(object payload);
+        Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical);
+        Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical);
+        Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string userId, string vertical);
 
 
     }
