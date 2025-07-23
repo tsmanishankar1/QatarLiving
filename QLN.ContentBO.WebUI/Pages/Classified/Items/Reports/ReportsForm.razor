@@ -1,22 +1,59 @@
 @using MudBlazor
 @inherits ReportsFormBase
+@using QLN.ContentBO.WebUI.Models;
 
 <div class="report-form-container">
+    
+<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
      <h3 class="form-heading">Report Form</h3>
-    <MudSelect T="string" Label="Category*" Variant="Variant.Outlined" Class="form-field" Required="true" @bind-Value="_selectedCategory">
-        @foreach (var category in _categories)
-        {
-            <MudSelectItem Value="@category">@category</MudSelectItem>
-        }
-    </MudSelect>
+       <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+                Value="@reports.SelectedCategoryId"
+                ValueChanged="@OnCategoryChanged"
+                For="@(() => reports.SelectedCategoryId)"
+                FullWidth="true">
+             @if (IsLoadingCategories)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var cat in CategoryTrees)
+                {
+                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
 
-    <MudSelect T="string" Label="Status*" Variant="Variant.Outlined" Class="form-field" Required="true" @bind-Value="_selectedStatus">
-        @foreach (var status in _statuses)
-        {
-            <MudSelectItem Value="@status">@status</MudSelectItem>
-        }
-    </MudSelect>
 
+        @if (!string.IsNullOrEmpty(reports.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
+        {
+          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
+                    Value="@reports.SelectedSubcategoryId"
+                    ValueChanged="@OnSubCategoryChanged"
+                    For="@(() => reports.SelectedSubcategoryId)"
+                    FullWidth="true">
+                @foreach (var sub in SelectedCategory.Children)
+                {
+                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+        }
+
+        @if (!string.IsNullOrEmpty(reports.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        {
+            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
+                Value="@reports.SelectedSubSubcategoryId"
+                ValueChanged="@OnSubSubCategoryChanged"
+                For="@(() => reports.SelectedSubSubcategoryId)"
+                FullWidth="true">
+            @foreach (var subsub in SelectedSubcategory.Children)
+            {
+                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+    }
     <!-- Date Range Selector -->
     <div class="report-date-input @(showDatePopover ? "active-report" : "")" @onclick="ToggleDatePopover">
            <span class="report-date-placeholder">
@@ -69,14 +106,6 @@
             </div>
         </MudPopover>
     </div>
-
-    <MudSelect T="string" Label="Subcategories" Variant="Variant.Outlined" Class="form-field" @bind-Value="_selectedSubcategory">
-        @foreach (var sub in _subcategories)
-        {
-            <MudSelectItem Value="@sub">@sub</MudSelectItem>
-        }
-    </MudSelect>
-
     <MudSelect T="string" Label="Section" Variant="Variant.Outlined" Class="form-field disabled-field" Disabled="true"></MudSelect>
     <!-- More Filters Popover Trigger -->
     <div class="report-date-input @(showFilterPopover ? "active-report" : "")" @onclick="ToggleFilterPopover">
@@ -96,18 +125,7 @@
                 <!-- Filter content like in the image -->
                 <div class="filter-scroll-area">
                     <!-- Example Sections -->
-                    <div class="filter-section">
-                        <strong>Brand</strong>
-                        <MudCheckBox  T="bool"Label="Apple" @bind-Checked="_brandApple" />
-                        <MudCheckBox  T="bool"Label="Samsung" @bind-Checked="_brandSamsung" />
-                    </div>
-
-                    <div class="filter-section">
-                        <strong>Condition</strong>
-                        <MudCheckBox T="bool" Label="Used" @bind-Checked="_conditionUsed" />
-                        <MudCheckBox  T="bool"Label="New" @bind-Checked="_conditionNew" />
-                    </div>
-
+                  
                     <!-- Add other sections (Model, Capacity, etc.) here -->
                 </div>
 
@@ -125,6 +143,7 @@
         <img src="/qln-images/upload_white_icon.svg" class="image-upload" width="20" height="20" />
         Download Report
     </MudButton>
+</EditForm>
 </div>
 
 <style>
