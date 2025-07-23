@@ -26,10 +26,6 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected ArticleCategory Category { get; set; } = new();
 
-        protected List<ArticleCategory> TempCategoryList { get; set; } = [];
-
-        public int MaxCategory { get; set; } = 2;
-
         public bool IsLoading { get; set; } = false;
 
         public bool IsBtnDisabled { get; set; } = false;
@@ -90,21 +86,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 throw;
             }
         }
-
-        protected void AddCategory()
-        {
-            IsAddingCategoryTwo = true;
-        }
-
-        protected void RemoveCategoryTwo()
-        {
-            CategoryTwo.CategoryId = 0;
-            CategoryTwo.SubcategoryId = 0;
-            CategoryTwo.SlotId = 0;
-            FilteredSubCategoriesTwo = [];
-            IsAddingCategoryTwo = false;
-        }
-
         protected async Task HandleValidSubmit()
         {
             try
@@ -135,14 +116,8 @@ namespace QLN.ContentBO.WebUI.Components.News
                     return;
                 }
 
-                TempCategoryList.Add(Category);
 
-                if (IsAddingCategoryTwo)
-                {
-                    TempCategoryList.Add(CategoryTwo);
-                }
-
-                article.Categories = TempCategoryList;
+                //article.Categories = TempCategoryList;
                 if (article.Categories.Count == 0)
                 {
                     ShowError("Select atleast one category");
@@ -304,15 +279,24 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected void ResetForm()
         {
             article = new();
-            TempCategoryList = [];
+            CategoryTwo.CategoryId = 0;
+            CategoryTwo.SubcategoryId = 0;
+            CategoryTwo.SlotId = 0;
+            FilteredSubCategories = [];
+            FilteredSubCategoriesTwo = [];
             if (CategoryId is not null && SubCategoryId is not null)
             {
-                TempCategoryList.Add(new()
+                Category = new()
                 {
                     CategoryId = CategoryId ?? 0,
                     SubcategoryId = SubCategoryId ?? 0,
                     SlotId = 15,
-                });
+                };
+
+
+                FilteredSubCategories = Categories
+                    .FirstOrDefault(c => c.Id == CategoryId)?
+                    .SubCategories ?? [];
             }
         }
 
@@ -328,7 +312,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
             await InvokeAsync(StateHasChanged);
         }
-
+        
         protected async Task OnCategoryTwoChanged(int newCategoryId)
         {
             CategoryTwo.CategoryId = newCategoryId;

@@ -42,20 +42,8 @@
                             }
                         </MudSelect>
                     </MudItem>
-
-                    @if (!IsAddingCategoryTwo)
-                    {
-                        <MudItem xs="1" Class="d-flex align-center">
-                            <MudTooltip Text="Add">
-                                <MudIconButton OnClick="AddCategory" Icon="@Icons.Material.Filled.Add" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
-                            </MudTooltip>
-                        </MudItem>
-                    }
-
                 </MudGrid>
 
-                @if(IsAddingCategoryTwo)
-                {
                     <MudGrid GutterSize="16px" Class="mb-4">
                         <MudItem xs="4">
                             <MudSelect T="int" Value="CategoryTwo.CategoryId" ValueChanged="OnCategoryTwoChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => CategoryTwo.CategoryId)">
@@ -88,14 +76,7 @@
                                 }
                             </MudSelect>
                         </MudItem>
-
-                        <MudItem xs="1" Class="d-flex align-center">
-                            <MudTooltip Text="Remove">
-                                <MudIconButton OnClick="RemoveCategoryTwo" Icon="@Icons.Material.Filled.Remove" Class="rounded-circle" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
-                            </MudTooltip>
-                        </MudItem>
                     </MudGrid>
-                }
 
                 <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
                     @foreach (var item in WriterTags)
