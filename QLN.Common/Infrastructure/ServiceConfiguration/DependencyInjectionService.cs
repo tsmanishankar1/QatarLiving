@@ -11,7 +11,6 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Model;
-using QLN.Common.Infrastructure.Service.Auth;
 using QLN.Common.Infrastructure.Service.AuthService;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Service.JwtTokenService;
@@ -33,7 +32,6 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
             services.AddScoped<IEventlogger, Eventlogger>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
             services.AddScoped<IWishlistService, WishlistService>();
-            services.AddScoped<IUserInfoService, UserInfoService>();
 
             return services;
         }
