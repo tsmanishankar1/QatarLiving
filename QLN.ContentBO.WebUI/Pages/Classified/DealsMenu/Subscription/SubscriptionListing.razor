@@ -2,6 +2,7 @@
 @inherits SubscriptionListingBase
 @using QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 @layout DealsLayout
+@using QLN.ContentBO.WebUI.Components.NewCustomSelect
 
 <div style="margin-top:10px">
     <div class="search-sort-container">
@@ -32,75 +33,68 @@
     <!-- Filter row -->
     <div class="filter-row">
 
-        <div>
-            <MudSelect T="string" Label="Subsctiption Type"
-               
-                       @bind-Value="SelectedCategory"
-                       Class="preloved-select no-underline"
-                       LabelClass="custom-label"
-                       RequiredError="Category is required">
-                <MudSelectItem T="string" Value=null>Choose</MudSelectItem>
-                @foreach (var category in Categories)
-                {
-                    <MudSelectItem T="string" Value="@category">@category</MudSelectItem>
-                }
-            </MudSelect>
+         <div class="subscription-types">
+       <NewCustomSelect TItem="string"
+                    Items="SubscriptionTypes"
+                    SelectedId="@SelectedSubscriptionType"
+                    SelectedIdChanged="OnSubscriptionChanged"
+                    GetId="item => item"
+                    GetLabel="item => item"
+                    Placeholder="Subscription type" />
         </div>
         @* Date picker *@
-        <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
-            <MudTextField Label="Date"
-                          Value="@SelectedDateLabel"
-                          ReadOnly="true"
-                          DisableUnderLine="true"
-                          Variant="Variant.Outlined"
-                          Style="background-color: #FFFFFF;"
-                          Class="event-cursor-pointer event-custom-textfield"
-                          Adornment="Adornment.End"
-                          AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
-                          OnAdornmentClick="@ClearSelectedDate"
-                          OnClick="ToggleDatePicker" />
-            <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
-                        TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
-                <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
-                    <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
-                        <MudDateRangePicker @bind-DateRange="_dateRange"
+        <div class="custom-date-picker-container @(showDatePopover ? "active" : "")" @onclick="ToggleDatePopover">
+            <div class="label-and-value">
+                <div class="custom-label">Dates</div>
+                <div class="custom-value">
+                    @if (_dateRange.Start.HasValue && _dateRange.End.HasValue)
+                    {
+                        <text>@_dateRange.Start.Value.ToString("dd MMM yyyy") - @_dateRange.End.Value.ToString("dd MMM yyyy")</text>
+                    }
+                    else
+                    {
+                        <span class="date-placeholder">Choose</span>
+                    }
+                </div>
+            </div>
+            <MudIcon Icon="@(showDatePopover ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+                     Class="custom-date-icon" />
+            <MudPopover Open="@showDatePopover"
+                        AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter"
+                        Elevation="6"
+                        Class="popover-container"
+                        Style="padding:0;">
+                <div class="custom-range-picker-container">
+                    <!-- Left: Calendar -->
+                    <div class="range-calendar">
+                        <MudDateRangePicker @bind-DateRange="_tempDateRange"
                                             PickerVariant="PickerVariant.Static"
                                             DisableToolbar="true"
                                             ShowToolbar="false"
                                             DisplayMonths="1"
                                             Class="event-custom-date-range"
-                                            Style="min-width: 300px;"
-                                            MinDate="@DateTime.Today" />
-
-                        <!-- Start and End Summary -->
-                        <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
-                            <div>
-                                <div class="event-summary-box">
-                                    @(_dateRange?.Start != null ? _dateRange.Start?.ToString("dd-MM-yyyy") : "Start date")
-                                </div>
-                            </div>
-                            <div>
-                                <div class="event-summary-box">
-                                    @(_dateRange?.End != null ? _dateRange.End?.ToString("dd-MM-yyyy") : "End date")
-                                </div>
-                            </div>
-                        </div>
+                                            Style="min-width: 300px;" />
                     </div>
-
-
-                    <!-- Actions -->
-                    <div class="event-picker-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
-                        <button class="event-cancel-button" @onclick="CancelDatePicker">Cancel</button>
-                        <button class="event-apply-button"
-                                @onclick="ApplyDatePicker"
-                                disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
-                            Apply
-                        </button>
+                    <!-- Right: Range Info + Controls -->
+                    <div class="range-sidebar">
+                        <div class="range-header-col">
+                            <span class="date-value">
+                                @(_tempDateRange?.Start?.ToString("dd MMM yyyy") ?? "Start date")
+                            </span>
+                            <span class="date-value">
+                                @(_tempDateRange?.End?.ToString("dd MMM yyyy") ?? "End date")
+                            </span>
+                        </div>
+                        <div class="range-footer">
+                            <MudButton Variant="Variant.Filled" Class="popover-button" OnClick="CancelDatePopover">Cancel</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="popover-button" OnClick="ApplyDatePopover">Apply</MudButton>
+                        </div>
                     </div>
                 </div>
             </MudPopover>
         </div>
-
+       
         <button class="preloved-filter-button " @onclick="ClearFilters">Clear Filters</button>
     </div>
 
