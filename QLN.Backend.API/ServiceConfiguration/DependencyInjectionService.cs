@@ -4,6 +4,7 @@ using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
 using QLN.Backend.API.Service.ContentService;
+using QLN.Backend.API.Service.DrupalAuthService;
 using QLN.Backend.API.Service.SearchService;
 using QLN.Backend.API.Service.Services;
 using QLN.Backend.API.Service.ServicesService;
@@ -11,6 +12,7 @@ using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
@@ -69,6 +71,21 @@ namespace QLN.Backend.API.ServiceConfiguration
             if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
             {
                 services.AddHttpClient<IBannerService, ExternalBannerService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+
+        public static IServiceCollection DrupalAuthConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalAuthService, DrupalAuthService>(option =>
                 {
                     option.BaseAddress = drupalBaseUrl;
                 });
