@@ -1,17 +1,14 @@
-﻿using System;
+using QLN.Common.DTO_s.Classified;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.DTO_s
+namespace QLN.Common.DTO_s.Classifieds
 {
-    public class ClassifiedsCollectibles : ClassifiedsBase
+    public class ClassifiedsCollectablesDTO : ClassifiedsBaseDTO
     {
-        public bool IsFeatured { get; set; }
-        public DateTime? FeaturedExpiryDate { get; set; }
-        public bool IsPromoted { get; set; }
-        public DateTime? PromotedExpiryDate { get; set; }
         public bool? HasAuthenticityCertificate { get; set; }
         public string? AuthenticityCertificateUrl { get; set; }
         public bool HasWarranty { get; set; }
