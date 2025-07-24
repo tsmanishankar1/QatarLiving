@@ -62,9 +62,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            // if (!firstRender) return;
-
-            await GetCommentAsync();
+            if (firstRender)
+            {
+                await GetCommentAsync();
+            }
         }
 
         protected void ToggleComment(string id)
