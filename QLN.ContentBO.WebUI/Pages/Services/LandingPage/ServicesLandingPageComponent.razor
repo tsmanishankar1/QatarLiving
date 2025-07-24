@@ -35,13 +35,27 @@ else
                 <tr data-slot-id="@context.Index">
                    
                     <td>
-                        <img src="/qln-images/arrow_icon.svg"
+                         @if (context.Item.Category == "Select a Seasonal Pick"
+                       || context.Item.Category == "Select a store to feature"
+                       || context.Item.Category == "Select a Featured Category")
+
+                        {
+                            <img src="/qln-images/arrow_icon.svg"
+                             style="width: 20px;"
+                             alt="drag" />
+                        <span class="slot-position">
+                        </span>
+                        }
+                        else{
+                            <img src="/qln-images/arrow_icon.svg"
                              class="drag-handle"
                              style="cursor: grab; width: 20px;"
                              alt="drag" />
                         <span class="slot-position">
                           
                         </span>
+
+                        }
                     </td>
                     <td>
                        @*  @if(context.Item.Category is not null)
@@ -80,7 +94,24 @@ else
                             : "-")
                     </td>
                     <td>
-                        <div class="d-flex align-center gap-2">
+                        @if (context.Item.Category == "Select a Seasonal Pick"
+                       || context.Item.Category == "Select a store to feature"
+                       || context.Item.Category == "Select a Featured Category")
+                        {
+                            <div class="d-flex align-center gap-2">
+                            <div>
+                                <img src="/qln-images/replace_icon1.svg"
+                                     alt="replace" />
+                            </div>
+                            <div class="custom-delete-button" >
+                                <img src="/qln-images/delete_icon1.svg" 
+                                     alt="delete" 
+                                     class="action-icon-style" />
+                            </div>
+                        </div>
+                            }
+                            else{
+                                <div class="d-flex align-center gap-2">
                             <div class="custom-delete-button">
                                 <img src="/qln-images/replace_icon.svg"
                                      @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))"
@@ -94,6 +125,8 @@ else
                                      class="action-icon-style" />
                             </div>
                         </div>
+
+                            }
                     </td>
                 </tr>
             }
