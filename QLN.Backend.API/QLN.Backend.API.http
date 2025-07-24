@@ -90,7 +90,7 @@ GET {{QLN.Backend.API_HostAddress}}/api/content/post/forum/news/akram-afif-score
 Accept: application/json
 
 ###
-GET {{QLN.Backend.API_HostAddress}}/api/content/news/forum/news/akram-afif-scores-twice-qatar-beat-lebanon-afc-asian-cup-opener
+GET {{QLN.Backend.API_HostAddress}}/api/content/news/forum/press-releases/posts/commercial-bank-partnered-manchester-united
 Accept: application/json
 
 ###
