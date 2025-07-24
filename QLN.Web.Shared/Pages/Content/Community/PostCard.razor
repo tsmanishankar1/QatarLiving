@@ -5,7 +5,7 @@
 
 <MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
     <div class="post-header d-flex justify-space-between align-center">
-    <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
+        <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
         @if (!IsDetailView)
         {
 
@@ -39,8 +39,8 @@
         <div class="post-footer">
             <div class="post-footer-left">
                 <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
-              
- <span class="post-meta">
+
+                <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -54,7 +54,7 @@
                                      <span class="icon-text">@Post.LikeCount</span> 
     
     </div> *@
-               @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
@@ -73,7 +73,7 @@
                             }
                             else
                             {
-                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
                                     <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
                                 </MudMenuItem>
                             }
@@ -82,19 +82,20 @@
                 </MudMenu>
 
 
-                
-             @*    <div class="post-card-comment-wrapper">
+
+                @*    <div class="post-card-comment-wrapper">
 
                     <img src="qln-images/content/Comment.svg" class="icon" />
                     <span class="icon-text">@Post.CommentCount</span>
                 </div> *@
             </div>
         </div>
-     if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
-    {
-    <div class="post-body-preview-details">
-        @((MarkupString)Post.BodyPreview)</div>
-    }
+        if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+        {
+            <div class="post-body-preview-details">
+                @((MarkupString)Post.BodyPreview)
+            </div>
+        }
         <div class="post-details-report-section">
             <MudChip T="string" Class="report-chip" Variant="Variant.Outlined">
                 <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
@@ -113,7 +114,7 @@
         {
             <div class="post-body-preview">@((MarkupString)Post.BodyPreview)</div>
         }
-       @*  else
+        @*  else
         {
             
             <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
@@ -122,8 +123,8 @@
         <div class="post-footer">
             <div class="post-footer-left">
                 <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
-               
- <span class="post-meta">
+
+                <span class="post-meta">
 
                     <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
                 </span>
@@ -131,7 +132,7 @@
             </div>
 
             <div class="post-icons">
-               @*  <div class="like-wrapper" @onclick="ToggleLikeAsync">
+                @*  <div class="like-wrapper" @onclick="ToggleLikeAsync">
 
                     <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
                             </div> *@
@@ -139,7 +140,7 @@
 
                     <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
                 </div> *@
-               <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
                     <ActivatorContent>
                         <img src="qln-images/content/Share.svg" class="icon" />
                     </ActivatorContent>
@@ -154,7 +155,7 @@
                             }
                             else
                             {
-                                <MudMenuItem Href="@item.Route"  Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
                                     <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
                                 </MudMenuItem>
                             }
@@ -176,13 +177,13 @@
 
 
 <style>
-     .share-icon {
+    .share-icon {
         margin: 0;
         width: 32px;
         height: 32px;
     }
 
-         /* Target all popover menus that are open and belong to the share menu */
+    /* Target all popover menus that are open and belong to the share menu */
     .mud-popover:has(.share-icon) .mud-list {
         display: flex !important;
         flex-direction: row !important;
@@ -217,10 +218,10 @@
         margin-top: 16px;
     }
 
-            .hover-expand {
+    .hover-expand {
         cursor: pointer;
-     }
-    
+    }
+
 
     .post-header {
         display: flex;
@@ -333,18 +334,25 @@
         line-height: 2;
     }
 
-    .post-body-preview-details img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1rem auto;
-        border-radius: 8px;
-    }
+        .post-body-preview-details img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
 
-    .post-body-preview-details a {
-        color: #00426D !important; 
-        text-decoration: underline !important;
-    }
+        .post-body-preview-details a {
+            color: #00426D !important;
+            text-decoration: underline !important;
+        }
+
+        .post-body-preview-details iframe {
+            height: revert-layer; /* This is load the iframe is the correct height to oveeride MudBlazor Css */
+            max-width: 100%;
+            border: none;
+        }
+
     .post-footer {
         display: flex;
         justify-content: space-between;
@@ -426,6 +434,7 @@
     .mud-elevation-8 {
         box-shadow: none !important;
     }
+
     .icon {
         width: 18px;
         height: 18px;
@@ -463,7 +472,7 @@
         gap: 6px;
     }
 
-  
+
 
 
     .share-wrapper {
@@ -511,8 +520,6 @@
     .report-icon {
         width: 14px;
         height: 14px;
-    @*         filter: brightness(0) invert(1);
- *@   
     }
 
     .report-text {
@@ -523,5 +530,534 @@
         margin-left: 4px;
     }
 
-  
+</style>
+@using System.Globalization
+@inherits PostCardBase
+@using MudBlazor
+@using QLN.Web.Shared.Components.EmptyCard
+
+<MudPaper Class="@($"post-card p-4 {(IsDetailView ? "" : "hover-expand")}")" Elevation="0" @onclick="() => { if (!IsDetailView) NavigateToPostDetail(); }">
+    <div class="post-header d-flex justify-space-between align-center">
+        <div class="post-tag">@(!string.IsNullOrWhiteSpace(Post.Category) ? Post.Category : "Category not found")</div>
+        @if (!IsDetailView)
+        {
+
+
+            <MudMenu Dense="true" AnchorOrigin="Origin.BottomLeft"
+                     @bind-IsOpen="@isMenuOpen" TransformOrigin="Origin.TopCenter">
+                <ActivatorContent>
+                    <MudIconButton DisableRipple="true" Class="menu-icon-button">
+                        <img src="qln-images/content/Menu.svg"
+                             alt="Menu"
+                             class="@($"menu-icon {(isMenuOpen ? "menu-open" : "")}")" />
+                    </MudIconButton>
+                </ActivatorContent>
+
+                <ChildContent>
+                    <MudMenuItem Class="report-menu-item" OnClick="@OnReport">Report</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        }
+
+    </div>
+    <div class="post-title">@Post.Title</div>
+
+    @if (IsDetailView)
+    {
+        <!-- Detail View - Show both image and full body -->
+        @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+        {
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="community-post-image" />
+        }
+        <div class="post-footer">
+            <div class="post-footer-left">
+                <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
+
+                <span class="post-meta">
+
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                </span>
+
+            </div>
+
+            <div class="post-icons">
+                @* <div class="like-wrapper" @onclick="ToggleLikeAsync">
+
+                  <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                                     <span class="icon-text">@Post.LikeCount</span> 
+    
+    </div> *@
+                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                </div> *@
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrimagin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
+
+
+
+                @*    <div class="post-card-comment-wrapper">
+
+                    <img src="qln-images/content/Comment.svg" class="icon" />
+                    <span class="icon-text">@Post.CommentCount</span>
+                </div> *@
+            </div>
+        </div>
+        if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+        {
+            <div class="post-body-preview-details">
+                @((MarkupString)Post.BodyPreview)
+            </div>
+        }
+        <div class="post-details-report-section">
+            <MudChip T="string" Class="report-chip" Variant="Variant.Outlined">
+                <img src="qln-images/content/ReportSVG.svg" class="report-icon" alt="Report" />
+                <span class="report-text">Report</span>
+            </MudChip>
+        </div>
+    }
+    else
+    {
+        <!-- Listing View - Show either image or preview text -->
+        @if (!string.IsNullOrWhiteSpace(Post.ImageUrl))
+        {
+            <img src="@($"{Post.ImageUrl}")" alt="Post Image" class="community-post-image" />
+        }
+        else if (!string.IsNullOrWhiteSpace(Post.BodyPreview))
+        {
+            <div class="post-body-preview">@((MarkupString)Post.BodyPreview)</div>
+        }
+        @*  else
+        {
+            
+            <EmptyCard Title="Data could not be loaded" Subtitle="Please check back later for updates." />
+
+        } *@
+        <div class="post-footer">
+            <div class="post-footer-left">
+                <img src="/qln-images/default_logo.svg" alt="User Avatar" class="post-footer-avatar" />
+
+                <span class="post-meta">
+
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                </span>
+
+            </div>
+
+            <div class="post-icons">
+                @*  <div class="like-wrapper" @onclick="ToggleLikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="icon" />
+                            </div> *@
+                @*  <div class="like-wrapper" @onclick="ToggleDislikeAsync">
+
+                    <img src="@($"qln-images/content/{(IsDisliked ? "DisLikeFilled.svg" : "Dislike.svg")}")" class="icon" />                <span class="icon-text">@Post.LikeCount</span>
+                </div> *@
+                <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight" @onclick:stopPropagation>
+                    <ActivatorContent>
+                        <img src="qln-images/content/Share.svg" class="icon" />
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var item in shareMenuItems)
+                        {
+                            if (item.OnClick != null)
+                            {
+                                <MudMenuItem OnClick="@item.OnClick">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                            else
+                            {
+                                <MudMenuItem Href="@item.Route" Target="@(item.OpenInNewTab ? "_blank" : "_self")">
+                                    <img src="@item.ImageSrc" alt="@item.Text" class="share-icon" />
+                                </MudMenuItem>
+                            }
+                        }
+                    </ChildContent>
+                </MudMenu>
+                @*    <div class="post-card-comment-wrapper">
+
+                    <img src="qln-images/content/Comment.svg" class="icon" />
+                    <span class="icon-text">@Post.CommentCount</span>
+                </div> *@
+            </div>
+        </div>
+    }
+
+
+</MudPaper>
+
+
+
+<style>
+    .share-icon {
+        margin: 0;
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Target all popover menus that are open and belong to the share menu */
+    .mud-popover:has(.share-icon) .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+    .share-popover .mud-list {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        gap: 4px;
+    }
+
+
+    .mud-menu-item {
+        padding: 0px 6px 0px 0px !important;
+    }
+
+    .mud-menu-list {
+        padding-left: 6px;
+    }
+
+    .mud-menu-item .mud-menu-item-text {
+        margin: 4px 0px 0px 0px !important;
+    }
+
+    .post-card {
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .hover-expand {
+        cursor: pointer;
+    }
+
+
+    .post-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .custom-menu .mud-popover {
+        box-shadow: none;
+    }
+
+
+    .post-tag {
+        display: inline-block;
+        color: #FF7F38;
+        padding: 4px 12px;
+        border-radius: 25px;
+        font-size: 12px;
+        font-weight: 500;
+        border: 1px solid #FF7F38;
+        margin-bottom: 8px;
+        font-family: 'Public Sans', sans-serif;
+    }
+
+    .post-title {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 25px;
+        font-weight: 600;
+        color: #242424;
+        margin-bottom: 10px;
+    }
+
+    .post-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .community-post-image {
+        max-height: 421px !important;
+        object-fit: contain !important;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background-color: #646464;
+        width: 100%;
+    }
+
+    .post-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .author {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 22px;
+        letter-spacing: 0%;
+        color: #242424;
+    }
+
+    .date-time {
+        font-family: 'Public Sans', sans-serif;
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 18px;
+        color: #242424;
+    }
+
+    @@media (max-width: 400px) {
+        .author, .date-time {
+            font-size: 12px;
+        }
+
+        .post-title {
+            font-family: 'Public Sans', sans-serif;
+            font-size: 20px;
+            line-height: 1.2;
+            font-weight: 600;
+            color: #242424;
+            word-break: break-word;
+            white-space: normal;
+        }
+    }
+
+    .post-body-preview {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        color: #242424;
+        margin-bottom: 12px;
+        font-weight: 400;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        line-height: 2;
+    }
+
+    .post-body-preview-details {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 14px;
+        color: #242424;
+        margin-bottom: 12px;
+        font-weight: 600;
+        overflow: hidden;
+        margin-top: 4px;
+        line-height: 2;
+    }
+
+        .post-body-preview-details img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
+
+        .post-body-preview-details a {
+            color: #00426D !important;
+            text-decoration: underline !important;
+        }
+
+        .post-body-preview-details iframe {
+            height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
+            max-width: 100%;
+            border: none;
+        }
+
+    .post-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 12px;
+        color: #999;
+        border: 1px solid #F0F0F0;
+        border-radius: 12px;
+        padding: 2px 4px;
+    }
+
+    .post-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 4px;
+        border-radius: 25px;
+        background-color: #F4F4FA;
+    }
+
+    .menu-icon {
+        width: 20px;
+        height: 20px;
+    }
+
+        .menu-icon:hover {
+            background: none !important;
+            filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+        }
+
+
+    menu-icon-button:active .menu-icon {
+        filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%);
+    }
+
+    .menu-icon-button {
+        background-color: transparent !important;
+        box-shadow: none !important;
+    }
+
+        .menu-icon-button:hover,
+        .menu-icon-button:active,
+        .menu-icon-button:focus {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+
+            /* Active/Open state (overrides hover) */
+            .menu-icon.menu-open,
+            .menu-icon-button:hover .menu-icon.menu-open {
+                filter: brightness(0) saturate(100%) invert(48%) sepia(86%) saturate(2087%) hue-rotate(4deg) brightness(101%) contrast(102%) !important;
+            }
+
+    .report-menu-item {
+        width: 76px;
+        height: 48px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid #D0D5DD;
+        border-radius: 4px;
+    }
+
+        .report-menu-item:hover {
+            background-color: transparent !important;
+        }
+
+        .report-menu-item .mud-menu-item-text {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+    .mud-elevation-8 {
+        box-shadow: none !important;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .icon-filled {
+        filter: brightness(0) saturate(100%) invert(22%) sepia(99%) saturate(7499%) hue-rotate(195deg) brightness(93%) contrast(101%) drop-shadow(0 0 1px rgba(0, 66, 109, 0.5));
+    }
+
+    .icon-text {
+        color: #00426D
+    }
+
+    .post-footer-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 2px 4px;
+    }
+
+    .post-footer-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 200px;
+        border: 1.5px solid #F0F0F0;
+        object-fit: cover;
+    }
+
+    .like-wrapper {
+        background-color: #F4F4FA;
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 16px;
+        gap: 6px;
+    }
+
+    .share-wrapper {
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 16px;
+        gap: 8px;
+        background-color: #F4F4FA;
+    }
+
+    .post-card-comment-wrapper {
+        padding: 8px;
+        display: inline-flex;
+        align-items: center;
+        border-radius: 16px;
+        gap: 6px;
+        border: 1px solid #F0F0F0;
+    }
+
+    .post-details-report-section {
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 8px;
+    }
+
+    .report-chip {
+        width: 72px;
+        height: 22px;
+        border-radius: 999px;
+        border: 1px solid #FF7F38;
+        padding: 4px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background-color: #FF7F38;
+        color: white;
+    }
+
+        .report-chip:hover {
+            background-color: #e6702e;
+        }
+
+    .report-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .report-text {
+        color: white;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: 'Public Sans', sans-serif;
+        margin-left: 4px;
+    }
+
 </style>
