@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
