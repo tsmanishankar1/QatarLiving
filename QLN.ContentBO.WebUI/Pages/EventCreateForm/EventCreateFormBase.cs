@@ -184,15 +184,15 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse ?? [];
         }
-        protected async  void OnCancelClicked()
+        protected async void OnCancelClicked()
         {
-             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
                 ClearForm();
-                  await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("resetLeafletMap");
                 await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                 StateHasChanged();
             }
@@ -347,13 +347,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 SelectedDateLabel = null;
             }
             else
-            { 
+            {
                 _showDatePicker = !_showDatePicker;
 
-            if (_showDatePicker)
-            {
-                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
-            }
+                if (_showDatePicker)
+                {
+                    _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+                }
             }
 
         }
@@ -692,8 +692,8 @@ namespace QLN.ContentBO.WebUI.Pages
             StateHasChanged();
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
-    {
-        var parameters = new DialogParameters
+        {
+            var parameters = new DialogParameters
         {
             { "Title", title },
             { "Descrption", description },
@@ -701,17 +701,17 @@ namespace QLN.ContentBO.WebUI.Pages
             { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
         };
 
-        var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
 
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
-        var result = await dialog.Result;
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
 
-    }
+        }
     };
 }
 
