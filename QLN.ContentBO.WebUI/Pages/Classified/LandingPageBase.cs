@@ -107,7 +107,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadFeaturedCategories()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedCategory("classifieds");
 
         if (response?.IsSuccessStatusCode == true)
         {

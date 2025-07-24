@@ -151,7 +151,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync/classifieds?{vertical}");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetSlottedFeaturedCategory?vertical={vertical}");
             }
             catch (Exception ex)
             {
