@@ -39,7 +39,7 @@ else
         <RowTemplate>
             <MudTd DataLabel="Number" Class="number-cell">@context.Number</MudTd>
             <MudTd DataLabel="Post">
-                <MudLink Href="@($"{PostDetailBaseURL}{context.Slug}")" Target="_blank" Class="post-title">@context.Post</MudLink>
+                <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Slug}")" Target="_blank" Class="post-title">@context.Post</MudLink>
             </MudTd>
 
             @if (Type != "community-posts")
