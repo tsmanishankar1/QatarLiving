@@ -62,7 +62,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            if (firstRender && IsLoggedIn)
             {
                 await GetCommentAsync();
             }
