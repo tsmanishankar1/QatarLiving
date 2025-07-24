@@ -155,10 +155,26 @@ Accept: application/json
 
 ###################################
 
-# @QLN.Drupal.API_HostAddress = https://test.qatarliving.com
+@QLN.Drupal.API_HostAddress = https://test.qatarliving.com
 # @QLN.Drupal.API_HostAddress = https://qa.qatarliving.com
-@QLN.Drupal.API_HostAddress = https://www.qatarliving.com
+# @QLN.Drupal.API_HostAddress = https://www.qatarliving.com
 
+### Drupal Login
+# curl --location 'https://test.qatarliving.com/api/v4/login' \
+# --header 'Content-Type: application/x-www-form-urlencoded' \
+# --data-urlencode 'username=USERNAME' \
+# --data-urlencode 'device_type=ios' \
+# --data-urlencode 'password=PASSWORD'
+
+@QLN.Drupal.Username = QLN Crayon
+@QLN.Drupal.Password = crayon123
+
+POST {{QLN.Drupal.API_HostAddress}}/api/v4/login
+Content-Type: application/x-www-form-urlencoded
+
+username={{QLN.Drupal.Username}}&password={{QLN.Drupal.Password}}&device_type=web
+
+###
 GET {{QLN.Drupal.API_HostAddress}}/qlnapi/categories
 Accept: application/json
 

@@ -3,6 +3,7 @@ using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
 using QLN.Backend.API.Service.ContentService;
+using QLN.Backend.API.Service.DrupalAuthService;
 using QLN.Backend.API.Service.SearchService;
 using QLN.Backend.API.Service.Services;
 using QLN.Backend.API.Service.ServicesService;
@@ -10,6 +11,8 @@ using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.IAuth;
+using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
@@ -24,6 +27,13 @@ namespace QLN.Backend.API.ServiceConfiguration
 {
     public static class DependencyInjectionService
     {
+        public static IServiceCollection FileServiceConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddScoped<IFileStorageBlobService, FileStorageBlobService>(); // need to inject in the Conenction string here rather
+
+            return services;
+        }
+
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
@@ -66,6 +76,21 @@ namespace QLN.Backend.API.ServiceConfiguration
             if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
             {
                 services.AddHttpClient<IBannerService, ExternalBannerService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+
+        public static IServiceCollection DrupalAuthConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalAuthService, DrupalAuthService>(option =>
                 {
                     option.BaseAddress = drupalBaseUrl;
                 });
