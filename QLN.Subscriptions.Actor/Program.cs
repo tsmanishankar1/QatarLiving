@@ -1,6 +1,5 @@
 using Dapr.Client;
 using QLN.Backend.Actor.ActorClass;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Subscriptions.Actor.ActorClass;
 
 var builder = WebApplication.CreateBuilder(args);
