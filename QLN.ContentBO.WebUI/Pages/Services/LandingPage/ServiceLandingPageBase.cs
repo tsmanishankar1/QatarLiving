@@ -4,7 +4,7 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.Classified.Modal;
+using QLN.ContentBO.WebUI.Pages.Services.Modal;
 using System.Text.Json;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
@@ -69,6 +69,33 @@ public class ServiceLandingPageBase : QLComponentBase
             ServiceLandingPageItemType.FeaturedStore => "Featured Store",
             _ => "Item"
         };
+    }
+    protected async Task ReplaceItem(LandingPageItem item)
+    {
+        var title = activeIndex switch
+        {
+            0 => "Replace Featured Category",
+            1 => "Replace Seasonal Pick",
+            2 => "Replace Featured Store",
+            _ => "Replace Item"
+        };
+
+        var parameters = new DialogParameters
+    {
+        { nameof(MessageBoxBase.Title), title },
+        { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
+        { nameof(ServicesReplaceDialogModal.events), _seasonalPicks },
+        { nameof(ServicesReplaceDialogModal.SlotNumber), item.SlotOrder }
+    };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = true
+        };
+
+        await DialogService.ShowAsync<ServicesReplaceDialogModal>("", parameters, options);
     }
 
 
@@ -316,36 +343,8 @@ public class ServiceLandingPageBase : QLComponentBase
         {
             CloseOnEscapeKey = true
         };
-        return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        return DialogService.ShowAsync<ServicesAddSeasonalPickModal>("", parameters, options);
 
-    }
-
-    protected async Task ReplaceItem(LandingPageItem item)
-    {
-        var title = activeIndex switch
-        {
-            0 => "Replace Featured Category",
-            1 => "Replace Seasonal Pick",
-            2 => "Replace Featured Store",
-            _ => "Replace Item"
-        };
-
-        var parameters = new DialogParameters
-    {
-        { nameof(MessageBoxBase.Title), title },
-        { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
-        { nameof(ReplaceDialogModal.events), _seasonalPicks },
-        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
-    };
-
-        var options = new DialogOptions
-        {
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true,
-            CloseOnEscapeKey = true
-        };
-
-        await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
     }
 
     protected Task OpenDialogAsync()
@@ -361,7 +360,7 @@ public class ServiceLandingPageBase : QLComponentBase
             FullWidth = true,
             CloseOnEscapeKey = true
         };
-        return DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        return DialogService.ShowAsync<ServicesReplaceDialogModal>("", parameters, options);
     }
 
     protected async Task DeleteItem(string id)
