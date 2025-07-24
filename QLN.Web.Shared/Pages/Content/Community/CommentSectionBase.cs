@@ -62,10 +62,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender && IsLoggedIn)
-            {
-                await GetCommentAsync();
-            }
+            await GetCommentAsync();
         }
 
         protected void ToggleComment(string id)
@@ -73,8 +70,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
             if (!expandedComments.Add(id))
                 expandedComments.Remove(id);
         }
-
-
 
         protected void OnMenuToggle(bool open)
         {
@@ -152,6 +147,8 @@ namespace QLN.Web.Shared.Pages.Content.Community
                             ? c.profile_picture
                             : "/qln-images/content/Sample.svg"
                     }).ToList();
+
+                    StateHasChanged();
                 }
                 else
                 {
@@ -167,7 +164,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
             }
         }
 
