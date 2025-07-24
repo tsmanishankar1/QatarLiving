@@ -103,12 +103,10 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
 
             var paginatedData = await GetEvents(1, 50,"","desc",1);
             var allEvents = paginatedData.Items;
-            AllEventsList = allEvents
-                 .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
-                  .ToList();
-             AllEventsList = AllEventsList
-                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                        .ToList();
+
+            AllEventsList = [.. allEvents
+                .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)];
         }
         protected EventDTO? draggedItem;
 
