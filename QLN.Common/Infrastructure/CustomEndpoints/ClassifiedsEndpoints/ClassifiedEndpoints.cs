@@ -5337,9 +5337,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             return group;
         }
-
-
-
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)
         {
 
@@ -5352,15 +5349,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Filters = new Dictionary<string, object>
                    {
-                        { "IsFeatured",   true },
-                        { "SubVertical", "Items" }
+                        { "IsFeatured",   true }
                     }
                 };
 
                 try
                 {
-                    CommonSearchResponse response = await searchSvc.SearchAsync(
-                        ConstantValues.Verticals.Classifieds,
+                    CommonSearchResponse response = await searchSvc.GetAllAsync(
+                        ConstantValues.IndexNames.ClassifiedsItemsIndex,
                         searchReq
                     );
 
@@ -5393,9 +5389,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-
 
             return group;
         }
