@@ -1,5 +1,4 @@
 ﻿using QLN.Backend.API.Service.AnalyticsService;
-using QLN.Backend.API.Service.BackOffice;
 using QLN.Backend.API.Service.BannerService;
 using QLN.Backend.API.Service.ClassifiedService;
 using QLN.Backend.API.Service.CompanyService;
@@ -11,7 +10,6 @@ using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.IService.IBackOfficeService;
 using QLN.Common.Infrastructure.IService.IBannerService;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
@@ -31,7 +29,6 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
             services.AddTransient<IServicesService, ExternalServiceService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-            services.AddTransient<IBackOfficeService<LandingBackOfficeIndex>, ExternalLandingBackOfficeService>();
 
             return services;
         }
