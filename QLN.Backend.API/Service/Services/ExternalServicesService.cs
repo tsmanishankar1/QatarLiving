@@ -362,9 +362,9 @@ namespace QLN.Backend.API.Service.Services
                             Email = dto.EmailAddress    
                         }
                     },
-                    Subject = $"Your service ad '{dto.Title}' was updated",
+                    Subject = $"Service Ad '{dto.Title}' was updated",
                     Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"Your ad titled {dto.Title} has been updated."
+                    Html = $"{dto.Title} has been updated."
                 }, cancellationToken);
 
                 return "Service ad updated successfully.";
