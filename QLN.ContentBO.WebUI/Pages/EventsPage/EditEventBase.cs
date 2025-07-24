@@ -34,6 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string? _PriceError;
         public string? _timeTypeError;
         public string? _eventTypeError;
+        protected string? _CategoryError;
         protected string? _timeError;
         protected string? _LocationError;
         protected string? _descriptionerror;
@@ -482,6 +483,12 @@ namespace QLN.ContentBO.WebUI.Pages
             _coverImageError = null;
             _timeError = null;
             bool hasError = false;
+            if (CurrentEvent == null || CurrentEvent.CategoryId == 0)
+            {
+                _CategoryError = "Category is required.";
+                Snackbar.Add("Category is required.", severity: Severity.Error);
+                return;
+            }
              if (CurrentEvent?.EventType == 0)
             {
                 _eventTypeError = "Event Type is required.";
