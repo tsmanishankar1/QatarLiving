@@ -87,7 +87,6 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
-
         protected TimeSpan? EndTimeSpan
         {
             get => CurrentEvent.EventSchedule.EndTime.HasValue
@@ -108,6 +107,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
 
         }
+
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
         protected MudExRichTextEdit Editor;
@@ -124,10 +124,15 @@ namespace QLN.ContentBO.WebUI.Pages
             public TimeSpan? StartTime { get; set; }
             public TimeSpan? EndTime { get; set; }
         }
+
         protected List<DayTimeEntry> DayTimeList = new();
+
         public double EventLat { get; set; } = 48.8584;
+
         public double EventLong { get; set; } = 2.2945;
+
         public bool _isDateRangeSelected = false;
+
         protected DateRange? _dateRange
         {
             get
@@ -173,6 +178,7 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
         private bool _shouldInitializeMap = true;
+
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
@@ -184,6 +190,7 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse ?? [];
         }
+
         protected async void OnCancelClicked()
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
@@ -197,6 +204,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
+
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -207,6 +215,7 @@ namespace QLN.ContentBO.WebUI.Pages
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
         }
+
         protected async Task DeleteEventOnClick()
         {
             var parameters = new DialogParameters
@@ -217,6 +226,7 @@ namespace QLN.ContentBO.WebUI.Pages
             var dialog = DialogService.Show<EventDiscardArticle>("", parameters, options);
             var result = await dialog.Result;
         }
+
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
             var file = e.File;
@@ -231,10 +241,12 @@ namespace QLN.ContentBO.WebUI.Pages
                 _coverImageError = null;
             }
         }
+
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
         }
+
         protected void ApplyTimeRange()
         {
             if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
@@ -247,6 +259,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             _isTimeDialogOpen = false;
         }
+
         protected void AddLocation()
         {
             if (!string.IsNullOrWhiteSpace(NewLocation) && !SelectedLocations.Contains(NewLocation))
@@ -255,6 +268,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 NewLocation = string.Empty;
             }
         }
+
         protected void HandleKeyPress(KeyboardEventArgs args)
         {
             if (args.Key == "Enter")
@@ -262,6 +276,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 AddLocation();
             }
         }
+
         protected async Task UploadFiles(IBrowserFile file)
         {
             if (file is not null)
@@ -272,6 +287,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 uploadedImage = $"data:{file.ContentType};base64,{base64}";
             }
         }
+
         protected void EditImage()
         {
             CurrentEvent.CoverImage = null;
@@ -281,10 +297,12 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             uploadedImage = null;
         }
+
         protected Task EventAdded(string value)
         {
             return Task.CompletedTask;
         }
+
         protected List<string> SelectedLocations = new()
         {
             "Viva Bahriya - The Pearl Island"
@@ -294,6 +312,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             CurrentEvent.Location = string.Empty;
         }
+
         protected async void CancelDatePicker()
         {
             _showDatePicker = false;
@@ -305,6 +324,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             StateHasChanged();
         }
+
         protected async Task ApplyDatePicker()
         {
             if (_dateRange?.Start != null)
@@ -331,6 +351,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
+
         protected void ToggleDatePicker()
         {
             _showDatePicker = !_showDatePicker;
@@ -340,6 +361,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
         }
+
         protected void ClearSelectedDate()
         {
             if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
@@ -497,34 +519,6 @@ namespace QLN.ContentBO.WebUI.Pages
 
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private async Task<List<EventCategoryModel>> GetEventsCategories()
         {
             try
@@ -546,6 +540,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
+
         private async Task<List<LocationEventDto>> GetEventsLocations()
         {
             var flattenedList = new List<LocationEventDto>();
@@ -583,6 +578,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 return new List<LocationEventDto>();
             }
         }
+
         private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
