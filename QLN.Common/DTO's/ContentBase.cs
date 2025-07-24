@@ -26,6 +26,6 @@ namespace QLN.Common.Infrastructure.DTO_s
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         [JsonPropertyName("comment_count")]
-        public string CommentCount { get; set; }
+        public string? CommentCount { get; set; }
     }
 }
