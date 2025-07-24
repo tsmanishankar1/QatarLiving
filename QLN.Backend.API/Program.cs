@@ -15,7 +15,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
