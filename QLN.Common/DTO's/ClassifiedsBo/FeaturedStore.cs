@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class FeaturedStoreDto
+    public class FeaturedStore
     {
         public string Vertical { get; set; }              
         public Guid? Id { get; set; }                     
