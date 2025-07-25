@@ -132,18 +132,9 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
-                if (PostModelData == null || PostModelData.Id == null)
+                if (PostModelData?.Id == null || PostModelData.Comments.Count == 0)
                 {
-                    IsLoading = false;
-                    StateHasChanged();
-                    return;
-                }
-
-                if (PostModelData.CommentCount == 0)
-                {
-                    IsLoading = false;
                     Comments.Clear();
-                    StateHasChanged();
                     return;
                 }
 
@@ -151,7 +142,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
                 TotalCount = response.total_comments;
 
-                if (response?.comments?.Count == 0)
+                if (TotalCount > 0)
                 {
                     Comments = [.. response.comments.Select(c => new CommentModel
                     {
