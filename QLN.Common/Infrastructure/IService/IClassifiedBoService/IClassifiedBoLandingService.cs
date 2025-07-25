@@ -40,7 +40,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedCategory>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default);
+        Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default);
 
         Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default);
 

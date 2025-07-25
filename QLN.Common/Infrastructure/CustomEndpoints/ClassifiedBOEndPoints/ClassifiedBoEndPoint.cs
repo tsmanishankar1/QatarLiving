@@ -26,7 +26,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
         public static RouteGroupBuilder MapClassifiedBoEndpoints(this RouteGroupBuilder group)
         {
 
-            group.MapPost("/CreateFeaturedCategory", async Task<Results<
+            group.MapPost("/createfeaturedcategory", async Task<Results<
                 Ok<string>,
                 ForbidHttpResult,
                 BadRequest<ProblemDetails>,
@@ -140,14 +140,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("GetFeaturedCategoriesByVerticalAsync/{vertical}", async Task<IResult> (
+            group.MapGet("getfeaturedcategoriesbyvertical/{vertical}", async Task<IResult> (
                 string vertical,
                 [FromServices] IClassifiedBoLandingService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    var result = await service.GetFeaturedCategoriesByVerticalAsync(vertical, token);
+                    var result = await service.GetFeaturedCategoriesByVertical(vertical, token);
                     return TypedResults.Ok(result);
                 }
                 catch (ArgumentException ex)
@@ -168,7 +168,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-                .WithName("GetFeaturedCategoriesByVerticalAsync")
+                .WithName("GetFeaturedCategoriesByVertical")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Get L1 categories for a given vertical")
                 .WithDescription("Returns a list of L1 categories from the category tree for a vertical. If none found, returns 200 with empty list.")
@@ -217,7 +217,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/ReorderFeaturedCategorySlots", async Task<Results<
+            group.MapPut("/reorderfeaturedcategoryslots", async Task<Results<
                Ok<string>,
                BadRequest<ProblemDetails>,
                ProblemHttpResult>>
@@ -260,7 +260,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPut("/ReplaceFeaturedCategorySlots", async Task<Results<
+            group.MapPut("/replacefeaturedcategoryslots", async Task<Results<
                 Ok<string>,
                 ForbidHttpResult,
                 BadRequest<ProblemDetails>,
@@ -448,7 +448,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/GetSlottedFeaturedCategory", async Task<Results<
+            group.MapGet("/getslottedfeaturedcategory", async Task<Results<
                 Ok<List<FeaturedCategory>>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -545,7 +545,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/createSeasonalPickById", async Task<Results<
+            group.MapPost("/createseasonalpickbyid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -600,7 +600,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/getSeasonalPicks", async Task<Results<
+            group.MapGet("/getseasonalpicks", async Task<Results<
                 Ok<List<SeasonalPicks>>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -704,7 +704,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/replaceSeasonalPickSlot", async Task<Results<
+            group.MapPut("/replace-seasonalpickslot", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -789,7 +789,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/reorderSeasonalPickSlots", async Task<Results<
+            group.MapPut("/reorder-seasonalpickslots", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -881,7 +881,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
              
-            group.MapDelete("/softDeleteSeasonalPick", async Task<Results<
+            group.MapDelete("/softdelete-seasonalpick", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -981,7 +981,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/createFeaturedStoreById", async Task<Results<
+            group.MapPost("/create-featuredstorebyid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -1036,7 +1036,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/getFeaturedStores", async Task<Results<
+            group.MapGet("/getfeaturedstores", async Task<Results<
                 Ok<List<FeaturedStore>>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -1140,7 +1140,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/replaceFeaturedStoreSlot", async Task<Results<
+            group.MapPut("/replace-featuredstoreSlot", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -1222,7 +1222,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/reorderFeaturedStoreSlots", async Task<Results<
+            group.MapPut("/reorder-featuredstoreslots", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -1314,7 +1314,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapDelete("/softDeleteFeaturedStore", async Task<Results<
+            group.MapDelete("/softdeletefeaturedstore", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>

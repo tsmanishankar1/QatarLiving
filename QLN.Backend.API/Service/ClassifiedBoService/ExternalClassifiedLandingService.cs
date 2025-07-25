@@ -90,7 +90,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
@@ -100,7 +100,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var trees = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync/{vertical}",
+                    $"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical/{vertical}",
                     cancellationToken);
 
                 var l1s = trees?.ToList() ?? new List<FeaturedCategory>();
@@ -121,7 +121,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<LandingBoSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/ReorderFeaturedCategorySlots?userid={userId}",
+                    $"/api/v2/classifiedbo/reorderfeaturedcategoryslots?userid={userId}",
                     dto,
                     cancellationToken);
 
@@ -231,7 +231,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/GetSlottedFeaturedCategory?vertical={vertical}",
+                    $"/api/v2/classifiedbo/getslottedfeaturedcategory?vertical={vertical}",
                     cancellationToken);
 
                 return response ?? new List<FeaturedCategory>();
@@ -280,7 +280,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<SeasonalPicksDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/createSeasonalPickById?userid={userId}&username={userName}",
+                    $"api/v2/classifiedbo/createseasonalpickbyid?userid={userId}&username={userName}",
                     dto,
                     cancellationToken
                 );
@@ -314,7 +314,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<List<SeasonalPicks>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/getSeasonalPicks?vertical={vertical}",
+                    $"api/v2/classifiedbo/getseasonalpicks?vertical={vertical}",
                     cancellationToken
                 );
 
@@ -361,7 +361,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<ReplaceSeasonalPickSlotRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/replaceSeasonalPickSlot?userid={userId}",
+                    $"api/v2/classifiedbo/replace-seasonalpickslot?userid={userId}",
                     dto,
                     cancellationToken
                 );
@@ -403,7 +403,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<SeasonalPickSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/reorderSeasonalPickSlots{queryParams}",
+                    $"api/v2/classifiedbo/reorder-seasonalpickslots{queryParams}",
                     request,
                     cancellationToken
                 );
@@ -435,7 +435,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/softDeleteSeasonalPick{queryParams}",
+                    $"api/v2/classifiedbo/softdelete-seasonalpick{queryParams}",
                     cancellationToken
                 );
 
@@ -472,7 +472,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<FeaturedStoreDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/createFeaturedStoreById?userid={userId}&username={userName}",
+                    $"api/v2/classifiedbo/create-featuredstorebyid?userid={userId}&username={userName}",
                     dto,
                     cancellationToken
                 );
@@ -505,7 +505,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<List<FeaturedStore>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/getFeaturedStores?vertical={vertical}",
+                    $"api/v2/classifiedbo/getfeaturedstores?vertical={vertical}",
                     cancellationToken
                 );
 
@@ -552,7 +552,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<ReplaceFeaturedStoresSlotRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/replaceFeaturedStoreSlot?userid={userId}",
+                    $"api/v2/classifiedbo/replace-featuredstoreSlot?userid={userId}",
                     dto,
                     cancellationToken
                 );
@@ -594,7 +594,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<FeaturedStoreSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/reorderFeaturedStoreSlots{queryParams}",
+                    $"api/v2/classifiedbo/reorder-featuredstoreslots{queryParams}",
                     request,
                     cancellationToken
                 );
@@ -626,7 +626,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/softDeleteFeaturedStore{queryParams}",
+                    $"api/v2/classifiedbo/softdeletefeaturedstore{queryParams}",
                     cancellationToken
                 );
 

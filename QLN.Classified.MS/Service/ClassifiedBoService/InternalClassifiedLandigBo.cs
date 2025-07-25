@@ -938,7 +938,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required to retrieve featured categories.", nameof(vertical));
