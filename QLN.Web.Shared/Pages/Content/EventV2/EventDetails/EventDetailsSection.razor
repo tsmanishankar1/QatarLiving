@@ -221,42 +221,69 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
     RenderFragment EventInfoBlock() => __builder =>
     {
         <div class="info-section">
-            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) || !string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
+            @if(Item.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
-                <div class="info-item">
+                @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) || !string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
+                {
+                    <div class="info-item">
 
-                    <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
-                    <span class="info-text">
-                        @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
-                        {
-                            @DateHelper.FormatDate(Item.EventSchedule.StartDate)
-                        }
-                        @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) && !string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
-                        {
-                            <text> to </text>
-                        }
-                        @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
-                        {
-                            @DateHelper.FormatDate(Item.EventSchedule.EndDate)
-                        }
-                    </span>
-                </div>
+                        <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
+                        <span class="info-text">
+                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
+                            {
+                                @DateHelper.FormatDate(Item.EventSchedule.StartDate)
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) && !string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
+                            {
+                                <text> to </text>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
+                            {
+                                @DateHelper.FormatDate(Item.EventSchedule.EndDate)
+                            }
+                        </span>
+                    </div>
+                }
+
+                @if (Item.EventSchedule.StartTime.HasValue && Item.EventSchedule.EndTime.HasValue)
+                {
+                    <div class="info-item">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                        <span class="info-text">@Item.EventSchedule.StartTime to @Item.EventSchedule.EndTime</span>
+                    </div>
+                }
+                
+            }
+            else if(Item.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
+            {
+                <!-- Display per day time slots -->
+                @if (Item.EventSchedule.TimeSlots != null && Item.EventSchedule.TimeSlots.Any())
+                {
+                    <div class="info-item">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                        <span class="info-text">
+                            @foreach (var slot in Item.EventSchedule.TimeSlots)
+                            {
+                                @if (slot.DayOfWeek.HasValue)
+                                {
+                                    <text>@slot.DayOfWeek.Value.ToString() - @slot.Time</text>
+                                }
+                                else
+                                {
+                                    <text>Week Day - @slot.Time</text>
+                                }
+
+                                @if (slot != Item.EventSchedule.TimeSlots.Last())
+                                {
+                                    <text>, </text>
+                                }
+                            }
+                        </span>
+                    </div>
+                }       
             }
 
-            @if (Item.EventSchedule.StartTime.HasValue && Item.EventSchedule.EndTime.HasValue)
-            {
-                <div class="info-item">
-                    <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                    <span class="info-text">@Item.EventSchedule.StartTime to @Item.EventSchedule.EndTime</span>
-                </div>
-            }    
         </div>
-
-        @* <div class="info-Access">
-            <span class="access-name">Access Fees:</span>
-            <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
-        </div> *@
-
 
         @if (!string.IsNullOrWhiteSpace(Item?.Venue))
         {
