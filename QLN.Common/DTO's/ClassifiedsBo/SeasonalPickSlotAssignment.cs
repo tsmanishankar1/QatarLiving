@@ -15,7 +15,13 @@ namespace QLN.Common.DTO_s
     public class SeasonalPickSlotReorderRequest
     {
         public List<SeasonalPickSlotAssignment> SlotAssignments { get; set; } = new();
-        public string? UserId { get; set; }
+        public string Vertical { get; set; }
+    }
+
+    public class ReplaceSeasonalPickSlotRequest
+    {
+        public string PickId { get; set; }
+        public int TargetSlotId { get; set; }
         public string Vertical { get; set; }
     }
 }
