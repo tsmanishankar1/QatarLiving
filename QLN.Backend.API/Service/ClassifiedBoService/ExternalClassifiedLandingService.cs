@@ -3,6 +3,7 @@ using Dapr.Client;
 using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -39,14 +40,14 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             _searchService = searchService;
         }
 
-        public async Task<string> CreateFeaturedCategory(string userId, V2ClassifiedLandingBoDto dto, CancellationToken cancellationToken)
+        public async Task<string> CreateFeaturedCategory(string userId, string userName, FeaturedCategoryDto dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             if (string.IsNullOrWhiteSpace(dto.ImageUrl))
                 throw new ArgumentException("Image is required.");
 
-            if (string.IsNullOrWhiteSpace(dto.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
@@ -54,16 +55,16 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             try
             {
                 var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"featured_{dto.UserId}_{Guid.NewGuid():N}".Substring(0, 10) + $".{imgExt}";
+                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
                 var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(uniqueName);
 
                 dto.ImageUrl = imageUrl;
 
-                var response = await _dapr.InvokeMethodAsync<V2ClassifiedLandingBoDto, string>(
+                var response = await _dapr.InvokeMethodAsync<FeaturedCategoryDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/create-category",
+                    $"api/v2/classifiedbo/create-category?userid={userId}&username={userName}",
                     dto,
                     cancellationToken
                 );
@@ -89,20 +90,20 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<V2ClassifiedLandingBoDto>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required.", nameof(vertical));
 
             try
             {
-                var trees = await _dapr.InvokeMethodAsync<List<V2ClassifiedLandingBoDto>>(
+                var trees = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync/{vertical}",
+                    $"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical/{vertical}",
                     cancellationToken);
 
-                var l1s = trees?.ToList() ?? new List<V2ClassifiedLandingBoDto>();
+                var l1s = trees?.ToList() ?? new List<FeaturedCategory>();
 
                 return l1s;
             }
@@ -113,14 +114,14 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderFeaturedCategorySlots(LandingBoSlotReorderRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var response = await _dapr.InvokeMethodAsync<LandingBoSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    "/api/v2/classifiedbo/ReorderFeaturedCategorySlots",
+                    $"/api/v2/classifiedbo/reorderfeaturedcategoryslots?userid={userId}",
                     dto,
                     cancellationToken);
 
@@ -153,7 +154,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<LandingBoSlotReplaceRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    "/api/v2/classifiedbo/replace-slot",
+                    $"/api/v2/classifiedbo/replace-slot?userid={userId}",
                     dto,
                     cancellationToken);
 
@@ -223,17 +224,17 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<V2ClassifiedLandingBoDto>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<V2ClassifiedLandingBoDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/GetSlottedFeaturedCategory?vertical={vertical}",
+                    $"/api/v2/classifiedbo/getslottedfeaturedcategory?vertical={vertical}",
                     cancellationToken);
 
-                return response ?? new List<V2ClassifiedLandingBoDto>();
+                return response ?? new List<FeaturedCategory>();
             }
             catch (InvocationException ex)
             {
@@ -255,14 +256,14 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> CreateSeasonalPick(SeasonalPicksDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateSeasonalPick(string userId, string userName, SeasonalPicksDto dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             if (string.IsNullOrWhiteSpace(dto.ImageUrl))
                 throw new ArgumentException("Image is required.");
 
-            if (string.IsNullOrWhiteSpace(dto.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
@@ -270,7 +271,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             try
             {
                 var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"seasonal_{dto.UserId}_{Guid.NewGuid():N}".Substring(0, 10) + $".{imgExt}";
+                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
                 var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(uniqueName);
 
@@ -279,7 +280,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<SeasonalPicksDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/createSeasonalPickById",  
+                    $"api/v2/classifiedbo/createseasonalpickbyid?userid={userId}&username={userName}",
                     dto,
                     cancellationToken
                 );
@@ -306,18 +307,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicks>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/getSeasonalPicks?vertical={vertical}",
+                    $"api/v2/classifiedbo/getseasonalpicks?vertical={vertical}",
                     cancellationToken
                 );
 
-                return response ?? new List<SeasonalPicksDto>();
+                return response ?? new List<SeasonalPicks>();
             }
             catch (Exception ex)
             {
@@ -326,18 +327,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicksDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<SeasonalPicks>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/v2/classifiedbo/seasonal-picks/slotted?vertical={vertical}",
                     cancellationToken
                 );
 
-                return response ?? new List<SeasonalPicksDto>();
+                return response ?? new List<SeasonalPicks>();
             }
             catch (Exception ex)
             {
@@ -346,22 +347,22 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithSeasonalPick(string vertical, string userId, Guid pickId, int slot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
 
-            if (slot < 1 || slot > 6)
-                throw new ArgumentOutOfRangeException(nameof(slot), "Slot number must be between 1 and 6.");
+            if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
+                throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot number must be between 1 and 6.");
 
             try
-            {
-                var queryParams = $"?pickId={pickId}&slot={slot}&userId={userId}&vertical={vertical}";
+            {                
 
-                var response = await _dapr.InvokeMethodAsync<string>(
+                var response = await _dapr.InvokeMethodAsync<ReplaceSeasonalPickSlotRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/replaceSeasonalPickSlot{queryParams}",
+                    $"api/v2/classifiedbo/replace-seasonalpickslot?userid={userId}",
+                    dto,
                     cancellationToken
                 );
 
@@ -374,13 +375,13 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request cannot be null.");
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
-                throw new ArgumentException("UserId is required in the request payload.", nameof(request.UserId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required in the request payload.", nameof(userId));
 
             if (request.SlotAssignments == null || !request.SlotAssignments.Any())
                 throw new ArgumentException("SlotAssignments list cannot be empty.", nameof(request.SlotAssignments));
@@ -397,12 +398,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             try
             {
-                var queryParams = $"?userId={request.UserId}";
+                var queryParams = $"?userId={userId}";
 
                 var response = await _dapr.InvokeMethodAsync<SeasonalPickSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/reorderSeasonalPickSlots{queryParams}",
+                    $"api/v2/classifiedbo/reorder-seasonalpickslots{queryParams}",
                     request,
                     cancellationToken
                 );
@@ -434,7 +435,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/softDeleteSeasonalPick{queryParams}",
+                    $"api/v2/classifiedbo/softdelete-seasonalpick{queryParams}",
                     cancellationToken
                 );
 
@@ -447,14 +448,14 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> CreateFeaturedStore(FeaturedStoreDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateFeaturedStore(string userId, string userName, FeaturedStoreDto dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             if (string.IsNullOrWhiteSpace(dto.ImageUrl))
                 throw new ArgumentException("Image is required.");
 
-            if (string.IsNullOrWhiteSpace(dto.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
@@ -462,7 +463,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             try
             {
                 var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"featured_{dto.UserId}_{Guid.NewGuid():N}".Substring(0, 10) + $".{imgExt}";
+                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
                 var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
                 uploadedBlobKeys.Add(uniqueName);
 
@@ -471,7 +472,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<FeaturedStoreDto, string>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    "api/v2/classifiedbo/createFeaturedStoreById",
+                    $"api/v2/classifiedbo/create-featuredstorebyid?userid={userId}&username={userName}",
                     dto,
                     cancellationToken
                 );
@@ -497,18 +498,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStoreDto>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<FeaturedStoreDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedStore>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/getFeaturedStores?vertical={vertical}",
+                    $"api/v2/classifiedbo/getfeaturedstores?vertical={vertical}",
                     cancellationToken
                 );
 
-                return response ?? new List<FeaturedStoreDto>();
+                return response ?? new List<FeaturedStore>();
             }
             catch (Exception ex)
             {
@@ -517,18 +518,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStoreDto>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<FeaturedStoreDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<FeaturedStore>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/v2/classifiedbo/featured-stores/slotted?vertical={vertical}",
                     cancellationToken
                 );
 
-                return response ?? new List<FeaturedStoreDto>();
+                return response ?? new List<FeaturedStore>();
             }
             catch (Exception ex)
             {
@@ -537,22 +538,22 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithFeaturedStore(string vertical, string userId, Guid storeId, int slot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithFeaturedStore(string userId, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
 
-            if (slot < 1 || slot > 6)
-                throw new ArgumentOutOfRangeException(nameof(slot), "Slot number must be between 1 and 6.");
+            if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
+                throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot number must be between 1 and 6.");
 
             try
-            {
-                var queryParams = $"?storeId={storeId}&slot={slot}&userId={userId}&vertical={vertical}";
+            {                
 
-                var response = await _dapr.InvokeMethodAsync<string>(
+                var response = await _dapr.InvokeMethodAsync<ReplaceFeaturedStoresSlotRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/replaceFeaturedStoreSlot{queryParams}",
+                    $"api/v2/classifiedbo/replace-featuredstoreSlot?userid={userId}",
+                    dto,
                     cancellationToken
                 );
 
@@ -565,13 +566,13 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-        public async Task<string> ReorderFeaturedStoreSlots(FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedStoreSlots(string userId, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request), "Request cannot be null.");
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
-                throw new ArgumentException("UserId is required in the request payload.", nameof(request.UserId));
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required in the request payload.", nameof(userId));
 
             if (request.SlotAssignments == null || !request.SlotAssignments.Any())
                 throw new ArgumentException("SlotAssignments list cannot be empty.", nameof(request.SlotAssignments));
@@ -588,12 +589,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             try
             {
-                var queryParams = $"?userId={request.UserId}";
+                var queryParams = $"?userId={userId}";
 
                 var response = await _dapr.InvokeMethodAsync<FeaturedStoreSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/reorderFeaturedStoreSlots{queryParams}",
+                    $"api/v2/classifiedbo/reorder-featuredstoreslots{queryParams}",
                     request,
                     cancellationToken
                 );
@@ -625,7 +626,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/softDeleteFeaturedStore{queryParams}",
+                    $"api/v2/classifiedbo/softdeletefeaturedstore{queryParams}",
                     cancellationToken
                 );
 

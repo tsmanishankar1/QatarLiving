@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class V2ClassifiedLandingBoDto
+    public class FeaturedCategory
     {
         public Guid? Id { get; set; }//
         public string Category { get; set; } = null!;
@@ -36,7 +36,6 @@ namespace QLN.Common.DTO_s
     {
         public List<LandingBoSlotAssignment> SlotAssignments { get; set; } = new();
         public string Vertical { get; set; }
-        public string UserId { get; set; }
     }
 
 
@@ -45,7 +44,6 @@ namespace QLN.Common.DTO_s
         public string CategoryId { get; set; }
         public int TargetSlotId { get; set; }
         public string Vertical { get; set; }
-        public string UserId { get; set; }
 
     }
 
