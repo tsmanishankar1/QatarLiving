@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class SeasonalPicksDto
+    public class SeasonalPicks
     {
         public string Vertical { get; set; }
         public Guid? Id { get; set; }//
@@ -30,4 +30,6 @@ namespace QLN.Common.DTO_s
         public string? UserName { get; set; }//
         public bool? IsActive { get; set; } = true;//
     }
+
+
 }
