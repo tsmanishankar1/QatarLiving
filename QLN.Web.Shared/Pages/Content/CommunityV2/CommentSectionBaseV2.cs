@@ -150,16 +150,12 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             {
                 if (CurrentPost == null || CurrentPost.Id == null)
                 {
-                    IsLoading = false;
-                    StateHasChanged();
                     return;
                 }
 
                 if (CurrentPost.CommentCount == 0)
                 {
-                    IsLoading = false;
                     Comments.Clear();
-                    StateHasChanged();
                     return;
                 }
 

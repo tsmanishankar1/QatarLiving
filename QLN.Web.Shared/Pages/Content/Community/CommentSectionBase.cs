@@ -134,16 +134,12 @@ namespace QLN.Web.Shared.Pages.Content.Community
             {
                 if (PostModelData == null || PostModelData.Id == null)
                 {
-                    IsLoading = false;
-                    StateHasChanged();
                     return;
                 }
 
                 if (PostModelData.CommentCount == 0)
                 {
-                    IsLoading = false;
                     Comments.Clear();
-                    StateHasChanged();
                     return;
                 }
 
