@@ -132,7 +132,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
-                if (PostModelData?.Id == null || !IsLoggedIn || PostModelData.Comments.Count == 0)
+                if (PostModelData?.Id == null || PostModelData.Comments.Count == 0)
                 {
                     Comments.Clear();
                     return;
