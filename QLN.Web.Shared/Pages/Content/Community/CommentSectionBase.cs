@@ -153,7 +153,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
                 if (response?.comments?.Count == 0)
                 {
-                    Comments = response.comments.Select(c => new CommentModel
+                    Comments = [.. response.comments.Select(c => new CommentModel
                     {
                         Id = c.comment_id,
                         CreatedBy = !string.IsNullOrWhiteSpace(c.user_name) ? c.user_name : "User not found",
@@ -164,7 +164,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Avatar = !string.IsNullOrWhiteSpace(c.profile_picture)
                             ? c.profile_picture
                             : "/qln-images/content/Sample.svg"
-                    }).ToList();
+                    })];
                 }
                 else
                 {
