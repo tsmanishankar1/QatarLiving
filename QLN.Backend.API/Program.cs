@@ -3,23 +3,29 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
+using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.LandingEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
 using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
@@ -204,8 +210,11 @@ builder.Services.AddResponseCompression(options =>
     });
 
 
+builder.Services.FileServiceConfiguration(builder.Configuration);
 builder.Services.ServicesConfiguration(builder.Configuration);
+builder.Services.ServiceConfiguration(builder.Configuration);
 builder.Services.ClassifiedServicesConfiguration(builder.Configuration);
+builder.Services.ClassifiedLandingBo(builder.Configuration);
 builder.Services.SearchServicesConfiguration(builder.Configuration);
 builder.Services.ContentServicesConfiguration(builder.Configuration);
 builder.Services.AnalyticsServicesConfiguration(builder.Configuration);
@@ -224,6 +233,9 @@ builder.Services.SubscriptionConfiguration(builder.Configuration);
 builder.Services.PayToPublishConfiguration(builder.Configuration);
 builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
+builder.Services.V2BannerConfiguration(builder.Configuration);
+builder.Services.DrupalAuthConfiguration(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -255,6 +267,8 @@ app.UseAuthorization();
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
+var filesGroup = app.MapGroup("/files");
+filesGroup.MapFileUploadEndpoint();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
@@ -269,12 +283,15 @@ eventGroup.MapEventEndpoints()
     .RequireAuthorization();
 var foEventGroup = app.MapGroup("/api/v2/fo/event");
 foEventGroup.MapFOEventEndpoints();
+var ServiceGroup = app.MapGroup("/api/service");
+ServiceGroup.MapAllServiceConfiguration()
+    .RequireAuthorization();
 var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-var bannerGroup = app.MapGroup("/api/banner");
-bannerGroup.MapBannerEndpoints();
+//var bannerGroup = app.MapGroup("/api/banner");
+//bannerGroup.MapBannerEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
@@ -289,6 +306,8 @@ app.MapGroup("/api/paytopublish")
 
 app.MapGroup("/api/addon")
  .MapAddonEndpoints();
+var quotaGroup = app.MapGroup("/api/userquota");
+quotaGroup.MapUserQuotaEndpoints();
 
 
 var newsGroup = app.MapGroup("/api/v2/news");
@@ -301,10 +320,15 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
+
+var bannerPostGroup  = app.MapGroup("/api/v2/banner");
+bannerPostGroup.MapBannerPostEndpoints();
 //.RequireAuthorization();
 
-app.MapAllBackOfficeEndpoints();
-app.MapLandingPageEndpoints();
+
+var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
+ClassifiedBo.MapClassifiedboEndpoints();
+
 
 app.MapGet("/testauth", (HttpContext context) =>
 {
@@ -335,5 +359,20 @@ app.MapPost("/testauth", (HttpContext context) =>
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
     .RequireAuthorization();
+
+app.MapPost("/drupallogin", async (
+    HttpContext context,
+    IDrupalAuthService drupalAuthService,
+    LoginRequest loginRequest,
+    CancellationToken cancellationToken
+    ) =>
+{
+    var drupalLogin = await drupalAuthService.LoginAsync(loginRequest.UsernameOrEmailOrPhone, loginRequest.Password, cancellationToken);
+
+    return Results.Ok(drupalLogin);
+})
+    .WithName("TestDrupalLogin")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test login to Drupal");
 
 app.Run();

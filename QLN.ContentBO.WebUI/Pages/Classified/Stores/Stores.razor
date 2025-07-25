@@ -1,0 +1,18 @@
+﻿@page "/manage/classified/stores"
+@inherits StoresBase
+<h2 class="main-title-name-style">Stores</h2>
+<MudTabs @bind-ActivePanelIndex="ActiveIndex"
+         Rounded="false"
+         Class="custom-tabs"
+         DisableSlideAnimation="true"
+         TabPanelClass="tab-panel-style"
+         TextColor="Color.Default"
+         IndicatorColor="Color.Primary">
+
+    @foreach (var tab in TabTitles)
+    {
+        <MudTabPanel Text="@tab">
+            @RenderTabContent()
+        </MudTabPanel>
+    }
+</MudTabs>

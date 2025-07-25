@@ -1,4 +1,5 @@
 @typeparam TPost
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 @using QLN.ContentBO.WebUI.Components.EmptyCard
@@ -43,17 +44,17 @@ else
 
             @if (Type != "community-posts")
             {
-                <MudTd DataLabel="Comment">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "--")</MudTd>
-                <MudTd DataLabel="Comment Date">@((context.CommentDate.HasValue) ? context.CommentDate.Value.ToString("dd-MM-yyyy") : "--")</MudTd>
+                <MudTd DataLabel="Comment">@(!string.IsNullOrWhiteSpace(context.Comment) ? context.Comment : "-")</MudTd>
+                <MudTd DataLabel="Comment Date">@((context.CommentDate.HasValue) ? context.CommentDate.Value.ToQatarTime("dd-MM-yyyy") : "-")</MudTd>
             }
             else
             {
-                <MudTd DataLabel="Post Date">@((context.PostDate.HasValue) ? context.PostDate.Value.ToString("dd-MM-yyyy") : "--")</MudTd>
+                <MudTd DataLabel="Post Date">@((context.PostDate.HasValue) ? context.PostDate.Value.ToQatarTime("dd-MM-yyyy") : "-")</MudTd>
             }
 
-            <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "--")</MudTd>
-            <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "--")</MudTd>
-            <MudTd DataLabel="Report Date">@context.ReportDate.ToString("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "-")</MudTd>
+            <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "-")</MudTd>
+            <MudTd DataLabel="Report Date">@context.ReportDate.ToQatarTime("dd-MM-yyyy")</MudTd>
 
             <MudTd>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">

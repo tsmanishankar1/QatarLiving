@@ -1,0 +1,17 @@
+﻿@inherits PreLovedNavigationTabsBase
+@using MudBlazor
+
+<MudTabs Rounded="false"
+         Class="custom-tabs"
+         DisableSlideAnimation="true"
+         TabPanelClass="tab-panel-style"
+         TextColor="Color.Default"
+         IndicatorColor="Color.Primary"
+         @bind-ActivePanelIndex="ActiveIndex"
+         KeepPanelsAlive="true">
+
+    @foreach (var tab in Tabs)
+    {
+        <MudTabPanel Text="@tab.Title" />
+    }
+</MudTabs>

@@ -1,0 +1,61 @@
+.field-heading {
+        font-size: 18px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: #00426d;
+        padding-bottom: 16px;
+    }
+
+    .title-heading {
+        font-size: 24px;
+        font-weight: 600;
+        font-family: 'Public Sans', sans-serif;
+        color: #00426d;
+        padding-bottom: 16px;
+    }
+
+
+    .event-custom-close {
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 8px;
+        border: 1px solid #D5D7DA;
+        color: #242424;
+        text-transform: none;
+        background-color: transparent;
+        background-color: white;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+
+    .full-width {
+        width: 100%;
+    }
+
+    .event-image-picker-style {
+        background-color: #000000CC;
+        width: 100%;
+        height: 39px;
+    }
+
+    .event-custom-add {
+        background-color: #FF7F38;
+        font-family: 'Public Sans', sans-serif;
+        font-size: 16px;
+        font-weight: 500;
+        border-radius: 4px;
+        color: white;
+        text-transform: none;
+        border: none;
+        padding: 10px 1rem;
+        cursor: pointer;
+    }
+     .mud-select-item {
+        padding-left: 16px;
+    }
+
+    .my-custom-select .mud-chip {
+        background-color: #ede9fe;
+        color: #4f46e5;
+        font-weight: bold;
+    }

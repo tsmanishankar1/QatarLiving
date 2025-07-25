@@ -13,7 +13,16 @@ namespace QLN.Common.Infrastructure.IService.IContentService
            int? page, int? perPage, string? search, CancellationToken cancellationToken = default);
         Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default);
         Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken);
-        Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(int categoryId, int subCategoryId, CancellationToken cancellationToken);
+
+            Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
+                int categoryId,
+                int subCategoryId,
+                ArticleStatus status,
+                int? page,
+                int? pageSize,
+                CancellationToken cancellationToken);
+
+
         Task<string> UpdateNewsArticleAsync(V2NewsArticleDTO updatedDto, CancellationToken cancellationToken);
 
         // Filter articles by IsActive status 

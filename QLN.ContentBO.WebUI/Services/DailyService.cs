@@ -93,6 +93,24 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> UpdateTopicRenameAsync(DailyTopic topic)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(topic, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/v2/dailyliving/updatedailytopic")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateTopic");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage> DeleteArticleAsync(string id)
         {
             try
@@ -150,6 +168,7 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     payload = new
                     {
+                        slotType = 0,
                         contentType = article.ContentType,
                         topicId = article.TopicId,
                         contentUrl = article.ContentURL
@@ -203,6 +222,7 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     payload = new
                     {
+                        slotType = 0,
                         contentType = article.ContentType,
                         topicId = article.TopicId,
                         slotNumber = article.SlotNumber,

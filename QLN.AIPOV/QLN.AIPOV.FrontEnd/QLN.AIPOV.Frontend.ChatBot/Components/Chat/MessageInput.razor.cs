@@ -8,6 +8,9 @@ namespace QLN.AIPOV.Frontend.ChatBot.Components.Chat
         [Parameter]
         public EventCallback<string> OnSend { get; set; }
 
+        [Parameter]
+        public bool DisableChatInput { get; set; }
+
         private string Message { get; set; } = string.Empty;
 
         private async Task Send()

@@ -1,3 +1,4 @@
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using System;
 using System.Threading;
@@ -20,7 +21,7 @@ public interface IExternalSubscriptionService
     Task<bool> ChangeUserRoleAsync(Guid userId, string newRole, CancellationToken cancellationToken = default);
     Task HandleSubscriptionExpiryAsync(SubscriptionExpiryMessage message, CancellationToken cancellationToken = default);
     Task<List<UserPaymentDetailsResponseDto>> GetUserPaymentDetailsAsync(   string userId,   CancellationToken cancellationToken = default);
-   Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(  string userId, CancellationToken cancellationToken = default);
+    Task<YearlySubscriptionResponseDto?> CheckYearlySubscriptionAsync(  string userId, CancellationToken cancellationToken = default);
 }
 
 

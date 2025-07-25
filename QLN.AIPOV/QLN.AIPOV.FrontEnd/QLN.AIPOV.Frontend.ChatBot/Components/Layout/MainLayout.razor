@@ -5,9 +5,12 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="1" Color="Color.Primary">
         <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h5" Class="ml-3">AI POV</MudText>
+        <div class="d-flex align-center ml-3">
+            <MudImage Src="images/logo.png" Height="40" Alt="App Logo" Class="mr-3" />
+            <MudText Typo="Typo.h5">AI POV</MudText>
+        </div>
         <MudSpacer />
         <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle" />
         <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
@@ -29,7 +32,7 @@
 
 @code {
     private bool _drawerOpen = true;
-    private bool _isDarkMode = true;
+    private bool _isDarkMode = false; // Changed to false to start in light mode
     private MudTheme? _theme = null;
 
     protected override void OnInitialized()
@@ -56,22 +59,37 @@
 
     private readonly PaletteLight _lightPalette = new()
     {
+        Primary = "#00426D",       // Set your primary color
+        PrimaryContrastText = "#FFFFFF", // White text on primary background
+        Secondary = "#FF7F38",     // A complementary color
+        SecondaryContrastText = "#FFFFFF",
+        Tertiary = "#2E8BC0",
+        TertiaryContrastText = "#FFFFFF",
+        Background = "#FFFFFF",    // White background
+        Surface = "#FFFFFF",
+        DrawerBackground = "#FFFFFF",
+        AppbarBackground = "#00426D", // Set app bar to primary color
+        AppbarText = "#FFFFFF",    // White text in app bar
+        DrawerText = "#424242",    // Dark drawer text for contrast
+        DrawerIcon = "#424242",
         Black = "#110e2d",
-        AppbarText = "#424242",
-        AppbarBackground = "rgba(255,255,255,0.8)",
-        DrawerBackground = "#ffffff",
         GrayLight = "#e8e8e8",
         GrayLighter = "#f9f9f9",
     };
 
     private readonly PaletteDark _darkPalette = new()
     {
-        Primary = "#7e6fff",
+        Primary = "#00426D",       // Keep the same primary in dark mode
+        PrimaryContrastText = "#FFFFFF",
+        Secondary = "#145DA0",
+        SecondaryContrastText = "#FFFFFF",
+        Tertiary = "#2E8BC0",
+        TertiaryContrastText = "#FFFFFF",
         Surface = "#1e1e2d",
         Background = "#1a1a27",
         BackgroundGray = "#151521",
-        AppbarText = "#92929f",
-        AppbarBackground = "rgba(26,26,39,0.8)",
+        AppbarText = "#FFFFFF",    // White text in app bar
+        AppbarBackground = "#00426D",  // Primary color for app bar
         DrawerBackground = "#1a1a27",
         ActionDefault = "#74718e",
         ActionDisabled = "#9999994d",
@@ -99,5 +117,3 @@
         false => Icons.Material.Outlined.DarkMode,
     };
 }
-
-
