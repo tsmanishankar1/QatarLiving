@@ -137,7 +137,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                     return;
                 }
 
-                if (PostModelData.CommentCount == 0)
+                if (PostModelData.Comments.Count == 0)
                 {
                     Comments.Clear();
                     return;
