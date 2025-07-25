@@ -20,7 +20,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected MudTextField<string> multilineReference;
 
         [Parameter]
-        public PostModel Comment { get; set; }
+        public PostModel PostModelData { get; set; }
 
         //public PostModel CommentList { get; set; } 
 
@@ -62,7 +62,10 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            await GetCommentAsync();
+            if (firstRender)
+            {
+                await GetCommentAsync();
+            }
         }
 
         protected void ToggleComment(string id)
@@ -87,14 +90,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
 
             try
             {
-                if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || Comment == null)
+                if (string.IsNullOrWhiteSpace(newComment) || CurrentUserId == 0 || PostModelData == null)
                 {
                     Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
                     return;
                 }
                 var request = new CommentPostRequest
                 {
-                    nid = int.TryParse(Comment.Id?.ToString(), out var nid) ? nid : 0,
+                    nid = int.TryParse(PostModelData.Id?.ToString(), out var nid) ? nid : 0,
                     uid = CurrentUserId,
                     comment = newComment
                 };
@@ -126,14 +129,29 @@ namespace QLN.Web.Shared.Pages.Content.Community
         protected async Task GetCommentAsync()
         {
             IsLoading = true;
-            //StateHasChanged();
 
             try
             {
-                int nid = int.TryParse(Comment?.Id?.ToString(), out var parsedNid) ? parsedNid : 0;
+                if (PostModelData == null || PostModelData.Id == null)
+                {
+                    IsLoading = false;
+                    StateHasChanged();
+                    return;
+                }
+
+                if (PostModelData.CommentCount == 0)
+                {
+                    IsLoading = false;
+                    Comments.Clear();
+                    StateHasChanged();
+                    return;
+                }
+
+                int nid = int.TryParse(PostModelData.Id, out var parsedNid) ? parsedNid : 0;
                 var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
                 TotalCount = response.total_comments;
-                if (response?.comments != null && response.comments.Any())
+
+                if (response?.comments?.Count == 0)
                 {
                     Comments = response.comments.Select(c => new CommentModel
                     {
@@ -147,8 +165,6 @@ namespace QLN.Web.Shared.Pages.Content.Community
                             ? c.profile_picture
                             : "/qln-images/content/Sample.svg"
                     }).ToList();
-
-                    StateHasChanged();
                 }
                 else
                 {
@@ -157,13 +173,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
             catch (Exception ex)
             {
+                Snackbar.Add("Error loading comments.", Severity.Error);
                 Console.WriteLine($"Error loading comments: {ex.Message}");
-                Comments ??= new List<CommentModel>();
                 Comments.Clear();
             }
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 
