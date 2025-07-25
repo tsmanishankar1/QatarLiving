@@ -22,6 +22,7 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeCategory = "Category";
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
+        public const string SubscriptionPrefix = "qln-subscription-actor";
         //Index constants
         public static class IndexNames
         {

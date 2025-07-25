@@ -14,10 +14,10 @@ namespace QLN.Common.DTO_s
     }
     public class V2CreateBannerDto
     {
-        // Banner type requests with location information
+        
         public List<V2BannerTypeRequest> BannerTypeIds { get; set; } = new();
 
-        // Banner properties
+       
         public bool Status { get; set; }
         public string? AnalyticsTrackingId { get; set; }
         public string? AltText { get; set; }

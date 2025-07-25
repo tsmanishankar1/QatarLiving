@@ -127,16 +127,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapUpdateBannerEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/edit", async Task<Results<
-    Ok<string>,
-    UnauthorizedHttpResult,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    V2BannerDto dto,
-    IV2BannerService service,
-    HttpContext httpContext,
-    CancellationToken cancellationToken
-) =>
+                Ok<string>,
+                UnauthorizedHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                V2BannerDto dto,
+                IV2BannerService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
             {
                 try
                 {
@@ -172,13 +172,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.WithName("EditBanner")
-.WithTags("Banners")
-.WithDescription("Edits an existing banner with authenticated user.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("EditBanner")
+            .WithTags("Banners")
+            .WithDescription("Edits an existing banner with authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/editbyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
@@ -231,16 +231,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
         public static RouteGroupBuilder MapDeleteBannerEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/delete", async Task<Results<
-    Ok<string>,
-    UnauthorizedHttpResult,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    Guid bannerId,
-    IV2BannerService service,
-    HttpContext httpContext,
-    CancellationToken cancellationToken
-) =>
+            Ok<string>,
+            UnauthorizedHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+                Guid bannerId,
+                IV2BannerService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
             {
                 try
                 {
@@ -274,13 +274,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.WithName("DeleteBanner")
-.WithTags("Banners")
-.WithDescription("Soft-deletes a banner by setting Status = false.")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces(StatusCodes.Status401Unauthorized)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("DeleteBanner")
+            .WithTags("Banners")
+            .WithDescription("Soft-deletes a banner by setting Status = false.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/deletebyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,

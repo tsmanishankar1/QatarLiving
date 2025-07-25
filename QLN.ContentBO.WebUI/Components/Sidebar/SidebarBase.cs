@@ -24,24 +24,18 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             NavManager.LocationChanged += (_, args) =>
             {
                 currentPath = args.Location;
-
-                // Recalculate expanded groups based on route
                 ExpandGroupForCurrentRoute();
-
                 StateHasChanged();
             };
 
-            // Expand relevant group on first load too
             ExpandGroupForCurrentRoute();
         }
-        private void ExpandGroupForCurrentRoute()
-        {
-            var relativePath = NavManager.ToBaseRelativePath(currentPath).ToLowerInvariant();
 
-            var matchingGroup = NavigationItems
-                .FirstOrDefault(i =>
-                    i.IsGroup &&
-                    i.Children?.Any(c => relativePath.StartsWith(c.Url.TrimStart('/').ToLowerInvariant())) == true);
+       private void ExpandGroupForCurrentRoute()
+        {
+            var matchingGroup = NavigationItems.FirstOrDefault(i =>
+                i.IsGroup &&
+                (IsActive(i) || i.Children?.Any(c => IsActive(c)) == true));
 
             if (matchingGroup != null)
             {
@@ -49,15 +43,14 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             }
         }
 
+
         protected void HandleRouterClick(string url)
         {
-            // Find the group this child belongs to (if any)
-            var matchingGroup = NavigationItems
-                .FirstOrDefault(i => i.IsGroup && i.Children?.Any(c => c.Url == url) == true);
+            var matchingGroup = NavigationItems.FirstOrDefault(i =>
+                i.IsGroup && i.Children?.Any(c => c.Url == url) == true);
 
             if (matchingGroup != null)
             {
-                // Ensure the group is expanded (but DON'T clear others!)
                 ExpandedGroups.Add(matchingGroup.Title);
             }
 
@@ -67,19 +60,43 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             }
         }
 
-
-        protected bool IsActive(string path)
+          protected bool IsActive(NavigationItem item)
         {
-            var relativeUri = NavManager.ToBaseRelativePath(currentPath ?? "").ToLowerInvariant();
-            return relativeUri.StartsWith(path.TrimStart('/').ToLowerInvariant());
+            if (string.IsNullOrWhiteSpace(currentPath) || item == null)
+                return false;
+
+            var relativeUri = NavManager.ToBaseRelativePath(currentPath).ToLowerInvariant();
+
+            // Check ActiveRoutePaths (if any)
+            if (item.ActiveRoutePaths != null && item.ActiveRoutePaths.Any())
+            {
+                foreach (var activePath in item.ActiveRoutePaths)
+                {
+                    if (string.IsNullOrWhiteSpace(activePath)) continue;
+
+                    var cleanPath = activePath.TrimStart('/').ToLowerInvariant();
+                    if (relativeUri.StartsWith(cleanPath))
+                        return true;
+                }
+            }
+
+            // Fallback: match base URL
+            if (!string.IsNullOrWhiteSpace(item.Url))
+            {
+                var cleanBaseUrl = item.Url.TrimStart('/').ToLowerInvariant();
+                if (relativeUri.StartsWith(cleanBaseUrl))
+                    return true;
+            }
+
+            return false;
         }
+
+
 
         protected Task ToggleGroup(string title)
         {
             if (ExpandedGroups.Contains(title))
-            {
                 ExpandedGroups.Remove(title);
-            }
             else
             {
                 ExpandedGroups.Clear();
@@ -89,7 +106,6 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
             StateHasChanged();
             return Task.CompletedTask;
         }
-
 
         public class NavigationItem
         {
@@ -135,6 +151,20 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
                 ActiveRoutePaths = new() { "/manage/events", "/content/events/create", "/content/events/edit" }
             },
             new() {
+                Title = "Classified",
+                IconPath = "/qln-images/classified_icon.svg",
+                IsGroup = true,
+                Children = new List<NavigationItem>
+                {
+                    new() { Title = "Landing Page", Url = "/manage/classified/landing" },
+                    new() { Title = "Items", Url = "/manage/classified/items" },
+                    new() { Title = "Deals", Url = "/manage/classified/deals/subscription/listing" },
+                    new() { Title = "Stores", Url = "/manage/classified/stores" },
+                    new() { Title = "Preloved", Url = "/manage/classified/preloved/subscription/listing" },
+                    new() { Title = "Collectibles", Url = "/manage/classified/collectibles" },
+                }
+            },
+             new() {
                 Title = "Report",
                 IconPath = "/qln-images/report_icon.svg",
                 IsGroup = true,
@@ -153,6 +183,5 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
                 ActiveRoutePaths = ["/manage/banner"]
             },
         };
-        }
-
+    }
 }

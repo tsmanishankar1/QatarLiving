@@ -1358,7 +1358,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/getall", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
+            group.MapPost("/getall-items", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
           (
               [FromServices] ISearchService service,
               [FromBody] CommonSearchRequest request,
@@ -1388,6 +1388,94 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
           .Produces<List<ClassifiedsItemsIndex>>(StatusCodes.Status200OK)
           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("/getall-preloved", static async Task<Results<Ok<ClassifiedsBoPrelovedResponseDto>, ProblemHttpResult>>
+           (
+               [FromServices] ISearchService service,
+               [FromBody] CommonSearchRequest request,
+               CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, request);
+                    var getall = new ClassifiedsBoPrelovedResponseDto
+                    {
+                        TotalCount = result.TotalCount,
+                        ClassifiedsPreloved = result.ClassifiedsPrelovedItem
+                    };
+                    return TypedResults.Ok(getall);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+           .WithName("GetAllPrelovedAds")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get all classifieds preloved ads")
+           .WithDescription("Retrieves all service ads from the system. This endpoint returns a list of all available classifieds preloved ads, including their details.")
+           .Produces<ClassifiedsPrelovedIndex>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/getall-collectibles", static async Task<Results<Ok<ClassifiedsBoCollectiblesResponseDto>, ProblemHttpResult>>
+            (
+              [FromServices] ISearchService service,
+              [FromBody] CommonSearchRequest request,
+              CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, request);
+                    var getall = new ClassifiedsBoCollectiblesResponseDto
+                    {
+                        TotalCount = result.TotalCount,
+                        ClassifiedsCollectibles = result.ClassifiedsCollectiblesItem
+                    };
+                    return TypedResults.Ok(getall);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllCollectiblesAds")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Get all classifieds collectibles ads")
+            .WithDescription("Retrieves all service ads from the system. " +
+                           "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
+            .Produces<List<ClassifiedsCollectiblesIndex>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/getall-deals", static async Task<Results<Ok<ClassifiedsBoDealsResponseDto>, ProblemHttpResult>>
+            (
+              [FromServices] ISearchService service,
+              [FromBody] CommonSearchRequest request,
+              CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, request);
+                    var getall = new ClassifiedsBoDealsResponseDto
+                    {
+                        TotalCount = result.TotalCount,
+                        ClassifiedsDeals = result.ClassifiedsDealsItem
+                    };
+                    return TypedResults.Ok(getall);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetAllDealsAds")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Get all classifieds deals ads")
+            .WithDescription("Retrieves all service ads from the system. " +
+                           "This endpoint returns a list of all available classifieds deals ads, including their details.")
+            .Produces<List<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

@@ -63,6 +63,4 @@ servicesGroup.MapServicesEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
 
-app.MapAllBackOfficeEndpoints();
-
 app.Run();

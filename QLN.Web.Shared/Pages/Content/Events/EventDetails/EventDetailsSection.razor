@@ -477,6 +477,11 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
         margin: 1rem auto;
         border-radius: 8px;
     }
+        .event-description iframe {
+            height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
+            max-width: 100%;
+            border: none;
+        }
 
     .card-container {
         background-color: white;

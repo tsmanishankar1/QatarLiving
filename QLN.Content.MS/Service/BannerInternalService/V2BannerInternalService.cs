@@ -3,11 +3,6 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Subscriptions;
-using System;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Threading;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.BannerInternalService
@@ -98,7 +93,7 @@ namespace QLN.Content.MS.Service.BannerInternalService
                     };
                     await _dapr.SaveStateAsync(
                             V2Content.ContentStoreName,
-                 V2Content.BannerTypeIndexKey,
+                            V2Content.BannerTypeIndexKey,
                             allBannerTypes,
                             metadata: null,
                             cancellationToken: cancellationToken
@@ -110,7 +105,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 _logger.LogError(ex, "Error creating banner.");
                 throw new Exception("Internal error occurred while creating banner.", ex);
             }
-
         }
         public async Task<string> CreateBannerAsync(string uid, V2CreateBannerDto dto, CancellationToken cancellationToken = default)
         {
@@ -198,8 +192,6 @@ namespace QLN.Content.MS.Service.BannerInternalService
                         }
                     }
                 }
-
-                
                 if (hasUpdates)
                 {
                     await _dapr.SaveStateAsync(
@@ -327,8 +319,23 @@ namespace QLN.Content.MS.Service.BannerInternalService
                     ConstantValues.V2Content.BannerTypeIndexKey,
                     cancellationToken: cancellationToken
                 ) ?? new List<V2BannerTypeDto>();
-
                 dto.Id = Guid.NewGuid();
+                if (dto.Pages != null && dto.Pages.Any())
+                {
+                    foreach (var page in dto.Pages)
+                    {
+                        page.Id = Guid.NewGuid();
+
+                        if (page.bannertypes != null && page.bannertypes.Any())
+                        {
+                            foreach (var bannerType in page.bannertypes)
+                            {
+                                bannerType.Id = Guid.NewGuid();
+                            }
+                        }
+                    }
+                }
+
                 bannerTypes.Add(dto);
 
                 await _dapr.SaveStateAsync(
@@ -346,6 +353,8 @@ namespace QLN.Content.MS.Service.BannerInternalService
                 throw;
             }
         }
+
+
         public async Task<List<V2BannerTypeDto>> GetAllBannerTypesAsync(CancellationToken cancellationToken = default)
         {
             try
