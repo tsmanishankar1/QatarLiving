@@ -147,7 +147,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 var response = await CommunityService.GetCommentsByPostIdAsync(nid, page: CurrentPage, pageSize: PageSize);
                 TotalCount = response.total_comments;
 
-                if (response?.comments?.Count == 0)
+                if (TotalCount > 0)
                 {
                     Comments = [.. response.comments.Select(c => new CommentModel
                     {
