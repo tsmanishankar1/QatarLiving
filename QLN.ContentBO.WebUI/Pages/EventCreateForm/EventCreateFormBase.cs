@@ -175,6 +175,9 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string SelectedLocationId;
         private bool _shouldInitializeMap = true;
 
+        protected MudFileUpload<IBrowserFile> _fileUpload;
+        protected MudFileUpload<IBrowserFile> _fileUpload1;
+
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
@@ -235,6 +238,14 @@ namespace QLN.ContentBO.WebUI.Pages
                 CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
                 _coverImageError = null;
+            }
+            if(_fileUpload is not null)
+            {
+                await _fileUpload.ResetAsync();
+            }
+            if(_fileUpload1 is not null)
+            {
+                await _fileUpload1.ResetAsync();
             }
         }
 
