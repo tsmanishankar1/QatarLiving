@@ -269,20 +269,31 @@ namespace QLN.ContentBO.WebUI.Pages
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
         }
+
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            var file = e.File;
-            if (file != null)
+            try
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024);
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
-                _coverImageError = null;
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
+                    _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
+                    _coverImageError = null;
+                }
             }
-            _fileUpload?.ResetValidation();
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleFilesChanged");
+            }
+            finally
+            {
+                _fileUpload?.ResetValidation();
+            }
         }
         protected void GeneratePerDayTimeList()
     {
