@@ -6,6 +6,7 @@ using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
+using QLN.Web.Shared.Services.Models;
 using System.Net.Http.Json;
 
 
@@ -90,7 +91,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Author = fetched.user_name ?? "Unknown User",
                         Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
                         LikeCount = 0,
-                        CommentCount = fetched.comments?.Count ?? 0,
+                        CommentCount = int.TryParse(fetched.comment_count, out int commentCount) ? commentCount : 0,
                         ImageUrl = fetched.image_url,
                         Slug = fetched.slug,
                         Comments = fetched.comments?.Select(c => new CommentModel

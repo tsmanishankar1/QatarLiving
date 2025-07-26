@@ -14,7 +14,7 @@
         <!-- Comment list skeletons -->
         @for (var i = 0; i < 3; i++)
         {
-            <div class="comment-item" >
+            <div class="comment-item">
                 <div style="display: flex; gap: 0.75rem;">
                     <MudSkeleton Height="24px" Width="24px" Variant="Variant.Circle" Animation="Animation.Pulse" />
                     <div style="flex-grow: 1;">
@@ -28,29 +28,12 @@
 }
 else
 {
-
-
-    @if (!IsLoggedIn)
-    {
-        <div class="comment-section-empty">
-            <div class="comment-title">Comments</div>
-
-            <div class="empty-state">
-                <img src="qln-images/content/Message.svg" class="msg-icon" />
-                <h6 class="empty-title">You must be logged in to comment</h6>
-
-            </div>
-        </div>
-    }
-    else
-    {
-        @if (Comments == null || !Comments.Any())
-        {
-            <div class="comment-section-empty">
-                <div class="comment-title">Comments</div>
-
+    <div>
+        <div class="comment-title">Comments</div>
+        <div class="comment-list">
+            @if (IsLoggedIn)
+            {
                 <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-
                     <MudTextField T="string"
                                   Value="@newComment"
                                   ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
@@ -62,48 +45,34 @@ else
                                   Class="comment-input no-underline"
                                   @ref="multilineReference"
                                   OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
-
                     @if (!string.IsNullOrWhiteSpace(newComment))
                     {
                         <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
                     }
                 </div>
 
+                @if (Comments is null || Comments.Count == 0)
+                {
+                    <div class="empty-state">
+                        <img src="qln-images/content/Message.svg" class="msg-icon" />
+                        <h6 class="empty-title">Be the first to comment</h6>
+                        <p class="empty-description">
+                            Nobody’s responded to this post yet. Add your thoughts and get the conversation going.
+                        </p>
+                    </div>
+                }
+            }
+            else
+            {
                 <div class="empty-state">
                     <img src="qln-images/content/Message.svg" class="msg-icon" />
+                    <h6 class="empty-title">You must be logged in to comment</h6>
 
-                    <h6 class="empty-title">Be the first to comment</h6>
-                    <p class="empty-description">
-                        Nobody’s responded to this post yet. Add your thoughts and get the conversation going.
-                    </p>
                 </div>
-            </div>
-        }
-        else
-        {
-            <div class="comment-list">
-                <div class="comment-title">Comments</div>
+            }
 
-                <div class="comment-input-wrapper @(string.IsNullOrWhiteSpace(newComment) ? "" : "has-text")">
-                    <MudTextField T="string"
-                                  Value="@newComment"
-                                  ValueChanged="@(val => { newComment = val; StateHasChanged(); })"
-                                  Immediate="true"
-                                  Placeholder="Add a comment"
-                                  Variant="Variant.Text"
-                                  Underline="false"
-                                  AutoGrow
-                                  Class="comment-input no-underline"
-                                  @ref="multilineReference"
-                                  OnAdornmentClick="@(() => multilineReference.SelectAsync())" />
-                    @if (!string.IsNullOrWhiteSpace(newComment))
-                    {
-                        <MudButton Class="comment-post-btn" OnClick="PostComment">Post</MudButton>
-                    }
-                </div>
-
-
-
+            @if (Comments is not null && Comments.Count > 0)
+            {
                 @foreach (var c in Comments)
                 {
                     <div class="comment-item @(c.IsByCurrentUser ? "my-comment" : "other-comment")">
@@ -143,20 +112,19 @@ else
                 }
                 @if (Comments?.Any() == true)
                 {
-                <div class="pagination-container">
-                    <PaginationFooter TotalItems="@TotalCount"
-                                      CurrentPage="@CurrentPage"
-                                      PageSize="@PageSize"
-                                      OnPageChange="HandlePageChange"
-                                      OnPageSizeChange="HandlePageSizeChange" />
-                </div>
+                    <div class="pagination-container">
+                        <PaginationFooter TotalItems="@TotalCount"
+                                          CurrentPage="@CurrentPage"
+                                          PageSize="@PageSize"
+                                          OnPageChange="HandlePageChange"
+                                          OnPageSizeChange="HandlePageSizeChange" />
+                    </div>
                 }
-
-            </div>
-
-        }
-    }
+            }
+        </div>
+    </div>
 }
+
 <style>
     .comment-section-empty, .comment-list {
         padding: 1rem;

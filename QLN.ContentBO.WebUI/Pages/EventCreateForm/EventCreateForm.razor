@@ -36,7 +36,6 @@
                              Variant="Variant.Outlined"
                              HideSpinButtons="true"
                              Label="Price"
-                             MaxLength="5"
                              @bind-Value="CurrentEvent.Price"
                              For="@(() => CurrentEvent.Price)"
                              Adornment="Adornment.End"
@@ -44,11 +43,8 @@
                              Style="background-color: #FFFFFF;"
                              Class="@PriceFieldClass"
                              Disabled="@(!IsFeesSelected)"
-                             Immediate="true" />
-            @if (!string.IsNullOrEmpty(_PriceError))
-            {
-                <div class="event-mud-error-text">@_PriceError</div>
-            }
+                             Immediate="true"
+                             Max=int.MaxValue />
             <MudTextField Variant="Variant.Outlined" Label="Redirection Link" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;" MaxLength="255" />
 
 
