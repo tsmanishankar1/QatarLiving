@@ -248,7 +248,7 @@
         <MudItem xs="12" md="6">
 
             <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
-            <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760" @ref="_fileUpload">
+            <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
                 <ActivatorContent>
                     <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
                         @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
