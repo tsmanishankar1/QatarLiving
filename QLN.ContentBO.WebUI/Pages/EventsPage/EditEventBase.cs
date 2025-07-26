@@ -158,7 +158,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected bool IsPageLoading { get; set; } = true;
 
         protected MudFileUpload<IBrowserFile> _fileUpload;
-        protected MudFileUpload<IBrowserFile> _fileUpload1;
+
         protected override async Task OnParametersSetAsync()
         {
             IsPageLoading = true;
@@ -282,14 +282,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
                 _coverImageError = null;
             }
-            if (_fileUpload is not null)
-            {
-                await _fileUpload.ResetAsync();
-            }
-            if (_fileUpload1 is not null)
-            {
-                await _fileUpload1.ResetAsync();
-            }
+            _fileUpload?.ResetValidation();
         }
         protected void GeneratePerDayTimeList()
     {
@@ -369,11 +362,18 @@ namespace QLN.ContentBO.WebUI.Pages
                 uploadedImage = $"data:{file.ContentType};base64,{base64}";
             }
         }
-        protected void EditImage()
+
+        protected async void EditImage()
+        {
+            await _fileUpload.OpenFilePickerAsync();
+        }
+
+        protected void RemoveImage()
         {
             CurrentEvent.CoverImage = null;
+            _fileUpload?.ResetValidation();
         }
- 
+
         protected void DeleteImage()
         {
             uploadedImage = null;
