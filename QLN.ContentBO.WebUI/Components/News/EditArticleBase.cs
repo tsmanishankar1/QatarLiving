@@ -37,7 +37,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory CategoryTwo { get; set; } = new();
         protected List<NewsSubCategory> FilteredSubCategories = [];
         protected List<NewsSubCategory> FilteredSubCategoriesTwo = [];
-
+        protected MudFileUpload<IBrowserFile> _fileUpload;
         protected override async Task OnInitializedAsync()
         {
             try
@@ -312,9 +312,15 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
+        protected async void EditImage()
+        {
+            await _fileUpload.OpenFilePickerAsync();
+        }
+
         protected void RemoveImage()
         {
             article.CoverImageUrl = null;
+            _fileUpload?.ResetValidation();
         }
 
         private async Task LoadArticle()
