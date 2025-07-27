@@ -476,6 +476,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyserviceid/{id:guid}", async Task<Results<
+                Ok<GetWithSimilarResponse<ServicesDto>>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>> (
+
+                Guid id,
+                [FromServices] ISearchService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.GetByIdWithSimilarAsync<ServicesDto>(
+                        "services",
+                        id.ToString(),
+                        10
+                    );
+
+                    if (result == null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Service Ad Not Found",
+                            Detail = $"No service ad found with ID: {id}",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Service Ad Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .AllowAnonymous()
+            .WithName("GetDetailedServiceAdById")
+            .WithTags("Service")
+            .WithSummary("Get a service ad by ID")
+            .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
+            .Produces<GetWithSimilarResponse<ServicesDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapServiceAdDeleteEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/delete", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Routing;
+using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapFeatureEndpoint()
                  .MapRefreshEndpoint()
                  .MapPublishEndpoint()
+                 .MapDetailedGetByIdEndpoint()
                  .MapBulkActionsEndpoint();
             return group;
         }
