@@ -106,10 +106,10 @@
 
             <!-- Right Column -->
             <MudItem xs="12" md="5">
-                <MudText Class="mb-4 title-style">Images</MudText>
+                <MudText Class="mb-4 title-style">Image</MudText>
 
                 <!-- Cover Image Upload -->
-                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
+                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
                     <ActivatorContent>
                         <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
                             @if (!string.IsNullOrEmpty(article.CoverImageUrl))
@@ -134,13 +134,9 @@
                 {
                     <MudPaper Elevation="0" Class="image-picker-style">
                         <div class="upload-action-style">
-                            <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
-                                <ActivatorContent>
-                                    <MudButton>
-                                        <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
-                                    </MudButton>
-                                </ActivatorContent>
-                            </MudFileUpload>
+                            <MudButton OnClick="EditImage">
+                                <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
+                            </MudButton>
                             <MudButton OnClick="RemoveImage">
                                 <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
                             </MudButton>
