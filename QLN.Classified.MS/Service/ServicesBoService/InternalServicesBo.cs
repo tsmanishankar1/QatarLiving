@@ -2,6 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
+using static QLN.Subscriptions.Actor.ActorClass.PaymentTransactionActor;
 using static QLN.Subscriptions.Actor.ActorClass.PayToPublishPaymentActor;
 
 namespace QLN.Classified.MS.Service.ServicesBoService
@@ -78,13 +79,13 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         DatePublished = serviceAd.PublishedDate,
                         DateExpiry = serviceAd.ExpiryDate,
                         ImageUpload = serviceAd.PhotoUpload,
-                        PaymentTransactionId = matchingPayment?.PaymentTransactionId
+                        OrderId = "103"//matchingPayment?.PaymentTransactionId  
                     };
 
                     serviceAds.Add(summary);
                 }
 
-                // Apply Filters
+              
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var lowerSearch = search.ToLowerInvariant();
@@ -139,6 +140,213 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     .ToList();
 
                 return new PaginatedResult<ServiceAdSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Items = pagedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all service ads");
+                throw new Exception("Error retrieving service ads", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<ServiceAdPaymentSummaryDto>> GetAllServiceAdPaymentSummaries(
+     int? pageNumber = 1,
+     int? pageSize = 12,
+     string? search = null,
+     string? sortBy = null, 
+     CancellationToken cancellationToken = default)
+        {
+            var result = new List<ServiceAdPaymentSummaryDto>();
+
+            var keys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.ServicesIndexKey,
+                cancellationToken: cancellationToken) ?? new();
+
+            var paymentDetails = await _dapr.GetStateAsync<UserPaymentDetailsCollection>(
+                StoreName,
+                GlobalPaymentDetailsKey,
+                cancellationToken: cancellationToken) ?? new();
+
+            var matchedAds = new List<ServiceAdPaymentSummaryDto>();
+
+            foreach (var key in keys)
+            {
+                var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    cancellationToken: cancellationToken);
+
+                if (serviceAd == null) continue;
+
+                var matchingPayment = paymentDetails.Details.FirstOrDefault(p =>
+                    p.UserId == serviceAd.CreatedBy && p.PaymentTransactionId == serviceAd.Id);
+
+                var defaultDate = new DateTime(2025, 4, 12);
+
+                var dto = new ServiceAdPaymentSummaryDto
+                {
+                    AddId = serviceAd.Id,
+                    AddTitle = serviceAd.Title,
+                    UserName = serviceAd.UserName,
+                    EmailAddress = serviceAd.EmailAddress,
+                    Mobile = serviceAd.PhoneNumber,
+                    WhatsappNumber = serviceAd.WhatsappNumber,
+                    StartDate = (matchingPayment == null || matchingPayment.StartDate == DateTime.MinValue)
+                        ? defaultDate
+                        : matchingPayment.StartDate,
+                    EndDate = (matchingPayment == null || matchingPayment.EndDate == DateTime.MinValue)
+                        ? defaultDate
+                        : matchingPayment.EndDate,
+                    Status = serviceAd.Status,
+                    OrderId = "102",//matchingPayment?.PaymentTransactionId"
+                    Amount =  100,// matchingPayment?.Price
+                    SubscriptionPlan = "2 Months"
+                    //(matchingPayment != null &&
+                    //            matchingPayment.StartDate != DateTime.MinValue &&
+                    //            matchingPayment.EndDate != DateTime.MinValue)
+                    //    ? $"{(matchingPayment.EndDate - matchingPayment.StartDate).TotalDays} days"
+                    //    : "0 days"
+                };
+
+                if (string.IsNullOrWhiteSpace(search) ||
+                    dto.AddTitle?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                    dto.AddId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                    dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    matchedAds.Add(dto);
+                }
+            }
+
+           
+            matchedAds = sortBy?.ToLower() switch
+            {
+                "startdate" => matchedAds.OrderBy(x => x.StartDate).ToList(),
+                "enddate" => matchedAds.OrderBy(x => x.EndDate).ToList(),
+                _ => matchedAds.OrderByDescending(x => x.StartDate).ToList() 
+            };
+
+           
+            var totalCount = matchedAds.Count;
+            int currentPage = pageNumber ?? 1;
+            int currentSize = pageSize ?? 12;
+
+            var paginatedItems = matchedAds
+                .Skip((currentPage - 1) * currentSize)
+                .Take(currentSize)
+                .ToList();
+
+            return new PaginatedResult<ServiceAdPaymentSummaryDto>
+            {
+                TotalCount = totalCount,
+                PageNumber = currentPage,
+                PageSize = currentSize,
+                Items = paginatedItems
+            };
+        }
+        public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
+       string? sortBy = "CreationDate",
+       string? search = null,
+       DateTime? fromDate = null,
+       DateTime? toDate = null,
+       int pageNumber = 1,
+       int pageSize = 12,
+       CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.Services.StoreName,
+                    ConstantValues.Services.ServicesIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                var paymentDetails = await _dapr.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                    StoreName,
+                    GlobalPaymentDetailsKey,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                var serviceAds = new List<ServiceP2PAdSummaryDto>();
+
+                foreach (var key in keys)
+                {
+                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                        ConstantValues.Services.StoreName,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (serviceAd == null) continue;
+
+                    var matchingPayment = paymentDetails.Details.FirstOrDefault(x =>
+                        x.UserId == serviceAd.CreatedBy && x.AddId == serviceAd.Id);
+
+                    var summary = new ServiceP2PAdSummaryDto
+                    {
+                        Id = serviceAd.Id,
+                        AdTitle = serviceAd.Title,
+                        ProductType= "2 Months",
+                        Email=serviceAd.EmailAddress,
+                        Mobile=serviceAd.PhoneNumber,
+                        Whatsapp=serviceAd.WhatsappNumber,
+                        Amount = "200",
+                        UserName = serviceAd.UserName,
+                        Status = serviceAd.Status,
+                        CreationDate = serviceAd.CreatedAt,
+                        DatePublished = serviceAd.PublishedDate,
+                        StartDate= "25/04/2025",
+                        EndDate = "25/04/2025",
+                        Views = "02/10/2025",
+                        OrderId = "103"//matchingPayment?.PaymentTransactionId  
+                    };
+
+                    serviceAds.Add(summary);
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var lowerSearch = search.ToLowerInvariant();
+                    serviceAds = serviceAds.Where(ad =>
+                        (!string.IsNullOrEmpty(ad.AdTitle) && ad.AdTitle.ToLowerInvariant().Contains(lowerSearch)) ||
+                        (ad.Id.ToString().ToLowerInvariant().Contains(lowerSearch)) ||
+                       
+                        (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLowerInvariant().Contains(lowerSearch))
+                    ).ToList();
+                }
+
+                if (fromDate.HasValue)
+                    serviceAds = serviceAds.Where(ad => ad.CreationDate >= fromDate.Value).ToList();
+
+                if (toDate.HasValue)
+                    serviceAds = serviceAds.Where(ad => ad.CreationDate <= toDate.Value).ToList();
+
+               
+
+                // Sort
+                sortBy = sortBy?.ToLowerInvariant();
+                serviceAds = sortBy switch
+                {
+                    "title" => serviceAds.OrderByDescending(x => x.AdTitle).ToList(),
+                    "username" => serviceAds.OrderByDescending(x => x.UserName).ToList(),
+                    "status" => serviceAds.OrderByDescending(x => x.Status).ToList(),
+                    "published" => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
+                    _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
+                };
+
+                // Pagination
+                int totalCount = serviceAds.Count;
+                var pagedItems = serviceAds
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PaginatedResult<ServiceP2PAdSummaryDto>
                 {
                     TotalCount = totalCount,
                     PageNumber = pageNumber,

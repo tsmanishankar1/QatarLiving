@@ -12,7 +12,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 
         public static RouteGroupBuilder MapAllServiceBoConfiguration(this RouteGroupBuilder group)
         {
-            group.MapServiceAdGetAllEndpoints();
+            group.MapServiceAdGetAllEndpoints()
+                .MapServiceAdPaymentSummaryEndpoints()
+                .MapServiceP2PAdGetAllEndpoints();
                 return group;
         }
     }
