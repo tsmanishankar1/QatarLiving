@@ -17,4 +17,20 @@ namespace QLN.Common.DTO_s
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 50;
     }
+    public enum SearchType
+    {
+        AdId,
+        OrderId,
+        Username,
+        Email,
+        PhoneNumber,
+        General
+    }
+
+    public class SearchDetectionResult
+    {
+        public SearchType Type { get; set; }
+        public string SearchTerm { get; set; }
+        public string Filter { get; set; }
+    }
 }

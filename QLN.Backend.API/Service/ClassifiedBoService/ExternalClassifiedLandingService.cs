@@ -284,10 +284,10 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     dto,
                     cancellationToken
                 );
-               
+
 
                 return response ?? "Seasonal pick created.";
-            }           
+            }
             catch (Exception ex)
             {
                 foreach (var key in uploadedBlobKeys)
@@ -356,7 +356,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot number must be between 1 and 6.");
 
             try
-            {                
+            {
 
                 var response = await _dapr.InvokeMethodAsync<ReplaceSeasonalPickSlotRequest, string>(
                     HttpMethod.Put,
@@ -547,7 +547,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot number must be between 1 and 6.");
 
             try
-            {                
+            {
 
                 var response = await _dapr.InvokeMethodAsync<ReplaceFeaturedStoresSlotRequest, string>(
                     HttpMethod.Put,
@@ -639,6 +639,109 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
+        private async Task IndexServiceToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+        {            
+            var indexDoc = new ClassifiedsItemsIndex
+            {
+                Id = dto.Id.ToString(),
+                SubVertical = dto.SubVertical,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                Category = dto.Category,
+                L1Category = dto.L1Category,
+                L2Category = dto.L2Category,
+                Price = (double)dto.Price,
+                PriceType = dto.PriceType,
+                Location = dto.Location,
+                Longitude = (double)dto.Longitude,
+                Lattitude = (double)dto.Latitude,
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                RefreshExpiryDate = dto.RefreshExpiryDate,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                UserName = dto.UserName,
+                AttributesJson = dto.Attributes != null ? JsonSerializer.Serialize(dto.Attributes) : null,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    AdImageFileNames = i.AdImageFileNames,
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                ClassifiedsItem = indexDoc
+            };
 
+            try
+            {
+                await _searchService.UploadAsync(indexRequest);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
+                throw;
+            }
+        }
+
+        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "api/v2/classifiedbo/bulk-action-userid";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                var moderatedAds = JsonSerializer.Deserialize<List<ClassifiedsItems>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                if (moderatedAds != null && moderatedAds.Any())
+                {
+                    foreach (var dto in moderatedAds)
+                    {
+                        await IndexServiceToAzureSearch(dto, cancellationToken);
+                    }
+                }
+                return moderatedAds ?? new List<ClassifiedsItems>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error moderating bulk services");
+                throw;
+            }
+
+        }
     }
 }
