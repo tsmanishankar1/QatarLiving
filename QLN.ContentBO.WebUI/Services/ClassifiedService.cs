@@ -96,7 +96,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Put,
+                var request = new HttpRequestMessage(HttpMethod.Delete,
                     $"/api/v2/classifiedbo/seasonal-picks/soft-delete?pickId={pickId}&Vertical={vertical}");
 
                 return await _httpClient.SendAsync(request);
@@ -107,5 +107,34 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string userId, string vertical)
+        {
+            try
+            {
+                var payload = new
+                {
+                    slotAssignments = slotAssignments,
+                    userId = userId,
+                    vertical = vertical
+                };
+
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
+
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ReorderSeasonalPicksAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
     }
 }

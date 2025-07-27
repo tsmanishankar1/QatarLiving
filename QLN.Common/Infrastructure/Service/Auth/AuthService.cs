@@ -18,6 +18,7 @@ using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 

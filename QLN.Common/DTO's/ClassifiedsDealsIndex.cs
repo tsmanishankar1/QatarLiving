@@ -9,23 +9,29 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsDealsIndex
     {
-        [SimpleField(IsKey = true, IsFilterable = true)]
+        [SimpleField(IsKey = true)]
         public string Id { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string Subvertical { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string UserId { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? BusinessName { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField]
         public string? BranchNames { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
-        public string? BusinessType { get; set; } 
-
         [SearchableField(IsFilterable = true)]
-        public string? DealTitle { get; set; }
+        public string? BusinessType { get; set; }
 
-        [SearchableField(IsFilterable = true)]
-        public string? DealDescription { get; set; }
+        [SearchableField]
+        public string Title { get; set; }
+
+        [SearchableField]
+        public string Description { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? StartDate { get; set; }
@@ -33,37 +39,49 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? EndDate { get; set; }
 
-        [SimpleField(IsFilterable = true)]
-        public string? FileUrl { get; set; }
+        [SearchableField(IsFilterable = false)]
+        public string? FlyerFileUrl { get; set; }
 
-        [SimpleField(IsFilterable = true)]
-        public string? DataFeedUrl { get; set; } 
+        [SearchableField(IsFilterable = false)]
+        public string? DataFeedUrl { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField]
         public string? ContactNumber { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField]
         public string? WhatsappNumber { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField]
         public string? WebsiteUrl { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SearchableField]
         public string? SocialMediaLinks { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string CreatedBy { get; set; } = string.Empty;
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime CreatedAt { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? UpdatedBy { get; set; }
-
-        [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? UpdatedAt { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public bool IsActive { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string CreatedBy { get; set; }
+
+        [SimpleField(IsSortable = true)]
+        public DateTime CreatedAt { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public string? UpdatedBy { get; set; }
+
+        [SimpleField(IsSortable = true)]
+        public DateTime? UpdatedAt { get; set; }
+
+        [SearchableField(IsFilterable = false)]
+        public string XMLlink { get; set; }
+
+        [SearchableField]
+        public string? offertitle { get; set; }
+
+        [SearchableField]
+        public string ImageUrl { get; set; }
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? ExpiryDate { get; set; }
     }
 }

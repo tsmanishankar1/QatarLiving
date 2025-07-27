@@ -106,10 +106,12 @@
             </div>
         </MudPopover>
     </div>
-    <MudSelect T="string" Label="Section" Variant="Variant.Outlined" Class="form-field disabled-field" Disabled="true"></MudSelect>
     <!-- More Filters Popover Trigger -->
-    <div class="report-date-input @(showFilterPopover ? "active-report" : "")" @onclick="ToggleFilterPopover">
-        <span class="report-date-placeholder">More Filters</span>
+    <div class="report-date-input @(showFilterPopover ? "active-report" : "") @(AvailableFields.Any() ? "" : "disabled-filter")"
+     @onclick="@(AvailableFields.Any() ? ToggleFilterPopover : null)">
+        <span class="report-date-placeholder">
+            @(SelectedFilterCount > 0 ? $"{SelectedFilterCount} Filter{(SelectedFilterCount > 1 ? "s" : "")} Selected" : "More Filters")
+        </span>
     <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Class="@FilterIconClass" />
     <MudPopover Open="@showFilterPopover"
                 AnchorOrigin="Origin.BottomCenter"
@@ -125,10 +127,62 @@
                 <!-- Filter content like in the image -->
                 <div class="filter-scroll-area">
                     <!-- Example Sections -->
-                  
-                    <!-- Add other sections (Model, Capacity, etc.) here -->
-                </div>
+                    @foreach (var field in AvailableFields)
+                    {
 
+                        <div class="filter-section">
+                            <label class="section-label">@field.Name</label>
+
+                            @if (field.Name == "Model")
+                            {
+                                <div class="model-filter-wrapper">
+                                    <input placeholder="Search"
+                                            class="model-search"
+                                            @bind="ModelSearchTerm"
+                                            @bind:event="oninput" />
+
+                                    <div class="model-list-scroll">
+                                        <div class="model-subheading">All</div>
+
+                                    @foreach (var option in GetFilteredModels(field))
+
+                                        {
+                                            // Add condition to segment if needed (e.g. POPULAR vs All)
+
+                                            <div class="checkbox-item model-item">
+                                                <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                                            Color="Color.Primary"
+                                                            UncheckedColor="Color.Default"
+                                                            Class="mb-1" />
+                                                <span class="option-text">@option</span>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="option-grid">
+                                    @foreach (var option in field.Options)
+                                    {
+                                        <div class="checkbox-item">
+                                            <MudCheckBox @bind-Value="SelectedOptions[field.Name][option]"
+                                                        Color="Color.Primary"
+                                                        UncheckedColor="Color.Default"
+                                                        Class="mb-1" />
+                                            @if (field.Name == "Colour")
+                                            {
+                                                <span class="color-dot" style="background-color:@option.ToLower();"></span>
+                                            }
+                                            <span class="option-text">@option</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    </div>
                 <!-- Footer Buttons -->
                 <div class="filter-footer">
                     <MudButton Variant="Variant.Text" OnClick="CancelFilters" Class="popover-button">Cancel</MudButton>
@@ -139,7 +193,7 @@
 
      </div>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"  Class="download-btn" FullWidth="true">
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"  Class="download-btn" ButtonType="ButtonType.Submit" FullWidth="true">
         <img src="/qln-images/upload_white_icon.svg" class="image-upload" width="20" height="20" />
         Download Report
     </MudButton>
@@ -209,7 +263,7 @@
         margin-top: 20px;
     }
     .report-date-input {
-      display: flex;
+        display: flex;
         align-items: center;
         flex-direction: row;
         justify-content: space-between;  
@@ -224,7 +278,16 @@
         gap: 0;               
         box-sizing: border-box;
         transition: border-color 0.3s;
+        margin-top: 6px;
     }
+
+    .report-date-input.disabled-filter {
+        background-color: #F2F4F7;
+        cursor: not-allowed;
+        pointer-events: none; /* Prevents clicking */
+        color: #999;
+    }
+
 
     .report-date-input.active-report {
         border-color: var(--color-accent) !important;
@@ -313,5 +376,79 @@
         font-size: 18px;
         font-weight: 600;
     }
+    .model-filter-wrapper {
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 10px;
+    }
+
+.model-search {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.model-subheading {
+    font-size: 12px;
+    font-weight: 600;
+    color: #999;
+    padding: 4px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.model-list-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.model-item {
+    margin-bottom: 4px;
+}
+
+    .filter-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-label {
+    font-weight: 500;
+    margin-bottom: 3px;
+    font-size: 14px;
+    color: var(--color-accent);
+    display: block;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem 1rem;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+}
+.option-text{
+    color: var(--color-text-heading);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 26px;
+    letter-spacing: 0;
+}
+.color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 6px;
+    border: 1px solid #ccc;
+}
 
 </style>

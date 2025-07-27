@@ -86,15 +86,12 @@ namespace QLN.SearchService
                 var modelType = ResolveModelType(vertical);
                 var fields = new FieldBuilder().Build(modelType);
 
-                // ✅ Configure AttributesJson field properly (no ParsingMode)
                 var attributesField = fields.FirstOrDefault(f => f.Name == "AttributesJson");
                 if (attributesField != null)
                 {
-                    // Just make it searchable - no parsing mode needed
                     _logger.LogInformation("Found AttributesJson field, configured for search");
                 }
 
-                // ✅ Add vector field if needed
                 var vectorField = new SearchField("ContentVector", SearchFieldDataType.Collection(SearchFieldDataType.Single))
                 {
                     IsSearchable = true,

@@ -20,8 +20,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                .MapdeleteSubscription()
                .MapGetUserPaymentDetailsEndpoint();
 
-
-
             return group;
         }
     }

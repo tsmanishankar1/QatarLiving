@@ -13,19 +13,19 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime FeaturedExpiryDate { get; set; }
+        public DateTime? FeaturedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPromoted { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime PromotedExpiryDate { get; set; }
+        public DateTime? PromotedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime RefreshExpiryDate { get; set; }
+        public DateTime? RefreshExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public bool? HasAuthenticityCertificate { get; set; }

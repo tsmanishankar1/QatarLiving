@@ -57,7 +57,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
             {
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(request.QuantitiesName))
+                    if (request.Quantity <=0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -115,7 +115,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint
             {
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(request.CurrencyName))
+                    if (request.CurrencyValue <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
