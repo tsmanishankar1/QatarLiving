@@ -2,8 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
-using static QLN.Subscriptions.Actor.ActorClass.PaymentTransactionActor;
-using static QLN.Subscriptions.Actor.ActorClass.PayToPublishPaymentActor;
+
 
 namespace QLN.Classified.MS.Service.ServicesBoService
 {
@@ -44,11 +43,11 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     cancellationToken: cancellationToken
                 ) ?? new();
 
-                var paymentDetails = await _dapr.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
-                    StoreName,
-                    GlobalPaymentDetailsKey,
-                    cancellationToken: cancellationToken
-                ) ?? new();
+                //var paymentDetails = await _dapr.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                //    StoreName,
+                //    GlobalPaymentDetailsKey,
+                //    cancellationToken: cancellationToken
+                //) ?? new();
 
                 var serviceAds = new List<ServiceAdSummaryDto>();
 
@@ -61,8 +60,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                     if (serviceAd == null) continue;
 
-                    var matchingPayment = paymentDetails.Details.FirstOrDefault(x =>
-                        x.UserId == serviceAd.CreatedBy && x.AddId == serviceAd.Id);
+                    //var matchingPayment = paymentDetails.Details.FirstOrDefault(x =>
+                    //    x.UserId == serviceAd.CreatedBy && x.AddId == serviceAd.Id);
 
                     var summary = new ServiceAdSummaryDto
                     {
@@ -168,10 +167,10 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 ConstantValues.Services.ServicesIndexKey,
                 cancellationToken: cancellationToken) ?? new();
 
-            var paymentDetails = await _dapr.GetStateAsync<UserPaymentDetailsCollection>(
-                StoreName,
-                GlobalPaymentDetailsKey,
-                cancellationToken: cancellationToken) ?? new();
+            //var paymentDetails = await _dapr.GetStateAsync<UserPaymentDetailsCollection>(
+            //    StoreName,
+            //    GlobalPaymentDetailsKey,
+            //    cancellationToken: cancellationToken) ?? new();
 
             var matchedAds = new List<ServiceAdPaymentSummaryDto>();
 
@@ -184,8 +183,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 if (serviceAd == null) continue;
 
-                var matchingPayment = paymentDetails.Details.FirstOrDefault(p =>
-                    p.UserId == serviceAd.CreatedBy && p.PaymentTransactionId == serviceAd.Id);
+                //var matchingPayment = paymentDetails.Details.FirstOrDefault(p =>
+                //    p.UserId == serviceAd.CreatedBy && p.PaymentTransactionId == serviceAd.Id);
 
                 var defaultDate = new DateTime(2025, 4, 12);
 
@@ -197,12 +196,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     EmailAddress = serviceAd.EmailAddress,
                     Mobile = serviceAd.PhoneNumber,
                     WhatsappNumber = serviceAd.WhatsappNumber,
-                    StartDate = (matchingPayment == null || matchingPayment.StartDate == DateTime.MinValue)
-                        ? defaultDate
-                        : matchingPayment.StartDate,
-                    EndDate = (matchingPayment == null || matchingPayment.EndDate == DateTime.MinValue)
-                        ? defaultDate
-                        : matchingPayment.EndDate,
+                    StartDate = "25/04/2025",
+                    EndDate = "25/04/2025",
                     Status = serviceAd.Status,
                     OrderId = "102",//matchingPayment?.PaymentTransactionId"
                     Amount =  100,// matchingPayment?.Price
@@ -266,11 +261,11 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     cancellationToken: cancellationToken
                 ) ?? new();
 
-                var paymentDetails = await _dapr.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
-                    StoreName,
-                    GlobalPaymentDetailsKey,
-                    cancellationToken: cancellationToken
-                ) ?? new();
+                //var paymentDetails = await _dapr.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                //    StoreName,
+                //    GlobalPaymentDetailsKey,
+                //    cancellationToken: cancellationToken
+                //) ?? new();
 
                 var serviceAds = new List<ServiceP2PAdSummaryDto>();
 
@@ -283,8 +278,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                     if (serviceAd == null) continue;
 
-                    var matchingPayment = paymentDetails.Details.FirstOrDefault(x =>
-                        x.UserId == serviceAd.CreatedBy && x.AddId == serviceAd.Id);
+                    //var matchingPayment = paymentDetails.Details.FirstOrDefault(x =>
+                    //    x.UserId == serviceAd.CreatedBy && x.AddId == serviceAd.Id);
 
                     var summary = new ServiceP2PAdSummaryDto
                     {

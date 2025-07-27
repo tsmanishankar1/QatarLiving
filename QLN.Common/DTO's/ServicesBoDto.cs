@@ -48,8 +48,8 @@ namespace QLN.Common.DTO_s
         public string? Mobile{ get;set; }
         public string? SubscriptionPlan { get; set; }
         public string? WhatsappNumber { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public string? StartDate { get; set; }
+        public string? EndDate { get; set; }
         public ServiceStatus? Status { get; set; }
         public string? OrderId { get; set; }
         public decimal? Amount { get; set; }
