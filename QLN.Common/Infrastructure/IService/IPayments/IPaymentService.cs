@@ -10,7 +10,7 @@ namespace QLN.Common.Infrastructure.IService.IPayments
     public interface IPaymentService
     {
         // pay
-        Task<FaturaPaymentResponse> PayAsync(FaturaPaymentRequest request, CancellationToken cancellationToken = default);
+        Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default);
 
         // success
 

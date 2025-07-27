@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s.Payments
 {
-    public class FaturaPaymentRequest
+    public class ExternalPaymentRequest
     {
         /// <summary>
         /// Ad Id against which the payment has to be done
@@ -62,6 +62,6 @@ namespace QLN.Common.DTO_s.Payments
         /// <summary>
         /// Order Id
         /// </summary>
-        public long? OrderId { get; set; }
+        public int? OrderId { get; set; }
     }
 }

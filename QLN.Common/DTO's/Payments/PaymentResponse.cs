@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s.Payments
 {
-    public class FaturaPaymentResponse
+    public class PaymentResponse
     {
         [JsonPropertyName("status")]
         public string? Status { get; set; }
@@ -34,5 +34,8 @@ namespace QLN.Common.DTO_s.Payments
 
         [JsonPropertyName("description")]
         public string? Description { get; set; }
+
+        [JsonPropertyName("message")]
+        public string? Message { get; set; }
     }
 }

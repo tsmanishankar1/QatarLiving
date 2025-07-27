@@ -20,7 +20,7 @@ public static class FaturaEndpoint
         group.MapPost("/", async Task<IResult> (
             [FromServices] IPaymentService service,
             [FromHeader] string? Platform,
-            [FromBody] FaturaPaymentRequest request,
+            [FromBody] ExternalPaymentRequest request,
             CancellationToken cancellationToken) =>
         {
             try
@@ -46,7 +46,7 @@ public static class FaturaEndpoint
         })
             .WithName("FaturaPayment")
             .WithTags("Payment")
-            .Produces<FaturaPaymentResponse>(StatusCodes.Status201Created)
+            .Produces<PaymentResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Process Fatura Payment")

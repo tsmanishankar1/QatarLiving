@@ -236,6 +236,7 @@ builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.PaymentsConfiguration(builder.Configuration);
 
 builder.Services.ServicesBo(builder.Configuration);
 var app = builder.Build();
@@ -271,7 +272,7 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
-var paymentGroup = app.MapGroup("/pay");
+var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
