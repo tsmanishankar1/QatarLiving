@@ -126,6 +126,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string DailyTopicIndexKey = "daily-topic-index";
             public const string BannerTypeIndexKey = "banner-type-index";
             public const string BannerIndexKey = "banner-index";
+
         }
         
         public static class V2ClassifiedBo
