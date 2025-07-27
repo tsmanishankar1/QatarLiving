@@ -77,7 +77,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                IClassifiedBoLandingService service,
                CancellationToken token) =>
             {
-                if (string.IsNullOrWhiteSpace(dto.Category))
+                if (string.IsNullOrWhiteSpace(dto.CategoryName))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {

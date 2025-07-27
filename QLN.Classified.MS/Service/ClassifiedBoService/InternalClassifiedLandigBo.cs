@@ -49,6 +49,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     L2categoryId = dto.L2categoryId,
                     L2categoryName = dto.L2categoryName,
                     StartDate = dto.StartDate,
+                    SlotOrder = 0,
                     EndDate = dto.EndDate,
                     ImageUrl = dto.ImageUrl,
                     CreatedAt = DateTime.UtcNow,
@@ -409,6 +410,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     StoreName = dto.StoreName,
                     ImageUrl = dto.ImageUrl,
                     StartDate = dto.StartDate,
+                    SlotOrder = 0,
                     EndDate = dto.EndDate,
                     IsActive = true,
                     UserId = userId,
@@ -764,11 +766,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     Id = Guid.NewGuid(),
                     Vertical = dto.Vertical,
-                    Category = dto.Category,
+                    CategoryName = dto.CategoryName,
                     CategoryId = dto.CategoryId,
                     StartDate = dto.StartDate,
                     EndDate = dto.EndDate,
                     ImageUrl = dto.ImageUrl,
+                    SlotOrder = 0,
                     IsActive = true,
                     UserId = userId,
                     UserName = userName,
@@ -776,7 +779,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.Category, userId, categories.Id);
+                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.CategoryName, userId, categories.Id);
 
                 // Determine index key by vertical
                 string indexKey = dto.Vertical?.ToLower() switch
@@ -795,13 +798,13 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingItems.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.Category.Equals(dto.Category, StringComparison.OrdinalIgnoreCase) &&
+                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null && p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.Category}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category '{dto.CategoryName}' already exists and is still active for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new InvalidOperationException(message);
                 }
@@ -816,18 +819,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, categories.Id);
                 }
 
-                var result = $"Landing bo '{dto.Category}' created successfully.";
+                var result = $"Landing bo '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed landing bo creation: {Message}", result);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.Category, userId);
+                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw;
             }
         }
-
+        
         public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
@@ -877,7 +880,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation($"Successfully deleted FeaturedCategory. FeaturedCategoryId: {categoryId}", categoryId);
 
-                return $"FeaturedCategory '{featuredCategory.Category}' has been deleted.";
+                return $"FeaturedCategory '{featuredCategory.CategoryName}' has been deleted.";
             }
             catch (Exception ex)
             {
@@ -1091,7 +1094,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 await _dapr.SaveStateAsync(StoreName, newItem.Id.ToString(), newItem);
 
-                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.Category}'.";
+                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.CategoryName}'.";
             }
             catch (Exception ex)
             {
