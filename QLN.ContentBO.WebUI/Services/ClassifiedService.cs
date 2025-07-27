@@ -139,7 +139,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetFeaturedCategoriesByVerticalAsync?vertical={vertical}");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getslottedfeaturedcategory?vertical={vertical}");
             }
             catch (Exception ex)
             {
@@ -151,7 +151,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/GetSlottedFeaturedCategory?vertical={vertical}");
+                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical/{vertical}");
             }
             catch (Exception ex)
             {
@@ -163,8 +163,17 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var json = JsonSerializer.Serialize(payload);
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/CreateFeaturedCategory")
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true 
+                };
+
+                var json = JsonSerializer.Serialize(payload, options);
+
+                Console.WriteLine("Serialized Payload:");
+                Console.WriteLine(json);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/createfeaturedcategory")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -185,9 +194,9 @@ namespace QLN.ContentBO.WebUI.Services
             {
                 var body = new
                 {
-                    PickId = pickId,
-                    Slot = slot,
-                    Vertical = vertical
+                    categoryId = pickId,
+                    targetSlotId = slot,
+                    vertical = vertical
                 };
 
                 var content = new StringContent(

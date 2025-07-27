@@ -25,6 +25,7 @@ public class LandingPageBase : QLComponentBase
     public IClassifiedService ClassifiedService { get; set; }
 
     private List<SeasonalPickDto> _seasonalPicks = new();
+    private List<SeasonalPickDto> _featuredCategory = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,6 +40,7 @@ public class LandingPageBase : QLComponentBase
 
             await LoadDataForCurrentTab();
             await LoadAllSeasonalPicks();
+            await LoadAllFeaturedCategory();
 
         }
         catch (Exception ex)
@@ -263,6 +265,24 @@ public class LandingPageBase : QLComponentBase
             Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
         }
     }
+
+    private async Task LoadAllFeaturedCategory()
+    {
+        var response = await ClassifiedService.GetAllFeatureCategory("classifieds");
+
+        if (response?.IsSuccessStatusCode == true)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            _featuredCategory = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new List<SeasonalPickDto>();
+        }
+        else
+        {
+            Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
+        }
+    }
     protected async Task SearchItems()
     {
         try
@@ -316,8 +336,16 @@ public class LandingPageBase : QLComponentBase
         {
             CloseOnEscapeKey = true
         };
-        return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
-
+        //return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        if (currentItemType == LandingPageItemType.FeaturedCategory)
+        {
+            return DialogService.ShowAsync<AddFeaturedCategoryModal>("", parameters, options);
+        }
+        else 
+        {
+            return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        }
+        
     }
 
     protected async Task ReplaceItem(LandingPageItem item)
@@ -329,12 +357,18 @@ public class LandingPageBase : QLComponentBase
             2 => "Replace Featured Store",
             _ => "Replace Item"
         };
-
+        var data  = activeIndex switch
+        {
+            0 => _featuredCategory,
+            1 => _seasonalPicks,
+            2 => _seasonalPicks,
+            _ => _seasonalPicks
+        };
         var parameters = new DialogParameters
     {
         { nameof(MessageBoxBase.Title), title },
         { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
-        { nameof(ReplaceDialogModal.events), _seasonalPicks },
+        { nameof(ReplaceDialogModal.events), data },
         { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
     };
 
