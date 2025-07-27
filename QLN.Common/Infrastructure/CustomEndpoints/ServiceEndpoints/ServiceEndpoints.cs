@@ -219,6 +219,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     dto.Id = id;
                     dto.CreatedBy = uid;
                     dto.CreatedAt = DateTime.UtcNow;
+                    dto.UpdatedBy = null;
+                    dto.UpdatedAt = null;
+                    dto.RefreshExpiryDate = null;
+                    dto.PromotedExpiryDate = null;
+                    dto.FeaturedExpiryDate = null;
+                    dto.PublishedDate = null;
+                    dto.ExpiryDate = null;
+                    dto.IsFeatured = false;
+                    dto.IsPromoted = false;
+                    dto.IsRefreshed = false;
                     dto.UserName = userName;
                     var result = await service.CreateServiceAd(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -745,6 +755,46 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ServicesDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapPublishEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/publish", async Task<IResult> (
+                [FromQuery] Guid id, 
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.PublishService(id, cancellationToken);
+                    if (result == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found.",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .AllowAnonymous()
+            .WithName("PublishService")
+            .WithTags("Service")
+            .WithSummary("Publish a service ad")
+            .WithDescription("Publishes a service ad if it's not already published and follows category rules.")
+            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
         public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)

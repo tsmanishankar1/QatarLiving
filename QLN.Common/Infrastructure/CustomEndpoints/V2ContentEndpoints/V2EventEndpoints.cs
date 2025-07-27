@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Dapr;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -52,6 +53,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.CreateEvent(uid, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -101,6 +111,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.CreateEvent(dto.CreatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -138,6 +157,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var events = await service.GetAllEvents(cancellationToken);
                     return TypedResults.Ok(events ?? new List<V2Events>());
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -164,6 +192,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var events = await service.GetAllIsFeaturedEvents(isFeatured, cancellationToken);
                     return TypedResults.Ok(events ?? new List<V2Events>());
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -201,6 +238,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                             });
                         }
                         return TypedResults.Ok(result);
+                    }
+                    catch (DaprException ex)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Dapr Error",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status500InternalServerError
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -261,6 +307,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                         throw new KeyNotFoundException($"Event with ID not found.");
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (KeyNotFoundException ex)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -290,7 +345,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("UpdateEvent")
@@ -306,6 +366,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             Conflict<ProblemDetails>,
+            NotFound<ProblemDetails>,
             ProblemHttpResult>>
             (
             V2Events dto,
@@ -328,6 +389,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.UpdateEvent(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
                 catch (InvalidOperationException iex)
                 {
                     return TypedResults.Conflict(new ProblemDetails
@@ -339,7 +427,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
             .WithName("UpdateEventByUserId")
@@ -368,6 +461,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     if (success == null)
                         throw new KeyNotFoundException($"Event with ID '{id}' not found.");
                     return TypedResults.Ok(success);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (KeyNotFoundException knf)
                 {
@@ -421,6 +523,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.CreateCategory(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -456,6 +567,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var eventCategories = await service.GetAllCategories(cancellationToken);
                     return TypedResults.Ok(eventCategories ?? new List<EventsCategory>());
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -495,6 +615,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     }
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -533,6 +662,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     }
                     var result = await service.GetPagedEvents(request, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (ArgumentException ex)
                 {
@@ -575,6 +713,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.GetAllEventSlot(cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem($"Unexpected error: {ex.Message}");
@@ -601,6 +748,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var expired = await service.GetExpiredEvents(cancellationToken);
                     return TypedResults.Ok(expired);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -684,6 +840,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -751,6 +916,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     var result = await service.ReorderEventSlotsAsync(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -781,6 +955,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         {
             group.MapGet("/getbystatus", async Task<Results<
                 Ok<List<V2Events>>,
+                ProblemHttpResult,
                 BadRequest<ProblemDetails>>>
             (
                 [FromQuery] EventStatus status,
@@ -792,6 +967,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var events = await service.GetEventsByStatus(status, cancellationToken);
                     return TypedResults.Ok(events);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -817,6 +1001,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
         {
             group.MapGet("/getbyfeaturedstatus", async Task<Results<
                 Ok<List<V2Events>>,
+                ProblemHttpResult,
                 BadRequest<ProblemDetails>>>
             (
                 [FromQuery] EventStatus status,
@@ -828,6 +1013,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var events = await service.GetEventStatus(status, cancellationToken);
                     return TypedResults.Ok(events);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -898,6 +1092,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     await service.UpdateFeaturedEvent(dto, cancellationToken);
                     return TypedResults.Ok("Featured event updated successfully.");
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -950,6 +1153,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                     await service.UpdateFeaturedEvent(dto, cancellationToken);
                     return TypedResults.Ok("Featured event updated successfully.");
                 }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (InvalidDataException ex)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -987,6 +1199,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints
                 {
                     var result = await service.UnfeatureEvent(id, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (DaprException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Dapr Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
                 catch (KeyNotFoundException ex)
                 {
