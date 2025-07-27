@@ -148,24 +148,27 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule == null)
                 throw new ArgumentException("EventSchedule is required.");
 
+            if (schedule.StartDate == default || schedule.EndDate == default)
+                throw new ArgumentException("StartDate and EndDate must be provided.");
+
             switch (schedule.TimeSlotType)
             {
                 case V2EventTimeType.PerDayTime:
                     if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
                         throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
 
-                    if (schedule.StartTime != null || schedule.EndTime != null)
+                    if (schedule.StartTime.HasValue || schedule.EndTime.HasValue)
                         throw new ArgumentException("StartTime and EndTime must be null for 'PerDayTime' events.");
 
-                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be null or empty for 'PerDayTime' events.");
+                    if (!string.IsNullOrWhiteSpace(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTimeText must be null or empty for 'PerDayTime' events.");
                     break;
 
                 case V2EventTimeType.FreeTimeText:
                     if (string.IsNullOrWhiteSpace(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be provided for 'FreeTimeText' events.");
+                        throw new ArgumentException("FreeTimeText must be provided for 'FreeTimeText' events.");
 
-                    if (schedule.StartTime != null || schedule.EndTime != null)
+                    if (schedule.StartTime.HasValue || schedule.EndTime.HasValue)
                         throw new ArgumentException("StartTime and EndTime must be null for 'FreeTimeText' events.");
 
                     if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
@@ -176,17 +179,14 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (schedule.StartDate > schedule.EndDate)
                         throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
 
-                    if (schedule.StartDate == null || schedule.EndDate == null)
-                        throw new ArgumentException("StartDate and EndDate must be provided for scheduled events.");
-
-                    if (schedule.StartTime == null || schedule.EndTime == null)
-                        throw new ArgumentException("StartTime and EndTime must be provided for scheduled events.");
+                    if (!schedule.StartTime.HasValue || !schedule.EndTime.HasValue)
+                        throw new ArgumentException("StartTime and EndTime must be provided for 'GeneralTime' events.");
 
                     if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be empty for non-'PerDayTime' events.");
+                        throw new ArgumentException("TimeSlots must be empty for 'GeneralTime' events.");
 
-                    if (!string.IsNullOrEmpty(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTextTime must be null or empty for 'GeneralTime' events.");
+                    if (!string.IsNullOrWhiteSpace(schedule.FreeTimeText))
+                        throw new ArgumentException("FreeTimeText must be null or empty for 'GeneralTime' events.");
                     break;
 
                 default:
@@ -318,11 +318,30 @@ namespace QLN.Content.MS.Service.EventInternalService
                     cancellationToken: cancellationToken);
 
                 if (existing == null)
-                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");                
+                    throw new KeyNotFoundException($"Event with ID {dto.Id} not found.");
+                var endDate = dto.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue).Date;
 
+                if (endDate < DateTime.UtcNow.Date)
+                {
+                    dto.Status = EventStatus.Expired;
+                    dto.PublishedDate = null;
+                }
+                else
+                {
+                    if (existing.Status == EventStatus.Expired)
+                    {
+                        dto.Status = EventStatus.Published;
+                        dto.PublishedDate = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        dto.Status = dto.Status;
+                        dto.PublishedDate = dto.Status == EventStatus.Published ? DateTime.UtcNow : null;
+                    }
+                }
                 if (existing.Status == EventStatus.Published && dto.Status == EventStatus.UnPublished)
                 {
-                    if(existing.IsFeatured == true)
+                    if (existing.IsFeatured == true)
                     {
                         throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is currently featured.");
                     }
@@ -349,7 +368,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                         throw new InvalidOperationException($"Cannot unpublish event {dto.Id}: It is used in Daily Top Section slot #{usedInTop.SlotNumber}");
                     }
-                    
+
                     var topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
                     foreach (var topicId in topicIds)
                     {
@@ -369,7 +388,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 var slug = GenerateSlug(dto.EventTitle);
-                var shouldUpdatePublishedDate = existing.Status == EventStatus.UnPublished && dto.Status == EventStatus.Published;
 
                 var updated = new V2Events
                 {
@@ -392,7 +410,11 @@ namespace QLN.Content.MS.Service.EventInternalService
                     IsFeatured = false,
                     FeaturedSlot = dto.FeaturedSlot,
                     Status = dto.Status,
-                    PublishedDate = shouldUpdatePublishedDate ? DateTime.UtcNow : existing.PublishedDate,
+                    PublishedDate = dto.Status == EventStatus.UnPublished || dto.Status == EventStatus.Expired
+                    ? null
+                    : dto.Status == EventStatus.Published
+                        ? DateTime.UtcNow
+                        : existing.PublishedDate,
                     IsActive = true,
                     CreatedBy = existing.CreatedBy,
                     CreatedAt = existing.CreatedAt,
@@ -410,6 +432,11 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 return "Event updated successfully";
             }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogError(ex, "Event not found while updating: {EventId}", dto.Id);
+                throw new KeyNotFoundException($"Event with ID '{dto.Id}' not found.", ex);
+            }
             catch (ArgumentException ex)
             {
                 _log.LogError(ex, "Validation error while updating event {EventId}", dto.Id);
@@ -426,8 +453,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 throw new Exception("Error updating events", ex);
             }
         }
-
-
         private async Task<List<Guid>> GetAllDailyTopicIdsAsync(CancellationToken ct)
         {
             try
@@ -667,6 +692,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (ev.EventSchedule.EndDate < today && ev.Status != EventStatus.Expired) 
                     {
                         ev.Status = EventStatus.Expired;
+                        ev.PublishedDate = null;
                         await _dapr.SaveStateAsync<V2Events>(V2Content.ContentStoreName, ev.Id.ToString(), ev, cancellationToken: cancellationToken);
                     }
                 }
