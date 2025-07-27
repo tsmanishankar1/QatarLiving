@@ -124,6 +124,14 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ReportsArticleCommentsIndexKey = "reportarticlecomments-category-index";
             public const string DailyTopBOIndexKey = "daily-top-bo-index";
             public const string DailyTopicIndexKey = "daily-topic-index";
+        }
+        public static class Services
+        {
+            public const string StoreName = "statestore";
+            public const string IndexKey = "service-category-index";
+            public const string ServiceAppId = "qln-classified-ms";
+            public const string ServicesIndexKey = "services-index";
+        }
             public const string BannerTypeIndexKey = "banner-type-index";
             public const string BannerIndexKey = "banner-index";
         }
@@ -142,5 +150,6 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ServicesIndexKey = "services-index";
         }
     }
-}
+
+
 
