@@ -1,3 +1,4 @@
+using QLN.ContentBO.WebUI.Models;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -23,7 +24,6 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical);
         Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical);
         Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string userId, string vertical);
-
-
+        Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
     }
 }

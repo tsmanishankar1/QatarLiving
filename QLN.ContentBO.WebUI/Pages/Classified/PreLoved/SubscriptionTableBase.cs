@@ -12,13 +12,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
     {
         [Inject] public IDialogService DialogService { get; set; }
 
-
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
-        }
-        protected List<SubscriptionListing> Listings { get; set; } = new();
-        protected HashSet<SubscriptionListing> SelectedListings { get; set; } = new();
+        [Parameter]
+        public List<PrelovedListing> Listings { get; set; } = new();
+        //protected override void OnInitialized()
+        //{
+        //    Listings = GetSampleData();
+        //}
+        protected HashSet<PrelovedListing> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected int TotalCount => Listings.Count;
@@ -98,49 +98,49 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-        private List<SubscriptionListing> GetSampleData()
+    //    private List<PrelovedListing> GetSampleData()
+    //    {
+    //        return new List<PrelovedListing>
+    //{
+    //    new PrelovedListing {
+    //        AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus", InternalUserId = 23,
+    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Plus",
+    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
+    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
+    //    },
+    //    new PrelovedListing {
+    //        AdId = 21435, UserId = 21435, AdTitle = "12 Months Super", InternalUserId = 23,
+    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
+    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
+    //    },
+    //    new PrelovedListing {
+    //        AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", InternalUserId = 23,
+    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
+    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
+    //    },
+    //    new PrelovedListing {
+    //        AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", InternalUserId = 23,
+    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
+    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"
+    //    }
+    //};
+    //    }
+
+        protected void OnEdit(PrelovedListing item)
         {
-            return new List<SubscriptionListing>
-    {
-        new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Plus",
-            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
-        },
-        new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
-        },
-        new SubscriptionListing {
-            AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
-        },
-        new SubscriptionListing {
-            AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"
-        }
-    };
+            Console.WriteLine($"Edit clicked: {item.Id}");
         }
 
-        protected void OnEdit(SubscriptionListing item)
+        protected void OnPreview(PrelovedListing item)
         {
-            Console.WriteLine($"Edit clicked: {item.AdTitle}");
-        }
-
-        protected void OnPreview(SubscriptionListing item)
-        {
-            Console.WriteLine($"Preview clicked: {item.AdTitle}");
+            Console.WriteLine($"Preview clicked: {item.Id}");
         }
 
         protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
@@ -150,18 +150,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
-        protected Task Publish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
-        protected Task Unpublish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
-        protected Task OnRemove(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+        protected Task Approve(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
+        protected Task Publish(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
+        protected Task Unpublish(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
+        protected Task OnRemove(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
             // Send to API or handle in state
         }
-        protected Task RequestChanges(SubscriptionListing item)
+        protected Task RequestChanges(PrelovedListing item)
         {
-            Console.WriteLine($"Requested changes for: {item.AdId}");
+            Console.WriteLine($"Requested changes for: {item.Id}");
             OpenRejectDialog();
             return Task.CompletedTask;
         }

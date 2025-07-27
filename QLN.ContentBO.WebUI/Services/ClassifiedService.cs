@@ -1,4 +1,5 @@
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
 using System.Net;
 using System.Net.Http;
@@ -258,5 +259,30 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/getall-preloved")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedListingsAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+
     }
 }
