@@ -10,6 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
     public partial class ViewSubscriptionListingTableBase : ComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
+        [Inject] public NavigationManager Navigation { get; set; }
         protected HashSet<SubscriptionOrder> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
@@ -128,6 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(SubscriptionOrder item)
         {
+            Navigation.NavigateTo("/manage/services/editform");
         }
         public void OnPreview(SubscriptionOrder item)
         {

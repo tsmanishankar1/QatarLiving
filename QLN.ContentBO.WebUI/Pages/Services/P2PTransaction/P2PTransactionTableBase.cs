@@ -11,6 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
     {
         [Inject] public IDialogService DialogService { get; set; }
         protected HashSet<SubscriptionOrder> SelectedListings { get; set; } = new();
+        [Inject] public NavigationManager Navigation { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected string selectedTab = "pendingApproval";
@@ -128,6 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(SubscriptionOrder item)
         {
+            Navigation.NavigateTo("/manage/services/editform");
         }
         public void OnPreview(SubscriptionOrder item)
         {
