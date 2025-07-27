@@ -1102,5 +1102,105 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to replace slot with selected category.", ex);
             }
         }
+
+        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.StateStoreNames.UnifiedStore,
+                ConstantValues.StateStoreNames.ItemsIndexKey,
+                cancellationToken: ct
+            ) ?? new();
+            Console.WriteLine(indexKeys);
+            var updated = new List<ClassifiedsItems>();
+
+            foreach (var id in request.AdIds)
+            {
+                var adKey = GetAdKey(id);
+                if (!indexKeys.Contains(adKey.ToString()))
+                {
+                    Console.WriteLine("Index Is Null");
+                    continue;
+                }
+
+                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    adKey.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                {
+                    Console.WriteLine("Ad Is Null");
+                    continue;
+                }
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkActionEnum.Approve:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Publish:
+                        if (ad.Status == AdStatus.Unpublished)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Unpublish:
+                        if (ad.Status == AdStatus.Published)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnPromote:
+                        if (ad.IsPromoted)
+                        {
+                            ad.IsPromoted = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnFeature:
+                        if (ad.IsFeatured)
+                        {
+                            ad.IsFeatured = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Remove:
+                        ad.Status = AdStatus.Rejected;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = request.UpdatedBy;
+                    Console.WriteLine("Updating");
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);
+                    Console.WriteLine("Updated");
+                }
+            }
+
+            return updated;
+        }
+
+        private string GetAdKey(Guid id) => $"ad-{id}";
     }
 }
