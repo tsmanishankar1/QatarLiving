@@ -138,7 +138,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                     if (postBreadcrumbCategory is not null)
                     {
                         postBreadcrumbCategory.Label = SelectedPost.Category;
-                        postBreadcrumbCategory.Url = $"/content/community/v2?categoryId={SelectedPost.CategoryId}"; // leaving this as it is a V2 component
+                        postBreadcrumbCategory.Url = $"/content/v2/community?categoryId={SelectedPost.CategoryId}"; // leaving this as it is a V2 component
                         StateHasChanged();
                     }
                 }

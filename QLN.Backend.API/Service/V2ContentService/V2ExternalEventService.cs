@@ -213,6 +213,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(e, "Invalid operation while updating event");
                 throw new InvalidOperationException("Invalid operation while updating event", e);
             }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, $"Validation error while updating event {dto.Id}");
+                throw new BadHttpRequestException(ex.Message, statusCode: 400);
+            }
             catch (InvocationException ex)
             {
                 await CleanupUploadedFiles(FileName, cancellationToken);
@@ -252,7 +257,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 _logger.LogError(ex, "Error updating event");
                 throw;
             }
-
         }
         public async Task<string> DeleteEvent(Guid id, CancellationToken cancellationToken = default)
         {

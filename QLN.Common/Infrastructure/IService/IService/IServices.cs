@@ -22,6 +22,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct);
         Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct);
         Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct);
+        Task<ServicesDto> PublishService(Guid id, CancellationToken ct);
         Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
     }
 }
