@@ -10,6 +10,9 @@ namespace QLN.Common.Infrastructure.IService.IPayments
     public interface ID365Service
     {
         Task<string> HandleD365OrderAsync(D365Order order);
+        Task<bool> CreateInterimSalesOrder(D365Data order);
+
+        Task<bool> CreateAndInvoiceSalesOrder(D365Data order);
 
     }
 }

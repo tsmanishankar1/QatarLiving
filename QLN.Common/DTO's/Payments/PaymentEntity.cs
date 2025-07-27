@@ -29,15 +29,15 @@ namespace QLN.Common.DTO_s.Payments
         public string PaidByUid { get; set; }
 
         [DataType(DataType.DateTime)]
-        public DateTime? Date { get; set; }
+        public DateTime Date { get; set; }
 
-        public int PaymentMethod { get; set; }
+        public PaymentMethod PaymentMethod { get; set; }
 
-        public int CardType { get; set; }
+        public CardType CardType { get; set; }
 
-        public int Source { get; set; }
+        public Source Source { get; set; }
 
-        public int Gateway { get; set; }
+        public string Gateway { get; set; }
 
         public string TransactionId { get; set; }
 

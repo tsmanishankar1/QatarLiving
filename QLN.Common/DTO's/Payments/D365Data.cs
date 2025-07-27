@@ -39,8 +39,8 @@ namespace QLN.Common.DTO_s.Payments
 
     public class ProductDurationData
     {
-        public DateTime? StartDate_dd_mm_yyyy { get; set; }
-        public DateTime? EndDate_dd_mm_yyyy { get; set; }
+        public DateTime StartDate_dd_mm_yyyy { get; set; }
+        public DateTime EndDate_dd_mm_yyyy { get; set; }
     }
 
     public static class D365PaymentOperations
