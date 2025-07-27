@@ -394,7 +394,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/details/{id}", async (
+            group.MapGet("/items-details/{id}", async (
                     [FromRoute] string id,
                     [FromQuery] int similarPageSize,
                     [FromServices] ISearchService svc,
@@ -417,8 +417,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsIndex>(
-                        ConstantValues.Verticals.Classifieds,
+                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsItemsIndex>(
+                        ConstantValues.IndexNames.ClassifiedsItemsIndex,
                         id,
                         similarPageSize
                     );
@@ -466,10 +466,166 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     );
                 }
             })
-            .WithName("GetClassifiedDetailsWithSimilar")
+            .WithName("GetClassifiedItemsWithSimilar")
             .WithTags("Classified")
             .WithSummary("Get a classified plus similar items")
             .WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
+
+            group.MapGet("/preloved-details/{id}", async (
+        [FromRoute] string id,
+        [FromQuery] int similarPageSize,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    logger.LogWarning("GetDetails called with empty id");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+
+                try
+                {
+                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsPrelovedIndex>(
+                        ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                        id,
+                        similarPageSize
+                    );
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid arguments for details");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+                catch (RequestFailedException ex)
+                {
+                    logger.LogError(ex, "Azure Search error on details");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status502BadGateway,
+                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error on details");
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    );
+                }
+            })
+.WithName("GetClassifiedPrelovedWithSimilar")
+.WithTags("Classified")
+.WithSummary("Get a classified plus similar items")
+.WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
+
+            group.MapGet("/collectibles-details/{id}", async (
+        [FromRoute] string id,
+        [FromQuery] int similarPageSize,
+        [FromServices] ISearchService svc,
+        [FromServices] ILoggerFactory logFac
+    ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    logger.LogWarning("GetDetails called with empty id");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+
+                try
+                {
+                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsCollectiblesIndex>(
+                        ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                        id,
+                        similarPageSize
+                    );
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid arguments for details");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    });
+                }
+                catch (RequestFailedException ex)
+                {
+                    logger.LogError(ex, "Azure Search error on details");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status502BadGateway,
+                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error on details");
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
+                    );
+                }
+            })
+.WithName("GetClassifiedCollectiblesWithSimilar")
+.WithTags("Classified")
+.WithSummary("Get a classified plus similar items")
+.WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
+
+
 
             // UPLOAD
             group.MapPost("/upload", async (
