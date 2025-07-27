@@ -262,7 +262,6 @@ namespace QLN.Backend.API.Service.Services
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
-                IsPriceOnRequest = dto.IsPriceOnRequest,
                 UserName = dto.UserName,
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
