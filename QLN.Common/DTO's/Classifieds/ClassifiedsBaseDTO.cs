@@ -1,16 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common.DTO_s
+namespace QLN.Common.DTO_s.Classified
 {
-    public class ClassifiedsBase
+    public class ClassifiedsBaseDTO
     {
-
-        public Guid Id { get; set; } = new Guid();
-        public string SubVertical { get; set; }
         public AdTypeEnum AdType { get; set; }
         public string Title { get; set; }
         public string? Description { get; set; }
@@ -23,11 +20,6 @@ namespace QLN.Common.DTO_s
         public string? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Location { get; set; }
-        public DateTime? PublishedDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
-        public AdStatus Status { get; set; }
-        public string UserId { get; set; }
-        public string UserName { get; set; }
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
         public string ContactNumber { get; set; }
@@ -38,12 +30,7 @@ namespace QLN.Common.DTO_s
         public string? zone { get; set; }
         public List<ImageInfo> Images { get; set; }
         public Dictionary<string, string>? Attributes { get; set; }
-        public bool IsActive { get; set; }
-        public string CreatedBy { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string? UpdatedBy { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public string? Subscription { get; set; }
+       
     }
 
 }
