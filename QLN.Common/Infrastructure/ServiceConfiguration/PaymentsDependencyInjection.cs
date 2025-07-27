@@ -29,6 +29,24 @@ namespace QLN.Common.Infrastructure.ServiceConfiguration
                 }
             });
 
+            services.Configure<D365Config>(configuration.GetSection("D365"));
+
+            services.AddHttpClient<ID365Service, D365Service>((serviceProvider, option) =>
+            {
+                var d365Config = serviceProvider.GetRequiredService<IOptions<D365Config>>().Value;
+
+                if (string.IsNullOrWhiteSpace(d365Config.D365Url)) throw new ArgumentNullException("D365Url");
+
+                if (Uri.TryCreate(d365Config.D365Url, UriKind.Absolute, out var d365Url))
+                {
+                    option.BaseAddress = d365Url;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid D365Url format in D365Config");
+                }
+            });
+
             services.AddScoped<IPaymentService, PaymentService>();
 
             return services;

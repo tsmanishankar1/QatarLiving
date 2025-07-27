@@ -13,14 +13,17 @@ namespace QLN.Common.Infrastructure.Service.Payments
     {
         private readonly ILogger<PaymentService> _logger;
         private readonly IFatoraService _fatoraService;
+        private readonly ID365Service _d365Service;
 
         public PaymentService(
             ILogger<PaymentService> logger,
-            IFatoraService fatoraService
+            IFatoraService fatoraService,
+            ID365Service d365Service
             )
         {
             _logger = logger;
             _fatoraService = fatoraService;
+            _d365Service = d365Service;
         }
 
         public Task<PaymentResponse> PayAsync(ExternalPaymentRequest request, CancellationToken cancellationToken = default)
