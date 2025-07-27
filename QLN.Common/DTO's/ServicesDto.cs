@@ -1,5 +1,4 @@
-﻿using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
 {
