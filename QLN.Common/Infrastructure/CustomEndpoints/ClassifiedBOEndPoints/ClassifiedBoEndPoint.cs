@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using System;
 using System.Collections.Generic;
@@ -1380,6 +1381,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+          .RequireAuthorization()
           .WithName("GetAllItemsAds")
           .WithTags("ClassifiedBo")
           .WithSummary("Get all classifieds ads")
@@ -1439,6 +1441,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithName("GetAllCollectiblesAds")
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds collectibles ads")
@@ -1469,6 +1472,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
+            .RequireAuthorization()
             .WithName("GetAllDealsAds")
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds deals ads")
@@ -1476,6 +1480,109 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                            "This endpoint returns a list of all available classifieds deals ads, including their details.")
             .Produces<List<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-action", async Task<Results<
+                    Ok<List<ClassifiedsItems>>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult
+                >> (
+                    BulkActionRequest req,
+                    HttpContext httpContext,
+                    IClassifiedBoLandingService service,
+                    CancellationToken ct
+                ) =>
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+                if (uid == null && userName == null)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                if (!req.AdIds.Any())
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+
+                if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+                req.UpdatedBy = uid;
+                try
+                {
+                    var result = await service.BulkAction(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("BulkAction")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Bulk action classifieds")
+                .WithDescription("Performs bulk actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds. " +
+                                 "Requires a list of ad IDs and the action to perform. " +
+                                 "If removing, a reason must be provided.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-action-userid", async Task<Results<
+               Ok<List<ClassifiedsItems>>,
+               BadRequest<ProblemDetails>,
+               ProblemHttpResult
+           >> (
+               BulkActionRequest req,
+               HttpContext httpContext,
+               IClassifiedBoLandingService service,
+               CancellationToken ct
+           ) =>
+            {
+                try
+                {
+                    if (req.UpdatedBy == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "UpdatedBy cannot be null.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var result = await service.BulkAction(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .ExcludeFromDescription()
+           .WithName("BulkActionByUserId")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Bulk action classifieds")
+           .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

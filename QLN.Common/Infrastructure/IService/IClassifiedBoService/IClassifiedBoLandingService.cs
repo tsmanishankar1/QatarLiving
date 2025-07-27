@@ -43,5 +43,6 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> ReorderFeaturedCategorySlots(LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default);
 
         Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
+        Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest dto, CancellationToken cancellationToken = default);
     }
 }

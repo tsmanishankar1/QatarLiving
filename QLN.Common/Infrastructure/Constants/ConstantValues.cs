@@ -132,8 +132,8 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ClassifiedBoStoreName = "contentstatestore";
             public const string ClassifiedBoServiceAppId = "qln-classifiedBo-ms";
-
-        }                  
+            public const string ClassifiedBoIndexKey = "classifiedBo-index";
+        }
         public static class Services
         {
             public const string StoreName = "servicestatestore";
