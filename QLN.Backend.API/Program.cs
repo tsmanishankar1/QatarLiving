@@ -271,6 +271,8 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
+var paymentGroup = app.MapGroup("/pay");
+paymentGroup.MapFaturaEndpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyGroup = app.MapGroup("/api/companyprofile");
