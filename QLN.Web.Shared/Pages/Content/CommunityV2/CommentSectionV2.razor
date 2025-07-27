@@ -133,13 +133,13 @@ else
                                     </ActivatorContent>
 
                                     <ChildContent>
-                                        <MudMenuItem OnClick="@(() => OnReport(Comment.Id, c.CommentId))">Report</MudMenuItem>
+                                        <MudMenuItem OnClick="@(() => OnReport(CurrentPost.Id, c.CommentId))">Report</MudMenuItem>
                                     </ChildContent>
                                 </MudMenu>
 
                             </div>
                             <div class="comment-description">@c.Content</div>
-                            <div class="like-wrapper" @onclick="@(() => ToggleLikeAsync(Comment.Id, c.CommentId))">
+                            <div class="like-wrapper" @onclick="@(() => ToggleLikeAsync(CurrentPost.Id, c.CommentId))">
 
                                 <img src="@($"qln-images/content/{(IsLiked ? "LikeFilled.svg" : "Like.svg")}")" class="comment-like-icon" />
                                 <span class="icon-text">@c.CommentsLikeCount</span>

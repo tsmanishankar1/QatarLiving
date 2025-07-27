@@ -445,8 +445,6 @@ namespace QLN.SearchService.Service
                     {
                         "IsPromoted desc",
                         "PromotedExpiryDate desc",
-                        "IsRefreshed desc",
-                        "RefreshExpiryDate desc",
                         "IsFeatured desc",
                         "FeaturedExpiryDate desc",
                         "CreatedAt desc"

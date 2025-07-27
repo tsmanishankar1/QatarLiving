@@ -14,6 +14,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.Constants;
 using System.Text.Json;
+using QLN.Common.Infrastructure.IService.IAuth;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.User
@@ -397,9 +398,38 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
                 [FromBody] LoginRequest request,
                 HttpContext context,
                 [FromServices] IAuthService authService,
-                [FromServices] IEventlogger log
+                [FromServices] IDrupalAuthService drupalAuthService,
+                [FromServices] IEventlogger log,
+                CancellationToken cancellationToken
             ) =>
             {
+                try
+                {
+                    var drupalLogin = await drupalAuthService.LoginAsync(request.UsernameOrEmailOrPhone, request.Password, cancellationToken);
+
+                    if(drupalLogin.Status && 
+                        drupalLogin.User != null &&
+                        drupalLogin.Token != null
+                        )
+                    {
+                        var response = new LoginResponse
+                        {
+                            Username = drupalLogin.User.Name,
+                            Emailaddress = drupalLogin.User.Mail,
+                            Mobilenumber = drupalLogin.User.Phone,
+                            AccessToken = drupalLogin.Token,
+                            RefreshToken = string.Empty,
+                            IsTwoFactorEnabled = false
+                        };
+
+                        return TypedResults.Ok(response);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex.Message);
+                }
+
                 try
                 {
                     return await authService.Login(request);
