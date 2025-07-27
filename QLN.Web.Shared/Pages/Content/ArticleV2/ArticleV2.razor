@@ -39,7 +39,7 @@
         <MudGrid Class="py-4" GutterSize="16px">
             <MudItem xs="12" md="8">
                 <ArticleDetailCardV2 Post="newsArticle" loading="isLoading"/>
-                         <CommentSection Comment="SelectedPost"/>    
+                         <CommentSection PostModelData="SelectedPost"/>    
             </MudItem>
             <MudItem xs="12" md="4">
                 <MoreArticleSectionV2 Articles="@moreArticleList" loading="@isLoading" ArticleSideBanners="ArticleSideBanners" Events="@vMoreArticles" category="@category" subCategory="@subcategory" />

@@ -123,7 +123,7 @@ public class ArticleBase : ComponentBase
                 Author = "",
                 Time = DateTime.TryParse(newsArticle.DateCreated, out var parsedDate) ? parsedDate : DateTime.MinValue,
                 LikeCount = 0,
-                CommentCount = newsArticle.Comments?.Count ?? 0,
+                CommentCount = int.TryParse(newsArticle.CommentCount, out int commentCount) ? commentCount : 0,
                 ImageUrl = newsArticle.ImageUrl,
                 slug = newsArticle.Slug,
                 isCommented = true,

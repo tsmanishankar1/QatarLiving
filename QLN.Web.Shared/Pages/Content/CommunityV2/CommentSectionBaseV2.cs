@@ -28,7 +28,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected MudTextField<string> multilineReference;
 
         [Parameter]
-        public PostModel Comment { get; set; }
+        public PostModel CurrentPost { get; set; }
 
         //public PostModel CommentList { get; set; } 
 
@@ -44,7 +44,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected bool isMenuOpen = false;
         protected bool IsLiked { get; set; } = false;
 
-
         public string Name { get; set; } = string.Empty;
         public string CurrentUserId { get; set; }
         public bool IsLoggedIn { get; set; } = false;
@@ -53,8 +52,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
         protected HashSet<string> expandedComments = new();
 
         protected override async Task OnInitializedAsync()
-        {
-          
+        { 
             try
             {
                 var authState = await CookieAuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -85,7 +83,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             {
                 await GetCommentAsync();
             }
-
         }
 
         protected void ToggleComment(string id)
@@ -93,8 +90,6 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             if (!expandedComments.Add(id))
                 expandedComments.Remove(id);
         }
-
-
 
         protected void OnMenuToggle(bool open)
         {
@@ -112,14 +107,14 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
             try
             {
-                if (string.IsNullOrWhiteSpace(newComment) || Comment == null)
+                if (string.IsNullOrWhiteSpace(newComment) || CurrentPost == null)
                 {
                     Snackbar.Add("Unable to post comment. Missing data.Please check back later!", Severity.Error);
                     return;
                 }
                 var request = new CommentPostRequestDto
                 {
-                    CommunityPostId = Comment.Id,
+                    CommunityPostId = CurrentPost.Id,
                     Content = newComment
                 };
 
@@ -153,13 +148,19 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
             try
             {
-                string postId = Comment.Id;
+                if (CurrentPost?.Id == null || !IsLoggedIn || CurrentPost.Comments.Count == 0)
+                {
+                    Comments.Clear();
+                    return;
+                }
+
+                string postId = CurrentPost.Id;
                 var response = await CommunityService.GetCommentsByPostIdAsyncV2(postId ,page: CurrentPage, pageSize: PageSize);
                 TotalCount = response.TotalComments;
 
                 if (response?.comments != null && response.comments.Any())
                 {
-                    Comments = response.comments.Select(c => new CommentModelV2
+                    Comments = [.. response.comments.Select(c => new CommentModelV2
                     {
                         CommentId = c.CommentId,
                         UserName = !string.IsNullOrWhiteSpace(c.UserName) ? c.UserName : "User not found",
@@ -168,7 +169,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                         CommentsLikeCount = c.CommentsLikeCount,
                         IsLiked = c.LikedUserIds?.Contains(CurrentUserId) ?? false,
 
-                    }).ToList();
+                    })];
                 }
                 else
                 {
@@ -179,6 +180,10 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
             {
                 Logger.LogError($"Error loading comments: {ex.Message}");
                 Comments ??= new List<CommentModelV2>();
+                Comments.Clear();
+
+                Snackbar.Add("Error loading comments.", Severity.Error);
+                Console.WriteLine($"Error loading comments: {ex.Message}");
                 Comments.Clear();
             }
             finally

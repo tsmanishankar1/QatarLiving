@@ -138,7 +138,7 @@ public class LandingPageBase : QLComponentBase
                 {
                     picks.Add(new LandingPageItem
                     {
-                        Id = Guid.NewGuid(),
+                        Id = null,
                         Category = "Select a Featured Category",
                         EndDate = null,
                         SlotOrder = slot,
@@ -185,7 +185,7 @@ public class LandingPageBase : QLComponentBase
                 {
                     picks.Add(new LandingPageItem
                     {
-                        Id = Guid.NewGuid(),
+                        Id = null,
                         Category = "Select a Seasonal Pick",
                         EndDate = null,
                         SlotOrder = slot,
@@ -216,7 +216,7 @@ public class LandingPageBase : QLComponentBase
                 .Where(x => x.SlotOrder >= 1 && x.SlotOrder <= 6)
                 .ToDictionary(x => x.SlotOrder, x => new LandingPageItem
                 {
-                    Id = Guid.Parse(x.Id),
+                    Id = null,
                     Category = x.CategoryName,
                     EndDate = x.EndDate,
                     SlotOrder = x.SlotOrder,
@@ -383,16 +383,25 @@ public class LandingPageBase : QLComponentBase
     {
         try
         {
-            await Task.Delay(500); 
-            Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
-            await LoadDataForCurrentTab();
+            var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+
+            if (response?.IsSuccessStatusCode == true)
+            {
+                Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
+                await LoadDataForCurrentTab();
+            }
+            else
+            {
+                Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, $"Error deleting {currentItemType}");
-            Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+            Snackbar.Add($"Error occurred while deleting {currentItemType}", Severity.Error);
         }
     }
+
 
     protected void CloseModal()
     {

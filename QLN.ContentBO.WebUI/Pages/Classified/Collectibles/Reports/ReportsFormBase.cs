@@ -18,7 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.Reports
 
         protected ReportsFormDto reports { get; set; } = new ReportsFormDto();
         protected EditContext editContext;
-        protected ValidationMessageStore messageStore;
+        private ValidationMessageStore messageStore;
 
         protected override async Task OnInitializedAsync()
         {
@@ -46,6 +46,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.Reports
             SelectedSubcategory?.Fields ??
             SelectedCategory?.Fields ??
             new List<CategoryField>();
+
+            protected int SelectedFilterCount =>
+               reports.ItemFieldFilters.Values.Sum(list => list.Count);
+
 
         protected string[] AllowedFields => new[]
         {
@@ -87,6 +91,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.Reports
             reports.SelectedCategoryId = categoryId;
             reports.SelectedSubcategoryId = null;
             reports.SelectedSubSubcategoryId = null;
+            BuildSelectedOptions();
             StateHasChanged();
         }
 
@@ -94,12 +99,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.Reports
         {
             reports.SelectedSubcategoryId = subCategoryId;
             reports.SelectedSubSubcategoryId = null;
+            BuildSelectedOptions();
             StateHasChanged();
         }
 
         protected void OnSubSubCategoryChanged(string subSubCategoryId)
         {
             reports.SelectedSubSubcategoryId = subSubCategoryId;
+            BuildSelectedOptions();
             StateHasChanged();
         }
 
@@ -127,19 +134,107 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.Reports
         // Filter Popover
         protected bool showFilterPopover = false;
 
-        protected void ToggleFilterPopover() => showFilterPopover = !showFilterPopover;
+        protected void ToggleFilterPopover()
+        {
+            BuildSelectedOptions(); // Make sure filters are rebuilt
+            showFilterPopover = !showFilterPopover;
+        }
+
 
         protected void CancelFilters()
         {
             showFilterPopover = false;
             StateHasChanged();
         }
-
-        protected void ApplyFilters()
+         private void BuildSelectedOptions()
         {
-            showFilterPopover = false;
-            StateHasChanged();
+            SelectedOptions.Clear();
+
+            foreach (var field in AvailableFields)
+            {
+                if (!SelectedOptions.ContainsKey(field.Name))
+                    SelectedOptions[field.Name] = new Dictionary<string, bool>();
+
+                foreach (var option in field.Options)
+                {
+                    bool isChecked = reports.ItemFieldFilters.TryGetValue(field.Name, out var selectedList)
+                                    && selectedList.Contains(option);
+
+                    SelectedOptions[field.Name][option] = isChecked;
+                }
+            }
         }
+
+
+          protected List<string> GetFilteredModels(CategoryField field)
+        {
+            if (string.IsNullOrWhiteSpace(ModelSearchTerm))
+                return field.Options;
+
+            // Prioritize matches that start with the search term
+            return field.Options
+                .OrderByDescending(option => option.StartsWith(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ThenBy(option => option.IndexOf(ModelSearchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+            protected Dictionary<string, Dictionary<string, bool>> ConfirmedOptions = new();
+            protected Dictionary<string, Dictionary<string, bool>> SelectedOptions = new();
+            protected string ModelSearchTerm = "";
+
+            protected override void OnParametersSet()
+        {
+            if (AvailableFields == null)
+                return;
+
+            SelectedOptions.Clear();
+
+            foreach (var field in AvailableFields)
+            {
+                SelectedOptions[field.Name] = new Dictionary<string, bool>();
+
+                foreach (var option in field.Options)
+                {
+                    // If already saved in reports, restore the checked state
+                    bool isChecked = reports.ItemFieldFilters.TryGetValue(field.Name, out var selectedList)
+                                    && selectedList.Contains(option);
+
+                    SelectedOptions[field.Name][option] = isChecked;
+                }
+            }
+        }
+
+
+            protected async Task ApplyFilters()
+            {
+                Console.WriteLine("Selected Filters:");
+
+                var selectedFilterMap = new Dictionary<string, List<string>>();
+
+                foreach (var field in SelectedOptions)
+                {
+                    var selectedOptions = field.Value
+                        .Where(x => x.Value)
+                        .Select(x => x.Key)
+                        .ToList();
+
+                    if (selectedOptions.Any())
+                    {
+                        selectedFilterMap[field.Key] = selectedOptions;
+                        Console.WriteLine($"{field.Key}: {string.Join(", ", selectedOptions)}");
+                    }
+                }
+
+                // ✅ Always update ConfirmedOptions from SelectedOptions
+                ConfirmedOptions = SelectedOptions
+                    .ToDictionary(
+                        kv => kv.Key,
+                        kv => kv.Value.ToDictionary(e => e.Key, e => e.Value)
+                    );
+
+                reports.ItemFieldFilters = selectedFilterMap;
+                showFilterPopover = false;
+                 StateHasChanged();
+            }
 
         protected string FilterIconClass =>
             showFilterPopover ? "report-date-icon active-icon" : "report-date-icon";

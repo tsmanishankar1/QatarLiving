@@ -38,7 +38,6 @@ namespace QLN.ContentBO.WebUI.Pages
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
         protected string? _timeError;
-        protected string? _PriceError;
         protected string? _LocationError;
         protected string? _descriptionerror;
         protected string? _coverImageError;
@@ -380,7 +379,6 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _DateError = null;
             _descriptionerror = null;
-            _PriceError = null;
             _LocationError = null;
             _timeError = null;
             _coverImageError = null;
@@ -393,7 +391,6 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             if (CurrentEvent?.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
-                _PriceError = "Price is required for Fees events.";
                 Snackbar.Add("Price is required for Fees events.", severity: Severity.Error);
                 return;
             }
@@ -684,7 +681,6 @@ namespace QLN.ContentBO.WebUI.Pages
             DayTimeList.Clear();
             _timeError = string.Empty;
             _descriptionerror = string.Empty;
-            _PriceError = string.Empty;
             _coverImageError = string.Empty;
             uploadedImage = null;
             SelectedLocationId = null;

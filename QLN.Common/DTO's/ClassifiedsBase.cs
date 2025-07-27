@@ -35,20 +35,13 @@ namespace QLN.Common.DTO_s
         public string? StreetNumber { get; set; }
         public string? BuildingNumber { get; set; }
         public string? zone { get; set; }
-        public List<ImageInfoDto> Images { get; set; }
+        public List<ImageInfo> Images { get; set; }
         public Dictionary<string, string>? Attributes { get; set; }
         public bool IsActive { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
-    }
-
-    public class ImageInfoDto
-    {
-        public string AdImageFileNames { get; set; }
-        public string Url { get; set; }
-        public int Order { get; set; }
     }
 
 }
