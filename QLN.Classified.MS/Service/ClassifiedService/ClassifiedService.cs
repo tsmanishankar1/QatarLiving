@@ -306,6 +306,7 @@ namespace QLN.Classified.MS.Service
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
+           
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");

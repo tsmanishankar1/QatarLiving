@@ -171,7 +171,11 @@ namespace QLN.Company.MS.Service
                 Status = dto.Status ?? CompanyStatus.Active,
                 CreatedBy = dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,
+                Coverimage1 = dto.Coverimage1,
+                Coverimage2 = dto.Coverimage2,
+                CRExpirydate = dto.CRExpirydate,
+                Authorizedcontactpersonname = dto.Authorizedcontactpersonname
             };
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
@@ -209,6 +213,23 @@ namespace QLN.Company.MS.Service
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while retrieving all company profiles.");
+                throw;
+            }
+        }
+        public async Task<CompanyProfileDto?> GetAllCompaniesBasedonStatus(string status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, status.ToString(), cancellationToken: cancellationToken);
+                if (result == null)
+                    throw new KeyNotFoundException($"Company with id '{status}' was not found.");
+                if (!result.IsActive)
+                    return null;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving company profile with ID: {Id}", status);
                 throw;
             }
         }
@@ -325,7 +346,7 @@ namespace QLN.Company.MS.Service
                 CreatedUtc = existing.CreatedUtc,
                 UpdatedBy = dto.UserId,
                 UpdatedUtc = DateTime.UtcNow,
-                IsActive = true
+                IsActive = true,Coverimage1 = dto.Coverimage1,Coverimage2 = dto.Coverimage2,Authorizedcontactpersonname= dto.Authorizedcontactpersonname,CRExpirydate=dto.CRExpirydate
             };
         }
         public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)

@@ -23,6 +23,7 @@ namespace QLN.Common.DTO_s
         public string BusinessDescription { get; set; } = string.Empty;
         [Required]
         public int CRNumber { get; set; }
+
         public bool? IsVerified { get; set; } = false;
         public bool IsActive { get; set; }
         public string CreatedBy { get; set; }

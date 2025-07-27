@@ -35,48 +35,75 @@ namespace QLN.Backend.API.Service.CompanyService
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
             string? cerBlobFileName = null;
+            string? coverImageBlobFileName = null;
+            string? coverImage1BlobFileName = null;
+
             try
             {
                 var id = Guid.NewGuid();
                 dto.Id = id;
+
+                // Sanitize business name to use in blob file names
+                var sanitizedBusinessName = SanitizeForBlobName(dto.BusinessName);
+
                 if (!string.IsNullOrWhiteSpace(dto.CRDocument))
                 {
                     var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
                     if (crExtension is not ("pdf" or "png" or "jpg"))
                         throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
 
-                    crBlobFileName = $"{dto.BusinessName}_{id}.{crExtension}";
+                    crBlobFileName = $"{sanitizedBusinessName}_{id}.{crExtension}";
                     var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
                     dto.CRDocument = crBlobUrl;
                 }
+
                 if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
                 {
-                    string logoExtension;
-                    string logoBase64Data;
-
-                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
-
+                    var (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
                     if (logoExtension is not ("png" or "jpg"))
                         throw new ArgumentException("Company logo must be in PNG or JPG format.");
 
-                    logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
+                    logoBlobFileName = $"{sanitizedBusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
+
+                if (!string.IsNullOrWhiteSpace(dto.Coverimage1))
+                {
+                    var (coverImageExtension, coverImageBase64Data) = Base64Helper.ParseBase64(dto.Coverimage1);
+                    if (coverImageExtension is not ("png" or "jpg" or "pdf"))
+                        throw new ArgumentException("Coverimage1 must be in PNG, JPG, or PDF format.");
+
+                    //coverImageBlobFileName = $"{sanitizedBusinessName}_{id}.{coverImageExtension}";
+                     coverImageBlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{coverImageExtension}";
+                    var coverImageUrl = await _blobStorage.SaveBase64File(coverImageBase64Data, coverImageBlobFileName, "Coverimage1", cancellationToken);
+                    dto.Coverimage1 = coverImageUrl;
+                }
+
+                if (!string.IsNullOrWhiteSpace(dto.Coverimage2))
+                {
+                    var (coverImage1Extension, coverImage1Base64Data) = Base64Helper.ParseBase64(dto.Coverimage2);
+                    if (coverImage1Extension is not ("png" or "jpg" or "pdf"))
+                        throw new ArgumentException("Coverimage2 must be in PNG, JPG, or PDF format.");
+
+                    //coverImage1BlobFileName = $"{sanitizedBusinessName}_{id}.{coverImage1Extension}";
+                    coverImage1BlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{coverImage1Extension}";
+                    var coverImage1Url = await _blobStorage.SaveBase64File(coverImage1Base64Data, coverImage1BlobFileName, "Coverimage2", cancellationToken);
+                    dto.Coverimage2 = coverImage1Url;
+                }
+
                 if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
                 {
-                    string cerExtension;
-                    string cerBase64Data;
-
-                    (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
-
+                    var (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
                     if (cerExtension is not ("png" or "jpg" or "pdf"))
                         throw new ArgumentException("Certificate must be in PDF, PNG or JPG format.");
 
-                    cerBlobFileName = $"{dto.BusinessName}_{id}.{cerExtension}";
+                    //cerBlobFileName = $"{sanitizedBusinessName}_{id}.{cerExtension}";
+                    cerBlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{cerExtension}";
                     var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
                     dto.TherapeuticCertificate = cerBlobUrl;
                 }
+
                 var url = "/api/companyprofile/createByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -86,8 +113,8 @@ namespace QLN.Backend.API.Service.CompanyService
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
                     string errorMessage;
+
                     try
                     {
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
@@ -98,31 +125,32 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, coverImageBlobFileName, coverImage1BlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
+
                 if (response.StatusCode == HttpStatusCode.Conflict)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, coverImageBlobFileName, coverImage1BlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
-                response.EnsureSuccessStatusCode();
 
+                response.EnsureSuccessStatusCode();
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
             }
-
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, coverImageBlobFileName, coverImage1BlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
             }
         }
 
-        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, string? cerFile, CancellationToken cancellationToken)
+
+        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, string? cerFile,string? coverimage,string? coverimage1, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrWhiteSpace(crFile))
                 await _blobStorage.DeleteFile(crFile, "crdocument", cancellationToken);
@@ -132,6 +160,10 @@ namespace QLN.Backend.API.Service.CompanyService
 
             if (!string.IsNullOrWhiteSpace(cerFile))
                 await _blobStorage.DeleteFile(cerFile, "therapeuticcertificate", cancellationToken);
+            if (!string.IsNullOrWhiteSpace(coverimage))
+                await _blobStorage.DeleteFile(coverimage, "Coverimage", cancellationToken);
+            if (!string.IsNullOrWhiteSpace(coverimage1))
+                await _blobStorage.DeleteFile(coverimage1, "Coverimage1", cancellationToken);
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -172,11 +204,36 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<CompanyProfileDto?> GetAllCompaniesBasedonStatus(string status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByStatus?status={status}";
+                return await _dapr.InvokeMethodAsync<CompanyProfileDto>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "No companies found with status {Status}.", status);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving company profiles for status: {Status}", status);
+                throw;
+            }
+        }
+
         public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
             string? cerBlobFileName = null;
+            string? CoverimageBlobFileName = null;
+            string? Coverimage1BlobFileName = null;
             try
             {
                 var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
@@ -202,6 +259,26 @@ namespace QLN.Backend.API.Service.CompanyService
                     logoBlobFileName = $"{dto.BusinessName}_{id}.{logoExtension}";
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
+                }
+                if (!string.IsNullOrWhiteSpace(dto.Coverimage1) && !dto.Coverimage1.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    var (CoverimageExtension, CoverimageBase64Data) = Base64Helper.ParseBase64(dto.Coverimage1);
+                    if (CoverimageExtension is not ("png" or "jpg"))
+                        throw new ArgumentException("Coverimage must be in PNG or JPG format.");
+
+                    CoverimageBlobFileName = $"{dto.BusinessName}_{id}.{CoverimageExtension}";
+                    var CoverimageBlobUrl = await _blobStorage.SaveBase64File(CoverimageBase64Data, CoverimageBlobFileName, "CoverimageBlobFileName", cancellationToken);
+                    dto.CompanyLogo = CoverimageBlobUrl;
+                }
+                if (!string.IsNullOrWhiteSpace(dto.Coverimage2) && !dto.Coverimage2.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    var (Coverimage1Extension, Coverimage1Base64Data) = Base64Helper.ParseBase64(dto.Coverimage1);
+                    if (Coverimage1Extension is not ("png" or "jpg"))
+                        throw new ArgumentException("Cover image must be in PNG or JPG format.");
+
+                    Coverimage1BlobFileName = $"{dto.BusinessName}_{id}.{Coverimage1Extension}";
+                    var Coverimage1BlobUrl = await _blobStorage.SaveBase64File(Coverimage1Base64Data, Coverimage1BlobFileName, "CoverimageBlobFileName", cancellationToken);
+                    dto.Coverimage2 = Coverimage1BlobUrl;
                 }
                 if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate) && !dto.TherapeuticCertificate.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
@@ -240,7 +317,7 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName,cerBlobFileName, CoverimageBlobFileName, Coverimage1BlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
 
@@ -248,7 +325,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, CoverimageBlobFileName, Coverimage1BlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
@@ -258,7 +335,7 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
+                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, CoverimageBlobFileName, Coverimage1BlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error updating company profile");
                 throw;
             }
@@ -486,5 +563,17 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        private static string SanitizeForBlobName(string input)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                input = input.Replace(c, '_');
+            }
+
+            return input.Replace(" ", "_").Trim(); // optional: replace spaces too
+        }
+
+
+
     }
 }

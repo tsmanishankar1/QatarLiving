@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.Spatial;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
@@ -10,6 +11,7 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
@@ -171,14 +173,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/post-by-id",
-                    dto,
-                    cancellationToken
-                );
+                var requestUrl = $"/api/classifieds/items/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
                 await IndexClassifiedItemToAzureSearch(dto, cancellationToken);
                 return new AdCreatedResponseDto
                 {
@@ -187,6 +189,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
+            }
+            catch(DaprServiceException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -202,8 +208,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -311,14 +317,22 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal service with CertificateUrl: {dto.AuthenticityCertificateUrl} and {dto.Images.Count} images");
+                var requestUrl = $"api/classifieds/preloved/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                await _dapr.InvokeMethodAsync(
+               /* await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/classifieds/preloved/post-by-id",
                     dto,
                     cancellationToken
-                );
+                );*/
                 await IndexPrelovedToAzureSearch(dto, cancellationToken);
                 return new AdCreatedResponseDto
                 {
@@ -327,6 +341,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CreatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad created successfully"
                 };
+            }
+            catch (DaprServiceException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -342,8 +360,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -389,14 +408,22 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
+                var requestUrl = $"api/classifieds/collectibles/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                await _dapr.InvokeMethodAsync(
+                /*await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/post-by-id",
                     dto,
                     cancellationToken
-                );
+                );*/
                 await IndexCollectiblesToAzureSearch(dto, cancellationToken);
 
                 return new AdCreatedResponseDto
@@ -421,8 +448,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -466,14 +494,22 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerFileUrl} and image: {dto.ImageUrl}");
+                var requestUrl = $"api/classifieds/deals/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                await _dapr.InvokeMethodAsync(
+                /*await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/classifieds/deals/post-by-id",
                     dto,
                     cancellationToken
-                );
+                );*/
 
                 return new AdCreatedResponseDto
                 {
@@ -498,8 +534,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
