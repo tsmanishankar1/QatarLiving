@@ -23,7 +23,7 @@ namespace QLN.Common.Infrastructure.IService.IServiceBoService
      int? pageNumber = 1,
      int? pageSize = 12,
      string? search = null,
-     string? sortBy = null, // Add sortBy param
+     string? sortBy = null, 
      CancellationToken cancellationToken = default);
 
         Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
@@ -34,5 +34,16 @@ namespace QLN.Common.Infrastructure.IService.IServiceBoService
        int pageNumber = 1,
        int pageSize = 12,
        CancellationToken cancellationToken = default);
+
+        Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
+                string? sortBy = "CreationDate",
+                string? search = null,
+                DateTime? fromDate = null,
+                DateTime? toDate = null,
+                DateTime? publishedFrom = null,
+                DateTime? publishedTo = null,
+                int pageNumber = 1,
+                int pageSize = 12,
+                CancellationToken cancellationToken = default);
     }
 }

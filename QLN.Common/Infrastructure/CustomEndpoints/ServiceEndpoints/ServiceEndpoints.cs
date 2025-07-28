@@ -8,12 +8,76 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
-using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
     public static class ServiceEndpoints
     {
+        public static RouteGroupBuilder MapServiceSearch(this RouteGroupBuilder group)
+        {
+            group.MapPost("/search", async (
+            [FromBody] CommonSearchRequest req,
+            [FromServices] ISearchService svc,
+            [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ServicesEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ServicesIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/services/search"
+                    );
+                }
+            })
+            .AllowAnonymous()
+            .WithName("SearchServicesItems")
+            .WithTags("Service")
+            .WithSummary("Search Services Items")
+            .Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapServiceCategoryEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcategory", async Task<Results<
@@ -185,7 +249,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<Ok<ServicesDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServicesDto dto,
                 IServices service,
                 HttpContext httpContext,
@@ -251,11 +315,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            group.MapPost("/createbyuserid", async Task<Results<Ok<ServicesDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServicesDto dto,
             IServices service,
             HttpContext httpContext,
@@ -294,7 +358,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -471,6 +535,67 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Get a service ad by ID")
             .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
             .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyserviceid/{id:guid}", async Task<Results<
+                Ok<GetWithSimilarResponse<ServicesIndex>>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>> (
+
+                Guid id,
+                [FromServices] ISearchService service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.GetByIdWithSimilarAsync<ServicesIndex>(
+                        ConstantValues.IndexNames.ServicesIndex,
+                        id.ToString(),
+                        10
+                    );
+
+                    if (result == null)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Service Ad Not Found",
+                            Detail = $"No service ad found with ID: {id}",
+                            Status = 404
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = 404
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = 500
+                    });
+                }
+            })
+            .AllowAnonymous()
+            .WithName("GetDetailedServiceAdById")
+            .WithTags("Service")
+            .WithSummary("Get a service ad by ID")
+            .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
+            .Produces<GetWithSimilarResponse<ServicesDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 

@@ -289,7 +289,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -323,7 +323,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"seasonal-pick-slot-{assignment.SlotNumber}";
+                var slotKey = $"seasonal-pick-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.PickId))
                 {
@@ -332,7 +332,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var pick = loadedPicks[assignment.PickId];
-                pick.SlotOrder = assignment.SlotNumber;
+                pick.SlotOrder = assignment.SlotOrder;
                 pick.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, pick);
@@ -648,7 +648,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -682,7 +682,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"featured-store-slot-{assignment.SlotNumber}";
+                var slotKey = $"featured-store-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.StoreId))
                 {
@@ -691,7 +691,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var store = loadedStores[assignment.StoreId];
-                store.SlotOrder = assignment.SlotNumber;
+                store.SlotOrder = assignment.SlotOrder;
                 store.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, store);
@@ -1422,104 +1422,5 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _ => "Transaction"
         };
 
-        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
-        {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.StateStoreNames.UnifiedStore,
-                ConstantValues.StateStoreNames.ItemsIndexKey,
-                cancellationToken: ct
-            ) ?? new();
-            Console.WriteLine(indexKeys);
-            var updated = new List<ClassifiedsItems>();
-
-            foreach (var id in request.AdIds)
-            {
-                var adKey = GetAdKey(id);
-                if (!indexKeys.Contains(adKey.ToString()))
-                {
-                    Console.WriteLine("Index Is Null");
-                    continue;
-                }
-
-                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    adKey.ToString(),
-                    cancellationToken: ct
-                );
-
-                if (ad is null)
-                {
-                    Console.WriteLine("Ad Is Null");
-                    continue;
-                }
-
-                bool shouldUpdate = false;
-
-                switch (request.Action)
-                {
-                    case BulkActionEnum.Approve:
-                        if (ad.Status == AdStatus.PendingApproval)
-                        {
-                            ad.Status = AdStatus.Published;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkActionEnum.Publish:
-                        if (ad.Status == AdStatus.Unpublished)
-                        {
-                            ad.Status = AdStatus.Published;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkActionEnum.Unpublish:
-                        if (ad.Status == AdStatus.Published)
-                        {
-                            ad.Status = AdStatus.Unpublished;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkActionEnum.UnPromote:
-                        if (ad.IsPromoted)
-                        {
-                            ad.IsPromoted = false;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkActionEnum.UnFeature:
-                        if (ad.IsFeatured)
-                        {
-                            ad.IsFeatured = false;
-                            shouldUpdate = true;
-                        }
-                        break;
-
-                    case BulkActionEnum.Remove:
-                        ad.Status = AdStatus.Rejected;
-                        shouldUpdate = true;
-                        break;
-
-                    default:
-                        throw new InvalidOperationException("Invalid action");
-                }
-
-                if (shouldUpdate)
-                {
-                    ad.UpdatedAt = DateTime.UtcNow;
-                    ad.UpdatedBy = request.UpdatedBy;
-                    Console.WriteLine("Updating");
-                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
-                    updated.Add(ad);
-                    Console.WriteLine("Updated");
-                }
-            }
-
-            return updated;
-        }
-
-        private string GetAdKey(Guid id) => $"ad-{id}";
     }
 }

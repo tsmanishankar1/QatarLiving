@@ -70,7 +70,8 @@ namespace QLN.Common.DTO_s
         PendingApproval = 2,
         Published = 3,
         Unpublished = 4,
-        Rejected = 5
+        Rejected = 5,
+        Expired = 6
     }
     public enum BulkModerationAction
     {
