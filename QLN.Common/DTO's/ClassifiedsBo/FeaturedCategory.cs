@@ -11,7 +11,7 @@ namespace QLN.Common.DTO_s
     public class FeaturedCategory
     {
         public Guid? Id { get; set; }//
-        public string Category { get; set; } = null!;
+        public string CategoryName { get; set; } = null!;
         public string CategoryId { get; set; } = null!;
         public string Vertical { get; set; } = null!;
         public string? UserId { get; set; }//
@@ -21,7 +21,7 @@ namespace QLN.Common.DTO_s
         public DateOnly StartDate { get; set; }
         [JsonConverter(typeof(FlexibleDateOnlyConverter))]
         public DateOnly EndDate { get; set; }
-        public int? SlotOrder { get; set; }//
+        public int SlotOrder { get; set; }
         public string ImageUrl { get; set; }
         public DateTime? CreatedAt { get; set; }//
         public DateTime? UpdatedAt { get; set; }
@@ -45,6 +45,24 @@ namespace QLN.Common.DTO_s
         public int TargetSlotId { get; set; }
         public string Vertical { get; set; }
 
+    }
+
+    public class BulkActionRequest
+    {
+        public List<Guid> AdIds { get; set; } = new();
+        public BulkActionEnum Action { get; set; }
+        public string? Reason { get; set; }
+        public string? UpdatedBy { get; set; }
+    }
+
+    public enum BulkActionEnum
+    {
+        Approve = 1,
+        Publish = 2,
+        Unpublish = 3,
+        UnPromote = 5,
+        UnFeature = 6,
+        Remove = 7
     }
 
 

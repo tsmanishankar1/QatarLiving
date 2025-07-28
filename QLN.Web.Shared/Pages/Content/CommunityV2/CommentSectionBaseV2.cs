@@ -148,7 +148,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
             try
             {
-                if (CurrentPost?.Id == null || !IsLoggedIn || CurrentPost.Comments.Count == 0)
+                if (CurrentPost?.Id == null || !IsLoggedIn || CurrentPost.CommentCount == 0)
                 {
                     Comments.Clear();
                     return;

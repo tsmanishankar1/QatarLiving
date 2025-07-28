@@ -6,6 +6,8 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Content.MS.Service.ClassifiedBoService;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Classified.MS.Service.ServicesBoService;
 
 
 namespace QLN.Classifieds.MS.ServiceConfiguration
@@ -19,6 +21,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
             services.AddTransient<IClassifiedService, ClassifiedService>();
             services.AddTransient<IServicesService, ServicesAdService>();
             services.AddTransient<IServices, InternalServicesService>();
+            services.AddTransient<IServicesBoService, InternalServicesBo>();
             return services;
         }
     }

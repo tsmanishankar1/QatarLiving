@@ -1,0 +1,33 @@
+@inherits SubscriptionAdsBase
+@using QLN.ContentBO.WebUI.Models;
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+              <div class="community-table">
+                    <SubscriptionAdsTable />
+             </div> 
+    </MudItem>
+</MudGrid>
+
+<style>
+    .community-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 30px;
+        font-weight: 600;
+        color: #242424;
+        text-transform: none;
+        padding-bottom: 32px;
+        }
+      .community-table {
+        margin-top: 20px;
+        }
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; 
+        z-index: 10; 
+        background-color: #FAFAFA; 
+        padding: 10px 0;
+    }
+</style>
