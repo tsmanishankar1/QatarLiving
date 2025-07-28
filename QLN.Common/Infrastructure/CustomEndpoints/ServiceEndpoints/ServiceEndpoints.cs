@@ -8,12 +8,75 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
-using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
     public static class ServiceEndpoints
     {
+        public static RouteGroupBuilder MapServiceSearch(this RouteGroupBuilder group)
+        {
+            group.MapPost("/search", async (
+            [FromBody] CommonSearchRequest req,
+            [FromServices] ISearchService svc,
+            [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ServicesEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ServicesIndex, req);
+                    return Results.Ok(results);
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/services/search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/services/search"
+                    );
+                }
+            })
+            .WithName("SearchServicesItems")
+            .WithTags("Service")
+            .WithSummary("Search Services Items")
+            .Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
         public static RouteGroupBuilder MapServiceCategoryEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/createcategory", async Task<Results<
@@ -479,7 +542,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/getbyserviceid/{id:guid}", async Task<Results<
-                Ok<GetWithSimilarResponse<ServicesDto>>,
+                Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
@@ -489,8 +552,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var result = await service.GetByIdWithSimilarAsync<ServicesDto>(
-                        "services",
+                    var result = await service.GetByIdWithSimilarAsync<ServicesIndex>(
+                        ConstantValues.IndexNames.ServicesIndex,
                         id.ToString(),
                         10
                     );
@@ -501,7 +564,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         {
                             Title = "Service Ad Not Found",
                             Detail = $"No service ad found with ID: {id}",
-                            Status = StatusCodes.Status404NotFound
+                            Status = 404
                         });
                     }
 
@@ -511,14 +574,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 {
                     return TypedResults.NotFound(new ProblemDetails
                     {
-                        Title = "Service Ad Not Found",
+                        Title = "Invalid Request",
                         Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
+                        Status = 404
                     });
                 }
                 catch (Exception ex)
                 {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Internal Server Error",
+                        Detail = ex.Message,
+                        Status = 500
+                    });
                 }
             })
             .AllowAnonymous()

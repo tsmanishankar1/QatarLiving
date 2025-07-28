@@ -12,7 +12,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
     {
         public static RouteGroupBuilder MapAllServiceConfiguration(this RouteGroupBuilder group)
         {
-            group.MapServiceCategoryEndpoints()
+            group
+                 .MapServiceSearch()
+                 .MapServiceCategoryEndpoints()
                  .MapServiceCategoryGetAllEndpoints()
                  .MapServiceCategoryGetByIdEndpoint()
                  .MapServiceCategoryUpdateEndpoints()

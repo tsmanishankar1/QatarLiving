@@ -196,99 +196,12 @@ namespace QLN.Backend.API.Service.Services
                 if (createdDto is null)
                     throw new InvalidDataException("Invalid service returned from creation.");
 
-                await IndexServiceToAzureSearch(dto, cancellationToken);
                 return dto;
             }
             catch (Exception ex)
             {
                 await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating service ad");
-                throw;
-            }
-        }
-        private async Task IndexServiceToAzureSearch(ServicesDto dto, CancellationToken cancellationToken)
-        {
-            var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
-                 ConstantValues.Services.StoreName,
-                 dto.CategoryId.ToString(),
-                 cancellationToken: cancellationToken);
-            string? categoryName = null;
-            string? l1CategoryName = null;
-            string? l2CategoryName = null;
-
-            if (mainCategory != null)
-            {
-                categoryName = mainCategory.Category;
-                var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                if (l1Category != null)
-                {
-                    l1CategoryName = l1Category.Name;
-
-                    var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                    if (l2Category != null)
-                    {
-                        l2CategoryName = l2Category.Name;
-                    }
-                }
-            }
-            var indexDoc = new ServicesIndex
-            {
-                Id = dto.Id.ToString(),
-                CategoryId = dto.CategoryId.ToString(),
-                L1CategoryId = dto.L1CategoryId.ToString(),
-                L2CategoryId = dto.L2CategoryId.ToString(),
-                CategoryName = categoryName,
-                L1CategoryName = l1CategoryName,
-                L2CategoryName = l2CategoryName,
-                Price = (double)dto.Price,
-                IsPriceOnRequest = dto.IsPriceOnRequest,
-                Title = dto.Title,
-                Description = dto.Description,
-                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                PhoneNumber = dto.PhoneNumber,
-                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                WhatsappNumber = dto.WhatsappNumber,
-                EmailAddress = dto.EmailAddress,
-                Location = dto.Location,
-                LocationId = dto.LocationId,
-                Longitude = (double)dto.Longitude,
-                Lattitude = (double)dto.Lattitude,
-                AdType = dto.AdType.ToString(),
-                IsFeatured = dto.IsFeatured,
-                IsPromoted = dto.IsPromoted,
-                Status = dto.Status.ToString(),
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                UserName = dto.UserName,
-                IsActive = dto.IsActive,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = dto.CreatedAt,
-                UpdatedAt = dto.UpdatedAt,
-                UpdatedBy = dto.UpdatedBy,
-                Images = dto.PhotoUpload.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.FileName,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList()
-            };
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ServicesIndex,
-                ServicesItem = indexDoc
-            };
-
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
                 throw;
             }
         }
@@ -350,7 +263,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                await IndexServiceToAzureSearch(dto, cancellationToken);
                 await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
                 {
                     Destinations = new List<string> { "email" }, 
@@ -497,7 +409,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -537,7 +448,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -577,7 +487,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -620,8 +529,6 @@ namespace QLN.Backend.API.Service.Services
 
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
-
-                    await IndexServiceToAzureSearch(serviceDto, ct);
 
                     return serviceDto;
                 }
@@ -673,7 +580,7 @@ namespace QLN.Backend.API.Service.Services
                 {
                     foreach (var dto in moderatedAds)
                     {
-                        await IndexServiceToAzureSearch(dto, cancellationToken);
+                        //await IndexServiceToAzureSearch(dto, cancellationToken);
                     }
                 }
                 return moderatedAds ?? new List<ServicesDto>();
