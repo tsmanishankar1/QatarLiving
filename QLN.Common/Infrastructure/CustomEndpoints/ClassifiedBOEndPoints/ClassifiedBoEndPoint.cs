@@ -361,7 +361,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string categoryId,
-                string Vertical,
+                string vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -386,7 +386,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -410,7 +410,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string categoryId,
                 [FromQuery] string? userId,
-                [FromQuery] string Vertical,
+                [FromQuery] string vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -429,7 +429,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -838,7 +838,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string pickId,  
-                string Vertical,
+                string vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -863,7 +863,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, Vertical, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
