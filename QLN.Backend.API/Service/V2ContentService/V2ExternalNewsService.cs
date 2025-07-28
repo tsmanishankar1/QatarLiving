@@ -54,7 +54,50 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+       
+        public async Task<string> CreateWritertagAsync(WritertagDTO dto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/createtagname";
 
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, appId, path);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                return result; 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating writer tag via internal service");
+                throw;
+            }
+        }
+        public async Task<List<WritertagDTO>> GetAllWritertagsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/getalltags";
+
+                return await _dapr.InvokeMethodAsync<List<WritertagDTO>>(
+               HttpMethod.Get,
+               appId,
+               path,
+               cancellationToken
+           ) ?? new();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving writer tags from internal service");
+                throw;
+            }
+        }
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -287,6 +330,51 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 _logger.LogError(ex, "Error calling GetNewsArticlesByIsActiveAsync");
                 throw;
+            }
+        }
+        public async Task<string> Deletetagname(Guid id, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/news/getalltags/{id}";
+            try
+            {
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Delete,
+                    V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken: cancellationToken
+                );
+            }
+            catch (InvocationException ex)
+            {
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
         }
 

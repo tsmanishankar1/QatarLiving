@@ -1,5 +1,7 @@
 ﻿using Dapr;
 using Dapr.Client;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure;
@@ -46,6 +48,106 @@ namespace QLN.Content.MS.Service.NewsInternalService
             };
 
             return Task.FromResult(response);
+        }
+        public async Task<string> CreateWritertagAsync(WritertagDTO dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Tagname))
+                {
+                    throw new ArgumentException("Tagname is required.");
+                }
+
+                // Normalize tag name (e.g., lowercase, trimmed)
+                var normalizedTag = dto.Tagname.Trim().ToLowerInvariant();
+                var tagId = Guid.NewGuid();
+                var key = $"writertag-{normalizedTag}";
+
+                var tagEntity = new WritertagDTO
+                {
+                    
+                    Tagname = normalizedTag,
+                    tagId=tagId
+                    
+                };
+
+                // Save to Dapr state store
+                string storeName = V2Content.ContentStoreName;
+                await _dapr.SaveStateAsync(storeName, key, tagEntity, cancellationToken: cancellationToken);
+
+                // Optional: update global list of tag keys
+                string indexKey = "writertags-index";
+                var currentTags = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
+                if (!currentTags.Contains(key))
+                {
+                    currentTags.Add(key);
+                    await _dapr.SaveStateAsync(storeName, indexKey, currentTags, cancellationToken: cancellationToken);
+                }
+
+                return "Writer tag created successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create writer tag");
+                throw new Exception("Unexpected error during writer tag creation", ex);
+            }
+        }
+        public async Task<List<WritertagDTO>> GetAllWritertagsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                string storeName = V2Content.ContentStoreName;
+                string indexKey = "writertags-index";
+
+                // Step 1: Get all keys of stored tags
+                var tagKeys = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
+
+                var tags = new List<WritertagDTO>();
+
+                // Step 2: Fetch each tag by key
+                foreach (var key in tagKeys)
+                {
+                    var tag = await _dapr.GetStateAsync<WritertagDTO>(storeName, key);
+                    if (tag != null)
+                    {
+                        tags.Add(tag);
+                    }
+                }
+
+                return tags;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve writer tags");
+                throw;
+            }
+        }
+        public async Task<string> Deletetagname(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var storeName = V2Content.ContentStoreName;
+                var key = $"writertag-{id}";
+
+                // Delete tag from store
+                await _dapr.DeleteStateAsync(storeName, key);
+
+                // Remove key from index
+                var indexKey = "writertags-index";
+                var keys = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
+                if (keys.Contains(key))
+                {
+                    keys.Remove(key);
+                    await _dapr.SaveStateAsync(storeName, indexKey, keys);
+                }
+
+                return "Writer tag deleted successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error deleting writer tag with id {id}");
+                throw new Exception("Unexpected error during deletion", ex);
+            }
         }
 
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)

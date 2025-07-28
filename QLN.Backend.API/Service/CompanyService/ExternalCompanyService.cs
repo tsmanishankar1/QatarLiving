@@ -76,7 +76,7 @@ namespace QLN.Backend.API.Service.CompanyService
 
                     //coverImageBlobFileName = $"{sanitizedBusinessName}_{id}.{coverImageExtension}";
                      coverImageBlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{coverImageExtension}";
-                    var coverImageUrl = await _blobStorage.SaveBase64File(coverImageBase64Data, coverImageBlobFileName, "Coverimage1", cancellationToken);
+                    var coverImageUrl = await _blobStorage.SaveBase64File(coverImageBase64Data, coverImageBlobFileName, "companylogo", cancellationToken);
                     dto.Coverimage1 = coverImageUrl;
                 }
 
@@ -88,7 +88,7 @@ namespace QLN.Backend.API.Service.CompanyService
 
                     //coverImage1BlobFileName = $"{sanitizedBusinessName}_{id}.{coverImage1Extension}";
                     coverImage1BlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{coverImage1Extension}";
-                    var coverImage1Url = await _blobStorage.SaveBase64File(coverImage1Base64Data, coverImage1BlobFileName, "Coverimage2", cancellationToken);
+                    var coverImage1Url = await _blobStorage.SaveBase64File(coverImage1Base64Data, coverImage1BlobFileName, "companylogo", cancellationToken);
                     dto.Coverimage2 = coverImage1Url;
                 }
 
@@ -100,7 +100,7 @@ namespace QLN.Backend.API.Service.CompanyService
 
                     //cerBlobFileName = $"{sanitizedBusinessName}_{id}.{cerExtension}";
                     cerBlobFileName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{cerExtension}";
-                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
+                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "companylogo", cancellationToken);
                     dto.TherapeuticCertificate = cerBlobUrl;
                 }
 
@@ -149,7 +149,6 @@ namespace QLN.Backend.API.Service.CompanyService
             }
         }
 
-
         private async Task CleanupUploadedFiles(string? crFile, string? logoFile, string? cerFile,string? coverimage,string? coverimage1, CancellationToken cancellationToken)
         {
             if (!string.IsNullOrWhiteSpace(crFile))
@@ -159,11 +158,11 @@ namespace QLN.Backend.API.Service.CompanyService
                 await _blobStorage.DeleteFile(logoFile, "companylogo", cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(cerFile))
-                await _blobStorage.DeleteFile(cerFile, "therapeuticcertificate", cancellationToken);
+                await _blobStorage.DeleteFile(cerFile, "companylogo", cancellationToken);
             if (!string.IsNullOrWhiteSpace(coverimage))
-                await _blobStorage.DeleteFile(coverimage, "Coverimage", cancellationToken);
+                await _blobStorage.DeleteFile(coverimage, "companylogo", cancellationToken);
             if (!string.IsNullOrWhiteSpace(coverimage1))
-                await _blobStorage.DeleteFile(coverimage1, "Coverimage1", cancellationToken);
+                await _blobStorage.DeleteFile(coverimage1, "companylogo", cancellationToken);
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
