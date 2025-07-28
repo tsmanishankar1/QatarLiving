@@ -9,8 +9,8 @@
   <ItemGroup>
     <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.2.4" />
     <PackageReference Include="MudBlazor" Version="8.8.0" />
-    <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.1" />
+    <PackageReference Include="PSC.Blazor.Components.MarkdownEditor" Version="8.0.8" />
   </ItemGroup>
 
   <ItemGroup>
