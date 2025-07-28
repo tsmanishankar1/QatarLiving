@@ -341,9 +341,13 @@ public class LandingPageBase : QLComponentBase
         {
             dialog = await DialogService.ShowAsync<AddFeaturedCategoryModal>("", parameters, options);
         }
-        else 
+        else if (currentItemType == LandingPageItemType.SeasonalPick)
         {
             dialog = await DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        }
+        else 
+        {
+            dialog = await DialogService.ShowAsync<AddStoreModal>("", parameters, options);
         }
         var result = await dialog.Result;
         if (!result.Canceled)
@@ -433,16 +437,43 @@ public class LandingPageBase : QLComponentBase
     {
         try
         {
-            var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+             string GetItemTypeName() => currentItemType switch
+            {
+                LandingPageItemType.FeaturedCategory => "Featured Category",
+                LandingPageItemType.SeasonalPick => "Seasonal Pick",
+                LandingPageItemType.FeaturedStore => "Featured Store",
+                _ => "Item"
+            };
 
+           HttpResponseMessage? response = null;
+
+            switch (currentItemType)
+            {
+                case LandingPageItemType.FeaturedCategory:
+                    response = await ClassifiedService.DeleteFeaturedCategory(id, "classifieds");
+                    break;
+
+                case LandingPageItemType.SeasonalPick:
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    break;
+
+                case LandingPageItemType.FeaturedStore:
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    break;
+
+                default:
+                    Snackbar.Add("Unknown item type selected.", Severity.Warning);
+                    Logger.LogWarning("Unhandled item type in delete: {ItemType}", currentItemType);
+                    return;
+            }
             if (response?.IsSuccessStatusCode == true)
             {
-                Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
-                await LoadDataForCurrentTab();
+                Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
+                await LoadDataForCurrentTab(); 
             }
             else
             {
-                Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+                Snackbar.Add($"Failed to delete {GetItemTypeName()}", Severity.Error);
             }
         }
         catch (Exception ex)
