@@ -261,64 +261,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/search", async (
-        [FromBody] CommonSearchRequest req,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ServicesEndpoints");
-
-                var validationContext = new ValidationContext(req);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
-                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
-
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Failed",
-                        Detail = errorMessages,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/services/search"
-                    });
-                }
-
-                try
-                {
-                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ServicesIndex, req);
-                    return Results.Ok(results);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid search request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/services/search"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled exception during search");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/services/search"
-                    );
-                }
-            })
-.WithName("SearchServicesItems")
-.WithTags("Service")
-.WithSummary("Search Services Items")
-.Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.ProducesProblem(StatusCodes.Status500InternalServerError);
-
 
             // GET BY ID
             group.MapGet("/{id}", async (
