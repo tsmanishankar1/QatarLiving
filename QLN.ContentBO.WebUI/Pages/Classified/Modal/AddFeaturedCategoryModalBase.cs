@@ -156,13 +156,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             {
                 vertical = "classifieds",
                 categoryId = SelectedCategoryId,
-                category = SelectedCategory,
+                categoryName = SelectedCategory,
                 //l1CategoryId = SelectedSubcategoryId,
                 //l1categoryName = SelectedSubcategory,
                 //l2categoryId = SelectedSectionId,
                 //l2categoryName = SelectedSection,
-                startDate = StartDate?.ToUniversalTime().ToString("o"),
-                endDate = EndDate?.ToUniversalTime().ToString("o"),
+                startDate = StartDate?.ToString("yyyy-MM-dd"),
+                endDate = EndDate?.ToString("yyyy-MM-dd"),
                 imageUrl = ImagePreviewWithoutBase64
             };
 

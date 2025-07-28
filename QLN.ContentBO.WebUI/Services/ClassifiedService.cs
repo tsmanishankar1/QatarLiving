@@ -66,6 +66,8 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
+                Console.WriteLine("CreateSeasonalPicksAsync" + request);
+                Console.WriteLine("CreateSeasonalPicksAsync Payload:\n" + json);
 
                 return await _httpClient.SendAsync(request);
             }
@@ -109,14 +111,13 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string userId, string vertical)
+        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments,  string vertical)
         {
             try
             {
                 var payload = new
                 {
                     slotAssignments = slotAssignments,
-                    userId = userId,
                     vertical = vertical
                 };
 
@@ -200,18 +201,22 @@ namespace QLN.ContentBO.WebUI.Services
                     vertical = vertical
                 };
 
-                var content = new StringContent(
-                    JsonSerializer.Serialize(body),
-                    Encoding.UTF8,
-                    "application/json"
-                );
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
 
-                return await _httpClient.PutAsync("/api/v2/classifiedbo/featured-category/reorder-slots", content);
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/replacefeaturedcategoryslots")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
+                return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
             {
-                _logger.LogError("ReplaceSeasonalPickAsync: " + ex.Message);
+                _logger.LogError("ReplaceFeaturedCategoryAsync: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -221,7 +226,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Delete,
-                    $"/api/v2/classifiedbo/featured-category-delete?categoryId={pickId}&Vertical={vertical}");
+                    $"/api/v2/classifiedbo/featured-category-delete?categoryId={pickId}&vertical={vertical}");
 
                 return await _httpClient.SendAsync(request);
             }
@@ -232,14 +237,13 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string userId, string vertical)
+        public async Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical)
         {
             try
             {
                 var payload = new
                 {
                     slotAssignments = slotAssignments,
-                    userId = userId,
                     vertical = vertical
                 };
 

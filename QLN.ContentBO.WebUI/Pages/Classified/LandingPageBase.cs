@@ -324,7 +324,7 @@ public class LandingPageBase : QLComponentBase
     }
 
 
-    protected  Task NavigateToAddItem()
+    protected async Task NavigateToAddItem()
     {
         var title = $"Add {GetCurrentTabAddButtonText()}";
 
@@ -336,16 +336,23 @@ public class LandingPageBase : QLComponentBase
         {
             CloseOnEscapeKey = true
         };
-        //return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        IDialogReference dialog;
         if (currentItemType == LandingPageItemType.FeaturedCategory)
         {
-            return DialogService.ShowAsync<AddFeaturedCategoryModal>("", parameters, options);
+            dialog = await DialogService.ShowAsync<AddFeaturedCategoryModal>("", parameters, options);
         }
         else 
         {
-            return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+            dialog = await DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
         }
-        
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadDataForCurrentTab();
+            await LoadAllFeaturedCategory();
+            await LoadAllSeasonalPicks();
+            StateHasChanged();
+        }
     }
 
     protected async Task ReplaceItem(LandingPageItem item)
@@ -369,7 +376,9 @@ public class LandingPageBase : QLComponentBase
         { nameof(MessageBoxBase.Title), title },
         { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
         { nameof(ReplaceDialogModal.events), data },
-        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
+        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder },
+        { nameof(ReplaceDialogModal.ActiveIndex), activeIndex }
+
     };
 
         var options = new DialogOptions
@@ -379,7 +388,14 @@ public class LandingPageBase : QLComponentBase
             CloseOnEscapeKey = true
         };
 
-        await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        //await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadDataForCurrentTab();
+        }
     }
 
     protected Task OpenDialogAsync()
