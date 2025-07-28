@@ -11,7 +11,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     public class FeaturedCategoryDto
     {
         public string Vertical { get; set; } = null!;
-        public string Category { get; set; } = null!;
+        public string CategoryName { get; set; } = null!;
         public string CategoryId { get; set; } = null!;
         [JsonConverter(typeof(FlexibleDateOnlyConverter))]
         public DateOnly StartDate { get; set; }

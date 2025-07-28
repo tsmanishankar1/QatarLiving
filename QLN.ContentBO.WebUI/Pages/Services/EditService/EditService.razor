@@ -1,0 +1,32 @@
+@page "/manage/services/editform"
+
+@using QLN.ContentBO.WebUI.Models
+@inherits EditServiceBase
+
+ <button class="back-button" @onclick="GoBack">
+     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+        Back
+</button>
+<div class="button-row">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                       StartIcon="@Icons.Material.Outlined.Visibility"
+                       OnClick='@(() => ShowConfirmation("Publish Ad", "Are you sure you want to Publish this ad?", "Publish"))'>
+                Publish
+            </MudButton>
+            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                       OnClick='@(() => OpenNeedChangesDialog())'>
+                <img src="/qln-images/delete_icon.svg" class="btn-icon" />
+                Need Changes
+            </MudButton>
+        </div>
+<div class="create-form-container">
+    <MudGrid GutterSize="24px">
+        <MudItem xs="12" md="5">
+            <EditServiceForm Id="@Id" />
+        </MudItem>
+
+        <MudItem xs="12" md="7">
+            <UploadPhotos  AdModel="@adPostModel"/>
+        </MudItem>
+    </MudGrid>
+</div>

@@ -31,44 +31,136 @@ public static class CommonIndexingEndpoints
             var logger = logFac.CreateLogger("CommonIndexing");
 
             if (string.IsNullOrWhiteSpace(index))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index parameter required", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/search"
+                });
 
             if (req is null)
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Payload required", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Request payload is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/search"
+                });
 
             try
             {
                 var response = await svc.SearchAsync(index, req);
                 return Results.Ok(response);
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning(ex, "Null argument provided for search on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/search?index={index}"
+                });
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("Invalid filter") ||
+                                              ex.Message.Contains("Invalid date") ||
+                                              ex.Message.Contains("Empty collection") ||
+                                              ex.Message.Contains("Unsupported filter") ||
+                                              ex.Message.Contains("Error building filter") ||
+                                              ex.Message.Contains("Error processing filters"))
+            {
+                logger.LogWarning(ex, "Invalid filter provided for index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Filter",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/search?index={index}"
+                });
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("PageNumber") ||
+                                              ex.Message.Contains("PageSize") ||
+                                              ex.Message.Contains("OrderBy"))
+            {
+                logger.LogWarning(ex, "Invalid pagination or sorting parameter for index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Parameter",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/search?index={index}"
+                });
+            }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid index '{Index}'", index);
-                return Results.BadRequest(new ProblemDetails { Title = "Invalid Index", Detail = ex.Message, Status = 400 });
+                logger.LogWarning(ex, "Invalid argument for search on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Argument",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/search?index={index}"
+                });
+            }
+            catch (NotSupportedException ex)
+            {
+                logger.LogWarning(ex, "Unsupported index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Unsupported Index",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/search?index={index}"
+                });
             }
             catch (RequestFailedException ex)
             {
-                logger.LogError(ex, "Azure Search error on '{Index}'", index);
-                var status = ex.Status >= 400 && ex.Status < 600
-                    ? ex.Status
-                    : StatusCodes.Status502BadGateway;
+                logger.LogError(ex, "Azure Search service error for index '{Index}'", index);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
                 return Results.Problem(
-                    title: "Search Error",
-                    detail: ex.Message,
+                    title: "Search Service Error",
+                    detail: $"Azure Search service encountered an error: {ex.Message}",
                     statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: $"/api/indexes/search?index={index}"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Search operation failed for index '{Index}'", index);
+                return Results.Problem(
+                    title: "Search Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
                     instance: $"/api/indexes/search?index={index}"
                 );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Search error on '{Index}'", index);
-                return Results.Problem("Search Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected error during search for index '{Index}'", index);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while processing your search request.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/search?index={index}"
+                );
             }
         })
         .WithName("GlobalSearch")
         .WithTags("Indexes")
         .WithSummary("Search documents in any index")
-        .WithDescription("Search for documents using ?index=classifiedsitems. Supports both regular property filters and JSON attribute filters.");
+        .WithDescription("Search for documents using ?index=classifiedsitems. Supports both regular property filters, JSON attribute filters, and date filtering.");
 
         group.MapPost("/getAll", async (
             [FromQuery] string index,
@@ -80,27 +172,136 @@ public static class CommonIndexingEndpoints
             var logger = logFac.CreateLogger("CommonIndexing");
 
             if (string.IsNullOrWhiteSpace(index))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index parameter required", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/getAll"
+                });
 
             if (req is null)
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Payload required", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Request payload is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/getAll"
+                });
 
             try
             {
                 var response = await svc.GetAllAsync(index, req);
                 return Results.Ok(response);
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning(ex, "Null argument provided for GetAll on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/getAll?index={index}"
+                });
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("Invalid filter") ||
+                                              ex.Message.Contains("Invalid date") ||
+                                              ex.Message.Contains("Empty collection") ||
+                                              ex.Message.Contains("Unsupported filter") ||
+                                              ex.Message.Contains("Error building filter") ||
+                                              ex.Message.Contains("Error processing filters"))
+            {
+                logger.LogWarning(ex, "Invalid filter provided for GetAll on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Filter",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/getAll?index={index}"
+                });
+            }
+            catch (ArgumentException ex) when (ex.Message.Contains("PageNumber") ||
+                                              ex.Message.Contains("PageSize") ||
+                                              ex.Message.Contains("OrderBy"))
+            {
+                logger.LogWarning(ex, "Invalid pagination or sorting parameter for GetAll on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Parameter",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/getAll?index={index}"
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Invalid argument for GetAll on index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Argument",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/getAll?index={index}"
+                });
+            }
+            catch (NotSupportedException ex)
+            {
+                logger.LogWarning(ex, "Unsupported index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Unsupported Index",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/getAll?index={index}"
+                });
+            }
+            catch (RequestFailedException ex)
+            {
+                logger.LogError(ex, "Azure Search service error for GetAll on index '{Index}'", index);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "Search Service Error",
+                    detail: $"Azure Search service encountered an error: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: $"/api/indexes/getAll?index={index}"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "GetAll operation failed for index '{Index}'", index);
+                return Results.Problem(
+                    title: "GetAll Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/getAll?index={index}"
+                );
+            }
             catch (Exception ex)
             {
-                logger.LogError(ex, "GetAll error for '{Index}'", index);
-                return Results.Problem("GetAll Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected error during GetAll for index '{Index}'", index);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while processing your GetAll request.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/getAll?index={index}"
+                );
             }
         })
         .WithName("GetAllIndexDocuments")
         .WithTags("Indexes")
         .WithSummary("Get all documents with filters, no default sorting")
-        .WithDescription("Returns all documents using filters, but skips internal default sorting logic.");
-
+        .WithDescription("Returns all documents using filters, but skips internal default sorting logic. Supports date filtering and JSON attribute filters.");
 
         group.MapPost("/upload", async (
                 [FromBody] CommonIndexRequest req,
@@ -109,25 +310,79 @@ public static class CommonIndexingEndpoints
             ) =>
         {
             var logger = logFac.CreateLogger("CommonIndexing");
+
+            if (req is null)
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Request payload is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/upload"
+                });
+
             try
             {
                 var msg = await svc.UploadAsync(req);
                 return Results.Ok(new { message = msg, success = true });
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning(ex, "Null argument provided for upload");
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/upload"
+                });
+            }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid upload for '{IndexName}'", req?.IndexName);
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = ex.Message, Status = 400 });
+                logger.LogWarning(ex, "Invalid upload request for index '{IndexName}'", req?.IndexName);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Upload Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/upload"
+                });
             }
             catch (RequestFailedException ex)
             {
-                logger.LogError(ex, "Azure Search error on upload for '{IndexName}'", req?.IndexName);
-                return Results.Problem("Azure Search Error", ex.Message, 502);
+                logger.LogError(ex, "Azure Search upload error for index '{IndexName}'", req?.IndexName);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "Upload Service Error",
+                    detail: $"Azure Search service encountered an error during upload: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: "/api/indexes/upload"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Upload operation failed for index '{IndexName}'", req?.IndexName);
+                return Results.Problem(
+                    title: "Upload Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: "/api/indexes/upload"
+                );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected upload error for '{IndexName}'", req?.IndexName);
-                return Results.Problem("Indexing Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected upload error for index '{IndexName}'", req?.IndexName);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while processing your upload request.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: "/api/indexes/upload"
+                );
             }
         })
         .WithName("UploadDocument")
@@ -142,25 +397,79 @@ public static class CommonIndexingEndpoints
             ) =>
         {
             var logger = logFac.CreateLogger("CommonIndexing");
+
+            if (req is null)
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Request payload is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/update"
+                });
+
             try
             {
                 var msg = await svc.UploadAsync(req);
                 return Results.Ok(new { message = msg, success = true });
             }
+            catch (ArgumentNullException ex)
+            {
+                logger.LogWarning(ex, "Null argument provided for update");
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/update"
+                });
+            }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid update for '{IndexName}'", req?.IndexName);
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = ex.Message, Status = 400 });
+                logger.LogWarning(ex, "Invalid update request for index '{IndexName}'", req?.IndexName);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Update Request",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/update"
+                });
             }
             catch (RequestFailedException ex)
             {
-                logger.LogError(ex, "Azure Search error on update '{IndexName}'", req?.IndexName);
-                return Results.Problem("Azure Search Error", ex.Message, 502);
+                logger.LogError(ex, "Azure Search update error for index '{IndexName}'", req?.IndexName);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "Update Service Error",
+                    detail: $"Azure Search service encountered an error during update: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: "/api/indexes/update"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Update operation failed for index '{IndexName}'", req?.IndexName);
+                return Results.Problem(
+                    title: "Update Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: "/api/indexes/update"
+                );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected update error for '{IndexName}'", req?.IndexName);
-                return Results.Problem("Update Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected update error for index '{IndexName}'", req?.IndexName);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while processing your update request.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: "/api/indexes/update"
+                );
             }
         })
         .WithName("UpdateDocument")
@@ -177,8 +486,25 @@ public static class CommonIndexingEndpoints
         {
             var logger = logFac.CreateLogger("CommonIndexing");
 
-            if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(id))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index and ID are required", Status = 400 });
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}"
+                });
+
+            if (string.IsNullOrWhiteSpace(id))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "ID parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}"
+                });
 
             try
             {
@@ -194,29 +520,77 @@ public static class CommonIndexingEndpoints
                         await svc.GetByIdAsync<ClassifiedsDealsIndex>(index, id),
                     ConstantValues.IndexNames.ServicesIndex =>
                         await svc.GetByIdAsync<ServicesIndex>(index, id),
-                    ConstantValues.IndexNames.LandingBackOfficeIndex =>
-                        await svc.GetByIdAsync<LandingBackOfficeIndex>(index, id),
                     _ => throw new NotSupportedException($"Unknown index '{index}'")
                 };
 
                 return result is null
-                    ? Results.NotFound(new ProblemDetails { Title = "Not Found", Detail = $"No '{id}' in '{index}'", Status = 404 })
+                    ? Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"Document with ID '{id}' not found in index '{index}' or is inactive",
+                        Status = 404,
+                        Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                        Instance = $"/api/indexes/{index}/{id}"
+                    })
                     : Results.Ok(result);
             }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid index '{Index}'", index);
-                return Results.BadRequest(new ProblemDetails { Title = "Invalid Index", Detail = ex.Message, Status = 400 });
+                logger.LogWarning(ex, "Invalid argument for GetById on index '{Index}', id '{Id}'", index, id);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Argument",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}"
+                });
             }
             catch (NotSupportedException ex)
             {
                 logger.LogWarning(ex, "Unsupported index '{Index}'", index);
-                return Results.BadRequest(new ProblemDetails { Title = "Unsupported Index", Detail = ex.Message, Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Unsupported Index",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}"
+                });
+            }
+            catch (RequestFailedException ex)
+            {
+                logger.LogError(ex, "Azure Search GetById error for index '{Index}', id '{Id}'", index, id);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "GetById Service Error",
+                    detail: $"Azure Search service encountered an error: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "GetById operation failed for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "GetById Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Lookup error for '{Index}/{Id}'", index, id);
-                return Results.Problem("Lookup Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected lookup error for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while retrieving the document.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
             }
         })
         .WithName("GetDocumentById")
@@ -234,10 +608,24 @@ public static class CommonIndexingEndpoints
             var logger = logFac.CreateLogger("CommonIndexing");
 
             if (string.IsNullOrWhiteSpace(index))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index must be provided", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}"
+                });
 
             if (string.IsNullOrWhiteSpace(id))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Id must be provided", Status = 400 });
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "ID parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}"
+                });
 
             try
             {
@@ -246,13 +634,61 @@ public static class CommonIndexingEndpoints
             }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Invalid index or id: '{Index}', '{Id}'", index, id);
-                return Results.BadRequest(new ProblemDetails { Title = "Invalid Argument", Detail = ex.Message, Status = 400 });
+                logger.LogWarning(ex, "Invalid argument for delete on index '{Index}', id '{Id}'", index, id);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Argument",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}"
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                logger.LogWarning(ex, "Document not found for delete on index '{Index}', id '{Id}'", index, id);
+                return Results.NotFound(new ProblemDetails
+                {
+                    Title = "Not Found",
+                    Detail = ex.Message,
+                    Status = 404,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Instance = $"/api/indexes/{index}/{id}"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Delete operation failed for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "Delete Operation Failed",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
+            }
+            catch (RequestFailedException ex)
+            {
+                logger.LogError(ex, "Azure Search delete error for index '{Index}', id '{Id}'", index, id);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "Delete Service Error",
+                    detail: $"Azure Search service encountered an error during delete: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Delete error for '{Index}/{Id}'", index, id);
-                return Results.Problem("Delete Error", ex.Message, 500);
+                logger.LogError(ex, "Unexpected delete error for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while deleting the document.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}"
+                );
             }
         })
        .WithName("DeleteDocumentById")
@@ -266,13 +702,39 @@ public static class CommonIndexingEndpoints
             [FromRoute] string index,
             [FromRoute] string id,
             [FromQuery] int similarPageSize = 10
-
         ) =>
         {
             var logger = logFac.CreateLogger("CommonIndexing");
 
-            if (string.IsNullOrWhiteSpace(index) || string.IsNullOrWhiteSpace(id))
-                return Results.BadRequest(new ProblemDetails { Title = "Bad Request", Detail = "Index and ID are required", Status = 400 });
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}/details"
+                });
+
+            if (string.IsNullOrWhiteSpace(id))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "ID parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/{id}/details"
+                });
+
+            if (similarPageSize <= 0 || similarPageSize > 100)
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "SimilarPageSize must be between 1 and 100",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}/details"
+                });
 
             try
             {
@@ -288,54 +750,79 @@ public static class CommonIndexingEndpoints
                         await svc.GetByIdWithSimilarAsync<ClassifiedsDealsIndex>(index, id, similarPageSize),
                     ConstantValues.IndexNames.ServicesIndex =>
                         await svc.GetByIdWithSimilarAsync<ServicesIndex>(index, id, similarPageSize),
-                    ConstantValues.IndexNames.LandingBackOfficeIndex =>
-                        await svc.GetByIdWithSimilarAsync<LandingBackOfficeIndex>(index, id, similarPageSize),
-                    _ => throw new NotSupportedException($"Details not supported for '{index}'")
+                    _ => throw new NotSupportedException($"Details not supported for index '{index}'")
                 };
                 return Results.Ok(result);
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                logger.LogWarning(ex, "Document not found for details on index '{Index}', id '{Id}'", index, id);
                 return Results.NotFound(new ProblemDetails
                 {
                     Title = "Not Found",
-                    Detail = $"No '{id}' in '{index}'",
-                    Status = StatusCodes.Status404NotFound
+                    Detail = ex.Message,
+                    Status = StatusCodes.Status404NotFound,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.4",
+                    Instance = $"/api/indexes/{index}/{id}/details"
                 });
             }
             catch (ArgumentException ex)
             {
-                logger.LogWarning(ex, "Bad request {Index}/{Id}", index, id);
+                logger.LogWarning(ex, "Invalid argument for details on index '{Index}', id '{Id}'", index, id);
                 return Results.BadRequest(new ProblemDetails
                 {
                     Title = "Invalid Argument",
                     Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}/details"
                 });
             }
             catch (NotSupportedException ex)
             {
-                logger.LogWarning(ex, ex.Message);
+                logger.LogWarning(ex, "Unsupported operation for index '{Index}'", index);
                 return Results.BadRequest(new ProblemDetails
                 {
                     Title = "Not Supported",
                     Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
+                    Status = StatusCodes.Status400BadRequest,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/{id}/details"
                 });
             }
             catch (RequestFailedException ex)
             {
-                logger.LogError(ex, "Azure Search failure on details for {Index}/{Id}", index, id);
+                logger.LogError(ex, "Azure Search details error for index '{Index}', id '{Id}'", index, id);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
                 return Results.Problem(
-                    title: "Search Error",
+                    title: "Details Service Error",
+                    detail: $"Azure Search service encountered an error: {ex.Message}",
+                    statusCode: status,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.3",
+                    instance: $"/api/indexes/{index}/{id}/details"
+                );
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Details operation failed for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "Details Operation Failed",
                     detail: ex.Message,
-                    statusCode: StatusCodes.Status502BadGateway
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}/details"
                 );
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected error on details for {Index}/{Id}", index, id);
-                return Results.Problem("Lookup Error", ex.Message, StatusCodes.Status500InternalServerError);
+                logger.LogError(ex, "Unexpected details error for index '{Index}', id '{Id}'", index, id);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while retrieving document details.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/{id}/details"
+                );
             }
         })
         .WithName("GetDocumentWithSimilar")
@@ -350,6 +837,16 @@ public static class CommonIndexingEndpoints
             ) =>
         {
             var logger = logFac.CreateLogger("CommonIndexing");
+
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/health"
+                });
 
             try
             {
@@ -395,6 +892,16 @@ public static class CommonIndexingEndpoints
         {
             var logger = logFac.CreateLogger("CommonIndexing");
 
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Index parameter is required",
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = "/api/indexes/{index}/stats"
+                });
+
             try
             {
                 var searchRequest = new CommonSearchRequest
@@ -413,10 +920,33 @@ public static class CommonIndexingEndpoints
                     lastQueried = DateTime.UtcNow
                 });
             }
+            catch (ArgumentException ex) when (ex.Message.Contains("Invalid filter") ||
+                                              ex.Message.Contains("Invalid date") ||
+                                              ex.Message.Contains("Empty collection") ||
+                                              ex.Message.Contains("Unsupported filter") ||
+                                              ex.Message.Contains("Error building filter") ||
+                                              ex.Message.Contains("Error processing filters"))
+            {
+                logger.LogError(ex, "Invalid filter in stats request for index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Filter",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Type = "https://tools.ietf.org/html/rfc7231#section-6.5.1",
+                    Instance = $"/api/indexes/{index}/stats"
+                });
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Stats failed for index '{Index}'", index);
-                return Results.Problem("Stats Error", ex.Message, 500);
+                return Results.Problem(
+                    title: "Stats Error",
+                    detail: "An error occurred while retrieving index statistics.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc7231#section-6.6.1",
+                    instance: $"/api/indexes/{index}/stats"
+                );
             }
         })
         .WithName("IndexStats")

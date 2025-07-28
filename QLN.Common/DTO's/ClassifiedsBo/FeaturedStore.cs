@@ -19,7 +19,7 @@ namespace QLN.Common.DTO_s
         public DateOnly StartDate { get; set; }
         [JsonConverter(typeof(FlexibleDateOnlyConverter))]
         public DateOnly EndDate { get; set; }            
-        public int? SlotOrder { get; set; }              
+        public int SlotOrder { get; set; }              
         public DateTime? CreatedAt { get; set; }         
         public DateTime? UpdatedAt { get; set; }         
         public string? UserId { get; set; }              
