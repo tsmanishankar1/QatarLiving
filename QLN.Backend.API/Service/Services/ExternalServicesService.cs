@@ -263,21 +263,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
-                {
-                    Destinations = new List<string> { "email" }, 
-                    Recipients = new List<RecipientDto>
-                    {
-                        new RecipientDto
-                        {
-                            Name = dto.UserName,   
-                            Email = dto.EmailAddress    
-                        }
-                    },
-                    Subject = $"Service Ad '{dto.Title}' was updated",
-                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{dto.Title} has been updated."
-                }, cancellationToken);
 
                 return "Service ad updated successfully.";
             }

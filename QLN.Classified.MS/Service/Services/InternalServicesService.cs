@@ -5,6 +5,7 @@ using QLN.Common.Infrastructure.IService.IService;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
+using static QLN.Common.DTO_s.NotificationDto;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -348,9 +349,9 @@ namespace QLN.Classified.MS.Service.Services
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
-                    CategoryName = dto.CategoryName,
-                    L1CategoryName = dto.L1CategoryName,
-                    L2CategoryName = dto.L2CategoryName,
+                    CategoryName = categoryName,
+                    L1CategoryName = l1CategoryName,
+                    L2CategoryName = l2CategoryName,
                     IsPriceOnRequest = dto.IsPriceOnRequest,
                     Price = dto.Price,
                     Title = dto.Title,
@@ -366,9 +367,14 @@ namespace QLN.Classified.MS.Service.Services
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
                     AdType = dto.AdType,
-                    IsFeatured = false,
-                    IsPromoted = false,
-                    IsRefreshed = false,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
+                    IsRefreshed = dto.IsRefreshed,
+                    RefreshExpiryDate = dto.RefreshExpiryDate,
+                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                    PromotedExpiryDate = dto.PromotedExpiryDate,
+                    ExpiryDate = dto.ExpiryDate,
+                    UserName = dto.UserName,
                     PublishedDate = dto.PublishedDate,
                     Status = dto.Status,
                     IsActive = dto.IsActive,
@@ -402,7 +408,21 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
+                {
+                    Destinations = new List<string> { "email" },
+                    Recipients = new List<RecipientDto>
+                    {
+                        new RecipientDto
+                        {
+                            Name = dto.UserName,
+                            Email = dto.EmailAddress
+                        }
+                    },
+                    Subject = $"Service Ad '{dto.Title}' was updated",
+                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
+                    Html = $"{dto.Title} has been updated."
+                }, cancellationToken);
                 return "Service Ad updated successfully.";
             }
             catch (ArgumentException ex)
