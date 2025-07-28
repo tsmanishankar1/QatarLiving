@@ -109,7 +109,6 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         {
             try
             {
-                Console.Write("the method is called" + SelectedVertical + isActive);
                 int? selectedVertical = SelectedVertical == -1 ? null : SelectedVertical;
                 var apiResponse = await bannerService.GetBannerByVerticalAndStatus(selectedVertical, isActive);
                 if (apiResponse.IsSuccessStatusCode)
