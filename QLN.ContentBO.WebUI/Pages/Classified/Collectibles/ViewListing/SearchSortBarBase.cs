@@ -126,8 +126,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         {
             var parameters = new DialogParameters
             {
-                { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "Title", "Export Classified Collectibles" },
+                { "Descrption", "Do you want to export the current classified collectibles data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };
