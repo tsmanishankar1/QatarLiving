@@ -10,10 +10,9 @@ namespace QLN.Common.Infrastructure.IRepository.ISearchServiceRepository
 {
     public interface ISearchRepository
     {
-        Task<AzureSearchResults<T>> SearchAsync<T>(string vertical, SearchOptions options, string searchText);
-        Task<string> UploadAsync<T>(string vertical, T document);
-        Task<T?> GetByIdAsync<T>(string vertical, string key);
-        Task DeleteAsync(string vertical, string key);
-
+        Task<AzureSearchResults<T>> SearchAsync<T>(string IndexName, SearchOptions options, string searchText);
+        Task<string> UploadAsync<T>(string IndexName, T document);
+        Task<T?> GetByIdAsync<T>(string IndexName, string key);
+        Task DeleteAsync(string IndexName, string key);
     }
 }

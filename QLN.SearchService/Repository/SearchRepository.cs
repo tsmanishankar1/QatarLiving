@@ -30,22 +30,22 @@ namespace QLN.SearchService.Repository
             _logger = logger;
         }
 
-        private SearchClient GetClient(string vertical)
+        private SearchClient GetClient(string IndexName)
         {
-            if (!_settings.Indexes.TryGetValue(vertical, out var indexName))
-                throw new ArgumentException($"No index configured for '{vertical}'", nameof(vertical));
+            if (!_settings.Indexes.TryGetValue(IndexName, out var indexName))
+                throw new ArgumentException($"No index configured for '{IndexName}'", nameof(IndexName));
             return new SearchClient(_endpoint, indexName, _credential);
         }
 
         public async Task<AzureSearchResults<T>> SearchAsync<T>(
-            string vertical,
+            string IndexName,
             SearchOptions options,
             string searchText)
         {
-            var client = GetClient(vertical);
+            var client = GetClient(IndexName);
             try
             {
-                _logger.LogInformation("Searching '{Vertical}' for '{Text}'", vertical, searchText ?? "*");
+                _logger.LogInformation("Searching '{IndexName}' for '{Text}'", IndexName, searchText ?? "*");
                 var resp = await client.SearchAsync<T>(searchText ?? "*", options);
 
                 // pull out documents
@@ -61,22 +61,22 @@ namespace QLN.SearchService.Repository
             }
             catch (RequestFailedException ex)
             {
-                _logger.LogError(ex, "Azure Search failed for '{Vertical}'", vertical);
+                _logger.LogError(ex, "Azure Search failed for '{IndexName}'", IndexName);
                 throw;
             }
         }
 
-        public async Task<string> UploadAsync<T>(string vertical, T document)
+        public async Task<string> UploadAsync<T>(string IndexName, T document)
         {
-            var client = GetClient(vertical);
+            var client = GetClient(IndexName);
             var batch = IndexDocumentsBatch.Upload(new[] { document! });
             await client.IndexDocumentsAsync(batch);
-            return $"Document indexed to '{vertical}'";
+            return $"Document indexed to '{IndexName}'";
         }
 
-        public async Task<T?> GetByIdAsync<T>(string vertical, string key)
+        public async Task<T?> GetByIdAsync<T>(string IndexName, string key)
         {
-            var client = GetClient(vertical);
+            var client = GetClient(IndexName);
             try
             {
                 var resp = await client.GetDocumentAsync<T>(key);
@@ -88,9 +88,9 @@ namespace QLN.SearchService.Repository
             }
         }
 
-        public async Task DeleteAsync(string vertical, string key)
+        public async Task DeleteAsync(string IndexName, string key)
         {
-            var client = GetClient(vertical);
+            var client = GetClient(IndexName);
             var batch = IndexDocumentsBatch.Delete("Id", new[] { key });
             await client.IndexDocumentsAsync(batch);
         }

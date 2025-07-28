@@ -363,6 +363,13 @@
             text-decoration: underline !important;
         }
 
+        .post-body-preview-details iframe {
+            height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
+            max-width: 100%;
+            border: none;
+        }
+
+
     .post-footer {
         display: flex;
         justify-content: space-between;

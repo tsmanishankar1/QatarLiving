@@ -13,7 +13,17 @@ namespace QLN.ContentBO.WebUI.Components.ConfirmationDialog
         [Parameter] public string Descrption { get; set; } = "Article Action";
         [Parameter] public string ButtonTitle { get; set; } = "Article Action";
         [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+
          [Parameter] public EventCallback OnConfirmed { get; set; }
+
+        protected string HeaderIconPath { get; set; } = "/qln-images/success_icon.svg";
+
+        protected override void OnInitialized()
+        {
+            HeaderIconPath = Title.Contains("delete", StringComparison.OrdinalIgnoreCase)
+                ? "/qln-images/waring_icon.svg"
+                : "/qln-images/success_icon.svg";
+        }
         public void Cancel() => MudDialog.Cancel();
          public async Task Confirm()
         {
@@ -21,5 +31,7 @@ namespace QLN.ContentBO.WebUI.Components.ConfirmationDialog
                 await OnConfirmed.InvokeAsync();
             MudDialog.Close(DialogResult.Ok(true));
         }
+       
     }
 }
+

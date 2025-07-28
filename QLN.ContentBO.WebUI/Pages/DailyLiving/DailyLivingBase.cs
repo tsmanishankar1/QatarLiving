@@ -660,7 +660,7 @@ public class DailyLivingBase : QLComponentBase
         try
         {
             selectedTopic.topicName = newName;
-            var apiResponse = await DailyService.UpdateTopicAsync(selectedTopic);
+            var apiResponse = await DailyService.UpdateTopicRenameAsync(selectedTopic);
             if (apiResponse.IsSuccessStatusCode)
             {
                 Snackbar.Add("Topic Renamed Successfully", Severity.Success);
