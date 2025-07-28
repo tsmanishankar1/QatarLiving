@@ -3,62 +3,87 @@ using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using System.Collections.Generic;
 using QLN.ContentBO.WebUI.Models;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Interfaces;
+using MudBlazor;
+using System.Linq;
+
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
     public partial class ViewListingTableBase : ComponentBase
     {
-        protected List<ListingItem> Listings { get; set; } = new();
+        [Inject]
+        public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<string> OnTabChange { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
-        protected HashSet<ListingItem> SelectedListings { get; set; } = new();
+        protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
-        protected void HandlePageChange(int newPage)
+        public enum BulkActionType
+        {
+            Approve = 1,
+            Publish = 2,
+            Unpublish = 3,
+            UnPromote = 5,
+            UnFeature = 6,
+            Remove = 7,
+            NeedChanges = 8
+        }
+
+
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChanged.InvokeAsync(currentPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // reset to first page
-            StateHasChanged();
-        }
-
-
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
+            currentPage = 1;
+            await OnPageSizeChanged.InvokeAsync(pageSize);
         }
         protected string selectedTab = "pendingApproval";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pending Approval", Value = "pendingApproval" },
+            new() { Label = "All", Value = "all" },
             new() { Label = "Published", Value = "published" },
             new() { Label = "Unpublished", Value = "unpublished" },
             new() { Label = "P2P", Value = "p2p" },
             new() { Label = "Promoted", Value = "promoted" },
             new() { Label = "Featured", Value = "featured" }
         };
+        protected string GetTabTitle()
+        {
+            return selectedTab switch
+            {
+                "all" => "All",
+                "pendingApproval" => "Pending Approval",
+                "published" => "Published",
+                "unpublished" => "Unpublished",
+                "p2p" => "P2P",
+                "promoted" => "Promoted",
+                "featured" => "Featured",
+                _ => "Classified"
+            };
+        }
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
-
-            int? status = newTab switch
-            {
-                "published" => 1,
-                "unpublished" => 2,
-                "Promoted" => 3,
-                _ => null
-            };
-
+            SelectedListings.Clear();
+            await OnTabChange.InvokeAsync(newTab);
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -98,51 +123,69 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-        private List<ListingItem> GetSampleData()
+        protected void OnEdit(ClassifiedItemViewListing item)
         {
-            string imageUrl = "https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-1.jpg";
-            return new List<ListingItem>
-            {
-                new ListingItem { AdId = 21660, UserId = 21660, AdTitle = "QPO Presents", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 21435, UserId = 21435, AdTitle = "LEGO® Show", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 21342, UserId = 21342, AdTitle = "Feast and Be...", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 23415, UserId = 23415, AdTitle = "Candlelight: T...", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl }
-            };
-        }
-        protected void OnEdit(ListingItem item)
-        {
-            var targetUrl = $"/manage/classified/items/edit/ad/{item.AdId}";
+            var targetUrl = $"/manage/classified/items/edit/ad/{item.Id}";
             Navigation.NavigateTo(targetUrl);
 
         }
 
-        protected void OnPreview(ListingItem item)
+        protected void OnPreview(ClassifiedItemViewListing item)
         {
-            Console.WriteLine($"Preview clicked: {item.AdTitle}");
+            Console.WriteLine($"Preview clicked: {item.Title}");
         }
 
-        protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
-        protected Task UnpublishSelected() => Task.Run(() => Console.WriteLine("Unpublished Selected"));
-        protected Task PublishSelected() => Task.Run(() => Console.WriteLine("Published Selected"));
-        protected Task RemoveSelected() => Task.Run(() => Console.WriteLine("Removed Selected"));
-        protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
-        protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
+        protected Task ApproveSelected() => PerformBulkAction(BulkActionType.Approve);
+        protected Task RemoveSelected() => PerformBulkAction(BulkActionType.Remove);
+        protected Task UnpublishSelected() => PerformBulkAction(BulkActionType.Unpublish);
+        protected Task PublishSelected() => PerformBulkAction(BulkActionType.Publish);
+        protected Task UnpromoteSelected() => PerformBulkAction(BulkActionType.UnPromote);
+        protected Task UnfeatureSelected() => PerformBulkAction(BulkActionType.UnFeature);
 
-        protected Task Approve(ListingItem item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
-        protected Task Publish(ListingItem item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
-        protected Task Unpublish(ListingItem item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
-        protected Task OnRemove(ListingItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
-        private void HandleRejection(string reason)
+
+        protected Task Approve(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
+        protected Task Publish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
+        protected Task Unpublish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
+        protected Task OnRemove(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        private async Task HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
-            // Send to API or handle in state
+            
+            await PerformBulkAction(BulkActionType.NeedChanges, reason);
         }
-        protected Task RequestChanges(ListingItem item)
+
+        protected Task RequestChanges(ClassifiedItemViewListing item)
         {
-            Console.WriteLine($"Requested changes for: {item.AdId}");
             OpenRejectDialog();
             return Task.CompletedTask;
         }
      
+       private async Task PerformBulkAction(BulkActionType action, string reason = "")
+        {
+            var adIds = SelectedListings.Select(x => x.Id).ToList();
+
+            if (!adIds.Any())
+                return;
+
+            var payload = new Dictionary<string, object>
+            {
+                ["adIds"] = adIds,
+                ["action"] = (int)action,
+                ["reason"] = reason
+            };
+
+            var response = await ClassifiedService.PerformBulkActionAsync(payload);
+
+            if (response?.IsSuccessStatusCode == true)
+            {
+                SelectedListings.Clear();
+                Snackbar.Add("Action performed successfully.", Severity.Success);
+                await OnTabChange.InvokeAsync(selectedTab); // Refresh
+            }
+            else
+            {
+                Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+            }
+        }
     }
 }

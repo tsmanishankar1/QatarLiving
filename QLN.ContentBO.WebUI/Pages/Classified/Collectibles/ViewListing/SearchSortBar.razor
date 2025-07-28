@@ -15,6 +15,7 @@
                 <input type="text"
                        placeholder="Search for Items"
                        class="search-input"
+                       @bind="searchText"
                        @oninput="OnSearchChanged" />
             </div>
         </div>
@@ -47,7 +48,7 @@
                                 ShowToolbar="false"
                                 PickerVariant="PickerVariant.Static" />
                     <div class="popover-footer">
-                        <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelCreatedPopover">Cancel</MudButton>
+                        <MudButton class="popover-button popover-close-btn" Variant="Variant.Outlined" OnClick="CancelCreatedPopover">Cancel</MudButton>
                         <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmCreatedPopover">OK</MudButton>
                     </div>
                 </div>
@@ -69,7 +70,7 @@
                                     ShowToolbar="false"
                                     PickerVariant="PickerVariant.Static" />
                         <div class="popover-footer">
-                            <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelPublishedPopover">Cancel</MudButton>
+                            <MudButton class="popover-button popover-close-btn" Variant="Variant.Outlined" OnClick="CancelPublishedPopover">Cancel</MudButton>
                             <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmPublishedPopover">OK</MudButton>
                         </div>
                     </div>

@@ -5,7 +5,6 @@ using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
-
     public class SearchSortBarBase : ComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
@@ -13,8 +12,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
+        [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
+        [Parameter] public EventCallback OnClearFilters { get; set; }
 
         protected bool ascending = true;
+        protected string searchText = string.Empty;
+
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
         protected DateTime? dateCreated;
@@ -55,22 +58,27 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
 
-        protected void ConfirmCreatedPopover()
+        protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ClearFilters()
+        protected async void ClearFilters()
         {
             dateCreated = null;
             datePublished = null;
+            ascending = true;
+            searchText = string.Empty;
+            await OnClearFilters.InvokeAsync();
         }
 
         protected async Task AddEventCallback()
@@ -95,7 +103,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             DialogService.Show<AutoSelectDialog>("", parameters);
         }
 
-        protected Task HandleSelect(DropdownItem selected)
+         protected Task HandleSelect(DropdownItem selected)
         {
             Console.WriteLine($"Selected: {selected.Label}");
 
@@ -111,6 +119,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             dateCreated = null;
             datePublished = null;
         }
-
     }
 }

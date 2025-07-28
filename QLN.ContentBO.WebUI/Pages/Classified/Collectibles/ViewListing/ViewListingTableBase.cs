@@ -11,54 +11,63 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
     public partial class ViewListingTableBase : ComponentBase
     {
-        protected List<ListingItem> Listings { get; set; } = new();
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<string> OnTabChange { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
-        protected HashSet<ListingItem> SelectedListings { get; set; } = new();
+        protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
-        protected void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChanged.InvokeAsync(currentPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // reset to first page
-            StateHasChanged();
+            currentPage = 1;
+            await OnPageSizeChanged.InvokeAsync(pageSize);
         }
 
 
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
-        }
         protected string selectedTab = "pendingApproval";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pending Approval", Value = "pendingApproval" },
+            new() { Label = "All", Value = "all" },
             new() { Label = "Published", Value = "published" },
             new() { Label = "Unpublished", Value = "unpublished" },
             new() { Label = "P2P", Value = "p2p" },
             new() { Label = "Promoted", Value = "promoted" },
             new() { Label = "Featured", Value = "featured" }
         };
-        protected async Task OnTabChanged(string newTab)
+        protected string GetTabTitle()
+        {
+            return selectedTab switch
+            {
+                "all" => "All",
+                "pendingApproval" => "Pending Approval",
+                "published" => "Published",
+                "unpublished" => "Unpublished",
+                "p2p" => "P2P",
+                "promoted" => "Promoted",
+                "featured" => "Featured",
+                _ => "Classified"
+            };
+        }
+         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
-
-            int? status = newTab switch
-            {
-                "published" => 1,
-                "unpublished" => 2,
-                "Promoted" => 3,
-                _ => null
-            };
-
+            SelectedListings.Clear();
+            await OnTabChange.InvokeAsync(newTab);
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -98,27 +107,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-        private List<ListingItem> GetSampleData()
+          protected void OnEdit(ClassifiedItemViewListing item)
         {
-            string imageUrl = "/qln-images/classifieds/collectibles_image.svg";
-            return new List<ListingItem>
-            {
-                new ListingItem { AdId = 21660, UserId = 21660, AdTitle = "QPO Presents", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 21435, UserId = 21435, AdTitle = "LEGO® Show", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 21342, UserId = 21342, AdTitle = "Feast and Be...", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl },
-                new ListingItem { AdId = 23415, UserId = 23415, AdTitle = "Candlelight: T...", InternalUserId = 23, UserName = "Rashid", Category = "Electronics", SubCategory = "Phone", Section = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), ExpiryDate = DateTime.Parse("2025-04-12"), ImageUrl = imageUrl }
-            };
-        }
-        protected void OnEdit(ListingItem item)
-        {
-            var targetUrl = $"/manage/classified/collectibles/edit/ad/{item.AdId}";
+            var targetUrl = $"/manage/classified/collectibles/edit/ad/{item.Id}";
             Navigation.NavigateTo(targetUrl);
 
         }
 
-        protected void OnPreview(ListingItem item)
+        protected void OnPreview(ClassifiedItemViewListing item)
         {
-            Console.WriteLine($"Preview clicked: {item.AdTitle}");
+            Console.WriteLine($"Preview clicked: {item.Title}");
         }
 
         protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
@@ -128,18 +126,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(ListingItem item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
-        protected Task Publish(ListingItem item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
-        protected Task Unpublish(ListingItem item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
-        protected Task OnRemove(ListingItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+        protected Task Approve(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
+        protected Task Publish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
+        protected Task Unpublish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
+        protected Task OnRemove(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
             // Send to API or handle in state
         }
-        protected Task RequestChanges(ListingItem item)
+        protected Task RequestChanges(ClassifiedItemViewListing item)
         {
-            Console.WriteLine($"Requested changes for: {item.AdId}");
+            Console.WriteLine($"Requested changes for: {item.Id}");
             OpenRejectDialog();
             return Task.CompletedTask;
         }

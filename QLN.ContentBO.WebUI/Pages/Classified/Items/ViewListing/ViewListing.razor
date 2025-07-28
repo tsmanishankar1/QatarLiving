@@ -7,10 +7,19 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+             <SearchSortBar 
+              OnSearch="HandleSearch"
+              OnSort="HandleSort"
+              OnDateFilterChanged="HandleDateFiltersChanged"
+              OnClearFilters="HandleClearFilters" />
               <div class="community-table">
-              <ViewListingTable/>
-
+              <ViewListingTable
+                IsLoading="IsLoading"
+                Items="ClassifiedItems"
+                TotalCount="TotalCount"
+                OnTabChange="HandleTabChange"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged" />
              </div> 
     </MudItem>
 </MudGrid>

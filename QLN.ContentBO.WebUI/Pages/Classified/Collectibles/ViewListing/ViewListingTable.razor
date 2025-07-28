@@ -1,5 +1,8 @@
 @inherits ViewListingTableBase
+@inject NavigationManager NavigationManager
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCardWithButton
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 
@@ -8,6 +11,22 @@
                 ActiveValue="@selectedTab"
                 OnChange="@OnTabChanged" />
 
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (Items == null || Items.Count == 0)
+{
+    <div class="empty-card-wrapper">
+        <EmptyCardWithButton 
+            Title="@($"No {GetTabTitle()} Items yet.")"
+            Subtitle="You haven't posted any ads yet. Create your first one now!"
+            ButtonText="Create Ad"
+            OnButtonClick="@(() => NavigationManager.NavigateTo("/manage/classified/collectibles/createform"))" />
+    </div>
+}
+else
+{
     <div class="tab-content">
         @if (SelectedListings.Count > 0)
         {
@@ -74,7 +93,7 @@
         }
     </div>
 
-    <MudTable Items="Listings"
+    <MudTable Items="Items"
               Hover="true"
               Bordered="true"
               Elevation="0"
@@ -86,7 +105,7 @@
         <HeaderContent>
             <MudTh class="header-cell">Item image</MudTh>
             <MudTh class="header-cell">Ad ID</MudTh>
-            <MudTh class="header-cell">User ID</MudTh>
+            <MudTh class="header-cell">Ad Type</MudTh>
             <MudTh class="header-cell">Ad Title</MudTh>
             <MudTh class="header-cell">User Id</MudTh>
             <MudTh class="header-cell">User Name</MudTh>
@@ -100,20 +119,21 @@
         </HeaderContent>
 
         <RowTemplate>
-            <MudTd>
-                <img src="@context.ImageUrl" style="width: 64px; height: 64px; object-fit: cover; border-radius: 4px;" />
-            </MudTd>
-            <MudTd><MudLink Href="#">@context.AdId</MudLink></MudTd>
-            <MudTd>@context.UserId</MudTd>
-            <MudTd><MudLink Href="#">@context.AdTitle</MudLink></MudTd>
-            <MudTd>@context.InternalUserId</MudTd>
-            <MudTd>@context.UserName</MudTd>
-            <MudTd>@context.Category</MudTd>
-            <MudTd>@context.SubCategory</MudTd>
-            <MudTd>@context.Section</MudTd>
-            <MudTd>@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@context.PublishedDate.ToString("dd-MM-yyyy")</MudTd>
-            <MudTd>@context.ExpiryDate.ToString("dd-MM-yyyy")</MudTd>
+           <MudTd>
+            <img src="@context.Images?.FirstOrDefault()?.Url" style="width: 136px; height: 61px; border-radius: 6px;" />
+        </MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Id) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdType) ? "-" : context.AdType)" Class="truncate-text hover-title">@context.AdType</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Title) ? "-" : context.Title)" Class="truncate-text hover-title">@context.Title</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text">@context.UserName</MudTd>
+        <MudTd Class="truncate-text">@context.Category</MudTd>
+        <MudTd Class="truncate-text">@context.L2Category</MudTd>
+        <MudTd Class="truncate-text">@context.L1Category</MudTd>
+        <MudTd Class="truncate-text">@(context.CreatedAt != null ? context.CreatedAt?.ToString("dd-MM-yyyy") : "--")</MudTd>
+        <MudTd Class="truncate-text">@(context.PublishedDate != null ? context.PublishedDate?.ToString("dd-MM-yyyy") : "--")</MudTd>
+        <MudTd Class="truncate-text"> @(context.ExpiryDate != null ? context.ExpiryDate?.ToString("dd-MM-yyyy") : "--")</MudTd>
+
             <MudTd>
                 <MudMenu Class="mud-table-menu"
                     Icon="@Icons.Material.Filled.MoreVert"
@@ -179,6 +199,10 @@
             </MudTd>
         </RowTemplate>
     </MudTable>
+    }
+    @if (Items != null && Items.Count > 0)
+    {
      <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
                 OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+    }
 </MudPaper>
