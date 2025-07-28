@@ -147,13 +147,12 @@
                 <MudRadioGroup Color="Color.Primary" T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
                     <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.GeneralTime">General time</MudRadio>
                     <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
-                    <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.FreeTextTime">Free Text time</MudRadio>
                 </MudRadioGroup>
             }
             @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime  && !string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <MudTextField  @bind-Value="@StartTimeSpan" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                    <MudTextField  MaxLength="50" @bind-Value="@StartTimeSpan" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                 </div>
                 @if (!string.IsNullOrEmpty(_timeError))
                 {
@@ -161,7 +160,7 @@
                 }
 
             }
-            {
+            else{
                 @foreach (var entry in DayTimeList.Take(7))
                 {
                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
@@ -175,7 +174,7 @@
                             </div>
                             <div style="display: flex; flex-direction: column;  align-items: flex-start; justify-content: center; flex-grow: 1;">
                                 <div style="display: flex; align-items: center; width: 100%;">
-                                    <MudTextField ReadOnly="!entry.IsSelected" @bind-Value="@entry.StartTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                                    <MudTextField  MaxLength="50"ReadOnly="!entry.IsSelected" @bind-Value="@entry.StartTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                                 </div>
                                 @if (!string.IsNullOrEmpty(entry.ErrorMsg))
                                 {
