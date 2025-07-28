@@ -80,10 +80,16 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 DisplayName = v.ToString(),
                 Value = (int)v
             }).ToList();
-        protected void ResetFilters()
+        protected async Task ResetFilters()
         {
             SelectedVertical = -1;
             SelectedStatus = "All";
+            isActive = null;
+            bannerTypes = await GetBannerTypes();
+             bannerPageTypes = bannerTypes
+                .Where(bt => bt.Pages != null)
+                .SelectMany(bt => bt.Pages!)
+                .ToList();
         }
 
         public class BannerLocationModel
