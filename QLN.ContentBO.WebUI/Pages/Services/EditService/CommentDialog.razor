@@ -1,0 +1,21 @@
+@using MudBlazor
+@inherits CommentDialogBase
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+        <h3 class="form-heading">Add Comments</h3>
+        <MudTextField @bind-Value="Comments"
+                      Label="Your comments"
+                      Variant="Variant.Outlined"
+                      Lines="4"
+                      FullWidth="true"
+                      Margin="Margin.Normal"
+                      TextArea="true" />
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Skip">Skip</MudButton>
+    </DialogActions>
+</MudDialog>

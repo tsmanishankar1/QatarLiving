@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using static QLN.Common.DTO_s.NotificationDto;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -195,8 +196,8 @@ namespace QLN.Backend.API.Service.Services
                 if (createdDto is null)
                     throw new InvalidDataException("Invalid service returned from creation.");
 
-                await IndexServiceToAzureSearch(createdDto, cancellationToken);
-                return createdDto;
+                await IndexServiceToAzureSearch(dto, cancellationToken);
+                return dto;
             }
             catch (Exception ex)
             {
@@ -350,6 +351,22 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 await IndexServiceToAzureSearch(dto, cancellationToken);
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
+                {
+                    Destinations = new List<string> { "email" }, 
+                    Recipients = new List<RecipientDto>
+                    {
+                        new RecipientDto
+                        {
+                            Name = dto.UserName,   
+                            Email = dto.EmailAddress    
+                        }
+                    },
+                    Subject = $"Service Ad '{dto.Title}' was updated",
+                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
+                    Html = $"{dto.Title} has been updated."
+                }, cancellationToken);
+
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
@@ -576,6 +593,51 @@ namespace QLN.Backend.API.Service.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error refresh service");
+                throw;
+            }
+        }
+        public async Task<ServicesDto> PublishService(Guid id, CancellationToken ct)
+        {
+            try
+            {
+                var url = $"/api/service/publish?id={id}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    await IndexServiceToAzureSearch(serviceDto, ct);
+
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found.");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException($"Service error: {errorJson}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing service");
                 throw;
             }
         }
