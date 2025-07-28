@@ -1,5 +1,6 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,5 +48,20 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
         Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct);
+        Task<TransactionListResponseDto> GetTransactionsAsync(
+                    int pageNumber,
+                    int pageSize,
+                    string? searchText,
+                    string? transactionType,
+                    string? dateCreated,
+                    string? datePublished,
+                    string? dateStart,
+                    string? dateEnd,
+                    string? status,
+                    string? paymentMethod,
+                    string sortBy,
+                    string sortOrder,
+                    CancellationToken cancellationToken = default);
     }
 }
+

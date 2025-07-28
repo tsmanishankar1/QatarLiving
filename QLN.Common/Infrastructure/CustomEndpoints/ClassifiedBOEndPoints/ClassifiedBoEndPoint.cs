@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IContentService;
@@ -1580,6 +1581,80 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/items/transactions", async Task<Results<
+                            Ok<TransactionListResponseDto>,
+                            BadRequest<ProblemDetails>,
+                            ProblemHttpResult>>
+                        (
+                            IClassifiedBoLandingService service,
+                            CancellationToken cancellationToken,
+                            [FromQuery] int pageNumber = 1,
+                            [FromQuery] int pageSize = 25,
+                            [FromQuery] string? searchText = null,
+                            [FromQuery] string? transactionType = null,
+                            [FromQuery] string? dateCreated = null,
+                            [FromQuery] string? datePublished = null,
+                            [FromQuery] string? dateStart = null,
+                            [FromQuery] string? dateEnd = null,
+                            [FromQuery] string? status = null,
+                            [FromQuery] string? paymentMethod = null,
+                            [FromQuery] string sortBy = "CreationDate",
+                            [FromQuery] string sortOrder = "desc"
+                        ) =>
+            {
+                try
+                {
+                    if (pageNumber < 1)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Page number must be greater than 0.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    if (pageSize < 1 || pageSize > 100)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Page size must be between 1 and 100.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.GetTransactionsAsync(
+                        pageNumber,
+                        pageSize,
+                        searchText,
+                        transactionType,
+                        dateCreated,
+                        datePublished,
+                        dateStart,
+                        dateEnd,
+                        status,
+                        paymentMethod,
+                        sortBy,
+                        sortOrder,
+                        cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                        .WithName("GetTransactions")
+                        .WithTags("Transactions")
+                        .WithSummary("Get transactions with filtering")
+                        .WithDescription("Get paginated transactions with search and filter capabilities")
+                        .Produces<TransactionListResponseDto>(StatusCodes.Status200OK)
+                        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             return group;
         }

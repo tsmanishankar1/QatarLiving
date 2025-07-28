@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
@@ -15,7 +16,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly Dapr.Client.DaprClient _dapr;
         private readonly ILogger<IClassifiedBoLandingService> _logger;
         private readonly IClassifiedService _classified;
-
+        private readonly List<TransactionDto> _mockTransactions;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -30,6 +31,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mockTransactions = GenerateMockTransactions();
         }
 
 
@@ -1202,5 +1204,222 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
         private string GetAdKey(Guid id) => $"ad-{id}";
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(
+                   int pageNumber,
+                   int pageSize,
+                   string? searchText,
+                   string? transactionType,
+                   string? dateCreated,
+                   string? datePublished,
+                   string? dateStart,
+                   string? dateEnd,
+                   string? status,
+                   string? paymentMethod,
+                   string sortBy,
+                   string sortOrder,
+                   CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+                await Task.Delay(50, cancellationToken);
+
+                var allTransactions = _mockTransactions.AsQueryable();
+
+                // Filter by transaction type
+                if (!string.IsNullOrWhiteSpace(transactionType))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.TransactionType.Equals(transactionType, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Filter by status
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Filter by payment method
+                if (!string.IsNullOrWhiteSpace(paymentMethod))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.PaymentMethod.Equals(paymentMethod, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Date filters - match exact dates
+                if (!string.IsNullOrWhiteSpace(dateCreated))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.CreationDate.Equals(dateCreated, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(datePublished))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.PublishedDate.Equals(datePublished, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateStart))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.StartDate.Equals(dateStart, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateEnd))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.EndDate.Equals(dateEnd, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Search filter
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    var search = searchText.ToLower();
+                    allTransactions = allTransactions.Where(t =>
+                        t.AdId.ToLower().Contains(search) ||
+                        t.OrderId.ToLower().Contains(search) ||
+                        t.Username.ToLower().Contains(search) ||
+                        t.UserEmail.ToLower().Contains(search) ||
+                        t.TransactionType.ToLower().Contains(search) ||
+                        t.ProductType.ToLower().Contains(search) ||
+                        t.Category.ToLower().Contains(search) ||
+                        t.Status.ToLower().Contains(search) ||
+                        t.Mobile.Contains(search) ||
+                        t.PaymentMethod.ToLower().Contains(search) ||
+                        t.Description.ToLower().Contains(search)
+                    );
+                }
+
+                // Sorting
+                allTransactions = sortBy.ToLower() switch
+                {
+                    "amount" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.Amount) :
+                        allTransactions.OrderBy(t => t.Amount),
+                    "status" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.Status) :
+                        allTransactions.OrderBy(t => t.Status),
+                    "transactiontype" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.TransactionType) :
+                        allTransactions.OrderBy(t => t.TransactionType),
+                    _ => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
+                        allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                };
+
+                var totalRecords = allTransactions.Count();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                // Pagination
+                var paginatedTransactions = allTransactions
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                _logger.LogInformation("Returning {Count} transactions out of {Total} total records",
+                    paginatedTransactions.Count, totalRecords);
+
+                return new TransactionListResponseDto
+                {
+                    Records = paginatedTransactions,
+                    TotalRecords = totalRecords,
+                    CurrentPage = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions");
+                throw;
+            }
+        }
+
+        private DateTime ParseDate(string dateString)
+        {
+            try
+            {
+                return DateTime.ParseExact(dateString, "dd-MM-yyyy", null);
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
+        }
+
+        private List<TransactionDto> GenerateMockTransactions()
+        {
+            var random = new Random();
+            var users = new[] { "john_doe", "jane_smith", "bob_wilson", "alice_brown", "charlie_davis" };
+            var emails = new[] { "john@example.com", "jane@example.com", "bob@example.com", "alice@example.com", "charlie@example.com" };
+            var categories = new[] { "Electronics", "Vehicles", "Real Estate", "Jobs", "Services", "Fashion" };
+            var productTypes = new[] { "Phone", "Car", "Apartment", "Furniture", "Laptop", "Clothing" };
+            var transactionTypes = new[] { "Pay To Publish", "Pay To Promote", "Pay To Feature", "Bulk Refresh" };
+            var statuses = new[] { "Active", "Pending Approval", "Expired", "Unpublished", "Awaits" };
+            var paymentMethods = new[] { "Credit Card", "PayPal", "Bank Transfer", "Digital Wallet" };
+
+            var transactions = new List<TransactionDto>();
+
+            for (int i = 1; i <= 100; i++)
+            {
+                var userIndex = random.Next(users.Length);
+                var transactionType = transactionTypes[random.Next(transactionTypes.Length)];
+                var createdDate = DateTime.UtcNow.AddDays(-random.Next(90));
+                var startDate = createdDate.AddDays(random.Next(0, 5));
+                var endDate = startDate.AddDays(random.Next(30, 90));
+
+                // Some transactions may not have published/start/end dates
+                var hasPublishedDate = random.Next(100) > 20; // 80% have published date
+                var hasStartDate = random.Next(100) > 30; // 70% have start date
+                var hasEndDate = random.Next(100) > 40; // 60% have end date
+
+                transactions.Add(new TransactionDto
+                {
+                    Id = $"txn_{i:D6}",
+                    AdId = $"{random.Next(21430, 21440)}",
+                    OrderId = $"{random.Next(21400, 21500)}",
+                    UserId = $"usr_{userIndex + 1}",
+                    Username = users[userIndex],
+                    UserEmail = emails[userIndex],
+                    TransactionType = transactionType,
+                    ProductType = productTypes[random.Next(productTypes.Length)],
+                    Category = categories[random.Next(categories.Length)],
+                    Status = statuses[random.Next(statuses.Length)],
+                    Email = emails[userIndex],
+                    Mobile = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
+                    Whatsapp = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
+                    Account = "User-account@gmail.com",
+                    CreationDate = createdDate.ToString("dd-MM-yyyy"),
+                    PublishedDate = hasPublishedDate ? createdDate.AddHours(random.Next(1, 24)).ToString("dd-MM-yyyy") : "",
+                    StartDate = hasStartDate ? startDate.ToString("dd-MM-yyyy") : "",
+                    EndDate = hasEndDate ? endDate.ToString("dd-MM-yyyy") : "",
+                    Amount = GetAmountByType(transactionType, random),
+                    PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
+                    Description = GetDescriptionByType(transactionType)
+                });
+            }
+
+            return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
+        }
+
+        private static decimal GetAmountByType(string type, Random random) => type switch
+        {
+            "Pay To Publish" => random.Next(10, 60),
+            "Pay To Promote" => random.Next(25, 125),
+            "Pay To Feature" => random.Next(50, 250),
+            "Bulk Refresh" => random.Next(100, 400),
+            _ => 25
+        };
+
+        private static string GetDescriptionByType(string type) => type switch
+        {
+            "Pay To Publish" => "Payment for ad publication",
+            "Pay To Promote" => "Payment for ad promotion",
+            "Pay To Feature" => "Payment for featured listing",
+            "Bulk Refresh" => "Bulk refresh payment",
+            _ => "Transaction"
+        };
     }
 }

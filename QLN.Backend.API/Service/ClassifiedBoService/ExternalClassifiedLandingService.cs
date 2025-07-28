@@ -4,12 +4,14 @@ using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Utilities;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using static QLN.Backend.API.Service.V2ClassifiedBoService.ExternalClassifiedLandingService;
@@ -742,6 +744,96 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
 
+        }
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(
+                    int pageNumber,
+                    int pageSize,
+                    string? searchText,
+                    string? transactionType,
+                    string? dateCreated,
+                    string? datePublished,
+                    string? dateStart,
+                    string? dateEnd,
+                    string? status,
+                    string? paymentMethod,
+                    string sortBy,
+                    string sortOrder,
+                    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new List<string>
+                {
+                    $"pageNumber={pageNumber}",
+                    $"pageSize={pageSize}"
+                };
+
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    queryParams.Add($"searchText={Uri.EscapeDataString(searchText)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(transactionType))
+                {
+                    queryParams.Add($"transactionType={Uri.EscapeDataString(transactionType)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(paymentMethod))
+                {
+                    queryParams.Add($"paymentMethod={Uri.EscapeDataString(paymentMethod)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateCreated))
+                {
+                    queryParams.Add($"dateCreated={Uri.EscapeDataString(dateCreated)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(datePublished))
+                {
+                    queryParams.Add($"datePublished={Uri.EscapeDataString(datePublished)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateStart))
+                {
+                    queryParams.Add($"dateStart={Uri.EscapeDataString(dateStart)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateEnd))
+                {
+                    queryParams.Add($"dateEnd={Uri.EscapeDataString(dateEnd)}");
+                }
+
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+                queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
+
+                var queryString = string.Join("&", queryParams);
+                var endpoint = $"api/v2/classifiedbo/items/transactions?{queryString}";
+
+                var response = await _dapr.InvokeMethodAsync<TransactionListResponseDto>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    endpoint,
+                    cancellationToken
+                );
+
+                return response ?? new TransactionListResponseDto();
+            }
+            catch (Dapr.DaprException ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions via Dapr");
+                string errorMessage = ex.InnerException is HttpRequestException httpEx ? httpEx.Message : ex.Message;
+                throw new InvalidOperationException(errorMessage, ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error getting transactions");
+                throw new InvalidOperationException("Error retrieving transactions", ex);
+            }
         }
     }
 }
