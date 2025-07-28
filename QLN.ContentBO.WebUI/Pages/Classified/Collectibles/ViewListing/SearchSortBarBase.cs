@@ -2,14 +2,16 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
+
     public class SearchSortBarBase : ComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
@@ -103,12 +105,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             DialogService.Show<AutoSelectDialog>("", parameters);
         }
 
-         protected Task HandleSelect(DropdownItem selected)
+        protected Task HandleSelect(DropdownItem selected)
         {
             Console.WriteLine($"Selected: {selected.Label}");
 
             // Option 1: Pass by query string (recommended for readability)
-            var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
+             var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
             NavManager.NavigateTo(targetUrl);
 
             return Task.CompletedTask;
@@ -119,5 +121,32 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             dateCreated = null;
             datePublished = null;
         }
+
+       protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+
+        private async Task ExportToExcel()
+        {
+          
+        }
+
     }
 }

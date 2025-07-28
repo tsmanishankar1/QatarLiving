@@ -3,15 +3,22 @@ using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using System.Collections.Generic;
 using QLN.ContentBO.WebUI.Models;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Interfaces;
+using MudBlazor;
+using System.Linq;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
     public partial class ViewListingTableBase : ComponentBase
     {
+        [Inject]
+        public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public ISnackbar Snackbar { get; set; }
         [Parameter] public bool IsLoading { get; set; }
+        [Inject] public ILogger<ViewListingTableBase> Logger { get; set; }
         [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
         [Parameter] public int TotalCount { get; set; }
         [Parameter]
@@ -23,6 +30,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Inject] public IDialogService DialogService { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
+        protected bool isBulkActionLoading = false;
+        protected string singleItemLoadingId = null;
+        protected string rejectionTargetItemId = null;
+        protected string removeTargetItemId = null;
+        protected bool isBulkRemove = false;
+
+        public enum BulkActionType
+        {
+            Approve = 1,
+            Publish = 2,
+            Unpublish = 3,
+            UnPromote = 5,
+            UnFeature = 6,
+            Remove = 7,
+            NeedChanges = 8
+        }
+
         protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
@@ -35,8 +59,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             currentPage = 1;
             await OnPageSizeChanged.InvokeAsync(pageSize);
         }
-
-
         protected string selectedTab = "pendingApproval";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
@@ -63,7 +85,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 _ => "Classified"
             };
         }
-         protected async Task OnTabChanged(string newTab)
+        protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
             SelectedListings.Clear();
@@ -90,8 +112,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             var result = await dialog.Result;
 
         }
-        private void OpenRejectDialog()
+        private void OpenRejectDialog(string itemId)
         {
+            rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
             {
                 { "Title", "Reject Verification" },
@@ -107,7 +130,27 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-          protected void OnEdit(ClassifiedItemViewListing item)
+         private void OpenRemoveReasonDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Remove Listing" },
+                { "Description", "Please enter a reason before removing." },
+                { "ButtonTitle", "Remove" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRemoveWithReason) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            DialogService.Show<RejectVerificationDialog>("", parameters, options);
+        }
+
+        protected void OnEdit(ClassifiedItemViewListing item)
         {
             var targetUrl = $"/manage/classified/collectibles/edit/ad/{item.Id}";
             Navigation.NavigateTo(targetUrl);
@@ -119,28 +162,137 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             Console.WriteLine($"Preview clicked: {item.Title}");
         }
 
-        protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
-        protected Task UnpublishSelected() => Task.Run(() => Console.WriteLine("Unpublished Selected"));
-        protected Task PublishSelected() => Task.Run(() => Console.WriteLine("Published Selected"));
-        protected Task RemoveSelected() => Task.Run(() => Console.WriteLine("Removed Selected"));
-        protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
-        protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
+        protected Task ApproveSelected() => PerformBulkAction(BulkActionType.Approve);
+        protected Task RemoveSelected()
+        {
+            if (!SelectedListings.Any())
+            {
+                Snackbar.Add("Please select at least one listing to remove.", Severity.Warning);
+                return Task.CompletedTask;
+            }
 
-        protected Task Approve(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
-        protected Task Publish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
-        protected Task Unpublish(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(ClassifiedItemViewListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
-        private void HandleRejection(string reason)
-        {
-            Console.WriteLine("Rejection Reason: " + reason);
-            // Send to API or handle in state
-        }
-        protected Task RequestChanges(ClassifiedItemViewListing item)
-        {
-            Console.WriteLine($"Requested changes for: {item.Id}");
-            OpenRejectDialog();
+            isBulkRemove = true;
+            OpenRemoveReasonDialog();
             return Task.CompletedTask;
         }
-     
+        protected Task UnpublishSelected() => PerformBulkAction(BulkActionType.Unpublish);
+        protected Task PublishSelected() => PerformBulkAction(BulkActionType.Publish);
+        protected Task UnpromoteSelected() => PerformBulkAction(BulkActionType.UnPromote);
+        protected Task UnfeatureSelected() => PerformBulkAction(BulkActionType.UnFeature);
+
+        protected Task Approve(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Approve);
+        protected Task Publish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Publish);
+        protected Task Unpublish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Unpublish);
+        protected Task OnRemove(ClassifiedItemViewListing item)
+        {
+            removeTargetItemId = item.Id;
+            isBulkRemove = false;
+            OpenRemoveReasonDialog();
+            return Task.CompletedTask;
+        }
+        private async Task RunSingleAction(string itemId, BulkActionType action)
+        {
+            singleItemLoadingId = itemId;
+            await PerformBulkAction(action, "", new List<string> { itemId });
+        }
+
+        private async Task HandleRejection(string reason)
+        {
+            Console.WriteLine($"Rejection Reason: {reason}");
+
+            if (string.IsNullOrWhiteSpace(rejectionTargetItemId))
+                return;
+
+            singleItemLoadingId = rejectionTargetItemId;
+
+            await PerformBulkAction(BulkActionType.NeedChanges, reason, new List<string> { rejectionTargetItemId });
+
+            rejectionTargetItemId = null;
+        }
+        private async Task HandleRemoveWithReason(string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return;
+
+            if (isBulkRemove)
+            {
+                await PerformBulkAction(BulkActionType.Remove, reason);
+            }
+            else if (!string.IsNullOrWhiteSpace(removeTargetItemId))
+            {
+                singleItemLoadingId = removeTargetItemId;
+                await PerformBulkAction(BulkActionType.Remove, reason, new List<string> { removeTargetItemId });
+                removeTargetItemId = null;
+            }
+
+            isBulkRemove = false;
+        }
+
+       protected Task RequestChanges(ClassifiedItemViewListing item)
+        {
+            OpenRejectDialog(item.Id);
+            return Task.CompletedTask;
+        }
+         private string GetSuccessMessage(BulkActionType action)
+        {
+            return action switch
+            {
+                BulkActionType.Approve => "Collectibles approved successfully.",
+                BulkActionType.Publish => "Collectibles published successfully.",
+                BulkActionType.Unpublish => "Collectibles unpublished successfully.",
+                BulkActionType.UnPromote => "Collectibles un-promoted successfully.",
+                BulkActionType.UnFeature => "Collectibles un-featured successfully.",
+                BulkActionType.Remove => "Collectibles removed successfully.",
+                BulkActionType.NeedChanges => "Request for changes sent successfully.",
+                _ => "Action performed successfully."
+            };
+        }     
+        private async Task PerformBulkAction(BulkActionType action, string reason = "", List<string> adIds = null)
+        {
+            isBulkActionLoading = adIds == null; // only bulk shows spinner
+
+            adIds ??= SelectedListings.Select(x => x.Id).ToList();
+
+            if (!adIds.Any())
+                return;
+
+            var payload = new Dictionary<string, object>
+            {
+                ["adIds"] = adIds,
+                ["action"] = (int)action,
+                ["reason"] = reason
+            };
+
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(payload);
+                Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
+                var response = await ClassifiedService.PerformBulkActionAsync(payload);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    SelectedListings.Clear();
+                    Snackbar.Add(GetSuccessMessage(action), Severity.Success);
+                    await OnTabChange.InvokeAsync(selectedTab);
+                }
+                else
+                {
+                    // Logger.LogWarning("Bulk action failed. StatusCode: {StatusCode}, Payload: {@Payload}",
+                    //     response?.StatusCode, payload);
+                    Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Exception occurred while performing bulk action with payload: {@Payload}", payload);
+                Snackbar.Add("Unexpected error occurred during the action.", Severity.Error);
+            }
+            finally
+            {
+                isBulkActionLoading = false;
+                singleItemLoadingId = null;
+                StateHasChanged();
+            }
+        }
     }
 }
