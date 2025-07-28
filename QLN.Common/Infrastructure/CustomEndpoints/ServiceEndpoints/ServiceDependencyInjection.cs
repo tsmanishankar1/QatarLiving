@@ -24,6 +24,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapPromoteEndpoint()
                  .MapFeatureEndpoint()
                  .MapRefreshEndpoint()
+                 .MapPublishEndpoint()
                  .MapBulkActionsEndpoint();
             return group;
         }

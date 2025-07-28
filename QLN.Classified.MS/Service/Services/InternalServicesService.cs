@@ -199,6 +199,14 @@ namespace QLN.Classified.MS.Service.Services
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
+                    ExpiryDate = dto.ExpiryDate,
+                    PublishedDate = dto.PublishedDate,
+                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                    PromotedExpiryDate = dto.PromotedExpiryDate,
+                    RefreshExpiryDate = dto.RefreshExpiryDate,
+                    UpdatedBy = dto.UpdatedBy,
+                    UpdatedAt = dto.UpdatedAt,
+                    IsRefreshed = false,
                     IsFeatured = false,
                     IsPromoted = false,
                     AdType = dto.AdType,
@@ -206,9 +214,7 @@ namespace QLN.Classified.MS.Service.Services
                     UserName = dto.UserName,
                     IsActive = true,
                     CreatedBy = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = null,
-                    UpdatedBy = null
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 var key = dto.Id.ToString();
@@ -320,6 +326,7 @@ namespace QLN.Classified.MS.Service.Services
                     AdType = dto.AdType,
                     IsFeatured = false,
                     IsPromoted = false,
+                    IsRefreshed = false,
                     PublishedDate = dto.PublishedDate,
                     Status = dto.Status,
                     IsActive = dto.IsActive,
@@ -543,6 +550,56 @@ namespace QLN.Classified.MS.Service.Services
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 serviceAd,
+                cancellationToken: ct
+            );
+
+            return serviceAd;
+        }
+        public async Task<ServicesDto> PublishService(Guid serviceId, CancellationToken ct)
+        {
+            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                ConstantValues.Services.StoreName,
+                serviceId.ToString(),
+                cancellationToken: ct
+            );
+
+            if (serviceAd == null)
+                throw new InvalidOperationException("Service ad not found.");
+
+            if (serviceAd.Status == ServiceStatus.Published)
+                return serviceAd;
+
+            var indexKey = $"{serviceAd.CreatedBy}_{serviceAd.L2CategoryName?.Trim().ToLowerInvariant()}_active";
+
+            var existingAdId = await _dapr.GetStateAsync<Guid?>(
+                ConstantValues.Services.ServicesIndexKey,
+                indexKey,
+                cancellationToken: ct
+            );
+
+            if (existingAdId.HasValue && existingAdId.Value != serviceAd.Id)
+            {
+                throw new InvalidOperationException(
+                    $"You already have an active ad in the '{serviceAd.L2CategoryName}' category. Please unpublish or remove it before posting another."
+                );
+            }
+
+            serviceAd.Status = ServiceStatus.Published;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+            serviceAd.PublishedDate = DateTime.UtcNow;
+            serviceAd.RefreshExpiryDate = serviceAd.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                serviceAd.Id.ToString(),
+                serviceAd,
+                cancellationToken: ct
+            );
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.ServicesIndexKey,
+                indexKey,
+                serviceAd.Id,
                 cancellationToken: ct
             );
 
