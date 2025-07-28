@@ -81,5 +81,23 @@ namespace QLN.Common.DTO_s
         public int? PageNumber { get; set; } = 1;
         public int? PageSize { get; set; } = 12;
     }
+    public class ServiceSubscriptionAdSummaryDto
+    {
+        public Guid Id { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string AdTitle { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string? Category { get; set; }
+        public string? SubCategory { get; set; }
+        public ServiceStatus? Status { get; set; }
+        public bool? IsPromoted { get; set; }
+        public bool? IsFeatured { get; set; }
+        public DateTime CreationDate { get; set; }
+        public DateTime? DatePublished { get; set; }
+        public DateTime? DateExpiry { get; set; }
+        public string? Favorites { get; set; }
+        public List<ImageDto>? ImageUpload { get; set; }
+        public string? OrderId { get; set; }
+    }
 
 }
