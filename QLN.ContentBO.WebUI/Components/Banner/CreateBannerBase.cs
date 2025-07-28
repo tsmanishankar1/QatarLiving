@@ -182,6 +182,23 @@ namespace QLN.ContentBO.WebUI.Components.Banner
 
             }
         }
+        protected void HandleAdornmentClick()
+        {
+            if (!string.IsNullOrWhiteSpace(_displayText))
+            {
+                _displayText = string.Empty;
+                _selectedBannerIds.Clear();
+                _selectedBannerTypeRequests.Clear();
+            }
+        }
+        protected void OnBannerSizeChanged(string? selectedSize)
+        {
+            bannerModel.BannerSize = selectedSize;
+             _displayText = string.Empty;
+            _selectedBannerIds.Clear();
+            _selectedBannerTypeRequests.Clear();
+        }
+
         protected async Task HandleMobileImageChanged(InputFileChangeEventArgs e)
         {
             var file = e.File;

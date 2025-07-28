@@ -11,7 +11,7 @@
         <MudGrid>
             <MudItem xs="6">
                  <MudText Class="banner-field-heading pt-2">Banner Size *</MudText>
-                <MudSelect T="string" Label="Select Banner Size" @bind-Value="bannerModel.BannerSize" Variant="Variant.Outlined" Style="background-color: white;">
+                <MudSelect T="string" Label="Select Banner Size" Value="bannerModel.BannerSize" ValueChanged="OnBannerSizeChanged" Variant="Variant.Outlined" Style="background-color: white;">
                 @foreach (var size in BannerSizes)
                 {
                     <MudSelectItem Value="@size">@size</MudSelectItem>
@@ -38,7 +38,8 @@
                       ReadOnly="true"
                       Variant="Variant.Outlined"
                       Adornment="Adornment.End"
-                      AdornmentIcon="@Icons.Material.Filled.ArrowDropDown"
+                      AdornmentIcon="@(_displayText?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.ArrowDropDown)"
+                      OnAdornmentClick="HandleAdornmentClick"
                       Style="width: 100%; background-color: white;" />
     </ActivatorContent>
 
