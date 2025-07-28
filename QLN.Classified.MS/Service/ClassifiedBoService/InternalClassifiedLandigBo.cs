@@ -49,6 +49,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     L2categoryId = dto.L2categoryId,
                     L2categoryName = dto.L2categoryName,
                     StartDate = dto.StartDate,
+                    SlotOrder = 0,
                     EndDate = dto.EndDate,
                     ImageUrl = dto.ImageUrl,
                     CreatedAt = DateTime.UtcNow,
@@ -286,7 +287,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -320,7 +321,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"seasonal-pick-slot-{assignment.SlotNumber}";
+                var slotKey = $"seasonal-pick-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.PickId))
                 {
@@ -329,7 +330,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var pick = loadedPicks[assignment.PickId];
-                pick.SlotOrder = assignment.SlotNumber;
+                pick.SlotOrder = assignment.SlotOrder;
                 pick.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, pick);
@@ -409,6 +410,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     StoreName = dto.StoreName,
                     ImageUrl = dto.ImageUrl,
                     StartDate = dto.StartDate,
+                    SlotOrder = 0,
                     EndDate = dto.EndDate,
                     IsActive = true,
                     UserId = userId,
@@ -644,7 +646,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -678,7 +680,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"featured-store-slot-{assignment.SlotNumber}";
+                var slotKey = $"featured-store-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.StoreId))
                 {
@@ -687,7 +689,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var store = loadedStores[assignment.StoreId];
-                store.SlotOrder = assignment.SlotNumber;
+                store.SlotOrder = assignment.SlotOrder;
                 store.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, store);
@@ -764,11 +766,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     Id = Guid.NewGuid(),
                     Vertical = dto.Vertical,
-                    Category = dto.Category,
+                    CategoryName = dto.CategoryName,
                     CategoryId = dto.CategoryId,
                     StartDate = dto.StartDate,
                     EndDate = dto.EndDate,
                     ImageUrl = dto.ImageUrl,
+                    SlotOrder = 0,
                     IsActive = true,
                     UserId = userId,
                     UserName = userName,
@@ -776,7 +779,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.Category, userId, categories.Id);
+                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.CategoryName, userId, categories.Id);
 
                 // Determine index key by vertical
                 string indexKey = dto.Vertical?.ToLower() switch
@@ -795,13 +798,13 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingItems.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.Category.Equals(dto.Category, StringComparison.OrdinalIgnoreCase) &&
+                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null && p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.Category}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category '{dto.CategoryName}' already exists and is still active for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
                     throw new InvalidOperationException(message);
                 }
@@ -816,18 +819,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, categories.Id);
                 }
 
-                var result = $"Landing bo '{dto.Category}' created successfully.";
+                var result = $"Landing bo '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed landing bo creation: {Message}", result);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.Category, userId);
+                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw;
             }
         }
-
+        
         public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
@@ -877,7 +880,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation($"Successfully deleted FeaturedCategory. FeaturedCategoryId: {categoryId}", categoryId);
 
-                return $"FeaturedCategory '{featuredCategory.Category}' has been deleted.";
+                return $"FeaturedCategory '{featuredCategory.CategoryName}' has been deleted.";
             }
             catch (Exception ex)
             {
@@ -1091,7 +1094,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 await _dapr.SaveStateAsync(StoreName, newItem.Id.ToString(), newItem);
 
-                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.Category}'.";
+                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.CategoryName}'.";
             }
             catch (Exception ex)
             {
@@ -1099,5 +1102,105 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to replace slot with selected category.", ex);
             }
         }
+
+        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.StateStoreNames.UnifiedStore,
+                ConstantValues.StateStoreNames.ItemsIndexKey,
+                cancellationToken: ct
+            ) ?? new();
+            Console.WriteLine(indexKeys);
+            var updated = new List<ClassifiedsItems>();
+
+            foreach (var id in request.AdIds)
+            {
+                var adKey = GetAdKey(id);
+                if (!indexKeys.Contains(adKey.ToString()))
+                {
+                    Console.WriteLine("Index Is Null");
+                    continue;
+                }
+
+                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    adKey.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                {
+                    Console.WriteLine("Ad Is Null");
+                    continue;
+                }
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkActionEnum.Approve:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Publish:
+                        if (ad.Status == AdStatus.Unpublished)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Unpublish:
+                        if (ad.Status == AdStatus.Published)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnPromote:
+                        if (ad.IsPromoted)
+                        {
+                            ad.IsPromoted = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnFeature:
+                        if (ad.IsFeatured)
+                        {
+                            ad.IsFeatured = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Remove:
+                        ad.Status = AdStatus.Rejected;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = request.UpdatedBy;
+                    Console.WriteLine("Updating");
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);
+                    Console.WriteLine("Updated");
+                }
+            }
+
+            return updated;
+        }
+
+        private string GetAdKey(Guid id) => $"ad-{id}";
     }
 }

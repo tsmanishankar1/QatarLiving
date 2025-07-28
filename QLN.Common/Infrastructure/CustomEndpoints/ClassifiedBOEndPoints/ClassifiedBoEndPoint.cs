@@ -77,7 +77,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                IClassifiedBoLandingService service,
                CancellationToken token) =>
             {
-                if (string.IsNullOrWhiteSpace(dto.Category))
+                if (string.IsNullOrWhiteSpace(dto.CategoryName))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -361,7 +361,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string categoryId,
-                string Vertical,
+                string vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -386,7 +386,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -410,7 +410,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string categoryId,
                 [FromQuery] string? userId,
-                [FromQuery] string Vertical,
+                [FromQuery] string vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -429,7 +429,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -838,7 +838,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string pickId,  
-                string Vertical,
+                string vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -863,7 +863,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, Vertical, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1476,6 +1476,110 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                            "This endpoint returns a list of all available classifieds deals ads, including their details.")
             .Produces<List<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-action", async Task<Results<
+                    Ok<List<ClassifiedsItems>>,
+                    BadRequest<ProblemDetails>,
+                    ProblemHttpResult
+                >> (
+                    BulkActionRequest req,
+                    HttpContext httpContext,
+                    IClassifiedBoLandingService service,
+                    CancellationToken ct
+                ) =>
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+                if (uid == null && userName == null)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                if (!req.AdIds.Any())
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+
+                if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+                req.UpdatedBy = uid;
+                try
+                {
+                    var result = await service.BulkAction(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("BulkAction")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Bulk action classifieds")
+                .WithDescription("Performs bulk actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds. " +
+                                 "Requires a list of ad IDs and the action to perform. " +
+                                 "If removing, a reason must be provided.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPost("/bulk-action-userid", async Task<Results<
+               Ok<List<ClassifiedsItems>>,
+               BadRequest<ProblemDetails>,
+               ProblemHttpResult
+           >> (
+               BulkActionRequest req,
+               HttpContext httpContext,
+               IClassifiedBoLandingService service,
+               CancellationToken ct
+           ) =>
+            {
+                try
+                {
+                    if (req.UpdatedBy == string.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Data",
+                            Detail = "UpdatedBy cannot be null.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var result = await service.BulkAction(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .ExcludeFromDescription()
+           .WithName("BulkActionByUserId")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Bulk action classifieds")
+           .WithDescription("Performs bulk moderation actions (approve, publish, unpublish, unpromote, unfeature, remove) on selected classifieds ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }

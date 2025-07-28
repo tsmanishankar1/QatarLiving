@@ -148,17 +148,9 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
             try
             {
-                if (CurrentPost == null || CurrentPost.Id == null)
+                if (CurrentPost?.Id == null || !IsLoggedIn || CurrentPost.CommentCount == 0)
                 {
-                    // CurrentPost or CurrentPost.Id is null.
-                    IsLoading = false;
-                    return;
-                }
-
-                if (CurrentPost.CommentCount == 0)
-                {
-                    // CurrentPost.CommentCount is zero.
-                    IsLoading = false;
+                    Comments.Clear();
                     return;
                 }
 
@@ -168,7 +160,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
 
                 if (response?.comments != null && response.comments.Any())
                 {
-                    Comments = response.comments.Select(c => new CommentModelV2
+                    Comments = [.. response.comments.Select(c => new CommentModelV2
                     {
                         CommentId = c.CommentId,
                         UserName = !string.IsNullOrWhiteSpace(c.UserName) ? c.UserName : "User not found",
@@ -177,8 +169,7 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                         CommentsLikeCount = c.CommentsLikeCount,
                         IsLiked = c.LikedUserIds?.Contains(CurrentUserId) ?? false,
 
-                    }).ToList();
-                    StateHasChanged();
+                    })];
                 }
                 else
                 {
@@ -190,10 +181,15 @@ namespace QLN.Web.Shared.Pages.Content.CommunityV2
                 Logger.LogError($"Error loading comments: {ex.Message}");
                 Comments ??= new List<CommentModelV2>();
                 Comments.Clear();
+
+                Snackbar.Add("Error loading comments.", Severity.Error);
+                Console.WriteLine($"Error loading comments: {ex.Message}");
+                Comments.Clear();
             }
             finally
             {
                 IsLoading = false;
+                StateHasChanged();
             }
         }
 
