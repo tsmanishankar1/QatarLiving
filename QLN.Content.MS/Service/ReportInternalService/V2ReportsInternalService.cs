@@ -512,7 +512,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination( int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination( int? pageNumber, int? pageSize, string? searchTerm = null, string? sortOrder = null, CancellationToken ct = default)
         {
             try
             {
@@ -592,15 +592,15 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 }
 
               
-                if (!string.IsNullOrWhiteSpace(searchTitle))
+                if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     allPosts = allPosts
-                        .Where(p => p.Post != null && p.Post.Contains(searchTitle, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => p.Post != null && p.Post.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
 
                
-                var sortKey = sortBy?.ToLowerInvariant();
+                var sortKey = sortOrder?.ToLowerInvariant();
                 allPosts = sortKey switch
                 {
                     "title" => allPosts.OrderBy(p => p.Post).ToList(),
@@ -614,22 +614,23 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     _ => allPosts.OrderByDescending(p => p.PostDate).ToList()
                 };
 
-             
+
                 var totalCount = allPosts.Count;
                 var currentPage = pageNumber ?? 1;
-                var pageSize = perPage ?? 12;
+                var itemsPerPage = pageSize ?? 12; 
                 var paginatedPosts = allPosts
-                    .Skip((currentPage - 1) * pageSize)
-                    .Take(pageSize)
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
                     .ToList();
 
                 return new PaginatedCommunityPostResponse
                 {
                     Items = paginatedPosts,
                     TotalCount = totalCount,
-                    Page = currentPage,
-                    PerPage = pageSize
+                    PageNumber = currentPage,
+                    PageSize = itemsPerPage
                 };
+
             }
             catch (Exception)
             {
