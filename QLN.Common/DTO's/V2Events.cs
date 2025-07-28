@@ -43,16 +43,13 @@ namespace QLN.Common.DTO_s
         [Required]
         public DateOnly EndDate { get; set; }
         public V2EventTimeType TimeSlotType { get; set; }
-        public string? FreeTimeText { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
+        public string? GeneralTextTime { get; set; }
         public List<TimeSlot>? TimeSlots { get; set; } = [];
     }
     public class TimeSlot
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
+        public string? TextTime { get; set; }
     }
     public class EventsCategory
     {
