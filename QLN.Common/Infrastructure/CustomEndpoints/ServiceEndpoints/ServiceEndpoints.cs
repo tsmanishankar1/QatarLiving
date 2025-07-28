@@ -68,6 +68,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     );
                 }
             })
+            .AllowAnonymous()
             .WithName("SearchServicesItems")
             .WithTags("Service")
             .WithSummary("Search Services Items")
@@ -248,7 +249,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<Ok<ServicesDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServicesDto dto,
                 IServices service,
                 HttpContext httpContext,
@@ -314,11 +315,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            group.MapPost("/createbyuserid", async Task<Results<Ok<ServicesDto>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+            group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServicesDto dto,
             IServices service,
             HttpContext httpContext,
@@ -357,7 +358,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Create a new service ad")
             .WithDescription("Creates a new service ad with the provided details. " +
                                  "The ad must include a valid category and description.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
