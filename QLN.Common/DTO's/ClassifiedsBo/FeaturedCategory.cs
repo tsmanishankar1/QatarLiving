@@ -65,5 +65,22 @@ namespace QLN.Common.DTO_s
         Remove = 7
     }
 
+    public class BulkActionRequest
+    {
+        public List<Guid> AdIds { get; set; } = new();
+        public BulkActionEnum Action { get; set; }
+        public string? Reason { get; set; }
+        public string? UpdatedBy { get; set; }
+    }
+
+    public enum BulkActionEnum
+    {
+        Approve = 1,
+        Publish = 2,
+        Unpublish = 3,
+        UnPromote = 5,
+        UnFeature = 6,
+        Remove = 7
+    }
 
 }

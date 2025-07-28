@@ -15,6 +15,132 @@ public static class V2NewsEndpoints
 {
     public static RouteGroupBuilder MapCreateNewsEndpoints(this RouteGroupBuilder group)
     {
+        group.MapPost("/createtagname", async Task<Results<
+       Ok<string>,
+       BadRequest<ProblemDetails>,
+       ProblemHttpResult>>
+   (
+       WritertagDTO dto,
+       IV2NewsService service,
+       CancellationToken cancellationToken
+   ) =>
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(dto.Tagname))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Tagname (news heading) is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var newId = await service.CreateWritertagAsync(dto, cancellationToken);
+                return TypedResults.Ok(newId);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+   .WithName("CreateNewsHeading")
+   .WithTags("News")
+   .WithSummary("Create News Heading")
+   .WithDescription("Creates a news heading with only the Tagname input.")
+   .Produces<string>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        group.MapGet("/getalltags", async Task<Results<
+    Ok<List<WritertagDTO>>,
+    ProblemHttpResult>>
+(
+    IV2NewsService service,
+    CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
+                var tags = await service.GetAllWritertagsAsync(cancellationToken);
+                return TypedResults.Ok(tags);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+.WithName("GetAllNewsHeadings")
+.WithTags("News")
+.WithSummary("Get All News Headings")
+.WithDescription("Returns a list of all created news heading tags.")
+.Produces<List<WritertagDTO>>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        group.MapDelete("/getalltags/{id:guid}",
+            async Task<Results<
+                Ok<string>,
+                NotFound<ProblemDetails>,
+                Conflict<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [FromRoute] Guid id,
+                [FromServices] IV2NewsService service,
+                [FromServices] ILogger<IV2NewsService> log,
+                CancellationToken ct
+            ) =>
+            {
+                try
+                {
+                    var msg = await service.DeleteNews(id, ct);
+                    return TypedResults.Ok(msg);
+                }
+                catch (KeyNotFoundException knf)
+                {
+                    log.LogWarning(knf, "News {NewsId} not found", id);
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = knf.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (InvalidOperationException iex)
+                {
+                    log.LogWarning(iex, "Cannot delete News {NewsId}", id);
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict – cannot delete",
+                        Detail = iex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (DaprServiceException dse)
+                {
+                    log.LogError(dse, "Upstream error deleting News {NewsId}", id);
+                    return TypedResults.Problem(
+                    title: "Upstream service error",
+                    detail: dse.ResponseBody,
+                    statusCode: dse.StatusCode,
+                    instance: $"/news/getalltags/{id}");
+                }
+                catch (Exception ex)
+                {
+                    log.LogError(ex, "Unhandled exception deleting News {NewsId}", id);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("Deletetagname")
+            .WithTags("News")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
         group.MapGet("/writertags", async Task<Results<
          Ok<WriterTagsResponse>,
          ProblemHttpResult>>
@@ -39,6 +165,7 @@ public static class V2NewsEndpoints
          .WithDescription("Returns writer tags in a key-value JSON object format")
          .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
         group.MapGet("/slots", async Task<Results<Ok<List<V2NewsSlot>>, ProblemHttpResult>> (
         IV2NewsService slotService,

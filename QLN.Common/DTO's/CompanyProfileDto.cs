@@ -24,7 +24,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Url]
         public string? WebsiteUrl { get; set; }
         [Url]
-        public string? FacebookUrl { get; set; } 
+        public string? FacebookUrl { get; set; }
         [Url]
         public string? InstagramUrl { get; set; }
         public bool? IsTherapeuticService { get; set; }
@@ -36,11 +36,15 @@ namespace QLN.Common.Infrastructure.DTO_s
         [Required, JsonConverter(typeof(CustomTimeSpanConverter))]
         public TimeSpan StartHour { get; set; }
         [Required, JsonConverter(typeof(CustomTimeSpanConverter))]
-        public TimeSpan EndHour { get; set; } 
+        public TimeSpan EndHour { get; set; }
         [Required]
         public string UserDesignation { get; set; } = string.Empty;
         [Required]
         public string CRDocument { get; set; } = string.Empty;
+        public string? Coverimage1 { get; set; }
+        public string? Coverimage2 { get; set; }
+        public string Authorizedcontactpersonname {get;set;}
+        public DateTime CRExpirydate { get; set; }
     }
     public class CompanyProfileCompletionStatusDto
     {

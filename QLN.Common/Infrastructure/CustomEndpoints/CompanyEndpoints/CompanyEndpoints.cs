@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -210,6 +211,48 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+        public static RouteGroupBuilder MapGetAllCompanyProfilesbasedonStatus(this RouteGroupBuilder group)
+        { 
+        group.MapGet("/getByStatus", async Task<IResult>(
+        [FromQuery] string status,
+        [FromServices] ICompanyService service) =>
+    {
+        try
+        {
+            var result = await service.GetAllCompaniesBasedonStatus(status);
+            if (result == null)
+                throw new KeyNotFoundException($"No companies found with status '{status}'.");
+            return TypedResults.Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return TypedResults.NotFound(new ProblemDetails
+            {
+                Title = "Not Found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound
+});
+        }
+        catch (Exception)
+        {
+    return TypedResults.Problem(
+        title: "Internal Server Error",
+        detail: "An unexpected error occurred.",
+        statusCode: StatusCodes.Status500InternalServerError
+    );
+}
+    })
+    .WithName("GetCompanyProfileByStatus")
+    .WithTags("Company")
+    .WithSummary("Get company profiles by status")
+    .WithDescription("Retrieves company profiles that match the specified status.")
+    .Produces<IEnumerable<object>>(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+return group;
+}
+        
         public static RouteGroupBuilder MapUpdateCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<

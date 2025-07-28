@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.Spatial;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
@@ -10,6 +11,7 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
@@ -171,15 +173,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                await IndexClassifiedItemToAzureSearch(dto, cancellationToken);
+                var requestUrl = $"/api/classifieds/items/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
@@ -187,6 +188,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
+            }
+            catch(DaprServiceException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -202,8 +207,8 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -311,15 +316,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal service with CertificateUrl: {dto.AuthenticityCertificateUrl} and {dto.Images.Count} images");
+                var requestUrl = $"api/classifieds/preloved/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                await IndexPrelovedToAzureSearch(dto, cancellationToken);
+              
+                
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
@@ -327,6 +334,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     CreatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad created successfully"
                 };
+            }
+            catch (DaprServiceException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -342,8 +353,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -389,15 +401,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
 
                 _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+                var requestUrl = $"api/classifieds/collectibles/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
                 return new AdCreatedResponseDto
                 {
@@ -421,8 +432,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -466,14 +478,22 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 dto.ExpiryDate = DateTime.UtcNow.AddDays(30);
 
                 _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerFileUrl} and image: {dto.ImageUrl}");
+                var requestUrl = $"api/classifieds/deals/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                await _dapr.InvokeMethodAsync(
+                /*await _dapr.InvokeMethodAsync(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
                     $"api/classifieds/deals/post-by-id",
                     dto,
                     cancellationToken
-                );
+                );*/
 
                 return new AdCreatedResponseDto
                 {
@@ -498,8 +518,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
                         _log.LogException(rollbackEx);
                     }
                 }
+                throw;
 
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                //throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
             }
         }
 
@@ -1478,7 +1499,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     "api/classifieds/items/update-by-id",
                     dto,
                     cancellationToken);
-                await IndexClassifiedItemToAzureSearch(dto, cancellationToken);
                 return response;
             }
             catch (InvocationException ex)
@@ -1597,7 +1617,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 $"api/classifieds/preloved/update-by-id",
                 dto,
                 cancellationToken);
-                await IndexPrelovedToAzureSearch(dto, cancellationToken);
+                
 
                 return response;
             }
@@ -1700,7 +1720,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     $"api/classifieds/collectibles/update-by-id",
                     dto,
                     cancellationToken);
-                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+                
                 return response;
             }
             catch (InvocationException ex)
@@ -1778,8 +1798,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                     dto,
                     cancellationToken);
 
-                await IndexDealsToAzureSearch(dto, cancellationToken);
-
                 return response;
             }
             catch (InvocationException ex)
@@ -1789,234 +1807,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-
-        private async Task IndexClassifiedItemToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
-        {
-            var indexDoc = new ClassifiedsItemsIndex
-            {
-                Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                AdType = dto.AdType.ToString(),
-                Title = dto.Title,
-                Description = dto.Description,
-                Price = dto.Price,
-                PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
-                Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
-                L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
-                L2Category = dto.L2Category,
-                Location = dto.Location,
-                CreatedAt = dto.CreatedAt,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                Status = dto.Status.ToString(),
-                Lattitude = dto.Latitude,
-                Longitude = dto.Longitude,
-                UserId = dto.UserId,
-                UserName = dto.UserName,
-                IsActive = true,
-                Images = dto.Images.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.AdImageFileNames,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList(),
-                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
-
-                IsFeatured = dto.IsFeatured,
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                IsPromoted = dto.IsPromoted,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-                RefreshExpiryDate = dto.RefreshExpiryDate
-            };
-
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
-                ClassifiedsItem = indexDoc
-            };
-
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
-                throw;
-            }
-        }
-
-        private async Task IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
-        {
-            var indexDoc = new ClassifiedsPrelovedIndex
-            {
-                Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                AdType = dto.AdType.ToString(),
-                Title = dto.Title,
-                Description = dto.Description,
-                Price = dto.Price,
-                PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
-                Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
-                L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
-                L2Category = dto.L2Category,
-                Location = dto.Location,
-                CreatedAt = dto.CreatedAt,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                Status = dto.Status.ToString(),
-                Lattitude = dto.Latitude,
-                Longitude = dto.Longitude,
-                UserId = dto.UserId,
-                UserName = dto.UserName,
-                IsActive = true,
-                Images = dto.Images.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.AdImageFileNames,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList(),
-                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
-
-                IsFeatured = dto.IsFeatured,
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                IsPromoted = dto.IsPromoted,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-
-                RefreshExpiryDate = dto.RefreshExpiryDate
-            };
-
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
-                ClassifiedsPrelovedItem = indexDoc
-            };
-
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
-                throw;
-            }
-        }
-        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
-        {
-            var indexDoc = new ClassifiedsCollectiblesIndex
-            {
-                Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                AdType = dto.AdType.ToString(),
-                Title = dto.Title,
-                Description = dto.Description,
-                Price = dto.Price,
-                PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
-                Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
-                L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
-                L2Category = dto.L2Category,
-                Location = dto.Location,
-                CreatedAt = dto.CreatedAt,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                Status = dto.Status.ToString(),
-                Lattitude = dto.Latitude,
-                Longitude = dto.Longitude,
-                UserId = dto.UserId,
-                UserName = dto.UserName,
-                IsActive = true,
-                Images = dto.Images.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.AdImageFileNames,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList(),
-                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
-
-                IsFeatured = dto.IsFeatured,
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                IsPromoted = dto.IsPromoted,
-                PromotedExpiryDate = dto.PromotedExpiryDate
-
-
-
-            };
-
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
-                ClassifiedsCollectiblesItem = indexDoc
-            };
-
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
-                throw;
-            }
-        }
-        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
-        {
-            var indexDoc = new ClassifiedsDealsIndex
-            {
-                Id = dto.Id.ToString(),
-                Subvertical = dto.Subvertical,
-                UserId = dto.UserId,
-                BusinessName = dto.BusinessName,
-                BranchNames = dto.BranchNames,
-                BusinessType = dto.BusinessType,
-                Title = dto.Title,
-                Description = dto.Description,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
-                FlyerFileUrl = dto.FlyerFileUrl,
-                DataFeedUrl = dto.DataFeedUrl,
-                ContactNumber = dto.ContactNumber,
-                WhatsappNumber = dto.WhatsappNumber,
-                WebsiteUrl = dto.WebsiteUrl,
-                SocialMediaLinks = dto.SocialMediaLinks,
-                IsActive = dto.IsActive,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = dto.CreatedAt,
-                UpdatedBy = dto.UpdatedBy,
-                UpdatedAt = dto.UpdatedAt,
-                XMLlink = dto.XMLlink,
-                offertitle = dto.offertitle,
-                ExpiryDate = dto.ExpiryDate,
-                ImageUrl = dto.ImageUrl
-            };
-
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
-                ClassifiedsDealsItem = indexDoc
-            };
-
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsDealsItem));
-                throw;
-            }
-        }
+       
+      
+      
 
 
     }
