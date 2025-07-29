@@ -14,7 +14,8 @@
                        Variant="Variant.Outlined"
                        @bind-Value="CurrentEvent.CategoryId"
                        Class="my-2 event-custom-textfield"
-                       Style="background-color: #FFFFFF;">
+                       Style="background-color: #FFFFFF;"
+                       For="@(() => CurrentEvent.CategoryId)">
                 <MudSelectItem Value="0" Disabled="true">Category</MudSelectItem>
                 @if (Categories != null && Categories.Any())
                 {
