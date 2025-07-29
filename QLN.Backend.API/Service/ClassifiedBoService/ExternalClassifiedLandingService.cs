@@ -387,12 +387,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentException("SlotAssignments list cannot be empty.", nameof(request.SlotAssignments));
 
             var invalidSlots = request.SlotAssignments
-                .Where(x => x.SlotNumber < 1 || x.SlotNumber > 6)
+                .Where(x => x.SlotOrder < 1 || x.SlotOrder > 6)
                 .ToList();
 
             if (invalidSlots.Any())
             {
-                var invalidDetails = string.Join(", ", invalidSlots.Select(x => $"[PickId: {x.PickId}, Slot: {x.SlotNumber}]"));
+                var invalidDetails = string.Join(", ", invalidSlots.Select(x => $"[PickId: {x.PickId}, Slot: {x.SlotOrder}]"));
                 throw new ArgumentOutOfRangeException(nameof(request.SlotAssignments), $"SlotNumber must be between 1 and 6. Invalid entries: {invalidDetails}");
             }
 
@@ -578,12 +578,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentException("SlotAssignments list cannot be empty.", nameof(request.SlotAssignments));
 
             var invalidSlots = request.SlotAssignments
-                .Where(x => x.SlotNumber < 1 || x.SlotNumber > 6)
+                .Where(x => x.SlotOrder < 1 || x.SlotOrder > 6)
                 .ToList();
 
             if (invalidSlots.Any())
             {
-                var invalidDetails = string.Join(", ", invalidSlots.Select(x => $"[StoreId: {x.StoreId}, Slot: {x.SlotNumber}]"));
+                var invalidDetails = string.Join(", ", invalidSlots.Select(x => $"[StoreId: {x.StoreId}, Slot: {x.SlotOrder}]"));
                 throw new ArgumentOutOfRangeException(nameof(request.SlotAssignments), $"SlotNumber must be between 1 and 6. Invalid entries: {invalidDetails}");
             }
 
@@ -638,7 +638,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new InvalidOperationException("Error while soft deleting featured store.", ex);
             }
         }
-
+         
         private async Task IndexServiceToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
         {            
             var indexDoc = new ClassifiedsItemsIndex

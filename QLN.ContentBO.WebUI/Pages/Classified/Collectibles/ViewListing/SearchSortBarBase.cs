@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
@@ -10,11 +11,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
+        [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
+        [Parameter] public EventCallback OnClearFilters { get; set; }
 
         protected bool ascending = true;
+        protected string searchText = string.Empty;
+
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
         protected DateTime? dateCreated;
@@ -55,22 +60,27 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
 
-        protected void ConfirmCreatedPopover()
+        protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ClearFilters()
+        protected async void ClearFilters()
         {
             dateCreated = null;
             datePublished = null;
+            ascending = true;
+            searchText = string.Empty;
+            await OnClearFilters.InvokeAsync();
         }
 
         protected async Task AddEventCallback()
@@ -100,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             Console.WriteLine($"Selected: {selected.Label}");
 
             // Option 1: Pass by query string (recommended for readability)
-            var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
+             var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
             NavManager.NavigateTo(targetUrl);
 
             return Task.CompletedTask;
@@ -110,6 +120,32 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         {
             dateCreated = null;
             datePublished = null;
+        }
+
+       protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Collectibles" },
+                { "Descrption", "Do you want to export the current classified collectibles data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+
+        private async Task ExportToExcel()
+        {
+          
         }
 
     }

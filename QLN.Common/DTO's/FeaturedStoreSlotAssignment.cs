@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class FeaturedStoreSlotAssignment
     {
-        public int SlotNumber { get; set; }
+        public int SlotOrder { get; set; }
         public string? StoreId { get; set; }
     }
 
