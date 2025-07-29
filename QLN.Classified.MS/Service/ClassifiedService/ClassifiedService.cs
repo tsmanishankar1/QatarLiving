@@ -397,6 +397,11 @@ namespace QLN.Classified.MS.Service
                 Category = dto.Category,
                 L1Category = dto.L1Category,
                 L2Category = dto.L2Category,
+                Brand = dto.Brand,
+                Model = dto.Model,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                SubscriptionId = dto.SubscriptionId,
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -420,7 +425,6 @@ namespace QLN.Classified.MS.Service
                 UpdatedBy = dto.UpdatedBy,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
-                    AdImageFileNames = i.AdImageFileNames,
                     Url = i.Url,
                     Order = i.Order
                 }).ToList()
@@ -437,6 +441,7 @@ namespace QLN.Classified.MS.Service
             var indexDoc = new ClassifiedsPrelovedIndex
             {
                 Id = dto.Id.ToString(),
+                SubscriptionId = dto.SubscriptionId,
                 SubVertical = dto.SubVertical,
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
@@ -461,7 +466,6 @@ namespace QLN.Classified.MS.Service
                 IsActive = true,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
-                    AdImageFileNames = i.AdImageFileNames,
                     Url = i.Url,
                     Order = i.Order
                 }).ToList(),
@@ -488,6 +492,7 @@ namespace QLN.Classified.MS.Service
             {
                 Id = dto.Id.ToString(),
                 SubVertical = dto.SubVertical,
+                SubscriptionId = dto.SubscriptionId,
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -511,7 +516,6 @@ namespace QLN.Classified.MS.Service
                 IsActive = true,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
-                    AdImageFileNames = i.AdImageFileNames,
                     Url = i.Url,
                     Order = i.Order
                 }).ToList(),
@@ -560,7 +564,11 @@ namespace QLN.Classified.MS.Service
                 XMLlink = dto.XMLlink,
                 offertitle = dto.offertitle,
                 ExpiryDate = dto.ExpiryDate,
-                ImageUrl = dto.ImageUrl
+                ImageUrl = dto.ImageUrl,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsFeatured = dto.IsFeatured
             };
 
             var indexRequest = new CommonIndexRequest
@@ -1280,7 +1288,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -1426,7 +1433,6 @@ namespace QLN.Classified.MS.Service
                              {
                                  return new ImageInfo
                                  {
-                                     AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                                      Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                                      Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                  };
@@ -1791,7 +1797,6 @@ namespace QLN.Classified.MS.Service
                       {
                           return new ImageInfo
                           {
-                              AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                               Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                               Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                           };
@@ -1931,7 +1936,6 @@ namespace QLN.Classified.MS.Service
                         {
                             return new ImageInfo
                             {
-                                AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                                 Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                                 Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                             };
@@ -2189,7 +2193,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2306,7 +2309,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2585,7 +2587,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2728,7 +2729,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };

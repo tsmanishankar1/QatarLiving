@@ -1245,6 +1245,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         L1CategoryId = dto.L1CategoryId,
                         L1Category = dto.L1Category,
                         L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
                         Location = dto.Location,
                         Latitude = dto.Latitude,
                         Longitude = dto.Longitude,
@@ -1256,11 +1260,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
-                        UpdatedBy = name,
-                        UpdatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
-                            AdImageFileNames = i.AdImageFileNames,
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
@@ -1496,6 +1497,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         L1CategoryId = dto.L1CategoryId,
                         L1Category = dto.L1Category,
                         L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
                         Location = dto.Location,
                         Latitude = dto.Latitude,
                         Longitude = dto.Longitude,
@@ -1507,11 +1512,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
-                        UpdatedBy = name,
-                        UpdatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
-                            AdImageFileNames = i.AdImageFileNames,
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
@@ -2211,6 +2213,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         L1CategoryId = dto.L1CategoryId,
                         L1Category = dto.L1Category,
                         L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
                         Location = dto.Location,
                         Latitude = dto.Latitude,
                         Longitude = dto.Longitude,
@@ -2222,11 +2228,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
-                        UpdatedBy = name,
-                        UpdatedAt = DateTime.UtcNow,
                         Images = dto.Images.Select(i => new ImageInfo
                         {
-                            AdImageFileNames = i.AdImageFileNames,
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
@@ -2243,7 +2246,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    //dto.UserId = uid;
                     var result = await service.CreateClassifiedCollectiblesAd(request, token);
 
                     return TypedResults.Created(

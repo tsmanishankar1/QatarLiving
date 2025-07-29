@@ -33,6 +33,10 @@ namespace QLN.Common.DTO_s
         public string? offertitle { get; set; }
         public string ImageUrl { get; set; }
         public DateTime? ExpiryDate { get; set; }
+        public bool IsFeatured { get; set; } = false;
+        public DateTime? FeaturedExpiryDate { get; set; } = null;
+        public bool IsPromoted { get; set; } = false;
+        public DateTime? PromotedExpiryDate { get; set; } = null;
     }
 
 }

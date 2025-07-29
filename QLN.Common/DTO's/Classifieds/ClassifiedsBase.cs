@@ -8,7 +8,6 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsBase
     {
-
         public Guid Id { get; set; } = new Guid();
         public string SubVertical { get; set; }
         public AdTypeEnum AdType { get; set; }
@@ -23,6 +22,10 @@ namespace QLN.Common.DTO_s
         public string? L2CategoryId { get; set; }
         public string? L2Category { get; set; }
         public string? Location { get; set; }
+        public string? Brand { get; set; }
+        public string? Model { get; set; }
+        public string? Condition { get; set; }
+        public string? Color { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public AdStatus Status { get; set; }
@@ -43,7 +46,7 @@ namespace QLN.Common.DTO_s
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public string? Subscription { get; set; }
+        public string? SubscriptionId { get; set; }
     }
 
 }

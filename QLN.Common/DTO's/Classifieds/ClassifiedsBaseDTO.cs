@@ -27,6 +27,10 @@ namespace QLN.Common.DTO_s.Classified
         public string? L2CategoryId { get; set; }
 
         public string? L2Category { get; set; }
+        public string? Brand { get; set; }
+        public string? Model { get; set; }
+        public string? Condition { get; set; }
+        public string? Color { get; set; }
 
         public string? Location { get; set; }
 
