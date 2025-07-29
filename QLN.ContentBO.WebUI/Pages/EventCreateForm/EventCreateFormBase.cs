@@ -64,7 +64,7 @@ namespace QLN.ContentBO.WebUI.Pages
             await DialogService.ShowAsync<SuccessModal>("", parameters, options);
         }
 
-        protected string? StartTimeSpan { get; set; }
+        protected string? GeneralFreeTextTime { get; set; }
 
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
@@ -427,7 +427,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
-                if (!IsValidTimeFormat(StartTimeSpan))
+                if (!IsValidTimeFormat(GeneralFreeTextTime))
                 {
                     _timeError = "Time are required.";
                     Snackbar.Add("Time are required.", severity: Severity.Error);
@@ -457,7 +457,7 @@ namespace QLN.ContentBO.WebUI.Pages
             try
             {
                 IsLoading = true;
-                CurrentEvent.EventSchedule.TimeSlots ??= new List<TimeSlotModel>();
+                CurrentEvent.EventSchedule.TimeSlots ??= [];
                 foreach (var entry in DayTimeList)
                 {
                     if (entry.IsSelected)
@@ -474,6 +474,7 @@ namespace QLN.ContentBO.WebUI.Pages
                     CurrentEvent.LocationId = value;
                 }
                 CurrentEvent.Status = EventStatus.Published;
+                CurrentEvent.EventSchedule.GeneralTextTime = GeneralFreeTextTime;
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -640,7 +641,7 @@ namespace QLN.ContentBO.WebUI.Pages
             };
 
             SelectedDateLabel = string.Empty;
-            StartTimeSpan = null;
+            GeneralFreeTextTime = null;
             _dateRange = null;
             DayTimeList.Clear();
             _timeError = string.Empty;
