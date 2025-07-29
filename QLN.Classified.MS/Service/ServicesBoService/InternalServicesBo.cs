@@ -52,7 +52,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -175,7 +175,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
             foreach (var key in keys)
             {
-                var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                     ConstantValues.Services.StoreName,
                     key,
                     cancellationToken: cancellationToken);
@@ -270,7 +270,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -385,7 +385,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
