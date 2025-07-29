@@ -541,7 +541,7 @@ namespace QLN.ContentBO.WebUI.Pages
                         CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
                         {
                             DayOfWeek = entry.Date.DayOfWeek,
-                            StartTime = entry.StartTime,
+                            TextTime = entry.StartTime,
                         });
                     }
                 }

@@ -5,15 +5,15 @@ using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Text.Json;
-using QLN.ContentBO.WebUI.Components.News;
-using QLN.ContentBO.WebUI.Pages.EventsPage;
-using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using System.Net;
+using QLN.ContentBO.WebUI.Components.News;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using QLN.ContentBO.WebUI.Pages.EventsPage;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages
 {
@@ -79,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages
             public DateTime Date { get; set; }
             public string Day => Date.ToString("dddd");
             public bool IsSelected { get; set; }
-            public string? StartTime { get; set; }
+            public string? FreeTextTime { get; set; }
             public string? ErrorMsg { get; set; }
         }
 
@@ -409,7 +409,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 }
                 foreach (var slot in DayTimeList)
                 {
-                    if (string.IsNullOrEmpty(slot.StartTime) && slot.IsSelected)
+                    if (string.IsNullOrEmpty(slot.FreeTextTime) && slot.IsSelected)
                     {
                         slot.ErrorMsg = "Time are required.";
                         hasError = true;
@@ -465,7 +465,7 @@ namespace QLN.ContentBO.WebUI.Pages
                         CurrentEvent.EventSchedule.TimeSlots.Add(new TimeSlotModel
                         {
                             DayOfWeek = entry.Date.DayOfWeek,
-                            StartTime = entry.StartTime,
+                            TextTime = entry.FreeTextTime,
                         });
                     }
                 }

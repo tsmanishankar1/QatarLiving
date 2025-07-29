@@ -5,19 +5,29 @@ namespace QLN.ContentBO.WebUI.Models
     public class EventDTO
     {
         public Guid Id { get; set; }
+        
         [Required]
         public string EventTitle { get; set; }
+        
         [Required]
         public int CategoryId { get; set; }
+        
         public string? CategoryName { get; set; }
+        
         public EventType EventType { get; set; }
+        
         [Range(0, int.MaxValue)]
         public int? Price { get; set; }
+        
         [Required]
         public string Location { get; set; }
+        
         public int? LocationId { get; set; }
+        
         public string Venue { get; set; } = string.Empty;
+        
         public string Longitude { get; set; }
+       
         public string Latitude { get; set; }
         
         [RegularExpression(@"^(https?://.*)?$",ErrorMessage = "Enter a valid URL starting with http:// or https://")]
@@ -27,23 +37,27 @@ namespace QLN.ContentBO.WebUI.Models
 
         [Required(ErrorMessage = "Event description is required.")]
         public string EventDescription { get; set; }
+        
         public string? CoverImage { get; set; }
+        
         public bool IsFeatured { get; set; } = false;
+        
         public Slot FeaturedSlot { get; set; } = new();
+        
         public DateTime? PublishedDate { get; set; }
+        
         public EventStatus Status { get; set; }
+        
         public string Slug { get; set; }
+        
         public bool IsActive { get; set; } = true;
+        
         public string CreatedBy { get; set; }
+        
         public DateTime CreatedAt { get; set; }
+        
         public string? UpdatedBy { get; set; }
+        
         public DateTime? UpdatedAt { get; set; }
-        public string? FreeTime { get; set; } 
     }
-}
-public enum EventStatus
-{
-    Published = 1,
-    UnPublished = 2,
-    Expired = 3
 }
