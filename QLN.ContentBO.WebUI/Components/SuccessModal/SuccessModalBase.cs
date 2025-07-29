@@ -7,6 +7,7 @@ namespace QLN.ContentBO.WebUI.Components.SuccessModal
     {
         [Parameter] public string Title { get; set; } = "Success!";
         [Parameter] public EventCallback OnClose { get; set; }
+        [Inject] private NavigationManager Navigation { get; set; } = default!;
 
         [CascadingParameter] protected IMudDialogInstance MudDialog { get; set; } = default!;
 
@@ -16,6 +17,9 @@ namespace QLN.ContentBO.WebUI.Components.SuccessModal
                 await OnClose.InvokeAsync();
 
             MudDialog.Close(DialogResult.Ok(true));
+            if (Title == "Events Added successfully!"){ 
+                     Navigation.NavigateTo("/manage/events");
+            }
         }
     }
 }

@@ -8,6 +8,9 @@ namespace QLN.ContentBO.WebUI.Components.RejectVerificationDialog
         [Parameter] public string Title { get; set; } = "Reject verification";
         [Parameter] public string Description { get; set; } = "Please enter a reason before rejecting";
         [Parameter] public string ButtonTitle { get; set; } = "Reject";
+        protected bool IsLoading { get; set; } = false;
+        protected bool IsConfirmDisabled => IsLoading || string.IsNullOrWhiteSpace(Reason);
+
         [Parameter] public EventCallback<string> OnRejected { get; set; }
 
         [CascadingParameter] protected IMudDialogInstance MudDialog { get; set; } = default!;
@@ -20,7 +23,11 @@ namespace QLN.ContentBO.WebUI.Components.RejectVerificationDialog
         {
             if (!string.IsNullOrWhiteSpace(Reason) && OnRejected.HasDelegate)
             {
+                IsLoading = true;
+                StateHasChanged();
+
                 await OnRejected.InvokeAsync(Reason);
+
                 MudDialog.Close(DialogResult.Ok(Reason));
             }
         }
