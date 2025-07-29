@@ -722,7 +722,23 @@ a, .btn-link {
     .capitalize-button {
         text-transform: capitalize !important;
     }
+    .truncate-text {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+      .mud-table .hover-title {
+        color: var(--color-background-grey) !important;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 400;
+    }
 
+    .mud-table .hover-title:hover {
+            color: #1976d2 !important; /* Material blue */
+            text-decoration: underline;
+    }
 
 /*classifeds*/
 .landing-action-section-container {
@@ -1006,9 +1022,15 @@ a, .btn-link {
 }
 
 .active-icon {
-    filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+    filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%) !important;
 }
-
+.popover-close-btn {
+        border-color: #D5D7DA !important;
+        font-size: 16px !important;
+        font-weight: 400 !important;
+        border-radius: 6px !important;
+        color: var(--color-text-heading) !important;
+}
 
 /*createdealsformlist*/
 
@@ -1201,6 +1223,7 @@ a, .btn-link {
 .popover-button {
     width: 100%;
     text-transform: capitalize;
+    box-shadow: none !important;
 }
 
 .active-filter {

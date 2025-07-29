@@ -12,6 +12,7 @@ namespace QLN.ContentBO.WebUI.Components.ConfirmationDialog
         [Parameter] public string Title { get; set; } = "Article Action";
         [Parameter] public string Descrption { get; set; } = "Article Action";
         [Parameter] public string ButtonTitle { get; set; } = "Article Action";
+        [Parameter] public bool IsLoading { get; set; } = false;
         [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
 
          [Parameter] public EventCallback OnConfirmed { get; set; }
@@ -27,8 +28,12 @@ namespace QLN.ContentBO.WebUI.Components.ConfirmationDialog
         public void Cancel() => MudDialog.Cancel();
          public async Task Confirm()
         {
+            IsLoading = true;
+            StateHasChanged();
+
             if (OnConfirmed.HasDelegate)
                 await OnConfirmed.InvokeAsync();
+
             MudDialog.Close(DialogResult.Ok(true));
         }
        
