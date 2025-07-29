@@ -10,19 +10,19 @@ using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
 {
-    public class InternalCompanyService : ICompanyService
+    public class InternalDealsStoresCompany : ICompanyDealsStoresService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<InternalCompanyService> _logger;
-        public InternalCompanyService(
+        private readonly ILogger<InternalDealsStoresCompany> _logger;
+        public InternalDealsStoresCompany(
             DaprClient dapr,
-            ILogger<InternalCompanyService> logger)
+            ILogger<InternalDealsStoresCompany> logger)
         {
             _dapr = dapr;
             _logger = logger;
         }
 
-        public async Task<string> CreateCompany(ServiceCompanyDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCompany(DealsStoresCompanyDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace QLN.Company.MS.Service
                 var keys = await GetIndex();
                 foreach (var key in keys)
                 {
-                    var existing = await _dapr.GetStateAsync<ServiceCompanyDto>(ConstantValues.CompanyStoreName, key, cancellationToken: cancellationToken);
+                    var existing = await _dapr.GetStateAsync<DealsStoresCompanyDto>(ConstantValues.CompanyStoreName, key, cancellationToken: cancellationToken);
                     if (existing != null)
                     {
                         if (existing.UserId == dto.UserId &&
@@ -55,7 +55,7 @@ namespace QLN.Company.MS.Service
                 if (!keys.Contains(id.ToString()))
                 {
                     keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyServiceIndex, keys);
+                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyDsIndex, keys);
                 }
 
                 return "Company Created successfully";
@@ -75,7 +75,7 @@ namespace QLN.Company.MS.Service
             return !string.IsNullOrWhiteSpace(email) &&
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
-        public static void Validate(ServiceCompanyDto dto)
+        public static void Validate(DealsStoresCompanyDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.CompanyName))
                 throw new ArgumentException("Company name is required.", nameof(dto.CompanyName));
@@ -124,18 +124,10 @@ namespace QLN.Company.MS.Service
 
             if (!IsValidEmail(dto.Email))
                 throw new ArgumentException("Invalid email format.");
-
-            if (dto.IsTherapeuticService == true)
-            {
-                if (string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
-                    throw new ArgumentException("Therapeutic certificate is required when therapeutic service is selected.");
-
-                return;
-            }
         }
-        private ServiceCompanyDto EntityForCreate(ServiceCompanyDto dto, Guid id)
+        private DealsStoresCompanyDto EntityForCreate(DealsStoresCompanyDto dto, Guid id)
         {
-            return new ServiceCompanyDto
+            return new DealsStoresCompanyDto
             {
                 Id = id,
                 Vertical = dto.Vertical,
@@ -157,11 +149,12 @@ namespace QLN.Company.MS.Service
                 EndDay = dto.EndDay,
                 StartHour = dto.StartHour,
                 EndHour = dto.EndHour,
+                CoverImage1 = dto.CoverImage1,
+                CoverImage2 = dto.CoverImage2,
                 NatureOfBusiness = dto.NatureOfBusiness,
-                IsTherapeuticService = dto.IsTherapeuticService,
-                TherapeuticCertificate = dto.TherapeuticCertificate,
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
+                UserDesignation = dto.UserDesignation,
                 BusinessDescription = dto.BusinessDescription,
                 CRNumber = dto.CRNumber,
                 CompanyLogo = dto.CompanyLogo,
@@ -173,11 +166,11 @@ namespace QLN.Company.MS.Service
                 IsActive = true
             };
         }
-        public async Task<ServiceCompanyDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<DealsStoresCompanyDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.GetStateAsync<ServiceCompanyDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
+                var result = await _dapr.GetStateAsync<DealsStoresCompanyDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
                 if (result == null)
                     throw new KeyNotFoundException($"Company with id '{id}' was not found.");
                 if (!result.IsActive)
@@ -190,18 +183,18 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<ServiceCompanyDto>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<List<DealsStoresCompanyDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
                 var keys = await GetIndex();
-                if (!keys.Any()) return new List<ServiceCompanyDto>();
+                if (!keys.Any()) return new List<DealsStoresCompanyDto>();
 
                 var items = await _dapr.GetBulkStateAsync(ConstantValues.CompanyStoreName, keys, parallelism: 10);
 
                 return items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<ServiceCompanyDto>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
+                    .Select(i => JsonSerializer.Deserialize<DealsStoresCompanyDto>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
                     .Where(e => e.Id != Guid.Empty && e.IsActive)
                     .ToList();
             }
@@ -211,13 +204,13 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(ServiceCompanyDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(DealsStoresCompanyDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 Validate(dto);
 
-                var existing = await _dapr.GetStateAsync<ServiceCompanyDto>(
+                var existing = await _dapr.GetStateAsync<DealsStoresCompanyDto>(
                     ConstantValues.CompanyStoreName,
                     dto.Id.ToString(),
                     cancellationToken: cancellationToken);
@@ -233,7 +226,7 @@ namespace QLN.Company.MS.Service
                 {
                     if (key == dto.Id.ToString()) continue;
 
-                    var other = await _dapr.GetStateAsync<ServiceCompanyDto>(
+                    var other = await _dapr.GetStateAsync<DealsStoresCompanyDto>(
                         ConstantValues.CompanyStoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -265,7 +258,7 @@ namespace QLN.Company.MS.Service
                 if (!keys.Contains(dto.Id.ToString()))
                 {
                     keys.Add(dto.Id.ToString());
-                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyServiceIndex, keys);
+                    await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyDsIndex, keys);
                 }
 
                 return "Company Profile Updated Successfully";
@@ -280,9 +273,9 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private ServiceCompanyDto EntityForUpdate(ServiceCompanyDto dto, ServiceCompanyDto existing)
+        private DealsStoresCompanyDto EntityForUpdate(DealsStoresCompanyDto dto, DealsStoresCompanyDto existing)
         {
-            return new ServiceCompanyDto
+            return new DealsStoresCompanyDto
             {
                 Id = dto.Id,
                 Vertical = dto.Vertical,
@@ -307,8 +300,9 @@ namespace QLN.Company.MS.Service
                 NatureOfBusiness = dto.NatureOfBusiness,
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
-                IsTherapeuticService = dto.IsTherapeuticService,
-                TherapeuticCertificate = dto.TherapeuticCertificate,
+                CoverImage1 = dto.CoverImage1,
+                CoverImage2 = dto.CoverImage2,
+                UserDesignation = dto.UserDesignation,
                 BusinessDescription = dto.BusinessDescription,
                 CRNumber = dto.CRNumber,
                 CompanyLogo = !string.IsNullOrWhiteSpace(dto.CompanyLogo)
@@ -330,7 +324,7 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                var entity = await _dapr.GetStateAsync<CompanyProfileDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
+                var entity = await _dapr.GetStateAsync<DealsStoresCompanyDto>(ConstantValues.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
                 if (entity == null)
                 {
                     throw new KeyNotFoundException($"Company with ID {id} not found.");
@@ -353,7 +347,7 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, ConstantValues.CompanyServiceIndex);
+                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, ConstantValues.CompanyDsIndex);
                 return result ?? new List<string>();
             }
             catch (Exception ex)
@@ -362,11 +356,11 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<string> ApproveCompany(Guid userId, CompanyServiceApproveDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ApproveCompany(Guid userId, CompanyDsApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var company = await _dapr.GetStateAsync<ServiceCompanyDto>(
+                var company = await _dapr.GetStateAsync<DealsStoresCompanyDto>(
                             ConstantValues.CompanyStoreName,
                             dto.CompanyId.ToString(),
                             cancellationToken: cancellationToken
@@ -407,7 +401,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<CompanyServiceApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
+        public async Task<CompanyDsApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -416,7 +410,7 @@ namespace QLN.Company.MS.Service
 
                 if (company == null) return null;
 
-                return new CompanyServiceApprovalResponseDto
+                return new CompanyDsApprovalResponseDto
                 {
                     CompanyId = company.Id,
                     Name = company.CompanyName,
@@ -432,7 +426,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyServiceVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyDsVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -441,7 +435,7 @@ namespace QLN.Company.MS.Service
                 var filtered = allCompanies
                     .Where(c => c.IsActive)
                     .Where(c => c.IsVerified == isVerified && c.Vertical == vertical)
-                    .Select(c => new CompanyServiceVerificationStatusDto
+                    .Select(c => new CompanyDsVerificationStatusDto
                     {
                         CompanyId = c.Id,
                         BusinessName = c.CompanyName,
@@ -459,7 +453,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<ServiceCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<DealsStoresCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -473,13 +467,13 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<ServiceProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<DsProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.CompanyStoreName,
-                    ConstantValues.CompanyServiceIndex,
+                    ConstantValues.CompanyDsIndex,
                     cancellationToken: cancellationToken
                 ) ?? new();
 
@@ -491,12 +485,12 @@ namespace QLN.Company.MS.Service
                 );
 
                 var companies = items
-                    .Select(i => JsonSerializer.Deserialize<CompanyProfileDto>(i.Value, new JsonSerializerOptions
+                    .Select(i => JsonSerializer.Deserialize<DealsStoresCompanyDto>(i.Value, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     }))
                     .Where(c => c != null && c.UserId == userId)
-                    .Select(c => new ServiceProfileStatus
+                    .Select(c => new DsProfileStatus
                     {
                         CompanyId = c.Id,
                         UserId = c.UserId,

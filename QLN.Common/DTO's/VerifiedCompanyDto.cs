@@ -1,31 +1,37 @@
-﻿using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.Service.TimeSpanConverter;
+﻿using QLN.Common.Infrastructure.DTO_s;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace QLN.Common.Infrastructure.DTO_s
+namespace QLN.Common.DTO_s
 {
-    public class CompanyProfileDto : BaseCompanyDto
+    public class VerifiedCompanyDto : BaseCompanyDto
     {
         [Required]
-        public string UserDesignation { get; set; }
+        public string AuthorisedContactPersonName { get; set; }
+        public string? UserDesignation { get; set; }
+        [Required]
+        public DateOnly CRExpiryDate { get; set; }
     }
-    public class CompanyProfileVerificationStatusDto
+    public class CompanyVerificationStatusDto
     {
         public Guid? CompanyId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
         public VerticalType Vertical { get; set; }
         public bool? IsVerified { get; set; }
-        public CompanyStatus? Status { get; set; } 
+        public CompanyStatus? Status { get; set; }
     }
-    public class CompanyApproveDto
+    public class CompanyVerificationApproveDto
     {
         public Guid? CompanyId { get; set; }
         public bool? IsVerified { get; set; }
         public CompanyStatus? Status { get; set; }
         public string? RejectionReason { get; set; }
     }
-    public class CompanyApprovalResponseDto
+    public class CompanyVerifyApprovalResponseDto
     {
         public Guid? CompanyId { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -34,12 +40,12 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string StatusName { get; set; } = string.Empty;
         public DateTime? UpdatedUtc { get; set; }
     }
-    public class ProfileStatus
+    public class VerificationProfileStatus
     {
         public Guid? CompanyId { get; set; }
         public string? UserId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
-        public VerticalType Vertical { get; set; } 
+        public VerticalType Vertical { get; set; }
         public SubVertical SubVertical { get; set; }
         public bool IsActive { get; set; }
     }
