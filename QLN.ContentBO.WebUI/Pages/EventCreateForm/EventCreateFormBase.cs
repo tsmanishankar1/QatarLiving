@@ -369,6 +369,11 @@ namespace QLN.ContentBO.WebUI.Pages
             _timeError = null;
             _coverImageError = null;
             bool hasError = false;
+            if (CurrentEvent.CategoryId <= 0)
+            {
+                Snackbar.Add("Event Category is required.", severity: Severity.Error);
+                return;
+            }
             if (CurrentEvent?.EventType == 0)
             {
                 _eventTypeError = "Event Type is required.";
