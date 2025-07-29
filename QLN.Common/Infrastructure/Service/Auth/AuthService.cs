@@ -106,11 +106,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 MobileOperator = request.MobileOperator,
                 Nationality = request.Nationality,
                 LanguagePreferences = request.Languagepreferences,
-                IsCompany = false,
                 EmailConfirmed = true,
                 PhoneNumberConfirmed = true,
                 TwoFactorEnabled = request.TwoFactorEnabled,
-                IsActive = true,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 CreatedAt = DateTime.UtcNow,
             };
@@ -152,7 +150,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 throw new InvalidEmailFormatException();
             }
 
-            var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email && u.IsActive);
+            var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (existingUser != null)
             {
                 throw new EmailAlreadyRegisteredException();
@@ -217,7 +215,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.Ok("OTP bypassed.");
                 }
 
-                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber && u.IsActive);
+                var existingUser = await _userManager.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
                 if (existingUser != null)
                 {
                     throw new PhoneAlreadyRegisteredException("Phone already registered.");
@@ -325,7 +323,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email && u.IsActive);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
                 if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
                     throw new ForgotPasswordUserNotFoundException();
@@ -362,7 +360,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email && r.IsActive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(r => r.Email == request.Email);
 
                 if (user == null || !await _userManager.IsEmailConfirmedAsync(user))
                 {
@@ -440,7 +438,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 var user = await _userManager.FindByNameAsync(usernameOrEmailOrPhone)
                     ?? await _userManager.FindByEmailAsync(usernameOrEmailOrPhone)
                     ?? await _userManager.Users.FirstOrDefaultAsync(u =>
-                    u.PhoneNumber == usernameOrEmailOrPhone && u.IsActive);
+                    u.PhoneNumber == usernameOrEmailOrPhone);
 
 
                 var isValid = await _userManager.CheckPasswordAsync(user, request.Password);
@@ -499,10 +497,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             try
             {
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                    (u.UserName == request.UsernameOrEmailOrPhone ||
+                    u.UserName == request.UsernameOrEmailOrPhone ||
                      u.Email == request.UsernameOrEmailOrPhone ||
-                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
-                    u.IsActive == true);
+                     u.PhoneNumber == request.UsernameOrEmailOrPhone);
 
                 if (user == null)
                     throw new InvalidCredentialsException("Invalid username/email/phone number.");
@@ -584,7 +581,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
 
                 if (user == null)
                 {
@@ -676,7 +673,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 }
 
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                    (u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber) && u.IsActive == true);
+                    u.Email == request.EmailorPhoneNumber || u.PhoneNumber == request.EmailorPhoneNumber);
 
                 if (user == null)
                 {
@@ -733,7 +730,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     });
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id && u.IsActive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == Id);
                 if (user == null)
                 {
                     return TypedResults.NotFound(new ProblemDetails
@@ -758,7 +755,6 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     user.MobileOperator,
                     user.PhoneNumberConfirmed,
                     user.EmailConfirmed,
-                    user.IsCompany,
                     user.TwoFactorEnabled
                 };
 
@@ -787,7 +783,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     });
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
                 {
@@ -836,7 +832,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         {
             try
             {
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id && u.IsActive == true);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
                 {
@@ -892,10 +888,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             try
             {
                 var user = await _userManager.Users.FirstOrDefaultAsync(u =>
-                    (u.UserName == request.UsernameOrEmailOrPhone ||
+                    u.UserName == request.UsernameOrEmailOrPhone ||
                      u.Email == request.UsernameOrEmailOrPhone ||
-                     u.PhoneNumber == request.UsernameOrEmailOrPhone) &&
-                     u.IsActive == true);
+                     u.PhoneNumber == request.UsernameOrEmailOrPhone);
 
                 if (user == null)
                 {
