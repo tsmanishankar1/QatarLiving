@@ -422,14 +422,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.FindFirst("sub")?.Value
-                                 ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(userId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-                    await service.ApproveCompany(userGuid, dto, cancellationToken);
+                    await service.ApproveCompany(uid, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -475,12 +475,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             (
                 CompanyDsApproveDto dto,
                 ICompanyDealsStoresService service,
-                Guid userId,
+                string userId,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",

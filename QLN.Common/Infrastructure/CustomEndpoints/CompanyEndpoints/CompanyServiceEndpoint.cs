@@ -412,10 +412,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapCompanyApprovals(this RouteGroupBuilder group)
         {
-            
             group.MapPut("/approve", async Task<IResult> (
-                [FromBody] CompanyVerificationApproveDto dto,
-                [FromServices] ICompanyVerifiedService service,
+                [FromBody] CompanyServiceApproveDto dto,
+                [FromServices] ICompanyService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
@@ -441,12 +440,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         return TypedResults.Forbid();
                     }
 
-                    var userId = uidElement.GetString(); // ✅ string userId extracted
+                    var userId = uidElement.GetString(); 
 
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
 
-                    await service.ApproveCompany(userId, dto, cancellationToken); // ✅ use string userId
+                    await service.ApproveCompany(userId, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -485,16 +484,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // Internal endpoint via Dapr — uses string userId as query param
-            group.MapPut("/approveByUserId", async Task<Results<
+            group.MapPut("/approvebyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                CompanyVerificationApproveDto dto,
+                CompanyServiceApproveDto dto,
                 [FromQuery] string userId,
-                ICompanyVerifiedService service,
+                ICompanyService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
@@ -512,7 +510,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     if (dto == null)
                         throw new KeyNotFoundException("Company approval data is missing.");
 
-                    var result = await service.ApproveCompany(userId, dto, cancellationToken); // ✅ string userId
+                    var result = await service.ApproveCompany(userId, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
@@ -553,10 +551,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
-
-
-
         public static RouteGroupBuilder MapGetCompanyApprovalInfo(this RouteGroupBuilder group)
         {
             group.MapGet("/getapprovalcompanyservice", async Task<Results<

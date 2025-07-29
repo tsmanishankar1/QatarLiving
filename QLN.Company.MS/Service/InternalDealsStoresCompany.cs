@@ -356,7 +356,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<string> ApproveCompany(Guid userId, CompanyDsApproveDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ApproveCompany(string userId, CompanyDsApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -376,7 +376,7 @@ namespace QLN.Company.MS.Service
                 company.IsVerified = dto.IsVerified ?? false;
                 company.Status = dto.Status;
                 company.UpdatedUtc = DateTime.UtcNow;
-                //company.UpdatedBy = userId;
+                company.UpdatedBy = userId;
 
                 await _dapr.SaveStateAsync(
                     ConstantValues.CompanyStoreName,

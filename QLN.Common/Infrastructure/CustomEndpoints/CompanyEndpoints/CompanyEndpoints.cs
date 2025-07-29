@@ -419,19 +419,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrWhiteSpace(userClaim))
-                        return TypedResults.Forbid();
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-
-                    if (!Guid.TryParse(uid, out var userGuid))
-                        return TypedResults.Forbid();
-
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
 
-                    await service.ApproveCompany(userGuid, dto, cancellationToken);
+                    await service.ApproveCompany(uid, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -463,7 +457,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
-            .AllowAnonymous()
             .WithSummary("Approve a company profile")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
@@ -479,12 +472,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             (
                 CompanyApproveDto dto,
                 ICompanyClassifiedService service,
-                Guid userId,
+                string userId,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -524,7 +517,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternalViaDapr")
             .WithTags("Company")
-            .RequireAuthorization() 
             .WithSummary("Approve a company profile internally via Dapr")
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)

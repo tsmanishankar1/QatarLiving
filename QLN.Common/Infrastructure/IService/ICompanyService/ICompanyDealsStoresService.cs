@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task<List<DealsStoresCompanyDto>> GetAllCompanies(CancellationToken cancellationToken = default);
         Task<string> UpdateCompany(DealsStoresCompanyDto dto, CancellationToken cancellationToken = default);
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
-        Task<string> ApproveCompany(Guid userId, CompanyDsApproveDto dto, CancellationToken cancellationToken = default);
+        Task<string> ApproveCompany(string userId, CompanyDsApproveDto dto, CancellationToken cancellationToken = default);
         Task<CompanyDsApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default);
         Task<List<CompanyDsVerificationStatusDto>> VerificationStatus(string userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default);
         Task<List<DealsStoresCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default);
