@@ -463,6 +463,10 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 IsLoading = true;
                 CurrentEvent.EventSchedule.TimeSlots ??= [];
+                if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+                {
+                    CurrentEvent.EventSchedule.GeneralTextTime = GeneralFreeTextTime;
+                }
                 foreach (var entry in DayTimeList)
                 {
                     if (entry.IsSelected)
@@ -479,7 +483,6 @@ namespace QLN.ContentBO.WebUI.Pages
                     CurrentEvent.LocationId = value;
                 }
                 CurrentEvent.Status = EventStatus.Published;
-                CurrentEvent.EventSchedule.GeneralTextTime = GeneralFreeTextTime;
                 var response = await eventsService.CreateEvent(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
