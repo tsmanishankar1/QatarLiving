@@ -249,14 +249,13 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
 
-                // Update current event coordinates
                 CurrentEvent.Latitude = lat.ToString();
                 CurrentEvent.Longitude = lng.ToString();
 
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Latitude));
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Longitude));
 
-                StateHasChanged(); // Reflect changes in UI
+                StateHasChanged(); 
                 return Task.CompletedTask;
             }
         protected Task OpenDialogAsync()
