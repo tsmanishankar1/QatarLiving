@@ -21,14 +21,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
         private readonly ILogger<IV2NewsService> _logger;
         private const string StoreName = V2Content.ContentStoreName;
         private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
-        private static readonly List<string> writerTags = new()
-    {
-        "Qatar Living",
-        "Everything Qatar",
-        "FIFA Arab Cup",
-        "QL Exclusive",
-        "Advice & Help"
-    };
         private static int _nextCategoryId = 101;
         private static int _nextSubCategoryId = 1001;
 
@@ -36,18 +28,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
         {
             _dapr = dapr;
             _logger = logger;
-        }
-
-        public Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("Returning static writer tags as key-value JSON");
-
-            var response = new WriterTagsResponse
-            {
-                Tags = writerTags
-            };
-
-            return Task.FromResult(response);
         }
         public async Task<string> CreateWritertagAsync(WritertagDTO dto, CancellationToken cancellationToken = default)
         {
@@ -58,7 +38,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     throw new ArgumentException("Tagname is required.");
                 }
 
-                // Normalize tag name (e.g., lowercase, trimmed)
                 var normalizedTag = dto.Tagname.Trim().ToLowerInvariant();
                 var tagId = Guid.NewGuid();
                 var key = $"writertag-{normalizedTag}";
@@ -71,11 +50,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     
                 };
 
-                // Save to Dapr state store
                 string storeName = V2Content.ContentStoreName;
                 await _dapr.SaveStateAsync(storeName, key, tagEntity, cancellationToken: cancellationToken);
 
-                // Optional: update global list of tag keys
                 string indexKey = "writertags-index";
                 var currentTags = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
                 if (!currentTags.Contains(key))
@@ -99,12 +76,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 string storeName = V2Content.ContentStoreName;
                 string indexKey = "writertags-index";
 
-                // Step 1: Get all keys of stored tags
                 var tagKeys = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
 
                 var tags = new List<WritertagDTO>();
 
-                // Step 2: Fetch each tag by key
                 foreach (var key in tagKeys)
                 {
                     var tag = await _dapr.GetStateAsync<WritertagDTO>(storeName, key);
@@ -122,17 +97,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw;
             }
         }
-        public async Task<string> Deletetagname(Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var storeName = V2Content.ContentStoreName;
                 var key = $"writertag-{id}";
 
-                // Delete tag from store
                 await _dapr.DeleteStateAsync(storeName, key);
 
-                // Remove key from index
                 var indexKey = "writertags-index";
                 var keys = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
                 if (keys.Contains(key))
@@ -325,7 +298,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
             return $"Article placed in slot {desiredSlot} of category {categoryId}/{subCategoryId}";
         }
-
         private string GetSlotKey(int categoryId, int subCategoryId, int slot) =>
            $"slot-article-{categoryId}-{subCategoryId}-slot{slot}";
 

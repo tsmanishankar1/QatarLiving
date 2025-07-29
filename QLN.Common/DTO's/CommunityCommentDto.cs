@@ -47,5 +47,10 @@ namespace QLN.Common.DTO_s
         public string UserId { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
     }
+    public class LikeCommentsDto
+    {
+        public Guid CommentId { get; set; }
+        public Guid CommunityPostId { get; set; }
+    }
 
 }

@@ -332,9 +332,9 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<string> Deletetagname(Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default)
         {
-            var url = $"/api/v2/news/getalltags/{id}";
+            var url = $"/api/v2/news/tag/{id}";
             try
             {
                 return await _dapr.InvokeMethodAsync<string>(

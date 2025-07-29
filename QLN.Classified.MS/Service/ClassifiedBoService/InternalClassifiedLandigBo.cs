@@ -4,6 +4,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -83,15 +84,15 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingPicks.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true && 
+                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
+                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null || p.EndDate >= today));
 
                 if (duplicateExists)
                 {
                     var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
 
                 // Save new seasonal pick
@@ -111,13 +112,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}", dto.CategoryName);
                 throw;
             }
         }
-
         public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -423,7 +429,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, userId, stores.Id);
 
-                
+
                 string indexKey = dto.Vertical?.ToLower() switch
                 {
                     Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
@@ -442,18 +448,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingStores.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.StoreName.Equals(dto.StoreName, StringComparison.OrdinalIgnoreCase) &&
+                    p.StoreId.Equals(dto.StoreId, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null && p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured store with the name '{dto.StoreName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured store with the name '{dto.StoreName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
 
-                
+
                 await _dapr.SaveStateAsync(StoreName, stores.Id.ToString(), stores);
                 _logger.LogInformation("Saved featured store state successfully. ID: {Id}", stores.Id);
 
@@ -469,13 +475,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.StoreName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, userId);
                 throw;
             }
         }
-
         public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -800,17 +811,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingItems.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
+                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null && p.EndDate >= today));
+                    (p.EndDate == null || p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.CategoryName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
-                                
+
                 await _dapr.SaveStateAsync(StoreName, categories.Id.ToString(), categories, cancellationToken: cancellationToken);
                 _logger.LogInformation("Saved featured category state successfully. ID: {Id}", categories.Id);
 
@@ -826,13 +837,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw;
             }
         }
-        
         public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
@@ -972,7 +988,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             var featuredCategories = await Task.WhenAll(stateTasks);
 
             var activeFeaturedCategories = featuredCategories
-                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) && (p.EndDate == null || p.EndDate > DateOnly.FromDateTime(DateTime.UtcNow)))
+                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
+                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
                 .OrderByDescending(p => p.UpdatedAt)
                 .ToList();
 
@@ -980,7 +997,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             return activeFeaturedCategories;
         }
-
         public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;
@@ -1105,7 +1121,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
+        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
             var indexKeys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.StateStoreNames.UnifiedStore,
@@ -1143,8 +1159,20 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Approve:
                         if (ad.Status == AdStatus.PendingApproval)
                         {
-                            ad.Status = AdStatus.Published;
-                            shouldUpdate = true;
+                            if (request.AdIds.Count == 1)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                         }
                         break;
 
@@ -1154,6 +1182,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
                         }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                        }
                         break;
 
                     case BulkActionEnum.Unpublish:
@@ -1161,6 +1193,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Unpublished;
                             shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
                         }
                         break;
 
@@ -1170,6 +1206,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             ad.IsPromoted = false;
                             shouldUpdate = true;
                         }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                        }
                         break;
 
                     case BulkActionEnum.UnFeature:
@@ -1177,6 +1217,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = false;
                             shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
                         }
                         break;
 
@@ -1192,17 +1236,137 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (shouldUpdate)
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
-                    ad.UpdatedBy = request.UpdatedBy;
-                    Console.WriteLine("Updating");
+                    ad.UpdatedBy = userId;
                     await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
                     updated.Add(ad);
-                    Console.WriteLine("Updated");
                 }
             }
 
-            return updated;
+            return "Action completed successfully";
         }
 
+        public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.StateStoreNames.UnifiedStore,
+                ConstantValues.StateStoreNames.CollectiblesIndexKey,
+                cancellationToken: ct
+            ) ?? new();
+            Console.WriteLine(indexKeys);
+            var updated = new List<ClassifiedsCollectibles>();
+
+            foreach (var id in request.AdIds)
+            {
+                var adKey = GetAdKey(id);
+                if (!indexKeys.Contains(adKey.ToString()))
+                {
+                    Console.WriteLine("Index Is Null");
+                    continue;
+                }
+
+                var ad = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    adKey.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                {
+                    Console.WriteLine("Ad Is Null");
+                    continue;
+                }
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkActionEnum.Approve:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            if (request.AdIds.Count == 1)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Publish:
+                        if (ad.Status == AdStatus.Unpublished)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Unpublish:
+                        if (ad.Status == AdStatus.Published)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.UnPromote:
+                        if (ad.IsPromoted)
+                        {
+                            ad.IsPromoted = false;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                        }
+                        break;
+
+                    case BulkActionEnum.UnFeature:
+                        if (ad.IsFeatured)
+                        {
+                            ad.IsFeatured = false;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Remove:
+                        ad.Status = AdStatus.Rejected;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = userId;
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);                }
+            }
+
+            return "Action completed successfully";
+        }
         private string GetAdKey(Guid id) => $"ad-{id}";
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
                    int pageNumber,

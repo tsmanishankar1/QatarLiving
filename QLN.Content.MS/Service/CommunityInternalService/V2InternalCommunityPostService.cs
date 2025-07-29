@@ -4,6 +4,8 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using static QLN.Common.DTO_s.CommunityBo;
 using System.Text.RegularExpressions;
+using QLN.Common.Infrastructure.CustomException;
+
 
  
 namespace QLN.Content.MS.Service.CommunityInternalService
@@ -64,7 +66,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Operation error while creating community post.");
-                throw;
+                throw new ConflictException(ex.Message);
             }
             catch (Exception ex)
             {
@@ -182,12 +184,40 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             {
                 var key = $"community-{id}";
                 var post = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, key, cancellationToken: ct);
-                return (post != null && post.IsActive) ? post : null;
+
+                if (post == null || !post.IsActive)
+                    return null;
+
+                var likeIndexKey = $"like-index-{post.Id}";
+                var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
+                post.LikeCount = likedUsers.Count;
+                post.LikedUserIds = likedUsers;
+
+                var commentIndexKey = $"comment-index-{post.Id}";
+                var commentIds = await _dapr.GetStateAsync<List<Guid>>(StoreName, commentIndexKey, cancellationToken: ct) ?? new();
+                post.CommentCount = commentIds.Count;
+
+                var commentedUserIds = new HashSet<string>();
+
+                foreach (var commentId in commentIds)
+                {
+                    var commentKey = $"comment-{post.Id}-{commentId}";
+                    var commentState = await _dapr.GetStateAsync<CommunityCommentDto>(StoreName, commentKey, cancellationToken: ct);
+
+                    if (commentState != null && commentState.IsActive && !string.IsNullOrWhiteSpace(commentState.UserId))
+                    {
+                        commentedUserIds.Add(commentState.UserId);
+                    }
+                }
+
+                post.CommentedUserIds = commentedUserIds.ToList();
+
+                return post;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching community posts");
-                throw;
+                _logger.LogError(ex, "Error fetching community post by ID: {PostId}", id);
+                throw new InvalidOperationException($"Error retrieving post with ID: {id}", ex);
             }
         }
         private string GenerateSlug(string title)
@@ -457,10 +487,10 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
-            var key = $"comment-like-{commentId}-{userId}";
-            var indexKey = $"comment-like-index-{commentId}";
+            var key = $"comment-like-{likeCommentsDto.CommentId}-{userId}";
+            var indexKey = $"comment-like-index-{likeCommentsDto.CommentId}";
 
             try
             {
@@ -473,7 +503,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     index.Remove(userId);
                     await _dapr.SaveStateAsync(StoreName, indexKey, index);
 
-                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, commentId);
+                    _logger.LogInformation("User {UserId} unliked comment {CommentId}", userId, likeCommentsDto.CommentId);
                     return false;
                 }
 
@@ -484,12 +514,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                 await _dapr.SaveStateAsync(StoreName, indexKey, index);
 
-                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, commentId);
+                _logger.LogInformation("User {UserId} liked comment {CommentId}", userId, likeCommentsDto.CommentId);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing comment like for {CommentId}", commentId);
+                _logger.LogError(ex, "Error processing comment like for {CommentId}", likeCommentsDto.CommentId);
                 throw;
             }
         }

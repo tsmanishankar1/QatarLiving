@@ -52,7 +52,7 @@ public static class V2NewsEndpoints
    .Produces<string>(StatusCodes.Status200OK)
    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-        group.MapGet("/getalltags", async Task<Results<
+        group.MapGet("/writertags", async Task<Results<
     Ok<List<WritertagDTO>>,
     ProblemHttpResult>>
 (
@@ -76,7 +76,8 @@ public static class V2NewsEndpoints
 .WithDescription("Returns a list of all created news heading tags.")
 .Produces<List<WritertagDTO>>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-        group.MapDelete("/getalltags/{id:guid}",
+
+        group.MapDelete("/tag/{id:guid}",
             async Task<Results<
                 Ok<string>,
                 NotFound<ProblemDetails>,
@@ -91,12 +92,12 @@ public static class V2NewsEndpoints
             {
                 try
                 {
-                    var msg = await service.DeleteNews(id, ct);
+                    var msg = await service.DeleteTagName(id, ct);
                     return TypedResults.Ok(msg);
                 }
                 catch (KeyNotFoundException knf)
                 {
-                    log.LogWarning(knf, "News {NewsId} not found", id);
+                    log.LogWarning(knf, "Tag {Tag} not found", id);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -106,7 +107,7 @@ public static class V2NewsEndpoints
                 }
                 catch (InvalidOperationException iex)
                 {
-                    log.LogWarning(iex, "Cannot delete News {NewsId}", id);
+                    log.LogWarning(iex, "Cannot delete Tag {tag}", id);
                     return TypedResults.Conflict(new ProblemDetails
                     {
                         Title = "Conflict – cannot delete",
@@ -116,12 +117,12 @@ public static class V2NewsEndpoints
                 }
                 catch (DaprServiceException dse)
                 {
-                    log.LogError(dse, "Upstream error deleting News {NewsId}", id);
+                    log.LogError(dse, "Upstream error deleting Tag {tagId}", id);
                     return TypedResults.Problem(
                     title: "Upstream service error",
                     detail: dse.ResponseBody,
                     statusCode: dse.StatusCode,
-                    instance: $"/news/getalltags/{id}");
+                    instance: $"/news/tag/{id}");
                 }
                 catch (Exception ex)
                 {
@@ -133,39 +134,13 @@ public static class V2NewsEndpoints
                     );
                 }
             })
-            .WithName("Deletetagname")
+            .WithName("DeleteTagName")
             .WithTags("News")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status502BadGateway)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        group.MapGet("/writertags", async Task<Results<
-         Ok<WriterTagsResponse>,
-         ProblemHttpResult>>
-         (
-             IV2NewsService service,
-             CancellationToken cancellationToken
-         ) =>
-        {
-            try
-            {
-                var tags = await service.GetWriterTagsAsync(cancellationToken);
-                return TypedResults.Ok(tags);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Error retrieving writer tags", ex.Message);
-            }
-        })
-         .WithName("getWriterTags")
-         .WithTags("News")
-         .WithSummary("Get all writer tags as key-value JSON")
-         .WithDescription("Returns writer tags in a key-value JSON object format")
-         .Produces<Dictionary<string, string>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
 
         group.MapGet("/slots", async Task<Results<Ok<List<V2NewsSlot>>, ProblemHttpResult>> (
         IV2NewsService slotService,
