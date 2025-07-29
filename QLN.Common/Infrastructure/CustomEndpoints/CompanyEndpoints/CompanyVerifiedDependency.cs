@@ -15,7 +15,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 .MapDeleteVerificationCompanyProfile()
                 .MapVerificationCompanyApproval()
                 .MapGetVerificationCompanyApprovalInfo()
-                .MapVerifyVerificationStatus();
+                .MapVerifyVerificationStatus()
+                .MapGetVerificationStatus();
             return group;
         }
     }

@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 
 
 namespace QLN.Common.Infrastructure.IService.IServiceBoService
@@ -45,5 +46,10 @@ namespace QLN.Common.Infrastructure.IService.IServiceBoService
                 int pageNumber = 1,
                 int pageSize = 12,
                 CancellationToken cancellationToken = default);
+
+        Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
+    VerticalType verticalId,
+    SubVertical? subVerticalId,
+    CancellationToken cancellationToken = default);
     }
 }
