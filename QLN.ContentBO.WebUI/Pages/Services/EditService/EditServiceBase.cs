@@ -3,6 +3,7 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 {
@@ -10,23 +11,47 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
     {
         [Inject] public NavigationManager Navigation { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
+        [Inject] IServiceBOService serviceBOService { get; set; }
+        [Inject] ILogger<EditServiceBase> Logger { get; set; }
 
         protected void GoBack()
         {
             Navigation.NavigateTo("/manage/services/listing");
         }
         protected AdPost adPostModel { get; set; } = new();
-
-        protected string? Id { get; set; }
-
-        protected override void OnInitialized()
+        [Parameter]
+        public Guid? Id { get; set; }
+        public ServicesDto selectedService { get; set; } = new ServicesDto();
+        protected override async Task OnParametersSetAsync()
         {
-            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("id", out var id))
+            try
             {
-                Id = id;
+                if (Id.HasValue)
+                {
+                    selectedService = await GetServiceById(Id.Value);
+                }
             }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+            }
+        }
+        private async Task<ServicesDto> GetServiceById(Guid Id)
+        {
+            try
+            {
+                var apiResponse = await serviceBOService.GetServiceById(Id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<ServicesDto>();
+                    return response ?? new ServicesDto();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventsLocations");
+            }
+            return new ServicesDto();
         }
         protected async Task ShowConfirmation(string title, string message, string buttonTitle)
         {
@@ -36,7 +61,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 { "Descrption", message },
                 { "ButtonTitle", buttonTitle },
                 { "OnConfirmed", EventCallback.Factory.Create(this, async () => {
-                    // Placeholder: handle actual action logic here.
                     Console.WriteLine($"{buttonTitle} confirmed.");
                 })}
             };

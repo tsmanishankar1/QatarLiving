@@ -5,43 +5,38 @@
     <DataAnnotationsValidator />
     <div class="create-form-list">
         <h3 class="form-heading">Ad Category</h3>
-            <MudSelect T="string" Label="Category" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
-           Value="_selectedCategoryId"
+            <MudSelect T="Guid" Label="Category" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           Value="selectedService.CategoryId"
            ValueChanged="@OnCategoryChanged">
-    @if (IsLoadingCategories)
-    {
-        <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
-    }
-    else
-    {
+   
         @foreach (var cat in CategoryTrees)
         {
-            <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Category</MudSelectItem>
+            <MudSelectItem T="Guid" Value="@cat.Id">@cat.Category</MudSelectItem>
         }
-    }
+    
 </MudSelect>
 
-<MudSelect T="string" Label="Subcategory" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
-           Value="_selectedL1CategoryId"
+<MudSelect T="Guid" Label="Subcategory" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           Value="selectedService.L1CategoryId"
            ValueChanged="@OnL1CategoryChanged"
            Disabled="@(_selectedL1Categories.Count == 0)">
     @foreach (var l1 in _selectedL1Categories)
     {
-        <MudSelectItem T="string" Value="@l1.Id.ToString()">@l1.Name</MudSelectItem>
+        <MudSelectItem T="Guid" Value="@l1.Id">@l1.Name</MudSelectItem>
     }
 </MudSelect>
 
-<MudSelect T="string" Label="Section" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
-           @bind-Value="_selectedL2CategoryId"
+<MudSelect T="Guid" Label="Section" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+           @bind-Value="selectedService.L2CategoryId"
            Disabled="@(_selectedL2Categories.Count == 0)">
     @foreach (var l2 in _selectedL2Categories)
     {
-        <MudSelectItem T="string" Value="@l2.Id.ToString()">@l2.Name</MudSelectItem>
+        <MudSelectItem T="Guid" Value="@l2.Id">@l2.Name</MudSelectItem>
     }
 </MudSelect>
 
         <h3 class="form-heading">Price</h3>
-        <MudCheckBox T="bool" @bind-Checked="_priceOnRequest" Label="This Price on request services" />
+        <MudCheckBox T="bool" @bind-Checked="selectedService.IsPriceOnRequest" Label="This Price on request services" />
 
         <div class="services-custom-alert" style="margin-bottom: 20px;">
             <div class="services-icon-box">
@@ -52,18 +47,18 @@
             </div>
         </div>
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Price"
-                      @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="decimal?" Label="Price"
+                      @bind-Value="selectedService.Price" For="@(() => selectedService.Price)" FullWidth="true" />
 
         <h3 class="form-heading">Description and Features</h3>
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
-                      @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
+                      @bind-Value="selectedService.Title" For="@(() => selectedService.Title)" FullWidth="true" />
 
-        <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
+        <MudExRichTextEdit @bind-Value="selectedService.Description" @ref="Editor"
                            Height="350" Placeholder="Start Typing"
-                           For="@(() => Ad.Description)">
+                           For="@(() => selectedService.Description)">
         </MudExRichTextEdit>
-        <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
+        @* <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
             <div class="catification-upload-info">
                 <h3 class="catification-upload-label">Certificate / Warranty*</h3>
 
@@ -109,7 +104,7 @@
                     }
                 </ActivatorContent>
             </MudFileUpload>
-        </MudPaper>
+        </MudPaper> *@
         <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
 
         <h3 class="form-heading">Contact Details</h3>
@@ -119,9 +114,9 @@
                         SelectedCountry="@SelectedPhoneCountry"
                         Placeholder="Phone Number"
                         SelectedCountryChanged="@OnPhoneCountryChanged"
-                        PhoneNumber="@Ad.PhoneNumber"
+                        PhoneNumber="@selectedService.PhoneNumber"
                         PhoneNumberChanged="@OnPhoneChanged" />
-                <ValidationMessage For="@(() => Ad.PhoneNumber)" />
+                <ValidationMessage For="@(() => @selectedService.PhoneNumber)" />
                 </div>
                 <div class="form-group">
                     <!-- WhatsApp -->
@@ -129,20 +124,31 @@
                         SelectedCountry="@SelectedWhatsappCountry"
                         Placeholder="WhatsApp Number"
                         SelectedCountryChanged="@OnWhatsappCountryChanged"
-                        PhoneNumber="@Ad.WhatsappNumber"
+                        PhoneNumber="@selectedService.WhatsappNumber"
                         PhoneNumberChanged="@OnWhatsappChanged" />
-                <ValidationMessage For="@(() => Ad.WhatsappNumber)" />
+                <ValidationMessage For="@(() => selectedService.WhatsappNumber)" />
                 </div>
                 <div class="form-group">
                     <!-- WhatsApp -->
                     <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Email Address"
-                      @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
+                      @bind-Value="selectedService.EmailAddress" For="@(() => selectedService.EmailAddress)" FullWidth="true" />
                 </div>
 
         <h3 class="form-heading">Location</h3>
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
-                      @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
+        <MudSelect T="string"
+           Label="Zone"
+           @bind-Value="selectedService.ZoneId"
+           For="@(() => selectedService.ZoneId)"
+           Variant="Variant.Outlined"
+           Class="white-bg"
+           FullWidth="true">
+    @foreach (var zone in Zones)
+    {
+        <MudSelectItem T="string" Value="@zone.Id">@zone.Name</MudSelectItem>
+    }
+</MudSelect>
+
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
                       @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />

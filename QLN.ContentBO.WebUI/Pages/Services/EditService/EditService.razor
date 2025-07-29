@@ -1,4 +1,4 @@
-@page "/manage/services/editform"
+@page "/manage/services/editform/{Id:guid}"
 
 @using QLN.ContentBO.WebUI.Models
 @inherits EditServiceBase
@@ -22,7 +22,7 @@
 <div class="create-form-container">
     <MudGrid GutterSize="24px">
         <MudItem xs="12" md="5">
-            <EditServiceForm Id="@Id" />
+            <EditServiceForm selectedService="@selectedService" />
         </MudItem>
 
         <MudItem xs="12" md="7">

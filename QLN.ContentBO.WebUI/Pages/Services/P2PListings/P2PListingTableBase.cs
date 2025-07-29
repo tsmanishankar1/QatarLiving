@@ -102,7 +102,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(ServiceAdSummaryDto item)
         {
-            Navigation.NavigateTo("/manage/services/editform");
+            Navigation.NavigateTo($"/manage/services/editform/{item.Id}");
         }
         public void OnPreview(ServiceAdSummaryDto item)
         {

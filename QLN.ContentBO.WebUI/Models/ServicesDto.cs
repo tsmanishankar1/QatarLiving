@@ -31,6 +31,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string? EmailAddress { get; set; }
         [Required]
         public string Location { get; set; }
+        public string? ZoneId { get; set; }
         public int? LocationId { get; set; }
         public decimal Longitude { get; set; }
         public decimal Lattitude { get; set; }

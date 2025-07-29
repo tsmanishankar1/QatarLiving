@@ -30,6 +30,8 @@ namespace QLN.ContentBO.WebUI.Interfaces
         DateTime? toDate = null,
         int? pageNumber = null,
         int? pageSize = null);
+        Task<HttpResponseMessage> GetServiceById(Guid id);
+        Task<HttpResponseMessage?> GetAllZonesAsync();
 
     }
 }
