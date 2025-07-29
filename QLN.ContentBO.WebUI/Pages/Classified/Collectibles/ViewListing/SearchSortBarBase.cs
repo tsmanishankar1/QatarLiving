@@ -4,8 +4,6 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using Microsoft.JSInterop;
-using ClosedXML.Excel;
-using System.IO;
 using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
@@ -21,8 +19,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Parameter] public EventCallback OnClearFilters { get; set; }
         [Inject] protected IJSRuntime JS { get; set; } = default!;
         [Inject] protected ISnackbar Snackbar { get; set; } = default!;
-        [Inject] protected IExcelExportService ExcelExportService { get; set; } = default!;
-
         protected bool ascending = true;
         protected string searchText = string.Empty;
 
@@ -157,25 +153,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                     Snackbar.Add("No data available to export.", Severity.Warning);
                     return;
                 }
-                var columns = new Dictionary<string, Func<ClassifiedItemViewListing, object?>>
+
+                // Prepare export data with capitalized headers
+                var exportData = Items.Select(x => new Dictionary<string, object?>
                 {
-                    ["Image URL"] = x => x.Images?.FirstOrDefault()?.Url,
-                    ["Ad ID"] = x => x.Id,
-                    ["Ad Type"] = x => x.AdType,
-                    ["Ad Title"] = x => x.Title,
-                    ["User ID"] = x => x.UserId,
-                    ["User Name"] = x => x.UserName,
-                    ["Category"] = x => x.Category,
-                    ["Sub Category"] = x => x.L2Category,
-                    ["Section"] = x => x.L1Category,
-                    ["Created At"] = x => x.CreatedAt?.ToString("yyyy/MM/dd"),
-                    ["Published Date"] = x => x.PublishedDate?.ToString("yyyy/MM/dd"),
-                    ["Expiry Date"] = x => x.ExpiryDate?.ToString("yyyy/MM/dd")
-                };
+                    ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
+                    ["Ad ID"] = x.Id,
+                    ["Ad Type"] = x.AdType,
+                    ["Ad Title"] = x.Title,
+                    ["User ID"] = x.UserId,
+                    ["User Name"] = x.UserName,
+                    ["Category"] = x.Category,
+                    ["Sub Category"] = x.L2Category,
+                    ["Section"] = x.L1Category,
+                    ["Created At"] = x.CreatedAt?.ToString("yyyy/MM/dd") ?? "-",
+                    ["Published Date"] = x.PublishedDate?.ToString("yyyy/MM/dd") ?? "-",
+                    ["Expiry Date"] = x.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-"
+                }).ToList();
 
-                var fileName = await ExcelExportService.ExportAsync(Items, columns, "Classified Collectibles", "Classified_Collectibles_View_Listing");
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Collectibles_ViewListing.xlsx", "Classified Collectibles");
 
-                await JS.InvokeVoidAsync("triggerFileDownload", $"/exports/{fileName}");
                 Snackbar.Add("Export successful!", Severity.Success);
             }
             catch (Exception ex)
