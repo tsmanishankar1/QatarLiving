@@ -5597,7 +5597,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Filters = new Dictionary<string, object>
                    {
-                        { "IsFeatured",   true }
+                        { "IsFeatured",   true },
                     }
                 };
 

@@ -11,12 +11,12 @@ namespace QLN.Common.DTO_s
         public bool? HasAuthenticityCertificate { get; set; }
         public string? AuthenticityCertificateUrl { get; set; }
         public string? Inclusion { get; set; }
-        public bool IsFeatured { get; set; } = false;
         public DateTime? FeaturedExpiryDate { get; set; } = null;
-        public bool IsPromoted { get; set; } = false;
         public DateTime? PromotedExpiryDate { get; set; } = null;
-        public bool IsRefreshed { get; set; }= false;
-        public DateTime? RefreshExpiryDate { get; set; } = null;
+        public DateTime? LastRefreshedOn { get; set; } = null;
+        public bool IsFeatured { get; set; }
+        public bool IsPromoted { get; set; }
+        public bool IsRefreshed => LastRefreshedOn.HasValue && LastRefreshedOn.Value > DateTime.UtcNow;
     }
 
 }

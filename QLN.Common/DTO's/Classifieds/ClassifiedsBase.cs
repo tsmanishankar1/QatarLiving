@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsBase
     {
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; } = Guid.Empty;
         public string SubVertical { get; set; }
         public AdTypeEnum AdType { get; set; }
         public string Title { get; set; }

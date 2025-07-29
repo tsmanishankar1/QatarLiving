@@ -412,7 +412,7 @@ namespace QLN.Classified.MS.Service
                 Status = dto.Status.ToString(),
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
+                RefreshExpiryDate = dto.LastRefreshedOn,
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
@@ -477,7 +477,7 @@ namespace QLN.Classified.MS.Service
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsRefreshed = dto.IsRefreshed,
 
-                RefreshExpiryDate = dto.RefreshExpiryDate
+                RefreshExpiryDate = dto.LastRefreshedOn
             };
             var indexRequest = new CommonIndexRequest
             {
@@ -578,10 +578,6 @@ namespace QLN.Classified.MS.Service
             };
             return indexRequest;
         }
-
-
-
-
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
             try
