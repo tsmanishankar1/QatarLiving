@@ -6,7 +6,7 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" OnDateFilterChanged="HandleDateFiltersChanged" OnClearFilters="HandleClearFilters"/>
               <div class="community-table">
                     <P2PTransactionTable Listings="Listings" OnPageChange="HandlePageChange"
                 OnPageSizeChange="HandlePageSizeChange" />

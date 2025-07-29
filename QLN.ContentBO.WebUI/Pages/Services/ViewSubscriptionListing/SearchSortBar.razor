@@ -30,55 +30,6 @@
             </button>
         </div>
     </div>
-
-    <!-- Filter row -->
-    <div class="filter-row">
-        <div class="filter-button @(showCreatedPopover ? "active-filter" : "")" @onclick="ToggleCreatedPopover">
-            <img src="/qln-images/date_icon.svg" class="filter-icon @(showCreatedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Date Created")</span>
-             <MudPopover Open="@showCreatedPopover"
-                AnchorOrigin="Origin.BottomCenter"
-                TransformOrigin="Origin.TopCenter"
-                Elevation="6"
-                Class="popover-container">
-                <div class="popover-content">
-                    <MudDatePicker @bind-Date="tempCreatedDate"
-                                DisableToolbar="true"
-                                ShowToolbar="false"
-                                PickerVariant="PickerVariant.Static" />
-                    <div class="popover-footer">
-                        <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelCreatedPopover">Cancel</MudButton>
-                        <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmCreatedPopover">OK</MudButton>
-                    </div>
-                </div>
-            </MudPopover>
-        </div>
-
-        <div class="filter-button @(showPublishedPopover ? "active-filter" : "")" @onclick="TogglePublishedPopover">
-            <img src="/qln-images/date_icon.svg" class="filter-icon @(showPublishedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(datePublished.HasValue ? datePublished.Value.ToString("dd MMM yyyy") : "Date Published")</span>
-                        <!-- Popover for Date Published -->
-                <MudPopover Open="@showPublishedPopover"
-                            AnchorOrigin="Origin.BottomCenter"
-                            TransformOrigin="Origin.TopCenter"
-                            Elevation="6"
-                            Class="popover-container">
-                    <div class="popover-content">
-                        <MudDatePicker @bind-Date="tempPublishedDate"
-                                    DisableToolbar="true"
-                                    ShowToolbar="false"
-                                    PickerVariant="PickerVariant.Static" />
-                        <div class="popover-footer">
-                            <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelPublishedPopover">Cancel</MudButton>
-                            <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmPublishedPopover">OK</MudButton>
-                        </div>
-                    </div>
-                </MudPopover>
-        </div>
-
-        <button class="filter-button" @onclick="ClearFilters">Clear Filters</button>
-    </div>
-
 </div>
 <style>
 .search-sort-container {

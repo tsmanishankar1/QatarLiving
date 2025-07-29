@@ -13,7 +13,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
 
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
-
+        [Parameter] public EventCallback OnClearFilters { get; set; }
+        [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
+        protected string searchText = string.Empty;
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
@@ -55,22 +57,27 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
 
-        protected void ConfirmCreatedPopover()
+        protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ClearFilters()
+        protected async void ClearFilters()
         {
             dateCreated = null;
             datePublished = null;
+            ascending = true;
+            searchText = string.Empty;
+            await OnClearFilters.InvokeAsync();
         }
         protected Task HandleSelect(DropdownItem selected)
         {

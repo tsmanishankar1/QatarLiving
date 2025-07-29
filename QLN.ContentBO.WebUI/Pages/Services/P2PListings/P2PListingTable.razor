@@ -117,12 +117,12 @@
                 </div>
             }
         </MudTd>
-        <MudTd>@context.Id</MudTd>
-        <MudTd>@context.UserId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Id.ToString()) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTitle) ? "-" : context.AdTitle)" Class="truncate-text hover-title">@context.AdTitle</MudTd>
-        <MudTd>@context.UserName</MudTd>
-        <MudTd>@context.Category</MudTd>
-        <MudTd>@context.SubCategory</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text hover-title">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Category) ? "-" : context.Category)" Class="truncate-text hover-title">@context.Category</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.SubCategory) ? "-" : context.SubCategory)" Class="truncate-text hover-title">@context.SubCategory</MudTd>
         <MudTd>Id</MudTd>
         <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>

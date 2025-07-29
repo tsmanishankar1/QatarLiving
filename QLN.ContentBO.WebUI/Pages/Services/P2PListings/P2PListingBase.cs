@@ -37,6 +37,28 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
+    protected async Task HandleDateFiltersChanged((DateTime? created, DateTime? published) filters)
+    {
+      FromDate = filters.created;
+      ToDate = filters.published;
+      pageSize = 50;
+      PaginatedData = await LoadP2PListingsAsync();
+      StateHasChanged();
+    }
+    protected async Task HandleClearFilters()
+    {
+      Search = string.Empty;
+      SortBy = "asc";
+      FromDate = null;
+      ToDate = null;
+      PublishedFrom = null;
+      PublishedTo = null;
+      currentPage = 1;
+      PaginatedData = await LoadP2PListingsAsync();
+      StateHasChanged();
+    }
+
+
     protected async Task HandleStatusChange(int? status)
     {
       currentPage = 1;

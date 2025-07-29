@@ -13,13 +13,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
 
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
-
+        [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
+        protected string searchText = string.Empty;
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
         protected DateTime? dateCreated;
         protected DateTime? datePublished;
-
+        [Parameter] public EventCallback OnClearFilters { get; set; }
         protected bool showCreatedPopover = false;
         protected bool showPublishedPopover = false;
 
@@ -55,30 +56,33 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
 
-        protected void ConfirmCreatedPopover()
+        protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ClearFilters()
+        protected async void ClearFilters()
         {
             dateCreated = null;
             datePublished = null;
+            ascending = true;
+            searchText = string.Empty;
+            await OnClearFilters.InvokeAsync();
         }
 
 
         protected Task HandleSelect(DropdownItem selected)
         {
-            Console.WriteLine($"Selected: {selected.Label}");
 
-            // Option 1: Pass by query string (recommended for readability)
             var targetUrl = $"/manage/classified/items/createform?email={selected.Label}";
             NavManager.NavigateTo(targetUrl);
 

@@ -126,9 +126,6 @@ namespace QLN.ContentBO.WebUI.Services
                     url += "?" + query;
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
                 var response = await _httpClient.SendAsync(request);
-                var responseContent = await response.Content.ReadAsStringAsync();
-Console.WriteLine("Response Content:");
-Console.WriteLine(responseContent);
                 return response;
             }
             catch (Exception ex)
