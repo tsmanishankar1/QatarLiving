@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
@@ -31,23 +32,36 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-       
 
-        public async Task<string> CreateSeasonalPick(SeasonalPicksDto dto, CancellationToken cancellationToken = default)
+
+        public async Task<string> CreateSeasonalPick(string userId, string userName, SeasonalPicksDto dto, CancellationToken cancellationToken = default)
         {
             try
-            {                               
-                dto.Id = Guid.NewGuid();
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-                dto.IsActive = true;
+            {
+                var newPick = new SeasonalPicks
+                {
+                    Id = Guid.NewGuid(),
+                    Vertical = dto.Vertical,
+                    CategoryId = dto.CategoryId,
+                    CategoryName = dto.CategoryName,
+                    L1CategoryId = dto.L1CategoryId,
+                    L1categoryName = dto.L1categoryName,
+                    L2categoryId = dto.L2categoryId,
+                    L2categoryName = dto.L2categoryName,
+                    StartDate = dto.StartDate,
+                    SlotOrder = 0,
+                    EndDate = dto.EndDate,
+                    ImageUrl = dto.ImageUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsActive = true,
+                    UserId = userId,
+                    UserName = userName
+                };
 
-                _logger.LogInformation("Creating new seasonal pick. Category: {CategoryName}, User: {UserId}, ID: {Id}", dto.CategoryName, dto.UserId, dto.Id);
+                _logger.LogInformation("Creating new seasonal pick. Category: {CategoryName}, User: {UserId}, ID: {Id}", dto.CategoryName, newPick.UserId, newPick.Id);
 
-                await _dapr.SaveStateAsync(StoreName, dto.Id.ToString(), dto);
-
-                _logger.LogInformation("Saved seasonal pick state successfully. ID: {Id}", dto.Id);
-
+                // Resolve index key based on vertical
                 string indexKey = dto.Vertical?.ToLower() switch
                 {
                     Verticals.Classifieds => ItemsIndexKey,
@@ -55,13 +69,39 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
-
+                // Get existing seasonal pick IDs from index
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-                if (!index.Contains(dto.Id.ToString()))
+
+                // Load existing seasonal pick objects to check for duplicate category name
+                var existingPickTasks = index.Select(id => _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
+                var existingPicks = await Task.WhenAll(existingPickTasks);
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                bool duplicateExists = existingPicks.Any(p =>
+                    p != null &&
+                    p.IsActive == true &&
+                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
+                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true && 
+                    (p.EndDate == null || p.EndDate >= today));
+
+                if (duplicateExists)
                 {
-                    index.Add(dto.Id.ToString());
+                    var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                // Save new seasonal pick
+                await _dapr.SaveStateAsync(StoreName, newPick.Id.ToString(), newPick);
+                _logger.LogInformation("Saved seasonal pick state successfully. ID: {Id}", newPick.Id);
+
+                // Update index if not already present
+                if (!index.Contains(newPick.Id.ToString()))
+                {
+                    index.Add(newPick.Id.ToString());
                     await _dapr.SaveStateAsync(StoreName, indexKey, index);
-                    _logger.LogInformation("Updated seasonal pick index with new ID: {Id}", dto.Id);
+                    _logger.LogInformation("Updated seasonal pick index with new ID: {Id}", newPick.Id);
                 }
 
                 var result = $"Seasonal pick '{dto.CategoryName}' created successfully.";
@@ -69,14 +109,14 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}, User: {UserId}", dto.CategoryName, dto.UserId);
+                _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}", dto.CategoryName);
                 throw;
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -97,11 +137,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Any())
                 {
                     _logger.LogInformation("No seasonal picks found in the index.");
-                    return new List<SeasonalPicksDto>();
+                    return new List<SeasonalPicks>();
                 }
 
                 var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id)).ToList();
+                    _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
 
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
@@ -122,7 +162,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<SeasonalPicksDto>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {            
             try
             {
@@ -144,11 +184,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Any())
                 {
                     _logger.LogInformation("No seasonal picks found in the index.");
-                    return new List<SeasonalPicksDto>();
+                    return new List<SeasonalPicks>();
                 }
 
                 var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id)).ToList();
+                    _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
 
                 var seasonalPicks = await Task.WhenAll(stateTasks);
 
@@ -169,37 +209,40 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithSeasonalPick(string vertical, string? userId, Guid newPickId, int targetSlot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default)
         {
-            if (targetSlot < 1 || targetSlot > 6)
-                throw new ArgumentOutOfRangeException(nameof(targetSlot), "Slot must be between 1 and 6.");
+            if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
+                throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(dto.Vertical))
+                throw new ArgumentException("Vertical is required.", nameof(dto.Vertical));
 
             try
             {
-                string indexKey = vertical.ToLower() switch
+                string indexKey = dto.Vertical.ToLower() switch
                 {
                     Verticals.Classifieds => ItemsIndexKey,         
                     Verticals.Services => ItemsServiceIndexKey,    
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
 
-                if (!index.Contains(newPickId.ToString()))
+                if (!Guid.TryParse(dto.PickId, out var pickGuid))
+                    throw new ArgumentException("Invalid PickId format. Must be a valid GUID.", nameof(dto.PickId));
+
+                if (!index.Contains(pickGuid.ToString()))
                     throw new InvalidOperationException("Selected pick ID not found.");
 
-                SeasonalPicksDto? newPick = null;
+                SeasonalPicks? newPick = null;
 
                 foreach (var id in index)
                 {
-                    var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, id);
+                    var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, id);
                     if (pick == null) continue;
 
                     // Case 1: Slot is currently occupied by someone else — clear it
-                    if (pick.SlotOrder == targetSlot && pick.Id != newPickId)
+                    if (pick.SlotOrder == dto.TargetSlotId && pick.Id != pickGuid)
                     {
                         pick.SlotOrder = 0;
                         pick.UpdatedAt = DateTime.UtcNow;
@@ -207,7 +250,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     }
 
                     // Case 2: The new pick is already slotted somewhere else — clear it before reassign
-                    if (pick.Id == newPickId)
+                    if (pick.Id == pickGuid)
                     {
                         newPick = pick;
                     }
@@ -217,25 +260,25 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new InvalidOperationException("New pick data not found in state.");
 
                 // Update the selected pick with new slot
-                newPick.SlotOrder = targetSlot;
+                newPick.SlotOrder = dto.TargetSlotId;
                 newPick.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, newPick.Id.ToString(), newPick);
 
-                return $"Successfully replaced slot {targetSlot} with seasonal pick '{newPick.CategoryName}' under vertical '{vertical}'.";
+                return $"Successfully replaced slot {dto.TargetSlotId} with seasonal pick '{newPick.CategoryName}' under vertical '{dto.Vertical}'.";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error replacing slot {Slot} with pick {PickId} in vertical: {Vertical}", targetSlot, newPickId, vertical);
+                _logger.LogError(ex, "Error replacing slot {Slot} with pick {PickId} in vertical: {Vertical}", dto.TargetSlotId, dto.PickId, dto.Vertical);
                 throw new InvalidOperationException("Failed to replace slot with selected seasonal pick.", ex);
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;           
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(request.Vertical))
@@ -244,7 +287,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -256,7 +299,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             };
 
             var seasonalIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedPicks = new Dictionary<string, SeasonalPicksDto>();
+            var loadedPicks = new Dictionary<string, SeasonalPicks>();
 
             foreach (var assignment in request.SlotAssignments)
             {
@@ -266,11 +309,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!seasonalIndex.Contains(assignment.PickId))
                     continue;
 
-                var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, assignment.PickId);
+                var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, assignment.PickId);
                 if (pick == null)
                     throw new InvalidDataException($"Pick with ID '{assignment.PickId}' not found.");
 
-                if (pick.UserId != request.UserId)
+                if (pick.UserId != userId)
                     throw new UnauthorizedAccessException("You are not authorized to update this pick.");
 
                 loadedPicks[assignment.PickId] = pick;
@@ -278,7 +321,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"seasonal-pick-slot-{assignment.SlotNumber}";
+                var slotKey = $"seasonal-pick-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.PickId))
                 {
@@ -287,7 +330,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var pick = loadedPicks[assignment.PickId];
-                pick.SlotOrder = assignment.SlotNumber;
+                pick.SlotOrder = assignment.SlotOrder;
                 pick.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, pick);
@@ -326,7 +369,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new UnauthorizedAccessException($"PickId '{pickId}' does not belong to vertical '{vertical}'.");
                 }
 
-                var pick = await _dapr.GetStateAsync<SeasonalPicksDto>(StoreName, pickId);
+                var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, pickId);
                 if (pick == null)
                 {
                     _logger.LogWarning("Pick not found for delete. PickId: {PickId}", pickId);
@@ -355,21 +398,30 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> CreateFeaturedStore(FeaturedStoreDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateFeaturedStore(string userId, string userName, FeaturedStoreDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                dto.Id = Guid.NewGuid();
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.UpdatedAt = DateTime.UtcNow;
-                dto.IsActive = true;
+                var stores = new FeaturedStore
+                {
+                    Id = Guid.NewGuid(),
+                    Vertical = dto.Vertical,
+                    StoreId = dto.StoreId,
+                    StoreName = dto.StoreName,
+                    ImageUrl = dto.ImageUrl,
+                    StartDate = dto.StartDate,
+                    SlotOrder = 0,
+                    EndDate = dto.EndDate,
+                    IsActive = true,
+                    UserId = userId,
+                    UserName = userName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
-                _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, dto.UserId, dto.Id);
+                _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, userId, stores.Id);
 
-                await _dapr.SaveStateAsync(StoreName, dto.Id.ToString(), dto);
-
-                _logger.LogInformation("Saved featured store state successfully. ID: {Id}", dto.Id);
-
+                
                 string indexKey = dto.Vertical?.ToLower() switch
                 {
                     Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
@@ -377,12 +429,37 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
+                // Get existing store index
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-                if (!index.Contains(dto.Id.ToString()))
+
+                var existingStoreTasks = index.Select(id => _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
+                var existingStores = await Task.WhenAll(existingStoreTasks);
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                bool duplicateExists = existingStores.Any(p =>
+                    p != null &&
+                    p.IsActive == true &&
+                    p.StoreName.Equals(dto.StoreName, StringComparison.OrdinalIgnoreCase) &&
+                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
+                    (p.EndDate == null && p.EndDate >= today));
+
+                if (duplicateExists)
                 {
-                    index.Add(dto.Id.ToString());
+                    var message = $"A featured store with the name '{dto.StoreName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+
+                
+                await _dapr.SaveStateAsync(StoreName, stores.Id.ToString(), stores);
+                _logger.LogInformation("Saved featured store state successfully. ID: {Id}", stores.Id);
+
+                if (!index.Contains(stores.Id.ToString()))
+                {
+                    index.Add(stores.Id.ToString());
                     await _dapr.SaveStateAsync(StoreName, indexKey, index);
-                    _logger.LogInformation("Updated featured store index with new ID: {Id}", dto.Id);
+                    _logger.LogInformation("Updated featured store index with new ID: {Id}", stores.Id);
                 }
 
                 var result = $"Featured store '{dto.StoreName}' created successfully.";
@@ -392,12 +469,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, dto.UserId);
+                _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, userId);
                 throw;
             }
         }
 
-        public async Task<List<FeaturedStoreDto>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -418,11 +495,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Any())
                 {
                     _logger.LogInformation("No featured stores found in the index.");
-                    return new List<FeaturedStoreDto>();
+                    return new List<FeaturedStore>();
                 }
 
                 var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id)).ToList();
+                    _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
 
                 var featuredStores = await Task.WhenAll(stateTasks);
 
@@ -447,7 +524,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<FeaturedStoreDto>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -468,11 +545,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Any())
                 {
                     _logger.LogInformation("No featured stores found in the index.");
-                    return new List<FeaturedStoreDto>();
+                    return new List<FeaturedStore>();
                 }
 
                 var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id)).ToList();
+                    _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
 
                 var featuredStores = await Task.WhenAll(stateTasks);
 
@@ -497,43 +574,43 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> ReplaceSlotWithFeaturedStore(string vertical, string? userId, Guid newStoreId, int targetSlot, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithFeaturedStore(string userId, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
         {
-            if (targetSlot < 1 || targetSlot > 6)
-                throw new ArgumentOutOfRangeException(nameof(targetSlot), "Slot must be between 1 and 6.");
+            if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
+                throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(dto.Vertical))
+                throw new ArgumentException("Vertical is required.", nameof(dto.Vertical));
 
             try
             {
-                string indexKey = vertical.ToLower() switch
+                string indexKey = dto.Vertical.ToLower() switch
                 {
                     Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
                     Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
+                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
 
-                if (!index.Contains(newStoreId.ToString()))
+                if (!index.Contains(dto.StoreId.ToString()))
                     throw new InvalidOperationException("Selected featured store ID not found.");
 
-                FeaturedStoreDto? newStore = null;
+                FeaturedStore? newStore = null;
 
                 foreach (var id in index)
                 {
-                    var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, id);
+                    var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, id);
                     if (store == null) continue;
 
-                    if (store.SlotOrder == targetSlot && store.Id != newStoreId)
+                    if (store.SlotOrder == dto.TargetSlotId && store.Id.ToString() != dto.StoreId.ToString())
                     {
                         store.SlotOrder = 0;
                         store.UpdatedAt = DateTime.UtcNow;
                         await _dapr.SaveStateAsync(StoreName, id, store);
                     }
 
-                    if (store.Id == newStoreId)
+                    if (store.Id.ToString() == dto.StoreId.ToString())
                     {
                         newStore = store;
                     }
@@ -542,25 +619,25 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (newStore == null)
                     throw new InvalidOperationException("New featured store data not found in state.");
 
-                newStore.SlotOrder = targetSlot;
+                newStore.SlotOrder = dto.TargetSlotId;
                 newStore.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, newStore.Id.ToString(), newStore);
 
-                return $"Successfully replaced slot {targetSlot} with featured store '{newStore.StoreName}' under vertical '{vertical}'.";
+                return $"Successfully replaced slot {dto.TargetSlotId} with featured store '{newStore.StoreName}' under vertical '{dto.Vertical}'.";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error replacing slot {Slot} with featured store {StoreId} in vertical: {Vertical}", targetSlot, newStoreId, vertical);
+                _logger.LogError(ex, "Error replacing slot {Slot} with featured store {StoreId} in vertical: {Vertical}", dto.TargetSlotId, dto.StoreId, dto.Vertical);
                 throw new InvalidOperationException("Failed to replace slot with selected featured store.", ex);
             }
         }
 
-        public async Task<string> ReorderFeaturedStoreSlots(FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedStoreSlots(string userId, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(request.Vertical))
@@ -569,7 +646,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
                 throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotNumber).ToList();
+            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
             if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
                 throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
@@ -581,7 +658,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             };
 
             var storeIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedStores = new Dictionary<string, FeaturedStoreDto>();
+            var loadedStores = new Dictionary<string, FeaturedStore>();
 
             foreach (var assignment in request.SlotAssignments)
             {
@@ -591,11 +668,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!storeIndex.Contains(assignment.StoreId))
                     continue;
 
-                var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, assignment.StoreId);
+                var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, assignment.StoreId);
                 if (store == null)
                     throw new InvalidDataException($"Store with ID '{assignment.StoreId}' not found.");
 
-                if (store.UserId != request.UserId)
+                if (store.UserId != userId)
                     throw new UnauthorizedAccessException("You are not authorized to update this store.");
 
                 loadedStores[assignment.StoreId] = store;
@@ -603,7 +680,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             foreach (var assignment in request.SlotAssignments)
             {
-                var slotKey = $"featured-store-slot-{assignment.SlotNumber}";
+                var slotKey = $"featured-store-slot-{assignment.SlotOrder}";
 
                 if (string.IsNullOrWhiteSpace(assignment.StoreId))
                 {
@@ -612,7 +689,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 }
 
                 var store = loadedStores[assignment.StoreId];
-                store.SlotOrder = assignment.SlotNumber;
+                store.SlotOrder = assignment.SlotOrder;
                 store.UpdatedAt = DateTime.UtcNow;
 
                 await _dapr.SaveStateAsync(StoreName, slotKey, store);
@@ -652,7 +729,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new UnauthorizedAccessException($"StoreId '{storeId}' does not belong to vertical '{vertical}'.");
                 }
 
-                var store = await _dapr.GetStateAsync<FeaturedStoreDto>(StoreName, storeId);
+                var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, storeId);
                 if (store == null)
                 {
                     _logger.LogWarning("Featured store not found for delete. StoreId: {StoreId}", storeId);
@@ -681,19 +758,28 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<string> CreateFeaturedCategory(string userId, V2ClassifiedLandingBoDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateFeaturedCategory(string userId, string userName, FeaturedCategoryDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                dto.Id = Guid.NewGuid();
-                dto.CreatedAt = DateTime.UtcNow;
-                dto.IsActive = true;
+                var categories = new FeaturedCategory
+                {
+                    Id = Guid.NewGuid(),
+                    Vertical = dto.Vertical,
+                    CategoryName = dto.CategoryName,
+                    CategoryId = dto.CategoryId,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    ImageUrl = dto.ImageUrl,
+                    SlotOrder = 0,
+                    IsActive = true,
+                    UserId = userId,
+                    UserName = userName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
 
-                _logger.LogInformation("Creating new landing bo. Category: {CategoryName}, User: {UserId}, ID: {Id}", dto.Category, dto.UserId, dto.Id);
-
-                // Save the DTO by its ID
-                var stateKey = dto.Id.ToString();
-                await _dapr.SaveStateAsync(StoreName, stateKey, dto, cancellationToken: cancellationToken);
+                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.CategoryName, userId, categories.Id);
 
                 // Determine index key by vertical
                 string indexKey = dto.Vertical?.ToLower() switch
@@ -703,29 +789,48 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
-                // Load or create the index
                 var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: cancellationToken) ?? new List<string>();
+                var existingTasks = index.Select(id => _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
+                var existingItems = await Task.WhenAll(existingTasks);
 
-                // Add ID to index if not present
-                if (!index.Contains(stateKey))
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                bool duplicateExists = existingItems.Any(p =>
+                    p != null &&
+                    p.IsActive == true &&
+                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
+                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
+                    (p.EndDate == null && p.EndDate >= today));
+
+                if (duplicateExists)
                 {
-                    index.Add(stateKey);
+                    var message = $"A featured category '{dto.CategoryName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new InvalidOperationException(message);
+                }
+                                
+                await _dapr.SaveStateAsync(StoreName, categories.Id.ToString(), categories, cancellationToken: cancellationToken);
+                _logger.LogInformation("Saved featured category state successfully. ID: {Id}", categories.Id);
+
+                if (!index.Contains(categories.Id.ToString()))
+                {
+                    index.Add(categories.Id.ToString());
                     await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: cancellationToken);
-                    _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, stateKey);
+                    _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, categories.Id);
                 }
 
-                var result = $"Landing bo '{dto.Category}' created successfully.";
+                var result = $"Landing bo '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed landing bo creation: {Message}", result);
 
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post landing bo. Category: {CategoryName}, User: {UserId}", dto.Category, dto.UserId);
+                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw;
             }
         }
-
+        
         public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
@@ -755,7 +860,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new UnauthorizedAccessException($"FeaturedCategoryId '{categoryId}' does not belong to vertical '{vertical}'.");
                 }
 
-                var featuredCategory = await _dapr.GetStateAsync<V2ClassifiedLandingBoDto>(StoreName, categoryId);
+                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, categoryId);
                 if (featuredCategory == null)
                 {
                     _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", categoryId);
@@ -775,7 +880,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation($"Successfully deleted FeaturedCategory. FeaturedCategoryId: {categoryId}", categoryId);
 
-                return $"FeaturedCategory '{featuredCategory.Category}' has been deleted.";
+                return $"FeaturedCategory '{featuredCategory.CategoryName}' has been deleted.";
             }
             catch (Exception ex)
             {
@@ -784,7 +889,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<V2ClassifiedLandingBoDto>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -809,12 +914,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Any())
                 {
                     _logger.LogInformation("No featured category found in the index.");
-                    return new List<V2ClassifiedLandingBoDto>();
+                    return new List<FeaturedCategory>();
                 }
 
                 // Load all DTOs from index
                 var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<V2ClassifiedLandingBoDto>(StoreName, id, cancellationToken: cancellationToken)).ToList();
+                    _dapr.GetStateAsync<FeaturedCategory>(StoreName, id, cancellationToken: cancellationToken)).ToList();
 
                 var featuredCategories = await Task.WhenAll(stateTasks);
                 
@@ -836,7 +941,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<V2ClassifiedLandingBoDto>> GetFeaturedCategoriesByVerticalAsync(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
                 throw new ArgumentException("Vertical is required to retrieve featured categories.", nameof(vertical));
@@ -856,11 +961,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (!index.Any())
             {
                 _logger.LogInformation("No featured categories found in the index.");
-                return new List<V2ClassifiedLandingBoDto>();
+                return new List<FeaturedCategory>();
             }
 
             var stateTasks = index.Select(id =>
-                _dapr.GetStateAsync<V2ClassifiedLandingBoDto>(StoreName, id)).ToList();
+                _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
 
             var featuredCategories = await Task.WhenAll(stateTasks);
 
@@ -874,11 +979,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             return activeFeaturedCategories;
         }
 
-        public async Task<string> ReorderFeaturedCategorySlots(LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;
 
-            if (string.IsNullOrWhiteSpace(request.UserId))
+            if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
 
             if (string.IsNullOrWhiteSpace(request.Vertical))
@@ -899,7 +1004,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             };
 
             var featuredCategoryIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedFeaturedCategories = new Dictionary<string, V2ClassifiedLandingBoDto>();
+            var loadedFeaturedCategories = new Dictionary<string, FeaturedCategory>();
 
             foreach (var assignment in request.SlotAssignments)
             {
@@ -909,11 +1014,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!featuredCategoryIndex.Contains(assignment.CategoryId))
                     continue;
 
-                var featuredCategory = await _dapr.GetStateAsync<V2ClassifiedLandingBoDto>(StoreName, assignment.CategoryId);
+                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, assignment.CategoryId);
                 if (featuredCategory == null)
                     throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found.");
 
-                if (featuredCategory.UserId != request.UserId)
+                if (featuredCategory.UserId != userId)
                     throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
 
                 loadedFeaturedCategories[assignment.CategoryId] = featuredCategory;
@@ -958,11 +1063,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (!index.Contains(dto.CategoryId.ToString()))
                     throw new InvalidOperationException("Selected featured category ID not found.");
 
-                V2ClassifiedLandingBoDto? newItem = null;
+                FeaturedCategory? newItem = null;
 
                 foreach (var id in index)
                 {
-                    var item = await _dapr.GetStateAsync<V2ClassifiedLandingBoDto>(StoreName, id);
+                    var item = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, id);
                     if (item == null) continue;
 
                     // Case 1: Slot is currently occupied by someone else — clear it
@@ -989,7 +1094,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 await _dapr.SaveStateAsync(StoreName, newItem.Id.ToString(), newItem);
 
-                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.Category}'.";
+                return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.CategoryName}'.";
             }
             catch (Exception ex)
             {
@@ -997,5 +1102,105 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to replace slot with selected category.", ex);
             }
         }
+
+        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.StateStoreNames.UnifiedStore,
+                ConstantValues.StateStoreNames.ItemsIndexKey,
+                cancellationToken: ct
+            ) ?? new();
+            Console.WriteLine(indexKeys);
+            var updated = new List<ClassifiedsItems>();
+
+            foreach (var id in request.AdIds)
+            {
+                var adKey = GetAdKey(id);
+                if (!indexKeys.Contains(adKey.ToString()))
+                {
+                    Console.WriteLine("Index Is Null");
+                    continue;
+                }
+
+                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    adKey.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                {
+                    Console.WriteLine("Ad Is Null");
+                    continue;
+                }
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkActionEnum.Approve:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Publish:
+                        if (ad.Status == AdStatus.Unpublished)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Unpublish:
+                        if (ad.Status == AdStatus.Published)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnPromote:
+                        if (ad.IsPromoted)
+                        {
+                            ad.IsPromoted = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.UnFeature:
+                        if (ad.IsFeatured)
+                        {
+                            ad.IsFeatured = false;
+                            shouldUpdate = true;
+                        }
+                        break;
+
+                    case BulkActionEnum.Remove:
+                        ad.Status = AdStatus.Rejected;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = request.UpdatedBy;
+                    Console.WriteLine("Updating");
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);
+                    Console.WriteLine("Updated");
+                }
+            }
+
+            return updated;
+        }
+
+        private string GetAdKey(Guid id) => $"ad-{id}";
     }
 }

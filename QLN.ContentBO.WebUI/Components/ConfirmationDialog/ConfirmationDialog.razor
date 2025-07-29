@@ -3,7 +3,7 @@
 <MudDialog Class="pa-2 custom-dialog">
     <DialogContent>
         <div class="d-flex justify-center">
-            <img class="icon-circle" src="/qln-images/success_icon.svg" alt="go-live Image" />
+            <img class="icon-circle" src="@HeaderIconPath" alt="go-live Image" />
         </div>
         <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
             @Title
@@ -12,8 +12,15 @@
             @Descrption
         </MudText>
         <div class="mt-4 d-flex flex-column gap-2">
-            <MudButton Variant="Variant.Filled" Class="mt-4 custom-add-btn" OnClick="Confirm">
-                    @ButtonTitle
+            <MudButton Variant="Variant.Filled"  Disabled="@IsLoading" Color="Color.Primary" Class="mt-4 custom-add-btn" OnClick="Confirm">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Color="Color.Inherit" Size="Size.Small"Indeterminate="true" />
+            }
+            else
+            {
+             @ButtonTitle
+            }
             </MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
                 Cancel
@@ -36,7 +43,6 @@
     }
 
     .custom-add-btn {
-        background-color: #FF7F38;
         font-size: 16px;
         font-weight: 400;
         color: white;

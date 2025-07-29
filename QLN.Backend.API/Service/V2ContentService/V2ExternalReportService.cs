@@ -345,19 +345,19 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? pageSize, string? searchTerm = null, string? sortOrder = null, CancellationToken ct = default)
         {
             try
             {
                 var queryParams = new List<string>
                 {
                     $"pageNumber={pageNumber ?? 1}",
-                    $"perPage={perPage ?? 12}"
+                    $"perPage={pageSize ?? 12}"
                 };
-                if (!string.IsNullOrWhiteSpace(searchTitle))
-                    queryParams.Add($"searchTitle={Uri.EscapeDataString(searchTitle)}");
-                if (!string.IsNullOrWhiteSpace(sortBy))
-                    queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                    queryParams.Add($"searchTitle={Uri.EscapeDataString(searchTerm)}");
+                if (!string.IsNullOrWhiteSpace(sortOrder))
+                    queryParams.Add($"sortBy={Uri.EscapeDataString(sortOrder)}");
 
                 var url = $"/api/v2/report/getallcommunitypostswithpagination?{string.Join("&", queryParams)}";
 

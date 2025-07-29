@@ -79,6 +79,7 @@ namespace QLN.Web.Shared.Model
         public string slug { get; set; }
         public string description { get; set; }
         public string image_url { get; set; }
+        public string? comment_count { get; set; }
         public List<CommentDto> comments { get; set; } = new();
 
     }
