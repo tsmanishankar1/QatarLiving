@@ -91,14 +91,15 @@
                             TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
                     <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
                         <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
-                            <MudDateRangePicker @bind-DateRange="_dateRange"
-                                                PickerVariant="PickerVariant.Static"
-                                                DisableToolbar="true"
-                                                ShowToolbar="false"
-                                                DisplayMonths="1"
-                                                Class="event-custom-date-range"
-                                                Style="min-width: 300px;"
-                                                MinDate="@DateTime.Today" />
+                                <MudDateRangePicker @bind-DateRange="_dateRange"
+                                PickerVariant="PickerVariant.Static"
+                                DisableToolbar="true"
+                                ShowToolbar="false"
+                                DisplayMonths="1"
+                                Class="event-custom-date-range"
+                                Style="min-width: 300px;" 
+                                 MinDate="@DateTime.Today"
+                                 />
 
                             <!-- Start and End Summary -->
                             <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
@@ -134,7 +135,7 @@
 
             @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
-                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType"  Disabled="@string.IsNullOrWhiteSpace(SelectedDateLabel)" Class="my-2">
+                <MudRadioGroup T="EventTimeType" Value="CurrentEvent.EventSchedule.TimeSlotType" ValueChanged="OnTimeSlotTypeChanged" Class="my-2">
                 <MudRadio  Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 </MudRadioGroup>

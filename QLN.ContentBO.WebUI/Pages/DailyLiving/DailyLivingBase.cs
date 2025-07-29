@@ -392,8 +392,8 @@ public class DailyLivingBase : QLComponentBase
 
         return new List<DailyLivingArticleDto>();
     }
-    
-    
+
+
 
     protected Task OpenDialogAsync()
     {
@@ -791,7 +791,15 @@ public class DailyLivingBase : QLComponentBase
             var topics = await DailyService.AddArticle(article);
             if (topics.IsSuccessStatusCode)
             {
-                Snackbar.Add("Article Added Successfully", Severity.Success);
+                string message = article.ContentType switch
+                {
+                    1 => "Article added successfully",
+                    2 => "Event added successfully",
+                    3 => "Video added successfully",
+                    _ => "Content added successfully"
+                };
+
+                Snackbar.Add(message, Severity.Success);
                 await OnTabChanged(activeIndex);
             }
             else
@@ -840,7 +848,14 @@ public class DailyLivingBase : QLComponentBase
             var topics = await DailyService.ReplaceArticle(article);
             if (topics.IsSuccessStatusCode)
             {
-                Snackbar.Add("Article Replaced Successfully", Severity.Success);
+                string message = article.ContentType switch
+                {
+                    1 => "Article replaced successfully",
+                    2 => "Event replaced successfully",
+                    3 => "Video replaced successfully",
+                    _ => "Content replaced successfully"
+                };
+                Snackbar.Add(message, Severity.Success);
                 await OnTabChanged(activeIndex);
             }
             else
@@ -908,24 +923,24 @@ public class DailyLivingBase : QLComponentBase
         }
         return new List<DailyLivingArticleDto>();
     }
-        private async Task<List<NewsCategory>> GetNewsCategories()
+    private async Task<List<NewsCategory>> GetNewsCategories()
+    {
+        try
         {
-            try
+            var apiResponse = await newsService.GetNewsCategories();
+            if (apiResponse.IsSuccessStatusCode)
             {
-                var apiResponse = await newsService.GetNewsCategories();
-                if (apiResponse.IsSuccessStatusCode)
-                {
-                    return await apiResponse.Content.ReadFromJsonAsync<List<NewsCategory>>() ?? [];
-                }
+                return await apiResponse.Content.ReadFromJsonAsync<List<NewsCategory>>() ?? [];
+            }
 
-                return [];
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "GetNewsCategories");
-                return [];
-            }
+            return [];
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "GetNewsCategories");
+            return [];
+        }
+    }
 
 }
 

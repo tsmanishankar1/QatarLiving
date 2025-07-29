@@ -35,6 +35,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
     };
         protected string? selectedPage;
         protected string? _DateError;
+        protected string? _EndDateError;
         protected string? _DesktopImageError;
         protected string? _MobileImageError;
         protected string? _AvailabilityError;
@@ -285,6 +286,8 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             _DesktopImageError = null;
             _MobileImageError = null;
             _AvailabilityError = null;
+            _DateError = null;
+            _EndDateError = null;
             bannerModel.BannerTypeIds = _selectedBannerTypeRequests;
             if (_startDate == null)
             {
@@ -294,14 +297,14 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             }
             if (_endDate == null)
             {
-                _DateError = "End date is required.";
+                _EndDateError = "End date is required.";
                 Snackbar.Add("End date is required.", severity: Severity.Error);
                 return;
             }
             if (_startDate != null && _endDate != null && _endDate <= _startDate)
             {
-                _DateError = "End date must be after the start date.";
-                Snackbar.Add("End date must be after the start date.", severity: Severity.Error);
+                _EndDateError = "End date should be greater than the start date";
+                Snackbar.Add("End date should be greater than the start date.", severity: Severity.Error);
                 return;
             }
             if (bannerModel.IsDesktopAvailability != true && bannerModel.IsMobileAvailability != true)

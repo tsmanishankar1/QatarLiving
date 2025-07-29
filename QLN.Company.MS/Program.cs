@@ -10,6 +10,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
+builder.Services.AddScoped<ICompanyVerifiedService, InternalVerifiedCompany>();
+builder.Services.AddScoped<ICompanyDealsStoresService, InternalDealsStoresCompany>();
+builder.Services.AddScoped<ICompanyClassifiedService, InternalClassifiedCompanyService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -17,8 +20,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints();
+var companyServiceGroup = app.MapGroup("/api/companyservice");
+companyServiceGroup.MapCompanyServiceEndpoints();
+var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
+companyClassifiedsGroup.MapCompanyEndpoints();
+var companyDsGroup = app.MapGroup("/api/companyds");
+companyDsGroup.MapCompanyDealsStoresEndpoints();
+var companyVerifiedGroup = app.MapGroup("/api/companyverified");
+companyVerifiedGroup.MapVerifiedCompanyEndpoints();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

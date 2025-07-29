@@ -35,6 +35,8 @@ namespace QLN.ContentBO.WebUI.Pages
         public bool _isTimeDialogOpen = true;
         protected string? _DateError;
         protected string? _timeError;
+        protected string? _PriceError;
+        protected string? _CategoryError;
         protected string? _LocationError;
         protected string? _descriptionerror;
         protected string? _coverImageError;
@@ -107,12 +109,16 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 if (value != null && CurrentEvent?.EventSchedule != null)
                 {
-                    CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
-                    CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start; 
+                    CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(start);
+                    CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(end);
                     _isDateRangeSelected = true;
                 }
+                StateHasChanged();
             }
         }
+
         protected ElementReference _popoverDiv;
 
         protected bool _showDatePicker = false;
@@ -165,6 +171,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
+
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -201,15 +208,12 @@ namespace QLN.ContentBO.WebUI.Pages
                     CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
                     _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
                     _coverImageError = null;
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleFilesChanged");
-            }
-            finally
-            {
-                _fileUpload?.ResetValidation();
             }
         }
 
@@ -217,6 +221,41 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _isTimeDialogOpen = true;
         }
+        protected void OnTimeSlotTypeChanged(EventTimeType newValue)
+        {
+            CurrentEvent.EventSchedule.TimeSlotType = newValue;
+            if (newValue == EventTimeType.GeneralTime)
+            {
+                GenerateDayTimeList();
+                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
+            }
+            else if (newValue == EventTimeType.PerDayTime)
+            {
+                StartTimeSpan = null;
+                EndTimeSpan = null;
+                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
+            }
+            else
+            { 
+                StartTimeSpan = null;
+                EndTimeSpan = null;
+                GenerateDayTimeList();
+            }
+        }
+
+        protected void ApplyTimeRange()
+        {
+            if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
+            {
+                _timeRangeDisplay = $"{DateTime.Today.Add(CurrentEvent.EventSchedule.StartTime.Value.ToTimeSpan()):h:mm tt} to {DateTime.Today.Add(CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()):h:mm tt}";
+            }
+            else
+            {
+                _timeRangeDisplay = string.Empty;
+            }
+            _isTimeDialogOpen = false;
+        }
+
         protected void AddLocation()
         {
             if (!string.IsNullOrWhiteSpace(NewLocation) && !SelectedLocations.Contains(NewLocation))
@@ -365,13 +404,21 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _DateError = null;
             _descriptionerror = null;
+            _CategoryError = null;
+            _PriceError = null;
             _LocationError = null;
             _timeError = null;
             _coverImageError = null;
             bool hasError = false;
-            if (CurrentEvent.CategoryId <= 0)
+            if (string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
-                Snackbar.Add("Event Category is required.", severity: Severity.Error);
+                Snackbar.Add("Date is required", severity: Severity.Error);
+                return;
+            }
+            if (CurrentEvent?.CategoryId == 0)
+            {
+                _CategoryError = "Category is required.";
+                Snackbar.Add("Category is required.", severity: Severity.Error);
                 return;
             }
             if (CurrentEvent?.EventType == 0)
@@ -386,6 +433,12 @@ namespace QLN.ContentBO.WebUI.Pages
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
+            {
+                _LocationError = "Location is required.";
+                Snackbar.Add("Location is required.", severity: Severity.Error);
+                return;
+            }
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
@@ -491,6 +544,8 @@ namespace QLN.ContentBO.WebUI.Pages
                     await JS.InvokeVoidAsync("resetLeafletMap");
                     await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+
                 }
                 else if (response?.StatusCode == HttpStatusCode.BadRequest)
                 {
