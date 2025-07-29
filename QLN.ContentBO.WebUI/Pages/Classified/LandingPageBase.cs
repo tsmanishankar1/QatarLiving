@@ -25,6 +25,7 @@ public class LandingPageBase : QLComponentBase
     public IClassifiedService ClassifiedService { get; set; }
 
     private List<SeasonalPickDto> _seasonalPicks = new();
+    private List<SeasonalPickDto> _featuredCategory = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -39,6 +40,7 @@ public class LandingPageBase : QLComponentBase
 
             await LoadDataForCurrentTab();
             await LoadAllSeasonalPicks();
+            await LoadAllFeaturedCategory();
 
         }
         catch (Exception ex)
@@ -107,7 +109,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadFeaturedCategories()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedCategory("classifieds");
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -263,6 +265,24 @@ public class LandingPageBase : QLComponentBase
             Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
         }
     }
+
+    private async Task LoadAllFeaturedCategory()
+    {
+        var response = await ClassifiedService.GetAllFeatureCategory("classifieds");
+
+        if (response?.IsSuccessStatusCode == true)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            _featuredCategory = JsonSerializer.Deserialize<List<SeasonalPickDto>>(content, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? new List<SeasonalPickDto>();
+        }
+        else
+        {
+            Snackbar.Add("Failed to load the seasonal pick items", Severity.Error);
+        }
+    }
     protected async Task SearchItems()
     {
         try
@@ -304,7 +324,7 @@ public class LandingPageBase : QLComponentBase
     }
 
 
-    protected  Task NavigateToAddItem()
+    protected async Task NavigateToAddItem()
     {
         var title = $"Add {GetCurrentTabAddButtonText()}";
 
@@ -316,8 +336,27 @@ public class LandingPageBase : QLComponentBase
         {
             CloseOnEscapeKey = true
         };
-        return DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
-
+        IDialogReference dialog;
+        if (currentItemType == LandingPageItemType.FeaturedCategory)
+        {
+            dialog = await DialogService.ShowAsync<AddFeaturedCategoryModal>("", parameters, options);
+        }
+        else if (currentItemType == LandingPageItemType.SeasonalPick)
+        {
+            dialog = await DialogService.ShowAsync<AddSeasonalPickModal>("", parameters, options);
+        }
+        else 
+        {
+            dialog = await DialogService.ShowAsync<AddStoreModal>("", parameters, options);
+        }
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            await LoadDataForCurrentTab();
+            await LoadAllFeaturedCategory();
+            await LoadAllSeasonalPicks();
+            StateHasChanged();
+        }
     }
 
     protected async Task ReplaceItem(LandingPageItem item)
@@ -329,13 +368,21 @@ public class LandingPageBase : QLComponentBase
             2 => "Replace Featured Store",
             _ => "Replace Item"
         };
-
+        var data  = activeIndex switch
+        {
+            0 => _featuredCategory,
+            1 => _seasonalPicks,
+            2 => _seasonalPicks,
+            _ => _seasonalPicks
+        };
         var parameters = new DialogParameters
     {
         { nameof(MessageBoxBase.Title), title },
         { nameof(MessageBoxBase.Placeholder), "Please type search item*" },
-        { nameof(ReplaceDialogModal.events), _seasonalPicks },
-        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder }
+        { nameof(ReplaceDialogModal.events), data },
+        { nameof(ReplaceDialogModal.SlotNumber), item.SlotOrder },
+        { nameof(ReplaceDialogModal.ActiveIndex), activeIndex }
+
     };
 
         var options = new DialogOptions
@@ -345,7 +392,14 @@ public class LandingPageBase : QLComponentBase
             CloseOnEscapeKey = true
         };
 
-        await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        //await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        var dialog = await DialogService.ShowAsync<ReplaceDialogModal>("", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            await LoadDataForCurrentTab();
+        }
     }
 
     protected Task OpenDialogAsync()
@@ -383,16 +437,43 @@ public class LandingPageBase : QLComponentBase
     {
         try
         {
-            var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+             string GetItemTypeName() => currentItemType switch
+            {
+                LandingPageItemType.FeaturedCategory => "Featured Category",
+                LandingPageItemType.SeasonalPick => "Seasonal Pick",
+                LandingPageItemType.FeaturedStore => "Featured Store",
+                _ => "Item"
+            };
 
+           HttpResponseMessage? response = null;
+
+            switch (currentItemType)
+            {
+                case LandingPageItemType.FeaturedCategory:
+                    response = await ClassifiedService.DeleteFeaturedCategory(id, "classifieds");
+                    break;
+
+                case LandingPageItemType.SeasonalPick:
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    break;
+
+                case LandingPageItemType.FeaturedStore:
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    break;
+
+                default:
+                    Snackbar.Add("Unknown item type selected.", Severity.Warning);
+                    Logger.LogWarning("Unhandled item type in delete: {ItemType}", currentItemType);
+                    return;
+            }
             if (response?.IsSuccessStatusCode == true)
             {
-                Snackbar.Add($"{currentItemType} deleted successfully", Severity.Success);
-                await LoadDataForCurrentTab();
+                Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
+                await LoadDataForCurrentTab(); 
             }
             else
             {
-                Snackbar.Add($"Failed to delete {currentItemType}", Severity.Error);
+                Snackbar.Add($"Failed to delete {GetItemTypeName()}", Severity.Error);
             }
         }
         catch (Exception ex)
