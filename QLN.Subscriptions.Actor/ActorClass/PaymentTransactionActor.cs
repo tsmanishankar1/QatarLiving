@@ -1,14 +1,21 @@
-﻿using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Actors.Runtime;
 using Dapr.Client;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
+using System.Security.Cryptography.X509Certificates;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
     public class PaymentTransactionActor : Dapr.Actors.Runtime.Actor, IPaymentTransactionActor, IRemindable
     {
         private const string StateKey = "payment-transaction-data";
-        private const string BackupStateKey = "transaction-data";
+
+        private const string StateStoreName = "statestore";
+        private const string GlobalPaymentDetailsKey = "payment-details-collection";
+        private const string PaymentDetailsStateKey = "payment-details-collection";
         private const string TimerName = "subscription-expiry-timer";
         private const string ReminderName = "subscription-expiry-reminder";
         private const string PubSubName = "pubsub";
@@ -17,10 +24,18 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private readonly ILogger<PaymentTransactionActor> _logger;
         private readonly DaprClient _daprClient;
 
-        public PaymentTransactionActor(ActorHost host,DaprClient dapr, ILogger<PaymentTransactionActor> logger) : base(host)
+        public PaymentTransactionActor(ActorHost host, DaprClient dapr, ILogger<PaymentTransactionActor> logger) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _daprClient = dapr;
+        }
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            return ActorProxy.Create<IUserQuotaActor>(new ActorId(userId), "UserQuotaActor");
+        }
+        public class UserPaymentDetailsCollection
+        {
+            public List<UserPaymentDetailsResponseDto> Details { get; set; } = new();
         }
 
         public async Task<bool> SetDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken = default)
@@ -31,14 +46,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Update timestamp
+
                 data.LastUpdated = DateTime.UtcNow;
 
-                // Store in both primary and backup state keys
-                await StoreInPrimaryStateAsync(data, cancellationToken);
-                await StoreInBackupStateAsync(data, cancellationToken);
-
-                // Schedule both timer and reminder when payment data is set
+                await StoreTransactionDataAsync(data, cancellationToken);
                 await ScheduleExpiryCheckAsync();
 
                 return true;
@@ -55,28 +66,66 @@ namespace QLN.Subscriptions.Actor.ActorClass
             return await SetDataAsync(data, cancellationToken);
         }
 
+
+
+        public async Task<bool> StorePaymentDetailsAsync(UserPaymentDetailsResponseDto dto, CancellationToken cancellationToken = default)
+        {
+            var quota = new GenericUserQuotaDto
+            {
+                UserId = dto.UserId,
+                SourceType = "Subscription",
+                PaymentTransactionId = dto.PaymentTransactionId,
+                SubscriptionId = dto.SubscriptionId,
+                SubscriptionName = dto.SubscriptionName,
+                VerticalTypeId = dto.VerticalTypeId,
+                VerticalName = dto.VerticalName,
+                SubVerticalId = dto.CategoryId,
+                SubVerticalName = dto.CategoryName,
+                TotalAdBudget = dto.AdsBudgetTotal ?? 0,
+                UsedAdBudget = 0,
+                TotalPromoteBudget = dto.PromoteBudgetTotal ?? 0,
+                UsedPromoteBudget = 0,
+                TotalRefreshBudget = dto.RefreshBudgetTotal ?? 0,
+                UsedRefreshToday = 0,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                Currency = dto.Currency,
+                Price = dto.Price,
+                CardHolderName = dto.CardHolderName,
+                TransactionDate = dto.TransactionDate,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var userQuotaActor = GetUserQuotaActorProxy(dto.UserId);
+            await userQuotaActor.UpsertQuotaAsync(quota, cancellationToken);
+            return true;
+        }
+
+        public async Task<UserPaymentDetailsResponseDto?> GetPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var state = await _daprClient.GetStateAsync<UserPaymentDetailsCollection>(
+                StateStoreName, GlobalPaymentDetailsKey, cancellationToken: cancellationToken);
+            var userIdString = Id.GetGuidId().ToString();
+
+            return state?.Details.FirstOrDefault(d => d.UserId == userIdString);
+        }
+
+
+
         public async Task<PaymentTransactionDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("[PaymentActor {ActorId}] GetDataAsync called", Id);
 
             try
             {
-                // Try to get from primary state first
-                var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
-                if (primaryStateValue != null)
+                var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(StateKey, cancellationToken);
+                if (conditionalValue.HasValue)
                 {
-                    return primaryStateValue;
+                    _logger.LogInformation("[PaymentActor {ActorId}] Retrieved transaction data successfully", Id);
+                    return conditionalValue.Value;
                 }
 
-                // If not found in primary state, try backup state
-                var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
-                if (backupStateValue != null)
-                {
-                    // If found in backup state, also update primary state for consistency
-                    await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
-                    return backupStateValue;
-                }
-
+                _logger.LogWarning("[PaymentActor {ActorId}] No transaction data found", Id);
                 return null;
             }
             catch (Exception ex)
@@ -86,70 +135,17 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        private async Task StoreInPrimaryStateAsync(PaymentTransactionDto data, CancellationToken cancellationToken)
+        private async Task StoreTransactionDataAsync(PaymentTransactionDto data, CancellationToken cancellationToken)
         {
             try
             {
                 await StateManager.SetStateAsync(StateKey, data, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-                _logger.LogInformation("[PaymentActor {ActorId}] Stored data in primary state key '{StateKey}'", Id, StateKey);
+                _logger.LogInformation("[PaymentActor {ActorId}] Stored transaction data", Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error storing in primary state key '{StateKey}'", Id, StateKey);
-                throw;
-            }
-        }
-
-        private async Task StoreInBackupStateAsync(PaymentTransactionDto data, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await StateManager.SetStateAsync(BackupStateKey, data, cancellationToken);
-                await StateManager.SaveStateAsync(cancellationToken);
-                _logger.LogInformation("[PaymentActor {ActorId}] Stored data in backup state key '{StateKey}'", Id, BackupStateKey);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error storing in backup state key '{StateKey}'", Id, BackupStateKey);
-                throw;
-            }
-        }
-
-        private async Task<PaymentTransactionDto?> GetFromPrimaryStateAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(StateKey, cancellationToken);
-                if (conditionalValue.HasValue)
-                {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from primary state key '{StateKey}'", Id, StateKey);
-                    return conditionalValue.Value;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error retrieving from primary state key '{StateKey}'", Id, StateKey);
-                throw;
-            }
-        }
-
-        private async Task<PaymentTransactionDto?> GetFromBackupStateAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                var conditionalValue = await StateManager.TryGetStateAsync<PaymentTransactionDto>(BackupStateKey, cancellationToken);
-                if (conditionalValue.HasValue)
-                {
-                    _logger.LogInformation("[PaymentActor {ActorId}] Retrieved data from backup state key '{StateKey}'", Id, BackupStateKey);
-                    return conditionalValue.Value;
-                }
-                return null;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error retrieving from backup state key '{StateKey}'", Id, BackupStateKey);
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error storing transaction data", Id);
                 throw;
             }
         }
@@ -159,16 +155,12 @@ namespace QLN.Subscriptions.Actor.ActorClass
             try
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
-
-                // Delete from both state keys
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
-                await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
+                await StateManager.TryRemoveStateAsync(PaymentDetailsStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers and reminders
                 await CleanupTimersAndRemindersAsync();
 
-                _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
+                _logger.LogInformation("[PaymentActor {ActorId}] Deleted all data and cleaned up timers", Id);
                 return true;
             }
             catch (Exception ex)
@@ -178,47 +170,21 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        public async Task<bool> SyncStateKeysAsync(CancellationToken cancellationToken = default)
+        public async Task<bool> RemoveTransactionDataAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation("[PaymentActor {ActorId}] SyncStateKeysAsync called", Id);
+                _logger.LogInformation("[PaymentActor {ActorId}] RemoveTransactionDataAsync called - removing transaction data but keeping payment details", Id);
+                await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
+                await StateManager.SaveStateAsync(cancellationToken);
+                await CleanupTimersAndRemindersAsync();
 
-                var primaryData = await GetFromPrimaryStateAsync(cancellationToken);
-                var backupData = await GetFromBackupStateAsync(cancellationToken);
-
-                // If data exists in primary but not in backup, sync to backup
-                if (primaryData != null && backupData == null)
-                {
-                    await StoreInBackupStateAsync(primaryData, cancellationToken);
-                    _logger.LogInformation("[PaymentActor {ActorId}] Synced data from primary to backup state key", Id);
-                }
-                // If data exists in backup but not in primary, sync to primary
-                else if (backupData != null && primaryData == null)
-                {
-                    await StoreInPrimaryStateAsync(backupData, cancellationToken);
-                    _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
-                }
-                // If both exist, use the most recently updated one
-                else if (primaryData != null && backupData != null)
-                {
-                    if (primaryData.LastUpdated > backupData.LastUpdated)
-                    {
-                        await StoreInBackupStateAsync(primaryData, cancellationToken);
-                        _logger.LogInformation("[PaymentActor {ActorId}] Synced newer data from primary to backup state key", Id);
-                    }
-                    else if (backupData.LastUpdated > primaryData.LastUpdated)
-                    {
-                        await StoreInPrimaryStateAsync(backupData, cancellationToken);
-                        _logger.LogInformation("[PaymentActor {ActorId}] Synced newer data from backup to primary state key", Id);
-                    }
-                }
-
+                _logger.LogInformation("[PaymentActor {ActorId}] Removed transaction data but preserved payment details", Id);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in SyncStateKeysAsync", Id);
+                _logger.LogError(ex, "[PaymentActor {ActorId}] Error in RemoveTransactionDataAsync", Id);
                 throw;
             }
         }
@@ -241,19 +207,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Scheduling expiry check for {NextCheck} IST (in {DueTime})",
                     Id, next115Pm, dueTime);
-
-                // Unregister existing timers/reminders first
                 await CleanupTimersAndRemindersAsync();
-
-                // Register Timer for regular checks
                 await RegisterTimerAsync(
                     TimerName,
                     nameof(CheckSubscriptionExpiryAsync),
                     null,
                     dueTime,
                     TimeSpan.FromDays(1));
-
-                // Register Reminder as backup
                 var reminderData = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
                 {
                     ScheduledTime = next115PmUtc,
@@ -312,15 +272,13 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
                     if (published)
                     {
-                        // Set IsExpiry to true and update LastUpdated when scheduler finishes
                         paymentData.IsExpired = true;
                         paymentData.LastUpdated = DateTime.UtcNow;
 
-                        await StoreInPrimaryStateAsync(paymentData, default);
-                        await StoreInBackupStateAsync(paymentData, default);
+                        await StoreTransactionDataAsync(paymentData, default);
+                        await RemoveTransactionDataAsync();
 
-                        await CleanupTimersAndRemindersAsync();
-                        _logger.LogInformation("[PaymentActor {ActorId}] Marked subscription as expired (IsExpiry=true) and cleaned up timers for user {UserId}",
+                        _logger.LogInformation("[PaymentActor {ActorId}] Marked subscription as expired, removed transaction data but kept payment details for user {UserId}",
                             Id, paymentData.UserId);
                     }
                     else
@@ -425,8 +383,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                await SyncStateKeysAsync();
-
                 var paymentData = await GetDataAsync();
                 if (paymentData != null && paymentData.EndDate > DateTime.UtcNow)
                 {

@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Http;
 using MudBlazor;
 using QLN.Web.Shared.Helpers;
 using QLN.Web.Shared.Models;
@@ -8,7 +7,7 @@ using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Subscription
 {
-    public class PurchasRefreshBase :ComponentBase
+    public class PurchaseRefreshBase : ComponentBase
     {
         [Inject] private ISnackbar Snackbar { get; set; } = default!;
 
@@ -29,6 +28,17 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected PayToPublishPlan? _selectedPlan;
         protected PaymentRequestModel _model = new();
 
+        protected int _selectedQuantity = 1000;
+        protected decimal _selectedPrice => _priceMap.ContainsKey(_selectedQuantity) ? _priceMap[_selectedQuantity] : 0;
+
+        protected List<int> _quantities = new() { 500, 1000, 2000, 5000 };
+        protected Dictionary<int, decimal> _priceMap = new()
+    {
+        { 500, 400 },
+        { 1000, 800 },
+        { 2000, 1500 },
+        { 5000, 3500 }
+    };
 
         protected override async void OnInitialized()
         {
@@ -43,18 +53,17 @@ namespace QLN.Web.Shared.Pages.Subscription
         public string Name { get; set; }
         public string Email { get; set; }
 
-
-
         protected void InitializeBreadcrumbs()
         {
             breadcrumbItems = new()
         {
-            new() { Label = "Classifieds", Url = "classifieds" },
-            new() { Label = "Subscriptions", Url = "/Subscriptions", IsLast = true },
+            new() { Label = "Back to Dashboard", Url = "/qln/classified/dashboard/items" },
+            new() { Label = "Purchase Refresh Add-on", Url = $"/qln/PurchaseRefresh", IsLast = true }
+
         };
         }
 
-       
+
         protected async Task LoadSubscriptionPlansFromApi(int verticalId, int categoryId)
         {
 
@@ -102,7 +111,7 @@ namespace QLN.Web.Shared.Pages.Subscription
         protected void CloseSuccessPopup()
         {
             _actionSucess = false;
-            Navigation.NavigateTo("/qln/classified/dashboard/items");
+            Navigation.NavigateTo("/qln/classified/dashboard/items", forceLoad: true);
         }
 
         protected void SelectPlan(PayToPublishPlan plan)

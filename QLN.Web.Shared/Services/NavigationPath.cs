@@ -82,5 +82,14 @@
 
         public string WishlistBase { get; set; } = "https://www.qatarliving.com/user/<USER_ID>/wishlist";
 
+        public string ContentDaily { get; set; } = "/content/daily";
+        public string ContentNews { get; set; } = "/content/news";
+        public string ContentNewsDetail { get; set; } = "/content/article/details";
+        public string ContentNewsDailyDetails { get; set; } = "/content/daily/article/details/";
+        public string ContentEvents { get; set; } = "/content/events";
+        public string ContentEventsDetail { get; set; } = "/content/events/details";
+        public string ContentCommunity { get; set; } = "/content/v2/community";
+        public string ContentCommunityPostCreate { get; set; } = "/content/v2/community/post/create";
+        public string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/detail/";
     }
 }

@@ -1,35 +1,34 @@
 ﻿using Microsoft.AspNetCore.Components;
 using QLN.Common.Infrastructure.DTO_s;
-using QLN.Web.Shared.Components.EventListCard;
 
 namespace QLN.Web.Shared.Pages.Content.Events.EventsList
 {
     public class EventListBase : ComponentBase
     {
         [Parameter] public List<ContentEvent> Items { get; set; } = [];
-         [Parameter]
-    public bool Loading { get; set; } = false;
+        [Parameter]
+        public bool Loading { get; set; } = false;
         protected string SelectedSort { get; set; } = "default";
 
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
-[Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
-[Parameter] public int CurrentPage { get; set; }
-[Parameter] public int PageSize { get; set; }
-[Parameter] public int TotalItems { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+        [Parameter] public int CurrentPage { get; set; }
+        [Parameter] public int PageSize { get; set; }
+        [Parameter] public int TotalItems { get; set; }
 
-protected IEnumerable<ContentEvent> FilteredEventItems => Items; // Apply filtering here if needed
-protected IEnumerable<ContentEvent> PagedFilteredEventItems => FilteredEventItems
-            .Skip((CurrentPage - 1) * PageSize)
-    .Take(PageSize);
-protected async void HandlePageChange(int newPage)
-{
-    await OnPageChange.InvokeAsync(newPage);
-}
+        protected IEnumerable<ContentEvent> FilteredEventItems => Items; // Apply filtering here if needed
+        protected IEnumerable<ContentEvent> PagedFilteredEventItems => FilteredEventItems
+                    .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
+        protected async void HandlePageChange(int newPage)
+        {
+            await OnPageChange.InvokeAsync(newPage);
+        }
 
-protected async void HandlePageSizeChange(int newSize)
-{
-    await OnPageSizeChange.InvokeAsync(newSize);
-}
+        protected async void HandlePageSizeChange(int newSize)
+        {
+            await OnPageSizeChange.InvokeAsync(newSize);
+        }
 
         [Inject] protected NavigationManager Navigation { get; set; }
 
@@ -45,12 +44,12 @@ protected async void HandlePageSizeChange(int newSize)
         new SortOption { Id = "high_to_low", Label = "Price: High to Low" },
         new SortOption { Id = "low_to_high", Label = "Price: Low to High" }
     };
- 
+
 
         protected void HandleCardClick(ContentEvent item)
         {
-          Navigation.NavigateTo($"/content/events/details/{item.Slug}");
+            Navigation.NavigateTo($"/content/events/details/{item.Slug}");
         }
-    
+
     }
 }

@@ -4,8 +4,13 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
+using QLN.Common.DTO_s;
 using QLN.Common.DTOs;
+using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Security.Claims;
+using System.Text.Json;
+
 
 
  
@@ -46,7 +51,7 @@ public static class SubscriptionEndpoints
                 );
             }
         })
-        .RequireAuthorization(policy => policy.RequireRole("Admin")) 
+        //.RequireAuthorization(policy => policy.RequireRole("Admin")) 
         .WithName("CreateSubscription")
         .WithTags("Subscription")
         .WithSummary("Create a new subscription")
@@ -232,103 +237,52 @@ public static class SubscriptionEndpoints
 
         return group;
     }
-    public static RouteGroupBuilder MapProcessPaymentEndpoint(this RouteGroupBuilder group)
-    {
-        group.MapPost("/subscribe", async (
-            PaymentTransactionRequestDto request,
-            HttpContext context,
-            [FromServices] IExternalSubscriptionService service,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
-                                   ?? context.User.FindFirst("sub")
-                                   ?? context.User.FindFirst("userId");
-
-                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-                {
-                    return Results.Unauthorized();
-                }
-
-              
-                var transactionId = await service.CreatePaymentAsync(request, userId, cancellationToken);
-
-                
-                return Results.Ok(new { Message = "Payment done successfully", TransactionId = transactionId });
-            }
-            catch (InvalidDataException ex)
-            {
-                return Results.BadRequest(new ProblemDetails
-                {
-                    Title = "Invalid Payment Data",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Results.Unauthorized();
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return Results.BadRequest(new ProblemDetails
-                {
-                    Title = "Subscription Not Found",
-                    Detail = ex.Message,
-                    Status = StatusCodes.Status400BadRequest
-                });
-            }
-            catch (Exception ex)
-            {
-                return Results.Problem(
-                    title: "Payment Processing Error",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status500InternalServerError
-                );
-            }
-        })
-        .WithName("ProcessPayment")
-        .WithTags("Payment")
-        .WithSummary("Process subscription payment")
-        .WithDescription("Processes payment for a subscription and creates a payment transaction record.")
-        .Produces(StatusCodes.Status200OK)
-        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status401Unauthorized)
-        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-        return group;
-    }
-    // Add this method to your PaymentEndpoint class
-
     public static RouteGroupBuilder MapGetUserPaymentDetailsEndpoint(this RouteGroupBuilder group)
     {
         // Get user payment details endpoint
         group.MapGet("/user-payments", async (
-            HttpContext context,
-            [FromServices] IExternalSubscriptionService service,
-            [FromServices] ILogger<IExternalSubscriptionService> logger,
-            CancellationToken cancellationToken) =>
+    HttpContext context,
+    [FromServices] IExternalSubscriptionService service,
+    [FromServices] ILogger<IExternalSubscriptionService> logger,
+    CancellationToken cancellationToken) =>
         {
             try
             {
-                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
-                                    ?? context.User.FindFirst("sub")
-                                    ?? context.User.FindFirst("userId");
+                // Extract UID from token using the new format
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                if (string.IsNullOrEmpty(userClaim))
                 {
-                    logger.LogWarning("Unauthorized access attempt - no valid user ID found in claims");
+                    logger.LogWarning("User claim not found in token");
                     return Results.Unauthorized();
                 }
 
-                logger.LogInformation("Retrieving payment details for user {UserId}", userId);
+                JsonElement userData;
+                string uid;
 
-                var paymentDetails = await service.GetUserPaymentDetailsAsync(userId, cancellationToken);
+                try
+                {
+                    userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Failed to parse user claim or extract UID from token");
+                    return Results.Unauthorized();
+                }
+
+                if (string.IsNullOrEmpty(uid))
+                {
+                    logger.LogWarning("Invalid or missing UID in user claim");
+                    return Results.Unauthorized();
+                }
+
+                logger.LogInformation("Retrieving payment details for user {UserId}", uid);
+                var paymentDetails = await service.GetUserPaymentDetailsAsync(uid, cancellationToken);
 
                 if (paymentDetails == null || paymentDetails.Count == 0)
                 {
-                    logger.LogInformation("No payment details found for user {UserId}", userId);
+                    logger.LogInformation("No payment details found for user {UserId}", uid);
                     return Results.Ok(paymentDetails);
                 }
 
@@ -363,9 +317,9 @@ public static class SubscriptionEndpoints
         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-     
+
         group.MapGet("/user-payments/{userId:guid}", async (
-          Guid userId,
+          string userId,
           [FromServices] IExternalSubscriptionService service,
           [FromServices] ILogger<IExternalSubscriptionService> logger,
           CancellationToken cancellationToken) =>
@@ -409,8 +363,6 @@ public static class SubscriptionEndpoints
 
         return group;
     }
-
-
 }
 
 

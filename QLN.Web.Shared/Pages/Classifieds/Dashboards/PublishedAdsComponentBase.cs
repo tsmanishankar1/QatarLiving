@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components;
-using System.Collections.Generic;
+using MudBlazor;
+using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Services.Interface;
 using static QLN.Web.Shared.Models.ClassifiedsDashboardModel;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
@@ -12,10 +14,14 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
         [Parameter]
         public bool _isPublishedLoading { get; set; }
 
+        //[Parameter]
+        //public string DashboardType { get; set; }
         [Parameter]
-        public string DashboardType { get; set; }
+        public VerticalConstants.SubVerticalId DashboardType { get; set; }
+
+
         [Parameter]
-        public EventCallback<string> OnPublish { get; set; }
+        public EventCallback<List<string>> OnPublish { get; set; }
 
         [Parameter]
         public EventCallback<string> OnEdit { get; set; }
@@ -31,36 +37,12 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
 
         [Inject]
         protected NavigationManager Navigation { get; set; }
+        [Inject] protected ISnackbar Snackbar { get; set; }
+
+        [Inject] protected IClassifiedDashboardService ClassfiedDashboardService { get; set; }
 
         protected bool isChecked { get; set; }
-        protected bool _isChecked
-        {
-            get => isChecked;
-            set
-            {
-                if (isChecked != value)
-                {
-                    isChecked = value;
-                    ToggleAllAds(isChecked);
-                }
-            }
-        }
-        private void ToggleAllAds(bool select)
-        {
-            foreach (var ad in Ads)
-            {
-                ad.IsSelected = select;
-            }
 
-            UpdateSelectedAdIds();
-            StateHasChanged();
-        }
-
-        public class AdSelectionModel
-{
-    public string AdId { get; set; }
-    public bool IsSelected { get; set; }
-}
 
         public enum AdStatus
         {
@@ -91,61 +73,45 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             };
         }
         public List<string> SelectedAdIds = new();
-
-        protected void SelectAll()
-        {
-            foreach (var ad in Ads)
-                ad.IsSelected = true;
-
-            UpdateSelectedAdIds();
-            isChecked = true;
-            StateHasChanged();
-        }
-
         protected void OnAdToggled(AdModal ad, bool value)
         {
             ad.IsSelected = value;
-            UpdateSelectedAdIds();
-            isChecked = Ads.All(a => a.IsSelected);
+
+            if (value)
+            {
+                if (!SelectedAdIds.Contains(ad.Id))
+                    SelectedAdIds.Add(ad.Id);
+            }
+            else
+            {
+                SelectedAdIds.Remove(ad.Id);
+            }
         }
-
-        protected void ToggleSelectAll(bool value)
+        protected void SelectAll()
         {
-            isChecked = value;
-
             foreach (var ad in Ads)
-                ad.IsSelected = value;
-
-            UpdateSelectedAdIds();
+            {
+                ad.IsSelected = true;
+                if (!SelectedAdIds.Contains(ad.Id))
+                    SelectedAdIds.Add(ad.Id);
+            }
         }
 
         protected void UnselectAll()
         {
             foreach (var ad in Ads)
+            {
                 ad.IsSelected = false;
-
+            }
             SelectedAdIds.Clear();
-            isChecked = false;
-            StateHasChanged();
-        }
-
-        private void UpdateSelectedAdIds()
-        {
-            SelectedAdIds = Ads.Where(a => a.IsSelected).Select(a => a.Id).ToList();
         }
 
         protected async Task PublishAllSelected()
         {
             if (SelectedAdIds.Any())
             {
-                await OnBulkPublish.InvokeAsync(SelectedAdIds);
-                SelectedAdIds.Clear();
-                isChecked = false;
-
-                foreach (var ad in Ads)
-                    ad.IsSelected = false;
-
-                StateHasChanged();
+                await OnPublish.InvokeAsync(SelectedAdIds);
+                UnselectAll();
             }
         }
         protected void NavigateToFeaturePage()
@@ -153,6 +119,15 @@ namespace QLN.Web.Shared.Pages.Classifieds.Dashboards
             Navigation.NavigateTo("/qln/paytofeature");
         }
 
+        protected async Task OnRefreshAd(string adId)
+        {
+            var success = await ClassfiedDashboardService.RefreshAdAsync(adId, (int)DashboardType);
+
+            if (success)
+                Snackbar.Add("Ad refreshed successfully!", Severity.Success);
+            else
+                Snackbar.Add("Failed to refresh ad.", Severity.Error);
+        }
 
     }
 }

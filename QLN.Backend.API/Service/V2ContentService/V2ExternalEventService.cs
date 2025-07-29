@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 
@@ -29,13 +31,13 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (!string.IsNullOrWhiteSpace(dto.CoverImage))
                 {
                     var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
-                    if (ext is not ("jpeg" or "png" or "jpg"))
-                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, Webp, svg or JPG format.");
                     var imageName = $"{dto.EventTitle}_{userId}.{ext}";
                     var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
                     dto.CoverImage = blobUrl;
                 }
-                var url = "/api/v2/event/createByUserId";
+                var url = "/api/v2/event/createbyuserid";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
@@ -86,9 +88,34 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return await _dapr.InvokeMethodAsync<List<V2Events>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/event/getAll",
+                    "/api/v2/event/getall",
                     cancellationToken
                 ) ?? new List<V2Events>();
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all events.");
+                throw;
+            }
+        }
+        public async Task<List<V2Events>> GetAllIsFeaturedEvents(bool isFeatured, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    $"/api/v2/event/getallfeaturedevents?isFeatured={isFeatured}",
+                    cancellationToken
+                ) ?? new List<V2Events>();
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
             }
             catch (Exception ex)
             {
@@ -100,7 +127,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/event/getById/{id}";
+                var url = $"/api/v2/event/getbyid/{id}";
 
                 return await _dapr.InvokeMethodAsync<V2Events>(
                     HttpMethod.Get,
@@ -126,14 +153,14 @@ namespace QLN.Backend.API.Service.V2ContentService
                 if (!string.IsNullOrWhiteSpace(dto.CoverImage) && !dto.CoverImage.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
                     var (ext, base64Data) = Base64Helper.ParseBase64(dto.CoverImage);
-                    if (ext is not ("jpeg" or "png" or "jpg"))
-                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, or JPG format.");
+                    if (ext is not ("jpeg" or "png" or "jpg" or "svg" or "webp"))
+                        throw new ArgumentException("Cover Image must be in Jpeg, PNG, Webp, svg or JPG format.");
                     var imageName = $"{dto.EventTitle}_{userId}.{ext}";
                     var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
                     dto.CoverImage = blobUrl;
                 }
 
-                var url = "/api/v2/event/updateByUserId";
+                var url = "/api/v2/event/updatebyuserid";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
@@ -156,14 +183,73 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
+
                     await CleanupUploadedFiles(FileName, cancellationToken);
-                    throw new InvalidDataException(errorMessage);
+
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.Conflict:
+                            throw new InvalidOperationException(errorMessage);
+
+                        case HttpStatusCode.BadRequest:
+                            throw new InvalidDataException(errorMessage);
+
+                        case HttpStatusCode.NotFound:
+                            throw new KeyNotFoundException(errorMessage);
+
+                        default:
+                            throw new DaprServiceException((int)response.StatusCode, errorMessage);
+                    }
                 }
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch(InvalidOperationException e)
+            {
+                await CleanupUploadedFiles(FileName, cancellationToken);
+                _logger.LogError(e, "Invalid operation while updating event");
+                throw new InvalidOperationException("Invalid operation while updating event", e);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, $"Validation error while updating event {dto.Id}");
+                throw new BadHttpRequestException(ex.Message, statusCode: 400);
+            }
+            catch (InvocationException ex)
+            {
+                await CleanupUploadedFiles(FileName, cancellationToken);
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
             catch (Exception ex)
             {
@@ -185,10 +271,37 @@ namespace QLN.Backend.API.Service.V2ContentService
                     cancellationToken
                 );
             }
-            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                _logger.LogWarning(ex, "Event with ID {id} not found.", id);
-                return null;
+            catch (InvocationException ex)
+            {               
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
             catch (Exception ex)
             {
@@ -200,7 +313,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = "/api/v2/event/createCategory";
+                var url = "/api/v2/event/createcategory";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -239,7 +352,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return await _dapr.InvokeMethodAsync<List<EventsCategory>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
-                    "/api/v2/event/getAllCategories",
+                    "/api/v2/event/getallcategories",
                     cancellationToken
                 ) ?? new List<EventsCategory>();
             }
@@ -253,7 +366,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/event/getCategoryById/{id}";
+                var url = $"/api/v2/event/getcategorybyid/{id}";
 
                 return await _dapr.InvokeMethodAsync<EventsCategory>(
                     HttpMethod.Get,
@@ -271,15 +384,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<PagedResponse<V2Events>> GetPagedEventCategories(int? page, int? perPage, string? search, int? sortBy, string? sortOrder, CancellationToken cancellationToken)
+        public async Task<PagedResponse<V2Events>> GetPagedEvents(
+           GetPagedEventsRequest request,
+           CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/v2/event/getPagination?page={page}&perPage={perPage}&search={search}&sortBy={sortBy}&sortOrder={sortOrder}";
-                return await _dapr.InvokeMethodAsync<PagedResponse<V2Events>>(
-                    HttpMethod.Get,
+                var url = "/api/v2/event/getpaginatedevents";
+                return await _dapr.InvokeMethodAsync<GetPagedEventsRequest, PagedResponse<V2Events>>(
+                    HttpMethod.Post,
                     ConstantValues.V2Content.ContentServiceAppId,
                     url,
+                    request,
                     cancellationToken);
             }
             catch (Exception ex)
@@ -312,7 +428,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = "/api/v2/event/getExpiredEvents";
+                var url = "/api/v2/event/getexpiredevents";
                 return await _dapr.InvokeMethodAsync<IEnumerable<V2Events>>(
                     HttpMethod.Get,
                     ConstantValues.V2Content.ContentServiceAppId,
@@ -323,6 +439,119 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving expired events.");
+                throw;
+            }
+        }
+        public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/reorderslotsbyuserid";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reordering event slots");
+                throw;
+            }
+        }
+        public async Task<List<V2Events>> GetEventsByStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var url = $"/api/v2/event/getbystatus?status={status}";
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                ) ?? new List<V2Events>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving events by status: {Status}", status);
+                throw;
+            }
+        }
+        public async Task<List<V2Events>> GetEventStatus(EventStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var url = $"/api/v2/event/getbyfeaturedstatus?status={status}";
+                return await _dapr.InvokeMethodAsync<List<V2Events>>(
+                    HttpMethod.Get,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                ) ?? new List<V2Events>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving events by status: {Status}", status);
+                throw;
+            }
+        }
+        public async Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/event/updatefeaturedeventbyuserid";
+                await _dapr.InvokeMethodAsync(
+                    HttpMethod.Post,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    dto,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating featured event");
+                throw;
+            }
+        }
+        public async Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/v2/event/unfeature/{id}";
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    ConstantValues.V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken
+                );
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "Event with ID {id} not found.", id);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unfeaturing event with ID {id}", id);
                 throw;
             }
         }

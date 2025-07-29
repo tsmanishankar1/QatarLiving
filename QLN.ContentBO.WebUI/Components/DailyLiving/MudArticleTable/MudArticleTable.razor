@@ -1,32 +1,117 @@
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Extensions
 @inherits MudArticleTableBase
-<MudTable Items="@articles" Elevation="0" Bordered="true" Hover="true">
+@if (IsLoadingEvent)
+{
+    <TableSkeleton Rows="10" />
+}
+else{
+<MudTable Items="@slotArticles" Class="table-style" Elevation="0" Bordered="true" Hover="true">
     <HeaderContent>
-        <MudTh>Slot</MudTh>
-        <MudTh>Title</MudTh>
-        <MudTh>Category</MudTh>
-        <MudTh>Subcategory</MudTh>
-        <MudTh>Creation Date</MudTh>
-        <MudTh>Replace</MudTh>
+        <MudTh Class="custom-header">Slot</MudTh>
+        <MudTh Class="custom-header">Title</MudTh>
+        <MudTh Class="custom-header">Category</MudTh>
+        <MudTh Class="custom-header">Subcategory</MudTh>
+        <MudTh Class="custom-header">Creation Date</MudTh>
+        <MudTh Class="custom-header">Replace</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="Slot">@context.Slot</MudTd>
+            <MudTd DataLabel="Slot">
+                @(Enum.IsDefined(typeof(DailySlotType), context.SlotType) 
+                    ? ((DailySlotType)context.SlotType).ToString() 
+                    : $"Unknown ({context.SlotType})")
+            </MudTd>
         <MudTd DataLabel="Title">
-            @if (!string.IsNullOrEmpty(context.Link))
+            @if (!string.IsNullOrEmpty(context.ContentURL))
             {
-                <MudLink Href="@context.Link" Target="_blank">@context.Title</MudLink>
+                <MudLink Href="@context.ContentURL" Target="_blank">@context.Title</MudLink>
             }
             else
             {
-                @context.Title
+                @if (context.Title == "Add Item")
+                {
+                    <span style="color: #FF7F38; text-decoration: underline; cursor: pointer;" @onclick="() => ReplaceArticle(context)">@context.Title</span>
+                }
+                else
+                {
+                    <span style="color: #535862; font-weight: normal;">@context.Title</span>
+                }
             }
         </MudTd>
-        <MudTd DataLabel="Category">@context.Category</MudTd>
-        <MudTd DataLabel="Subcategory">@context.Subcategory</MudTd>
-        <MudTd DataLabel="Creation Date">@context.CreationDate.ToString("dd-MM-yyyy")</MudTd>
+        @if (context.ContentType == 1)
+        {
+                <MudTd DataLabel="Category">
+                @{
+                    var categoryName = NewsCategories
+                    ?.FirstOrDefault(c => c.Id.ToString() == context.Category)
+                    ?.CategoryName ?? "-";
+                }
+                @categoryName
+                </MudTd>
+                <MudTd DataLabel="Subcategory">
+                @{
+                    var subcategoryName = NewsCategories
+                        .SelectMany(c => c.SubCategories)
+                        .FirstOrDefault(sc => sc.Id.ToString() == context.Subcategory)
+                        ?.SubCategoryName ?? "-";
+                }
+                @subcategoryName
+                </MudTd>
+        }
+        else{
+                <MudTd DataLabel="Category">
+                @if (context.Category is not null)
+                {
+                    @(context.Category)
+                }
+                else
+                {
+                    @("-")
+                }
+                </MudTd>
+                <MudTd DataLabel="Subcategory">
+                @if(context.Subcategory is not null)
+                {
+                    @(context.Subcategory)
+                }
+                else
+                {
+                    @("-")
+                }
+            </MudTd>
+        }
+            <MudTd DataLabel="Creation Date">
+            @(context.CreatedAt != DateTime.MinValue
+                        ? context.CreatedAt.ToQatarTime("dd-MM-yyyy")
+                        : "-")
+            </MudTd>
         <MudTd>
-            <MudIconButton Icon="@Icons.Material.Filled.FindReplace" Color="Color.Primary" />
+             @if (context.Title == "Add Item")
+                    {
+                        <img src="/qln-images/replace_icon1.svg" alt="delete" class="action-icon-style" />
+                    }
+                    else
+                    {
+                        <img src="/qln-images/replace_icon.svg" @onclick="() => ReplaceArticle(context)" alt="delete" class="action-icon-style" />
+                    }
         </MudTd>
     </RowTemplate>
 </MudTable>
+}
 
+<style>
+.custom-header {
+    background-color: #FAFAFA;  
+    color: #787878;              
+    font-weight: 500;             
+    font-size: 12px;         
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+.table-style {
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+</style>

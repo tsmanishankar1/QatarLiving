@@ -1,68 +1,71 @@
 @inherits FeaturedEventCardBase
 @using QLN.Web.Shared.Components.EmptyCard
 
-<div class="category-event-card-section" @onclick="() => OnClick.InvokeAsync(Item)">
-    <div class="card-contents">
-        <div class="category-event-image-wrapper">
+<MudLink Href="@($"/content/events/details/{Item.Slug}")" Style="text-decoration: none;">
+    <div class="fec--category-event-card-section">
+        <div class="fec--card-contents">
+            <div class="fec--category-event-image-wrapper">
 
-            @if (ShowEmptyCard)
-            {
-                <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
-            }
-            else
-            {
-                @if (!imageLoaded)
+                @if (ShowEmptyCard)
                 {
-                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                }
+                else
+                {
+                    @if (!imageLoaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="200px" />
+                    }
+
+                    <img src="@Item.ImageUrl" alt="@Item.Title" class="fec--category-event-image"
+                         style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
+                         @onerror="OnImageError" key="@Item.ImageUrl" />
                 }
 
-                <img src="@Item.ImageUrl" alt="@Item.Title" class="category-event-image"
-                    style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
-                    @onerror="OnImageError" key="@Item.ImageUrl" />
-            }
-
+            </div>
+            <h4 class="fec--category-event-card-title">@Item.Title</h4>
         </div>
-        <h4 class="category-event-card-title">@Item.Title</h4>
     </div>
-</div>
+</MudLink>
+
 
 
 <style>
-    .category-event-card-section {
+    .fec--category-event-card-section {
         transition: transform 0.3s ease;
         cursor: pointer;
         padding: 0;
-        width: 181px;
-        height: 290px;
+        width: 182px;
+        height: 205px !important;
         font-family: 'Public Sans', sans-serif;
     }
 
-    .category-event-card-section:hover {
+    .fec--category-event-card-section:hover {
         transform: scale(1.03);
     }
 
-    .card-contents {
+    .fec--card-contents {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
     }
 
-    .category-event-image-wrapper {
+    .fec--category-event-image-wrapper {
         width: 100%;
-        height: 200px;
+        height: 115px !important;
         border-radius: 10px;
         overflow: hidden;
         margin-bottom: 8px;
     }
 
-    .category-event-image {
+    .fec--category-event-image {
         width: 100%;
         height: 100%;
         object-fit: contain;
         display: block;
     }
 
-    .category-event-card-title {
+    .fec--category-event-card-title {
         font-size: 18px;
         font-weight: 500;
         margin: 0;
@@ -78,12 +81,12 @@
 
     @@media (max-width: 768px) {
 
-        .card-contents {
+        .fec--card-contents {
             align-items: flex-start;
             text-align: left;
         }
 
-        .category-event-card-title {
+        .fec--category-event-card-title {
             font-size: 0.85rem;
             color: #242424;
             text-align: center;

@@ -4,7 +4,7 @@ namespace QLN.Web.Shared.Model
 {
     public class PostModel
     {
-        public string Id { get; set; } 
+        public string Id { get; set; }
         public string Category { get; set; }
         public string CategoryId { get; set; }
         public string Title { get; set; }
@@ -16,7 +16,8 @@ namespace QLN.Web.Shared.Model
         public int LikeCount { get; set; }
         public int CommentCount { get; set; }
         public bool isCommented { get; set; }
-        public string Slug { get; set; } 
+        public bool IsLiked { get; set; }
+        public string Slug { get; set; }
         public int TotalCount { get; set; }
         public List<CommentModel> Comments { get; set; } = new();
     }
@@ -49,7 +50,6 @@ namespace QLN.Web.Shared.Model
         public bool IsByCurrentUser { get; set; }
     }
 
-
     public class PostListDto
     {
         public string forum_id { get; set; }
@@ -79,12 +79,13 @@ namespace QLN.Web.Shared.Model
         public string slug { get; set; }
         public string description { get; set; }
         public string image_url { get; set; }
+        public string? comment_count { get; set; }
         public List<CommentDto> comments { get; set; } = new();
 
     }
     public class CommentDto
     {
-        public string nid { get; set; } 
+        public string nid { get; set; }
         public string user_name { get; set; } = string.Empty;
         public DateTime created_date { get; set; }
         public string subject { get; set; } = string.Empty;
@@ -119,6 +120,28 @@ namespace QLN.Web.Shared.Model
 
         [JsonPropertyName("total")]
         public int total { get; set; }
+    }
+    public class PaginatedCommentResponseV2
+    {
+        public int TotalComments { get; set; }
+        public int PerPage { get; set; }
+        public int CurrentPage { get; set; }
+        public List<CommentModelV2> comments { get; set; }
+
+    }
+    public class CommentModelV2
+    {
+        public string CommentId { get; set; }
+        public string Avatar { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public DateTime CommentedAt { get; set; }
+        public string Content { get; set; } = string.Empty;
+        public int CommentsLikeCount { get; set; }
+        public int UnlikeCount { get; set; }
+        public bool IsByCurrentUser { get; set; }
+        public bool IsLiked { get; set; }
+        public List<string> LikedUserIds { get; set; }
+        public List<string> CommentedUserIds { get; set; }
     }
 
 }

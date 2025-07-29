@@ -6,6 +6,7 @@ using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Services;
 using QLN.Web.Shared.Services.Interface;
+using QLN.Web.Shared.Services.Models;
 using System.Net.Http.Json;
 
 
@@ -90,14 +91,14 @@ namespace QLN.Web.Shared.Pages.Content.Community
                         Author = fetched.user_name ?? "Unknown User",
                         Time = DateTime.TryParse(fetched.date_created, out var parsedDate) ? parsedDate : DateTime.MinValue,
                         LikeCount = 0,
-                        CommentCount = fetched.comments?.Count ?? 0,
+                        CommentCount = int.TryParse(fetched.comment_count, out int commentCount) ? commentCount : 0,
                         ImageUrl = fetched.image_url,
                         Slug = fetched.slug,
                         Comments = fetched.comments?.Select(c => new CommentModel
                         {
                             Id = c.nid,
                             CreatedBy = c.user_name ?? "Unknown User",
-                            CreatedAt = c.created_date,      
+                            CreatedAt = c.created_date,
                             Description = c.subject ?? "No content to display",
                             LikeCount = 0,
                             UnlikeCount = 0,
@@ -131,6 +132,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 StateHasChanged();
             }
         }
+
         protected async Task LoadBanners()
         {
             isLoadingBanners = true;

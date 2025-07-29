@@ -1,7 +1,10 @@
-﻿using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Actors.Runtime;
+using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToPublishService;
-using QLN.Common.Infrastructure.Subscriptions;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -9,18 +12,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "paytopublish-payment-data";
         private const string BackupStateKey = "transaction-data";
+        private const string StoreName = "statestore";
+        private const string GlobalPaymentDetailsKey = "paytopublish-payment-details-collection";
         private const string PaymentIdsStateKey = "payment-ids-collection";
         private const string DailyTimerName = "paytopublish-daily-timer";
         private const string SpecificTimerName = "paytopublish-specific-timer";
         private readonly ILogger<PayToPublishPaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
+        private readonly DaprClient _daprClient;
 
-        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger) : base(host)
+        public PayToPublishPaymentActor(ActorHost host, ILogger<PayToPublishPaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _daprClient = daprClient;
         }
-
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            return ActorProxy.Create<IUserQuotaActor>(new ActorId(userId), "UserQuotaActor");
+        }
+        public class GlobalP2PPaymentDetailsCollection
+        {
+            public List<UserP2PPaymentDetailsResponseDto> Details { get; set; } = new();
+        }
         public async Task<bool> SetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -29,14 +43,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-                
+
                 await StoreInPrimaryStateAsync(data, cancellationToken);
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
                 {
@@ -55,6 +69,57 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
+        public async Task StorePaymentDetailsAsync(UserP2PPaymentDetailsResponseDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var quota = new GenericUserQuotaDto
+                {
+                    UserId = dto.UserId,
+                    SourceType = "P2P",
+                    PaymentTransactionId = dto.PaymentTransactionId,
+                    AdId = dto.AddId,
+                    VerticalTypeId = dto.VerticalTypeId,
+                    VerticalName = dto.VerticalName,
+                    SubVerticalId = dto.CategoryId,
+                    SubVerticalName = dto.CategoryName,
+                    TotalPromoteBudget = dto.IsPromoteAd ? 1 : 0,
+                    UsedPromoteBudget = 0,
+                    TotalFeatureBudget = dto.IsFeatureAd ? 1 : 0,
+                    UsedFeatureBudget = 0,
+                    TotalAdBudget = dto.IsAdFree ? 1 : 0,
+                    UsedAdBudget = 0,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    Currency = dto.Currency,
+                    Price = dto.Price,
+                    CardHolderName = dto.CardHolderName,
+                    TransactionDate = dto.TransactionDate,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                var userQuotaActor = GetUserQuotaActorProxy(dto.UserId);
+                await userQuotaActor.UpsertQuotaAsync(quota, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing global paytopublish payment detail");
+                throw;
+            }
+        }
+        public async Task<List<UserP2PPaymentDetailsResponseDto>> GetAllPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var global = await _daprClient.GetStateAsync<GlobalP2PPaymentDetailsCollection>(
+                StoreName,
+                GlobalPaymentDetailsKey,
+                cancellationToken: cancellationToken);
+
+            return global?.Details ?? new List<UserP2PPaymentDetailsResponseDto>();
+        }
+
+
+
+
 
         public async Task<bool> FastSetDataAsync(PaymentDto data, CancellationToken cancellationToken = default)
         {
@@ -233,7 +298,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     await StoreInPrimaryStateAsync(backupData, cancellationToken);
                     _logger.LogInformation("[PaymentActor {ActorId}] Synced data from backup to primary state key", Id);
                 }
-   
+
                 else if (primaryData != null && backupData != null)
                 {
                     if (primaryData.LastUpdated > backupData.LastUpdated)
@@ -370,7 +435,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             if (timeUntilExpiry < timeUntilNextDailyCheck && timeUntilExpiry > TimeSpan.Zero)
             {
-  
+
                 var bufferTime = TimeSpan.FromMinutes(2);
                 var specificDueTime = timeUntilExpiry.Add(bufferTime);
 
@@ -384,7 +449,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
                     nameof(CheckPaytopublishExpiryAsync),
                     null,
                     specificDueTime,
-                    TimeSpan.FromMilliseconds(-1)); 
+                    TimeSpan.FromMilliseconds(-1));
             }
         }
 

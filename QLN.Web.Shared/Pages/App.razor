@@ -19,17 +19,16 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" media="print"
           onload="this.media='all'" />
 
-    @* <link rel="preload" href="fonts/PublicSans.woff2" as="font" type="font/woff2" crossorigin="anonymous"> *@
-
     <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" media="print" onload="this.media='all'" as="style">
-    @* <noscript>
-        <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" as="style">
-    </noscript> *@
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 
     <link rel="icon" type="image/svg+xml" href="fav-icon.svg">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-L8G5Y1WPNH"></script>
+    <script>window.dataLayer = window.dataLayer || [];  function gtag(){ dataLayer.push(arguments); }  gtag('js', new Date());  gtag('config', 'G-L8G5Y1WPNH');</script>
     <HeadOutlet />
     <ImportMap />
 </head>
@@ -66,58 +65,106 @@
 </HeadContent> *@
 
 <body>
+    
+    <!-- Routes -->
     <Routes @rendermode="InteractiveServer" />
+    <!-- Scripts -->
     <script src="@Assets["_content/MudBlazor/MudBlazor.min.js?v=8.6.0"]"></script>
-    @* <div id="reconnect-modal" style="display: none;"></div> *@
+    <!-- Blazor - Hide the Reconnect Modal -->
+    <div id="components-reconnect-modal" style="display: none;"></div>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
-    @* <script src="js/boot.js"></script> *@
+    <!-- Swiper ? -->
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js" defer></script>
-    <script src="@Assets["_content/GoogleAnalytics.Blazor/googleanalytics.blazor.js"]" defer></script>
+    <!-- CodeBeam -->
     <script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
     @* 
         Script is MIA, not needed maybe?
         <script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js?v=3.2.0" defer></script> 
     *@
-    <script>
-        window.initializeMap = function (dotnetHelper) {
-            // Prevent re-initialization
-            if (window._leafletMap) {
-                return;
-            }
+<script>
+    
+    window.resetLeafletMap = function () {
+        if (window._leafletMap) {
+            window._leafletMap.remove(); // Removes the map from the DOM
+            window._leafletMap = null;
+        }
+        if (window._leafletMarker) {
+            window._leafletMarker = null;
+        }
+    };
+    window.initializeMap = function (dotnetHelper) {
+        if (window._leafletMap) return;
 
-            const map = L.map('map').setView([25.276987, 55.296249], 10); // Dubai
+        const defaultLatLng = [25.276987, 55.296249]; // Dubai fallback
+
+        const customIcon = L.icon({
+            iconUrl: '/qln-images/location_pin.svg',
+            iconSize: [32, 48],
+            iconAnchor: [16, 48],
+            popupAnchor: [0, -40]
+        });
+
+        function initMap(center) {
+            const map = L.map('map').setView(center, 15);
             window._leafletMap = map;
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // ✅ Custom icon
+            window._leafletMarker = L.marker(center, { icon: customIcon }).addTo(map);
+
+            dotnetHelper.invokeMethodAsync('SetCoordinates', center[0], center[1]);
+
+            map.on('click', function (e) {
+                const latlng = e.latlng;
+                if (window._leafletMarker) {
+                    window._leafletMarker.setLatLng(latlng);
+                } else {
+                    window._leafletMarker = L.marker(latlng, { icon: customIcon }).addTo(map);
+                }
+                dotnetHelper.invokeMethodAsync('SetCoordinates', latlng.lat, latlng.lng);
+            });
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLatLng = [position.coords.latitude, position.coords.longitude];
+                    initMap(userLatLng);
+                },
+                (error) => {
+                    console.warn("Geolocation error:", error);
+                    initMap(defaultLatLng);
+                },
+                { enableHighAccuracy: true }
+            );
+        } else {
+            initMap(defaultLatLng);
+        }
+    };
+
+    window.updateMapCoordinates = function (lat, lng) {
+        if (!window._leafletMap) return;
+
+        const latlng = L.latLng(lat, lng);
+        window._leafletMap.setView(latlng, 15);
+
+        if (window._leafletMarker) {
+            window._leafletMarker.setLatLng(latlng);
+        } else {
             const customIcon = L.icon({
                 iconUrl: '/qln-images/location_pin.svg',
                 iconSize: [32, 48],
                 iconAnchor: [16, 48],
-                popupAnchor: [0, -40],
-                shadowUrl: null
+                popupAnchor: [0, -40]
             });
+            window._leafletMarker = L.marker(latlng, { icon: customIcon }).addTo(window._leafletMap);
+        }
+    };
+</script>
 
-            let marker;
 
-            map.on('click', function (e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-
-                if (marker) {
-                    marker.setLatLng(e.latlng);
-                } else {
-                    // ✅ Use custom icon here
-                    marker = L.marker(e.latlng, { icon: customIcon }).addTo(map);
-                }
-
-                dotnetHelper.invokeMethodAsync('SetCoordinates', lat, lng);
-            });
-        };
-    </script>
 
     <!-- Mailchimp validation script -->
     <script type="text/javascript" src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script>
@@ -400,6 +447,7 @@
                      prevEl: thumbsPrev,
                  },
                  breakpoints: {
+                     320: { slidesPerView: 2 },
                      380: { slidesPerView: 2.6 },
                      450: { slidesPerView: 3 },
                      640: { slidesPerView: 4 },
@@ -873,8 +921,6 @@
         }
         });
     </script>
-
-    <GBAnchor />
     <script>
         window.registerPopoverClickAway = (popoverDiv, dotNetHelper) => {
             const handler = (event) => {
@@ -889,25 +935,6 @@
                 document.addEventListener("click", handler);
             }, 100);
         };
-    </script>
-    <script>
-
-        // if (!window.__blazorStarted) {
-        //     window.__blazorStarted = true;
-        //     Blazor.start({
-        //         reconnectionOptions: {
-        //             maxRetries: 5,
-        //             retryIntervalMilliseconds: 4000
-        //         },
-        //         onConnectionDown: (options, error) => {
-        //             console.warn('Connection down:', error);
-        //             setTimeout(() => {
-        //                 location.reload();
-        //             }, 30000); reload after 30s if not reconnected
-        //         }
-        //     });
-        // }
-
     </script>
     <script>
         window.scrollToElementById = function (id) {

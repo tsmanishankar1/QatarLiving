@@ -6,12 +6,13 @@ namespace QLN.Web.Shared.Pages.Classifieds.Landing.Components
 {
     public class SeasonalSectionBase : ComponentBase
     {
-       [Parameter]
-public List<LandingBackOfficeIndex> Seasonal { get; set; } = new();
-
+        [Parameter]
+        public List<LandingBackOfficeIndex> Seasonal { get; set; } = new();
 
         [Parameter]
         public bool Loading { get; set; }
+        [Inject]
+        protected NavigationManager NavigationManager { get; set; } = default!;
 
         [Inject]
         protected IJSRuntime JS { get; set; } = default!;
@@ -36,6 +37,14 @@ public List<LandingBackOfficeIndex> Seasonal { get; set; } = new();
                 _swiperInitialized = true;
                 await JS.InvokeVoidAsync("initSeasonalSwiper");
             }
+        }
+        protected void HandleCategoryClick(LandingBackOfficeIndex category)
+        {
+            if (category?.EntityId == null)
+                return;
+
+            var url = $"/qln/classifieds/items?categoryIdL2={category.EntityId}";
+            NavigationManager.NavigateTo(url);
         }
     }
 }

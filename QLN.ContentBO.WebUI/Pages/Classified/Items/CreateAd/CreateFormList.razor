@@ -1,0 +1,211 @@
+@inherits CreateFormListBase
+@using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+
+<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
+    <DataAnnotationsValidator />
+
+    <div class="create-form-list">
+        <h3 class="form-heading-f1">Ad Form</h3>
+        <h4 class="form-heading-f2">User can edit this ad in their dashboard</h4>
+        <div class="user-email-display">
+            <span>@UserEmail</span>
+        </div>
+        <h3 class="form-heading">Ad Information</h3>
+            <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
+                Value="@Ad.SelectedCategoryId"
+                ValueChanged="@OnCategoryChanged"
+                For="@(() => Ad.SelectedCategoryId)"
+                FullWidth="true">
+             @if (IsLoadingCategories)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var cat in CategoryTrees)
+                {
+                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+
+        @if (!string.IsNullOrEmpty(Ad.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
+        {
+          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
+                    Value="@Ad.SelectedSubcategoryId"
+                    ValueChanged="@OnSubCategoryChanged"
+                    For="@(() => Ad.SelectedSubcategoryId)"
+                    FullWidth="true">
+                @foreach (var sub in SelectedCategory.Children)
+                {
+                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                }
+            </MudSelect>
+
+        }
+
+        @if (!string.IsNullOrEmpty(Ad.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        {
+            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
+                Value="@Ad.SelectedSubSubcategoryId"
+                ValueChanged="@OnSubSubCategoryChanged"
+                For="@(() => Ad.SelectedSubSubcategoryId)"
+                FullWidth="true">
+            @foreach (var subsub in SelectedSubcategory.Children)
+            {
+                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+            }
+        </MudSelect>
+
+        }
+        @if (AvailableFields != null)
+        {
+            @foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
+            {
+                if (!Ad.DynamicFields.ContainsKey(field.Name))
+                {
+                    Ad.DynamicFields[field.Name] = string.Empty;
+                }
+
+                <div class="mt-2">
+                      @if (field.Type == "dropdown" || field.Type == "Dropdown")
+                    {
+                        <MudSelect T="string"
+                                Label="@field.Name"
+                                Variant="Variant.Outlined"
+                                @bind-Value="Ad.DynamicFields[field.Name]"
+                                FullWidth="true"
+                                Class="white-bg"
+                                Immediate="true">
+                            @foreach (var option in field.Options)
+                            {
+                                <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    else if (field.Type == "Free Text")
+                    {
+                        <MudTextField T="string"
+                                    Label="@field.Name"
+                                    Variant="Variant.Outlined"
+                                    @bind-Value="Ad.DynamicFields[field.Name]"
+                                    FullWidth="true"
+                                    Class="white-bg" />
+                    }
+
+                        @if (DynamicFieldErrors.TryGetValue(field.Name, out var errors))
+                    {
+                        @foreach (var error in errors)
+                        {
+                            <div class="mud-input-error">@error</div>
+                        }
+                    }
+                </div>
+            }
+        }
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Price"
+                      @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
+
+        <h3 class="form-heading">Description and Features</h3>
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
+                      @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
+
+        <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
+                           Height="350" Placeholder="Start Typing"
+                           For="@(() => Ad.Description)">
+        </MudExRichTextEdit>
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
+                      @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
+        <MudPaper Class="catification-upload-section">
+            <div class="catification-upload-info">
+                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
+
+                @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                {
+                    <div class="catification-file-info">
+                        <span class="catification-file-name">
+                            @ShortFileName(Ad.CertificateFileName, 10)
+                        </span>
+                        <MudIconButton Icon="@Icons.Material.Outlined.Close"
+                                    Size="Size.Small"
+                                    Color="Color.Error"
+                                    OnClick="ClearFile"
+                                    />
+                    </div>
+                }
+            </div>
+
+            <MudFileUpload T="IBrowserFile"
+                        Accept=".pdf,.png,.jpg,.jpeg"
+                        MaxFileSize="10485760"
+                        FilesChanged="OnCrFileSelected">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="catification-upload-button">
+                        Upload
+                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+        </MudPaper>
+        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
+
+        <h3 class="form-heading">Contact Details</h3>
+        <div class="form-group">
+                <!-- Phone -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedPhoneCountry"
+                        Placeholder="Phone Number"
+                        SelectedCountryChanged="@OnPhoneCountryChanged"
+                        PhoneNumber="@Ad.PhoneNumber"
+                        PhoneNumberChanged="@OnPhoneChanged" />
+                <ValidationMessage For="@(() => Ad.PhoneNumber)" />
+                </div>
+                <div class="form-group">
+                    <!-- WhatsApp -->
+                    <PhoneNumberInput
+                        SelectedCountry="@SelectedWhatsappCountry"
+                        Placeholder="WhatsApp Number"
+                        SelectedCountryChanged="@OnWhatsappCountryChanged"
+                        PhoneNumber="@Ad.WhatsappNumber"
+                        PhoneNumberChanged="@OnWhatsappChanged" />
+                <ValidationMessage For="@(() => Ad.WhatsappNumber)" />
+                </div>
+
+        <h3 class="form-heading">Location</h3>
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
+                      @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
+                      @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />
+
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
+                      @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+
+        <div id="map" style="height: 300px; width: 100%;"></div>
+
+         <div class="checkbox-section">
+            <div class="checkbox-left">
+                <MudCheckBox @bind-Value="Ad.IsAgreed" Color="Color.Primary" />
+            </div>
+            <div class="checkbox-right">
+                <span>
+                    I agree to the
+                    <a href="https://www.qatarliving.com/rules-advertising" target="_blank">Rules for Advertising</a>
+                    and the
+                    <a href="https://www.qatarliving.com/terms-of-use" target="_blank">Terms of Use</a>.
+                </span>
+            </div>
+        </div>
+        <ValidationMessage For="@(() => Ad.IsAgreed)" />
+
+        <div class="custom-button-group">
+            <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
+            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
+        </div>
+    </div>
+</EditForm>

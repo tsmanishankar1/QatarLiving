@@ -119,7 +119,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        // Plan ID Management Methods
+
         public async Task<bool> AddPlanIdAsync(Guid planId, CancellationToken cancellationToken = default)
         {
             try
@@ -168,7 +168,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
             }
         }
 
-        // Basic Price ID Management Methods
+
         public async Task<bool> AddBasicPriceIdAsync(Guid basicPriceId, CancellationToken cancellationToken = default)
         {
             try
@@ -216,8 +216,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return new List<Guid>();
             }
         }
-
-        // Payment ID Management Methods
         public async Task<bool> AddPaymentIdAsync(Guid paymentId, CancellationToken cancellationToken = default)
         {
             try
@@ -265,8 +263,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 return new List<Guid>();
             }
         }
-
-        // Actor lifecycle methods
         protected override Task OnActivateAsync()
         {
             _logger.LogInformation("[PayToPublishActor {ActorId}] Activated", Id);

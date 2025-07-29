@@ -21,14 +21,14 @@ namespace QLN.Web.Shared.Models
             [JsonPropertyName("itemsDashboard")]
             public ItemsDashboard ItemsDashboard { get; set; }
 
-        
+
         }
         public class PreLovedDashboardResponse
         {
             [JsonPropertyName("prelovedDashboard")]
             public PreLovedDashboard preLovedDashboard { get; set; }
 
-            
+
         }
 
         public class PreLovedDashboard
@@ -165,6 +165,9 @@ namespace QLN.Web.Shared.Models
 
             [JsonPropertyName("isPromoted")]
             public bool IsPromoted { get; set; }
+
+            [JsonPropertyName("isRefreshed")]
+            public bool IsRefreshed { get; set; }
 
             [JsonPropertyName("refreshExpiry")]
             public DateTime? RefreshExpiry { get; set; }

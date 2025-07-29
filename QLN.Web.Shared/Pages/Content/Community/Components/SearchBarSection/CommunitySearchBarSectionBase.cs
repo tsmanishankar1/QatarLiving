@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Models;
-using QLN.Web.Shared.Services;
 
 public class CommunitySearchBarSectionBase : ComponentBase
 {
@@ -14,7 +13,7 @@ public class CommunitySearchBarSectionBase : ComponentBase
 
     [Parameter] public EventCallback<Dictionary<string, object>> OnSearchCompleted { get; set; }
     [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
-
+    [Parameter] public EventCallback<string> OnSearchTextChanged { get; set; }
 
     [Parameter]
     public string InitialCategoryId { get; set; }
@@ -33,6 +32,9 @@ public class CommunitySearchBarSectionBase : ComponentBase
         try
         {
             CategorySelectOptions = await CommunityService.GetForumCategoriesAsync();
+
+          
+
             if (!string.IsNullOrEmpty(InitialCategoryId))
             {
                 SelectedCategoryId = InitialCategoryId;
@@ -47,13 +49,13 @@ public class CommunitySearchBarSectionBase : ComponentBase
         }
     }
 
-
     protected async Task OnCategoryChange(string newId)
     {
         SelectedCategoryId = newId;
         await OnCategoryChanged.InvokeAsync(newId);
         NavigationManager.NavigateTo($"content/community?categoryId={newId}", forceLoad: false);
     }
+  
 
     protected override void OnParametersSet()
     {
@@ -64,15 +66,17 @@ public class CommunitySearchBarSectionBase : ComponentBase
         }
     }
 
+    //protected async Task PerformSearch()
+    //{
+    //    //var success = await CommunitySearchService.PerformSearchAsync(searchText);
+    //    Snackbar.Add("More features are coming soon!", Severity.Success);
+
+    //}
     protected async Task PerformSearch()
     {
-        
-
-       
-            //var success = await CommunitySearchService.PerformSearchAsync(searchText);
-            Snackbar.Add("More features are coming soon!", Severity.Success);
-
-        
+        Console.WriteLine($"Search text submitted: {searchText}");
+        await OnSearchTextChanged.InvokeAsync(searchText);
     }
-  
+
+
 }

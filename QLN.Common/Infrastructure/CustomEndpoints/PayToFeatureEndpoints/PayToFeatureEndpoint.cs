@@ -5,8 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToFeatureService;
-
-using System.Security.Claims;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.PayToFeatureEndpoint;
 
@@ -46,7 +45,7 @@ public static class PayToFeatureEndpoints
                 );
             }
         })
-        .RequireAuthorization(policy => policy.RequireRole("Admin"))
+        //.RequireAuthorization(policy => policy.RequireRole("Admin"))
         .WithName("CreatePayToFeature")
         .WithTags("PayToFeature")
         .WithSummary("Create a new PayToFeature")
@@ -200,16 +199,30 @@ public static class PayToFeatureEndpoints
         {
             try
             {
-                var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier)
-                                 ?? context.User.FindFirst("sub")
-                                 ?? context.User.FindFirst("userId");
+                // ✅ Extract UID from "user" claim
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                if (string.IsNullOrEmpty(userClaim))
                 {
                     return Results.Unauthorized();
                 }
 
-                var result = await service.GetPaymentsByUserIdAsync(userId, cancellationToken);
+                string uid;
+                try
+                {
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrWhiteSpace(uid))
+                    {
+                        return Results.Unauthorized();
+                    }
+                }
+                catch (Exception)
+                {
+                    return Results.Unauthorized();
+                }
+                var result = await service.GetPaymentsByUserIdAsync(uid, cancellationToken);
                 return Results.Ok(result);
             }
             catch (Exception ex)
@@ -232,10 +245,11 @@ public static class PayToFeatureEndpoints
         return group;
     }
 
+
     public static RouteGroupBuilder MapGetPayToFeaturePaymentsByUserIdEndpoint(this RouteGroupBuilder group)
     {
         group.MapGet("/paytofeature/user/{userId:guid}", async (
-            Guid userId,
+            string userId,
             [FromServices] IPayToFeatureService service,
             CancellationToken cancellationToken) =>
         {

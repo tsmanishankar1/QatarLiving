@@ -4,8 +4,6 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Components.ViewToggleButtons;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
-using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace QLN.Web.Shared.Pages.Content.News
 {
@@ -282,6 +280,26 @@ namespace QLN.Web.Shared.Pages.Content.News
             {
                 navManager.NavigateTo($"/content/article/details/{news.Slug}");
             }
+        }
+
+        protected string getLink(ContentPost news)
+        {
+            if (news != null) // Fix for CS0029: Ensure 'news' is checked for null instead of treating it as a boolean
+            {
+                if (!string.IsNullOrEmpty(_selectedView) && !string.IsNullOrEmpty(subTabLabel))
+                {
+                    return $"/content/article/details/{news.Slug}?category={_selectedView}&subcategory={subTabLabel}";
+                }
+                else if (!string.IsNullOrEmpty(_selectedView))
+                {
+                    return $"/content/article/details/{news.Slug}?category={_selectedView}";
+                }
+                else
+                {
+                    return $"/content/article/details/{news.Slug}";
+                }
+            }
+            return "";
         }
     }
 }

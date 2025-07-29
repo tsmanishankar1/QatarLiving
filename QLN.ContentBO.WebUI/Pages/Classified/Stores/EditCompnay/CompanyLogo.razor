@@ -1,0 +1,45 @@
+@inherits CompanyLogoBase
+@using MudBlazor
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="company-logo-section">
+    <h3 class="section-title">Company Logo</h3>
+
+    <MudFileUpload T="IBrowserFile"
+                   Accept="image/*"
+                   FilesChanged="HandleLogoFileSelected">
+        <ActivatorContent>
+            <div class="upload-wrapper">
+                <MudPaper Class="upload-box">
+                    @if (HasLogo)
+                    {
+                        <img src="@LogoSource" alt="Company Logo" class="logo-image" />
+                    }
+                    else
+                    {
+                        <div class="upload-placeholder">
+                            <img src="/qln-images/upload_icon.svg" alt="Upload" class="upload-icon" />
+                        </div>
+                        <MudText Class="upload-text">Upload image</MudText>
+                    }
+                </MudPaper>
+
+                @if (HasLogo)
+                {
+                    <div class="logo-overlay">
+                         <MudIconButton Class="logo-action">
+                            <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                        </MudIconButton>
+                        <MudIconButton OnClick="ClearLogo">
+                            <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
+                        </MudIconButton>
+                    </div>
+                }
+            </div>
+        </ActivatorContent>
+    </MudFileUpload>
+
+    <MudText Typo="Typo.caption" Class="recommendation-text">
+        Recommended image size: Minimum 1920 x 1200 pixels
+    </MudText>
+</div>

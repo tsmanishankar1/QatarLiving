@@ -1,0 +1,16 @@
+@page "/manage/classified/collectibles/verification/preview/{UserId:int}"
+@inherits VerificationPreviewBase
+@layout CollectiblesLayout
+
+<div >
+    <VerificationActions />
+
+    <MudGrid>
+        <MudItem xs="12" md="3">
+            <UserImageCard ImageUrl="/qln-images/user_image.svg" />
+        </MudItem>
+        <MudItem xs="12" md="8">
+            <UserProfileFields />
+        </MudItem>
+    </MudGrid>
+</div>

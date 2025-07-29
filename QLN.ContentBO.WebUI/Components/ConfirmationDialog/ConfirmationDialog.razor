@@ -1,0 +1,64 @@
+@inherits ConfirmationeDialogBase
+
+<MudDialog Class="pa-2 custom-dialog">
+    <DialogContent>
+        <div class="d-flex justify-center">
+            <img class="icon-circle" src="@HeaderIconPath" alt="go-live Image" />
+        </div>
+        <MudText Align="Align.Center" Class="mt-4 mb-2 title-style ">
+            @Title
+        </MudText>
+        <MudText Align="Align.Center">
+            @Descrption
+        </MudText>
+        <div class="mt-4 d-flex flex-column gap-2">
+            <MudButton Variant="Variant.Filled"  Disabled="@IsLoading" Color="Color.Primary" Class="mt-4 custom-add-btn" OnClick="Confirm">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Color="Color.Inherit" Size="Size.Small"Indeterminate="true" />
+            }
+            else
+            {
+             @ButtonTitle
+            }
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="mt-2 custom-close-btn">
+                Cancel
+            </MudButton>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+<style>
+    .title-style {
+        font-family: 'Public Sans', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        color: #242424;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+    }
+
+    .custom-add-btn {
+        font-size: 16px;
+        font-weight: 400;
+        color: white;
+        text-transform: none;
+    }
+
+    .custom-close-btn {
+        border-color: #D5D7DA;
+        font-size: 16px;
+        font-weight: 400;
+        color: #242424;
+        text-transform: none;
+    }
+
+    .custom-dialog {
+        width: 400px;
+        max-width: 90vw;
+    }
+</style>

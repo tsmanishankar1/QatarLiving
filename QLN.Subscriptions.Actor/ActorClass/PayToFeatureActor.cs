@@ -1,8 +1,6 @@
 ﻿using Dapr.Actors.Runtime;
 using global::QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToFeatureActor;
-using QLN.Common.Infrastructure.IService.IPayToPublicActor;
-using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -35,7 +33,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<bool> FastSetDataAsync(PayToFeatureDto data, CancellationToken cancellationToken = default)
         {
-            // Same logic as SetDataAsync for now
             return await SetDataAsync(data, cancellationToken);
         }
 

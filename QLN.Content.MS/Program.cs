@@ -3,20 +3,30 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
-//using QLN.Content.MS.Service.NewsInternalService;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Content.MS.Service.EventInternalService;
 using QLN.Content.MS.Service.NewsInternalService;
+using QLN.Content.MS.Service.CommunityInternalService;
+using QLN.Content.MS.Service.ReportInternalService;
+using QLN.Content.MS.Service.DailyInternalService;
+using QLN.Content.MS.Service.BannerInternalService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
+builder.Services.AddScoped<IV2FOEventService, V2InternalFOEventService>();
 builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
-
+builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
+builder.Services.AddScoped<IV2ContentDailyService, DailyInternalService>();
+builder.Services.AddScoped<V2IContentLocation, V2InternalLocationService>();
+builder.Services.AddScoped<IV2ReportsService, V2InternalReportsService>();
+builder.Services.AddScoped<IV2BannerService,V2BannerInternalService>();
+builder.Services.AddScoped<IV2CommunityPostService,V2InternalCommunityPostService>();
 builder.Services.AddSwaggerGen(opts =>
 {
     opts.SwaggerDoc("v1", new OpenApiInfo { Title = "QLN.Content.MS", Version = "v1" });
@@ -42,11 +52,6 @@ builder.Services.AddSwaggerGen(opts =>
     });
 });
 
-builder.Services.AddDaprClient();
-builder.Services.AddScoped<IV2NewsService, V2InternalNewsService>();
-builder.Services.AddScoped<IV2EventService, V2InternalEventService>();
-builder.Services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -56,10 +61,22 @@ if (app.Environment.IsDevelopment())
 }
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints();
-
+var foEventGroup = app.MapGroup("/api/v2/fo/event");
+foEventGroup.MapFOEventEndpoints();
+var reportgroup = app.MapGroup("/api/v2/report");
+reportgroup.MapReportsEndpoints();
 var newsGroup = app.MapGroup("/api/v2/news");
 newsGroup.MapNewsEndpoints();
+var dailyGroup = app.MapGroup("/api/v2/dailyliving");
+dailyGroup.MapDailyEndpoints();
+var CommunityGroup = app.MapGroup("/api/v2/location");
+CommunityGroup.MapLocationsEndpoints();
+var communityPostGroup = app.MapGroup("/api/v2/community");
+communityPostGroup.MapCommunityPostEndpoints();
 
-// app.MapControllers(); / disabling to trigger a build, but we dont use controllers anyhow
+var bannerPostGroup = app.MapGroup("/api/v2/banner");
+bannerPostGroup.MapBannerPostEndpoints();
+
+
 app.UseHttpsRedirection();
 app.Run();

@@ -1,7 +1,6 @@
 ﻿using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IBannerService;
-using System.Net.Http;
 
 namespace QLN.Backend.API.Service.BannerService
 {

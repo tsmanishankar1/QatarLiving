@@ -8,9 +8,12 @@ namespace QLN.Common.DTO_s
     {
         [Required]
         public int CategoryId { get; set; }
+        //public string CategoryName { get; set; }
 
         [Required]
         public int SubcategoryId { get; set; }
+        //public string SubCategoryName { get; set; }
+
         public int SlotId { get; set; }
     }
     public class V2NewsArticleDTO
@@ -32,11 +35,11 @@ namespace QLN.Common.DTO_s
 
         public string Slug { get; set; }
 
-        public string IsActive { get; set; }
+        public bool IsActive { get; set; } = true;
 
         public List<V2ArticleCategory> Categories { get; set; } = [];
 
-        public DateTime PublishedDate { get; set; }
+        public DateTime? PublishedDate { get; set; }
 
         public string CreatedBy { get; set; }
 
@@ -52,22 +55,30 @@ namespace QLN.Common.DTO_s
 
     public class V2NewsCategory
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
-        public List<V2NewsSubCategory> SubCategories { get; set; }
+        public int Id { get; set; } // Start from 101
+        public string CategoryName { get; set; } = string.Empty;
+        public List<V2NewsSubCategory> SubCategories { get; set; } = [];
     }
+
     public class V2NewsSubCategory
     {
-        public int Id { get; set; }
-        public string CategoryName { get; set; }
+        public int Id { get; set; } // Start from 1001
+        public string SubCategoryName { get; set; } = string.Empty;
     }
+
     public class V2NewsSlot
     {
         public int Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
     }
-    public enum NewsSlot
+
+    public class WriterTagsResponse
+    {
+        public List<string> Tags { get; set; }
+    }
+
+    public enum Slot
     {
         Slot1 = 1,
         Slot2 = 2,
@@ -86,10 +97,14 @@ namespace QLN.Common.DTO_s
         UnPublished = 15
     }
 
-    public class WriterTagsResponse
+    public enum ArticleStatus
     {
-        public List<string> Tags { get; set; }
+        None = 0,
+        Live = 1,
+        Published = 2,
+        Unpublished = 3
     }
+
 
 
 }

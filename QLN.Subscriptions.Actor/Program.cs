@@ -27,6 +27,7 @@ builder.Services.AddActors(options =>
     options.Actors.RegisterActor<PayToFeaturePaymentActor>();
     options.Actors.RegisterActor<AddonActor>();
     options.Actors.RegisterActor<AddonPaymentActor>();
+    options.Actors.RegisterActor<UserQuotaActor>();
     options.ActorIdleTimeout = TimeSpan.FromMinutes(60);
     options.ActorScanInterval = TimeSpan.FromSeconds(30);
     options.DrainOngoingCallTimeout = TimeSpan.FromSeconds(60);

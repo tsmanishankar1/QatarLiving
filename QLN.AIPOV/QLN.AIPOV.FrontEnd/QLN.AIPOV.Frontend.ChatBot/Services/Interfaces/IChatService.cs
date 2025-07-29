@@ -4,6 +4,6 @@ namespace QLN.AIPOV.FrontEnd.ChatBot.Services.Interfaces
 {
     public interface IChatService
     {
-        Task<ChatCompletionResponse> GetMessagesAsync(string prompt);
+        Task<JobDescriptionsResponse> GetMessagesAsync(string prompt);
     }
 }

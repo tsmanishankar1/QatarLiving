@@ -1,5 +1,3 @@
-using Google.Api;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -7,9 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace QLN.Web.Shared.Models
 {
@@ -31,7 +27,7 @@ namespace QLN.Web.Shared.Models
             var httpContext = _httpContextAccessor.HttpContext;
             ClaimsPrincipal principal = new ClaimsPrincipal(new ClaimsIdentity());
 
-            if(httpContext == null)
+            if (httpContext == null)
             {
                 //Console.WriteLine("HttpContext is null");
                 return Task.FromResult(new AuthenticationState(principal));
@@ -97,8 +93,9 @@ namespace QLN.Web.Shared.Models
                                             identity.AddClaim(new Claim(ClaimTypes.Email, user.Email));
                                         if (user.IsAdmin != null)
                                             identity.AddClaim(new Claim("is_admin", user.IsAdmin.ToString()!));
-                                        if (!string.IsNullOrEmpty(user.QlnextUserId))
-                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));
+                                        /*   if (!string.IsNullOrEmpty(user.QlnextUserId))
+                                            identity.AddClaim(new Claim("qlnext_user_id", user.QlnextUserId));  Commenting this now for future use as suggested by Grant  */
+
                                         if (!string.IsNullOrEmpty(user.Alias))
                                             identity.AddClaim(new Claim("alias", user.Alias));
                                         if (!string.IsNullOrEmpty(user.Image))
@@ -116,7 +113,7 @@ namespace QLN.Web.Shared.Models
                                                 identity.AddClaim(new Claim(ClaimTypes.Role, role));
                                         }
                                     }
-                                    
+
                                     //Console.WriteLine("Claims added to identity: {0}", string.Join(", ", identity.Claims.Select(c => $"{c.Type}: {c.Value}")));
 
                                     principal = new ClaimsPrincipal(identity);
@@ -147,7 +144,7 @@ namespace QLN.Web.Shared.Models
                 {
                     principal = new ClaimsPrincipal(new ClaimsIdentity());
                 }
-            } 
+            }
             //else
             //{
             //    Console.WriteLine("Cookie not found");

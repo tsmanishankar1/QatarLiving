@@ -1,0 +1,26 @@
+@page "/manage/classified/collectibles/view/listing"
+@page "/manage/classified/collectibles"
+@inherits ViewListingBase
+@using QLN.ContentBO.WebUI.Models;
+@layout CollectiblesLayout
+
+<MudGrid Style="padding-top: 18px">
+    <!-- Left Form Section -->
+    <MudItem xs="12" md="12">
+             <SearchSortBar 
+              Items="ClassifiedItems"
+              OnSearch="HandleSearch"
+              OnSort="HandleSort"
+              OnDateFilterChanged="HandleDateFiltersChanged"
+              OnClearFilters="HandleClearFilters" />
+              <div class="community-table">
+              <ViewListingTable
+                IsLoading="IsLoading"
+                Items="ClassifiedItems"
+                TotalCount="TotalCount"
+                OnTabChange="HandleTabChange"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged" />
+             </div> 
+    </MudItem>
+</MudGrid>

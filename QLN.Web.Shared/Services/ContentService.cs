@@ -1,4 +1,5 @@
-﻿using QLN.Web.Shared.Services.Interface;
+﻿using Microsoft.Extensions.Options;
+using QLN.Web.Shared.Services.Interface;
 using System.Net;
 
 namespace QLN.Web.Shared.Services
@@ -7,7 +8,8 @@ namespace QLN.Web.Shared.Services
     {
         private readonly HttpClient _httpClient;
 
-        public ContentService(HttpClient httpClient)
+        public ContentService(
+            HttpClient httpClient)
         {
             _httpClient = httpClient;
         }
@@ -17,7 +19,9 @@ namespace QLN.Web.Shared.Services
         {
             try
             {
-                var response = await _httpClient.GetAsync($"/api/content/qln_contents_daily/landing");
+                var response = await _httpClient.GetAsync("/api/content/qln_contents_daily/landing");
+
+
                 return response;
             }
             catch (Exception ex)
@@ -72,6 +76,20 @@ namespace QLN.Web.Shared.Services
             catch (Exception ex)
             {
                 Console.WriteLine("GetVideosLPAsync: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> GetDailyLPV2Async()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync("/api/v2/dailyliving/landing");
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetDailyLPV2Async" + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

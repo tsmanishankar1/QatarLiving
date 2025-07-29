@@ -1,0 +1,127 @@
+@using QLN.ContentBO.WebUI.Extensions
+@using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using MudBlazor;
+@using QLN.ContentBO.WebUI.Components.ConfirmationDialog
+@typeparam TPost
+@inherits CommunityTableBase
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+else if (Posts == null || Posts.Count == 0)
+{
+      <div class="empty-card-wrapper">
+        <EmptyCard Title="No community found" Subtitle="Please check back later or explore other categories." />
+    </div>
+}
+else
+{
+    <MudDataGrid T="CommunityPostDto" Items="@Posts" Hover="true" Class="custom-table" SortMode="SortMode.Single"
+                 Filterable="true">
+        <Columns>
+            <TemplateColumn Title="Number">
+                <CellTemplate>
+                    @(Posts.IndexOf(context.Item) + 1)
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Title">
+                <CellTemplate>
+                    <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Item.Slug}")"
+                             Target="_blank">
+                        @context.Item.Title
+                    </MudLink>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Category" Title="Category">
+                <CellTemplate>
+                    @context.Item.Category
+                </CellTemplate>
+            </PropertyColumn>
+
+            <PropertyColumn Property="x => x.UserName" Title="UserName">
+                <CellTemplate>
+                    @context.Item.UserName
+                </CellTemplate>
+            </PropertyColumn>
+
+            <TemplateColumn Title="Date Created">
+                <CellTemplate>
+                    @context.Item.DateCreated.ToQatarTime("dd-MM-yyyy")
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Live For">
+                <CellTemplate>
+                    @if (context.Item?.DateCreated is not null)
+                    {
+                        @GetTimeDifferenceFromNowUtc(context.Item.DateCreated)
+                    }
+                    else
+                    {
+                        @("-")
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Actions">
+                <CellTemplate>
+                    <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Item.Id))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+
+
+<style>
+    /* Table header style */
+.custom-table .header-cell {
+    background-color: #FAFAFA;
+    font-weight: 600;
+    font-family: 'Public Sans', sans-serif;
+}
+
+/* Centered bold number column */
+.custom-table .number-cell {
+    text-align: center;
+    font-weight: bold;
+}
+ .custom-delete-button {
+        background-color: #F44336; /* Material red */
+        border-radius: 12px; /* soft rounded */
+        padding: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+    }
+/* Post title styling */
+.custom-table .post-title {
+    color: var(--color-background-grey) !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.custom-table .post-title:hover {
+    color: #1976d2 !important; /* Material blue */
+    text-decoration: underline;
+}
+
+/* Delete icon style */
+.action-icon-style {
+    cursor: pointer;
+    width: 24px;
+    height: 24px;
+}
+
+</style>

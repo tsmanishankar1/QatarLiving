@@ -1,9 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Web;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
@@ -11,7 +6,12 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
+using QLN.Web.Shared.Pages.Content.Community;
 using QLN.Web.Shared.Services.Interface;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Web;
 
 
 namespace QLN.Web.Shared.Pages.Content.Community
@@ -24,7 +24,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
         public IDialogService DialogService { get; set; }
 
         [Inject]
-        public ISimpleMemoryCache _simpleCacheService{ get; set; }
+        public ISimpleMemoryCache _simpleCacheService { get; set; }
 
         [Inject] private ILogger<CommunityBase> Logger { get; set; }
         [Inject] private ICommunityService CommunityService { get; set; }
@@ -98,7 +98,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 await Task.WhenAll(
                     LoadPosts(),
                     LoadBanners()
-                    //GetAdAsync()
+                //GetAdAsync()
                 );
             }
             catch (Exception ex)
@@ -314,7 +314,7 @@ namespace QLN.Web.Shared.Pages.Content.Community
             }
         }
 
-        
+
         protected async Task SubscribeAsync()
         {
             if (string.IsNullOrWhiteSpace(SubscriptionModel?.Email))
@@ -330,84 +330,84 @@ namespace QLN.Web.Shared.Pages.Content.Community
                 return;
             }
             IsSubscribingToNewsletter = true;
-          
-                try
+
+            try
+            {
+                string baseUrl = "https://qatarliving.us9.list-manage.com/subscribe/post-json";
+                string u = "3ab0436d22c64716e67a03f64";
+                string id = "94198fac96";
+                string email = SubscriptionModel.Email;
+                string callback = $"jQuery{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+                string botField = "";
+                string subscribe = "Subscribe";
+                string cacheBuster = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+
+                var query = HttpUtility.ParseQueryString(string.Empty);
+                query["u"] = u;
+                query["id"] = id;
+                query["c"] = callback;
+                query["EMAIL"] = email;
+                query["b_3ab0436d22c64716e67a03f64_94198fac96"] = botField;
+                query["subscribe"] = subscribe;
+                query["_"] = cacheBuster;
+
+                string url = $"{baseUrl}?{query}";
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url);
+                request.Headers.Add("User-Agent", "Mozilla/5.0");
+                request.Headers.Add("Referer", "https://qatarliving.com/");
+                request.Headers.Add("Origin", "https://qatarliving.com");
+                var response = await Http.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var successPatteren = "Thank you for subscribing!";
+
+                var matches = Regex.Matches(responseContent, @"\((\{.*?\})\)");
+                string msg = "";
+                foreach (Match match in matches)
                 {
-                    string baseUrl = "https://qatarliving.us9.list-manage.com/subscribe/post-json";
-                    string u = "3ab0436d22c64716e67a03f64";
-                    string id = "94198fac96";
-                    string email = SubscriptionModel.Email;
-                    string callback = $"jQuery{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-                    string botField = "";
-                    string subscribe = "Subscribe";
-                    string cacheBuster = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString();
+                    string json = match.Groups[1].Value;
+                    using var doc = JsonDocument.Parse(json);
 
-                    var query = HttpUtility.ParseQueryString(string.Empty);
-                    query["u"] = u;
-                    query["id"] = id;
-                    query["c"] = callback;
-                    query["EMAIL"] = email;
-                    query["b_3ab0436d22c64716e67a03f64_94198fac96"] = botField;
-                    query["subscribe"] = subscribe;
-                    query["_"] = cacheBuster;
-
-                    string url = $"{baseUrl}?{query}";
-
-                    var request = new HttpRequestMessage(HttpMethod.Post, url);
-                    request.Headers.Add("User-Agent", "Mozilla/5.0");
-                    request.Headers.Add("Referer", "https://qatarliving.com/");
-                    request.Headers.Add("Origin", "https://qatarliving.com");
-                    var response = await Http.SendAsync(request);
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var successPatteren = "Thank you for subscribing!";
-
-                    var matches = Regex.Matches(responseContent, @"\((\{.*?\})\)");
-                    string msg = "";
-                    foreach (Match match in matches)
+                    if (doc.RootElement.TryGetProperty("msg", out var msgElement))
                     {
-                        string json = match.Groups[1].Value;
-                        using var doc = JsonDocument.Parse(json);
-
-                        if (doc.RootElement.TryGetProperty("msg", out var msgElement))
-                        {
-                            msg = msgElement.GetString();
-                        }
-                        else if (doc.RootElement.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind != JsonValueKind.Null)
-                        {
-                            msg = errorsElement.ToString();
-                        }
+                        msg = msgElement.GetString();
                     }
-
-                    if (response.IsSuccessStatusCode && successPatteren.Equals(msg, StringComparison.OrdinalIgnoreCase))
-
+                    else if (doc.RootElement.TryGetProperty("errors", out var errorsElement) && errorsElement.ValueKind != JsonValueKind.Null)
                     {
-                        Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
-                        SubscriptionStatusMessage = $"Subscription submitted: {msg}";
-                    }
-                    else if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(msg))
-                    {
-                        Snackbar.Add($"{msg}", Severity.Warning);
-                        SubscriptionStatusMessage = $"{msg}";
-                    }
-                    else
-                    {
-                        Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
-                        SubscriptionStatusMessage = "Failed to subscribe. Please try again.";
+                        msg = errorsElement.ToString();
                     }
                 }
-                catch (Exception ex)
+
+                if (response.IsSuccessStatusCode && successPatteren.Equals(msg, StringComparison.OrdinalIgnoreCase))
+
                 {
-                    Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
-                    SubscriptionStatusMessage = "An error occurred while subscribing.";
-                    Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+                    Snackbar.Add($"Subscription submitted: {msg}", Severity.Success);
+                    SubscriptionStatusMessage = $"Subscription submitted: {msg}";
                 }
-                finally
+                else if (response.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(msg))
                 {
-                    IsSubscribingToNewsletter = false;
+                    Snackbar.Add($"{msg}", Severity.Warning);
+                    SubscriptionStatusMessage = $"{msg}";
+                }
+                else
+                {
+                    Snackbar.Add("Failed to subscribe. Please try again.", Severity.Error);
+                    SubscriptionStatusMessage = "Failed to subscribe. Please try again.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{ex.Message} Newsletter subscription failed.");
+                SubscriptionStatusMessage = "An error occurred while subscribing.";
+                Snackbar.Add($"Failed to subscribe: {ex.Message}", Severity.Error);
+            }
+            finally
+            {
+                IsSubscribingToNewsletter = false;
                 StateHasChanged();
-                }
-            
-           
+            }
+
+
         }
     }
 }

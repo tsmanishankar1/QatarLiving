@@ -1,13 +1,13 @@
 ﻿namespace QLN.Web.Shared.Services.Interface
 {
-    public  interface IContentService
+    public interface IContentService
     {
         /// <summary>
         /// Gets Content Daily Landing Page data.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetDailyLPAsync();
-         /// <summary>
+        /// <summary>
         /// Gets Featured Events for Events Landing Page.
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
@@ -24,5 +24,7 @@
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetVideosLPAsync();
+
+        Task<HttpResponseMessage?> GetDailyLPV2Async();
     }
 }

@@ -10,7 +10,7 @@ namespace QLN.Common.DTO_s
         {
             [Key]
             public Guid QuantitiesId { get; set; }
-            public string QuantitiesName { get; set; }
+            public int Quantity { get; set; }
             public DateTime CreatedAt { get; set; }
         }
 
@@ -18,7 +18,7 @@ namespace QLN.Common.DTO_s
         {
             [Key]
             public Guid CurrencyId { get; set; }
-            public string CurrencyName { get; set; }
+            public decimal CurrencyValue { get; set; }
             public DateTime CreatedAt { get; set; }
         }
 
@@ -28,6 +28,7 @@ namespace QLN.Common.DTO_s
             public Guid Id { get; set; }
             public Guid QuantityId { get; set; }
             public Guid CurrencyId { get; set; }
+            public string currency { get; set; }
             public DurationType Duration { get; set; }
             public DateTime CreatedAt { get; set; }
         }
@@ -41,33 +42,32 @@ namespace QLN.Common.DTO_s
             public Guid NextId { get; set; }
             public DateTime LastUpdated { get; set; }
         }
-
-        // Request DTOs
         public class CreateQuantityRequest
         {
-            public string QuantitiesName { get; set; }
+            public int Quantity { get; set; }
         }
         public class CurrencyResponse
         {
             public Guid CurrencyId { get; set; }
-            public string CurrencyName { get; set; }
+            public decimal CurrencyValue { get; set; }
         }
         public class QuantityResponse
         {
             public Guid QuantitiesId { get; set; }
-            public string QuantitiesName { get; set; }
+            public int Quantity { get; set; }
         }
 
 
         public class CreateCurrencyRequest
         {
-            public string CurrencyName { get; set; }
+            public decimal CurrencyValue { get; set; }
         }
 
         public class CreateUnitCurrencyRequest
         {
             public Guid QuantityId { get; set; }
             public Guid CurrencyId { get; set; }
+            public string currency { get; set; }
             public DurationType durationId { get; set; }
 
         }
@@ -75,9 +75,10 @@ namespace QLN.Common.DTO_s
         {
             public Guid Id { get; set; }
             public Guid QuantityId { get; set; }
-            public string QuantityName { get; set; }
+            public int Quantity { get; set; }
             public Guid CurrencyId { get; set; }
-            public string CurrencyName { get; set; }
+            public decimal CurrencyValue { get; set; }
+            public string Currency { get; set; }
             public int durationId { get; set; }
             public string durationName { get; set; }
         }
@@ -86,7 +87,7 @@ namespace QLN.Common.DTO_s
             public Guid Id { get; set; }
             public Guid AddonId { get; set; }
             public int VerticalId { get; set; }
-            public Guid UserId { get; set; }
+            public string UserId { get; set; }
             public DateTime StartDate { get; set; }
             public DateTime EndDate { get; set; }
             public string CardNumber { get; set; } = string.Empty;
@@ -99,6 +100,35 @@ namespace QLN.Common.DTO_s
             public DateTime LastUpdated { get; set; }
 
         }
+        public class AddonPaymentWithCurrencyDto
+        {
+           
+            public Guid Id { get; set; }
+            public Guid AddonId { get; set; }
+            public Guid AddId { get; set; }
+            public int AddUsage { get; set; }
+            public int VerticalId { get; set; }
+            public string CardNumber { get; set; } = default!;
+            public string ExpiryMonth { get; set; } = default!;
+            public string ExpiryYear { get; set; } = default!;
+            public string Cvv { get; set; } = default!;
+            public string CardHolderName { get; set; } = default!;
+
+            public string UserId { get; set; } = default!;
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public DateTime LastUpdated { get; set; }
+            public bool IsExpired { get; set; }
+            public Guid UnitCurrencyId { get; set; }
+            public Guid QuantityId { get; set; }
+            public Guid CurrencyId { get; set; }
+            public string Currency { get; set; }
+            public int Quantity { get; set; } = default!;
+            public decimal CurrencyValue { get; set; } = default!;
+            public DurationType Duration { get; set; }
+            public DateTime CreatedAt { get; set; }
+        }
+
         public class PaymentAddonRequestDto
         {
             [Required]

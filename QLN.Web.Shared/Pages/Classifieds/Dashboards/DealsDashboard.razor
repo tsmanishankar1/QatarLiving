@@ -139,11 +139,10 @@
         </div>
 
         <!-- My Ads Section -->
-        <MudPaper Class="mt-4 p-5 rounded-xl" Style="background-color: white; box-shadow: none;padding:40px">
-
+        <MudPaper Class="mt-0 pt-4 pb-2 pl-4 pr-4" Style="background-color: white; box-shadow: none;padding:40px">
 
             <!-- Tabs + Search/Sort -->
-            <div class="d-flex flex-column flex-sm-row mb-4" style="border-bottom: 1px solid #EAECF0;">
+            <div class="d-flex flex-column flex-sm-row">
                 <!-- First Row (Tabs) -->
                 <div class="d-flex">
                     <!-- Published Tab (active style) -->
@@ -238,6 +237,9 @@
                     </MudMenu>
                 </div>
             </div>
+        </MudPaper>
+        <MudPaper Class="mt-4 p-2 rounded-md" Style="background-color: white; box-shadow: none;padding:40px">
+
             @if (_selectedAdsTab == 0)
             {
                 <PublishedAdsComponent Ads="publishedAds"
@@ -246,7 +248,7 @@
                                        OnEdit="OnEditAd"
                                        OnPreview="onPreview"
                                        OnRemove="onRemove"
-                                       DashboardType="Deals" />
+                                       DashboardType="VerticalConstants.SubVerticalId.Deals" />
             }
             else if (_selectedAdsTab == 1)
             {
@@ -256,7 +258,7 @@
                                          OnEdit="OnEditAd"
                                          OnPreview="onPreview"
                                          OnRemove="onRemove"
-                                         DashboardType="Deals" />
+                                         DashboardType="VerticalConstants.SubVerticalId.Deals" />
             }
         </MudPaper>
 
@@ -338,6 +340,7 @@
         gap: 16px;
         background-color: white;
         margin-top: 24px;
+        box-shadow: none !important;
     }
 
     .dashboard-company-container {
@@ -348,6 +351,7 @@
         align-items: center;
         border-radius: 12px;
         background-color: #FAFAFA;
+        box-shadow: none !important;
     }
 
     .dashboard-company-logo {
@@ -525,16 +529,16 @@
 
     .ad-image-wrapper {
         position: relative;
+        height: 100%;
     }
 
     .ad-image {
         width: 240px;
         max-width: 100%;
         height: auto;
-        max-height: 180px;
+        max-height: 170px !important;
         border-radius: 4px;
     }
-
     /* Badge styles */
     .promoted-badge {
         position: absolute;

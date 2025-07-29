@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using QLN.Web.Shared.Services.Interface;
+﻿using QLN.Web.Shared.Services.Interface;
 
 namespace QLN.Web.Shared.Services
 {

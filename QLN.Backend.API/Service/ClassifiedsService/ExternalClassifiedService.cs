@@ -1,16 +1,18 @@
 ﻿using Dapr;
 using Dapr.Client;
+using Microsoft.Spatial;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
-using static System.Net.Mime.MediaTypeNames;
-using System.Runtime.Intrinsics.Arm;
-using QLN.Common.Infrastructure.IService.ISearchService;
+using System.Text;
+using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
 namespace QLN.Backend.API.Service.ClassifiedService
@@ -34,7 +36,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         }
-       
+
 
         public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(string userId, CancellationToken cancellationToken = default)
         {
@@ -138,136 +140,46 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
+            if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
-                throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
 
-            var uploadedBlobKeys = new List<string>();
-
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
-
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);  
-
-
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
-
-                // Upload certificate
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
-
-                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);                
-                dto.CertificateUrl = certUrl;
-
-                // Upload images with order
-                for (int i = 0; i < dto.ImageUrls.Count; i++)
-                {
-                    var image = dto.ImageUrls[i];
-                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"Itemsad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
-
-                    var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = customName;
-                    image.Url = url;
-                }
-
-                _log.LogTrace($"Calling internal service with {dto.ImageUrls.Count} images");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                var classifiedsIndex = new ClassifiedsIndex
-                {
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.L1Category,
-                    L1CategoryId = dto.L1CategoryId.ToString(),
-                    L2Category = dto.L2Category,
-                    L2CategoryId = dto.L2CategoryId.ToString(),
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = dto.ImageUrls,
-                    WarrantyCertificateUrl = dto.CertificateUrl,
-                    Make = dto.MakeType,
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    Status = "Published",
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage = dto.BatteryPercentage,
-                    ExpiryDate = dto.ExpiryDate,
-                    RefreshExpiryDate = dto.RefreshExpiry
-                };
-                var indexDocument = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = classifiedsIndex
-                };
-                await _searchService.UploadAsync(indexDocument);
+                dto.Id = Guid.NewGuid();
+                _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
+                var requestUrl = $"/api/classifieds/items/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
                 };
             }
+            catch(DaprServiceException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                foreach (var blobName in uploadedBlobKeys)
-                {
-                    try
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-                    catch (Exception rollbackEx)
-                    {
-                        _log.LogException(rollbackEx);
-                    }
-                }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
             }
         }
 
@@ -280,12 +192,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                 await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"/api/classifieds/items/refresh/{adId}?subVertical={subVertical}",
-                    cancellationToken 
-                );
+                await _dapr.InvokeMethodAsync(
+                   HttpMethod.Post,
+                   SERVICE_APP_ID,
+                   $"/api/classifieds/items/refresh/{adId}?subVertical={subVertical}",
+                   cancellationToken
+               );
                 var item = await _searchService.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, adId.ToString());
                 if (item == null)
                 {
@@ -295,14 +207,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 item.IsRefreshed = true;
                 item.CreatedDate = DateTime.UtcNow;
                 item.RefreshExpiryDate = DateTime.UtcNow.AddHours(72);
-                var indexDocument = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = item
-                };
-
-                await _searchService.UploadAsync(indexDocument);
-
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -331,233 +235,83 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
+            if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Preloved' subvertical.");
 
-            var uploadedBlobKeys = new List<string>();
-
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
+                dto.Id = Guid.NewGuid();
+                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.AuthenticityCertificateUrl} and {dto.Images.Count} images");
+                var requestUrl = $"api/classifieds/preloved/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                long guidHash = Math.Abs(adId.GetHashCode());
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
-
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
-
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
-
-                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);                
-                dto.CertificateUrl = certUrl;
-
-                for (int i = 0; i < dto.ImageUrls.Count; i++)
-                {
-                    var image = dto.ImageUrls[i];
-
-                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var customName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"PrelovedAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
-
-                    var url = await _fileStorageBlob.SaveBase64File(base64Image, customName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(customName);
-
-                    image.AdImageFileNames = customName;
-                    image.Url = url;
-                }
-
-                _log.LogTrace($"Calling internal service with CertificateUrl: {dto.CertificateFileName} and {dto.ImageUrls.Count} images");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                var prelovedIndex = new ClassifiedsIndex
-                {
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.L1Category,
-                    L1CategoryId = dto.L1CategoryId.ToString(),
-                    L2Category = dto.L2Category,
-                    L2CategoryId = dto.L2CategoryId.ToString(),
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = dto.ImageUrls,
-                    WarrantyCertificateUrl = dto.CertificateUrl,
-                    Status = "Published",
-                    Model = dto.Model,
-                    Brand = dto.Brand,
-                    Processor = dto.Processor,
-                    Ram = dto.Ram,
-                    SizeType = dto.Size,
-                    Size = dto.SizeValue,
-                    StreetNumber = dto.StreetNumber,
-                    Zone = dto.Zone,
-                    Storage = dto.Capacity,
-                    BuildingNumber = dto.BuildingNumber,
-                    Colour = dto.Color,
-                    BatteryPercentage = dto.BatteryPercentage,
-                    ExpiryDate = dto.ExpiryDate,
-                    RefreshExpiryDate = dto.RefreshExpiry
-                };
-                var indexDocument = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = prelovedIndex
-                };
-                await _searchService.UploadAsync(indexDocument);
+              
+                
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad created successfully"
                 };
             }
+            catch (DaprServiceException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                foreach (var blobName in uploadedBlobKeys)
-                {
-                    try
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-                    catch (Exception rollbackEx)
-                    {
-                        _log.LogException(rollbackEx);
-                    }
-                }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
+            if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.CertificateUrl))
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Collectibles' subvertical.");
 
-            var uploadedBlobKeys = new List<string>();
-
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
+                dto.Id = Guid.NewGuid();
 
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
+                _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
+                var requestUrl = $"api/classifieds/collectibles/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                var (certExt, certBase64) = Base64ImageHelper.ParsePdfFile(dto.CertificateUrl);
-
-                var certFileName = !string.IsNullOrWhiteSpace(dto.CertificateFileName)
-                    ? $"{tenDigitGuid}_{dto.CertificateFileName}"
-                    : $"{tenDigitGuid}_certificate_{dto.UserId}_{adId}.{certExt}";
-
-                var certUrl = await _fileStorageBlob.SaveBase64File(certBase64, certFileName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(certFileName);
-                dto.CertificateUrl = certUrl;
-
-                for (int i = 0; i < dto.ImageUrls.Count; i++)
-                {
-                    var image = dto.ImageUrls[i];
-                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"collectibles_ad_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
-
-                    var blobUrl = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(fileName);
-
-                    image.AdImageFileNames = fileName;
-                    image.Url = blobUrl;
-                }
-
-                _log.LogTrace($"Calling internal collectibles service with {dto.ImageUrls.Count} images and cert: {dto.CertificateFileName}");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                var collectiblesIndex = new ClassifiedsIndex
-                {
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    CategoryId = dto.CategoryId.ToString(),
-                    Category = dto.Category,
-                    L1Category = dto.L1Category,
-                    L1CategoryId = dto.L1CategoryId.ToString(),
-                    L2Category = dto.L2Category,
-                    L2CategoryId = dto.L2CategoryId.ToString(),
-                    Price = (double?)dto.Price,
-                    PriceType = dto.PriceType,
-                    Location = dto.Location.FirstOrDefault(),
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumber = dto.WhatsAppNumber,
-                    UserId = dto.UserId.ToString(),
-                    CreatedDate = DateTime.UtcNow,
-                    ModifiedDate = DateTime.UtcNow,
-                    Images = dto.ImageUrls,
-                    WarrantyCertificateUrl = dto.CertificateUrl,
-                    YearEra = dto.YearOrEra,
-                    Rarity = dto.Rarity,
-                    Material = dto.Material,
-                    Status = "Published",
-                    SerialNumber = dto.SerialNumber,
-                    SignedBy = dto.SignedBy,
-                    IsSigned = dto.Signed,
-                    ExpiryDate = dto.ExpiryDate,
-                    RefreshExpiryDate = dto.RefreshExpiry
-                };
-                var indexDocument = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = collectiblesIndex
-                };
-                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Collectibles Ad created successfully"
@@ -566,105 +320,38 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-                foreach (var blobName in uploadedBlobKeys)
-                {
-                    try
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-                    catch (Exception rollbackEx)
-                    {
-                        _log.LogException(rollbackEx);
-                    }
-                }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
+
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.ImageUrls == null || dto.ImageUrls.Count == 0)
-                throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.FlyerFile))
-                throw new ArgumentException("FlyerFile image is required.");
+            if (string.IsNullOrWhiteSpace(dto.ImageUrl)) throw new ArgumentException("Ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("FlyerFile image is required.");
 
-            if (!string.Equals(dto.SubVertical, "Deals", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Deals' subvertical.");
-
-            var uploadedBlobKeys = new List<string>();
 
             try
             {
-                var adId = Guid.NewGuid();
-                dto.Id = adId;
+                dto.Id = Guid.NewGuid();
+                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerFileUrl} and image: {dto.ImageUrl}");
+                var requestUrl = $"api/classifieds/deals/post-by-id";
+                var payload = JsonSerializer.Serialize(dto);
+                var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
+                req.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using var res = await _dapr.InvokeMethodWithResponseAsync(req, cancellationToken);
+                var body = await res.Content.ReadAsStringAsync(cancellationToken);
+                if (!res.IsSuccessStatusCode)
+                    throw new DaprServiceException((int)res.StatusCode, body);
 
-                long guidHash = Math.Abs(adId.GetHashCode()); 
-                string tenDigitGuid = guidHash.ToString().Substring(0, 10);
-
-                var (flyerExt, flyerBase64) = Base64ImageHelper.ParsePdfFile(dto.FlyerFile);
-
-                var flyerName = !string.IsNullOrWhiteSpace(dto.FlyerName)
-                    ? $"{tenDigitGuid}_{dto.FlyerName}"
-                    : $"{tenDigitGuid}_Flyer_{dto.UserId}_{adId}.{flyerExt}";
-
-                var flyerUrl = await _fileStorageBlob.SaveBase64File(dto.FlyerFile, flyerName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(flyerName);
-                dto.FlyerFile = flyerUrl;                
-
-                for (int i = 0; i < dto.ImageUrls.Count; i++)
-                {
-                    var image = dto.ImageUrls[i];
-
-                    var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(image.Url);
-
-                    var fileName = !string.IsNullOrWhiteSpace(image.AdImageFileNames)
-                        ? image.AdImageFileNames
-                        : $"DealsAd_{dto.UserId}_{adId}_{i + 1}.{imgExt}";
-
-                    var url = await _fileStorageBlob.SaveBase64File(base64Image, fileName, "classifieds-images", cancellationToken);
-                    uploadedBlobKeys.Add(fileName);
-
-                    image.AdImageFileNames = fileName;
-                    image.Url = url;
-                }
-
-                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerName} and {dto.ImageUrls.Count} images");
-
-                await _dapr.InvokeMethodAsync(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/post-by-id",
-                    dto,
-                    cancellationToken
-                );
-                var dealsIndex = new ClassifiedsIndex
-                {
-                    SubVertical = dto.SubVertical,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    Location = dto.Location.FirstOrDefault(),
-                    CreatedDate = DateTime.UtcNow,
-                    Images = dto.ImageUrls,
-                    FlyerFileUrl = dto.FlyerFile,
-                    Status = "Published",
-                    FlyerFileName = dto.FlyerName,
-                    FlyerXmlLink = dto.XMLLink,
-                    ExpiryDate = dto.ExpiryDate,
-                    RefreshExpiryDate = dto.RefreshExpiry
-                };
-                var indexDocument = new CommonIndexRequest
-                {
-                    VerticalName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = dealsIndex
-                };
-                await _searchService.UploadAsync(indexDocument);
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Deals Ad created successfully"
@@ -673,22 +360,10 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (Exception ex)
             {
                 _log.LogException(ex);
-
-                foreach (var blobName in uploadedBlobKeys)
-                {
-                    try
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-                    catch (Exception rollbackEx)
-                    {
-                        _log.LogException(rollbackEx);
-                    }
-                }
-
-                throw new InvalidOperationException("Ad creation failed after uploading images. All uploaded files have been cleaned up.", ex);
+                throw;
             }
         }
+
 
         public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
         {
@@ -758,7 +433,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     _log.LogException(new Exception($"Deleted blobs for Ad ID: {adId}"));
                 }
-
+                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, adId.ToString());
                 return response;
             }
             catch (Exception ex)
@@ -793,7 +468,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     _log.LogException(new Exception($"Deleted blobs for Preloved Ad ID: {adId}"));
                 }
-
+                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, adId.ToString());
                 return response;
             }
             catch (Exception ex)
@@ -828,7 +503,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     _log.LogException(new Exception($"Deleted blobs for Collectibles Ad ID: {adId}"));
                 }
-
+                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, adId.ToString());
                 return response;
             }
             catch (Exception ex)
@@ -863,7 +538,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
                     _log.LogException(new Exception($"Deleted blobs for Deals Ad ID: {adId}"));
                 }
-
+                await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, adId.ToString());
                 return response;
             }
             catch (Exception ex)
@@ -872,17 +547,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 throw new InvalidOperationException("Failed to delete Classified Deals Ad.", ex);
             }
         }
-  
-        public async Task<ClassifiedItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+
+        public async Task<ClassifiedsItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedItems>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedsItems>(
                     HttpMethod.Get,
-                    SERVICE_APP_ID, 
+                    SERVICE_APP_ID,
                     $"api/classifieds/items/ads/{adId}",
                     cancellationToken);
 
@@ -895,16 +570,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedPreloved>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedsPreloved>(
                     HttpMethod.Get,
-                    SERVICE_APP_ID, 
+                    SERVICE_APP_ID,
                     $"api/classifieds/preloved/ad/{adId}",
                     cancellationToken);
 
@@ -917,16 +592,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedDeals>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedsDeals>(
                     HttpMethod.Get,
-                    SERVICE_APP_ID, 
+                    SERVICE_APP_ID,
                     $"api/classifieds/deals/ad/{adId}",
                     cancellationToken);
 
@@ -934,19 +609,19 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex); 
+                _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
             }
         }
 
-        public async Task<ClassifiedCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
         {
             if (adId == Guid.Empty)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedCollectibles>(
+                var result = await _dapr.InvokeMethodAsync<ClassifiedsCollectibles>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/ad/{adId}",
@@ -1018,7 +693,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (sortOption.HasValue)
                     queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
 
-                if (!string.IsNullOrWhiteSpace(search))  
+                if (!string.IsNullOrWhiteSpace(search))
                     queryParams.Add("search", search);
 
                 var queryString = queryParams.Count > 0
@@ -1274,7 +949,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var response = await _dapr.InvokeMethodAsync<CategoryDtos, Guid>(
                     HttpMethod.Post,
                     SERVICE_APP_ID,
-                    "api/classifieds/category", 
+                    "api/classifieds/category",
                     dto,
                     cancellationToken);
 
@@ -1282,7 +957,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex);             
+                _log.LogException(ex);
                 throw new InvalidOperationException("Failed to create category in classified microservice.", ex);
             }
         }
@@ -1350,7 +1025,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/category/{vertical}/{categoryId}/tree", 
+                    $"api/classifieds/category/{vertical}/{categoryId}/tree",
                     cancellationToken);
             }
             catch (InvocationException ex)
@@ -1369,7 +1044,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<List<CategoryTreeDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/category/{vertical}/all-trees", 
+                    $"api/classifieds/category/{vertical}/all-trees",
                     cancellationToken);
 
                 return result;
@@ -1590,31 +1265,32 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
-            if(dto.Id == null)
-            {
-                throw new ArgumentException("Id must be specified.");
-            }
+            if (dto.Id == null)
+                throw new ArgumentException("Id must be specified.", nameof(dto.Id));
+
             try
-            {                
-                var response = await _dapr.InvokeMethodAsync<ClassifiedItems,AdUpdatedResponseDto>(
+            {
+
+                var response = await _dapr.InvokeMethodAsync<ClassifiedsItems, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items/update-by-id",
+                    "api/classifieds/items/update-by-id",
                     dto,
                     cancellationToken);
-
                 return response;
             }
             catch (InvocationException ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to update classified item ad in the classifieds microservice.", ex);
+                throw new InvalidOperationException(
+                    "Failed to update classified item ad in the classifieds microservice.",
+                    ex);
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
             {
@@ -1622,12 +1298,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedPreloved, AdUpdatedResponseDto>(
-                    HttpMethod.Put,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/update-by-id",
-                    dto,
-                    cancellationToken);
+                var response = await _dapr.InvokeMethodAsync<ClassifiedsPreloved, AdUpdatedResponseDto>(
+                HttpMethod.Put,
+                SERVICE_APP_ID,
+                $"api/classifieds/preloved/update-by-id",
+                dto,
+                cancellationToken);
+                
 
                 return response;
             }
@@ -1638,7 +1315,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
             {
@@ -1646,13 +1323,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedCollectibles, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<ClassifiedsCollectibles, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/update-by-id",
                     dto,
                     cancellationToken);
-
+                
                 return response;
             }
             catch (InvocationException ex)
@@ -1662,15 +1339,16 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
             {
                 throw new ArgumentException("Id must be specified.");
             }
+
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedDeals, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<ClassifiedsDeals, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
                     $"api/classifieds/deals/update-by-id",
@@ -1682,10 +1360,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             catch (InvocationException ex)
             {
                 _log.LogException(ex);
-                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+                throw new InvalidOperationException("Failed to update classified deals ad in the classifieds microservice.", ex);
             }
         }
-
     }
 }
 

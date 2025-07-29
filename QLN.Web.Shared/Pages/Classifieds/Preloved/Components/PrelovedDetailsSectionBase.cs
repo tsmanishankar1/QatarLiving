@@ -1,17 +1,17 @@
 using Microsoft.AspNetCore.Components;
-using QLN.Common.DTO_s;
-using QLN.Web.Shared.Components.BreadCrumb;
-using MudBlazor;
-using QLN.Web.Shared.Helpers;
 using Microsoft.JSInterop;
+using MudBlazor;
+using QLN.Common.DTO_s;
+using QLN.Web.Shared.Helpers;
 
 namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 {
     public class PrelovedDetailsSectionBase : ComponentBase
     {
         protected bool isSaved = false;
+        [Inject] protected SearchStateService SearchState { get; set; }
         public List<QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem> breadcrumbItems = new();
-        
+
         [Inject] protected NavigationManager Navigation { get; set; }
         [Inject] protected ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JSRuntime { get; set; }
@@ -25,10 +25,10 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 
         protected string CurrentUrl => Navigation.ToAbsoluteUri(Navigation.Uri).ToString();
         protected int selectedImageIndex = 0;
-        protected string categorySegment = "items"; 
+        protected string categorySegment = "items";
         protected void OnClickCardItem(ClassifiedsIndex item)
         {
-            Navigation.NavigateTo($"/qln/classifieds/preloved/details/{item.Id}",true);
+            Navigation.NavigateTo($"/qln/classifieds/preloved/details/{item.Id}", true);
         }
 
         protected override void OnParametersSet()
@@ -41,15 +41,49 @@ namespace QLN.Web.Shared.Pages.Classifieds.Preloved.Components
 
         protected override void OnInitialized()
         {
-           breadcrumbItems = new()
+            breadcrumbItems = new()
             {
                 new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Classifieds", Url = "/qln/classifieds" },
-                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Preloved", Url = "/qln/classifieds/preloved" },
-                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = Item?.Title ?? "Details", Url = "/qln/classifieds/preloved/details", IsLast = true }
+                new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem { Label = "Preloved", Url = "/qln/classifieds/preloved" }
             };
 
+            // Add selected category levels if available
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSelectedCategoryName))
+            {
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.PrelovedSelectedCategoryName,
+                    Url = "/qln/classifieds/preloved"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSelectedSubCategoryName))
+            {
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.PrelovedSelectedSubCategoryName,
+                    Url = "/qln/classifieds/preloved"
+                });
+            }
+
+            if (!string.IsNullOrWhiteSpace(SearchState.PrelovedSelectedSubSubCategoryName))
+            {
+                breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+                {
+                    Label = SearchState.PrelovedSelectedSubSubCategoryName,
+                    Url = "/qln/classifieds/preloved"
+                });
+            }
+
+            // Final item title
+            breadcrumbItems.Add(new QLN.Web.Shared.Components.BreadCrumb.BreadcrumbItem
+            {
+                Label = Item?.Title ?? "Details",
+                Url = "/qln/classifieds/preloved/details",
+                IsLast = true
+            });
         }
- 
+
         protected List<MenuItem> ShareMenuItems => new()
         {
             new MenuItem {

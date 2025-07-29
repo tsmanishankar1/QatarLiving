@@ -1,0 +1,678 @@
+@using MudBlazor
+@inherits FeedbackBase
+
+@if (ShowForm)
+{
+    <div class="feedback-form-overlay" id="feedbackModal">
+         @if (submissionResult == null){
+            <MudPaper Class="feedback-form-div-first" Elevation="4" Style="padding: 1rem;">
+                <MudGrid Class="feedback-form-div-second"justify="Justify.Center">
+                    <!-- Left Side -->
+                    <MudItem xs="12" md="5" Class="feedback-form-div-third-left feedback-image-container">
+                        <div class="feedback-form-header-container">
+                            <h1 class="feedback-form-h1-heading">Your satisfaction, our priority</h1>
+                            <MudIconButton Class="feedback-form-close-icon" Icon="@Icons.Material.Filled.Close"
+                                        OnClick="@ResetForm" AriaLabel="Close Feedback Form" />
+                        </div>
+                        <p class="feedback-form-p-description">
+                            We’re here to listen and assist with any questions or concerns. Your satisfaction drives us to improve continually.
+                        </p>
+                        <div class="feedback-form-div-img-container">
+                            <img src="/qln-images/feedback/feedback.webp" alt="Feedback" class="feedback-form-img" />
+                        </div>
+                    </MudItem>
+
+                    <!-- Right Side (Form) -->
+                    <MudItem xs="12" md="7" Class="feedback-form-div-third-right">
+                        <MudForm @ref="form" Model="@formModel">
+
+                            <MudTextField @bind-Value="formModel.Name" Label="Full name" For="@(() => formModel.Name)"
+                                        Required="true" Variant="Variant.Outlined" Class="feedback-form-textfield"
+                                        ErrorText="User name is required" />
+
+                            <MudTextField @bind-Value="formModel.Email" Label="Contact email" For="@(() => formModel.Email)"
+                                        Required="true" Variant="Variant.Outlined" Class="feedback-form-textfield"
+                                        ErrorText="Invalid email formt" />
+
+                            <MudTextField @bind-Value="formModel.Mobile" Label="Phone number" For="@(() => formModel.Mobile)"
+                                        Placeholder="+974 " Required="true" Variant="Variant.Outlined"
+                                        Class="feedback-form-textfield feedback-mobile-input"
+                                        ErrorText="Invaild phone number">
+                                <AdornmentContent>
+                                    <img class="feedback-qatar-flag-image" src="https://flagcdn.com/w40/qa.webp" alt="Country Flag" height="20" width="20" />
+                                </AdornmentContent>
+                            </MudTextField>
+
+                            <MudSelect T="string" Label="Category" @bind-Value="formModel.Category"
+                                    Required="true" Variant="Variant.Outlined" Class="feedback-form-textfield"
+                                    ErrorText="Category type is required">
+                                @foreach (var category in Categories)
+                                {
+                                    <MudSelectItem Value="@category">@category</MudSelectItem>
+                                }
+                            </MudSelect>
+
+                            <MudTextField @bind-Value="formModel.Description" Placeholder="Describe your problem, give feedback or tell us how we could do better!"
+                                        Required="true" Variant="Variant.Outlined" Class="feedback-form-textarea" Lines="4" TextArea="true"
+                                        RequiredError="Feedback message is required" />
+
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="feedback-form-buttons-section" Spacing="2">
+                                @if (isSubmitting)
+                                {
+                                    <div class="feedback-progress-container">
+                                        <MudProgressCircular Indeterminate="true" Size="Size.Medium" Color="Color.Primary"/>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudButton Variant="Variant.Text" OnClick="@ResetForm" Class="feedback-form-close-button">Close</MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" onclick="@HandleValidSubmit"
+                                            Disabled="@isSubmitting" Class="feedback-form-submit-button">
+                                        <span>Submit</span>
+                                    </MudButton>
+                                }
+                            </MudStack>
+                        </MudForm>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+         }
+        <!-- Success Modal -->
+        @if (submissionResult == true)
+        {
+            <MudPaper Class="feedback-form-success-result-modal feedback-form-success-result-modal-width" Style="margin-top: 1rem; padding: 1rem;">
+                <MudGrid>
+                    <MudItem xs="12" Class="feedback-form-modal-header">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                        <h2 class="feedback-form-h1-heading-modal">Your Message Submitted</h2>
+                    </MudItem>
+                    <MudItem xs="12" Class="feedback-form-p-description-modal">
+                        Thank you for your feedback! We’ll review it promptly and work on fixing any issues to improve your experience.
+                    </MudItem>
+                    <MudItem xs="12" Class="feedback-form-modal-footer" Style="margin-top: 1rem;">
+                        <MudButton Color="Color.Primary" style="text-transform: capitalize; width:100%" Variant="Variant.Filled" OnClick="@ResetForm">Ok</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+
+        <!-- Fail Modal -->
+        @if (submissionResult == false)
+        {
+            <MudPaper Class="feedback-form-fail-result-modal feedback-form-fail-result-modal-width" Style="margin-top: 1rem; padding: 1rem;">
+                <MudGrid>
+                    <MudItem xs="12" Class="feedback-form-modal-header">
+                        <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                        <h2 class="feedback-form-h1-heading-modal">Your message was not sent</h2>
+                    </MudItem>
+                    <MudItem xs="12" Class="feedback-form-p-description-modal">
+                        There was an error delivering your feedback, please try again.
+                    </MudItem>
+                    <MudItem xs="12" Class="feedback-form-modal-footer" Style="margin-top: 1rem;">
+                        <MudButton Color="Color.Primary" style="text-transform: capitalize; width:100%" Variant="Variant.Filled" OnClick="@ResetForm">Ok</MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        }
+    </div>
+}
+
+<!-- Trigger Buttons -->
+<MudButton Class="feedback-form-button-desktop" Variant="Variant.Filled" OnClick="@Open">
+    <span class="feedback-form-span-text">Share Feedback</span>
+</MudButton>
+
+<MudButton Class="feedback-form-button-mobile" OnClick="@Open">
+    <img src="/qln-images/feedback/message.svg" alt="Feedback" style="width:24px; height:24px;" />
+</MudButton>
+
+
+<style>
+    .feedback-form-button-desktop {
+        min-height: 146px;
+        min-width: 40px;
+        max-height: 146px;
+        max-width: 40px;
+        position: fixed;
+        bottom: 70px;
+        left: 0;
+        margin: 0;
+        width: auto;
+        /* Matches Hug property */
+        height: auto;
+        /* Matches Hug property */
+        padding: 10px 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        border-radius: 0px 6px 6px 0px;
+        background-color: var(--color-accent);
+        /* border: var(--color-accent) solid 1px; */
+        color: #FFFFFF;
+        text-transform: capitalize
+    }
+
+    .feedback-form-button-desktop:hover {
+        background-color: var(--color-accent) !important;
+        color: #FFFFFF !important;
+        box-shadow: none !important;
+    }
+
+    .feedback-form-span-text {
+        transform: rotate(180deg);
+        writing-mode: vertical-lr;
+        text-decoration: none;
+        text-underline-position: from-font;
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 20px;
+        text-align: left;
+    }
+
+    .feedback-progress-container{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .feedback-form-button-mobile {
+            min-width: 50px !important;
+            position: fixed;
+            bottom: 80px;
+            left: 16px;
+            margin: 0;
+            width: 50px !important;
+            height: 50px !important;
+            border-radius:25px;
+            background-color: var(--color-accent);
+            border: var(--color-accent) solid 1px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+    }
+
+    .feedback-form-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(8px);
+        background: #00000080;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        overflow-y: scroll;
+    }
+
+    .feedback-form-div-img-container {
+        margin-top: 10px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .feedback-form-header-container {
+        width: 100%;
+        /* Full width */
+        display: flex;
+        justify-content: space-between;
+        /* Space between the buttons */
+        align-items: flex-start;
+    }
+
+    .feedback-form-h1-heading {
+        font-family: "Poppins", sans-serif;
+        font-weight: 600;
+        line-height: 26px;
+        text-align: left;
+        margin: 0px;
+        font-style: normal;
+        letter-spacing: 0em;
+        font-size: 31px;
+        line-height: 46.5px;
+        text-align: left;
+        padding: 10px;
+        padding-left: 0px;
+    }
+
+    .feedback-form-p-description {
+        font-family: "Poppins", sans-serif;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 26px;
+        text-align: left;
+        margin-top: 0px;
+        color: #646464;
+    }
+
+    .feedback-form-textfield {
+        font-family: "Poppins", sans-serif;
+        margin-bottom: 14px !important;
+        margin-top: 0px !important;
+    }
+
+    .feedback-form-textfield .mud-input {
+        background-color: #fff;
+    }
+
+    .feedback-form-textfield .mud-input-control-helper-container {
+        background-color: #F0F0F0 !important; /* Your desired color */
+    }
+
+    .feedback-form-textarea {
+        font-family: "Poppins", sans-serif;
+        margin-bottom: 14px !important;
+        margin-top: 0px !important;
+    }
+
+    .feedback-form-textarea .mud-input {
+        background-color: #fff;
+        height: 200px;
+    }
+
+    .feedback-form-textarea .mud-input textarea{
+        background-color: #fff;
+        height: 100%;
+    }
+
+    .feedback-form-textarea .mud-input-control-helper-container {
+        background-color: #F0F0F0 !important; /* Your desired color */
+    }
+
+    .feedback-mobile-input div.mud-input-outlined.mud-input-outlined-with-label{
+        flex-direction: row-reverse !important;
+    }
+
+    .feedback-mobile-input div.mud-input-outlined.mud-input-outlined-with-label input{
+        padding-left: 0px !important;
+    }
+
+    .feedback-mobile-input div.mud-input-outlined.mud-input-outlined-with-label div {
+        display: block !important;
+        width:auto !important;
+    }
+
+    .feedback-qatar-flag-image {
+        border-radius: 50%;
+        height: 20px;
+        width: 20px;
+    }
+
+    /* Buttons Section */
+    .feedback-form-buttons-section {
+        width: 100%;
+        margin-top: 16px;
+        /* Optional: Space above the buttons */
+    }
+
+    .feedback-form-close-button:hover {
+        background-color: #f0f0f0;
+        /* Optional hover effect */
+    }
+
+
+    .feedback-form-submit-button {
+        height: 44px;
+        padding: 10px var(--spacing-xl);
+        border-radius: 4px;
+        border: none;
+        background-color: var(--color-accent);
+        color: #fff;
+        font-size: 14px;
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        font-weight: 600;
+        box-shadow: none;
+        text-transform: capitalize
+    }
+
+    /* Modal Parent Div */
+    .feedback-form-success-result-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* Center both ways */
+        min-height: 284px;
+        /* Minimum height */
+        width: 100%;
+        /* Full width (within max-width constraint) */
+        background-color: #fff;
+        /* Background color */
+        border-radius: 12px;
+        /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        /* Optional: subtle shadow for elevation */
+        padding: 24px;
+        /* Padding inside the modal */
+        text-align: center;
+        /* Center align the text */
+        box-sizing: border-box;
+        /* Include padding and border in width/height */
+    }
+
+    .feedback-form-fail-result-modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* Center both ways */
+        min-height: 284px;
+        /* Minimum height */
+        width: 100%;
+        /* Full width (within max-width constraint) */
+        background-color: #fff;
+        /* Background color */
+        border-radius: 12px;
+        /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        /* Optional: subtle shadow for elevation */
+        padding: 24px;
+        /* Padding inside the modal */
+        text-align: center;
+        /* Center align the text */
+        box-sizing: border-box;
+        /* Include padding and border in width/height */
+    }
+
+    /* First Div: Dynamic Height */
+    .feedback-form-modal-header {
+        flex: 1;
+        /* Occupies remaining height */
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Second Div: Fixed Height */
+    .feedback-form-modal-footer {
+        height: 100px;
+        /* Fixed height */
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding-top: 0px !important;
+        margin-top: 0px !important;
+    }
+
+    /* First Div: SVG Icon */
+    .feedback-form-modal-icon {
+        width: 100%;
+        /* Full width */
+        height: 48px;
+        /* Fixed height */
+        display: flex;
+        justify-content: flex-start;
+        /* Center the icon horizontally */
+        align-items: center;
+        /* Center the icon vertically */
+    }
+
+    /* SVG Icon Styling */
+    .feedback-form-modal-icon svg {
+        height: 48px;
+        /* Fixed height */
+        width: 48px;
+        /* Fixed width */
+    }
+
+    .feedback-form-h1-heading-modal {
+        font-family: "Poppins", sans-serif;
+        font-size: 18px;
+        font-weight: 400;
+        line-height: 26px;
+        text-align: left;
+        margin-top: 16px;
+        margin-bottom: 0px;
+    }
+
+    .feedback-form-p-description-modal {
+        font-family: "Poppins", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 26px;
+        text-align: left;
+        margin-top: 0px;
+        color: #454545;
+        ;
+    }
+
+    /* Submit Button Hover State */
+    .feedback-form-close-button-modal:hover {
+        background-color: #7b204e;
+        /* Optional hover effect */
+    }
+
+    .feedback-form-close-button-modal {
+        height: 44px;
+        padding: 10px var(--spacing-xl);
+        border-radius: 4px;
+        border: none;
+        background-color: var(--color-accent);
+        color: #fff;
+        font-size: 14px;
+        font-family: "Poppins", sans-serif;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        width: 100%;
+        font-weight: 600;
+        box-shadow: none;
+    }
+
+    /* Desktop View */
+    @@media (min-width: 1007px) {
+        .feedback-image-container{
+            min-width: calc(100% - 483px);
+        }
+
+        .feedback-form-button-mobile {
+            display: none;
+        }
+
+        /* First Level Div */
+        .feedback-form-div-first {
+            padding: 16px 24px !important;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 1096px;
+            width: calc(100% - 32px);
+            background-color: #fff;
+            border-radius: 12px;
+        }
+
+        /* Second Level Div */
+        .feedback-form-div-second {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: flex-start;
+            margin: 0px;
+            width: 100%;
+            height: calc(100% - 32px);
+        }
+
+        /* Third Level Left Div */
+        .feedback-form-div-third-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .feedback-form-h1-heading {
+            margin-bottom: 10px;
+        }
+
+        .feedback-form-img {
+            max-height: 367px;
+            max-width: 367px;
+        }
+
+        /* Third Level Right Div */
+        .feedback-form-div-third-right {
+            background-color: #F0F0F0;
+            border-radius: 8px;
+            max-width: 483px !important;
+            min-height: 604px !important;
+            min-width: 483px !important;
+            padding: 24px
+                /* flex-grow: 1; Allow to fill remaining space */
+        }
+
+        /* Close Button */
+        .feedback-form-close-button {
+            width: 211px;
+            height: 44px;
+            padding: 10px var(--spacing-xl);
+            border: 1px solid #D0D5DD;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #333;
+            font-size: 14px;
+            font-family: "Poppins", sans-serif;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            font-weight: 600;
+            box-shadow: none;
+            text-transform: capitalize
+        }
+
+        /* Submit Button */
+        .feedback-form-submit-button {
+            width: 211px;
+        }
+
+        .feedback-form-close-icon {
+            display: none;
+            /* Hide on disktop */
+        }
+
+        .feedback-form-fail-result-modal-width {
+            max-width: 400px;
+            height: 284px;
+        }
+
+        .feedback-form-success-result-modal-width {
+            max-width: 400px;
+            height: 284px;
+        }
+    }
+
+    /* Mobile View */
+    @@media (max-width: 1006px) {
+        .feedback-form-button-desktop {
+            display: none;
+        }
+
+        /* Firest Level Right Div */
+        .feedback-form-div-first {
+            padding: 16px 16px !important;
+            position: absolute;
+            top: 100px;
+            /* Fixed distance from the top */
+            left: 16px;
+            /* Centered horizontally with 16px margins */
+            right: 16px;
+            transform: none;
+            /* Remove centering by transform */
+            width: calc(100% - 32px);
+            /* Full width with 16px margins */
+            background-color: #fff;
+            /* Same background color */
+            border-radius: 12px;
+            /* Same border radius */
+            height: auto;
+            /* Expand height based on content */
+        }
+
+        /* Second Level Right Div */
+        .feedback-form-div-second {
+            display: flex;
+            flex-direction: column;
+            /* Stack items vertically */
+            justify-content: center;
+            align-items: flex-start;
+            /* Align items to the start */
+            margin: 0px;
+            width: 100%;
+            /* Parent width minus horizontal margins */
+            height: calc(100% - 48px);
+            /* Parent height minus vertical margins */
+        }
+
+        /* Third Level Left Div */
+        .feedback-form-div-third-left {
+            display: flex;
+            width: 100% !important;
+            max-width: 100% !important;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .feedback-form-h1-heading {
+            margin-bottom: 6px;
+        }
+
+        .feedback-form-close-icon {
+            margin-top: 0px !important;
+        }
+
+        .feedback-form-img {
+            max-height: 215px;
+            max-width: 215px;
+        }
+
+        /* Third Level Right Div */
+        .feedback-form-div-third-right {
+            background-color: #F0F0F0;
+            border-radius: 8px;
+            margin-top: 10px;
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 16px
+                /* flex-grow: 1; Allow to fill remaining space */
+        }
+
+
+        /* Submit Button */
+        .feedback-form-submit-button {
+            width: 100%;
+        }
+
+        .feedback-form-close-button {
+            display: none;
+            /* Hide on mobile */
+        }
+
+        .feedback-form-fail-result-modal-width {
+            max-width: 361px;
+        }
+
+        .feedback-form-success-result-modal-width {
+            max-width: 361px;
+        }
+    }
+
+    @@media (max-width: 360px) {
+        .feedback-form-fail-result-modal-width {
+            max-width: calc(100% - 32px) !important;
+        }
+        .feedback-form-success-result-modal-width {
+            max-width: calc(100% - 32px) !important;
+        }
+    }
+</style>

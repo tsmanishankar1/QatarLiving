@@ -1,5 +1,6 @@
 ﻿using Azure;
 using Azure.Search.Documents.Indexes;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Options;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.SearchService;
@@ -7,6 +8,7 @@ using QLN.SearchService.CustomEndpoints;
 using QLN.SearchService.IndexModels;
 using QLN.SearchService.ServiceConfiguration;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDaprClient();
@@ -21,14 +23,21 @@ builder.Services.AddSingleton(sp =>
         new AzureKeyCredential(s.ApiKey)
     );
 });
-builder.Services.SearchConfiguration(builder.Configuration);
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNameCaseInsensitive = true;
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
 });
+
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+});
+
+builder.Services.SearchConfiguration(builder.Configuration);
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -44,7 +53,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseCloudEvents();
 app.MapSubscribeHandler();
-var common = app.MapGroup("/api/{vertical}");
+var common = app.MapGroup("/api/indexes");
 common.MapCommonIndexingEndpoints();
 app.MapGroup("/api/analytics")
    .MapAnalyticsEndpoints();

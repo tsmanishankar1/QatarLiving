@@ -1,6 +1,10 @@
-﻿using Dapr.Actors.Runtime;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Actors.Runtime;
+using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService.IPayToFeatureService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -8,18 +12,74 @@ namespace QLN.Subscriptions.Actor.ActorClass
     {
         private const string StateKey = "paytofeature-payment-data";
         private const string BackupStateKey = "transaction-data";
+        private const string StoreName = "statestore";
+        private const string GlobalPaymentDetailsKey = "paytofeature-payment-details-collection";
         private const string PaymentIdsStateKey = "payment-ids-collection";
         private const string DailyTimerName = "paytofeature-daily-timer";
         private const string SpecificTimerName = "paytofeature-specific-timer";
         private readonly ILogger<PayToFeaturePaymentActor> _logger;
         private static readonly TimeSpan DailyCheckTime = new TimeSpan(00, 00, 0);
         private static readonly string TimeZoneId = "India Standard Time";
-
-        public PayToFeaturePaymentActor(ActorHost host, ILogger<PayToFeaturePaymentActor> logger) : base(host)
+        private readonly DaprClient _daprClient;
+        public PayToFeaturePaymentActor(ActorHost host, ILogger<PayToFeaturePaymentActor> logger, DaprClient daprClient) : base(host)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _daprClient = daprClient;
         }
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            return ActorProxy.Create<IUserQuotaActor>(new ActorId(userId), "UserQuotaActor");
+        }
+        public class GlobalP2FPaymentDetailsCollection
+        {
+            public List<UserP2FPaymentDetailsResponseDto> Details { get; set; } = new();
+        }
+        public async Task StorePaymentDetailsAsync(UserP2FPaymentDetailsResponseDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var quota = new GenericUserQuotaDto
+                {
+                    UserId = dto.UserId,
+                    SourceType = "P2F",
+                    PaymentTransactionId = dto.PaymentTransactionId,
+                    AdId = dto.AddId,
+                    AdRefreshUsage = dto.AddUsage,
+                    VerticalTypeId = dto.VerticalTypeId,
+                    VerticalName = dto.VerticalName,
+                    SubVerticalId = dto.CategoryId,
+                    SubVerticalName = dto.CategoryName,
+                    TotalPromoteBudget = dto.IsPromoteAd ? dto.AddUsage : 0,
+                    UsedPromoteBudget = 0,
+                    TotalFeatureBudget = dto.IsFeatureAd ? dto.AddUsage : 0,
+                    UsedFeatureBudget = 0,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    Currency = dto.Currency,
+                    Price = dto.Price,
+                    CardHolderName = dto.CardHolderName,
+                    TransactionDate = dto.TransactionDate,
+                    CreatedAt = DateTime.UtcNow
+                };
 
+                var userQuotaActor = GetUserQuotaActorProxy(dto.UserId);
+                await userQuotaActor.UpsertQuotaAsync(quota, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error storing global paytopublish payment detail");
+                throw;
+            }
+        }
+        public async Task<List<UserP2FPaymentDetailsResponseDto>> GetAllPaymentDetailsAsync(CancellationToken cancellationToken = default)
+        {
+            var global = await _daprClient.GetStateAsync<GlobalP2FPaymentDetailsCollection>(
+                StoreName,
+                GlobalPaymentDetailsKey,
+                cancellationToken: cancellationToken);
+
+            return global?.Details ?? new List<UserP2FPaymentDetailsResponseDto>();
+        }
         public async Task<bool> SetDataAsync(PayToFeaturePaymentDto data, CancellationToken cancellationToken = default)
         {
             if (data == null) throw new ArgumentNullException(nameof(data));
@@ -28,14 +88,14 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-               
+
                 if (data.IsExpired == null)
                 {
                     data.IsExpired = false;
                 }
                 data.LastUpdated = DateTime.UtcNow;
 
-               
+
                 await StoreInPrimaryStateAsync(data, cancellationToken);
                 await StoreInBackupStateAsync(data, cancellationToken);
                 if (!data.IsExpired && data.EndDate > DateTime.UtcNow)
@@ -68,18 +128,18 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                
+
                 var primaryStateValue = await GetFromPrimaryStateAsync(cancellationToken);
                 if (primaryStateValue != null)
                 {
                     return primaryStateValue;
                 }
 
-               
+
                 var backupStateValue = await GetFromBackupStateAsync(cancellationToken);
                 if (backupStateValue != null)
                 {
-                    
+
                     await StoreInPrimaryStateAsync(backupStateValue, cancellationToken);
                     return backupStateValue;
                 }
@@ -208,12 +268,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 _logger.LogInformation("[PaymentActor {ActorId}] DeleteDataAsync called", Id);
 
-                
+
                 await StateManager.TryRemoveStateAsync(StateKey, cancellationToken);
                 await StateManager.TryRemoveStateAsync(BackupStateKey, cancellationToken);
                 await StateManager.SaveStateAsync(cancellationToken);
-
-                // Clean up timers
                 await CleanupTimersAsync();
 
                 _logger.LogInformation("[PaymentActor {ActorId}] Deleted data from both state keys and cleaned up timers", Id);
@@ -418,7 +476,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-               
+
                 await SyncStateKeysAsync();
 
                 var paymentData = await GetDataAsync();

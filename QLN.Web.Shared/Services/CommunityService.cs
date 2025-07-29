@@ -1,7 +1,11 @@
-﻿using QLN.Web.Shared.Contracts;
+﻿using Microsoft.Extensions.Logging;
+using Nextended.Core.Extensions;
+using QLN.Web.Shared.Contracts;
 using QLN.Web.Shared.Model;
 using QLN.Web.Shared.Models;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace QLN.Web.Shared.Services
@@ -9,11 +13,14 @@ namespace QLN.Web.Shared.Services
     public class CommunityService : ServiceBase<CommunityService>, ICommunityService
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<CommunityService> _logger;
 
-        public CommunityService(HttpClient httpClient) : base(httpClient)
+        public CommunityService(HttpClient httpClient, ILogger<CommunityService> logger) : base(httpClient)
         {
             _httpClient = httpClient;
+            _logger = logger;
         }
+
 
         public async Task<(List<PostListDto> Posts, int TotalCount)> GetPostsAsync(int? forumId, string? order, int page, int pageSize)
         {
@@ -39,7 +46,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return (null, 0);
             }
         }
@@ -53,7 +60,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return null;
             }
         }
@@ -66,7 +73,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new List<MorePostItem>();
             }
         }
@@ -85,7 +92,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new List<SelectOption>();
             }
         }
@@ -98,7 +105,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error posting comment: {ex.Message}");
+                _logger.LogInformation($"Error posting comment: {ex.Message}");
                 return false;
             }
         }
@@ -112,7 +119,7 @@ namespace QLN.Web.Shared.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"API Error: {ex.Message}");
+                _logger.LogInformation($"API Error: {ex.Message}");
                 return new PaginatedCommentResponse();
             }
         }
@@ -123,6 +130,259 @@ namespace QLN.Web.Shared.Services
             public List<ForumCategory> Forum_Categories { get; set; }
         }
 
+        public async Task<(List<CommunityPostModel> Posts, int TotalCount)> GetCommunityPostList(int? categoryId, string? search, int? page, int? pageSize, string? sortDirection)
+        {
+            try
+            {
+                var url = $"api/v2/community/getAllPosts?categoryId={categoryId}&search={search}&page={page}&pageSize={pageSize}&sortDirection={sortDirection}";
+
+                var result = await _httpClient.GetFromJsonAsync<CommunityPostListResponse>(url);
+
+                return (result?.Items ?? new List<CommunityPostModel>(), result?.Total ?? 0);
+
+            }
+            catch (Exception)
+            {
+                return (new List<CommunityPostModel>(), 0);
+            }
+        }
+
+
+
+        public async Task<CommunityPostModel> GetCommunityPostDetail(string slug)
+        {
+            try
+            {
+                var url = $"api/v2/community/getBySlug/{slug}";
+                var response = await _httpClient.GetFromJsonAsync<CommunityPostModel>(url);
+                
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"API Error: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<CommunityCategoryModel>> GetCommunityCategoriesAsync()
+        {
+            try
+            {
+                var result = await _httpClient.GetFromJsonAsync<CommunityCategoryResponse>("api/v2/community/getAllForumCategories");
+                return result?.ForumCategories ?? new List<CommunityCategoryModel>();
+            }
+            catch
+            {
+                return new List<CommunityCategoryModel>();
+            }
+        }
+        public async Task<bool> CreateCommunityPostAsync(CreateCommunityPostDto dto)
+        {
+            try
+            {
+                var url = "api/v2/community/createPost";
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(dto, options);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+              
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch(Exception ex)
+            {
+                
+                return false;
+            }
+        }
+        public async Task<bool> PostCommentAsyncV2(CommentPostRequestDto dto)
+        {
+            try
+            {
+                var url = "api/v2/community/addCommentByCategoryId";
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                };
+
+                var json = JsonSerializer.Serialize(dto, options);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+
+                return false;
+            }
+        }
+
+        public async Task<PaginatedCommentResponseV2> GetCommentsByPostIdAsyncV2(string postId, int page, int pageSize)
+        {
+            try
+            {
+                var url = $"api/v2/community/getCommentsByPostId/{postId}?page={page}&perPage={pageSize}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                var response = await _httpClient.SendAsync(request);
+
+                var result = await response.Content.ReadFromJsonAsync<PaginatedCommentResponseV2>();
+                return result ?? new PaginatedCommentResponseV2();
+            
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"API Exception: {ex.Message}");
+                return new PaginatedCommentResponseV2();
+            }
+        }
+
+
+        public async Task<HttpResponseMessage?> ReportCommentAsync(string postId, string commentId)
+        {
+            try
+            {
+                var url = "/api/v2/report/createcommunitycomments";
+                var payload = new { postId, commentId };
+
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Error reporting comment: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<HttpResponseMessage?> ReportCommunityPostAsync(string postId)
+        {
+            try
+            {
+                var url = "/api/v2/report/createcommunitypost";
+                var body = new { postId };
+
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Error reporting post: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<bool> LikeCommunityPostAsync(string postId)
+        {
+            try
+            {
+                var url = "/api/v2/community/likePostByCategoryId";
+
+                var body = new
+                {
+                    communityPostId = postId
+                };
+
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Error liking post: {ex.Message}");
+                return false;
+            }
+        }
+        public async Task<bool> LikeCommunityCommentstAsync(string postId,string commentId)
+        {
+            try
+            {
+                var url = "api/v2/community/likeCommentByUserId";
+
+                var body = new
+                {
+                    communityPostId = postId,
+                    commentId = commentId,
+
+                };
+
+                var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = content
+                };
+
+                var response = await _httpClient.SendAsync(request);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation($"Error liking post: {ex.Message}");
+                return false;
+            }
+        }
 
     }
 }

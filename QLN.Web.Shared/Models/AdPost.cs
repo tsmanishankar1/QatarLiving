@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Web.Shared.Models
@@ -38,8 +36,9 @@ namespace QLN.Web.Shared.Models
 
         // Location
         public string? Zone { get; set; }
-        public string? StreetNumber { get; set; }
-        public string? BuildingNumber { get; set; }
+        public int? StreetNumber { get; set; }
+        public int? BuildingNumber { get; set; }
+
 
         // Agreement
         public bool IsAgreed { get; set; }

@@ -7,8 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.2.4" />
     <PackageReference Include="MudBlazor" Version="8.8.0" />
     <PackageReference Include="MudExRichTextEditor" Version="8.5.2" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +19,6 @@
     <Folder Include="Components\Community\" />
     <Folder Include="Components\Daily\" />
     <Folder Include="Components\Report\" />
-    <Folder Include="wwwroot\qln-images\" />
   </ItemGroup>
 
   <ItemGroup>

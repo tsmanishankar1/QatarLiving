@@ -8,17 +8,27 @@ namespace QLN.Web.Shared.Models
         public string Id { get; set; }
         public int Vertical { get; set; }
         public int SubVertical { get; set; }
+        [Required(ErrorMessage = "Country is required")]
         public string Country { get; set; }
+        [Required(ErrorMessage = "City is required")]
         public string City { get; set; }
         public List<string> BranchLocations { get; set; }
+        [Phone(ErrorMessage = "Invalid Whatsapp number format")]
         public string WhatsAppNumber { get; set; }
-   
+
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Invalid email format")]
         public string Email { get; set; }
 
+        [Url(ErrorMessage = "Invalid website URL format")]
         public string WebsiteUrl { get; set; }
 
+        [Url(ErrorMessage = "Invalid Facebook URL format")]
         public string FacebookUrl { get; set; }
+
+        [Url(ErrorMessage = "Invalid Instagram URL format")]
         public string InstagramUrl { get; set; }
+
         public string StartDay { get; set; }
         public string EndDay { get; set; }
         [JsonPropertyName("startHour")]
@@ -43,10 +53,14 @@ namespace QLN.Web.Shared.Models
 
         public string UserDesignation { get; set; }
 
+        [Required(ErrorMessage = "CR Document is required")]
         public string CrDocument { get; set; }
 
+        [Required(ErrorMessage = "Business Name is required")]
         public string BusinessName { get; set; }
 
+        [Required(ErrorMessage = "Phone number is required")]
+        [Phone(ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; }
 
         public string CompanyLogo { get; set; }
@@ -72,6 +86,8 @@ namespace QLN.Web.Shared.Models
         [Required(ErrorMessage = "City is required")]
         public string City { get; set; }
         public List<string> BranchLocations { get; set; }
+
+        [Phone(ErrorMessage = "Invalid Whatsapp number format")]
         public string WhatsAppNumber { get; set; }
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
@@ -82,6 +98,8 @@ namespace QLN.Web.Shared.Models
 
         [Url(ErrorMessage = "Invalid Facebook URL format")]
         public string FacebookUrl { get; set; }
+        [Url(ErrorMessage = "Invalid Instagram URL format")]
+
         public string InstagramUrl { get; set; }
         public string StartDay { get; set; }
         public string EndDay { get; set; }
@@ -100,7 +118,6 @@ namespace QLN.Web.Shared.Models
         [Phone(ErrorMessage = "Invalid phone number format")]
         public string PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "Company Logo is required")]
         public string CompanyLogo { get; set; }
         public int CompanyType { get; set; }
         public int CompanySize { get; set; }

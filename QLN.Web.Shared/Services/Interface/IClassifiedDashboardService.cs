@@ -6,8 +6,8 @@ namespace QLN.Web.Shared.Services.Interface
     {
         Task<ItemDashboardResponse?> GetItemDashboard();
         Task<PreLovedDashboardResponse?> GetPreLovedDashboard();
-        Task<List<AdModal>?> GetPublishedAds( int page, int pageSize, string search, int sortOption);
-        Task<List<AdModal>?> GetUnpublishedAds( int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetPublishedAds(int page, int pageSize, string search, int sortOption);
+        Task<List<AdModal>?> GetUnpublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetPreLovedPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetPreLovedUnPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetCollectiblesPublishedAds(int page, int pageSize, string search, int sortOption);
@@ -16,20 +16,20 @@ namespace QLN.Web.Shared.Services.Interface
         Task<List<AdModal>?> GetStoresUnPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetDealsPublishedAds(int page, int pageSize, string search, int sortOption);
         Task<List<AdModal>?> GetDealsUnPublishedAds(int page, int pageSize, string search, int sortOption);
-        Task<bool> PublishAdAsync(string adId);
-        Task<bool> UnPublishAdAsync(string adId);
-        Task<bool> PublishPreLovedAdAsync(string adId);
-        Task<bool> UnPublishPreLovedAdAsync(string adId);
-        Task<bool> PublishCollectiblesAdAsync(string adId);
-        Task<bool> UnPublishCollectiblesAdAsync(string adId);
-        Task<bool> PublishDealsAdAsync(string adId);
-        Task<bool> UnPublishDealsAdAsync(string adId);
+        Task<bool> PublishAdAsync(List<string> adId);
+        Task<bool> UnPublishAdAsync(List<string> adId);
+        Task<bool> PublishPreLovedAdAsync(List<string> adId);
+        Task<bool> UnPublishPreLovedAdAsync(List<string> adId);
+        Task<bool> PublishCollectiblesAdAsync(List<string> adId);
+        Task<bool> UnPublishCollectiblesAdAsync(List<string> adId);
+        Task<bool> PublishDealsAdAsync(List<string> adId);
+        Task<bool> UnPublishDealsAdAsync(List<string> adId);
         Task<bool> RemoveItemAdAsync(string adId);
         Task<bool> RemoveCollectiblesAdAsync(string adId);
         Task<bool> RemovePrelovedAsync(string adId);
         Task<bool> RemoveDealsAdAsync(string adId);
-        Task<bool> PublishBulkAdsAsync(List<string> adIds);
 
+        Task<bool> RefreshAdAsync(string adId, int subVerticalId);
 
     }
 }

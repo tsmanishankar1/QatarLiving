@@ -1,0 +1,128 @@
+@using QLN.Web.Shared.Helpers
+@inherits DailyNewsCardBase
+
+@{
+    var detailUrl = Item.NodeType.Contains("post") && !string.IsNullOrWhiteSpace(Item.Slug)
+        ? $"{NavigationPath.Value.ContentNewsDailyDetails}{Item.Slug}"
+        : $"{NavigationPath.Value.ContentEventsDetail}{Item.Slug}";
+}
+@if (!string.IsNullOrEmpty(Item.ImageUrl) || !string.IsNullOrEmpty(Item.Category) || !string.IsNullOrEmpty(Item.Title))
+{
+
+    <MudLink Href="@detailUrl" Style="text-decoration: none;">
+        <div class="daily-news-card" @onclick="NavigateToDetailPage">
+            <div class="daily-news-card-image-wrapper">
+                <img src="@Item.ImageUrl" alt="img-alt" class="daily-news-card-image" />
+            </div>
+            <div class="daily-news-card-content">
+                <div class="daily-news-category">@Item.Category</div>
+            
+            <div class="daily-news-title">@Item.Title</div>
+
+            
+            </div>
+        </div>
+    </MudLink>
+}
+
+
+
+<style>   
+    .daily-news-card {
+        display: flex;
+        overflow: hidden;
+        font-family: 'Public Sans', sans-serif;
+        width: 100%;
+        max-width: 240px;
+        flex-direction: column;
+    }
+
+
+    .daily-news-category {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-accent);
+    }
+
+
+    .daily-news-card-image-wrapper {
+        width: 100%;
+        height: 140px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+
+
+    .daily-news-card-image {
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+        display: block;
+        cursor: pointer;
+    }
+
+
+    .daily-news-card-content {
+        padding-top: 6px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .daily-news-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text-heading);
+        line-height: 26px;
+        letter-spacing: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .daily-news-title:hover {
+        text-decoration: underline;
+        color: var(--color-primary);
+        cursor: pointer;
+    }
+
+    @@media (max-width: 768px) {
+        .daily-news-card {
+            flex-direction: row;
+            max-width: 100%;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .daily-news-card-image-wrapper {
+            width: 177px;
+            height: 100px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .daily-news-card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .daily-news-title {
+            color: var(--color-text-heading);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+    }
+</style>

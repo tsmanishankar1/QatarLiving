@@ -27,15 +27,13 @@
     {
         @foreach (var article in Articles.Take(4))
         {
-            <div class="article-entry">
-                <div class="article-content">
-                    <MudLink Class="more-article-title" href="@($"/content/article/details/{article.Slug}?category={selectedMainTab}&subcategory={selectedTab}")">
-                        @article.Title
-                    </MudLink>
+            <div class="more-article-entry">
+                <div class="more-article-title" @onclick="@(() => onclick(article))">
+                        @(article.Title)
                 </div>
                 @if (!string.IsNullOrWhiteSpace(article.ImageUrl))
                 {
-                    <div class="image-container" @onclick="@(() => onclick(article))">
+                    <div class="more-image-container" @onclick="@(() => onclick(article))">
                      @if (!imageLoaded)
                     {
                         <MudSkeleton SkeletonType="SkeletonType.Rectangle" Class="more-article-image"  />
@@ -52,6 +50,7 @@
                     </div>
                 }
             </div>
+            
         }
     }
     else
@@ -85,7 +84,7 @@
         color: #555;
         font-size: 1rem;
     }
-    .image-container {
+    .more-image-container {
         width: 100%;
         max-width: 124px;
         aspect-ratio: 16 / 9;
@@ -120,7 +119,7 @@
         font-size: 20px;
     }
 
-    .article-entry {
+    .more-article-entry {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -128,13 +127,13 @@
         border-bottom: 1px solid #F0F0F0;
     }
 
-    .article-entry:last-child {
+    .more-article-entry:last-child {
         border-bottom: none;
     }
 
     .article-content {
         flex: 1;
-        padding-right: 12px;
+        
     }
 
     .article-meta {
@@ -153,7 +152,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: normal;
-
+        padding-right: 12px;
         font-size: 16px;
         font-weight: 600;
         color: var(--color-text-heading) !important;
@@ -164,6 +163,7 @@
 
     .more-article-title:hover {
         text-decoration: underline;
+        cursor: pointer;
         color: var(--color-primary) !important;          
     }
 

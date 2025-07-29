@@ -1,0 +1,94 @@
+<div class="tab-container">
+    @for (int i = 0; i < Options.Count; i++)
+    {
+        var option = Options[i];
+        var isActive = option.Value == ActiveValue;
+        var isFirst = i == 0;
+        var isLast = i == Options.Count - 1;
+
+        <div class="tab-item @(isActive ? "active" : "") 
+                              @(isFirst ? "first" : "") 
+                              @(isLast ? "last" : "")"
+             @onclick="@(() => OnSelect(option.Value))">
+            @option.Label
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TabOption> Options { get; set; } = new();
+    [Parameter] public string ActiveValue { get; set; } = "";
+    [Parameter] public EventCallback<string> OnChange { get; set; }
+
+    private Task OnSelect(string value)
+    {
+        if (value != ActiveValue)
+        {
+            ActiveValue = value;
+            return OnChange.InvokeAsync(value);
+        }
+        return Task.CompletedTask;
+    }
+
+    public class TabOption
+    {
+        public string Label { get; set; }
+        public string Value { get; set; }
+    }
+}
+
+<style>
+ .tab-container {
+    display: inline-flex;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+}
+
+.tab-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    background-color: white;
+    border-right: 1px solid #d1d5db;
+    display: flex;
+    user-select: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.tab-item:last-child {
+    border-right: none;
+}
+
+.tab-item:hover {
+    color: #f97316;
+}
+
+.tab-item.active {
+    background-color: #f97316;
+    color: white;
+    /* Remove these to avoid misalignment: */
+    /* border-left: 1px solid #f97316;
+       border-right: 1px solid #f97316; */
+}
+
+.tab-item.first.active {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.tab-item.last.active {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+
+</style>

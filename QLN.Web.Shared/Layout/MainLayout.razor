@@ -10,6 +10,7 @@
 @using Microsoft.AspNetCore.Http;
 @using QLN.Web.Shared.Services
 @inject IOptions<NavigationPath> options;
+@using QLN.Web.Shared.Components.Feedback
 
 <MudThemeProvider @ref="@_mudThemeProvider" Theme="@CustomTheme"/>
 <MudDialogProvider />
@@ -28,7 +29,7 @@
         <MudIconButton Icon="@Icons.Material.Filled.Menu" OnClick="@ToggleMobileMenu" Class="mobile-menu-button" />
 
         <div class="header-left">
-            <NavLink href="/content/daily">
+            <NavLink href="@navigationPath.ContentDaily">
                 <MudImage id="logoImage" Src="/qln-images/dark_mode_logo.svg" Alt="Qatar Living" Class="logo-img" />
             </NavLink>
         </div>
@@ -48,11 +49,11 @@
                         <MudButton id="headerPostButton" Variant="Variant.Filled"
                             Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
                             StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
-                            @onclick="OnPostAdClicked">
+                            >
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
                     </ActivatorContent>
-            @*           <ChildContent>
+                       <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
                   <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
@@ -62,7 +63,7 @@
                 </div>
             </MudMenuItem>
                     }
-                </ChildContent> *@
+                </ChildContent> 
                 </MudMenu>
             </div>
         </div>
@@ -78,7 +79,7 @@
              }
 
                    <img src="/qln-images/header/add_post_svg.svg" alt="Post" class="mobile-post-icon"
-                    @onclick="ToggleProfileMenu" />
+                 @onclick="OnPostAdClicked" />
         <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                 <ActivatorContent>
                     <div id="userIcon" style="display: flex; align-items: center; gap: 0.5rem;" class="cursor-pointer">
@@ -162,6 +163,7 @@
 
 <main class="main-content">
     @Body
+    <Feedback />
     <Footer DarkMode="@_isDarkMode" />
 </main>
 
