@@ -1,5 +1,4 @@
-﻿using Google.Api;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -319,7 +318,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var result = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
-                catch(ConflictException ex)
+                catch (ConflictException ex)
                 {
                     return TypedResults.Problem(
                         title: "Conflict",
@@ -788,7 +787,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-         
+
                     var companies = await service.GetStatusByTokenUser(uid, cancellationToken);
 
                     var filtered = companies

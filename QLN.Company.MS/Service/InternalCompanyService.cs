@@ -26,14 +26,8 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                Console.WriteLine($"Validating company profile DTO for User ID: {dto.UserId}");
                 Validate(dto);
-                Console.WriteLine("Validation passed.");
-
-                Console.WriteLine("Fetching existing company profile keys...");
                 var keys = await GetIndex();
-                Console.WriteLine($"Total keys fetched: {keys.Count}");
-
                 foreach (var key in keys)
                 {
                     var existing = await _dapr.GetStateAsync<ServiceCompanyDto>(ConstantValues.CompanyStoreName, key, cancellationToken: cancellationToken);
@@ -43,50 +37,39 @@ namespace QLN.Company.MS.Service
                             existing.Vertical == dto.Vertical &&
                             existing.SubVertical == dto.SubVertical)
                         {
-                            Console.WriteLine("Conflict: Company already exists for this user under the same subvertical.");
                             throw new ConflictException("A company profile already exists for this user under the same subvertical.");
                         }
 
                         if (existing.UserId != dto.UserId &&
                             (existing.PhoneNumber == dto.PhoneNumber || existing.Email == dto.Email))
                         {
-                            Console.WriteLine("Conflict: Phone number or email already in use by another user.");
                             throw new ConflictException("Phone number or email is already used by another user.");
                         }
                     }
                 }
-
                 var id = Guid.NewGuid();
-                Console.WriteLine($"Generated new Company ID: {id}");
-
                 var entity = EntityForCreate(dto, id);
                 entity.IsVerified = false;
-
-                Console.WriteLine("Saving new company profile to state store...");
                 await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, id.ToString(), entity);
 
                 if (!keys.Contains(id.ToString()))
                 {
-                    Console.WriteLine("Adding new Company ID to index...");
                     keys.Add(id.ToString());
                     await _dapr.SaveStateAsync(ConstantValues.CompanyStoreName, ConstantValues.CompanyServiceIndex, keys);
                 }
 
-                Console.WriteLine($"Company profile created successfully for ID: {id}");
                 return "Company Created successfully";
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine($"Validation error: {ex.Message}");
                 throw new InvalidDataException(ex.Message, ex);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unexpected error while creating company profile for User ID: {dto.UserId}. Error: {ex.Message}");
+                _logger.LogError(ex, "Error while creating company profile for user ID: {UserId}", dto.UserId);
                 throw;
             }
         }
-
         private static bool IsValidEmail(string email)
         {
             return !string.IsNullOrWhiteSpace(email) &&
@@ -187,11 +170,7 @@ namespace QLN.Company.MS.Service
                 Status = dto.Status ?? CompanyStatus.Active,
                 CreatedBy = dto.UserId,
                 CreatedUtc = DateTime.UtcNow,
-                IsActive = true,
-                Coverimage1 = dto.Coverimage1,
-                Coverimage2 = dto.Coverimage2,
-                CRExpirydate = dto.CRExpirydate,
-                Authorizedcontactpersonname = dto.Authorizedcontactpersonname
+                IsActive = true
             };
         }
         public async Task<ServiceCompanyDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
@@ -344,7 +323,7 @@ namespace QLN.Company.MS.Service
                 CreatedUtc = existing.CreatedUtc,
                 UpdatedBy = dto.UserId,
                 UpdatedUtc = DateTime.UtcNow,
-                IsActive = true,Coverimage1 = dto.Coverimage1,Coverimage2 = dto.Coverimage2,Authorizedcontactpersonname= dto.Authorizedcontactpersonname,CRExpirydate=dto.CRExpirydate
+                IsActive = true
             };
         }
         public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
