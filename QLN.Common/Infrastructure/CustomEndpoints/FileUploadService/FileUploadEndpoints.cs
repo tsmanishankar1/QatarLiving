@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
@@ -34,8 +35,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
             {
                 var allowedContainers = new List<string>
                 {
-                    "uploads",
-                    "somethingelse"
+                    "classifieds-images",
+                    "services-images",
+                    "content-images",
+                    "banner-assets"
+
                 };
 
                 if(!allowedContainers.Contains(request.Container))
@@ -48,7 +52,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
                     });
                 }
 
-                var (imgExt, base64Image) = Base64ImageHelper.ParseBase64Image(request.Base64);
+                var (imgExt, base64Image) = Base64Helper.ParseBase64(request.Base64);
                 string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
                 var customName = $"{tenDigitGuid1}.{imgExt}";
 

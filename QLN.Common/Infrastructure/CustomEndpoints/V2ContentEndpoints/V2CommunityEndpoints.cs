@@ -522,16 +522,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 
 
             group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
-    Ok<object>,
-    ForbidHttpResult,
-    ProblemHttpResult>>
-(
-    Guid commentId,
-    Guid communityPostId,
-    IV2CommunityPostService service,
-    HttpContext httpContext,
-    CancellationToken ct
-) =>
+                Ok<object>,
+                ForbidHttpResult,
+                ProblemHttpResult>>
+            (
+                LikeCommentsDto comment,
+                IV2CommunityPostService service,
+                HttpContext httpContext,
+                CancellationToken ct
+            ) =>
             {
                 try
                 {
@@ -544,12 +543,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
 
-                    var liked = await service.LikeCommentAsync(commentId, userId, communityPostId, ct);
+                    var liked = await service.LikeCommentAsync(comment, userId, ct);
 
                     return TypedResults.Ok((object)new
                     {
                         status = liked ? "liked" : "unliked",
-                        commentId,
+                        comment.CommentId,
                         userId
                     });
                 }
@@ -558,18 +557,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Failed to process comment like operation.", ex.Message);
                 }
             })
-.WithName("LikeCommentByUser")
-.WithTags("V2Community")
-.WithSummary("Like/Unlike a comment using JWT")
-.WithDescription("Extracts user ID from token and toggles comment like.");
+            .WithName("LikeCommentByUser")
+            .WithTags("V2Community")
+            .WithSummary("Like/Unlike a comment using JWT")
+            .WithDescription("Extracts user ID from token and toggles comment like.");
 
 
             group.MapPost("/likeCommentInternal/{commentId:guid}/{communityPostId:guid}/{userId}", async Task<Results<
     Ok<object>,
     ProblemHttpResult>>
 (
-    Guid commentId,
-    Guid communityPostId,
+   LikeCommentsDto comment,
     string userId,
     IV2CommunityPostService service,
     CancellationToken ct
@@ -577,12 +575,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             {
                 try
                 {
-                    var liked = await service.LikeCommentAsync(commentId, userId, communityPostId, ct);
+                    var liked = await service.LikeCommentAsync(comment, userId, ct);
 
                     return TypedResults.Ok((object)new
                     {
                         status = liked ? "liked" : "unliked",
-                        commentId,
+                        comment.CommentId,
                         userId
                     });
                 }
