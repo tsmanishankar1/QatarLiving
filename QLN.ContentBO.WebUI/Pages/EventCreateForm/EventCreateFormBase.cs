@@ -484,6 +484,11 @@ namespace QLN.ContentBO.WebUI.Pages
                     await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 }
+                else if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Snackbar.Add($"Bad Request: {errorContent}", Severity.Error);
+                }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
                     Snackbar.Add("You are unauthorized to perform this action");
