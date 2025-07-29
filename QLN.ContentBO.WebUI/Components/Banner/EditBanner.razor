@@ -109,6 +109,10 @@
                        Variant="Variant.Outlined"
                        Style="background-color: white;"
                        @bind-Date="_startDate" />
+                       @if (!string.IsNullOrEmpty(_DateError))
+                        { 
+                            <div class="mud-error-text">@_DateError</div>
+                        } 
                     </MudItem>
 
                     <MudItem xs="12" sm="6">
@@ -116,12 +120,12 @@
                        Variant="Variant.Outlined"
                        Style="background-color: white;"
                        @bind-Date="_endDate" />
+                       @if (!string.IsNullOrEmpty(_EndDateError))
+                        { 
+                             <div class="mud-error-text">@_EndDateError</div>
+                        } 
                     </MudItem>
                 </MudGrid> 
-                  @if (!string.IsNullOrEmpty(_DateError))
-                { 
-                    <div class="mud-error-text">@_DateError</div>
-                } 
             
                 <MudText Class="field-heading pt-2">Duration
                     (in seconds)</MudText>
