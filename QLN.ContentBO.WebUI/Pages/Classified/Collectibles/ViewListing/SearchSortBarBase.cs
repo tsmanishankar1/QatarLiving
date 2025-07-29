@@ -3,10 +3,13 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using Microsoft.JSInterop;
+using ClosedXML.Excel;
+using System.IO;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
-
     public class SearchSortBarBase : ComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
@@ -16,6 +19,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
         [Parameter] public EventCallback OnClearFilters { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected ISnackbar Snackbar { get; set; } = default!;
+        [Inject] protected IExcelExportService ExcelExportService { get; set; } = default!;
 
         protected bool ascending = true;
         protected string searchText = string.Empty;
@@ -142,10 +148,40 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-
         private async Task ExportToExcel()
         {
-          
+            try
+            {
+                if (Items == null || !Items.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var columns = new Dictionary<string, Func<ClassifiedItemViewListing, object?>>
+                {
+                    ["Image URL"] = x => x.Images?.FirstOrDefault()?.Url,
+                    ["Ad ID"] = x => x.Id,
+                    ["Ad Type"] = x => x.AdType,
+                    ["Ad Title"] = x => x.Title,
+                    ["User ID"] = x => x.UserId,
+                    ["User Name"] = x => x.UserName,
+                    ["Category"] = x => x.Category,
+                    ["Sub Category"] = x => x.L2Category,
+                    ["Section"] = x => x.L1Category,
+                    ["Created At"] = x => x.CreatedAt?.ToString("yyyy/MM/dd"),
+                    ["Published Date"] = x => x.PublishedDate?.ToString("yyyy/MM/dd"),
+                    ["Expiry Date"] = x => x.ExpiryDate?.ToString("yyyy/MM/dd")
+                };
+
+                var fileName = await ExcelExportService.ExportAsync(Items, columns, "Classified Collectibles", "Classified_Collectibles_View_Listing");
+
+                await JS.InvokeVoidAsync("triggerFileDownload", $"/exports/{fileName}");
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
         }
 
     }
