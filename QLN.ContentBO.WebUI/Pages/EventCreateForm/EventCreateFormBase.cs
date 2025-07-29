@@ -246,15 +246,12 @@ namespace QLN.ContentBO.WebUI.Pages
                     CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
                     _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
                     _coverImageError = null;
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleFilesChanged");
-            }
-            finally
-            {
-                _fileUpload?.ResetValidation();
             }
         }
 
