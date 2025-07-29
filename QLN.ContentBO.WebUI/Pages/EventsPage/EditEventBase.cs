@@ -184,17 +184,25 @@ namespace QLN.ContentBO.WebUI.Pages
         private DotNetObjectReference<EditEventBase>? _dotNetRef;
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (_shouldInitializeMap)
+            try
             {
-                _shouldInitializeMap = false;
-
-                if (_dotNetRef == null)
+                if (_shouldInitializeMap)
                 {
-                    _dotNetRef = DotNetObjectReference.Create(this);
-                }
+                    _shouldInitializeMap = false;
 
-                await JS.InvokeVoidAsync("resetLeafletMap");
-                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    if (_dotNetRef == null)
+                    {
+                        _dotNetRef = DotNetObjectReference.Create(this);
+                    }
+
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+                throw;
             }
         }
 
