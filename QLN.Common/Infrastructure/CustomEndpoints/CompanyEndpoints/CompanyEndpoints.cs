@@ -588,10 +588,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
 
-                    if (!Guid.TryParse(uid, out var userGuid))
-                        return TypedResults.Forbid();
-
-                    var result = await service.VerificationStatus(userGuid, vertical, isVerified, cancellationToken);
+                    var result = await service.VerificationStatus(uid, vertical, isVerified, cancellationToken);
                     if (result == null || result.Count == 0)
                         throw new KeyNotFoundException("Company profile not found");
 
@@ -622,13 +619,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             group.MapGet("/classifiedcompanyverifiedstatusbyuserid", async Task<IResult> (
                 [FromQuery] bool isVerified,
                 [FromQuery] VerticalType vertical,
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 [FromServices] ICompanyClassifiedService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {

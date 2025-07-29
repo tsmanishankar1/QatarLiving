@@ -65,7 +65,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-                var url = "/api/companyds/createByUserId";
+                var url = "/api/companyds/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -125,7 +125,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyds/getById?id={id}";
+                var url = $"/api/companyds/getdsbyid?id={id}";
                 return await _dapr.InvokeMethodAsync<DealsStoresCompanyDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
@@ -150,7 +150,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodAsync<List<DealsStoresCompanyDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
-                    "api/companyds/getAll",
+                    "api/companyds/getallds",
                     cancellationToken);
                 return response ?? new List<DealsStoresCompanyDto>();
             }
@@ -191,7 +191,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-                var url = $"/api/companyds/updateByUserId";
+                var url = $"/api/companyds/updatebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -241,7 +241,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyds/delete?id={id}";
+                var url = $"/api/companyds/deleteds?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     ConstantValues.CompanyServiceAppId,
@@ -281,7 +281,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     Status = dto.Status
                 };
 
-                var url = $"/api/companyds/approveByUserId?userId={userId}";
+                var url = $"/api/companyds/approvebyuserid?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
 
@@ -336,7 +336,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyds/getApproval?companyId={companyId}";
+                var url = $"/api/companyds/getapprovalds?companyId={companyId}";
                 var response = await _dapr.InvokeMethodAsync<CompanyDsApprovalResponseDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
@@ -356,11 +356,11 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyDsVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyDsVerificationStatusDto>> VerificationStatus(string userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyds/verifiedstatusbyuserId" +
+                var url = $"/api/companyds/verifiedstatusbyuserid" +
                                   $"?isverified={isVerified.ToString().ToLower()}" +
                                   $"&userId={userId}" +
                                   $"&vertical={vertical}";
@@ -394,7 +394,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyds/getByUserId?userId={userId}";
+                var url = $"/api/companyds/getbyuserid?userId={userId}";
 
                 return await _dapr.InvokeMethodAsync<List<DealsStoresCompanyDto>>(
                     HttpMethod.Get,
@@ -417,7 +417,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyds/statusByUserId?userId={userId}";
+                var url = $"/api/companyds/statusbyuserid?userId={userId}";
 
                 var companies = await _dapr.InvokeMethodAsync<List<DsProfileStatus>>(
                     HttpMethod.Get,

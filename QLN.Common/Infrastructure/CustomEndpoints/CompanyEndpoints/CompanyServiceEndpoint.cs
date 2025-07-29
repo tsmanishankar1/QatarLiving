@@ -582,13 +582,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
-                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(tokenUserId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
 
-                    var result = await service.VerificationStatus(userGuid, vertical, isVerified, cancellationToken);
+                    var result = await service.VerificationStatus(uid, vertical, isVerified, cancellationToken);
                     if (result == null || result.Count == 0)
                         throw new KeyNotFoundException("Company profile not found");
 
@@ -619,13 +618,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             group.MapGet("/verifiedstatusbyuserid", async Task<IResult> (
                 [FromQuery] bool isVerified,
                 [FromQuery] VerticalType vertical,
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 [FromServices] ICompanyService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
