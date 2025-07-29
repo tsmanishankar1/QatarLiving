@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class SeasonalPickSlotAssignment
     {
-        public int SlotNumber { get; set; }
+        public int SlotOrder { get; set; }
         public string? PickId { get; set; }
     }
 

@@ -149,6 +149,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 
             return group;
         }
+        public static RouteGroupBuilder MapServiceSubscriptionAdGetAllEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getallsubscriptionadsbo", async (
+                IServicesBoService service,
+                CancellationToken cancellationToken,
+                [FromQuery] string? sortBy = null,
+                [FromQuery] string? search = null,
+                [FromQuery] DateTime? fromDate = null,
+                [FromQuery] DateTime? toDate = null,
+                [FromQuery] DateTime? publishedFrom = null,
+                [FromQuery] DateTime? publishedTo = null,
+                
+                [FromQuery] int pageNumber = 1,
+                [FromQuery] int pageSize = 12) =>
+            {
+                try
+                {
+                    var result = await service.GetAllSubscriptionAdsServiceBo(
+                        sortBy ?? "CreationDate",
+                        search,
+                        fromDate,
+                        toDate,
+                        publishedFrom,
+                        publishedTo,
+                        pageNumber,
+                        pageSize,
+                        cancellationToken
+                    );
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(detail: ex.Message, title: "Internal Server Error");
+                }
+            })
+            .WithName("GetAllSubscriptionsAdsBo")
+            .WithTags("ServicesBo")
+            .WithSummary("Get all service ads with pagination")
+            .WithDescription("Retrieves a paginated summary of all SubscriptionsAds ads with optional sorting, search, status, report, feature and date filters.")
+            .Produces<PaginatedResult<ServiceAdSummaryDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
 
 
 
