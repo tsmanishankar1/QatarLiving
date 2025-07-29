@@ -50,6 +50,7 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<TransactionListResponseDto> GetTransactionsAsync(
+                    string subVertical,
                     int pageNumber,
                     int pageSize,
                     string? searchText,
