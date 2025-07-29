@@ -94,6 +94,8 @@ try
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
 
+    builder.Services.AddScoped<IExcelExportService, ExcelExportService>();
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.

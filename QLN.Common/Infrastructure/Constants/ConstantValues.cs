@@ -15,6 +15,9 @@ namespace QLN.Common.Infrastructure.Constants
         //Company Constants
         public const string CompanyStoreName = "companystatestore";
         public const string CompanyIndexKey = "company-index";
+        public const string CompanyServiceIndex = "company-service-index";
+        public const string CompanyVerifiedIndex = "company-verified-index";
+        public const string CompanyDsIndex = "company-Ds-index";
         public const string CompanyServiceAppId = "qln-company-ms";
         // Classifieds Constants
         public const string ClassifiedsVertical = "classifieds";
