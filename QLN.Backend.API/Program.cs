@@ -273,8 +273,17 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints()
+var companyServiceGroup = app.MapGroup("/api/companyservice");
+companyServiceGroup.MapCompanyServiceEndpoints()
+    .RequireAuthorization();
+var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
+companyClassifiedsGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
+var companyDsGroup = app.MapGroup("/api/companyds");
+companyDsGroup.MapCompanyDealsStoresEndpoints()
+    .RequireAuthorization();
+var companyVerifiedGroup = app.MapGroup("/api/companyverified");
+companyVerifiedGroup.MapVerifiedCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
