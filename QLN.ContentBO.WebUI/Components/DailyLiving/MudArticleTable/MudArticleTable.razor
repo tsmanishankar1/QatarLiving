@@ -81,7 +81,11 @@ else{
                 }
             </MudTd>
         }
-            <MudTd DataLabel="Creation Date">@context.CreatedAt.ToQatarTime("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Creation Date">
+            @(context.CreatedAt != DateTime.MinValue
+                        ? context.CreatedAt.ToQatarTime("dd-MM-yyyy")
+                        : "-")
+            </MudTd>
         <MudTd>
              @if (context.Title == "Add Item")
                     {

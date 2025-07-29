@@ -99,16 +99,62 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                         .ToDictionary(item => item.SlotOrder, item => item.Id);
                     Console.WriteLine("pickMap", pickMap);
 
-                    var slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
-                    {
-                        slotNumber = newIndex + 1,
-                        pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
-                    }).ToList();
+                    //var slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                    //{
+                    //    slotOrder = newIndex + 1,
+                    //    pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
+                    //}).ToList();
                     Console.WriteLine("pickMap", pickMap);
+                    List<object> slotAssignments;
 
-                    var response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, UserId, "classifieds");
+                    switch (ItemType)
+                    {
+                        case LandingPageItemType.FeaturedCategory:
+                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            {
+                                slotOrder = newIndex + 1,
+                                categoryId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
+                            }).Cast<object>().ToList();
+                            break;
 
-                    if (response != null && response.IsSuccessStatusCode)
+                        case LandingPageItemType.SeasonalPick:
+                        case LandingPageItemType.FeaturedStore:
+                            slotAssignments = newSlotOrder.Select((originalSlotNumber, newIndex) => new
+                            {
+                                slotOrder = newIndex + 1,
+                                pickId = pickMap.TryGetValue(originalSlotNumber, out var id) && id != Guid.Empty ? (Guid?)id : null
+                            }).Cast<object>().ToList();
+                            break;
+
+                        default:
+                            Snackbar.Add("Unknown item type for reordering.", Severity.Warning);
+                            Logger.LogWarning("Unhandled ItemType in reorder: {ItemType}", ItemType);
+                            return;
+                    }
+
+
+                    HttpResponseMessage? response = null;
+                    Console.WriteLine("ItemType", ItemType);
+                    switch (ItemType)
+                    {
+                        case LandingPageItemType.FeaturedCategory:
+                            response = await ClassifiedService.ReorderFeaturedCategoryAsync(slotAssignments, "classifieds");
+                            break;
+
+                        case LandingPageItemType.SeasonalPick:
+                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, "classifieds");
+                            break;
+
+                        case LandingPageItemType.FeaturedStore:
+                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, "classifieds");
+                            break;
+
+                        default:
+                            Snackbar.Add("Unknown item type for reordering.", Severity.Warning);
+                            Logger.LogWarning("Unhandled ItemType in reorder: {ItemType}", ItemType);
+                            return;
+                    }
+                    if (response?.IsSuccessStatusCode == true)
                     {
                         Snackbar.Add("Items reordered successfully.", Severity.Success);
                     }
@@ -117,7 +163,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                         Snackbar.Add("Failed to reorder items.", Severity.Error);
                         Logger.LogError("Reorder API failed: {StatusCode}", response?.StatusCode);
                     }
-
                     StateHasChanged();
                 }
             }
@@ -168,13 +213,31 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
         {
             try
             {
-                var response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                HttpResponseMessage? response = null;
+                switch (ItemType)
+                {
+                    case LandingPageItemType.SeasonalPick:
+                        response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                        break;
+
+                    case LandingPageItemType.FeaturedCategory:
+                        response = await ClassifiedService.DeleteFeaturedCategory(id, "classifieds");
+                        break;
+
+                    case LandingPageItemType.FeaturedStore:
+                        response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                        break;
+
+                    default:
+                        Snackbar.Add("Unknown item type for deletion", Severity.Warning);
+                        Logger.LogWarning("Unhandled ItemType in delete: {ItemType}", ItemType);
+                        return;
+                }
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     Snackbar.Add($"{GetItemTypeName()} deleted successfully", Severity.Success);
 
-                    // Reload or update UI as needed
                     var deletedItem = Items.FirstOrDefault(i => i.Id.ToString() == id);
                     if (deletedItem != null)
                         Items.Remove(deletedItem);

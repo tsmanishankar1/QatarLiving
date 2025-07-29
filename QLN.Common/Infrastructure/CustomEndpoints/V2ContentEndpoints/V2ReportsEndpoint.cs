@@ -727,15 +727,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 >> (
                 IV2ReportsService service,
                 int? pageNumber,
-                int? perPage,
-                string? searchTitle = null,
-                string? sortBy = null,
+                int? pageSize,
+                string? searchTerm = null,
+                string? sortOrder = null,
                 CancellationToken ct = default
                 ) =>
             {
                 try
                 {
-                    var result = await service.GetAllCommunityPostsWithPagination(pageNumber, perPage, searchTitle, sortBy, ct);
+                    var result = await service.GetAllCommunityPostsWithPagination(pageNumber, pageSize, searchTerm, sortOrder, ct);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

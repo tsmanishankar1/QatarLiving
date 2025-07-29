@@ -2,19 +2,26 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
 {
-
     public class SearchSortBarBase : ComponentBase
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
+        [Parameter] public List<ClassifiedItemViewListing> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
-
+        [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
+        [Parameter] public EventCallback OnClearFilters { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected ISnackbar Snackbar { get; set; } = default!;
         protected bool ascending = true;
+        protected string searchText = string.Empty;
+
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
 
         protected DateTime? dateCreated;
@@ -55,22 +62,27 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
 
-        protected void ConfirmCreatedPopover()
+        protected async void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ConfirmPublishedPopover()
+        protected async void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
+            await OnDateFilterChanged.InvokeAsync((dateCreated, datePublished));
         }
 
-        protected void ClearFilters()
+        protected async void ClearFilters()
         {
             dateCreated = null;
             datePublished = null;
+            ascending = true;
+            searchText = string.Empty;
+            await OnClearFilters.InvokeAsync();
         }
 
         protected async Task AddEventCallback()
@@ -100,7 +112,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             Console.WriteLine($"Selected: {selected.Label}");
 
             // Option 1: Pass by query string (recommended for readability)
-            var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
+             var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
             NavManager.NavigateTo(targetUrl);
 
             return Task.CompletedTask;
@@ -110,6 +122,63 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         {
             dateCreated = null;
             datePublished = null;
+        }
+
+       protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Collectibles" },
+                { "Descrption", "Do you want to export the current classified collectibles data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Items == null || !Items.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+
+                // Prepare export data with capitalized headers
+                var exportData = Items.Select(x => new Dictionary<string, object?>
+                {
+                    ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
+                    ["Ad ID"] = x.Id,
+                    ["Ad Type"] = x.AdType,
+                    ["Ad Title"] = x.Title,
+                    ["User ID"] = x.UserId,
+                    ["User Name"] = x.UserName,
+                    ["Category"] = x.Category,
+                    ["Sub Category"] = x.L2Category,
+                    ["Section"] = x.L1Category,
+                    ["Created At"] = x.CreatedAt?.ToString("yyyy/MM/dd") ?? "-",
+                    ["Published Date"] = x.PublishedDate?.ToString("yyyy/MM/dd") ?? "-",
+                    ["Expiry Date"] = x.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-"
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Collectibles_ViewListing.xlsx", "Classified Collectibles");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
         }
 
     }

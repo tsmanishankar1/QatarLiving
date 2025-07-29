@@ -10,7 +10,6 @@ using QLN.Backend.API.Service.Services;
 using QLN.Backend.API.Service.ServicesService;
 using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
-using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IBannerService;
@@ -103,6 +102,9 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<ICompanyService, ExternalCompanyService>();
+            services.AddTransient<ICompanyVerifiedService, ExternalCompanyVerifiedService>();
+            services.AddTransient<ICompanyDealsStoresService, ExternalCompanyDealsStoresService>();
+            services.AddTransient<ICompanyClassifiedService, ExternalCompanyClassifiedService>();
             return services;
         }
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
