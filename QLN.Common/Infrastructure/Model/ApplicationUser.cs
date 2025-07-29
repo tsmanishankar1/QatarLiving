@@ -14,6 +14,8 @@ namespace QLN.Common.Infrastructure.Model
         public string? Location { get; set; }
         public List<UserCompany>? Companies { get; set; }
         public List<UserSubscription>? Subscriptions { get; set; }
+        public long? LegacyUid { get; set; }
+        public List<UserLegacyData>? LegacyData { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; }
     }

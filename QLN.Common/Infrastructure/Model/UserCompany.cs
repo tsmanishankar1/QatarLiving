@@ -8,7 +8,8 @@ namespace QLN.Common.Infrastructure.Model
 {
     public class UserCompany
     {
-        public Guid Id { get; set; }
+        public required Guid UserId { get; set; }
+        public required Guid Id { get; set; }
         public required string DisplayName { get; set; }
     }
 }
