@@ -3,7 +3,7 @@
 namespace QLN.Common.Infrastructure.Model
 {
     public class ApplicationUser : IdentityUser<Guid>
-    {        
+    {
         public string? MobileOperator { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
@@ -18,5 +18,6 @@ namespace QLN.Common.Infrastructure.Model
         public List<UserLegacyData>? LegacyData { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; }
+        public bool IsCompany { get; set; } // need to come back to this as by doing this we inherit a limitation of an existing system, but at this time "whatever" ....
     }
 }
