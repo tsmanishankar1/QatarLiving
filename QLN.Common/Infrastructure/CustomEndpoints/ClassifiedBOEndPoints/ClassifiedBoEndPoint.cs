@@ -1581,6 +1581,92 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/preloved-ads/payment-summary", async Task<Results<
+                Ok<PaginatedResult<PrelovedAdPaymentSummaryDto>>,
+                ProblemHttpResult>>
+                (
+                [AsParameters] PaginationQuery pagination,
+                [FromQuery] string? search,
+                [FromQuery] string? sortBy,
+                IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllPrelovedAdPaymentSummaries(
+                        pagination.PageNumber ?? 1,
+                        pagination.PageSize ?? 12,
+                        search,
+                        sortBy,
+                        cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("GetAllPrelovedAdPaymentSummaries")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Get all preloved ad payment summaries")
+                .WithDescription("Returns paginated list of preloved ads with payment-style summaries including order ID, status, contact info, and subscription type.")
+                .Produces<PaginatedResult<PrelovedAdPaymentSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getallprelovedads", async (
+                [FromServices] IClassifiedBoLandingService service,
+                CancellationToken cancellationToken,
+                [FromQuery] string? sortBy = "CreationDate",
+                [FromQuery] string? search = null,
+                [FromQuery] DateTime? fromDate = null,
+                [FromQuery] DateTime? toDate = null,
+                [FromQuery] DateTime? publishedFrom = null,
+                [FromQuery] DateTime? publishedTo = null,
+                [FromQuery] int? status = null,
+                [FromQuery] bool? isPromoted = null,
+                [FromQuery] bool? isFeatured = null,
+                [FromQuery] int pageNumber = 1,
+                [FromQuery] int pageSize = 12
+                ) =>
+            {
+                try
+                {
+                    var result = await service.GetAllPrelovedBoAds(sortBy, search, fromDate, toDate, 
+                        publishedFrom, publishedTo, status, isFeatured, isPromoted, pageNumber,
+                        pageSize, cancellationToken
+                    );
+
+                    return Results.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        title: "Internal Server Error",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+                .WithName("GetAllPrelovedBoAds")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Get all preloved ads with pagination")
+                .WithDescription("Retrieves a paginated summary of all Preloved ads with optional filters like status, date, promotion and feature state.")
+                .Produces<PaginatedResult<PrelovedAdSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
             return group;
         }
     }

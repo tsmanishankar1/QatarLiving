@@ -1202,5 +1202,213 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
         private string GetAdKey(Guid id) => $"ad-{id}";
+
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null, 
+            string? sortBy = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {               
+                var result = new List<PrelovedAdPaymentSummaryDto>();
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.PrelovedIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                _logger.LogInformation("Fetched {Count} ad keys from index.", keys.Count);
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null)
+                    {                     
+                        continue;
+                    }
+
+                    var dto = new PrelovedAdPaymentSummaryDto
+                    {
+                        AdId = ad.Id,                        
+                        SubscriptionType = "12 Months Super",
+                        UserName = ad.UserName,
+                        EmailAddress = ad.ContactEmail,
+                        Mobile = ad.ContactNumber,
+                        WhatsappNumber = ad.WhatsAppNumber,
+                        Amount = 250, 
+                        Status = ad.Status.ToString(),
+                        StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
+                        ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
+                        : "N/A",
+                        EndDate = ad.ExpiryDate.HasValue && ad.ExpiryDate.Value != DateTime.MinValue
+                        ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
+                        : "N/A",
+
+                        OrderId = ad.Id.ToString().Substring(0, 6) 
+                    };
+
+                    if (string.IsNullOrWhiteSpace(search) ||
+                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                        dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        result.Add(dto);
+                    }
+                }
+                _logger.LogInformation("Total matched ads after filtering: {Count}", result.Count);
+                result = sortBy?.ToLower() switch
+                {
+                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
+                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
+                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                };
+
+                var totalCount = result.Count;
+                int currentPage = pageNumber ?? 1;
+                int currentSize = pageSize ?? 12;
+
+                var paginatedItems = result
+                    .Skip((currentPage - 1) * currentSize)
+                    .Take(currentSize)
+                    .ToList();
+                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})", paginatedItems.Count, currentPage, currentSize);
+                return new PaginatedResult<PrelovedAdPaymentSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = currentPage,
+                    PageSize = currentSize,
+                    Items = paginatedItems
+                };
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
+            }
+        }
+        
+        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
+            string? sortBy = "CreationDate",
+            string? search = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            DateTime? publishedFrom = null,
+            DateTime? publishedTo = null,
+            int? status = null,
+            bool? isFeatured = null,
+            bool? isPromoted = null,
+            int pageNumber = 1,
+            int pageSize = 12,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.PrelovedIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                var ads = new List<PrelovedAdSummaryDto>();
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null) continue;
+
+                    ads.Add(new PrelovedAdSummaryDto
+                    {
+                        Id = ad.Id,
+                        UserId = ad.UserId,
+                        UserName = ad.UserName, 
+                        AdTitle = ad.Title,
+                        Category = ad.Category,
+                        SubCategory = ad.L1Category,
+                        Status = ad.Status, 
+                        IsFeatured = ad.IsFeatured,
+                        IsPromoted = ad.IsPromoted,
+                        CreationDate = ad.CreatedAt,
+                        DatePublished = ad.PublishedDate,
+                        DateExpiry = ad.ExpiryDate,
+                        ImageUpload = ad.Images?.Select(img => new ImageDto
+                        {
+                            Url = img.Url,
+                            FileName = img.AdImageFileNames
+                        }).ToList(),
+                        OrderId = ad.Id.ToString().Substring(0, 6)
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var lowerSearch = search.ToLowerInvariant();
+                    ads = ads.Where(ad =>
+                        (!string.IsNullOrEmpty(ad.AdTitle) && ad.AdTitle.ToLowerInvariant().Contains(lowerSearch)) ||
+                        ad.Id.ToString().Contains(lowerSearch) ||
+                        (!string.IsNullOrEmpty(ad.UserId) && ad.UserId.ToLowerInvariant().Contains(lowerSearch)) ||
+                        (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLowerInvariant().Contains(lowerSearch))
+                    ).ToList();
+                }
+
+                if (fromDate.HasValue)
+                    ads = ads.Where(x => x.CreationDate >= fromDate.Value).ToList();
+
+                if (toDate.HasValue)
+                    ads = ads.Where(x => x.CreationDate <= toDate.Value).ToList();
+
+                if (publishedFrom.HasValue)
+                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished >= publishedFrom.Value).ToList();
+
+                if (publishedTo.HasValue)
+                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished <= publishedTo.Value).ToList();
+
+                if (status.HasValue && Enum.IsDefined(typeof(AdStatus), status.Value))
+                {
+                    var statusEnum = (AdStatus)status.Value;
+                    ads = ads.Where(x => x.Status == statusEnum).ToList();
+                }
+
+                if (isFeatured.HasValue)
+                    ads = ads.Where(x => x.IsFeatured == isFeatured.Value).ToList();
+
+                if (isPromoted.HasValue)
+                    ads = ads.Where(x => x.IsPromoted == isPromoted.Value).ToList();
+
+                sortBy = sortBy?.ToLowerInvariant();
+                ads = sortBy switch
+                {
+                    "title" => ads.OrderByDescending(x => x.AdTitle).ToList(),
+                    "username" => ads.OrderByDescending(x => x.UserName).ToList(),
+                    "status" => ads.OrderByDescending(x => x.Status).ToList(),
+                    "published" => ads.OrderByDescending(x => x.DatePublished).ToList(),
+                    _ => ads.OrderByDescending(x => x.CreationDate).ToList()
+                };
+
+                // Paginate
+                var totalCount = ads.Count;
+                var pagedItems = ads
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PaginatedResult<PrelovedAdSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Items = pagedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ads.");
+                throw new InvalidOperationException("Failed to fetch preloved ads.", ex);
+            }
+        }
     }
 }

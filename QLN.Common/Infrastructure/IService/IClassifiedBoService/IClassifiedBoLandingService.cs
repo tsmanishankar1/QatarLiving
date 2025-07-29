@@ -47,5 +47,11 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
         Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
         Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct);
+        Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
+            string? sortBy = null, CancellationToken cancellationToken = default);
+
+        Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(string? sortBy = "CreationDate", string? search = null, DateTime? fromDate = null,
+            DateTime? toDate = null, DateTime? publishedFrom = null, DateTime? publishedTo = null, int? status = null, bool? isFeatured = null,
+            bool? isPromoted = null, int pageNumber = 1, int pageSize = 12, CancellationToken cancellationToken = default);
     }
 }

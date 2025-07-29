@@ -743,5 +743,163 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
 
         }
+
+
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(
+     int? pageNumber = 1,
+     int? pageSize = 12,
+     string? search = null,
+     string? sortBy = null,
+     CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber ?? 1}",
+                $"pageSize={pageSize ?? 12}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+            }
+
+            var url = $"/api/v2/classifiedbo/preloved-ads/payment-summary?{string.Join("&", queryParams)}";
+
+            try
+            {                
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                
+                var result = JsonSerializer.Deserialize<PaginatedResult<PrelovedAdPaymentSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                }
+
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+                throw new InvalidOperationException("Error fetching preloved ad payment summaries.", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
+            string? sortBy = "CreationDate",
+            string? search = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            DateTime? publishedFrom = null,
+            DateTime? publishedTo = null,
+            int? status = null,
+            bool? isFeatured = null,
+            bool? isPromoted = null,
+            int pageNumber = 1,
+            int pageSize = 12,
+            CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber}",
+                $"pageSize={pageSize}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+            if (fromDate.HasValue)
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
+
+            if (toDate.HasValue)
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
+
+            if (publishedFrom.HasValue)
+                queryParams.Add($"publishedFrom={Uri.EscapeDataString(publishedFrom.Value.ToString("o"))}");
+
+            if (publishedTo.HasValue)
+                queryParams.Add($"publishedTo={Uri.EscapeDataString(publishedTo.Value.ToString("o"))}");
+
+            if (status.HasValue)
+                queryParams.Add($"status={status.Value}");
+
+            if (isFeatured.HasValue)
+                queryParams.Add($"isFeatured={isFeatured.Value.ToString().ToLowerInvariant()}");
+
+            if (isPromoted.HasValue)
+                queryParams.Add($"isPromoted={isPromoted.Value.ToString().ToLowerInvariant()}");
+
+            var url = $"/api/v2/classifiedbo/getallprelovedads?{string.Join("&", queryParams)}";
+
+            try
+            {
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var result = JsonSerializer.Deserialize<PaginatedResult<PrelovedAdSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                }
+
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad summaries.");
+                throw new InvalidOperationException("Error fetching preloved ad summaries.", ex);
+            }
+        }
+
+
+
     }
 }
