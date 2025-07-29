@@ -318,7 +318,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId) ?? throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
                 var user = await _userManager.FindByIdAsync(company.UserId.ToString()) ?? throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
 
-                if (user.IsCompany == true && company.IsVerified == true)
+                if (company.IsVerified == true)
                     throw new InvalidDataException("Company is already marked as approved.");
 
                 var wasNotVerified = !company.IsVerified.GetValueOrDefault(false);
@@ -358,7 +358,6 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 if (isNowVerified)
                 {
-                    user.IsCompany = true;
                     user.UpdatedAt = DateTime.UtcNow;
                     var updateResult = await _userManager.UpdateAsync(user);
                 }

@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.Infrastructure.DbContext;
@@ -11,12 +10,10 @@ using QLN.Common.Infrastructure.DbContext;
 
 namespace QLN.Common.Migrations
 {
-    [DbContext(typeof(QatarlivingDevContext))]
-    [Migration("20250505054032_initialMigration")]
-    partial class initialMigration
+    [DbContext(typeof(QLApplicationContext))]
+    partial class QLApplicationContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,23 +179,15 @@ namespace QLN.Common.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("FirstName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Gender")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsCompany")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("LanguagePreferences")
                         .HasColumnType("text");
 
                     b.Property<string>("LastName")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Location")
@@ -214,7 +203,6 @@ namespace QLN.Common.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Nationality")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("NormalizedEmail")
@@ -240,7 +228,7 @@ namespace QLN.Common.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime?>("UpdatedAt")
+                    b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserName")
@@ -257,6 +245,46 @@ namespace QLN.Common.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserCompany", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.ToTable("UserCompany");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserSubscription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicationUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.ToTable("UserSubscription");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -308,6 +336,27 @@ namespace QLN.Common.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserCompany", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
+                        .WithMany("Companies")
+                        .HasForeignKey("ApplicationUserId");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserSubscription", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.ApplicationUser", null)
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("ApplicationUserId");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ApplicationUser", b =>
+                {
+                    b.Navigation("Companies");
+
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,9 +5,9 @@ using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.DbContext
 {
-    public class QatarlivingDevContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
+    public class QLApplicationContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {
-        public QatarlivingDevContext(DbContextOptions<QatarlivingDevContext> options)
+        public QLApplicationContext(DbContextOptions<QLApplicationContext> options)
             : base(options)
         {
         }
