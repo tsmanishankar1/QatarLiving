@@ -14,7 +14,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsKey = true, IsFilterable = true)]
         public string Id { get; set; }
 
-        [SearchableField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true)]
         public string? SubscriptionId { get; set; }
 
         [SearchableField(IsFilterable = true)]
