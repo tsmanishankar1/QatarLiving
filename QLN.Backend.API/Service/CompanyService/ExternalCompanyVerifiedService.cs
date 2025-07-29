@@ -13,16 +13,17 @@ using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+
 namespace QLN.Backend.API.Service.CompanyService
 {
-    public class ExternalCompanyService : ICompanyService
+    public class ExternalCompanyVerifiedService : ICompanyVerifiedService
     {
         private readonly DaprClient _dapr;
-        private readonly ILogger<ExternalCompanyService> _logger;
+        private readonly ILogger<ExternalCompanyVerifiedService> _logger;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
         private readonly IFileStorageBlobService _blobStorage;
         private readonly UserManager<ApplicationUser> _userManager;
-        public ExternalCompanyService(DaprClient dapr, ILogger<ExternalCompanyService> logger,
+        public ExternalCompanyVerifiedService(DaprClient dapr, ILogger<ExternalCompanyVerifiedService> logger,
             IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr;
@@ -31,7 +32,7 @@ namespace QLN.Backend.API.Service.CompanyService
             _blobStorage = blobStorage;
             _userManager = userManager;
         }
-        public async Task<string> CreateCompany(ServiceCompanyDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCompany(VerifiedCompanyDto dto, CancellationToken cancellationToken = default)
         {
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
@@ -64,21 +65,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-                if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
-                {
-                    string cerExtension;
-                    string cerBase64Data;
-
-                    (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
-
-                    if (cerExtension is not ("png" or "jpg" or "pdf"))
-                        throw new ArgumentException("Certificate must be in PDF, PNG or JPG format.");
-
-                    cerBlobFileName = $"{dto.CompanyName}_{id}.{cerExtension}";
-                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
-                    dto.TherapeuticCertificate = cerBlobUrl;
-                }
-                var url = "/api/companyservice/createbyuserid";
+                var url = "/api/companyverified/createByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
@@ -134,12 +121,12 @@ namespace QLN.Backend.API.Service.CompanyService
             if (!string.IsNullOrWhiteSpace(cerFile))
                 await _blobStorage.DeleteFile(cerFile, "therapeuticcertificate", cancellationToken);
         }
-        public async Task<ServiceCompanyDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<VerifiedCompanyDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyservice/getById?id={id}";
-                return await _dapr.InvokeMethodAsync<ServiceCompanyDto>(
+                var url = $"/api/companyverified/getById?id={id}";
+                return await _dapr.InvokeMethodAsync<VerifiedCompanyDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -156,16 +143,16 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<ServiceCompanyDto>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<List<VerifiedCompanyDto>> GetAllCompanies(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<ServiceCompanyDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<VerifiedCompanyDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
-                    "api/companyservice/getAll",
+                    "api/companyverified/getAll",
                     cancellationToken);
-                return response ?? new List<ServiceCompanyDto>();
+                return response ?? new List<VerifiedCompanyDto>();
             }
             catch (Exception ex)
             {
@@ -173,7 +160,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> UpdateCompany(ServiceCompanyDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(VerifiedCompanyDto dto, CancellationToken cancellationToken = default)
         {
             string? crBlobFileName = null;
             string? logoBlobFileName = null;
@@ -204,21 +191,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
                     dto.CompanyLogo = logoBlobUrl;
                 }
-                if (!string.IsNullOrWhiteSpace(dto.TherapeuticCertificate) && !dto.TherapeuticCertificate.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    string cerExtension;
-                    string cerBase64Data;
-
-                    (cerExtension, cerBase64Data) = Base64Helper.ParseBase64(dto.TherapeuticCertificate);
-
-                    if (cerExtension is not ("png" or "jpg" or "pdf"))
-                        throw new ArgumentException("Certificat must be in PDF, PNG or JPG format.");
-
-                    cerBlobFileName = $"{dto.CompanyName}_{id}.{cerExtension}";
-                    var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
-                    dto.TherapeuticCertificate = cerBlobUrl;
-                }
-                var url = $"/api/companyservice/updateByUserId";
+                var url = $"/api/companyverified/updateByUserId";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -268,7 +241,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyservice/delete?id={id}";
+                var url = $"/api/companyverified/delete?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     ConstantValues.CompanyServiceAppId,
@@ -286,7 +259,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> ApproveCompany(Guid userId, CompanyServiceApproveDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ApproveCompany(Guid userId, CompanyVerificationApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -301,14 +274,14 @@ namespace QLN.Backend.API.Service.CompanyService
                 var isNowVerified = dto.IsVerified.GetValueOrDefault(false);
                 var shouldSendEmail = wasNotVerified && isNowVerified && !string.IsNullOrWhiteSpace(company.Email);
 
-                var requestDto = new CompanyServiceApproveDto
+                var requestDto = new CompanyVerificationApproveDto
                 {
                     CompanyId = dto.CompanyId,
                     IsVerified = dto.IsVerified,
                     Status = dto.Status
                 };
 
-                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
+                var url = $"/api/companyverified/approveByUserId?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
 
@@ -359,12 +332,12 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<CompanyServiceApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
+        public async Task<CompanyVerifyApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/getApproval?companyId={companyId}";
-                var response = await _dapr.InvokeMethodAsync<CompanyServiceApprovalResponseDto>(
+                var url = $"/api/companyverified/getApproval?companyId={companyId}";
+                var response = await _dapr.InvokeMethodAsync<CompanyVerifyApprovalResponseDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -383,11 +356,11 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyServiceVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/verifiedstatusbyuserId" +
+                var url = $"/api/companyverified/verifiedstatusbyuserId" +
                                   $"?isverified={isVerified.ToString().ToLower()}" +
                                   $"&userId={userId}" +
                                   $"&vertical={vertical}";
@@ -400,17 +373,17 @@ namespace QLN.Backend.API.Service.CompanyService
                     if (response.StatusCode == HttpStatusCode.NotFound)
                     {
                         _logger.LogWarning("No companies found for user {UserId} with status {IsVerified}", userId, isVerified);
-                        return new List<CompanyServiceVerificationStatusDto>();
+                        return new List<CompanyVerificationStatusDto>();
                     }
                 }
 
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 // TODO: Possibly create this once and reuse it, not creating a new instance every time
-                return JsonSerializer.Deserialize<List<CompanyServiceVerificationStatusDto>>(json, new JsonSerializerOptions
+                return JsonSerializer.Deserialize<List<CompanyVerificationStatusDto>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
-                }) ?? new List<CompanyServiceVerificationStatusDto>();
+                }) ?? new List<CompanyVerificationStatusDto>();
             }
             catch (Exception ex)
             {
@@ -418,13 +391,13 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<ServiceCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<VerifiedCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/getByUserId?userId={userId}";
+                var url = $"/api/companyverified/getByUserId?userId={userId}";
 
-                return await _dapr.InvokeMethodAsync<List<ServiceCompanyDto>>(
+                return await _dapr.InvokeMethodAsync<List<VerifiedCompanyDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
@@ -441,13 +414,13 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<ServiceProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<VerificationProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/statusByUserId?userId={userId}";
+                var url = $"/api/companyverified/statusByUserId?userId={userId}";
 
-                var companies = await _dapr.InvokeMethodAsync<List<ServiceProfileStatus>>(
+                var companies = await _dapr.InvokeMethodAsync<List<VerificationProfileStatus>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
                     url,
