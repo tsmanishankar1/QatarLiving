@@ -1,6 +1,6 @@
 @page "/content/events/create"
 @inherits EventCreateFormBase;
-
+@using QLN.ContentBO.WebUI.Models
 
 <EditForm Model="CurrentEvent" OnValidSubmit="HandleValidSubmit">
     <DataAnnotationsValidator />
@@ -164,7 +164,7 @@
                             </div>
                             <div style="display: flex; flex-direction: column;  align-items: flex-start; justify-content: center; flex-grow: 1;">
                                 <div style="display: flex; align-items: center; width: 100%;">
-                                    <MudTextField MaxLength="50" ReadOnly="!entry.IsSelected" @bind-Value="@entry.StartTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                                    <MudTextField MaxLength="50" ReadOnly="!entry.IsSelected" @bind-Value="@entry.FreeTextTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                                 </div>
                                 @if (!string.IsNullOrEmpty(entry.ErrorMsg))
                                 {
