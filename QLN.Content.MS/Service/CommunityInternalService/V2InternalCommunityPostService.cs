@@ -529,6 +529,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             {
                 Console.WriteLine($"[START] Looking for post with slug: {slug}");
 
+                // Get all post keys from index
                 var keys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: cancellationToken) ?? new();
 
                 Console.WriteLine($"[INFO] Retrieved {keys.Count} keys from IndexKey = {IndexKey}");
@@ -539,17 +540,15 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     return null;
                 }
 
+                // Bulk get all posts
                 var items = await _dapr.GetBulkStateAsync(StoreName, keys, parallelism: null, cancellationToken: cancellationToken);
 
+                // Deserialize and filter active posts
+                var allPosts = new List<V2CommunityPostDto>();
                 foreach (var item in items)
                 {
-                    Console.WriteLine($"[LOOP] Checking key: {item.Key}");
-
                     if (string.IsNullOrWhiteSpace(item.Value))
-                    {
-                        Console.WriteLine($"[SKIP] Empty value for key: {item.Key}");
                         continue;
-                    }
 
                     try
                     {
@@ -558,99 +557,160 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             PropertyNameCaseInsensitive = true
                         });
 
-                        if (post == null)
-                        {
-                            Console.WriteLine($"[SKIP] Null post after deserialization. Key: {item.Key}");
+                        if (post == null || !post.IsActive)
                             continue;
-                        }
 
-                        if (!post.IsActive)
-                        {
-                            Console.WriteLine($"[SKIP] Post is not active. Key: {item.Key}");
-                            continue;
-                        }
-
-                        if (!string.Equals(post.Slug, slug, StringComparison.OrdinalIgnoreCase))
-                        {
-                            Console.WriteLine($"[SKIP] Slug mismatch. Found: {post.Slug}, Looking for: {slug}");
-                            continue;
-                        }
-
-                        Console.WriteLine($"[MATCH] Post matched. ID: {post.Id}");
-
-                        // Initialize collections
-                        post.LikedUserIds ??= new();
-                        post.CommentedUserIds ??= new();
-
-                        // Get liked users
-                        var likeIndexKey = $"like-index-{post.Id}";
-                        var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: cancellationToken);
-                        post.LikedUserIds = (likedUsers ?? new())
-                            .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
-                            .ToList();
-                        post.LikeCount = post.LikedUserIds.Count;
-
-                        Console.WriteLine($"[LIKE] {post.LikeCount} users liked the post.");
-
-                        // Get comments
-                        var commentIndexKey = $"comment-index-{post.Id}";
-                        var commentIds = await _dapr.GetStateAsync<List<string>>(StoreName, commentIndexKey, cancellationToken: cancellationToken);
-
-                        if (commentIds != null && commentIds.Count > 0)
-                        {
-                            Console.WriteLine($"[COMMENT] Found {commentIds.Count} comment IDs.");
-
-                            var commentKeys = commentIds.Select(cid => $"comment-{post.Id}-{cid}").ToList();
-                            var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null, cancellationToken: cancellationToken);
-
-                            foreach (var state in commentStates)
-                            {
-                                if (string.IsNullOrWhiteSpace(state.Value))
-                                    continue;
-
-                                try
-                                {
-                                    var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
-                                    {
-                                        PropertyNameCaseInsensitive = true
-                                    });
-
-                                    if (comment is { IsActive: true } &&
-                                        !string.IsNullOrWhiteSpace(comment.UserId) &&
-                                        comment.UserId != "string")
-                                    {
-                                        post.CommentedUserIds.Add(comment.UserId);
-                                    }
-                                }
-                                catch (JsonException ex)
-                                {
-                                    _logger.LogWarning(ex, "Failed to deserialize comment for key: {Key}", state.Key);
-                                    Console.WriteLine($"[ERROR] Deserialization failed for comment key: {state.Key}");
-                                }
-                            }
-
-                            post.CommentedUserIds = post.CommentedUserIds
-                                .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
-                                .Distinct()
-                                .ToList();
-
-                            post.CommentCount = post.CommentedUserIds.Count;
-                            Console.WriteLine($"[COMMENT] Total valid unique commenters: {post.CommentCount}");
-                        }
-
-                        return post;
+                        allPosts.Add(post);
                     }
                     catch (JsonException ex)
                     {
-                        _logger.LogWarning(ex, "Skipping item {Key} due to deserialization failure", item.Key);
-                        Console.WriteLine($"[ERROR] Post deserialization failed for key: {item.Key}");
+                        _logger.LogWarning(ex, "Failed to deserialize post for key: {Key}", item.Key);
                         continue;
                     }
                 }
 
-                _logger.LogInformation("No matching post found with slug: {Slug}", slug);
-                Console.WriteLine($"[INFO] No post found with slug: {slug}");
-                return null;
+                // Find matched post by slug (case insensitive)
+                var matchedPost = allPosts.FirstOrDefault(p => string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
+                if (matchedPost == null)
+                {
+                    Console.WriteLine($"[INFO] No post found with slug: {slug}");
+                    return null;
+                }
+
+                // Initialize collections
+                matchedPost.LikedUserIds ??= new();
+                matchedPost.CommentedUserIds ??= new();
+
+                // Load likes for matched post
+                var likeIndexKey = $"like-index-{matchedPost.Id}";
+                var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: cancellationToken) ?? new List<string>();
+                matchedPost.LikedUserIds = likedUsers
+                    .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                    .ToList();
+                matchedPost.LikeCount = matchedPost.LikedUserIds.Count;
+
+                Console.WriteLine($"[LIKE] {matchedPost.LikeCount} users liked the post.");
+
+                // Load comments for matched post
+                var commentIndexKey = $"comment-index-{matchedPost.Id}";
+                var commentIds = await _dapr.GetStateAsync<List<string>>(StoreName, commentIndexKey, cancellationToken: cancellationToken) ?? new List<string>();
+
+                matchedPost.CommentedUserIds.Clear();
+                int activeCommentCount = 0;
+
+                if (commentIds.Count > 0)
+                {
+                    var commentKeys = commentIds.Select(cid => $"comment-{matchedPost.Id}-{cid}").ToList();
+                    var commentStates = await _dapr.GetBulkStateAsync(StoreName, commentKeys, null, cancellationToken: cancellationToken);
+
+                    foreach (var state in commentStates)
+                    {
+                        if (string.IsNullOrWhiteSpace(state.Value))
+                            continue;
+
+                        try
+                        {
+                            var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                            if (comment != null && comment.IsActive &&
+                                !string.IsNullOrWhiteSpace(comment.UserId) &&
+                                comment.UserId != "string")
+                            {
+                                matchedPost.CommentedUserIds.Add(comment.UserId);
+                                activeCommentCount++;
+                            }
+                        }
+                        catch (JsonException ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to deserialize comment for key: {Key}", state.Key);
+                            Console.WriteLine($"[ERROR] Deserialization failed for comment key: {state.Key}");
+                        }
+                    }
+
+                    matchedPost.CommentedUserIds = matchedPost.CommentedUserIds
+                        .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                        .Distinct()
+                        .ToList();
+                }
+
+                matchedPost.CommentCount = activeCommentCount;
+                Console.WriteLine($"[COMMENT] Total valid unique commenters: {matchedPost.CommentCount}");
+
+                // Load MoreArticles: recent 3 posts excluding current, with full like/comment load
+                var recentPosts = allPosts
+                    .Where(p => p.Id != matchedPost.Id)
+                    .OrderByDescending(p => p.DateCreated)
+                    .Take(3)
+                    .ToList();
+
+                foreach (var post in recentPosts)
+                {
+                    post.LikedUserIds ??= new();
+                    post.CommentedUserIds ??= new();
+
+                    // Load likes for each recent post
+                    var lKey = $"like-index-{post.Id}";
+                    var lUsers = await _dapr.GetStateAsync<List<string>>(StoreName, lKey, cancellationToken: cancellationToken) ?? new List<string>();
+                    post.LikedUserIds = lUsers
+                        .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                        .ToList();
+                    post.LikeCount = post.LikedUserIds.Count;
+
+                    // Load comments for each recent post
+                    var cKey = $"comment-index-{post.Id}";
+                    var cIds = await _dapr.GetStateAsync<List<string>>(StoreName, cKey, cancellationToken: cancellationToken) ?? new List<string>();
+
+                    post.CommentedUserIds.Clear();
+                    int postActiveCommentCount = 0;
+
+                    if (cIds.Count > 0)
+                    {
+                        var cKeys = cIds.Select(cid => $"comment-{post.Id}-{cid}").ToList();
+                        var cStates = await _dapr.GetBulkStateAsync(StoreName, cKeys, null, cancellationToken: cancellationToken);
+
+                        foreach (var state in cStates)
+                        {
+                            if (string.IsNullOrWhiteSpace(state.Value))
+                                continue;
+
+                            try
+                            {
+                                var comment = JsonSerializer.Deserialize<CommunityCommentDto>(state.Value, new JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                });
+
+                                if (comment != null && comment.IsActive &&
+                                    !string.IsNullOrWhiteSpace(comment.UserId) &&
+                                    comment.UserId != "string")
+                                {
+                                    post.CommentedUserIds.Add(comment.UserId);
+                                    postActiveCommentCount++;
+                                }
+                            }
+                            catch (JsonException ex)
+                            {
+                                _logger.LogWarning(ex, "Failed to deserialize comment for key: {Key}", state.Key);
+                            }
+                        }
+
+                        post.CommentedUserIds = post.CommentedUserIds
+                            .Where(uid => !string.IsNullOrWhiteSpace(uid) && uid != "string")
+                            .Distinct()
+                            .ToList();
+                    }
+
+                    post.CommentCount = postActiveCommentCount;
+                }
+
+                matchedPost.MoreArticles = recentPosts;
+
+                Console.WriteLine($"[INFO] Found {matchedPost.MoreArticles.Count} more articles.");
+
+                return matchedPost;
             }
             catch (Exception ex)
             {
