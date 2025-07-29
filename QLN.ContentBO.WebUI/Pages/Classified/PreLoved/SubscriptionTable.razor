@@ -2,6 +2,7 @@
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models
 
 <MudPaper Class="pa-4">
     
@@ -72,7 +73,8 @@
         }
     </div>
 
-    <MudTable Items="Listings"
+    <MudTable T="PrelovedListing"
+        Items="Listings"
               Hover="true"
               Bordered="true"
               Elevation="0"
@@ -96,7 +98,7 @@
         </HeaderContent>
 
         <RowTemplate>
-            <MudTd>@context.AdId</MudTd>
+            <MudTd>@context.Id</MudTd>
             <MudTd>@context.UserId</MudTd>
             <MudTd>@context.Section</MudTd> 
             <MudTd>@context.UserName</MudTd>
@@ -105,8 +107,8 @@
             <MudTd>@context.Whatsapp</MudTd>
             <MudTd>@context.Amount</MudTd>
             <MudTd>@context.Status</MudTd>
-            <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-            <MudTd>@context.ExpiryDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+            <MudTd>@context.CreatedAt.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+            <MudTd>@(context.ExpiryDate?.ToString("dd-MM-yyyy hh:mm tt") ?? "-")</MudTd>
             <MudTd>
                 <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
                      @if (selectedTab != "pendingApproval")

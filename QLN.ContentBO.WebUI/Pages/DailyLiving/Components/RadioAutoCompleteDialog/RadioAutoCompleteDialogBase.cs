@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.ContentBO.WebUI.Models;
+using System;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using MudBlazor;
 public class RadioAutoCompleteDialogBase : ComponentBase
 {
     [Parameter] public string Title { get; set; } = "Featured Event";
@@ -116,13 +117,30 @@ public class RadioAutoCompleteDialogBase : ComponentBase
         var matched = optionsList.Any(e => e.Title.Equals(text, StringComparison.InvariantCultureIgnoreCase));
         _autocompleteError = matched ? null : "No matching event found.";
     }
+
     private bool IsValidYouTubeUrl(string url)
     {
-        if (string.IsNullOrWhiteSpace(url))
+        if (string.IsNullOrWhiteSpace(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
             return false;
-        var pattern = @"^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w\-]{11}(&\S*)?$";
-        return Regex.IsMatch(url, pattern, RegexOptions.IgnoreCase);
+
+        var host = uri.Host.ToLower();
+
+        bool isRegularVideo = host.Contains("youtube.com") &&
+                              uri.AbsolutePath.Equals("/watch", StringComparison.OrdinalIgnoreCase) &&
+                              Microsoft.AspNetCore.WebUtilities.QueryHelpers
+                                  .ParseQuery(uri.Query)
+                                  .ContainsKey("v");
+
+        bool isShortsVideo = host.Contains("youtube.com") &&
+                             uri.AbsolutePath.StartsWith("/shorts/", StringComparison.OrdinalIgnoreCase);
+
+        bool isShortLink = host.Contains("youtu.be") &&
+                           uri.AbsolutePath.Trim('/').Length == 11;
+
+        return isRegularVideo || isShortsVideo || isShortLink;
     }
+
+
     protected void OnTopicTypeChanged(string value)
 {
     TopicType = value;

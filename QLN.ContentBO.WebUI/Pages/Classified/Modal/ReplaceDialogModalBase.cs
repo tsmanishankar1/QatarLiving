@@ -23,6 +23,10 @@ public class ReplaceDialogModalBase : ComponentBase
 
     [Parameter]
     public string Placeholder { get; set; } = "Item Name*";
+
+    [Parameter]
+    public int ActiveIndex { get; set; }
+
     protected override void OnInitialized()
     {
         SelectedPick.SlotNumber = SlotNumber;
@@ -54,23 +58,55 @@ public class ReplaceDialogModalBase : ComponentBase
             StateHasChanged();
             return;
         }
+        string successMessage = ActiveIndex switch
+        {
+            0 => "Featured category replaced successfully.",
+            1 => "Seasonal pick replaced successfully.",
+            2 => "Featured store replaced successfully.",
+            _ => "Item replaced successfully."
+        };
 
-        var response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "classifieds");
+        string errorMessage = ActiveIndex switch
+        {
+            0 => "Failed to replace featured category.",
+            1 => "Failed to replace seasonal pick.",
+            2 => "Failed to replace featured store.",
+            _ => "Failed to replace item."
+        };
+        HttpResponseMessage? response = null;
+
+        switch (ActiveIndex)
+        {
+            case 0:
+                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, "classifieds");
+                break;
+            case 1:
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "classifieds");
+                break;
+            case 2:
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "classifieds");
+                break;
+            default:
+                Snackbar.Add("Unknown item type.", Severity.Error);
+                return;
+        }
+
 
         if (response?.IsSuccessStatusCode == true)
         {
-            Snackbar.Add("Seasonal pick replaced successfully.", Severity.Success);
+            Snackbar.Add(successMessage, Severity.Success);
 
             if (OnAdd.HasDelegate)
             {
                 await OnAdd.InvokeAsync(selected);
             }
 
-            MudDialog.Close(DialogResult.Ok(selected));
+            //MudDialog.Close(DialogResult.Ok(selected));
+            MudDialog.Close(DialogResult.Ok(true));
         }
         else
         {
-            Snackbar.Add("Failed to replace seasonal pick.", Severity.Error);
+            Snackbar.Add(errorMessage, Severity.Error);
         }
     }
 

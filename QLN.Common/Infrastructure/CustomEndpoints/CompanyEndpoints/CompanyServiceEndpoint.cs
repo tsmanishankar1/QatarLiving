@@ -410,23 +410,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-        public static RouteGroupBuilder MapCompanyApproval(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapCompanyApprovals(this RouteGroupBuilder group)
         {
-            group.MapPut("/approvecompanyservice", async Task<IResult> (
-                [FromBody] CompanyServiceApproveDto dto,
-                [FromServices] ICompanyService service,
+            
+            group.MapPut("/approve", async Task<IResult> (
+                [FromBody] CompanyVerificationApproveDto dto,
+                [FromServices] ICompanyVerifiedService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    var uid = httpContext.User.Claims.FirstOrDefault(c => c.Type == "uid")?.Value;
-                    if (!Guid.TryParse(uid, out var userGuid))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrWhiteSpace(userClaim))
                         return TypedResults.Forbid();
+
+                    JsonElement userData;
+                    try
+                    {
+                        userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    }
+                    catch (JsonException)
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    if (!userData.TryGetProperty("uid", out var uidElement) || string.IsNullOrWhiteSpace(uidElement.GetString()))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userId = uidElement.GetString(); // ✅ string userId extracted
 
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-                    await service.ApproveCompany(userGuid, dto, cancellationToken);
+
+                    await service.ApproveCompany(userId, dto, cancellationToken); // ✅ use string userId
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -456,36 +476,43 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
-            .WithName("ApproveServiceCompanyInternal")
+            .WithName("ApproveServiceVerificationCompany")
             .WithTags("Company")
             .WithSummary("Approve a company profile")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/approvebyuserid", async Task<Results<
+            // Internal endpoint via Dapr — uses string userId as query param
+            group.MapPut("/approveByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                CompanyServiceApproveDto dto,
-                ICompanyService service,
-                Guid userId,
+                CompanyVerificationApproveDto dto,
+                [FromQuery] string userId,
+                ICompanyVerifiedService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
-                            Detail = "UserId must be provided in the payload.",
+                            Detail = "UserId must be provided.",
                             Status = StatusCodes.Status400BadRequest
                         });
+                    }
 
-                    var result = await service.ApproveCompany(userId, dto, cancellationToken);
+                    if (dto == null)
+                        throw new KeyNotFoundException("Company approval data is missing.");
+
+                    var result = await service.ApproveCompany(userId, dto, cancellationToken); // ✅ string userId
                     return TypedResults.Ok(result);
                 }
                 catch (KeyNotFoundException ex)
@@ -509,13 +536,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(
-                           title: "Internal Server Error",
-                           detail: ex.Message,
-                           statusCode: StatusCodes.Status500InternalServerError
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-            .WithName("ApproveServiceCompanyInternalViaDapr")
+            .WithName("ApproveVerificationCompanyInternalViaDapr")
             .WithTags("Company")
             .WithSummary("Approve a company profile internally via Dapr")
             .ExcludeFromDescription()
@@ -526,6 +553,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+
+
+
+
         public static RouteGroupBuilder MapGetCompanyApprovalInfo(this RouteGroupBuilder group)
         {
             group.MapGet("/getapprovalcompanyservice", async Task<Results<
