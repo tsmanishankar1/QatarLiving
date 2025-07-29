@@ -53,7 +53,7 @@ namespace QLN.ContentBO.WebUI.Pages
         "Option 4"
     };
 
-        protected string? StartTimeSpan { get; set; }
+        protected string? FreeTextTimeField { get; set; }
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
         protected MudExRichTextEdit Editor;
@@ -156,6 +156,7 @@ namespace QLN.ContentBO.WebUI.Pages
                         endDate.Value.ToDateTime(TimeOnly.MinValue)
                     );
                     SelectedDateLabel = $"{startDate.Value:dd-MM-yyyy} to {endDate.Value:dd-MM-yyyy}";
+                    FreeTextTimeField = CurrentEvent?.EventSchedule?.GeneralTextTime;
                 }
                 else
                 {
@@ -421,10 +422,12 @@ namespace QLN.ContentBO.WebUI.Pages
                 });
             }
         }
-        protected bool IsValidTimeFormat(string? start)
+
+        protected bool IsValidTimeFormat(string? textTime)
         {
-            return !string.IsNullOrWhiteSpace(start);
+            return !string.IsNullOrWhiteSpace(textTime);
         }
+
         private async Task ShowSuccessModal(string title)
         {
             var parameters = new DialogParameters
@@ -510,7 +513,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
-                if (!IsValidTimeFormat(StartTimeSpan))
+                if (!IsValidTimeFormat(FreeTextTimeField))
                 {
                     _timeError = "Time are required.";
                     Snackbar.Add("Time are required.", severity: Severity.Error);
@@ -545,6 +548,7 @@ namespace QLN.ContentBO.WebUI.Pages
                         });
                     }
                 }
+                CurrentEvent.EventSchedule.GeneralTextTime = FreeTextTimeField; 
                 var response = await eventsService.UpdateEvents(CurrentEvent);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -682,7 +686,7 @@ namespace QLN.ContentBO.WebUI.Pages
             };
 
             SelectedDateLabel = string.Empty;
-            StartTimeSpan = null;
+            FreeTextTimeField = null;
             _dateRange = null;
             DayTimeList.Clear();
             _descriptionerror = string.Empty;

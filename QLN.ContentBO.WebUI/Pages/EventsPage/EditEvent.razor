@@ -153,7 +153,7 @@
             @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime  && !string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <MudTextField  MaxLength="50" @bind-Value="@StartTimeSpan" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
+                    <MudTextField  MaxLength="50" @bind-Value="@FreeTextTimeField" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                 </div>
                 @if (!string.IsNullOrEmpty(_timeError))
                 {
