@@ -11,7 +11,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 {
     public class EditServiceFormBase : ComponentBase
     {
-        [Inject] public IServiceService _serviceService { get; set; }
+        [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject] public IJSRuntime JSRuntime { get; set; }
          [Inject] public IDialogService DialogService { get; set; }
         [Parameter]

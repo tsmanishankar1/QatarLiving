@@ -171,7 +171,7 @@ namespace QLN.ContentBO.WebUI.Components.Sidebar
                 Children = new List<NavigationItem>
                 {
                     new() { Title = "Landing Page", Url = "/manage/services/landing" },
-                    new() { Title = "Services", Url = "/manage/services/listing" }, 
+                    new() { Title = "Services", Url = "/manage/services/listing/subscriptions" }, 
                 }
             },
              new() {

@@ -1,6 +1,7 @@
 @inherits P2PListingTableBase
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 
 <MudPaper Class="pa-4">
@@ -72,46 +73,60 @@
             </div>
         }
     </div>
-   <MudTable Items="Listings"
+    @if(Listings == null || !Listings.Any()){
+
+<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
+
+        
+    }
+    else{
+        <MudTable Items="Listings"
           Hover="true"
           Bordered="true"
           Elevation="0"
-           MultiSelection="true"
+          MultiSelection="true"
           RowCheckBoxVisible="true"
-            @bind-SelectedItems="SelectedListings"
+          @bind-SelectedItems="SelectedListings"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
-        <MudTh class="header-cell">Item image</MudTh>
+        <MudTh class="header-cell">Item Image</MudTh>
         <MudTh class="header-cell">Ad ID</MudTh>
-        <MudTh class="header-cell">Order Id</MudTh>
-        <MudTh class="header-cell">Subscription Plan</MudTh>
-        <MudTh class="header-cell">Username</MudTh>
-        <MudTh class="header-cell">Email</MudTh>
-        <MudTh class="header-cell">Mobile</MudTh>
-        <MudTh class="header-cell">Whatsapp</MudTh>
-        <MudTh class="header-cell">Amount</MudTh>
-        <MudTh class="header-cell">Status</MudTh>
-        <MudTh class="header-cell">Start Date</MudTh>
-        <MudTh class="header-cell">End Date</MudTh>
+        <MudTh class="header-cell" >User ID</MudTh>
+        <MudTh class="header-cell">Ad Title</MudTh>
+        <MudTh class="header-cell">User Name</MudTh>
+        <MudTh class="header-cell">Category</MudTh>
+        <MudTh class="header-cell">Sub Category</MudTh>
+        <MudTh class="header-cell">Certification</MudTh>
+        <MudTh class="header-cell">Creation Date</MudTh>
+        <MudTh class="header-cell">Date Published</MudTh>
+        <MudTh class="header-cell">Date Expiry</MudTh>
         <MudTh class="header-cell">Actions</MudTh>
     </HeaderContent>
 
     <RowTemplate>
         <MudTd>
-                <img src="@context.ImageUrl" style="width: 136px; height: 61px; object-fit: cover; border-radius: 4px;" />
+            @if (context.ImageUpload?.FirstOrDefault()?.Url is string imageUrl)
+            {
+                <img src="@imageUrl" style="width: 136px; height: 61px; object-fit: cover; border-radius: 4px;" />
+            }
+            else
+            {
+                <div style="width: 136px; height: 61px; background-color: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                    No Image
+                </div>
+            }
         </MudTd>
-        <MudTd>@context.AdId</MudTd>
-        <MudTd>@context.OrderId</MudTd>
-        <MudTd>@context.SubscriptionPlan</MudTd>
-        <MudTd>@context.Username</MudTd>
-        <MudTd>@context.Email</MudTd>
-        <MudTd>@context.Mobile</MudTd>
-        <MudTd>@context.Whatsapp</MudTd>
-        <MudTd>@context.Amount</MudTd>
-        <MudTd>@context.Status</MudTd>
-        <MudTd>@context.StartDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd>@context.EndDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd>@context.Id</MudTd>
+        <MudTd>@context.UserId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTitle) ? "-" : context.AdTitle)" Class="truncate-text hover-title">@context.AdTitle</MudTd>
+        <MudTd>@context.UserName</MudTd>
+        <MudTd>@context.Category</MudTd>
+        <MudTd>@context.SubCategory</MudTd>
+        <MudTd>Id</MudTd>
+        <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+        <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
+        <MudTd>@context.DateExpiry?.ToString("dd-MM-yyyy hh:mm tt")</MudTd>
         <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
                 <MudMenuItem OnClick="() => OnEdit(context)">
@@ -127,6 +142,8 @@
         </MudTd>
     </RowTemplate>
 </MudTable>
+
+    }
      <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
                 OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 </MudPaper>

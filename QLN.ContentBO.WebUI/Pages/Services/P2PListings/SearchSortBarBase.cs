@@ -73,27 +73,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
             datePublished = null;
         }
 
-        protected async Task AddEventCallback()
-        {
-            var parameters = new DialogParameters
-        {
-            { "Title", "Create Ad" },
-            { "Label", "User Email*" },
-            { "ButtonText", "Continue" },
-            { "ListItems", new List<DropdownItem>
-                {
-                    new() { Id = 1, Label = "john.doe@hotmail.com" },
-                    new() { Id = 2, Label = "jane.doe@gmail.com" },
-                    new() { Id = 3, Label = "alice@example.com" },
-                    new() { Id = 4, Label = "bob@workmail.com" },
-                    new() { Id = 5, Label = "emma@company.com" }
-                }
-            },
-            { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
-        };
-
-            DialogService.Show<AutoSelectDialog>("", parameters);
-        }
 
         protected Task HandleSelect(DropdownItem selected)
         {

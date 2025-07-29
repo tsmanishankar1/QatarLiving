@@ -2,125 +2,47 @@
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models;
 
 <MudPaper Class="pa-4">
-    <ToggleTabs Options="@tabOptions"
-                ActiveValue="@selectedTab"
-                OnChange="@OnTabChanged" />
-    <div class="tab-content">
-        @if (SelectedListings.Count > 0)
-        {
-            <div class="action-buttons">
-                @if (selectedTab == "pendingApproval")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
-                               OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
-                        Approve
-                    </MudButton>
-                }
-                else if (selectedTab == "published")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
-                               OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", UnpublishSelected)'>
-                        Unpublish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-                else if (selectedTab == "unpublished")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
-                               OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", PublishSelected)'>
-                        Publish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-
-                @if (selectedTab == "promoted")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unpromote Items", "Are you sure you want to unpromote selected Items?", "Unpromote", UnpromoteSelected)'>
-                        Unpromote
-                    </MudButton>
-                }
-
-                @if (selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unfeature Items", "Are you sure you want to unfeature selected Items?", "Unfeature", UnfeatureSelected)'>
-                        Unfeature
-                    </MudButton>
-                }
-
-                @if (selectedTab == "p2p" || selectedTab == "promoted" || selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-            </div>
-
-            <div class="alert-container">
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
-                @($"{SelectedListings.Count} item(s) selected.")
-            </div>
-        }
-    </div>
    <MudTable Items="Listings"
           Hover="true"
           Bordered="true"
           Elevation="0"
-           MultiSelection="true"
-          RowCheckBoxVisible="true"
-            @bind-SelectedItems="SelectedListings"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
         <MudTh class="header-cell">Ad ID</MudTh>
         <MudTh class="header-cell">Order Id</MudTh>
-        <MudTh class="header-cell">Subscription Plan</MudTh>
+        <MudTh class="header-cell">Product Type</MudTh>
         <MudTh class="header-cell">Username</MudTh>
         <MudTh class="header-cell">Email</MudTh>
         <MudTh class="header-cell">Mobile</MudTh>
         <MudTh class="header-cell">Whatsapp</MudTh>
         <MudTh class="header-cell">Amount</MudTh>
         <MudTh class="header-cell">Status</MudTh>
+        <MudTh class="header-cell">Create Date</MudTh>
+        <MudTh class="header-cell">Publish Date</MudTh>
         <MudTh class="header-cell">Start Date</MudTh>
         <MudTh class="header-cell">End Date</MudTh>
-        <MudTh class="header-cell">Actions</MudTh>
+        <MudTh class="header-cell">Views</MudTh>
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd>@context.AdId</MudTd>
+        <MudTd>@context.Id</MudTd>
         <MudTd>@context.OrderId</MudTd>
-        <MudTd>@context.SubscriptionPlan</MudTd>
-        <MudTd>@context.Username</MudTd>
+        <MudTd>@context.ProductType</MudTd>
+        <MudTd>@context.UserName</MudTd>
         <MudTd>@context.Email</MudTd>
         <MudTd>@context.Mobile</MudTd>
         <MudTd>@context.Whatsapp</MudTd>
         <MudTd>@context.Amount</MudTd>
-        <MudTd>@context.Status</MudTd>
-        <MudTd>@context.StartDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd>@context.EndDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd>
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                <MudMenuItem OnClick="() => OnEdit(context)">
-                    <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
-                </MudMenuItem>
-                <MudMenuItem OnClick="() => OnPreview(context)">
-                    <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
-                </MudMenuItem>
-                <MudMenuItem OnClick="() => OnRemove(context)" Class="mud-text-error">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
-                </MudMenuItem>
-            </MudMenu>
-        </MudTd>
+         <MudTd>@((ServiceStatus)context.Status)</MudTd>
+        <MudTd>@context.CreationDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd>@context.DatePublished?.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd>@context.StartDate</MudTd>
+        <MudTd>@context.EndDate</MudTd>
+        <MudTd>@context.Views</MudTd>
     </RowTemplate>
 </MudTable>
      <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
