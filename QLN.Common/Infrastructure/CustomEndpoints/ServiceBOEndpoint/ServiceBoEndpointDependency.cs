@@ -14,7 +14,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
         {
             group.MapServiceAdGetAllEndpoints()
                 .MapServiceAdPaymentSummaryEndpoints()
-                .MapServiceP2PAdGetAllEndpoints();
+                .MapServiceP2PAdGetAllEndpoints()
+                .MapServiceSubscriptionAdGetAllEndpoints();
                 return group;
         }
     }

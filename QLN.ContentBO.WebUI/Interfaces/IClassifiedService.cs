@@ -6,7 +6,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
 {
     public interface IClassifiedService
     {
-          /// <summary>
+        /// <summary>
         /// Gets Classifieds by IdCategoryTrees.
         /// </summary>
         /// <param name="vertical">Classifieds CategoryTrees</param>
@@ -25,5 +25,9 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical);
         Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical);
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
+        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string userId, string vertical);
+        Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
+        Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
+
     }
 }

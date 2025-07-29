@@ -25,8 +25,8 @@ namespace QLN.Common.DTO_s
         {
             public List<CommunityPostWithReports> Items { get; set; } = new();
             public int TotalCount { get; set; }
-            public int? Page { get; set; }
-            public int? PerPage { get; set; }
+            public int? PageNumber { get; set; }
+            public int? PageSize { get; set; }
         }
         public class V2ReportStatus
         {

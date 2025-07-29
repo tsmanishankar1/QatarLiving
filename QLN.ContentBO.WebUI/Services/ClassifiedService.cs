@@ -19,7 +19,7 @@ namespace QLN.ContentBO.WebUI.Services
             _httpClient = httpClient;
             _logger = Logger;
         }
-       public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
+        public async Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical)
         {
             try
             {
@@ -40,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("GetFeaturedSeasonalPicks"+ex.Message);
+                _logger.LogError("GetFeaturedSeasonalPicks" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -260,6 +260,48 @@ namespace QLN.ContentBO.WebUI.Services
             catch (Exception ex)
             {
                 _logger.LogError("ReorderFeaturedCategoryAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        /// <summary>
+        /// Searches classifieds by vertical using a common API pattern.
+        /// </summary>
+        /// <param name="vertical">The vertical segment of the API URL (e.g., "getall-items")</param>
+        /// <param name="searchPayload">The request payload</param>
+        /// <returns>A list of HttpResponseMessage</returns>
+        public async Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload)
+        {
+            var responses = new List<HttpResponseMessage>();
+
+            try
+            {
+                var endpoint = $"/api/v2/classifiedbo/{vertical}";
+                var response = await _httpClient.PostAsJsonAsync(endpoint, searchPayload);
+                responses.Add(response);
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SearchClassifiedsAsync Error for {vertical}: " + ex);
+                responses.Add(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+                return responses;
+            }
+        }
+        public async Task<HttpResponseMessage?> PerformBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-action")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformBulkActionAsync Error: " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
