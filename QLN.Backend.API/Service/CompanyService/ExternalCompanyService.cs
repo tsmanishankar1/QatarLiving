@@ -138,7 +138,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyservice/getById?id={id}";
+                var url = $"/api/companyservice/getcompanyservicebyid?id={id}";
                 return await _dapr.InvokeMethodAsync<ServiceCompanyDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
@@ -163,7 +163,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 var response = await _dapr.InvokeMethodAsync<List<ServiceCompanyDto>>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
-                    "api/companyservice/getAll",
+                    "api/companyservice/getallcompanyservice",
                     cancellationToken);
                 return response ?? new List<ServiceCompanyDto>();
             }
@@ -218,7 +218,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     var cerBlobUrl = await _blobStorage.SaveBase64File(cerBase64Data, cerBlobFileName, "therapeuticcertificate", cancellationToken);
                     dto.TherapeuticCertificate = cerBlobUrl;
                 }
-                var url = $"/api/companyservice/updateByUserId";
+                var url = $"/api/companyservice/updatebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
                     JsonSerializer.Serialize(dto),
@@ -268,7 +268,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyservice/delete?id={id}";
+                var url = $"/api/companyservice/deletecompanyservice?id={id}";
                 await _dapr.InvokeMethodAsync(
                     HttpMethod.Delete,
                     ConstantValues.CompanyServiceAppId,
@@ -308,7 +308,7 @@ namespace QLN.Backend.API.Service.CompanyService
                     Status = dto.Status
                 };
 
-                var url = $"/api/companyprofile/approveByUserId?userId={userId}";
+                var url = $"/api/companyservice/approvebyuserid?userId={userId}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(requestDto), Encoding.UTF8, "application/json");
 
@@ -363,7 +363,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyprofile/getApproval?companyId={companyId}";
+                var url = $"/api/companyservice/getapprovalcompanyservice?companyId={companyId}";
                 var response = await _dapr.InvokeMethodAsync<CompanyServiceApprovalResponseDto>(
                     HttpMethod.Get,
                     ConstantValues.CompanyServiceAppId,
@@ -387,7 +387,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyprofile/verifiedstatusbyuserId" +
+                var url = $"/api/companyservice/verifiedstatusbyuserid" +
                                   $"?isverified={isVerified.ToString().ToLower()}" +
                                   $"&userId={userId}" +
                                   $"&vertical={vertical}";
@@ -406,7 +406,6 @@ namespace QLN.Backend.API.Service.CompanyService
 
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                // TODO: Possibly create this once and reuse it, not creating a new instance every time
                 return JsonSerializer.Deserialize<List<CompanyServiceVerificationStatusDto>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
@@ -422,7 +421,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyprofile/getByUserId?userId={userId}";
+                var url = $"/api/companyservice/getbyuserid?userId={userId}";
 
                 return await _dapr.InvokeMethodAsync<List<ServiceCompanyDto>>(
                     HttpMethod.Get,
@@ -445,7 +444,7 @@ namespace QLN.Backend.API.Service.CompanyService
         {
             try
             {
-                var url = $"/api/companyprofile/statusByUserId?userId={userId}";
+                var url = $"/api/companyservice/statusbyuserid?userId={userId}";
 
                 var companies = await _dapr.InvokeMethodAsync<List<ServiceProfileStatus>>(
                     HttpMethod.Get,
