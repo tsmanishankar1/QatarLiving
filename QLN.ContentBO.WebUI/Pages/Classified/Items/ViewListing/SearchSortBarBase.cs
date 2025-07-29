@@ -3,6 +3,8 @@ using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
@@ -16,7 +18,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
         [Parameter] public EventCallback OnClearFilters { get; set; }
-
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
+        [Inject] protected ISnackbar Snackbar { get; set; } = default!;
         protected bool ascending = true;
         protected string searchText = string.Empty;
 
@@ -143,10 +146,41 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             var result = await dialog.Result;
         }
 
-        private async Task ExportToExcel()
+     private async Task ExportToExcel()
+    {
+        try
         {
-          
-        }
+            if (Items == null || !Items.Any())
+            {
+                Snackbar.Add("No data available to export.", Severity.Warning);
+                return;
+            }
 
+            // Prepare export data with capitalized headers
+            var exportData = Items.Select(x => new Dictionary<string, object?>
+            {
+                ["Image URL"] = x.Images?.FirstOrDefault()?.Url ?? "-",
+                ["Ad ID"] = x.Id,
+                ["Ad Type"] = x.AdType,
+                ["Ad Title"] = x.Title,
+                ["User ID"] = x.UserId,
+                ["User Name"] = x.UserName,
+                ["Category"] = x.Category,
+                ["Sub Category"] = x.L2Category,
+                ["Section"] = x.L1Category,
+                ["Created At"] = x.CreatedAt?.ToString("yyyy/MM/dd") ?? "-",
+                ["Published Date"] = x.PublishedDate?.ToString("yyyy/MM/dd") ?? "-",
+                ["Expiry Date"] = x.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-"
+            }).ToList();
+
+            await JS.InvokeVoidAsync("exportToExcel", exportData, "Classified_Items_ViewListing.xlsx", "Classified Items");
+
+            Snackbar.Add("Export successful!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+    }
     }
 }

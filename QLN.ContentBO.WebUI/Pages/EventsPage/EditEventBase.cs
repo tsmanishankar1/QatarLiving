@@ -11,7 +11,7 @@ using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using QLN.ContentBO.WebUI.Components;
 using System.Net;
-using Markdig.Syntax;
+
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EditEventBase : QLComponentBase
@@ -34,6 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string? _PriceError;
         public string? _timeTypeError;
         public string? _eventTypeError;
+        protected string? _CategoryError;
         protected string? _timeError;
         protected string? _LocationError;
         protected string? _descriptionerror;
@@ -249,14 +250,13 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
 
-                // Update current event coordinates
                 CurrentEvent.Latitude = lat.ToString();
                 CurrentEvent.Longitude = lng.ToString();
 
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Latitude));
                 _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.Longitude));
 
-                StateHasChanged(); // Reflect changes in UI
+                StateHasChanged(); 
                 return Task.CompletedTask;
             }
         protected Task OpenDialogAsync()
@@ -284,17 +284,15 @@ namespace QLN.ContentBO.WebUI.Pages
                     CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
                     _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
                     _coverImageError = null;
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleFilesChanged");
             }
-            finally
-            {
-                _fileUpload?.ResetValidation();
-            }
         }
+
         protected void GeneratePerDayTimeList()
     {
         DayTimeList.Clear();
@@ -504,6 +502,12 @@ namespace QLN.ContentBO.WebUI.Pages
             _coverImageError = null;
             _timeError = null;
             bool hasError = false;
+            if (CurrentEvent == null || CurrentEvent.CategoryId == 0)
+            {
+                _CategoryError = "Category is required.";
+                Snackbar.Add("Category is required.", severity: Severity.Error);
+                return;
+            }
              if (CurrentEvent?.EventType == 0)
             {
                 _eventTypeError = "Event Type is required.";

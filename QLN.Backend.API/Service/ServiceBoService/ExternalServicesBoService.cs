@@ -1,9 +1,9 @@
 ﻿
-
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 using System.Text.Json;
 
@@ -309,7 +309,35 @@ namespace QLN.Backend.API.Service.ServiceBoService
                 throw;
             }
         }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
+    VerticalType verticalId,
+    SubVertical? subVerticalId,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByVertical?verticalId={(int)verticalId}" +
+                          (subVerticalId != null ? $"&subVerticalId={(int)subVerticalId}" : string.Empty);
+
+                return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "No companies found for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                return new List<CompanyProfileDto>(); // Or return null if your use case needs it
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                throw;
+            }
+        }
 
 
     }
+
 }
