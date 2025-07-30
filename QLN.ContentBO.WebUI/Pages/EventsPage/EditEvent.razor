@@ -55,7 +55,8 @@
                              Disabled="@(!IsFeesSelected)"
                              Immediate="true"
                              Max=int.MaxValue
-                             InputMode="InputMode.numeric" />
+                             InputMode="InputMode.numeric"
+                             Pattern="^\d*$" />
             @if (!string.IsNullOrEmpty(_PriceError))
             {
                 <div class="event-mud-error-text">@_PriceError</div>

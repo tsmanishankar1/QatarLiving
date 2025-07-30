@@ -46,7 +46,8 @@
                              Disabled="@(!IsFeesSelected)"
                              Immediate="true"
                              Max=int.MaxValue
-                             InputMode="InputMode.numeric" />
+                             InputMode="InputMode.numeric" 
+                             Pattern="^\d*$" />
             <MudTextField Variant="Variant.Outlined" Label="Redirection Link" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;" MaxLength="255" />
 
 
