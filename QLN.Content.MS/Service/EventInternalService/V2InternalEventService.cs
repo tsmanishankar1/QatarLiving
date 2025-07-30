@@ -154,15 +154,15 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule.StartDate > schedule.EndDate)
                 throw new ArgumentException("StartDate must not be later than EndDate.");
 
-            if (!string.IsNullOrWhiteSpace(schedule.GeneralTextTime) && schedule.GeneralTextTime.Length > 20)
-                throw new ArgumentException("GeneralTextTime must not exceed 20 characters.");
+            if (!string.IsNullOrWhiteSpace(schedule.GeneralTextTime) && schedule.GeneralTextTime.Length > 50)
+                throw new ArgumentException("GeneralTextTime must not exceed 50 characters.");
 
             if (schedule.TimeSlots != null)
             {
                 foreach (var slot in schedule.TimeSlots)
                 {
-                    if (!string.IsNullOrWhiteSpace(slot.TextTime) && slot.TextTime.Length > 20)
-                        throw new ArgumentException("Each TimeSlot.TextTime must not exceed 20 characters.");
+                    if (!string.IsNullOrWhiteSpace(slot.TextTime) && slot.TextTime.Length > 50)
+                        throw new ArgumentException("Each TimeSlot.TextTime must not exceed 50 characters.");
                 }
             }
         }

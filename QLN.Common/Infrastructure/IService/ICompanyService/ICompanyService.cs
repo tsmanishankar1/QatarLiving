@@ -1,11 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
-using QLN.Common.DTO_s;
+﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace QLN.Common.Infrastructure.IService.ICompanyService
 {
@@ -18,7 +13,7 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task DeleteCompany(Guid id, CancellationToken cancellationToken = default);
         Task<string> ApproveCompany(string userId, CompanyServiceApproveDto dto, CancellationToken cancellationToken = default);
         Task<CompanyServiceApprovalResponseDto?> GetCompanyApprovalInfo(Guid companyId, CancellationToken cancellationToken = default);
-        Task<List<CompanyServiceVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default);
+        Task<List<CompanyServiceVerificationStatusDto>> VerificationStatus(string userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default);
         Task<List<ServiceCompanyDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default);
         Task<List<ServiceProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default);
     }
