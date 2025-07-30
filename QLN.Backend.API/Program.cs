@@ -202,6 +202,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 {
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
