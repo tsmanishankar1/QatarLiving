@@ -1368,7 +1368,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             return "Action completed successfully";
         }
         private string GetAdKey(Guid id) => $"ad-{id}";
-        public async Task<TransactionListResponseDto> GetTransactionsAsync(
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(string subVertical,
                    int pageNumber,
                    int pageSize,
                    string? searchText,

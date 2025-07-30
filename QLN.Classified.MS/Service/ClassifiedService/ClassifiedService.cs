@@ -412,6 +412,7 @@ namespace QLN.Classified.MS.Service
                 Status = dto.Status.ToString(),
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
+                UserId = dto.UserId,
                 RefreshExpiryDate = dto.LastRefreshedOn,
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
@@ -421,8 +422,6 @@ namespace QLN.Classified.MS.Service
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
-                UpdatedAt = dto.UpdatedAt,
-                UpdatedBy = dto.UpdatedBy,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -462,6 +461,14 @@ namespace QLN.Classified.MS.Service
                 Lattitude = dto.Latitude,
                 Longitude = dto.Longitude,
                 UserId = dto.UserId,
+                AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                Brand = dto.Brand,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                CreatedBy = dto.CreatedBy,
+                HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                Inclusion = dto.Inclusion,
+                Model = dto.Model,
                 UserName = dto.UserName,
                 IsActive = true,
                 Images = dto.Images.Select(i => new ImageInfo
@@ -559,8 +566,6 @@ namespace QLN.Classified.MS.Service
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
-                UpdatedBy = dto.UpdatedBy,
-                UpdatedAt = dto.UpdatedAt,
                 XMLlink = dto.XMLlink,
                 offertitle = dto.offertitle,
                 ExpiryDate = dto.ExpiryDate,
@@ -568,7 +573,7 @@ namespace QLN.Classified.MS.Service
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                IsFeatured = dto.IsFeatured
+                IsFeatured = dto.IsFeatured,
             };
 
             var indexRequest = new CommonIndexRequest

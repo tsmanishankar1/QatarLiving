@@ -1837,6 +1837,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         (
                             IClassifiedBoLandingService service,
                             CancellationToken cancellationToken,
+                            [FromQuery] string subVertical,
                             [FromQuery] int pageNumber = 1,
                             [FromQuery] int pageSize = 25,
                             [FromQuery] string? searchText = null,
@@ -1874,6 +1875,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     }
 
                     var result = await service.GetTransactionsAsync(
+                        subVertical,
                         pageNumber,
                         pageSize,
                         searchText,
