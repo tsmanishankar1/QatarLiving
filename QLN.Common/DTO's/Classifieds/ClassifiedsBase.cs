@@ -40,7 +40,7 @@ namespace QLN.Common.DTO_s
         public string WhatsAppNumber { get; set; } = string.Empty;
         public string? StreetNumber { get; set; }
         public string? BuildingNumber { get; set; }
-        public string? zone { get; set; }
+        public string zone { get; set; }
         public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
         public Dictionary<string, string>? Attributes { get; set; }
         public bool IsActive { get; set; }

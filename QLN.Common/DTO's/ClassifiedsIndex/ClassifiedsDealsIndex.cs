@@ -97,7 +97,9 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? PromotedExpiryDate { get; set; }
+
         [SimpleField(IsFilterable = true)]
         public string? SubscriptionId { get; set; }
+        public List<string> Locations { get; set; } = new List<string>();
     }
 }

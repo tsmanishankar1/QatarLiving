@@ -1792,13 +1792,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         AdId = ad.Id,
                         subscriptiontype = "12 Months Super",
                         createdby = ad.CreatedBy,
-                        //email = "Milo",
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
                         price = "250",
                         status = ad.IsActive.ToString(),
                         StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A"
+                        EndDate = ad.ExpiryDate.ToString()
 
 ,
                         orderid = ad.Id.ToString().Substring(0, 6) // or fetch from actual payment state
@@ -1892,7 +1891,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
                         StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
+                        EndDate = ad.ExpiryDate.ToString(),
                         WebClick = "2",
                         Weburl = "linkup.com",
                         Views = "3",
