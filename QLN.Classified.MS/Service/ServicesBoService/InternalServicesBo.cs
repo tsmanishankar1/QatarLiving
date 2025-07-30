@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 
 
@@ -475,6 +476,40 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 _logger.LogError(ex, "Error retrieving all service ads");
                 throw new Exception("Error retrieving service ads", ex);
             }
+        }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(VerticalType verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.GetBulkStateAsync<CompanyProfileDto>(
+                    storeName: ConstantValues.CompanyStoreName,
+                    keys: await GetAllCompanyIdsAsync(cancellationToken), 
+                    parallelism: 10,
+                    metadata: null,
+                    cancellationToken: cancellationToken);
+
+                var filtered = result
+                    .Where(entry =>  entry.Value != null)
+                    .Select(entry => entry.Value!)
+                    .Where(company => company.Vertical == verticalId &&
+                        (subVerticalId == null || company.SubVertical == subVerticalId) &&
+                        company.IsActive)
+                    .ToList();
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for vertical '{VerticalId}' and subvertical '{SubVerticalId}'", verticalId, subVerticalId);
+                throw;
+            }
+        }
+
+        private async Task<IReadOnlyList<string>> GetAllCompanyIdsAsync(CancellationToken cancellationToken)
+        {
+            var indexKey = ConstantValues.CompanyIndexKey; 
+            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, indexKey, cancellationToken: cancellationToken);
+            return index ?? new List<string>();
         }
 
 

@@ -318,7 +318,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var result = await service.UpdateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
-                catch(ConflictException ex)
+                catch (ConflictException ex)
                 {
                     return TypedResults.Problem(
                         title: "Conflict",
@@ -416,20 +416,26 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         public static RouteGroupBuilder MapCompanyClassifiedsApproval(this RouteGroupBuilder group)
         {
             group.MapPut("/approveclassifiedcompany", async Task<IResult> (
-                [FromBody] CompanyApproveDto dto,
-                [FromServices] ICompanyClassifiedService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken = default) =>
+            [FromBody] CompanyApproveDto dto,
+            [FromServices] ICompanyClassifiedService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    var userId = httpContext.User.FindFirst("sub")?.Value
-                                 ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                    if (!Guid.TryParse(userId, out var userGuid))
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrWhiteSpace(userClaim))
                         return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (!Guid.TryParse(uid, out var userGuid))
+                        return TypedResults.Forbid();
+
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
+
                     await service.ApproveCompany(userGuid, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
@@ -462,12 +468,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
+            .AllowAnonymous()
             .WithSummary("Approve a company profile")
-            .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapPut("/approveclassifiedcompanybyuserid", async Task<Results<
                 Ok<string>,
@@ -522,6 +529,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternalViaDapr")
             .WithTags("Company")
+            .RequireAuthorization() 
             .WithSummary("Approve a company profile internally via Dapr")
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
@@ -787,7 +795,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-         
+
                     var companies = await service.GetStatusByTokenUser(uid, cancellationToken);
 
                     var filtered = companies

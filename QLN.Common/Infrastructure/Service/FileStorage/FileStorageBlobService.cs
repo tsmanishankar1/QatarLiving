@@ -1,4 +1,5 @@
 ﻿using Azure.Storage.Blobs;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -50,6 +51,28 @@ namespace QLN.Common.Infrastructure.Service.FileStorage
                 throw;
             }
         }
+
+        public async Task<string> SaveFile(byte[] fileBytes, string fileName, string containerName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
+                await containerClient.CreateIfNotExistsAsync();
+
+                var blobClient = containerClient.GetBlobClient(fileName);
+
+                using var stream = new MemoryStream(fileBytes);
+
+                await blobClient.UploadAsync(stream, overwrite: true, cancellationToken);
+                return blobClient.Uri.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save file to blob container {ContainerName}", containerName);
+                throw;
+            }
+        }
+
         public async Task<byte[]> ReadFile(string blobName, string containerName, CancellationToken cancellationToken = default)
         {
             try

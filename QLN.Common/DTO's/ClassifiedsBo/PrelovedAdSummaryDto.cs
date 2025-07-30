@@ -15,7 +15,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string? Category { get; set; }
         public string? SubCategory { get; set; }
         public string? Section { get; set; }
-        public AdStatus? Status { get; set; }
+        public string? Status { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
         public DateTime CreationDate { get; set; }
