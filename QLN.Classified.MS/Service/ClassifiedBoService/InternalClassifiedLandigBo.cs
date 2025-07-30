@@ -1161,20 +1161,24 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Approve:
                         if (ad.Status == AdStatus.PendingApproval)
                         {
-                            if (request.AdIds.Count == 1)
-                            {
-                                ad.Status = AdStatus.NeedsModification;
-                                shouldUpdate = true;
-                            }
-                            else
-                            {
-                                ad.Status = AdStatus.Published;
-                                shouldUpdate = true;
-                            }
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
                         }
                         else
                         {
                             throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.NeedChanges:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            ad.Status = AdStatus.NeedsModification;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                         }
                         break;
 
@@ -1285,20 +1289,24 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Approve:
                         if (ad.Status == AdStatus.PendingApproval)
                         {
-                            if (request.AdIds.Count == 1)
-                            {
-                                ad.Status = AdStatus.NeedsModification;
-                                shouldUpdate = true;
-                            }
-                            else
-                            {
-                                ad.Status = AdStatus.Published;
-                                shouldUpdate = true;
-                            }
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
                         }
                         else
                         {
                             throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.NeedChanges:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            ad.Status = AdStatus.NeedsModification;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                         }
                         break;
 
@@ -1370,79 +1378,42 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             return "Action completed successfully";
         }
         private string GetAdKey(Guid id) => $"ad-{id}";
-        public async Task<TransactionListResponseDto> GetTransactionsAsync(string subVertical,
-                   int pageNumber,
-                   int pageSize,
-                   string? searchText,
-                   string? transactionType,
-                   string? dateCreated,
-                   string? datePublished,
-                   string? dateStart,
-                   string? dateEnd,
-                   string? status,
-                   string? paymentMethod,
-                   string sortBy,
-                   string sortOrder,
-                   CancellationToken cancellationToken = default)
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(
+            TransactionFilterRequestDto request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", request.PageNumber, request.PageSize);
 
-                await Task.Delay(50, cancellationToken);
+                await Task.Delay(50, cancellationToken); 
 
                 var allTransactions = _mockTransactions.AsQueryable();
 
-                // Filter by transaction type
-                if (!string.IsNullOrWhiteSpace(transactionType))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.TransactionType.Equals(transactionType, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.TransactionType))
+                    allTransactions = allTransactions.Where(t => t.TransactionType.Equals(request.TransactionType, StringComparison.OrdinalIgnoreCase));
 
-                // Filter by status
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.Status))
+                    allTransactions = allTransactions.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
 
-                // Filter by payment method
-                if (!string.IsNullOrWhiteSpace(paymentMethod))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.PaymentMethod.Equals(paymentMethod, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.PaymentMethod))
+                    allTransactions = allTransactions.Where(t => t.PaymentMethod.Equals(request.PaymentMethod, StringComparison.OrdinalIgnoreCase));
 
-                // Date filters - match exact dates
-                if (!string.IsNullOrWhiteSpace(dateCreated))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.CreationDate.Equals(dateCreated, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.DateCreated))
+                    allTransactions = allTransactions.Where(t => t.CreationDate.Equals(request.DateCreated, StringComparison.OrdinalIgnoreCase));
 
-                if (!string.IsNullOrWhiteSpace(datePublished))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.PublishedDate.Equals(datePublished, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.DatePublished))
+                    allTransactions = allTransactions.Where(t => t.PublishedDate.Equals(request.DatePublished, StringComparison.OrdinalIgnoreCase));
 
-                if (!string.IsNullOrWhiteSpace(dateStart))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.StartDate.Equals(dateStart, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.DateStart))
+                    allTransactions = allTransactions.Where(t => t.StartDate.Equals(request.DateStart, StringComparison.OrdinalIgnoreCase));
 
-                if (!string.IsNullOrWhiteSpace(dateEnd))
-                {
-                    allTransactions = allTransactions.Where(t =>
-                        t.EndDate.Equals(dateEnd, StringComparison.OrdinalIgnoreCase));
-                }
+                if (!string.IsNullOrWhiteSpace(request.DateEnd))
+                    allTransactions = allTransactions.Where(t => t.EndDate.Equals(request.DateEnd, StringComparison.OrdinalIgnoreCase));
 
-                // Search filter
-                if (!string.IsNullOrWhiteSpace(searchText))
+                if (!string.IsNullOrWhiteSpace(request.SearchText))
                 {
-                    var search = searchText.ToLower();
+                    var search = request.SearchText.ToLower();
                     allTransactions = allTransactions.Where(t =>
                         t.AdId.ToLower().Contains(search) ||
                         t.OrderId.ToLower().Contains(search) ||
@@ -1458,41 +1429,39 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     );
                 }
 
-                // Sorting
-                allTransactions = sortBy.ToLower() switch
+                allTransactions = request.SortBy.ToLower() switch
                 {
-                    "amount" => sortOrder == "desc" ?
-                        allTransactions.OrderByDescending(t => t.Amount) :
-                        allTransactions.OrderBy(t => t.Amount),
-                    "status" => sortOrder == "desc" ?
-                        allTransactions.OrderByDescending(t => t.Status) :
-                        allTransactions.OrderBy(t => t.Status),
-                    "transactiontype" => sortOrder == "desc" ?
-                        allTransactions.OrderByDescending(t => t.TransactionType) :
-                        allTransactions.OrderBy(t => t.TransactionType),
-                    _ => sortOrder == "desc" ?
-                        allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
-                        allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                    "amount" => request.SortOrder == "desc"
+                        ? allTransactions.OrderByDescending(t => t.Amount)
+                        : allTransactions.OrderBy(t => t.Amount),
+
+                    "status" => request.SortOrder == "desc"
+                        ? allTransactions.OrderByDescending(t => t.Status)
+                        : allTransactions.OrderBy(t => t.Status),
+
+                    "transactiontype" => request.SortOrder == "desc"
+                        ? allTransactions.OrderByDescending(t => t.TransactionType)
+                        : allTransactions.OrderBy(t => t.TransactionType),
+
+                    _ => request.SortOrder == "desc"
+                        ? allTransactions.OrderByDescending(t => ParseDate(t.CreationDate))
+                        : allTransactions.OrderBy(t => ParseDate(t.CreationDate))
                 };
 
                 var totalRecords = allTransactions.Count();
-                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+                var totalPages = (int)Math.Ceiling((double)totalRecords / request.PageSize);
 
-                // Pagination
-                var paginatedTransactions = allTransactions
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
+                var paginated = allTransactions
+                    .Skip((request.PageNumber - 1) * request.PageSize)
+                    .Take(request.PageSize)
                     .ToList();
-
-                _logger.LogInformation("Returning {Count} transactions out of {Total} total records",
-                    paginatedTransactions.Count, totalRecords);
 
                 return new TransactionListResponseDto
                 {
-                    Records = paginatedTransactions,
+                    Records = paginated,
                     TotalRecords = totalRecords,
-                    CurrentPage = pageNumber,
-                    PageSize = pageSize,
+                    CurrentPage = request.PageNumber,
+                    PageSize = request.PageSize,
                     TotalPages = totalPages
                 };
             }
@@ -2090,20 +2059,24 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         case BulkActionEnum.Approve:
                             if (ad.Status == AdStatus.PendingApproval)
                             {
-                                if (request.AdIds.Count == 1)
-                                {
-                                    ad.Status = AdStatus.NeedsModification;
-                                    shouldUpdate = true;
-                                }
-                                else
-                                {
-                                    ad.Status = AdStatus.Published;
-                                    shouldUpdate = true;
-                                }
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
                             }
                             else
                             {
                                 throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.NeedChanges:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                             }
                             break;
 

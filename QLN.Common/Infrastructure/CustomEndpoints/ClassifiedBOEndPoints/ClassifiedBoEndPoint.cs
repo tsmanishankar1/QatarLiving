@@ -1538,7 +1538,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                                 ProblemHttpResult
                             >> (
                                 BulkActionRequest req,
-                                string? userId,
                                 HttpContext httpContext,
                                 IClassifiedBoLandingService service,
                                 CancellationToken ct
@@ -1571,7 +1570,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
-                userId = uid;
+                var userId = uid;
                 try
                 {
                     var result = await service.BulkItemsAction(req, userId, ct);
@@ -1688,7 +1687,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                    ProblemHttpResult
                >> (
                    BulkActionRequest req,
-                   string? userId,
                    HttpContext httpContext,
                    IClassifiedBoLandingService service,
                    CancellationToken ct
@@ -1721,7 +1719,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                 if (req.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(req.Reason))
                     return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
-                userId = uid;
+                var userId = uid;
                 try
                 {
                     var result = await service.BulkCollectiblesAction(req, userId, ct);
@@ -1830,31 +1828,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/items/transactions", async Task<Results<
-                            Ok<TransactionListResponseDto>,
-                            BadRequest<ProblemDetails>,
-                            ProblemHttpResult>>
-                        (
-                            IClassifiedBoLandingService service,
-                            CancellationToken cancellationToken,
-                            [FromQuery] string subVertical,
-                            [FromQuery] int pageNumber = 1,
-                            [FromQuery] int pageSize = 25,
-                            [FromQuery] string? searchText = null,
-                            [FromQuery] string? transactionType = null,
-                            [FromQuery] string? dateCreated = null,
-                            [FromQuery] string? datePublished = null,
-                            [FromQuery] string? dateStart = null,
-                            [FromQuery] string? dateEnd = null,
-                            [FromQuery] string? status = null,
-                            [FromQuery] string? paymentMethod = null,
-                            [FromQuery] string sortBy = "CreationDate",
-                            [FromQuery] string sortOrder = "desc"
-                        ) =>
+            group.MapPost("/items/transactions", async Task<Results<
+                Ok<TransactionListResponseDto>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                [FromBody] TransactionFilterRequestDto request,
+                IClassifiedBoLandingService service,
+                CancellationToken cancellationToken
+            ) =>
             {
                 try
                 {
-                    if (pageNumber < 1)
+                    if (request.PageNumber < 1)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1864,7 +1850,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    if (pageSize < 1 || pageSize > 100)
+                    if (request.PageSize < 1 || request.PageSize > 100)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1874,22 +1860,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.GetTransactionsAsync(
-                        subVertical,
-                        pageNumber,
-                        pageSize,
-                        searchText,
-                        transactionType,
-                        dateCreated,
-                        datePublished,
-                        dateStart,
-                        dateEnd,
-                        status,
-                        paymentMethod,
-                        sortBy,
-                        sortOrder,
-                        cancellationToken);
-
+                    var result = await service.GetTransactionsAsync(request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)

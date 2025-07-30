@@ -59,8 +59,9 @@ namespace QLN.Common.DTO_s
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        UnPromote = 5,
-        UnFeature = 6,
-        Remove = 7
+        UnPromote = 4,
+        UnFeature = 5,
+        Remove = 6,
+        NeedChanges = 7
     }
 }
