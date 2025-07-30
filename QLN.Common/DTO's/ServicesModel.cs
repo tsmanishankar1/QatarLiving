@@ -77,14 +77,21 @@ namespace QLN.Common.DTO_s
         Published = 3,
         Unpublished = 4,
         Rejected = 5,
-        Expired = 6
+        Expired = 6,
+        Promote=7,
+        UnPromote=8,
+        Feature=9,
+        UnFeature = 10,
     }
     public enum BulkModerationAction
     {
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        Remove = 4
+        UnPromote =4,
+        feature =5,
+        Remove = 6,
+        UnFeature = 7,
     }
     public enum ServiceAdType
     {
