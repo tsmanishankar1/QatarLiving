@@ -2059,20 +2059,24 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         case BulkActionEnum.Approve:
                             if (ad.Status == AdStatus.PendingApproval)
                             {
-                                if (request.AdIds.Count == 1)
-                                {
-                                    ad.Status = AdStatus.NeedsModification;
-                                    shouldUpdate = true;
-                                }
-                                else
-                                {
-                                    ad.Status = AdStatus.Published;
-                                    shouldUpdate = true;
-                                }
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
                             }
                             else
                             {
                                 throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.NeedChanges:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                             }
                             break;
 
