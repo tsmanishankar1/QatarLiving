@@ -13,8 +13,8 @@ namespace QLN.Common.DTO_s.Payments
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
-        public string Payload { get; set; } // JSON request ?
-        public string Response { get; set; } // JSON response ?
+        public D365Order Payload { get; set; } 
+        public object Response { get; set; }
         public int Status { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

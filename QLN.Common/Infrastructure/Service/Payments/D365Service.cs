@@ -2,9 +2,11 @@
 using Microsoft.Identity.Client;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.Infrastructure.IService.IPayments;
+using QLN.Common.Infrastructure.QLDbContext;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -17,16 +19,19 @@ namespace QLN.Common.Infrastructure.Service.Payments
         private readonly ILogger<D365Service> _logger;
         private readonly HttpClient _httpClient;
         private readonly D365Config _d365Config;
+        private readonly QLPaymentsContext _dbContext;
 
         public D365Service(
             ILogger<D365Service> logger,
             HttpClient httpClient,
-            D365Config d365Config
+            D365Config d365Config,
+            QLPaymentsContext dbContext
             )
         {
             _logger = logger;
             _httpClient = httpClient;
             _d365Config = d365Config;
+            _dbContext = dbContext;
 
             // Acquire Bearer token using MSAL
             var authority = $"https://login.microsoftonline.com/{_d365Config.TenantId}";
@@ -41,6 +46,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
             _httpClient.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", tokenResult.AccessToken);
         }
+
+
 
         public async Task<bool> CreateAndInvoiceSalesOrder(D365Data order)
         {
@@ -88,8 +95,9 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
         public async Task<bool> CreateInterimSalesOrder(D365Data order)
         {
-
             _logger.LogInformation("Creating interim sales order for user: {UserId}", order.User.Id);
+
+            var statusText = "Unknown Failure";
 
             var processedOrder = ProcessCheckoutOrder(order);
 
@@ -101,31 +109,167 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             try
             {
-                // Use PostAsJsonAsync for cleaner serialization and posting
                 var response = await _httpClient.PostAsJsonAsync(_d365Config.CheckoutPath, processedOrder);
 
                 response.EnsureSuccessStatusCode();
 
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                // Log the request and response to D365PaymentLogsEntity
+                var paymentLogs = new List<D365PaymentLogsEntity>
+                {
+                    new D365PaymentLogsEntity
+                    {
+                        PaymentId = order.PaymentInfo.PaymentId,
+                        Operation = Operation.CHECKOUT,
+                        Status = (int)response.StatusCode,
+                        Response = responseContent
+                    },
+                    new D365PaymentLogsEntity
+                    {
+                        PaymentId = order.PaymentInfo.PaymentId,
+                        Operation = Operation.CHECKOUT_REQUEST,
+                        Status = 200, // HttpStatusCode.Ok
+                        Response = processedOrder
+                    }
+                };
+
+                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs);
+                await _dbContext.SaveChangesAsync();
+
+
+                if (response.IsSuccessStatusCode)
+                {
+                    
+                    var paymentResponse = JsonSerializer.Deserialize<D365PaymentResponse>(responseContent);
+
+                    if (paymentResponse.Errors != null && paymentResponse.Errors.Count > 0)
+                    {
+                        _logger.LogError("Payment error: {ErrorMessage}", paymentResponse.Errors[0].Details);
+                        statusText = paymentResponse.StatusText;
+                        return false;
+                    }
+
+                    return paymentResponse.Status;
+                }
+
                 _logger.LogInformation("Interim sales order created successfully for user: {UserId}", order.User.Id);
 
                 return true;
-
-            } 
-            catch (Exception ex)
+            }
+            catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "Error creating interim sales order for user: {UserId}", order.User.Id);
-            };
+
+                // Log the request and response to D365PaymentLogsEntity
+                var paymentLogs = new List<D365PaymentLogsEntity>
+                {
+                    new D365PaymentLogsEntity
+                    {
+                        PaymentId = order.PaymentInfo.PaymentId,
+                        Operation = Operation.CHECKOUT,
+                        Status = ex.StatusCode != null ? (int)ex.StatusCode : (int)HttpStatusCode.BadRequest,
+                        Response = ex.Message
+                    },
+                    new D365PaymentLogsEntity
+                    {
+                        PaymentId = order.PaymentInfo.PaymentId,
+                        Operation = Operation.CHECKOUT_REQUEST,
+                        Status = 200, // HttpStatusCode.Ok
+                        Response = processedOrder
+                    }
+                };
+
+                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            _logger.LogError("Failed to send checkout Sale order {StatusText}", statusText);
 
             return false;
-
         }
 
         public async Task<string> HandleD365OrderAsync(D365Order order)
         {
             _logger.LogInformation("Handling D365 order with ID: {OrderId}", order.OrderId);
 
+            if (order.D365Itemid != null && order.D365Itemid.StartsWith("QLR"))
+            {
+                if (order.D365Itemid.StartsWith("QLR-ADD-FEA"))
+                {
+                    try
+                    {
+                        // Simulate processPaytoFeature (replace with actual implementation)
+                        await ProcessPaytoFeatureAsync(order.AdId, order.D365Itemid);
 
-            throw new NotImplementedException();
+                        await SaveD365RequestLogsAsync(
+                            DateTime.UtcNow,
+                            order,
+                            1,
+                            new { message = "Add feature processed successfully" }
+                        );
+
+                        return "Add feature processed successfully";
+                    }
+                    catch (Exception ex)
+                    {
+                        await SaveD365RequestLogsAsync(
+                            DateTime.UtcNow,
+                            order,
+                            0,
+                            new { message = ex.Message }
+                        );
+                        throw new InvalidOperationException($"Error processing feature: {ex.Message}", ex);
+                    }
+                }
+                else if (order.D365Itemid.StartsWith("QLR-SUB"))
+                {
+                    try
+                    {
+                        // Simulate processSubscriptions (replace with actual implementation)
+                        await ProcessSubscriptionsAsync(order);
+
+                        await SaveD365RequestLogsAsync(
+                            DateTime.UtcNow,
+                            order,
+                            1,
+                            new { message = "Subscription processed successfully" }
+                        );
+
+                        return "Subscription processed successfully";
+                    }
+                    catch (Exception ex)
+                    {
+                        await SaveD365RequestLogsAsync(
+                            DateTime.UtcNow,
+                            order,
+                            0,
+                            new { message = "Error While processing subscription" }
+                        );
+                        throw new InvalidOperationException($"Error processing subscription: {ex.Message}", ex);
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unknown QLC Reward D365 ItemID : {order.D365Itemid}");
+                }
+            }
+
+            return "No QLR item processed";
+        }
+
+        // Placeholder for actual feature processing logic
+        private async Task ProcessPaytoFeatureAsync(int adId, string d365ItemId)
+        {
+            await Task.CompletedTask;
+            // Implement actual logic here
+        }
+
+        // Placeholder for actual subscription processing logic
+        private async Task ProcessSubscriptionsAsync(D365Order order)
+        {
+            await Task.CompletedTask;
+            // Implement actual logic here
         }
 
 
@@ -167,6 +311,55 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
             };
         }
+        private async Task SaveD365RequestLogsAsync(DateTime createdAt, D365Order payload, int status, object response)
+        {
+            try
+            {
+                // Assuming D365RequestsLogsEntity is a class with a suitable constructor or properties
+                var logEntry = new D365RequestsLogsEntity
+                {
+                    CreatedAt = createdAt,
+                    Payload = payload,
+                    Status = status,
+                    Response = response
+                };
 
+                // Replace with your actual persistence logic, e.g. EF Core DbContext or repository
+                await _dbContext.D365RequestsLogs.AddAsync(logEntry);
+                await _dbContext.SaveChangesAsync();
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving D365 request logs");
+                throw;
+            }
+        }
+        public async Task SendPaymentInfoD365Async(D365Data data)
+        {
+            try
+            {
+                _logger.LogInformation("payment d365 Notification: {@Data}", data);
+
+                // Token is already set in constructor, so we skip token acquisition here
+
+                if (data.Operation == D365PaymentOperations.CHECKOUT)
+                {
+                    await CreateInterimSalesOrder(data);
+                }
+                else if (data.Operation == D365PaymentOperations.SUCCESS)
+                {
+                    await CreateAndInvoiceSalesOrder(data);
+                }
+                else
+                {
+                    _logger.LogError("Error processing message: Unsupported operation {Operation}", data.Operation);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing message");
+            }
+        }
     }
 }

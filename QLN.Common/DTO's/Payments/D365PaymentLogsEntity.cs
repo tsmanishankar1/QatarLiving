@@ -20,7 +20,7 @@ namespace QLN.Common.DTO_s.Payments
 
         public Operation Operation { get; set; }
 
-        public string Response { get; set; } // JSON response ?
+        public object Response { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }

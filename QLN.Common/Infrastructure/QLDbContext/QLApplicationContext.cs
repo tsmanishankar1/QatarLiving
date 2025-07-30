@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 
-namespace QLN.Common.Infrastructure.DbContext
+namespace QLN.Common.Infrastructure.QLDbContext
 {
     public class QLApplicationContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
     {

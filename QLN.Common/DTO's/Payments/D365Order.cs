@@ -51,7 +51,7 @@ namespace QLN.Common.DTO_s.Payments
         /// <summary>
         /// Ad ID
         /// </summary>
-        public int? AdId { get; set; }
+        public int AdId { get; set; }
 
         /// <summary>
         /// Price of the item
