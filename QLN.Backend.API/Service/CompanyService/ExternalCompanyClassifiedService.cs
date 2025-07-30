@@ -6,8 +6,6 @@ using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
-using QLN.Common.Infrastructure.IService.IFileStorage;
-using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text.Json;
 using System.Text;
@@ -20,50 +18,21 @@ namespace QLN.Backend.API.Service.CompanyService
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalCompanyClassifiedService> _logger;
         private readonly IExtendedEmailSender<ApplicationUser> _emailSender;
-        private readonly IFileStorageBlobService _blobStorage;
         private readonly UserManager<ApplicationUser> _userManager;
         public ExternalCompanyClassifiedService(DaprClient dapr, ILogger<ExternalCompanyClassifiedService> logger,
-            IExtendedEmailSender<ApplicationUser> emailSender, IFileStorageBlobService blobStorage, UserManager<ApplicationUser> userManager)
+            IExtendedEmailSender<ApplicationUser> emailSender, UserManager<ApplicationUser> userManager)
         {
             _dapr = dapr;
             _logger = logger;
             _emailSender = emailSender;
-            _blobStorage = blobStorage;
             _userManager = userManager;
         }
         public async Task<string> CreateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
-            string? crBlobFileName = null;
-            string? logoBlobFileName = null;
-            string? cerBlobFileName = null;
             try
             {
                 var id = Guid.NewGuid();
                 dto.Id = id;
-                if (!string.IsNullOrWhiteSpace(dto.CRDocument))
-                {
-                    var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
-                    if (crExtension is not ("pdf" or "png" or "jpg"))
-                        throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
-
-                    crBlobFileName = $"{dto.CompanyName}_{id}.{crExtension}";
-                    var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
-                    dto.CRDocument = crBlobUrl;
-                }
-                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo))
-                {
-                    string logoExtension;
-                    string logoBase64Data;
-
-                    (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
-
-                    if (logoExtension is not ("png" or "jpg"))
-                        throw new ArgumentException("Company logo must be in PNG or JPG format.");
-
-                    logoBlobFileName = $"{dto.CompanyName}_{id}.{logoExtension}";
-                    var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
-                    dto.CompanyLogo = logoBlobUrl;
-                }
                 var url = "/api/companyprofile/createclassifiedcompanybyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -85,14 +54,12 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
                 if (response.StatusCode == HttpStatusCode.Conflict)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
@@ -103,21 +70,9 @@ namespace QLN.Backend.API.Service.CompanyService
 
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error creating company profile");
                 throw;
             }
-        }
-        private async Task CleanupUploadedFiles(string? crFile, string? logoFile, string? cerFile, CancellationToken cancellationToken)
-        {
-            if (!string.IsNullOrWhiteSpace(crFile))
-                await _blobStorage.DeleteFile(crFile, "crdocument", cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(logoFile))
-                await _blobStorage.DeleteFile(logoFile, "companylogo", cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(cerFile))
-                await _blobStorage.DeleteFile(cerFile, "therapeuticcertificate", cancellationToken);
         }
         public async Task<CompanyProfileDto?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
@@ -160,35 +115,10 @@ namespace QLN.Backend.API.Service.CompanyService
         }
         public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
-            string? crBlobFileName = null;
-            string? logoBlobFileName = null;
-            string? cerBlobFileName = null;
             try
             {
                 var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
                 dto.Id = id;
-
-                if (!string.IsNullOrWhiteSpace(dto.CRDocument) && !dto.CRDocument.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    var (crExtension, crBase64) = Base64Helper.ParseBase64(dto.CRDocument);
-                    if (crExtension is not ("pdf" or "png" or "jpg"))
-                        throw new ArgumentException("CR Document must be in PDF, PNG, or JPG format.");
-
-                    crBlobFileName = $"{dto.CompanyName}_{id}.{crExtension}";
-                    var crBlobUrl = await _blobStorage.SaveBase64File(crBase64, crBlobFileName, "crdocument", cancellationToken);
-                    dto.CRDocument = crBlobUrl;
-                }
-
-                if (!string.IsNullOrWhiteSpace(dto.CompanyLogo) && !dto.CompanyLogo.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                {
-                    var (logoExtension, logoBase64Data) = Base64Helper.ParseBase64(dto.CompanyLogo);
-                    if (logoExtension is not ("png" or "jpg"))
-                        throw new ArgumentException("Company logo must be in PNG or JPG format.");
-
-                    logoBlobFileName = $"{dto.CompanyName}_{id}.{logoExtension}";
-                    var logoBlobUrl = await _blobStorage.SaveBase64File(logoBase64Data, logoBlobFileName, "companylogo", cancellationToken);
-                    dto.CompanyLogo = logoBlobUrl;
-                }
                 var url = $"/api/companyprofile/updateclassifiedcompanybyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.CompanyServiceAppId, url);
                 request.Content = new StringContent(
@@ -212,7 +142,6 @@ namespace QLN.Backend.API.Service.CompanyService
                         errorMessage = errorJson;
                     }
 
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new InvalidDataException(errorMessage);
                 }
 
@@ -220,7 +149,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
                     var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                     throw new ConflictException(problem?.Detail ?? "Conflict error.");
                 }
                 response.EnsureSuccessStatusCode();
@@ -230,7 +158,6 @@ namespace QLN.Backend.API.Service.CompanyService
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(crBlobFileName, logoBlobFileName, cerBlobFileName, cancellationToken);
                 _logger.LogError(ex, "Error updating company profile");
                 throw;
             }
@@ -257,20 +184,18 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> ApproveCompany(Guid userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ApproveCompany(string userId, CompanyApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var allCompanies = await GetAllCompanies(cancellationToken);
                 var company = allCompanies.FirstOrDefault(c => c.Id == dto.CompanyId) ?? throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-                var user = await _userManager.FindByIdAsync(company.UserId.ToString()) ?? throw new KeyNotFoundException($"User with ID {company.UserId} not found.");
 
-                if (user.IsCompany == true && company.IsVerified == true)
+                if (company.IsVerified == true)
                     throw new InvalidDataException("Company is already marked as approved.");
 
                 var wasNotVerified = !company.IsVerified.GetValueOrDefault(false);
                 var isNowVerified = dto.IsVerified.GetValueOrDefault(false);
-                var shouldSendEmail = wasNotVerified && isNowVerified && !string.IsNullOrWhiteSpace(company.Email);
 
                 var requestDto = new CompanyApproveDto
                 {
@@ -302,20 +227,6 @@ namespace QLN.Backend.API.Service.CompanyService
                     throw new InvalidDataException(errorMessage);
                 }
                 response.EnsureSuccessStatusCode();
-
-                if (isNowVerified)
-                {
-                    user.IsCompany = true;
-                    user.UpdatedAt = DateTime.UtcNow;
-                    var updateResult = await _userManager.UpdateAsync(user);
-                }
-
-                if (shouldSendEmail)
-                {
-                    var subject = "Company Profile Approved - Qatar Living";
-                    var htmlBody = _emailSender.GetApprovalEmailTemplate(company.CompanyName);
-                    await _emailSender.SendEmail(company.Email, subject, htmlBody);
-                }
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
@@ -354,7 +265,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(Guid userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(string userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default)
         {
             try
             {
