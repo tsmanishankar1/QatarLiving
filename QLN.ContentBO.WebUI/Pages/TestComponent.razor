@@ -1,0 +1,27 @@
+﻿@page "/blazormarkdown"
+<MudGrid Style="padding-top: 18px">
+      <MarkdownEditor @bind-Value="@markdownValue"  ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
+
+    <hr />
+
+    <h3>Result</h3>
+    @((MarkupString)markdownHtml)
+
+</MudGrid>
+
+
+@code {
+    string markdownValue = "#Markdown Editor\nThis is a test";
+    string markdownHtml;
+
+    Task OnMarkdownValueChanged(string value)
+    {
+        return Task.CompletedTask;
+    }
+
+    Task OnMarkdownValueHTMLChanged(string value)
+    {
+        markdownHtml = value;
+        return Task.CompletedTask;
+    }
+}

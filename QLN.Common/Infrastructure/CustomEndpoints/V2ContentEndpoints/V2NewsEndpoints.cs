@@ -10,6 +10,7 @@ using System.Text.Json;
 using QLN.Common.Infrastructure.DTO_s;
 using Microsoft.Extensions.Logging;
 using QLN.Common.Infrastructure.CustomException;
+using System.Net.Http;
 
 public static class V2NewsEndpoints
 {
@@ -18,15 +19,29 @@ public static class V2NewsEndpoints
         group.MapPost("/createtagname", async Task<Results<
        Ok<string>,
        BadRequest<ProblemDetails>,
-       ProblemHttpResult>>
+          ForbidHttpResult,
+          ProblemHttpResult>>
    (
        WritertagDTO dto,
        IV2NewsService service,
+       HttpContext httpContext,
        CancellationToken cancellationToken
    ) =>
         {
             try
             {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Forbid();
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var uname = userData.GetProperty("name").GetString();
+                if (uid == null)
+                {
+                    return TypedResults.Forbid();
+                }
                 if (string.IsNullOrWhiteSpace(dto.Tagname))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -36,7 +51,43 @@ public static class V2NewsEndpoints
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
+                var request = new Writertag
+                {
+                    tagId = Guid.NewGuid(),
+                    Tagname = dto.Tagname,
+                    userId = uid,
+                    userName = uname,
+                };
+                var newId = await service.CreateWritertagAsync(request, cancellationToken);
+                return TypedResults.Ok(newId);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem("Internal Server Error", ex.Message);
+            }
+        })
+   .RequireAuthorization()
+   .WithName("CreateNewsHeading")
+   .WithTags("News")
+   .WithSummary("Create News Heading")
+   .WithDescription("Creates a news heading with only the Tagname input.")
+   .Produces<string>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+        group.MapPost("/createtagnamebyuserid", async Task<Results<
+Ok<string>,
+BadRequest<ProblemDetails>,
+ProblemHttpResult>>
+(
+Writertag dto,
+IV2NewsService service,
+CancellationToken cancellationToken
+) =>
+        {
+            try
+            {
                 var newId = await service.CreateWritertagAsync(dto, cancellationToken);
                 return TypedResults.Ok(newId);
             }
@@ -45,15 +96,14 @@ public static class V2NewsEndpoints
                 return TypedResults.Problem("Internal Server Error", ex.Message);
             }
         })
-   .WithName("CreateNewsHeading")
-   .WithTags("News")
-   .WithSummary("Create News Heading")
-   .WithDescription("Creates a news heading with only the Tagname input.")
-   .Produces<string>(StatusCodes.Status200OK)
-   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-        group.MapGet("/writertags", async Task<Results<
-    Ok<List<WritertagDTO>>,
+.ExcludeFromDescription()
+.WithDescription("Creates a news heading with only the Tagname input.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+    group.MapGet("/writertags", async Task<Results<
+    Ok<List<Writertag>>,
     ProblemHttpResult>>
 (
     IV2NewsService service,

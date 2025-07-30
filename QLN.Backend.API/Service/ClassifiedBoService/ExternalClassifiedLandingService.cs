@@ -873,80 +873,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
-                    string subVertical,
-                    int pageNumber,
-                    int pageSize,
-                    string? searchText,
-                    string? transactionType,
-                    string? dateCreated,
-                    string? datePublished,
-                    string? dateStart,
-                    string? dateEnd,
-                    string? status,
-                    string? paymentMethod,
-                    string sortBy,
-                    string sortOrder,
-                    CancellationToken cancellationToken = default)
+            TransactionFilterRequestDto request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = new List<string>
-                {
-                    $"subVertical={subVertical}",
-                    $"pageNumber={pageNumber}",
-                    $"pageSize={pageSize}"
-                };
+                var endpoint = $"api/v2/classifiedbo/items/transactions";
 
-                if (!string.IsNullOrWhiteSpace(searchText))
-                {
-                    queryParams.Add($"searchText={Uri.EscapeDataString(searchText)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(transactionType))
-                {
-                    queryParams.Add($"transactionType={Uri.EscapeDataString(transactionType)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(paymentMethod))
-                {
-                    queryParams.Add($"paymentMethod={Uri.EscapeDataString(paymentMethod)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateCreated))
-                {
-                    queryParams.Add($"dateCreated={Uri.EscapeDataString(dateCreated)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(datePublished))
-                {
-                    queryParams.Add($"datePublished={Uri.EscapeDataString(datePublished)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateStart))
-                {
-                    queryParams.Add($"dateStart={Uri.EscapeDataString(dateStart)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateEnd))
-                {
-                    queryParams.Add($"dateEnd={Uri.EscapeDataString(dateEnd)}");
-                }
-
-                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-                queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
-
-                var queryString = string.Join("&", queryParams);
-                var endpoint = $"api/v2/classifiedbo/items/transactions?{queryString}";
-
-                var response = await _dapr.InvokeMethodAsync<TransactionListResponseDto>(
-                    HttpMethod.Get,
+                var response = await _dapr.InvokeMethodAsync<TransactionFilterRequestDto, TransactionListResponseDto>(
+                    HttpMethod.Post,
                     SERVICE_APP_ID,
                     endpoint,
+                    request,
                     cancellationToken
                 );
 

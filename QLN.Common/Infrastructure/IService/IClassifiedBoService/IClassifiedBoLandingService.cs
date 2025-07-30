@@ -49,21 +49,6 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
-        Task<TransactionListResponseDto> GetTransactionsAsync(
-                    string subVertical,
-                    int pageNumber,
-                    int pageSize,
-                    string? searchText,
-                    string? transactionType,
-                    string? dateCreated,
-                    string? datePublished,
-                    string? dateStart,
-                    string? dateEnd,
-                    string? status,
-                    string? paymentMethod,
-                    string sortBy,
-                    string sortOrder,
-                    CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
 
@@ -99,6 +84,7 @@ string? sortBy = null, CancellationToken cancellationToken = default);
                  string sortBy,
                  string sortOrder,
                  CancellationToken cancellationToken = default);
+        Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
     }
 }
 

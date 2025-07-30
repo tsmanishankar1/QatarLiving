@@ -1,5 +1,6 @@
 ﻿@using System.Globalization
 @inherits PostCardBaseV2
+@using QLN.Web.Shared.Extensions
 @using MudBlazor
 @using QLN.Web.Shared.Components.EmptyCard
 
@@ -42,7 +43,7 @@
 
                 <span class="post-meta">
 
-                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToString("MMM dd, yyyy - hh:mm tt")</span></span>
+                    <span class="author">@Post.Author  • <span class="date-time">@Post.Time.ToQatarTime("MMMM d, yyyy - HH:mm")</span></span>
                 </span>
 
             </div>
