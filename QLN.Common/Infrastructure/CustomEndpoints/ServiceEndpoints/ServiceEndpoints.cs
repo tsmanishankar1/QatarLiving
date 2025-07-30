@@ -10,6 +10,8 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
+using Dapr.Client.Autogen.Grpc.v1;
+using Dapr.Client;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -250,9 +252,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-                ServicesDto dto,
+                ServiceDto dto,
                 IServices service,
                 HttpContext httpContext,
+                DaprClient dapr,
                 CancellationToken cancellationToken) =>
             {
                 try
@@ -279,22 +282,74 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var id = Guid.NewGuid();
-                    dto.Id = id;
-                    dto.CreatedBy = uid;
-                    dto.CreatedAt = DateTime.UtcNow;
-                    dto.UpdatedBy = null;
-                    dto.UpdatedAt = null;
-                    dto.RefreshExpiryDate = null;
-                    dto.PromotedExpiryDate = null;
-                    dto.FeaturedExpiryDate = null;
-                    dto.PublishedDate = null;
-                    dto.ExpiryDate = null;
-                    dto.IsFeatured = false;
-                    dto.IsPromoted = false;
-                    dto.IsRefreshed = false;
-                    dto.UserName = userName;
-                    var result = await service.CreateServiceAd(uid, dto, cancellationToken);
+                    var mainCategory = await dapr.GetStateAsync<ServicesCategory>(
+                  ConstantValues.Services.StoreName,
+                  dto.CategoryId.ToString(),
+                  cancellationToken: cancellationToken);
+                    string? categoryName = null;
+                    string? l1CategoryName = null;
+                    string? l2CategoryName = null;
+
+                    if (mainCategory != null)
+                    {
+                        categoryName = mainCategory.Category;
+                        var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                        if (l1Category != null)
+                        {
+                            l1CategoryName = l1Category.Name;
+
+                            var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                            if (l2Category != null)
+                            {
+                                l2CategoryName = l2Category.Name;
+                            }
+                        }
+                    }
+                    var request = new ServicesModel
+                    {
+                        CreatedBy = uid,
+                        CreatedAt = DateTime.UtcNow,
+                        UserName = userName,
+                        Id = Guid.NewGuid(),
+                        Status = ServiceStatus.Draft,
+                        AdType = dto.AdType,
+                        IsFeatured = false,
+                        IsPromoted = false,
+                        IsRefreshed = false,
+                        PromotedExpiryDate = null,
+                        FeaturedExpiryDate = null,
+                        RefreshExpiryDate = null,
+                        PublishedDate = null,
+                        ExpiryDate = null,
+                        IsActive = true,
+                        CategoryId = dto.CategoryId,
+                        L1CategoryId = dto.L1CategoryId,
+                        L2CategoryId = dto.L2CategoryId,
+                        CategoryName = categoryName,
+                        L1CategoryName = l1CategoryName,
+                        L2CategoryName = l2CategoryName,
+                        IsPriceOnRequest = dto.IsPriceOnRequest,
+                        Price = dto.Price,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                        PhoneNumber = dto.PhoneNumber,
+                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                        WhatsappNumber = dto.WhatsappNumber,
+                        EmailAddress = dto.EmailAddress,
+                        Location = dto.Location,
+                        LocationId = dto.LocationId,
+                        //SubscriptionId = dto.SubscriptionId,
+                        ZoneId = dto.ZoneId,
+                        StreetNumber = dto.StreetNumber,
+                        BuildingNumber = dto.BuildingNumber,
+                        LicenseCertificate = dto.LicenseCertificate,
+                        Comments = dto.Comments,
+                        Longitude = dto.Longitude,
+                        Lattitude = dto.Lattitude,
+                        PhotoUpload = dto.PhotoUpload ?? new List<ImageDto>(),
+                    };
+                    var result = await service.CreateServiceAd(request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -320,7 +375,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-            ServicesDto dto,
+            ServicesModel dto,
             IServices service,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -336,7 +391,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var result = await service.CreateServiceAd(dto.CreatedBy, dto, cancellationToken);
+                    var result = await service.CreateServiceAd(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -367,7 +422,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<Ok<string>, NotFound, ProblemHttpResult>> (
-                ServicesDto dto,
+                ServicesModel dto,
                 HttpContext httpContext,
                 IServices service,
                 CancellationToken cancellationToken) =>
@@ -422,7 +477,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPut("/updatebyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-            ServicesDto dto,
+            ServicesModel dto,
             HttpContext httpContext,
             IServices service,
             CancellationToken cancellationToken) =>
@@ -488,13 +543,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Get all service ads")
             .WithDescription("Retrieves all service ads from the system. " +
                              "This endpoint returns a list of all available service ads, including their details.")
-            .Produces<List<ServicesDto>>(StatusCodes.Status200OK)
+            .Produces<List<ServicesModel>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapServiceGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<ServicesDto>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+            group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<ServicesModel>, NotFound<ProblemDetails>, ProblemHttpResult>> (
                 Guid id,
                 IServices service,
                 CancellationToken cancellationToken) =>
@@ -534,7 +589,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get a service ad by ID")
             .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -595,7 +650,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get a service ad by ID")
             .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
-            .Produces<GetWithSimilarResponse<ServicesDto>>(StatusCodes.Status200OK)
+            .Produces<GetWithSimilarResponse<ServicesModel>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -731,7 +786,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get services by status (with pagination)")
             .WithDescription("Returns paged service ads matching the given status (Published, Unpublished, etc).")
-            .Produces<PagedResponse<ServicesDto>>(StatusCodes.Status200OK)
+            .Produces<PagedResponse<ServicesModel>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
@@ -779,7 +834,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Promote a service ad")
             .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -830,7 +885,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Feature a service ad")
             .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -877,7 +932,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Refresh a service ad")
             .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
@@ -915,7 +970,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Publish a service ad")
             .WithDescription("Publishes a service ad if it's not already published and follows category rules.")
-            .Produces<ServicesDto>(StatusCodes.Status200OK)
+            .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -925,7 +980,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/moderatebulk", async Task<Results<
-                    Ok<List<ServicesDto>>,
+                    Ok<List<ServicesModel>>,
                     BadRequest<ProblemDetails>,
                     ProblemHttpResult
                 >> (
@@ -984,7 +1039,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
-               Ok<List<ServicesDto>>,
+               Ok<List<ServicesModel>>,
                BadRequest<ProblemDetails>,
                ProblemHttpResult
            >> (

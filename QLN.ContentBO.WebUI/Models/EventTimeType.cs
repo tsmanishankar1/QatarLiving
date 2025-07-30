@@ -1,6 +1,8 @@
-public enum EventTimeType
+namespace QLN.ContentBO.WebUI.Models
 {
+    public enum EventTimeType
+    {
         GeneralTime = 1,
-        PerDayTime = 2,
-        FreeTextTime = 3
+        PerDayTime = 2
+    }
 }

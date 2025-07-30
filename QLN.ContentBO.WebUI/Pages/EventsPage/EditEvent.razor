@@ -2,6 +2,7 @@
 @page "/content/events/edit/{Id:guid}"
 @inherits EditEventBase;
 @using QLN.ContentBO.WebUI.Components.LoadingOverlay;
+@using QLN.ContentBO.WebUI.Models
 
 @if (IsPageLoading)
 {
@@ -21,7 +22,8 @@
                        Variant="Variant.Outlined"
                        @bind-Value="CurrentEvent.CategoryId"
                        Class="my-2 event-custom-textfield"
-                       Style="background-color: #FFFFFF;">
+                       Style="background-color: #FFFFFF;"\
+                       For="@(() => CurrentEvent.CategoryId)">
                 @if (Categories != null && Categories.Any())
                 {
                     @foreach (var category in Categories)
@@ -40,17 +42,21 @@
                 <MudRadio Color="Color.Primary" T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
                 <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
-            <MudTextField T="int?"
-                          Variant="Variant.Outlined"
-                          Label="Price"
-                          InputType="InputType.Number"
-                          Style="background-color: #FFFFFF;"
-                          @bind-Value="CurrentEvent.Price"
-                          For="@(() => CurrentEvent.Price)"
-                          Adornment="Adornment.End"
-                          AdornmentText="QAR"
-                          Class="@PriceFieldClass"
-                          Disabled="@(!IsFeesSelected)" />
+            <MudNumericField T="int?"
+                             Variant="Variant.Outlined"
+                             HideSpinButtons="true"
+                             Label="Price"
+                             @bind-Value="CurrentEvent.Price"
+                             For="@(() => CurrentEvent.Price)"
+                             Adornment="Adornment.End"
+                             AdornmentText="QAR"
+                             Style="background-color: #FFFFFF;"
+                             Class="@PriceFieldClass"
+                             Disabled="@(!IsFeesSelected)"
+                             Immediate="true"
+                             Max=int.MaxValue
+                             InputMode="InputMode.numeric"
+                             Pattern="^\d*$" />
             @if (!string.IsNullOrEmpty(_PriceError))
             {
                 <div class="event-mud-error-text">@_PriceError</div>
@@ -147,33 +153,12 @@
                 <MudRadioGroup Color="Color.Primary" T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType" Class="my-2">
                     <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.GeneralTime">General time</MudRadio>
                     <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
-                    <MudRadio T="EventTimeType" Color="Color.Primary" Value="EventTimeType.FreeTextTime">Free Text time</MudRadio>
                 </MudRadioGroup>
             }
-            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime)
+            @if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.GeneralTime  && !string.IsNullOrWhiteSpace(SelectedDateLabel))
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?"
-                                       Label="Start Time"
-                                       Time="@StartTimeSpan"
-                                       Class="event-custom-textfield"
-                                       Style="background-color: #FFFFFF;"
-                                       Variant="Variant.Outlined"
-                                       TimeChanged="@((TimeSpan? t) => StartTimeSpan = t)" />
-                        <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
-                    </div>
-
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?"
-                                       Label="End Time"
-                                       Time="@EndTimeSpan"
-                                       Class="event-custom-textfield"
-                                       Style="background-color: #FFFFFF;"
-                                       Variant="Variant.Outlined"
-                                       TimeChanged="@((TimeSpan? t) => EndTimeSpan = t)" />
-                        <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
-                    </div>
+                    <MudTextField  MaxLength="50" @bind-Value="@FreeTextTimeField" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                 </div>
                 @if (!string.IsNullOrEmpty(_timeError))
                 {
@@ -181,51 +166,30 @@
                 }
 
             }
-            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
-            {
+            else{
                 @foreach (var entry in DayTimeList.Take(7))
                 {
                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-                            <div style="display: flex; align-items: center; gap: 8px; flex-direction: row; width: 150px;">
+                             <div style="width: 135px;display: flex; justify-content: flex-start; align-items: center;">
                                 <input type="checkbox"
-                                       checked="@entry.IsSelected"
-                                       disabled="@(!IsValidTimeFormat(entry.StartTime, entry.EndTime))"
-                                       @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
-                                       style="transform: scale(1.5); margin-right: 8px;" />
-                                <label>@entry.Day</label>
+                                checked="@entry.IsSelected"
+                                class="eef--custom-accent"
+                                @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"/>
+                                <label style="font-size: 1rem;">@entry.Day</label>
                             </div>
-                            <div style="display: flex; gap: 0px; align-items: center;">
-                                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; width: 50px;">
-                                    <MudTimePicker T="TimeSpan?"
-                                                   Label="Start Time"
-                                                   @bind-Time="entry.StartTime"
-                                                   Class="event-custom-textfield"
-                                                   Style="background-color: #FFFFFF;"
-                                                   Variant="Variant.Outlined" />
-                                    <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
+                            <div style="display: flex; flex-direction: column;  align-items: flex-start; justify-content: center; flex-grow: 1;">
+                                <div style="display: flex; align-items: center; width: 100%;">
+                                    <MudTextField  MaxLength="50"ReadOnly="!entry.IsSelected" @bind-Value="@entry.FreeTextTime" Label="Time" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.AccessTime" />
                                 </div>
-                                <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; width: 150px;">
-                                    <MudTimePicker T="TimeSpan?"
-                                                   Label="End Time"
-                                                   @bind-Time="entry.EndTime"
-                                                   Class="event-custom-textfield"
-                                                   Style="background-color: #FFFFFF;"
-                                                   Variant="Variant.Outlined" />
-                                    <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
-                                </div>
+                                @if (!string.IsNullOrEmpty(entry.ErrorMsg))
+                                {
+                                    <div class="mud-error-text">@entry.ErrorMsg</div>
+                                }
                             </div>
                         </div>
                     </MudPaper>
-                    @if (!IsValidTimeFormat(entry.StartTime, entry.EndTime))
-                    {
-                        <div class="mud-error-text">Enter Valid Time format</div>
-                    }
                 }
-            }
-            else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.FreeTextTime)
-            {
-                <MudTextField Variant="Variant.Outlined" Label="Time" MaxLength="255" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;" />
             }
             <MarkdownEditor @bind-Value="@CurrentEvent.EventDescription" Placeholder="Start Typing" />
             @if (!string.IsNullOrEmpty(_descriptionerror))
@@ -332,9 +296,47 @@
         margin: 0;
     }
 
-    .no-spinner input[type=number] {
-        -moz-appearance: textfield; /* Firefox */
-    }
+.no-spinner input[type=number] {
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.eef--custom-accent {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background-color: #fff;
+  border: 2px solid #D0D5DD; 
+  cursor: pointer;
+  position: relative;
+  margin-right: 4px;
+  margin-left: 6px;
+}
+
+.eef--custom-accent:checked {
+  background-color: var(--color-accent);
+  border:none
+}
+
+.eef--custom-accent::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 7px;
+  width: 7px;
+  height: 14px;
+  border: solid #fff; 
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  opacity: 0;
+}
+
+.eef--custom-accent:checked::after {
+  opacity: 1;
+}
 </style>
 
 
