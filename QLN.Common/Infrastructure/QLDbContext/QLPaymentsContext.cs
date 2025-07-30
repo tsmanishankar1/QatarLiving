@@ -34,21 +34,18 @@ namespace QLN.Common.Infrastructure.QLDbContext
                     b => b.Response, ownedNavigationBuilder =>
                     {
                         ownedNavigationBuilder.ToJson();
-                        ownedNavigationBuilder.OwnsOne(response => response);
                     });
 
             modelBuilder.Entity<D365RequestsLogsEntity>().OwnsOne(
                     b => b.Payload, ownedNavigationBuilder =>
                     {
                         ownedNavigationBuilder.ToJson();
-                        ownedNavigationBuilder.OwnsOne(payload => payload);
                     });
 
             modelBuilder.Entity<D365RequestsLogsEntity>().OwnsOne(
                     b => b.Response, ownedNavigationBuilder =>
                     {
                         ownedNavigationBuilder.ToJson();
-                        ownedNavigationBuilder.OwnsOne(response => response);
                     });
         }
 
