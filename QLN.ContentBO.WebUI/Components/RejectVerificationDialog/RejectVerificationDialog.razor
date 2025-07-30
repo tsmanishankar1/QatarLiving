@@ -21,10 +21,18 @@
 
         <div class="mt-4 d-flex flex-column gap-2">
             <MudButton Variant="Variant.Filled"
-                       Disabled="@string.IsNullOrWhiteSpace(Reason)"
+                       Disabled="@IsConfirmDisabled"
                        Class="custom-add-btn"
                        OnClick="Confirm">
+                 @if (IsLoading)
+                {
+                     <MudProgressCircular Color="Color.Inherit" Size="Size.Small"Indeterminate="true" />
+                }
+                else
+                {
+
                 @ButtonTitle
+                }
             </MudButton>
 
             <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="custom-close-btn">

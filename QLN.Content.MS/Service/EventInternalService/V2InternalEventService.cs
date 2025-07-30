@@ -151,46 +151,19 @@ namespace QLN.Content.MS.Service.EventInternalService
             if (schedule.StartDate == default || schedule.EndDate == default)
                 throw new ArgumentException("StartDate and EndDate must be provided.");
 
-            switch (schedule.TimeSlotType)
+            if (schedule.StartDate > schedule.EndDate)
+                throw new ArgumentException("StartDate must not be later than EndDate.");
+
+            if (!string.IsNullOrWhiteSpace(schedule.GeneralTextTime) && schedule.GeneralTextTime.Length > 50)
+                throw new ArgumentException("GeneralTextTime must not exceed 50 characters.");
+
+            if (schedule.TimeSlots != null)
             {
-                case V2EventTimeType.PerDayTime:
-                    if (schedule.TimeSlots == null || !schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be provided for 'PerDayTime' events.");
-
-                    if (schedule.StartTime.HasValue || schedule.EndTime.HasValue)
-                        throw new ArgumentException("StartTime and EndTime must be null for 'PerDayTime' events.");
-
-                    if (!string.IsNullOrWhiteSpace(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTimeText must be null or empty for 'PerDayTime' events.");
-                    break;
-
-                case V2EventTimeType.FreeTimeText:
-                    if (string.IsNullOrWhiteSpace(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTimeText must be provided for 'FreeTimeText' events.");
-
-                    if (schedule.StartTime.HasValue || schedule.EndTime.HasValue)
-                        throw new ArgumentException("StartTime and EndTime must be null for 'FreeTimeText' events.");
-
-                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be empty for 'FreeTimeText' events.");
-                    break;
-
-                case V2EventTimeType.GeneralTime:
-                    if (schedule.StartDate > schedule.EndDate)
-                        throw new ArgumentException($"StartDate ({schedule.StartDate:dd.MM.yyyy}) cannot be after EndDate ({schedule.EndDate:dd.MM.yyyy}).");
-
-                    if (!schedule.StartTime.HasValue || !schedule.EndTime.HasValue)
-                        throw new ArgumentException("StartTime and EndTime must be provided for 'GeneralTime' events.");
-
-                    if (schedule.TimeSlots != null && schedule.TimeSlots.Any())
-                        throw new ArgumentException("TimeSlots must be empty for 'GeneralTime' events.");
-
-                    if (!string.IsNullOrWhiteSpace(schedule.FreeTimeText))
-                        throw new ArgumentException("FreeTimeText must be null or empty for 'GeneralTime' events.");
-                    break;
-
-                default:
-                    throw new ArgumentException("Invalid TimeSlotType value.");
+                foreach (var slot in schedule.TimeSlots)
+                {
+                    if (!string.IsNullOrWhiteSpace(slot.TextTime) && slot.TextTime.Length > 50)
+                        throw new ArgumentException("Each TimeSlot.TextTime must not exceed 50 characters.");
+                }
             }
         }
         private string GenerateSlug(string title)

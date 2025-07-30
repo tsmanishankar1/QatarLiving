@@ -293,11 +293,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(Guid commentId, string userId, Guid communityPostId, CancellationToken ct = default)
+        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
             try
             {
-                var url = $"/api/v2/community/likeCommentInternal/{commentId}/{communityPostId}/{userId}";
+                var url = $"/api/v2/community/likeCommentInternal/{userId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);

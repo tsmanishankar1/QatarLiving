@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Common.Infrastructure.Subscriptions;
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 {
     public static class ServiceBOEndpoint
@@ -65,6 +68,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
                 [AsParameters] PaginationQuery pagination,
                 [FromQuery] string? search,
                 [FromQuery] string? sortBy,
+                [FromQuery] DateTime? startDate,
+                [FromQuery] DateTime? endDate,
+                [FromQuery] string? subscriptionType,
                 IServicesBoService externalService,
                 ILoggerFactory loggerFactory,
                 CancellationToken cancellationToken) =>
@@ -78,6 +84,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
                         pagination.PageSize ?? 12,
                         search,
                         sortBy,
+                        startDate,
+                        endDate,
+                        subscriptionType,
                         cancellationToken);
 
                     return Results.Ok(result);
@@ -102,7 +111,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
             .WithName("GetAllServiceSubscriptionListing")
             .WithTags("ServicesBo")
             .WithSummary("Get all service ads with Subscription info")
-            .WithDescription("Returns all service ads with basic contact and payment details, with pagination, search, and sorting for subscription.")
+            .WithDescription("Returns all service ads with basic contact and payment details, with pagination, search, sorting, and filtering.")
             .Produces<PaginatedResult<ServiceAdPaymentSummaryDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -145,6 +154,91 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
             .WithSummary("Get all  P2P Transaction  ads with pagination")
             .WithDescription("Retrieves a paginated summary of all service ads with optional sorting, search, status, report, feature and date filters.")
             .Produces<PaginatedResult<ServiceP2PAdSummaryDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapServiceSubscriptionAdGetAllEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getallsubscriptionadsbo", async (
+                IServicesBoService service,
+                CancellationToken cancellationToken,
+                [FromQuery] string? sortBy = null,
+                [FromQuery] string? search = null,
+                [FromQuery] DateTime? fromDate = null,
+                [FromQuery] DateTime? toDate = null,
+                [FromQuery] DateTime? publishedFrom = null,
+                [FromQuery] DateTime? publishedTo = null,
+                
+                [FromQuery] int pageNumber = 1,
+                [FromQuery] int pageSize = 12) =>
+            {
+                try
+                {
+                    var result = await service.GetAllSubscriptionAdsServiceBo(
+                        sortBy ?? "CreationDate",
+                        search,
+                        fromDate,
+                        toDate,
+                        publishedFrom,
+                        publishedTo,
+                        pageNumber,
+                        pageSize,
+                        cancellationToken
+                    );
+                    return Results.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(detail: ex.Message, title: "Internal Server Error");
+                }
+            })
+            .WithName("GetAllSubscriptionsAdsBo")
+            .WithTags("ServicesBo")
+            .WithSummary("Get all service ads with pagination")
+            .WithDescription("Retrieves a paginated summary of all SubscriptionsAds ads with optional sorting, search, status, report, feature and date filters.")
+            .Produces<PaginatedResult<ServiceAdSummaryDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+        public static RouteGroupBuilder MapGetCompaniesByVertical(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getByVertical", async Task<IResult> (
+                [FromQuery] VerticalType verticalId,
+                [FromQuery] SubVertical? subVerticalId,
+                [FromServices] IServicesBoService service) =>
+            {
+                try
+                {
+                    var result = await service.GetCompaniesByVerticalAsync(verticalId, subVerticalId);
+
+                    if (result == null || result.Count == 0)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "No companies found for the specified vertical and subvertical.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred while retrieving company profiles.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+            .WithName("GetCompaniesByVertical")
+            .WithTags("ServicesBo")
+            .WithSummary("Get company profiles by vertical and subvertical")
+            .WithDescription("Retrieves company profiles based on the provided verticalId and optional subVerticalId.")
+            .Produces<List<CompanyProfileDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

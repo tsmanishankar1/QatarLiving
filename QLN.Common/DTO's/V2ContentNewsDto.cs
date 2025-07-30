@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
@@ -73,9 +74,18 @@ namespace QLN.Common.DTO_s
         public string Name { get; set; } = string.Empty;
     }
 
-    public class WriterTagsResponse
+    public class WritertagDTO
     {
-        public List<string> Tags { get; set; }
+        public string Tagname { get; set; } = string.Empty;
+
+    }
+    public class Writertag
+    {
+        public Guid tagId { get; set; }
+        public string Tagname { get; set; } = string.Empty;
+        public string userId { get; set; } = string.Empty;
+        public string userName { get; set; } = string.Empty;
+
     }
 
     public enum Slot

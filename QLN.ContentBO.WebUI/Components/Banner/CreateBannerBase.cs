@@ -34,6 +34,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         };
         protected string? selectedPage;
         protected string? _DateError;
+        protected string? _EndDateError;
         protected string? _BannerError;
         protected string? _DesktopImageError;
         protected string? _MobileImageError;
@@ -50,6 +51,20 @@ namespace QLN.ContentBO.WebUI.Components.Banner
         protected HashSet<Guid> _selectedBannerIds = new();
         protected List<BannerTypeRequest> _selectedBannerTypeRequests = new();
         protected bool IsChecked(BannerLocationDto item) => _selectedBannerIds.Contains(item.Id);
+        protected List<BannerPageLocationDto> FilteredGroups =>
+        bannerPageTypes
+            .Select(group => new BannerPageLocationDto
+            {
+                Id = group.Id,
+                VerticalId = group.VerticalId,
+                SubVerticalId = group.SubVerticalId,
+                BannerPageName = group.BannerPageName,
+                bannertypes = group.bannertypes
+                    .Where(x => string.IsNullOrEmpty(bannerModel.BannerSize) || x.Dimensions == bannerModel.BannerSize)
+                    .ToList()
+            })
+            .Where(g => g.bannertypes.Any())
+            .ToList();
 
 
         protected void OnCheckedChanged(BannerLocationDto item, bool isChecked, int? verticalId, int? subVerticalId, Guid pageId)
@@ -94,12 +109,12 @@ namespace QLN.ContentBO.WebUI.Components.Banner
 
         protected void UpdateDisplayText()
         {
-            var selectedNames = bannerPageTypes
-                .SelectMany(g => g.bannertypes)
-                .Where(b => _selectedBannerIds.Contains(b.Id))
-                .Select(b => b.BannerTypeName);
-
-            _displayText = string.Join(", ", selectedNames);
+            var selectedItems = bannerPageTypes
+            .SelectMany(g => g.bannertypes)
+            .Where(b => _selectedBannerIds.Contains(b.Id))
+            .ToList(); 
+            _displayText = string.Join(", ", selectedItems.Select(b => b.BannerTypeName));
+            bannerModel.BannerSize = selectedItems.FirstOrDefault()?.Dimensions ?? string.Empty;
         }
 
         public class GroupedOption
@@ -128,14 +143,17 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 .Where(bt => bt.Pages != null)
                 .SelectMany(bt => bt.Pages!)
                 .ToList();
+        }
+        protected override async Task OnParametersSetAsync()
+        {
             if (BannerTypeId is Guid id)
             {
                 _selectedBannerIds.Add(id);
                 UpdateDisplayText();
             }
-
-
+            await base.OnParametersSetAsync();
         }
+
         private async Task ShowSuccessModal(string title)
         {
             var parameters = new DialogParameters
@@ -168,6 +186,23 @@ namespace QLN.ContentBO.WebUI.Components.Banner
 
             }
         }
+        protected void HandleAdornmentClick()
+        {
+            if (!string.IsNullOrWhiteSpace(_displayText))
+            {
+                _displayText = string.Empty;
+                _selectedBannerIds.Clear();
+                _selectedBannerTypeRequests.Clear();
+            }
+        }
+        protected void OnBannerSizeChanged(string? selectedSize)
+        {
+            bannerModel.BannerSize = selectedSize;
+             _displayText = string.Empty;
+            _selectedBannerIds.Clear();
+            _selectedBannerTypeRequests.Clear();
+        }
+
         protected async Task HandleMobileImageChanged(InputFileChangeEventArgs e)
         {
             var file = e.File;
@@ -205,6 +240,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             _MobileImageError = null;
             _AvailabilityError = null;
             _DateError = null;
+            _EndDateError = null;
             _BannerError = null;
             bannerModel.BannerTypeIds = _selectedBannerTypeRequests;
             if (bannerModel.BannerTypeIds == null || !bannerModel.BannerTypeIds.Any())
@@ -221,14 +257,14 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             }
             if (_endDate == null)
             {
-                _DateError = "End date is required.";
+                _EndDateError = "End date is required.";
                 Snackbar.Add("End date is required.", severity: Severity.Error);
                 return;
             }
             if (_startDate != null && _endDate != null && _endDate <= _startDate)
             {
-                _DateError = "End date must be after the start date.";
-                Snackbar.Add("End date must be after the start date.", severity: Severity.Error);
+                _EndDateError = "End date should be greater than the start date.";
+                Snackbar.Add("End date should be greater than the start date.", severity: Severity.Error);
                 return;
             }
             if (bannerModel.IsDesktopAvailability != true && bannerModel.IsMobileAvailability != true)
@@ -342,6 +378,10 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
+            _displayText = string.Empty;
+            _selectedBannerIds = new HashSet<Guid>();
+            _startDate = null;
+            _endDate = null;
             StateHasChanged();
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)

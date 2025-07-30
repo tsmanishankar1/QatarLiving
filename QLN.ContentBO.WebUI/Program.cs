@@ -83,6 +83,10 @@ try
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+    builder.Services.AddHttpClient<IServiceService, ServicesService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
        builder.Services.AddHttpClient<IClassifiedService, ClassifiedService>(client =>
     {

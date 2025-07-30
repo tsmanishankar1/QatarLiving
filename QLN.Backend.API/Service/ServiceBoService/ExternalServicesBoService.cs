@@ -1,12 +1,9 @@
 ﻿
-
 using Dapr.Client;
-using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
-using QLN.Backend.API.Service.Services;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 using System.Text.Json;
 
@@ -111,9 +108,11 @@ namespace QLN.Backend.API.Service.ServiceBoService
       int? pageSize = 12,
       string? search = null,
       string? sortBy = null,
+      DateTime? startDate = null,
+      DateTime? endDate = null,
+      string? subscriptionType = null,
       CancellationToken cancellationToken = default)
         {
-            // Properly encode query params
             var queryParams = new List<string>
     {
         $"pageNumber={pageNumber ?? 1}",
@@ -121,14 +120,19 @@ namespace QLN.Backend.API.Service.ServiceBoService
     };
 
             if (!string.IsNullOrWhiteSpace(search))
-            {
                 queryParams.Add($"search={Uri.EscapeDataString(search)}");
-            }
 
             if (!string.IsNullOrWhiteSpace(sortBy))
-            {
                 queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-            }
+
+            if (startDate.HasValue)
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (endDate.HasValue)
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (!string.IsNullOrWhiteSpace(subscriptionType))
+                queryParams.Add($"subscriptionType={Uri.EscapeDataString(subscriptionType)}");
 
             var url = $"/api/servicebo/getalladpayments?{string.Join("&", queryParams)}";
 
@@ -155,9 +159,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (result == null)
-                {
                     throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
-                }
 
                 return result;
             }
@@ -237,8 +239,110 @@ namespace QLN.Backend.API.Service.ServiceBoService
             }
         }
 
+        public async Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
+                string? sortBy = "CreationDate",
+                string? search = null,
+                DateTime? fromDate = null,
+                DateTime? toDate = null,
+                DateTime? publishedFrom = null,
+                DateTime? publishedTo = null,
+                int pageNumber = 1,
+                int pageSize = 12,
+                CancellationToken cancellationToken = default)
+        {
+            try
+            {
 
+                var queryParams = new List<string>
+        {
+            $"sortBy={Uri.EscapeDataString(sortBy ?? "CreationDate")}",
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    queryParams.Add($"search={Uri.EscapeDataString(search)}");
+                if (fromDate.HasValue)
+                    queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
+                if (toDate.HasValue)
+                    queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
+                if (publishedFrom.HasValue)
+                    queryParams.Add($"publishedFrom={Uri.EscapeDataString(publishedFrom.Value.ToString("o"))}");
+                if (publishedTo.HasValue)
+                    queryParams.Add($"publishedTo={Uri.EscapeDataString(publishedTo.Value.ToString("o"))}");
+              
+
+                var queryString = string.Join("&", queryParams);
+                var url = $"/api/servicebo/getallsubscriptionadsbo?{queryString}";
+
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.Services.ServiceAppId, url);
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown error occurred.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidOperationException(errorMessage);
+                }
+
+                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                var paginatedResult = JsonSerializer.Deserialize<PaginatedResult<ServiceSubscriptionAdSummaryDto>>(responseJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return paginatedResult ?? new PaginatedResult<ServiceSubscriptionAdSummaryDto>
+                {
+                    TotalCount = 0,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Items = new List<ServiceSubscriptionAdSummaryDto>()
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all service ads");
+                throw;
+            }
+        }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
+    VerticalType verticalId,
+    SubVertical? subVerticalId,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByVertical?verticalId={(int)verticalId}" +
+                          (subVerticalId != null ? $"&subVerticalId={(int)subVerticalId}" : string.Empty);
+
+                return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "No companies found for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                return new List<CompanyProfileDto>(); // Or return null if your use case needs it
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                throw;
+            }
+        }
 
 
     }
+
 }

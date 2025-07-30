@@ -10,7 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         [Inject] public NavigationManager Navigation { get; set; }
         protected EditAdPost adPostModel { get; set; } = new();
         [Parameter]
-        public int AdId { get; set; }
+        public string Id { get; set; }
 
         protected void GoBack()
         {

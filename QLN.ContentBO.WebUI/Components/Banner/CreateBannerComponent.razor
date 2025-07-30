@@ -10,6 +10,16 @@
     <MudPaper Elevation="0" Class="pa-4" Style="background-color: #FAFAFA;">
         <MudGrid>
             <MudItem xs="6">
+                 <MudText Class="banner-field-heading pt-2">Banner Size *</MudText>
+                <MudSelect T="string" Label="Select Banner Size" Value="bannerModel.BannerSize" ValueChanged="OnBannerSizeChanged" Variant="Variant.Outlined" Style="background-color: white;">
+                @foreach (var size in BannerSizes)
+                {
+                    <MudSelectItem Value="@size">@size</MudSelectItem>
+                }
+                </MudSelect>
+                <div class="py-2">
+                 <ValidationMessage For="@(() => bannerModel.BannerSize)" />
+                 </div>
                 <MudText Class="banner-field-heading">Banner Location *
                 </MudText>
               
@@ -28,30 +38,42 @@
                       ReadOnly="true"
                       Variant="Variant.Outlined"
                       Adornment="Adornment.End"
-                      AdornmentIcon="@Icons.Material.Filled.ArrowDropDown"
+                      AdornmentIcon="@(_displayText?.Length > 0 ? Icons.Material.Filled.Clear : Icons.Material.Filled.ArrowDropDown)"
+                      OnAdornmentClick="HandleAdornmentClick"
                       Style="width: 100%; background-color: white;" />
     </ActivatorContent>
 
     <ChildContent>
-        <MudPaper Class="pa-3" Style="width: 480px; overflow-y: auto;">
-            @foreach (var group in bannerPageTypes)
-            {
-                <MudText Typo="Typo.body1" Class="mt-2 mb-1" Color="Color.Primary">
-                    @group.BannerPageName
-                </MudText>
-                @foreach (var item in group.bannertypes)
-                {
-                    <MudCheckBox T="bool"
-                                Color="Color.Primary"
-                                 Label="@item.BannerTypeName"
-                                 Value="@IsChecked(item)"
-                                 ValueChanged="val => OnCheckedChanged(item, val, group.VerticalId, group.SubVerticalId, group.Id)" />
-                }
-            }
-        </MudPaper>
-    </ChildContent>
+        <MudPaper Elevation="0" Class="pa-3" Style="width: 480px; max-height: 300px; overflow-y: auto;">
+    @if (FilteredGroups.Any())
+    {
+        @foreach (var group in FilteredGroups)
+        {
+            <MudText Typo="Typo.body1" Class="mt-2 mb-1" Color="Color.Primary">
+                @group.BannerPageName
+            </MudText>
 
+            @foreach (var item in group.bannertypes)
+            {
+                <MudCheckBox T="bool"
+                             Color="Color.Primary"
+                             Label="@item.BannerTypeName"
+                             Value="@IsChecked(item)"
+                             ValueChanged="val => OnCheckedChanged(item, val, group.VerticalId, group.SubVerticalId, group.Id)" />
+            }
+        }
+    }
+    else
+    {
+        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="mt-2">
+            No matching banner types for the selected size.
+        </MudText>
+    }
+
+</MudPaper>
+    </ChildContent>
 </MudMenu>
+
 
                 <MudText Class="banner-field-heading pt-2">Analytics Tracking ID</MudText>
                 <MudTextField MaxLength="255" @bind-Value="bannerModel.AnalyticsTrackingId" Placeholder="Analytics Tracking ID"
@@ -90,37 +112,32 @@
                     <MudItem xs="12" sm="6">
                        <MudDatePicker Label="Start date"
                        Variant="Variant.Outlined"
+                       MinDate="@DateTime.Today"
                        Style="background-color: white;"
                        @bind-Date="_startDate" />
+                        @if (!string.IsNullOrEmpty(_DateError))
+                        { 
+                            <div class="mud-error-text">@_DateError</div>
+                        } 
                     </MudItem>
 
                     <MudItem xs="12" sm="6">
                         <MudDatePicker Label="End date"
+                        MinDate="@DateTime.Today"
                        Variant="Variant.Outlined"
                        Style="background-color: white;"
                        @bind-Date="_endDate" />
+                        @if (!string.IsNullOrEmpty(_EndDateError))
+                        { 
+                             <div class="mud-error-text">@_EndDateError</div>
+                        } 
                     </MudItem>
                 </MudGrid> 
-                  @if (!string.IsNullOrEmpty(_DateError))
-                { 
-                    <div class="mud-error-text">@_DateError</div>
-                } 
             
                 <MudText Class="banner-field-heading pt-2">Duration
                     (in seconds)</MudText>
                 <MudNumericField T="int" @bind-Value="bannerModel.Duration" Placeholder="Duration"
                     Variant="Variant.Outlined" Min="1" Style="background-color: white;" />
-                
-                <MudText Class="banner-field-heading pt-2">Banner Size *</MudText>
-                <MudSelect T="string" Label="Select Banner Size" @bind-Value="bannerModel.BannerSize" Variant="Variant.Outlined" Style="background-color: white;">
-                @foreach (var size in BannerSizes)
-                {
-                    <MudSelectItem Value="@size">@size</MudSelectItem>
-                }
-                </MudSelect>
-                <div class="py-2">
-                 <ValidationMessage For="@(() => bannerModel.BannerSize)" />
-                 </div>
             
                 <MudText Class="banner-field-heading">
                     Availability</MudText>

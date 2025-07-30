@@ -131,7 +131,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -146,7 +146,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     options.Tokens.EmailConfirmationTokenProvider = "EmailVerification";
     options.Tokens.ChangePhoneNumberTokenProvider = "PhoneVerification";
 })
-.AddEntityFrameworkStores<QatarlivingDevContext>()
+.AddEntityFrameworkStores<QLApplicationContext>()
 .AddDefaultTokenProviders();
 
 WebApplicationBuilder builder1 = builder;
@@ -202,6 +202,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 {
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
@@ -276,8 +277,17 @@ var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints()
+var companyServiceGroup = app.MapGroup("/api/companyservice");
+companyServiceGroup.MapCompanyServiceEndpoints()
+    .RequireAuthorization();
+var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
+companyClassifiedsGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
+var companyDsGroup = app.MapGroup("/api/companyds");
+companyDsGroup.MapCompanyDealsStoresEndpoints()
+    .RequireAuthorization();
+var companyVerifiedGroup = app.MapGroup("/api/companyverified");
+companyVerifiedGroup.MapVerifiedCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
@@ -332,7 +342,8 @@ bannerPostGroup.MapBannerPostEndpoints();
 
 
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
-ClassifiedBo.MapClassifiedboEndpoints();
+ClassifiedBo.MapClassifiedboEndpoints()
+    .RequireAuthorization();
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();

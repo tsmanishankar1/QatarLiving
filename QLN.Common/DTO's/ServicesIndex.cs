@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Azure.Search.Documents.Indexes;
-using System.Text.Json.Serialization;
-using Azure.Core.Serialization;
-using Microsoft.Spatial;
-using static QLN.Common.DTO_s.ClassifiedsIndex;
+﻿using Azure.Search.Documents.Indexes;
 
 namespace QLN.Common.DTO_s
 {
@@ -119,13 +113,27 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPriceOnRequest { get; set; }
 
+        [SearchableField(IsFilterable = true)]
+        public string? SubscriptionId { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string ZoneId { get; set; } = string.Empty;
+
+        [SearchableField(IsFilterable = true)]
+        public string? StreetNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? BuildingNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? LicenseCertificate { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Comments { get; set; }
     }
 
     public class ServiceImageInfo
     {
-        [SearchableField(IsFilterable = true)]
-        public string? FileName { get; set; }
-
         [SearchableField(IsFilterable = true)]
         public string Url { get; set; } = string.Empty;
 
