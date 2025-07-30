@@ -83,5 +83,16 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ExpiryDate { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsFeatured { get; set; } = false;
+
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? FeaturedExpiryDate { get; set; } = null;
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsPromoted { get; set; } = false;
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public DateTime? PromotedExpiryDate { get; set; } = null;
     }
 }

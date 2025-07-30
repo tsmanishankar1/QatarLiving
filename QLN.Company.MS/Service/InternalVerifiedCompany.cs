@@ -34,6 +34,7 @@ namespace QLN.Company.MS.Service
                     if (existing != null)
                     {
                         if (existing.UserId == dto.UserId &&
+                            existing.UserName == dto.UserName &&
                             existing.Vertical == dto.Vertical &&
                             existing.SubVertical == dto.SubVertical)
                         {
@@ -162,6 +163,7 @@ namespace QLN.Company.MS.Service
                 IsVerified = dto.IsVerified,
                 Status = dto.Status ?? CompanyStatus.Active,
                 CreatedBy = dto.UserId,
+                UserName=dto.UserName,
                 CreatedUtc = DateTime.UtcNow,
                 IsActive = true
             };
@@ -313,6 +315,7 @@ namespace QLN.Company.MS.Service
                         : existing.CRDocument,
                 IsVerified = dto.IsVerified,
                 Status = dto.Status ?? CompanyStatus.Active,
+                UserName=dto.UserName,
                 CreatedBy = existing.CreatedBy,
                 CreatedUtc = existing.CreatedUtc,
                 UpdatedBy = dto.UserId,
@@ -356,7 +359,7 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<string> ApproveCompany(Guid userId, CompanyVerificationApproveDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> ApproveCompany(string userId, CompanyVerificationApproveDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -509,5 +512,52 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        public async Task<List<VerificationProfileStatus>> GetAllVerificationProfiles(VerticalType vertical,SubVertical? subVertical,CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.CompanyStoreName,
+                    ConstantValues.CompanyVerifiedIndex,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.CompanyStoreName,
+                    keys,
+                    null,
+                    cancellationToken: cancellationToken
+                );
+
+                var companies = items
+                    .Select(i => JsonSerializer.Deserialize<VerifiedCompanyDto>(i.Value, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }))
+                    .Where(c => c != null && c.Vertical == vertical && (!subVertical.HasValue || c.SubVertical == subVertical.Value))
+                    .Select(c => new VerificationProfileStatus
+                    {
+                        CompanyId = c.Id,
+                        UserId = c.UserId,
+                        CRFile=c.CRDocument,
+                        CRLicense=c.CRNumber,
+                        Enddate=c.CRExpiryDate,
+                        Username=c.UserName,
+                        BusinessName = c.CompanyName,
+                        Vertical = c.Vertical,
+                        SubVertical = c.SubVertical ?? SubVertical.Items,
+                        IsActive = c.IsActive
+                    })
+                    .ToList();
+
+                return companies;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch company summaries by vertical and subvertical");
+                throw;
+            }
+        }
+
     }
 }

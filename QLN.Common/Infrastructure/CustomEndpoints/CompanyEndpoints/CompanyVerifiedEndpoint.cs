@@ -17,28 +17,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         public static RouteGroupBuilder MapCreateVerificationCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPost("/create", async Task<Results<
-                Ok<string>,
-                ForbidHttpResult,
-                BadRequest<ProblemDetails>,
-                Conflict<string>,
-                ProblemHttpResult>>
-            (
-                VerifiedCompanyDto dto,
-                ICompanyVerifiedService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken = default) =>
+    Ok<string>,
+    ForbidHttpResult,
+    BadRequest<ProblemDetails>,
+    Conflict<string>,
+    ProblemHttpResult>>
+(
+    VerifiedCompanyDto dto,
+    ICompanyVerifiedService service,
+    HttpContext httpContext,
+    CancellationToken cancellationToken = default) =>
             {
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var isSubcriber = userData.GetProperty("roles").EnumerateArray()
-                        .Any(r => r.GetString() == "subscription");
-                    dto.UserId = uid;
-                    if (dto.UserId != uid)
+                    if (string.IsNullOrEmpty(userClaim))
                         return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+
+                    var uid = userData.GetProperty("uid").GetString();
+                    var username = userData.GetProperty("name").GetString();
+
+                   
+                    dto.UserId = uid;
+                    dto.UserName = username; 
+
                     var result = await service.CreateCompany(dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
@@ -68,15 +73,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
-            .WithName("CreateVerificationCompanyProfile")
-            .WithTags("Company")
-            .WithSummary("Create a company profile")
-            .WithDescription("Creates a new company profile using the user ID from the access token.")
-            .Produces<string>(StatusCodes.Status200OK)
-            .Produces<string>(StatusCodes.Status409Conflict)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .DisableAntiforgery();
+.WithName("CreateVerificationCompanyProfile")
+.WithTags("Company")
+.WithSummary("Create a company profile")
+.WithDescription("Creates a new company profile using the user ID and username from the access token.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<string>(StatusCodes.Status409Conflict)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+.DisableAntiforgery();
+
 
             group.MapPost("/createByUserId", async Task<Results<
                 Ok<string>,
@@ -414,6 +420,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapVerificationCompanyApproval(this RouteGroupBuilder group)
         {
+            
             group.MapPut("/approve", async Task<IResult> (
                 [FromBody] CompanyVerificationApproveDto dto,
                 [FromServices] ICompanyVerifiedService service,
@@ -422,14 +429,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.FindFirst("sub")?.Value
-                                 ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(userId, out var userGuid))
+                    if (string.IsNullOrWhiteSpace(userClaim))
                         return TypedResults.Forbid();
-                    if (dto == null)
-                        throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-                    await service.ApproveCompany(userGuid, dto, cancellationToken);
+
+                    if (!JsonSerializer.Deserialize<JsonElement>(userClaim).TryGetProperty("uid", out var uidElement) ||
+                        string.IsNullOrWhiteSpace(uidElement.GetString()))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userId = uidElement.GetString(); 
+
+                    await service.ApproveCompany(userId, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -459,14 +472,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
-            .WithName("ApproveVerificationCompanyInternal")
+            .WithName("ApproveVerificationCompany")
             .WithTags("Company")
-            .WithSummary("Approve a company profile")
+            .WithSummary("Approve a company externally using UID from claims")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             group.MapPut("/approveByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
@@ -474,19 +487,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 ProblemHttpResult>>
             (
                 CompanyVerificationApproveDto dto,
-                ICompanyVerifiedService service,
-                Guid userId,
+                [FromQuery] string userId,
+                [FromServices] ICompanyVerifiedService service,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
-                            Detail = "UserId must be provided in the payload.",
+                            Detail = "UserId must be provided.",
                             Status = StatusCodes.Status400BadRequest
                         });
+                    }
 
                     var result = await service.ApproveCompany(userId, dto, cancellationToken);
                     return TypedResults.Ok(result);
@@ -512,15 +527,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(
-                           title: "Internal Server Error",
-                           detail: ex.Message,
-                           statusCode: StatusCodes.Status500InternalServerError
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-            .WithName("ApproveVerificationCompanyInternalViaDapr")
+            .WithName("ApproveVerifiedCompanyInternal")
             .WithTags("Company")
-            .WithSummary("Approve a company profile internally via Dapr")
+            .WithSummary("Approve a company internally using userId from query")
             .ExcludeFromDescription()
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
@@ -529,6 +544,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+
+
         public static RouteGroupBuilder MapGetVerificationCompanyApprovalInfo(this RouteGroupBuilder group)
         {
             group.MapGet("/getApproval", async Task<Results<
@@ -869,5 +886,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+
+        public static RouteGroupBuilder MapGetVerificationStatus(this RouteGroupBuilder group)
+        {
+            group.MapGet("/profileStatusbyverified", async Task<IResult> (
+                [FromQuery] VerticalType vertical,
+                [FromQuery] SubVertical? subVertical,
+                [FromServices] ICompanyVerifiedService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var filtered = await service.GetAllVerificationProfiles(vertical, subVertical, cancellationToken);
+
+                    if (filtered == null || filtered.Count == 0)
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "No company profiles matched the given vertical and subvertical.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+
+                    return TypedResults.Ok(filtered);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetVerifedCompanyStatus")
+            .WithTags("Company")
+            .AllowAnonymous()
+            .WithSummary("Get filtered company profiles")
+            .WithDescription("Returns company profiles matching vertical and optional subvertical.")
+            .Produces<List<VerificationProfileStatus>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+
     }
 }

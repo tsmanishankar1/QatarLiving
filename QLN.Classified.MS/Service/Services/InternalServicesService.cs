@@ -500,7 +500,6 @@ namespace QLN.Classified.MS.Service.Services
                 UpdatedBy = dto.UpdatedBy,
                 Images = dto.PhotoUpload.Select(i => new ImageInfo
                 {
-                    AdImageFileNames = i.FileName,
                     Url = i.Url,
                     Order = i.Order
                 }).ToList()

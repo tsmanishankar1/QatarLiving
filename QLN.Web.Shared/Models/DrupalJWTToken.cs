@@ -51,8 +51,8 @@ namespace QLN.Web.Shared.Models
         [JsonPropertyName("uid")]
         public string? Uid { get; set; }
 
-        /*        [JsonPropertyName("qlnext_user_id")] // Commenting this for now for future use by Grant
-                public string? QlnextUserId { get; set; } */
+        [JsonPropertyName("qlnext_user_id")]
+        public string? QlnextUserId { get; set; }
 
         [JsonPropertyName("name")]
         public string? Name { get; set; }
@@ -84,7 +84,43 @@ namespace QLN.Web.Shared.Models
         //[JsonPropertyName("showroom_info")]
         //public List<object> ShowroomInfo { get; set; }
 
-        //[JsonPropertyName("subscription")]
-        //public string? Subscription { get; set; } // temp remove so we dont even try and serialize this
+        [JsonPropertyName("subscription")]
+        public DrupalSubscription? Subscription { get; set; }
+
+        public class DrupalSubscription
+        {
+            [JsonPropertyName("reference_id")]
+            public string? ReferenceId { get; set; }
+
+            [JsonPropertyName("start_date")]
+            public string? StartDate { get; set; }
+
+            [JsonPropertyName("expire_date")]
+            public string? ExpireDate { get; set; }
+
+            [JsonPropertyName("uid")]
+            public string? Uid { get; set; }
+
+            [JsonPropertyName("product_type")]
+            public string? ProductType { get; set; }
+
+            [JsonPropertyName("access_dashboard")]
+            public string? AccessDashboard { get; set; }
+
+            [JsonPropertyName("product_class")]
+            public string? ProductClass { get; set; }
+
+            [JsonPropertyName("categories")]
+            public List<string>? Categories { get; set; }
+
+            [JsonPropertyName("subscription_categories")]
+            public List<string>? SubscriptionCategories { get; set; }
+
+            [JsonPropertyName("snid")]
+            public string? Snid { get; set; }
+
+            [JsonPropertyName("status")]
+            public string? Status { get; set; }
+        }
     }
 }
