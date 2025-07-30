@@ -52,18 +52,16 @@ namespace QLN.Common.DTO_s
         public List<Guid> AdIds { get; set; } = new();
         public BulkActionEnum Action { get; set; }
         public string? Reason { get; set; }
-        public string? UpdatedBy { get; set; }
+        public string? Comments { get; set; }
     }
-
     public enum BulkActionEnum
     {
         Approve = 1,
         Publish = 2,
         Unpublish = 3,
-        UnPromote = 5,
-        UnFeature = 6,
-        Remove = 7
+        UnPromote = 4,
+        UnFeature = 5,
+        Remove = 6,
+        NeedChanges = 7
     }
-
-
 }

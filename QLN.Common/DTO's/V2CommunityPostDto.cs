@@ -61,6 +61,7 @@ namespace QLN.Common.DTO_s
         public List<string>? LikedUserIds { get; set; }
 
         public List<string>? CommentedUserIds { get; set; }
+        public List<V2CommunityPostDto>? MoreArticles { get; set; }
     }
     public class CommunityCommentApiResponse
     {

@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 {
@@ -67,7 +69,47 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
+        [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
+        protected List<PrelovedListing> Listings { get; set; } = new();
+        
+        protected override async Task OnInitializedAsync()
+        {
+            await LoadListingsAsync();
+        }
 
+        protected async Task LoadListingsAsync()
+        {
+            try
+            {
+                var filter = new FilterRequest
+                {
+                    Text = SearchText,
+                    PageNumber = 1,
+                    PageSize = 12
+                };
+
+                var response = await ClassifiedService.GetPrelovedListingsAsync(filter);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var result = JsonSerializer.Deserialize<PrelovedResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    Listings = result?.ClassifiedsPreloved ?? new();
+                }
+                else
+                {
+                    Console.WriteLine($"API call failed with status: {response?.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception in LoadListingsAsync: {ex.Message}");
+            }
+        }
         protected void OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString();

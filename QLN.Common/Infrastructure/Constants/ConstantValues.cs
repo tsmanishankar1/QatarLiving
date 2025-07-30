@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.Constants
         public const string CompanyIndexKey = "company-index";
         public const string CompanyServiceIndex = "company-service-index";
         public const string CompanyVerifiedIndex = "company-verified-index";
-        public const string CompanyDsIndex = "company-Ds-index";
+        public const string CompanyDsIndex = "company-ds-index";
         public const string CompanyServiceAppId = "qln-company-ms";
         // Classifieds Constants
         public const string ClassifiedsVertical = "classifieds";
@@ -92,6 +92,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string FeaturedCategoryClassifiedIndex = "featured-category-classified-index";
             public const string FeaturedCategoryServiceIndex = "featured-category-services-index";
             public const string UnifiedStore = "adstore";
+            public const string CommonStore = "commonstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
             public const string PrelovedIndexKey = "preloved-index";

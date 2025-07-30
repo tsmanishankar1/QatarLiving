@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 
 
@@ -52,7 +53,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -70,6 +71,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         UserName = serviceAd.UserName,
                         Category = serviceAd.CategoryName,
                         SubCategory = serviceAd.L1CategoryName,
+                        Certificate=serviceAd.LicenseCertificate,
                         IsPromoted = serviceAd.IsPromoted,
                         IsFeatured = serviceAd.IsFeatured,
                         Status = serviceAd.Status,
@@ -156,7 +158,10 @@ namespace QLN.Classified.MS.Service.ServicesBoService
      int? pageNumber = 1,
      int? pageSize = 12,
      string? search = null,
-     string? sortBy = null, 
+     string? sortBy = null,
+     DateTime? filterStartDate = null,
+     DateTime? filterEndDate = null,
+     string? subscriptionType = null,
      CancellationToken cancellationToken = default)
         {
             var result = new List<ServiceAdPaymentSummaryDto>();
@@ -166,26 +171,16 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 ConstantValues.Services.ServicesIndexKey,
                 cancellationToken: cancellationToken) ?? new();
 
-            //var paymentDetails = await _dapr.GetStateAsync<UserPaymentDetailsCollection>(
-            //    StoreName,
-            //    GlobalPaymentDetailsKey,
-            //    cancellationToken: cancellationToken) ?? new();
-
             var matchedAds = new List<ServiceAdPaymentSummaryDto>();
 
             foreach (var key in keys)
             {
-                var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                     ConstantValues.Services.StoreName,
                     key,
                     cancellationToken: cancellationToken);
 
                 if (serviceAd == null) continue;
-
-                //var matchingPayment = paymentDetails.Details.FirstOrDefault(p =>
-                //    p.UserId == serviceAd.CreatedBy && p.PaymentTransactionId == serviceAd.Id);
-
-                var defaultDate = new DateTime(2025, 4, 12);
 
                 var dto = new ServiceAdPaymentSummaryDto
                 {
@@ -196,36 +191,48 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     Mobile = serviceAd.PhoneNumber,
                     WhatsappNumber = serviceAd.WhatsappNumber,
                     StartDate = "25/04/2025",
-                    EndDate = "25/04/2025",
+                    EndDate = "25/07/2025",
                     Status = serviceAd.Status,
-                    OrderId = "102",//matchingPayment?.PaymentTransactionId"
-                    Amount =  100,// matchingPayment?.Price
+                    OrderId = "102",
+                    Amount = 100,
                     SubscriptionPlan = "2 Months"
-                    //(matchingPayment != null &&
-                    //            matchingPayment.StartDate != DateTime.MinValue &&
-                    //            matchingPayment.EndDate != DateTime.MinValue)
-                    //    ? $"{(matchingPayment.EndDate - matchingPayment.StartDate).TotalDays} days"
-                    //    : "0 days"
                 };
 
-                if (string.IsNullOrWhiteSpace(search) ||
-                    dto.AddTitle?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                    dto.AddId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
-                    dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                if (!string.IsNullOrWhiteSpace(search) &&
+                    !(dto.AddTitle?.Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                      dto.AddId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                      dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true))
                 {
-                    matchedAds.Add(dto);
+                    continue;
                 }
+
+                if (!string.IsNullOrWhiteSpace(subscriptionType) &&
+                    !string.Equals(dto.SubscriptionPlan, subscriptionType, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // Parse date strings to DateTime for filtering
+                if (DateTime.TryParseExact(dto.StartDate, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var adStartDate) &&
+                    DateTime.TryParseExact(dto.EndDate, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var adEndDate))
+                {
+                    if ((filterStartDate.HasValue && adEndDate < filterStartDate.Value) ||
+                        (filterEndDate.HasValue && adStartDate > filterEndDate.Value))
+                    {
+                        continue;
+                    }
+                }
+
+                matchedAds.Add(dto);
             }
 
-           
             matchedAds = sortBy?.ToLower() switch
             {
                 "startdate" => matchedAds.OrderBy(x => x.StartDate).ToList(),
                 "enddate" => matchedAds.OrderBy(x => x.EndDate).ToList(),
-                _ => matchedAds.OrderByDescending(x => x.StartDate).ToList() 
+                _ => matchedAds.OrderByDescending(x => x.StartDate).ToList()
             };
 
-           
             var totalCount = matchedAds.Count;
             int currentPage = pageNumber ?? 1;
             int currentSize = pageSize ?? 12;
@@ -243,6 +250,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 Items = paginatedItems
             };
         }
+
         public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
        string? sortBy = "CreationDate",
        string? search = null,
@@ -270,7 +278,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -322,7 +330,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                
 
-                // Sort
+              
                 sortBy = sortBy?.ToLowerInvariant();
                 serviceAds = sortBy switch
                 {
@@ -333,7 +341,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
                 };
 
-                // Pagination
+              
                 int totalCount = serviceAds.Count;
                 var pagedItems = serviceAds
                     .Skip((pageNumber - 1) * pageSize)
@@ -385,7 +393,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 foreach (var key in keys)
                 {
-                    var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+                    var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                         ConstantValues.Services.StoreName,
                         key,
                         cancellationToken: cancellationToken);
@@ -475,6 +483,40 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 _logger.LogError(ex, "Error retrieving all service ads");
                 throw new Exception("Error retrieving service ads", ex);
             }
+        }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(VerticalType verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = await _dapr.GetBulkStateAsync<CompanyProfileDto>(
+                    storeName: ConstantValues.CompanyStoreName,
+                    keys: await GetAllCompanyIdsAsync(cancellationToken), 
+                    parallelism: 10,
+                    metadata: null,
+                    cancellationToken: cancellationToken);
+
+                var filtered = result
+                    .Where(entry =>  entry.Value != null)
+                    .Select(entry => entry.Value!)
+                    .Where(company => company.Vertical == verticalId &&
+                        (subVerticalId == null || company.SubVertical == subVerticalId) &&
+                        company.IsActive)
+                    .ToList();
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for vertical '{VerticalId}' and subvertical '{SubVerticalId}'", verticalId, subVerticalId);
+                throw;
+            }
+        }
+
+        private async Task<IReadOnlyList<string>> GetAllCompanyIdsAsync(CancellationToken cancellationToken)
+        {
+            var indexKey = ConstantValues.CompanyIndexKey; 
+            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, indexKey, cancellationToken: cancellationToken);
+            return index ?? new List<string>();
         }
 
 

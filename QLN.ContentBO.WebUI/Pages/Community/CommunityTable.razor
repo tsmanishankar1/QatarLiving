@@ -19,45 +19,64 @@ else if (Posts == null || Posts.Count == 0)
 }
 else
 {
-    <MudTable Items="Posts" Hover="true" Class="custom-table">
-        <HeaderContent>
-            <MudTh class="header-cell">Number</MudTh>
-            <MudTh class="header-cell">Title</MudTh>
-            <MudTh class="header-cell">Category</MudTh>
-            <MudTh class="header-cell">User Name</MudTh>
-            <MudTh class="header-cell">Date Created</MudTh>
-            <MudTh class="header-cell">Live For</MudTh>
-            <MudTh class="header-cell">Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate Context="context">
-            <MudTd DataLabel="S.No">@((Posts.IndexOf(context) + 1).ToString())</MudTd>
-            <MudTd DataLabel="Title">
-                <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Slug}")"
-                         Target="_blank">
-                    @context.Title
-                </MudLink>
-            </MudTd>
-            <MudTd DataLabel="Category">@context.Category</MudTd>
-            <MudTd DataLabel="User Name">@context.UserName</MudTd>
-            <MudTd DataLabel="Date Created">@context.DateCreated.ToQatarTime("dd-MM-yyyy")</MudTd>
-            <MudTd>
-                @if (context?.DateCreated is not null)
-                {
-                    @GetTimeDifferenceFromNowUtc(context.DateCreated)
-                }
-                else
-                {
-                    @("-")
-                }
-            </MudTd>
+    <MudDataGrid T="CommunityPostDto" Items="@Posts" Hover="true" Class="custom-table" SortMode="SortMode.Single"
+                 Filterable="true">
+        <Columns>
+            <TemplateColumn Title="Number">
+                <CellTemplate>
+                    @(Posts.IndexOf(context.Item) + 1)
+                </CellTemplate>
+            </TemplateColumn>
 
-            <MudTd>
-                <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Id))">
-                    <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                </div>
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+            <TemplateColumn Title="Title">
+                <CellTemplate>
+                    <MudLink Href="@($"{NavigationPath.Value.ContentPostDetail}{context.Item.Slug}")"
+                             Target="_blank">
+                        @context.Item.Title
+                    </MudLink>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Category" Title="Category">
+                <CellTemplate>
+                    @context.Item.Category
+                </CellTemplate>
+            </PropertyColumn>
+
+            <PropertyColumn Property="x => x.UserName" Title="UserName">
+                <CellTemplate>
+                    @context.Item.UserName
+                </CellTemplate>
+            </PropertyColumn>
+
+            <TemplateColumn Title="Date Created">
+                <CellTemplate>
+                    @context.Item.DateCreated.ToQatarTime("dd-MM-yyyy")
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Live For">
+                <CellTemplate>
+                    @if (context.Item?.DateCreated is not null)
+                    {
+                        @GetTimeDifferenceFromNowUtc(context.Item.DateCreated)
+                    }
+                    else
+                    {
+                        @("-")
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Actions">
+                <CellTemplate>
+                    <div class="custom-delete-button" @onclick="@(() => DeleteSlotHandler(context.Item.Id))">
+                        <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                    </div>
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
 }
 
 

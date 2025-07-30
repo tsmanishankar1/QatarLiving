@@ -7,7 +7,9 @@ namespace QLN.Common.Infrastructure.IService.IContentService
 {
     public interface IV2NewsService
     {
-        Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default);
+        Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken);
+        Task<List<Writertag>> GetAllWritertagsAsync(CancellationToken cancellationToken);
+        Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default);
         Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default);
         Task<PagedResponse<V2NewsArticleDTO>> GetAllNewsArticlesAsync(
            int? page, int? perPage, string? search, CancellationToken cancellationToken = default);

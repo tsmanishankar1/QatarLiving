@@ -4,6 +4,7 @@ using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.EventLogger;
@@ -11,6 +12,7 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Utilities;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -53,25 +55,64 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
 
             try
             {
-                var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
-                var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(uniqueName);
 
-                dto.ImageUrl = imageUrl;
+                var url = $"api/v2/classifiedbo/create-category?userid={userId}&username={userName}";
 
-                var response = await _dapr.InvokeMethodAsync<FeaturedCategoryDto, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/create-category?userid={userId}&username={userName}",
-                    dto,
-                    cancellationToken
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
 
-                return response ?? "Featured category created";
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("Received empty response from content service.");
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize report response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
+            }
+            catch (ConflictException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -86,12 +127,15 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         _logger.LogError(rollbackEx, "Failed to rollback uploaded blob file: {BlobName}", key);
                     }
                 }
-
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Unexpected error in Create Featured Category.");
-                throw new InvalidOperationException("Error creating featured category.", ex);
+                throw new ConflictException(ex.Message);
             }
         }
-
         public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(vertical))
@@ -269,26 +313,62 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
-
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
-                var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
-                var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(uniqueName);
+                var url = $"api/v2/classifiedbo/createseasonalpickbyid?userid={userId}&username={userName}";
 
-                dto.ImageUrl = imageUrl;
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
 
-                var response = await _dapr.InvokeMethodAsync<SeasonalPicksDto, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/createseasonalpickbyid?userid={userId}&username={userName}",
-                    dto,
-                    cancellationToken
-                );
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
-                return response ?? "Seasonal pick created.";
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("Received empty response from content service.");
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize report response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
+            }
+            catch (ConflictException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -303,12 +383,15 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         _logger.LogError(rollbackEx, "Failed to rollback uploaded blob file: {BlobName}", key);
                     }
                 }
-
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Unexpected error in CreateSeasonalPickAsync.");
-                throw new InvalidOperationException("Error creating seasonal pick.", ex);
+                throw new ConflictException(ex.Message);
             }
         }
-
         public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -461,25 +544,63 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
-
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
-                var (imgExt, base64Data) = Base64ImageHelper.ParseBase64Image(dto.ImageUrl);
-                var uniqueName = $"featured_{Guid.NewGuid():N}".Substring(0, 20) + $".{imgExt}";
-                var imageUrl = await _fileStorageBlob.SaveBase64File(base64Data, uniqueName, "classifieds-images", cancellationToken);
-                uploadedBlobKeys.Add(uniqueName);
 
-                dto.ImageUrl = imageUrl;
+                var url = $"api/v2/classifiedbo/create-featuredstorebyid?userid={userId}&username={userName}";
 
-                var response = await _dapr.InvokeMethodAsync<FeaturedStoreDto, string>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/v2/classifiedbo/create-featuredstorebyid?userid={userId}&username={userName}",
-                    dto,
-                    cancellationToken
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(dto),
+                    Encoding.UTF8,
+                    "application/json");
 
-                return response ?? "Featured store created.";
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                if (string.IsNullOrWhiteSpace(rawJson))
+                {
+                    _logger.LogWarning("Received empty response from content service.");
+                    return "Empty response from content service";
+                }
+
+                try
+                {
+                    return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+                }
+                catch (JsonException jsonEx)
+                {
+                    _logger.LogError(jsonEx, "Failed to deserialize report response. Raw JSON: {RawJson}", rawJson);
+                    return $"Unexpected response format: {rawJson}";
+                }
+            }
+            catch (ConflictException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -494,12 +615,15 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                         _logger.LogError(rollbackEx, "Failed to rollback uploaded blob file: {BlobName}", key);
                     }
                 }
-
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Unexpected error in CreateFeaturedStoreAsync.");
-                throw new InvalidOperationException("Error creating featured store.", ex);
+                throw new ConflictException(ex.Message);
             }
         }
-
         public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -640,69 +764,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new InvalidOperationException("Error while soft deleting featured store.", ex);
             }
         }
-         
-        private async Task IndexServiceToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
-        {            
-            var indexDoc = new ClassifiedsItemsIndex
-            {
-                Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                AdType = dto.AdType.ToString(),
-                Title = dto.Title,
-                Description = dto.Description,
-                CategoryId = dto.CategoryId.ToString(),
-                L1CategoryId = dto.L1CategoryId.ToString(),
-                L2CategoryId = dto.L2CategoryId.ToString(),
-                Category = dto.Category,
-                L1Category = dto.L1Category,
-                L2Category = dto.L2Category,
-                Price = (double)dto.Price,
-                PriceType = dto.PriceType,
-                Location = dto.Location,
-                Longitude = (double)dto.Longitude,
-                Lattitude = (double)dto.Latitude,
-                IsFeatured = dto.IsFeatured,
-                IsPromoted = dto.IsPromoted,
-                Status = dto.Status.ToString(),
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                UserName = dto.UserName,
-                AttributesJson = dto.Attributes != null ? JsonSerializer.Serialize(dto.Attributes) : null,
-                IsActive = dto.IsActive,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = dto.CreatedAt,
-                UpdatedAt = dto.UpdatedAt,
-                UpdatedBy = dto.UpdatedBy,
-                Images = dto.Images.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.AdImageFileNames,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList()
-            };
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
-                ClassifiedsItem = indexDoc
-            };
 
-            try
-            {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
-                throw;
-            }
-        }
-
-        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.");
+
+            var uploadedBlobKeys = new List<string>();
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+
             try
             {
                 var url = "api/v2/classifiedbo/bulk-action-userid";
@@ -722,21 +795,571 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     {
                         errorMessage = errorJson;
                     }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
                     throw new InvalidDataException(errorMessage);
                 }
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                var moderatedAds = JsonSerializer.Deserialize<List<ClassifiedsItems>>(json, new JsonSerializerOptions
+                response.EnsureSuccessStatusCode();
+                return "Status Changed successfully";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
                 {
-                    PropertyNameCaseInsensitive = true
-                });
-                if (moderatedAds != null && moderatedAds.Any())
-                {
-                    foreach (var dto in moderatedAds)
-                    {
-                        await IndexServiceToAzureSearch(dto, cancellationToken);
-                    }
+                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
+                    throw new ConflictException(ex.Message);
                 }
-                return moderatedAds ?? new List<ClassifiedsItems>();
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
+                    throw new ConflictException(ex.Message);
+                }
+
+                _logger.LogError(ex, "Error moderating bulk services");
+                throw;
+            }
+        }
+
+        public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.");
+
+            var uploadedBlobKeys = new List<string>();
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+            try
+            {
+                var url = "api/v2/classifiedbo/bulk-collectibles-action-userid";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                return "Action Processed successfully";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
+                    throw new ConflictException(ex.Message);
+                }
+                _logger.LogError(ex, "Error bulk collectibles action");
+                throw;
+            }
+        }
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(
+            TransactionFilterRequestDto request,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var endpoint = $"api/v2/classifiedbo/items/transactions";
+
+                var response = await _dapr.InvokeMethodAsync<TransactionFilterRequestDto, TransactionListResponseDto>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    endpoint,
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new TransactionListResponseDto();
+            }
+            catch (Dapr.DaprException ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions via Dapr");
+                string errorMessage = ex.InnerException is HttpRequestException httpEx ? httpEx.Message : ex.Message;
+                throw new InvalidOperationException(errorMessage, ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error getting transactions");
+                throw new InvalidOperationException("Error retrieving transactions", ex);
+            }
+        }
+
+
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(
+     int? pageNumber = 1,
+     int? pageSize = 12,
+     string? search = null,
+     string? sortBy = null,
+     CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber ?? 1}",
+                $"pageSize={pageSize ?? 12}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+            }
+
+            var url = $"/api/v2/classifiedbo/preloved-ads/payment-summary?{string.Join("&", queryParams)}";
+
+            try
+            {                
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                
+                var result = JsonSerializer.Deserialize<PaginatedResult<PrelovedAdPaymentSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                }
+
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+                throw new InvalidOperationException("Error fetching preloved ad payment summaries.", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
+            string? sortBy = "CreationDate",
+            string? search = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            DateTime? publishedFrom = null,
+            DateTime? publishedTo = null,
+            int? status = null,
+            bool? isFeatured = null,
+            bool? isPromoted = null,
+            int pageNumber = 1,
+            int pageSize = 12,
+            CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber}",
+                $"pageSize={pageSize}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+            if (fromDate.HasValue)
+                queryParams.Add($"fromDate={Uri.EscapeDataString(fromDate.Value.ToString("o"))}");
+
+            if (toDate.HasValue)
+                queryParams.Add($"toDate={Uri.EscapeDataString(toDate.Value.ToString("o"))}");
+
+            if (publishedFrom.HasValue)
+                queryParams.Add($"publishedFrom={Uri.EscapeDataString(publishedFrom.Value.ToString("o"))}");
+
+            if (publishedTo.HasValue)
+                queryParams.Add($"publishedTo={Uri.EscapeDataString(publishedTo.Value.ToString("o"))}");
+
+            if (status.HasValue)
+                queryParams.Add($"status={status.Value}");
+
+            if (isFeatured.HasValue)
+                queryParams.Add($"isFeatured={isFeatured.Value.ToString().ToLowerInvariant()}");
+
+            if (isPromoted.HasValue)
+                queryParams.Add($"isPromoted={isPromoted.Value.ToString().ToLowerInvariant()}");
+
+            var url = $"/api/v2/classifiedbo/getallprelovedads?{string.Join("&", queryParams)}";
+
+            try
+            {
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var result = JsonSerializer.Deserialize<PaginatedResult<PrelovedAdSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                }
+
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad summaries.");
+                throw new InvalidOperationException("Error fetching preloved ad summaries.", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
+            int? pageNumber = 1,
+            int? pageSize = 12,
+            string? search = null,
+            string? sortBy = null,
+            CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber ?? 1}",
+                $"pageSize={pageSize ?? 12}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+            }
+
+            var url = $"/api/v2/classifiedbo/getdealsSummary?{string.Join("&", queryParams)}";
+
+
+            try
+            {
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var result = JsonSerializer.Deserialize<PaginatedResult<DealsAdSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (result == null)
+                {
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                }
+
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching deals ad payment summaries.");
+                throw new InvalidOperationException("Error fetching deals ad payment summaries.", ex);
+            }
+        }
+
+
+        public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(int? pageNumber = 1, int? pageSize = 12,
+            string? search = null,
+            string? sortBy = null,
+            string? status = null,
+            bool? isPromoted = null,
+            bool? isFeatured = null,
+            CancellationToken cancellationToken = default)
+        {
+            var queryParams = new List<string>
+            {
+                $"pageNumber={pageNumber ?? 1}",
+                $"pageSize={pageSize ?? 12}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(search))
+
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+
+            if (!string.IsNullOrWhiteSpace(status))
+
+                queryParams.Add($"status={Uri.EscapeDataString(status)}");
+
+            if (isPromoted.HasValue)
+
+                queryParams.Add($"isPromoted={isPromoted.Value.ToString().ToLower()}");
+
+            if (isFeatured.HasValue)
+
+                queryParams.Add($"isFeatured={isFeatured.Value.ToString().ToLower()}");
+
+            var url = $"/api/v2/classifiedbo/DealsViewSummary?{string.Join("&", queryParams)}";
+
+            try
+            {
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    url);
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var error = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                    throw new InvalidOperationException(error?.Detail ?? errorJson);
+                }
+
+                var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                var result = JsonSerializer.Deserialize<PaginatedResult<DealsViewSummaryDto>>(
+                    content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (result == null)
+                    throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
+                return result;
+            }
+            catch (JsonException jsonEx)
+            {
+                throw new InvalidOperationException("Failed to parse response JSON.", jsonEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching deals ad payment summaries.");
+                throw new InvalidOperationException("Error fetching deals ad payment summaries.", ex);
+            }
+
+        }
+
+        public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId == null || dto.AdId.Count == 0)
+                throw new ArgumentException("At least one Ad ID is required.", nameof(dto.AdId));
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+            var queryParam = $"?userId={Uri.EscapeDataString(userId)}";
+
+            try
+            {
+                var request = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Delete,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/softdeletedeals{queryParam}"
+                );
+
+                var payload = new { adid = dto.AdId };
+
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(payload),
+                    Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+                return result ?? $"Soft delete triggered for {dto.AdId.Count} deal(s).";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SoftDeleteDeals (bulk external call).");
+                throw new InvalidOperationException("Error while performing bulk soft delete.", ex);
+            }
+        }
+        public async Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.");
+
+            var uploadedBlobKeys = new List<string>();
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+            try
+            {
+                var url = "api/v2/classifiedbo/bulk-preloved-action-userid";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                return "Action Processed successfully";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
+                    throw new ConflictException(ex.Message);
+                }
+                _logger.LogError(ex, "Error bulk preloved action");
+                throw;
+            }
+        }
+        
+        
+        public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(int pageNumber,
+            int pageSize,
+            string? searchText,
+            string? dateCreated,
+            string? datePublished,
+            string? dateStart,
+            string? dateEnd,
+            string? status,
+            string sortBy,
+            string sortOrder,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new List<string>
+                {
+                    $"pageNumber={pageNumber}",
+                    $"pageSize={pageSize}"
+                };
+
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    queryParams.Add($"searchText={Uri.EscapeDataString(searchText)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateCreated))
+                {
+                    queryParams.Add($"dateCreated={Uri.EscapeDataString(dateCreated)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(datePublished))
+                {
+                    queryParams.Add($"datePublished={Uri.EscapeDataString(datePublished)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateStart))
+                {
+                    queryParams.Add($"dateStart={Uri.EscapeDataString(dateStart)}");
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateEnd))
+                {
+                    queryParams.Add($"dateEnd={Uri.EscapeDataString(dateEnd)}");
+                }
+
+                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
+                queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
+
+                var queryString = string.Join("&", queryParams);
+                var endpoint = $"api/v2/classifiedbo/preloved/transactions?{queryString}";
+
+                var response = await _dapr.InvokeMethodAsync<PrelovedTransactionListResponseDto>(
+               HttpMethod.Get,
+               SERVICE_APP_ID,
+               endpoint,
+               cancellationToken
+               );
+
+                return response ?? new PrelovedTransactionListResponseDto();
+            }
+            catch (Dapr.DaprException ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions via Dapr");
+                string errorMessage = ex.InnerException is HttpRequestException httpEx ? httpEx.Message : ex.Message;
+                throw new InvalidOperationException(errorMessage, ex);
             }
             catch (Exception ex)
             {

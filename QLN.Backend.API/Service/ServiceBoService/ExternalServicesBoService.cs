@@ -1,9 +1,9 @@
 ﻿
-
 using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 using System.Text.Json;
 
@@ -108,9 +108,11 @@ namespace QLN.Backend.API.Service.ServiceBoService
       int? pageSize = 12,
       string? search = null,
       string? sortBy = null,
+      DateTime? startDate = null,
+      DateTime? endDate = null,
+      string? subscriptionType = null,
       CancellationToken cancellationToken = default)
         {
-            // Properly encode query params
             var queryParams = new List<string>
     {
         $"pageNumber={pageNumber ?? 1}",
@@ -118,14 +120,19 @@ namespace QLN.Backend.API.Service.ServiceBoService
     };
 
             if (!string.IsNullOrWhiteSpace(search))
-            {
                 queryParams.Add($"search={Uri.EscapeDataString(search)}");
-            }
 
             if (!string.IsNullOrWhiteSpace(sortBy))
-            {
                 queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-            }
+
+            if (startDate.HasValue)
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (endDate.HasValue)
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (!string.IsNullOrWhiteSpace(subscriptionType))
+                queryParams.Add($"subscriptionType={Uri.EscapeDataString(subscriptionType)}");
 
             var url = $"/api/servicebo/getalladpayments?{string.Join("&", queryParams)}";
 
@@ -152,9 +159,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (result == null)
-                {
                     throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
-                }
 
                 return result;
             }
@@ -309,7 +314,35 @@ namespace QLN.Backend.API.Service.ServiceBoService
                 throw;
             }
         }
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
+    VerticalType verticalId,
+    SubVertical? subVerticalId,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getByVertical?verticalId={(int)verticalId}" +
+                          (subVerticalId != null ? $"&subVerticalId={(int)subVerticalId}" : string.Empty);
+
+                return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+            }
+            catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning(ex, "No companies found for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                return new List<CompanyProfileDto>(); // Or return null if your use case needs it
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving companies for verticalId: {VerticalId}, subVerticalId: {SubVerticalId}", verticalId, subVerticalId);
+                throw;
+            }
+        }
 
 
     }
+
 }

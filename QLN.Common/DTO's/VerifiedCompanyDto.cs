@@ -13,6 +13,8 @@ namespace QLN.Common.DTO_s
         [Required]
         public string AuthorisedContactPersonName { get; set; }
         public string? UserDesignation { get; set; }
+        public string? UserName { get; set; }
+
         [Required]
         public DateOnly CRExpiryDate { get; set; }
     }
@@ -44,6 +46,10 @@ namespace QLN.Common.DTO_s
     {
         public Guid? CompanyId { get; set; }
         public string? UserId { get; set; }
+        public string? CRFile { get; set; }
+        public int? CRLicense { get; set; }
+        public DateOnly Enddate { get; set; }
+        public string? Username { get; set; }
         public string BusinessName { get; set; } = string.Empty;
         public VerticalType Vertical { get; set; }
         public SubVertical SubVertical { get; set; }

@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.V2IContent;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
@@ -82,6 +84,8 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<string> CreateCommunityCommentReport(string userName, V2ReportsCommunitycommentsDto dto, CancellationToken cancellationToken = default)
         {
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
                 var url = "/api/v2/report/createcommunitycommentsByUserId";
@@ -108,7 +112,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
-
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
                     throw new InvalidDataException(errorMessage);
                 }
 
@@ -132,14 +137,26 @@ namespace QLN.Backend.API.Service.V2ContentService
                     return $"Unexpected response format: {rawJson}";
                 }
             }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                _logger.LogWarning(ex, "Conflict detected while creating report.");
+                throw new ConflictException(ex.Message);
+            }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Error creating report");
                 throw;
             }
         }
         public async Task<string> CreateReport(string userName, V2ContentReportArticleDto dto, CancellationToken cancellationToken = default)
         {
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
                 var url = "/api/v2/report/createByUserId";
@@ -166,7 +183,8 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
-
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
                     throw new InvalidDataException(errorMessage);
                 }
 
@@ -190,14 +208,26 @@ namespace QLN.Backend.API.Service.V2ContentService
                     return $"Unexpected response format: {rawJson}";
                 }
             }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                _logger.LogWarning(ex, "Conflict detected while creating report.");
+                throw new ConflictException(ex.Message);
+            }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Error creating report");
                 throw;
             }
         }
         public async Task<string> CreateCommunityReport(string userName, V2ReportCommunityPostDto dto, CancellationToken cancellationToken = default)
         {
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
                 var url = "/api/v2/report/createcommunitypostByUserId";
@@ -224,8 +254,9 @@ namespace QLN.Backend.API.Service.V2ContentService
                     {
                         errorMessage = errorJson;
                     }
-
-                    throw new InvalidDataException(errorMessage);
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new Exception(errorMessage);
                 }
 
                 response.EnsureSuccessStatusCode();
@@ -248,8 +279,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                     return $"Unexpected response format: {rawJson}";
                 }
             }
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Conflict)
+            {
+                _logger.LogWarning(ex, "Conflict detected while creating report.");
+                throw new ConflictException(ex.Message);
+            }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while creating report.");
+                    throw new ConflictException(ex.Message);
+                }
                 _logger.LogError(ex, "Error creating report");
                 throw;
             }
@@ -350,12 +391,16 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var queryParams = new List<string>
-                {
-                    $"pageNumber={pageNumber ?? 1}",
-                    $"perPage={pageSize ?? 12}"
-                };
+        {
+            $"pageNumber={pageNumber ?? 1}",
+            $"pageSize={pageSize ?? 12}"
+        };
+
+               
                 if (!string.IsNullOrWhiteSpace(searchTerm))
-                    queryParams.Add($"searchTitle={Uri.EscapeDataString(searchTerm)}");
+                    queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+
+              
                 if (!string.IsNullOrWhiteSpace(sortOrder))
                     queryParams.Add($"sortBy={Uri.EscapeDataString(sortOrder)}");
 

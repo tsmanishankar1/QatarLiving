@@ -15,6 +15,7 @@ namespace QLN.Common.DTO_s
         public string? Category { get; set; }
         public string? SubCategory { get; set; }
         public ServiceStatus? Status { get; set; } 
+        public string Certificate { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
         public DateTime CreationDate { get; set; }
