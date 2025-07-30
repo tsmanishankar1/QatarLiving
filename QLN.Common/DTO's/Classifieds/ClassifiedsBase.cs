@@ -9,9 +9,9 @@ namespace QLN.Common.DTO_s
     public class ClassifiedsBase
     {
         public Guid Id { get; set; } = Guid.Empty;
-        public string SubVertical { get; set; }
+        public string SubVertical { get; set; } = string.Empty;
         public AdTypeEnum AdType { get; set; }
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public double? Price { get; set; }
         public string? PriceType { get; set; }
@@ -29,20 +29,22 @@ namespace QLN.Common.DTO_s
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public AdStatus Status { get; set; }
-        public string UserId { get; set; }
-        public string UserName { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
-        public string ContactNumber { get; set; }
-        public string ContactEmail { get; set; }
-        public string WhatsAppNumber { get; set; }
+        public string ContactNumberCountryCode { get; set; } = string.Empty;
+        public string ContactNumber { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string WhatsappNumberCountryCode { get; set; } = string.Empty;
+        public string WhatsAppNumber { get; set; } = string.Empty;
         public string? StreetNumber { get; set; }
         public string? BuildingNumber { get; set; }
-        public string? zone { get; set; }
-        public List<ImageInfo> Images { get; set; }
+        public string zone { get; set; }
+        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
         public Dictionary<string, string>? Attributes { get; set; }
         public bool IsActive { get; set; }
-        public string CreatedBy { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }

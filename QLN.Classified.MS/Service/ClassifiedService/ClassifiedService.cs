@@ -406,14 +406,22 @@ namespace QLN.Classified.MS.Service
                 PriceType = dto.PriceType,
                 Location = dto.Location,
                 Longitude = (double)dto.Longitude,
-                Lattitude = (double)dto.Latitude,
+                Latitude = (double)dto.Latitude,
                 IsFeatured = dto.IsFeatured,
                 IsPromoted = dto.IsPromoted,
                 Status = dto.Status.ToString(),
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 UserId = dto.UserId,
-                RefreshExpiryDate = dto.LastRefreshedOn,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                BuildingNumber = dto.BuildingNumber,
+                ContactEmail = dto.ContactEmail,
+                ContactNumber = dto.ContactNumber,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                StreetNumber = dto.StreetNumber,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                Zone = dto.zone,
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
@@ -422,6 +430,8 @@ namespace QLN.Classified.MS.Service
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -458,8 +468,17 @@ namespace QLN.Classified.MS.Service
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
                 Status = dto.Status.ToString(),
-                Lattitude = dto.Latitude,
+                Latitude = dto.Latitude,
                 Longitude = dto.Longitude,
+                Zone = dto.zone,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                StreetNumber = dto.StreetNumber,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                BuildingNumber = dto.BuildingNumber,
+                ContactEmail = dto.ContactEmail,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                ContactNumber = dto.ContactNumber,
                 UserId = dto.UserId,
                 AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                 Brand = dto.Brand,
@@ -471,6 +490,8 @@ namespace QLN.Classified.MS.Service
                 Model = dto.Model,
                 UserName = dto.UserName,
                 IsActive = true,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -482,9 +503,7 @@ namespace QLN.Classified.MS.Service
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-
-                RefreshExpiryDate = dto.LastRefreshedOn
+                IsRefreshed = dto.IsRefreshed
             };
             var indexRequest = new CommonIndexRequest
             {
@@ -516,11 +535,31 @@ namespace QLN.Classified.MS.Service
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
                 Status = dto.Status.ToString(),
-                Lattitude = dto.Latitude,
+                Latitude = dto.Latitude,
+                Color = dto.Color,
+                ContactNumber = dto.ContactNumber,
+                BuildingNumber = dto.BuildingNumber,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                ContactEmail = dto.ContactEmail,
+                StreetNumber = dto.StreetNumber,
+                Model = dto.Model,
+                IsHandmade = dto.IsHandmade,
+                HasWarranty = dto.HasWarranty,
+                Condition = dto.Condition,
+                Brand = dto.Brand,
+                AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                CreatedBy = dto.CreatedBy,
+                HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                YearOrEra = dto.YearOrEra,
+                Zone = dto.zone,
                 Longitude = dto.Longitude,
                 UserId = dto.UserId,
                 UserName = dto.UserName,
                 IsActive = true,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
                 Images = dto.Images.Select(i => new ImageInfo
                 {
                     Url = i.Url,
@@ -567,6 +606,11 @@ namespace QLN.Classified.MS.Service
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
                 XMLlink = dto.XMLlink,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                SubscriptionId = dto.SubscriptionId,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
                 offertitle = dto.offertitle,
                 ExpiryDate = dto.ExpiryDate,
                 ImageUrl = dto.ImageUrl,
@@ -583,6 +627,7 @@ namespace QLN.Classified.MS.Service
             };
             return indexRequest;
         }
+
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
             try
@@ -668,6 +713,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -748,7 +794,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -827,7 +872,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
         public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -905,9 +949,6 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-
-
-
         public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -979,7 +1020,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified items ad.", ex);
             }
         }
-
         public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -1049,7 +1089,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified preloved ad.", ex);
             }
         }
-
         public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -1118,7 +1157,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified collectibles ad.", ex);
             }
         }
-
         public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -1187,7 +1225,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified deals ad.", ex);
             }
         }
-
         private static string ExtractBlobName(string? url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -1202,7 +1239,6 @@ namespace QLN.Classified.MS.Service
                 return null;
             }
         }
-
         public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try
@@ -1347,7 +1383,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve user items ads", ex);
             }
         }
-
         public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
         {
             try

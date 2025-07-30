@@ -202,6 +202,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 {
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
@@ -338,7 +339,8 @@ bannerPostGroup.MapBannerPostEndpoints();
 
 
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
-ClassifiedBo.MapClassifiedboEndpoints();
+ClassifiedBo.MapClassifiedboEndpoints()
+    .RequireAuthorization();
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
