@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components.DiscardDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 {
@@ -14,6 +16,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
     {
         [Inject] public NavigationManager Navigation { get; set; }
         [Inject] public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public IFileUploadService FileUploadService { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; }
+
         protected List<LocationZoneDto> Zones { get; set; } = new();
         [Inject] ILogger<CreateAdBase> Logger { get; set; }
         protected bool IsLoadingZones { get; set; } = true;
@@ -157,14 +162,85 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 Snackbar.Add("Please check highlighted fields before creating ad.", Severity.Error);
                 return;
             }
-
-
             // All good!
-            Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
+            // Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
             // Proceed with form submission
-            await PostAdToApiAsync();
+            await OpenConfirmationDialog();
 
         }
+        private async Task OpenConfirmationDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Confirm Create Ad" },
+                { "Descrption", "Are you sure you want to create this ad?" },
+                { "ButtonTitle", "Yes, Create Ad" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, HandleAdConfirmedAsync) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+         private async Task HandleAdConfirmedAsync()
+        {
+            await PostAdToApiAsync();
+        }
+          protected async Task OpenDiscardDialog()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Discard Event" },
+                { "Description", "Are you sure you want to discard this event? Any unsaved changes will be gone." },
+                { "OnDiscard", EventCallback.Factory.Create(this, HandleDiscardAsync) }
+            };
+
+                 var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<DiscardDialog>("", parameters, options);
+            var result = await dialog.Result;
+
+        }
+
+        private void ResetFormState()
+        {
+            // Clear the ad model
+            adPostModel = new AdPost();
+
+            // Reset the EditContext with the new model
+            editContext = new EditContext(adPostModel);
+
+            // Reassign validation store and handlers
+            messageStore = new ValidationMessageStore(editContext);
+            editContext.OnValidationRequested += (_, __) =>
+            {
+                messageStore.Clear();
+                ValidateDynamicFields();
+            };
+
+            DynamicFieldErrors.Clear();
+
+            // Notify UI to re-render
+            StateHasChanged();
+        }
+        private async Task HandleDiscardAsync()
+        {
+            ResetFormState();
+            Snackbar.Add("Ad creation form discarded successfully.", Severity.Info);
+        }
+
+
          private string GetCategoryNameById(string? id)
         {
             if (string.IsNullOrEmpty(id)) return string.Empty;
@@ -179,11 +255,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         private bool IsBasicField(string key)
         {
             // Exclude these from the attributes payload; they go in root fields
-            return key.Equals("brand", StringComparison.OrdinalIgnoreCase)
-                || key.Equals("model", StringComparison.OrdinalIgnoreCase)
-                || key.Equals("condition", StringComparison.OrdinalIgnoreCase)
-                || key.Equals("color", StringComparison.OrdinalIgnoreCase)
-                || key.Equals("location", StringComparison.OrdinalIgnoreCase);
+            return key.Equals("Brand", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("Model", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("Condition", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("Color", StringComparison.OrdinalIgnoreCase)
+                || key.Equals("Location", StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task PostAdToApiAsync()
@@ -191,10 +267,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             try
             {
                 IsSaving = true;
-
+                var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 var payload = new
                 {
-                    adType = "Free",
+                    adType = 1,
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
@@ -206,31 +282,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                     l2CategoryId = adPostModel.SelectedSubSubcategoryId,
                     l2Category = GetCategoryNameById(adPostModel.SelectedSubSubcategoryId),
 
-                    brand = adPostModel.DynamicFields.GetValueOrDefault("brand"),
-                    model = adPostModel.DynamicFields.GetValueOrDefault("model"),
-                    condition = adPostModel.DynamicFields.GetValueOrDefault("condition"),
-                    color = adPostModel.DynamicFields.GetValueOrDefault("color"),
-                    location = adPostModel.DynamicFields.GetValueOrDefault("location"),
+                    brand = adPostModel.DynamicFields.GetValueOrDefault("Brand"),
+                    model = adPostModel.DynamicFields.GetValueOrDefault("Model"),
+                    condition = adPostModel.DynamicFields.GetValueOrDefault("Condition"),
+                    color = adPostModel.DynamicFields.GetValueOrDefault("Color"),
+                    location = adPostModel.DynamicFields.GetValueOrDefault("Location"),
 
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
                     contactNumber = $"{adPostModel.PhoneCode}{adPostModel.PhoneNumber}",
-                    contactEmail = UserEmail ?? "user@example.com",
+                    contactEmail = string.IsNullOrWhiteSpace(UserEmail) ? null : UserEmail,
                     whatsAppNumber = $"{adPostModel.WhatsappCode}{adPostModel.WhatsappNumber}",
                     streetNumber = adPostModel.StreetNumber?.ToString(),
                     buildingNumber = adPostModel.BuildingNumber?.ToString(),
                     zone = adPostModel.Zone,
-
-                    images = adPostModel.Images
-                        .Where(img => !string.IsNullOrEmpty(img.Url))
-                        .OrderBy(i => i.Order)
-                        .Select(img => new { url = img.Url, order = img.Order }),
-
+                    images = uploadedImages,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
                 };
-                await JS.InvokeVoidAsync("console.log", payload);
+                // await JS.InvokeVoidAsync("console.log", payload);
       
 
                 var response = await ClassifiedService.PostAdAsync("items", payload);
@@ -238,6 +309,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 if (response?.IsSuccessStatusCode == true)
                 {
                     Snackbar.Add("Ad posted successfully!", Severity.Success);
+                    ResetFormState();
                 }
                 else
                 {
@@ -256,6 +328,52 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             }
         }
 
+         private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        {
+            var uploadedImages = new List<object>();
+
+            var orderedImages = images
+                .Where(img => !string.IsNullOrWhiteSpace(img.Url))
+                .OrderBy(img => img.Order)
+                .ToList();
+
+            for (int i = 0; i < orderedImages.Count; i++)
+            {
+                var image = orderedImages[i];
+
+                var uploadPayload = new FileUploadModel
+                {
+                    Container = "classifieds-images",
+                    File = image.Url
+                };
+
+                var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+
+                if (uploadResponse.IsSuccessStatusCode)
+                {
+                    var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+
+                    if (result?.IsSuccess == true)
+                    {
+                        uploadedImages.Add(new
+                        {
+                            url = result.FileUrl,
+                            order = i
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Image upload failed: " + result?.Message);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload HTTP error at index " + i);
+                }
+            }
+
+            return uploadedImages;
+        }
 
         private async Task LoadCategoryTreesAsync()
         {
