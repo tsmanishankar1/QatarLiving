@@ -71,6 +71,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         UserName = serviceAd.UserName,
                         Category = serviceAd.CategoryName,
                         SubCategory = serviceAd.L1CategoryName,
+                        Certificate=serviceAd.LicenseCertificate,
                         IsPromoted = serviceAd.IsPromoted,
                         IsFeatured = serviceAd.IsFeatured,
                         Status = serviceAd.Status,
