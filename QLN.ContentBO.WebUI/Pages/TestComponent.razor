@@ -1,18 +1,53 @@
 ﻿@page "/blazormarkdown"
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+
 <MudGrid Style="padding-top: 18px">
-      <MarkdownEditor @bind-Value="@markdownValue"  ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
-
+    <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
     <hr />
-
+    @if (!string.IsNullOrEmpty(PastedImage))
+    {
+        <img src="@PastedImage" alt="Pasted" style="max-width: 300px;" />
+    }
     <h3>Result</h3>
     @((MarkupString)markdownHtml)
 
+
 </MudGrid>
 
+<h3>Paste an Image (Ctrl + V or Right Click → Paste)</h3>
+
+<div id="pasteTarget" @ref="divRef" style="border:2px dashed #888;padding:20px;width:300px;height:150px;">
+    Click here and press Ctrl + V to paste image
+</div>
+
+
+
+@if (!string.IsNullOrEmpty(base64Image))
+{
+    <h4>Preview:</h4>
+    <img src="@base64Image" style="max-width:300px;" />
+}
 
 @code {
+
+    private string? PastedImage;
+
     string markdownValue = "#Markdown Editor\nThis is a test";
     string markdownHtml;
+
+    private ElementReference divRef;
+    private DotNetObjectReference<TestComponent>? _objRef;
+    private string base64Image = string.Empty;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("pasteImageHandler.register", "pasteTarget", _objRef);
+        }
+    }
 
     Task OnMarkdownValueChanged(string value)
     {
@@ -23,5 +58,17 @@
     {
         markdownHtml = value;
         return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public void OnImagePasted(string base64)
+    {
+        base64Image = base64;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _objRef?.Dispose();
     }
 }
