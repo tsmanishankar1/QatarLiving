@@ -375,6 +375,7 @@ a, .btn-link {
             background-color: #FAFAFA;
             font-weight: 600;
             font-family: 'Public Sans', sans-serif;
+            white-space: nowrap;
         }
 
         /* Centered bold number column */
@@ -1754,6 +1755,10 @@ a, .btn-link {
         font-size: 18px;
         color: var(--color-text-heading);
         margin-bottom: 4px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .status-chip {

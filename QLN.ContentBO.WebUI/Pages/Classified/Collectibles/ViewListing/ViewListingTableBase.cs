@@ -267,7 +267,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformBulkActionAsync(payload);
+                var response = await ClassifiedService.PerformBulkActionAsync("bulk-collectibles-action",payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {

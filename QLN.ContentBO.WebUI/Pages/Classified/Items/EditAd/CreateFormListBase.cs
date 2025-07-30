@@ -14,9 +14,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected bool IsLoadingCategories { get; set; } = true;
         protected string? ErrorMessage { get; set; }
         protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
-        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
-        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubSubcategoryId);
+        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
+        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
+        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
 
         protected List<CategoryField> AvailableFields => 
                                         SelectedSubSubcategory?.Fields ??
@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
         [Inject] ISnackbar Snackbar { get; set; }
-        [Parameter] public EditAdPost Ad { get; set; } = new();
+        [Parameter] public ItemEditAdPost Ad { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
         [Inject] private IJSRuntime JS { get; set; }
@@ -97,9 +97,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         }
         protected async Task OnCategoryChanged(string categoryId)
         {
-            Ad.SelectedCategoryId = categoryId;
-            Ad.SelectedSubcategoryId = null;
-            Ad.SelectedSubSubcategoryId = null;
+            Ad.CategoryId = categoryId;
+            Ad.L1CategoryId = null;
+            Ad.L2CategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
@@ -110,8 +110,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected async Task OnSubCategoryChanged(string subcategoryId)
         {
-            Ad.SelectedSubcategoryId = subcategoryId;
-            Ad.SelectedSubSubcategoryId = null;
+            Ad.L1CategoryId = subcategoryId;
+            Ad.L2CategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
@@ -121,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
         {
-            Ad.SelectedSubSubcategoryId = subsubcategoryId;
+            Ad.L2CategoryId = subsubcategoryId;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
@@ -228,15 +228,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             // Run automatic validation
             var isValid = editContext.Validate();
 
-            if (SelectedCategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.SelectedSubcategoryId))
+            if (SelectedCategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.L1CategoryId))
             {
-                messageStore.Add(() => Ad.SelectedSubcategoryId, "Subcategory is required.");
+                messageStore.Add(() => Ad.L1CategoryId, "Subcategory is required.");
                 isValid = false;
             }
 
-            if (SelectedSubcategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.SelectedSubSubcategoryId))
+            if (SelectedSubcategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.L2CategoryId))
             {
-                messageStore.Add(() => Ad.SelectedSubSubcategoryId, "Sub Subcategory is required.");
+                messageStore.Add(() => Ad.L2CategoryId, "Sub Subcategory is required.");
                 isValid = false;
             }
 

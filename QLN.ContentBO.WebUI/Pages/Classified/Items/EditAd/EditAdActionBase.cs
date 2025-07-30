@@ -8,10 +8,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class EditAdActionBase : ComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
-        [Parameter] public string UserName { get; set; } = "Rashid";
-        [Parameter] public string Category { get; set; } = "Electronics";
-        [Parameter] public int AdId { get; set; } = 21660;
+        [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         [Parameter] public int OrderId { get; set; } = 24578;
         protected async Task OpenPreviewDialog()
         {

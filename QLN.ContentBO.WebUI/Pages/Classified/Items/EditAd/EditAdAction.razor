@@ -6,7 +6,7 @@
     <div class="left-column">
         <div class="user-info">
             <div class="label">Username</div>
-            <div class="value">@($"{UserName} {Category}")</div>
+            <div class="value">@AdModel.UserName</div>
             <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
                 <span class="dot"></span> Active
             </MudChip>
@@ -53,8 +53,8 @@
     <!-- Right Column -->
     <div class="right-column">
         <div class="ad-info">
-            <div class="value"><span class="label">Ad ID:</span> @AdId</div>
-            <div class="value"><span class="label">Order ID:</span> @OrderId</div>
+            <div class="value"><span title="@AdModel.Id" class="label">Ad ID:</span> @AdModel.Id</div>
+            @* <div class="value"><span class="label">Order ID:</span> @OrderId</div> *@
         </div>
     </div>
 </div>

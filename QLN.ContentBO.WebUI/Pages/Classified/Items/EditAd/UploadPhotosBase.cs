@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         [Inject] private IJSRuntime JS { get; set; }
         [Inject] private ILogger<UploadPhotosBase> Logger { get; set; }
 
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
+        [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
 
         protected const int MaxImages = 9;
 

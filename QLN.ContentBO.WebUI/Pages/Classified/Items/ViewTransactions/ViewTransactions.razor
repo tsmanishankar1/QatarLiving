@@ -6,10 +6,16 @@
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
+             <SearchSortBar Items="Transactions" OnSearch="HandleSearch" OnSort="HandleSort" OnDateFilterChanged="HandleDateFilterChanged"  />
               <div class="community-table">
-              <ViewTransactionsTable/>
-
+              <ViewTransactionsTable 
+                IsLoading="IsLoading"
+                Transactions="Transactions"
+                TotalRecords="TotalRecords"
+                OnTabChanged="HandleTabChanged"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged"
+            />
              </div> 
     </MudItem>
 </MudGrid>

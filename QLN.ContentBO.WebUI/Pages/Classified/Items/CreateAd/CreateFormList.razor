@@ -1,9 +1,6 @@
 @inherits CreateFormListBase
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
 
-<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
-    <DataAnnotationsValidator />
-
     <div class="create-form-list">
         <h3 class="form-heading-f1">Ad Form</h3>
         <h4 class="form-heading-f2">User can edit this ad in their dashboard</h4>
@@ -88,6 +85,7 @@
                     {
                         <MudTextField T="string"
                                     Label="@field.Name"
+                                    MaxLength="50"
                                     Variant="Variant.Outlined"
                                     @bind-Value="Ad.DynamicFields[field.Name]"
                                     FullWidth="true"
@@ -104,54 +102,17 @@
                 </div>
             }
         }
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Price"
+        <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined"  MaxLength="20" T="int" Label="Price"
                       @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
 
         <h3 class="form-heading">Description and Features</h3>
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
+        <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined" MaxLength="50" T="string" Label="Title"
                       @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
 
         <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
                            Height="350" Placeholder="Start Typing"
                            For="@(() => Ad.Description)">
         </MudExRichTextEdit>
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
-                      @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
-        <MudPaper Class="catification-upload-section">
-            <div class="catification-upload-info">
-                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
-
-                @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
-                {
-                    <div class="catification-file-info">
-                        <span class="catification-file-name">
-                            @ShortFileName(Ad.CertificateFileName, 10)
-                        </span>
-                        <MudIconButton Icon="@Icons.Material.Outlined.Close"
-                                    Size="Size.Small"
-                                    Color="Color.Error"
-                                    OnClick="ClearFile"
-                                    />
-                    </div>
-                }
-            </div>
-
-            <MudFileUpload T="IBrowserFile"
-                        Accept=".pdf,.png,.jpg,.jpeg"
-                        MaxFileSize="10485760"
-                        FilesChanged="OnCrFileSelected">
-                <ActivatorContent>
-                    <MudButton Variant="Variant.Filled"
-                            Color="Color.Primary"
-                            Class="catification-upload-button">
-                        Upload
-                        <img src="/qln-images/upload_white_icon.svg" width="20" height="20" />
-                    </MudButton>
-                </ActivatorContent>
-            </MudFileUpload>
-        </MudPaper>
-        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
 
         <h3 class="form-heading">Contact Details</h3>
         <div class="form-group">
@@ -177,14 +138,37 @@
 
         <h3 class="form-heading">Location</h3>
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
-                      @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
+            <MudSelect T="string" Class="white-bg" Label="Zone" Variant="Variant.Outlined"
+                Value="@Ad.Zone"
+                Immediate="true"
+                ValueChanged="@OnZoneChanged"
+                For="@(() => Ad.Zone)"
+                FullWidth="true">
 
+             @if (IsLoadingZones)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var zone in Zones)
+                {
+                    <MudSelectItem T="string" Value="@zone.Id.ToString()">@zone.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
-                      @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />
+                    Value="@Ad.StreetNumber"
+                    ValueChanged="@OnStreetNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.StreetNumber)" FullWidth="true" />
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
-                      @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+                    Value="@Ad.BuildingNumber"
+                    ValueChanged="@OnBuildingNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+
 
         <div id="map" style="height: 300px; width: 100%;"></div>
 
@@ -202,10 +186,4 @@
             </div>
         </div>
         <ValidationMessage For="@(() => Ad.IsAgreed)" />
-
-        <div class="custom-button-group">
-            <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
-            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
-        </div>
     </div>
-</EditForm>

@@ -9,9 +9,9 @@
  
         @* <h3 class="form-heading">Ad Information</h3> *@
             <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
-                Value="@Ad.SelectedCategoryId"
+                Value="@Ad.CategoryId"
                 ValueChanged="@OnCategoryChanged"
-                For="@(() => Ad.SelectedCategoryId)"
+                For="@(() => Ad.CategoryId)"
                 FullWidth="true">
              @if (IsLoadingCategories)
             {
@@ -27,12 +27,12 @@
         </MudSelect>
 
 
-        @if (!string.IsNullOrEmpty(Ad.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Children?.Any() == true)
         {
           <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
-                    Value="@Ad.SelectedSubcategoryId"
+                    Value="@Ad.L1CategoryId"
                     ValueChanged="@OnSubCategoryChanged"
-                    For="@(() => Ad.SelectedSubcategoryId)"
+                    For="@(() => Ad.L1CategoryId)"
                     FullWidth="true">
                 @foreach (var sub in SelectedCategory.Children)
                 {
@@ -42,12 +42,12 @@
 
         }
 
-        @if (!string.IsNullOrEmpty(Ad.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Children?.Any() == true)
         {
             <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
-                Value="@Ad.SelectedSubSubcategoryId"
+                Value="@Ad.L2CategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
-                For="@(() => Ad.SelectedSubSubcategoryId)"
+                For="@(() => Ad.L2CategoryId)"
                 FullWidth="true">
             @foreach (var subsub in SelectedSubcategory.Children)
             {
@@ -177,10 +177,10 @@
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
                       @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Street Number"
                       @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Building Number"
                       @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
 
         <div id="map" style="height: 300px; width: 100%;"></div>
