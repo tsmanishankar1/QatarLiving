@@ -916,6 +916,20 @@ namespace QLN.Classified.MS.Service.Services
                             shouldUpdate = true;
                         }
                         break;
+                    case BulkModerationAction.UnPromote:
+                        if (ad.Status == ServiceStatus.Promote)
+                        {
+                            ad.Status = ServiceStatus.UnPromote;
+                            shouldUpdate = true;
+                        }
+                        break;
+                        case BulkModerationAction.UnFeature:
+                        if (ad.Status == ServiceStatus.Feature)
+                        {
+                            ad.Status = ServiceStatus.UnFeature;
+                            shouldUpdate = true;
+                        }
+                        break;
 
                     case BulkModerationAction.Remove:
                         ad.Status = ServiceStatus.Rejected;
