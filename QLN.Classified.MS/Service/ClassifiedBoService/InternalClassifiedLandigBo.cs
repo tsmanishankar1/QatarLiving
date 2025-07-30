@@ -2,7 +2,9 @@
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -15,7 +17,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly Dapr.Client.DaprClient _dapr;
         private readonly ILogger<IClassifiedBoLandingService> _logger;
         private readonly IClassifiedService _classified;
-
+        private readonly List<TransactionDto> _mockTransactions;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -30,6 +32,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _mockTransactions = GenerateMockTransactions();
         }
 
 
@@ -81,15 +84,15 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingPicks.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true && 
+                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
+                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null || p.EndDate >= today));
 
                 if (duplicateExists)
                 {
                     var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
 
                 // Save new seasonal pick
@@ -109,13 +112,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}", dto.CategoryName);
                 throw;
             }
         }
-
         public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -421,7 +429,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, userId, stores.Id);
 
-                
+
                 string indexKey = dto.Vertical?.ToLower() switch
                 {
                     Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
@@ -440,18 +448,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingStores.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.StoreName.Equals(dto.StoreName, StringComparison.OrdinalIgnoreCase) &&
+                    p.StoreId.Equals(dto.StoreId, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
                     (p.EndDate == null && p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured store with the name '{dto.StoreName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured store with the name '{dto.StoreName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
 
-                
+
                 await _dapr.SaveStateAsync(StoreName, stores.Id.ToString(), stores);
                 _logger.LogInformation("Saved featured store state successfully. ID: {Id}", stores.Id);
 
@@ -467,13 +475,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.StoreName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, userId);
                 throw;
             }
         }
-
         public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
         {
             try
@@ -798,17 +811,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 bool duplicateExists = existingItems.Any(p =>
                     p != null &&
                     p.IsActive == true &&
-                    p.CategoryName.Equals(dto.CategoryName, StringComparison.OrdinalIgnoreCase) &&
+                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
                     p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null && p.EndDate >= today));
+                    (p.EndDate == null || p.EndDate >= today));
 
                 if (duplicateExists)
                 {
-                    var message = $"A featured category '{dto.CategoryName}' already exists and is still active for vertical '{dto.Vertical}'.";
+                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
                     _logger.LogWarning(message);
-                    throw new InvalidOperationException(message);
+                    throw new ConflictException(message);
                 }
-                                
+
                 await _dapr.SaveStateAsync(StoreName, categories.Id.ToString(), categories, cancellationToken: cancellationToken);
                 _logger.LogInformation("Saved featured category state successfully. ID: {Id}", categories.Id);
 
@@ -824,13 +837,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return result;
             }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                throw new ConflictException(ex.Message);
+
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw;
             }
         }
-        
         public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(categoryId))
@@ -970,7 +988,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             var featuredCategories = await Task.WhenAll(stateTasks);
 
             var activeFeaturedCategories = featuredCategories
-                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) && (p.EndDate == null || p.EndDate > DateOnly.FromDateTime(DateTime.UtcNow)))
+                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
+                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
                 .OrderByDescending(p => p.UpdatedAt)
                 .ToList();
 
@@ -978,7 +997,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             return activeFeaturedCategories;
         }
-
         public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
             const int MaxSlot = 6;
@@ -1103,7 +1121,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<List<ClassifiedsItems>> BulkAction(BulkActionRequest request, CancellationToken ct)
+        public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
             var indexKeys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.StateStoreNames.UnifiedStore,
@@ -1141,8 +1159,20 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     case BulkActionEnum.Approve:
                         if (ad.Status == AdStatus.PendingApproval)
                         {
-                            ad.Status = AdStatus.Published;
-                            shouldUpdate = true;
+                            if (request.AdIds.Count == 1)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
                         }
                         break;
 
@@ -1152,6 +1182,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             ad.Status = AdStatus.Published;
                             shouldUpdate = true;
                         }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                        }
                         break;
 
                     case BulkActionEnum.Unpublish:
@@ -1159,6 +1193,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         {
                             ad.Status = AdStatus.Unpublished;
                             shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
                         }
                         break;
 
@@ -1168,6 +1206,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             ad.IsPromoted = false;
                             shouldUpdate = true;
                         }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                        }
                         break;
 
                     case BulkActionEnum.UnFeature:
@@ -1175,6 +1217,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         {
                             ad.IsFeatured = false;
                             shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
                         }
                         break;
 
@@ -1190,17 +1236,355 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 if (shouldUpdate)
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
-                    ad.UpdatedBy = request.UpdatedBy;
-                    Console.WriteLine("Updating");
+                    ad.UpdatedBy = userId;
                     await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
                     updated.Add(ad);
-                    Console.WriteLine("Updated");
                 }
             }
 
-            return updated;
+            return "Action completed successfully";
         }
 
+        public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.StateStoreNames.UnifiedStore,
+                ConstantValues.StateStoreNames.CollectiblesIndexKey,
+                cancellationToken: ct
+            ) ?? new();
+            Console.WriteLine(indexKeys);
+            var updated = new List<ClassifiedsCollectibles>();
+
+            foreach (var id in request.AdIds)
+            {
+                var adKey = GetAdKey(id);
+                if (!indexKeys.Contains(adKey.ToString()))
+                {
+                    Console.WriteLine("Index Is Null");
+                    continue;
+                }
+
+                var ad = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    adKey.ToString(),
+                    cancellationToken: ct
+                );
+
+                if (ad is null)
+                {
+                    Console.WriteLine("Ad Is Null");
+                    continue;
+                }
+
+                bool shouldUpdate = false;
+
+                switch (request.Action)
+                {
+                    case BulkActionEnum.Approve:
+                        if (ad.Status == AdStatus.PendingApproval)
+                        {
+                            if (request.AdIds.Count == 1)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Publish:
+                        if (ad.Status == AdStatus.Unpublished)
+                        {
+                            ad.Status = AdStatus.Published;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Unpublish:
+                        if (ad.Status == AdStatus.Published)
+                        {
+                            ad.Status = AdStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                        }
+                        break;
+
+                    case BulkActionEnum.UnPromote:
+                        if (ad.IsPromoted)
+                        {
+                            ad.IsPromoted = false;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                        }
+                        break;
+
+                    case BulkActionEnum.UnFeature:
+                        if (ad.IsFeatured)
+                        {
+                            ad.IsFeatured = false;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Remove:
+                        ad.Status = AdStatus.Rejected;
+                        shouldUpdate = true;
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid action");
+                }
+
+                if (shouldUpdate)
+                {
+                    ad.UpdatedAt = DateTime.UtcNow;
+                    ad.UpdatedBy = userId;
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updated.Add(ad);                }
+            }
+
+            return "Action completed successfully";
+        }
         private string GetAdKey(Guid id) => $"ad-{id}";
+        public async Task<TransactionListResponseDto> GetTransactionsAsync(string subVertical,
+                   int pageNumber,
+                   int pageSize,
+                   string? searchText,
+                   string? transactionType,
+                   string? dateCreated,
+                   string? datePublished,
+                   string? dateStart,
+                   string? dateEnd,
+                   string? status,
+                   string? paymentMethod,
+                   string sortBy,
+                   string sortOrder,
+                   CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+                await Task.Delay(50, cancellationToken);
+
+                var allTransactions = _mockTransactions.AsQueryable();
+
+                // Filter by transaction type
+                if (!string.IsNullOrWhiteSpace(transactionType))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.TransactionType.Equals(transactionType, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Filter by status
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Filter by payment method
+                if (!string.IsNullOrWhiteSpace(paymentMethod))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.PaymentMethod.Equals(paymentMethod, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Date filters - match exact dates
+                if (!string.IsNullOrWhiteSpace(dateCreated))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.CreationDate.Equals(dateCreated, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(datePublished))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.PublishedDate.Equals(datePublished, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateStart))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.StartDate.Equals(dateStart, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateEnd))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                        t.EndDate.Equals(dateEnd, StringComparison.OrdinalIgnoreCase));
+                }
+
+                // Search filter
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    var search = searchText.ToLower();
+                    allTransactions = allTransactions.Where(t =>
+                        t.AdId.ToLower().Contains(search) ||
+                        t.OrderId.ToLower().Contains(search) ||
+                        t.Username.ToLower().Contains(search) ||
+                        t.UserEmail.ToLower().Contains(search) ||
+                        t.TransactionType.ToLower().Contains(search) ||
+                        t.ProductType.ToLower().Contains(search) ||
+                        t.Category.ToLower().Contains(search) ||
+                        t.Status.ToLower().Contains(search) ||
+                        t.Mobile.Contains(search) ||
+                        t.PaymentMethod.ToLower().Contains(search) ||
+                        t.Description.ToLower().Contains(search)
+                    );
+                }
+
+                // Sorting
+                allTransactions = sortBy.ToLower() switch
+                {
+                    "amount" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.Amount) :
+                        allTransactions.OrderBy(t => t.Amount),
+                    "status" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.Status) :
+                        allTransactions.OrderBy(t => t.Status),
+                    "transactiontype" => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => t.TransactionType) :
+                        allTransactions.OrderBy(t => t.TransactionType),
+                    _ => sortOrder == "desc" ?
+                        allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
+                        allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                };
+
+                var totalRecords = allTransactions.Count();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                // Pagination
+                var paginatedTransactions = allTransactions
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                _logger.LogInformation("Returning {Count} transactions out of {Total} total records",
+                    paginatedTransactions.Count, totalRecords);
+
+                return new TransactionListResponseDto
+                {
+                    Records = paginatedTransactions,
+                    TotalRecords = totalRecords,
+                    CurrentPage = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions");
+                throw;
+            }
+        }
+
+        private DateTime ParseDate(string dateString)
+        {
+            try
+            {
+                return DateTime.ParseExact(dateString, "dd-MM-yyyy", null);
+            }
+            catch
+            {
+                return DateTime.MinValue;
+            }
+        }
+
+        private List<TransactionDto> GenerateMockTransactions()
+        {
+            var random = new Random();
+            var users = new[] { "john_doe", "jane_smith", "bob_wilson", "alice_brown", "charlie_davis" };
+            var emails = new[] { "john@example.com", "jane@example.com", "bob@example.com", "alice@example.com", "charlie@example.com" };
+            var categories = new[] { "Electronics", "Vehicles", "Real Estate", "Jobs", "Services", "Fashion" };
+            var productTypes = new[] { "Phone", "Car", "Apartment", "Furniture", "Laptop", "Clothing" };
+            var transactionTypes = new[] { "Pay To Publish", "Pay To Promote", "Pay To Feature", "Bulk Refresh" };
+            var statuses = new[] { "Active", "Pending Approval", "Expired", "Unpublished", "Awaits" };
+            var paymentMethods = new[] { "Credit Card", "PayPal", "Bank Transfer", "Digital Wallet" };
+
+            var transactions = new List<TransactionDto>();
+
+            for (int i = 1; i <= 100; i++)
+            {
+                var userIndex = random.Next(users.Length);
+                var transactionType = transactionTypes[random.Next(transactionTypes.Length)];
+                var createdDate = DateTime.UtcNow.AddDays(-random.Next(90));
+                var startDate = createdDate.AddDays(random.Next(0, 5));
+                var endDate = startDate.AddDays(random.Next(30, 90));
+
+                // Some transactions may not have published/start/end dates
+                var hasPublishedDate = random.Next(100) > 20; // 80% have published date
+                var hasStartDate = random.Next(100) > 30; // 70% have start date
+                var hasEndDate = random.Next(100) > 40; // 60% have end date
+
+                transactions.Add(new TransactionDto
+                {
+                    Id = $"txn_{i:D6}",
+                    AdId = $"{random.Next(21430, 21440)}",
+                    OrderId = $"{random.Next(21400, 21500)}",
+                    UserId = $"usr_{userIndex + 1}",
+                    Username = users[userIndex],
+                    UserEmail = emails[userIndex],
+                    TransactionType = transactionType,
+                    ProductType = productTypes[random.Next(productTypes.Length)],
+                    Category = categories[random.Next(categories.Length)],
+                    Status = statuses[random.Next(statuses.Length)],
+                    Email = emails[userIndex],
+                    Mobile = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
+                    Whatsapp = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
+                    Account = "User-account@gmail.com",
+                    CreationDate = createdDate.ToString("dd-MM-yyyy"),
+                    PublishedDate = hasPublishedDate ? createdDate.AddHours(random.Next(1, 24)).ToString("dd-MM-yyyy") : "",
+                    StartDate = hasStartDate ? startDate.ToString("dd-MM-yyyy") : "",
+                    EndDate = hasEndDate ? endDate.ToString("dd-MM-yyyy") : "",
+                    Amount = GetAmountByType(transactionType, random),
+                    PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
+                    Description = GetDescriptionByType(transactionType)
+                });
+            }
+
+            return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
+        }
+
+        private static decimal GetAmountByType(string type, Random random) => type switch
+        {
+            "Pay To Publish" => random.Next(10, 60),
+            "Pay To Promote" => random.Next(25, 125),
+            "Pay To Feature" => random.Next(50, 250),
+            "Bulk Refresh" => random.Next(100, 400),
+            _ => 25
+        };
+
+        private static string GetDescriptionByType(string type) => type switch
+        {
+            "Pay To Publish" => "Payment for ad publication",
+            "Pay To Promote" => "Payment for ad promotion",
+            "Pay To Feature" => "Payment for featured listing",
+            "Bulk Refresh" => "Bulk refresh payment",
+            _ => "Transaction"
+        };
+
     }
 }

@@ -2,14 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
-using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using static QLN.Common.DTO_s.NotificationDto;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -17,14 +14,11 @@ namespace QLN.Backend.API.Service.Services
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
         private readonly ISearchService _searchService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger,
-            IFileStorageBlobService blobStorage, ISearchService searchService)
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, ISearchService searchService)
         {
             _dapr = dapr;
             _logger = logger;
-            _blobStorage = blobStorage;
             _searchService = searchService;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
@@ -141,32 +135,10 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
         {
-            string? FileName = null;
             try
             {
-                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
-                {
-                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
-                    {
-                        var image = dto.PhotoUpload[i];
-
-                        if (!string.IsNullOrWhiteSpace(image?.Url))
-                        {
-                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url!);
-
-                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
-                                throw new ArgumentException("Only jpg, png, heic and webp images are allowed.");
-
-                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
-                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
-
-                            image.FileName = imageName;
-                            image.Url = blobUrl;
-                        }
-                    }
-                }
                 var url = "/api/service/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -182,7 +154,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
-                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
@@ -193,49 +164,14 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating service ad");
                 throw;
             }
         }
-        private async Task CleanupUploadedFiles(string? file, CancellationToken cancellationToken)
+        public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
         {
-            if (!string.IsNullOrWhiteSpace(file))
-                await _blobStorage.DeleteFile(file, "PhotoUpload", cancellationToken);
-        }
-        public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
-        {
-            string? FileName = null;
             try
             {
-                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
-                {
-                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
-                    {
-                        var image = dto.PhotoUpload[i];
-
-                        if (string.IsNullOrWhiteSpace(image?.Url))
-                            throw new ArgumentException("Image URL is required.");
-
-                        if (image.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                        {
-                            image.FileName = Path.GetFileName(new Uri(image.Url).AbsolutePath);
-                        }
-                        else
-                        {
-                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url);
-
-                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
-                                throw new ArgumentException("Only heic, jpg, png, and webp images are allowed.");
-
-                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
-                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
-
-                            image.FileName = imageName;
-                            image.Url = blobUrl;
-                        }
-                    }
-                }
                 var url = "/api/service/updatebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -251,7 +187,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
-                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
@@ -261,22 +196,21 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating service ad");
                 throw;
             }
         }
-        public async Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default)
+        public async Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<ServicesDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<ServicesModel>>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     "/api/service/getall",
                     cancellationToken
                 );
-                return response ?? new List<ServicesDto>();
+                return response ?? new List<ServicesModel>();
             }
             catch (Exception ex)
             {
@@ -284,12 +218,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/service/getbyid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, ServicesDto>(
+                return await _dapr.InvokeMethodAsync<object?, ServicesModel>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -347,12 +281,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = "/api/service/getbystatus";
-                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesDto>>(
+                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesModel>>(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -366,7 +300,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -379,7 +313,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -405,7 +339,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -418,7 +352,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -444,7 +378,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -457,7 +391,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -483,7 +417,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> PublishService(Guid id, CancellationToken ct)
+        public async Task<ServicesModel> PublishService(Guid id, CancellationToken ct)
         {
             try
             {
@@ -500,7 +434,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -526,7 +460,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        public async Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -550,18 +484,11 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                var moderatedAds = JsonSerializer.Deserialize<List<ServicesDto>>(json, new JsonSerializerOptions
+                var moderatedAds = JsonSerializer.Deserialize<List<ServicesModel>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
-                if (moderatedAds != null && moderatedAds.Any())
-                {
-                    foreach (var dto in moderatedAds)
-                    {
-                        //await IndexServiceToAzureSearch(dto, cancellationToken);
-                    }
-                }
-                return moderatedAds ?? new List<ServicesDto>();
+                return moderatedAds ?? new List<ServicesModel>();
             }
             catch (Exception ex)
             {

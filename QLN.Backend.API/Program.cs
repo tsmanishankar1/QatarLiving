@@ -131,7 +131,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -146,7 +146,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     options.Tokens.EmailConfirmationTokenProvider = "EmailVerification";
     options.Tokens.ChangePhoneNumberTokenProvider = "PhoneVerification";
 })
-.AddEntityFrameworkStores<QatarlivingDevContext>()
+.AddEntityFrameworkStores<QLApplicationContext>()
 .AddDefaultTokenProviders();
 
 WebApplicationBuilder builder1 = builder;
