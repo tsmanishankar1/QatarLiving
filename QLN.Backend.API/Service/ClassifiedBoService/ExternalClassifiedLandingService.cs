@@ -873,6 +873,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
+                    string subVertical,
                     int pageNumber,
                     int pageSize,
                     string? searchText,
@@ -891,6 +892,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             {
                 var queryParams = new List<string>
                 {
+                    $"subVertical={subVertical}",
                     $"pageNumber={pageNumber}",
                     $"pageSize={pageSize}"
                 };
