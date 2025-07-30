@@ -330,7 +330,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                
 
-                // Sort
+              
                 sortBy = sortBy?.ToLowerInvariant();
                 serviceAds = sortBy switch
                 {
@@ -341,7 +341,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
                 };
 
-                // Pagination
+              
                 int totalCount = serviceAds.Count;
                 var pagedItems = serviceAds
                     .Skip((pageNumber - 1) * pageSize)

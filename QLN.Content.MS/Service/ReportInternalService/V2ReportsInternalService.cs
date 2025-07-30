@@ -637,7 +637,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     if (post is null || !post.IsActive)
                         continue;
 
-                    // Check if this post has reports
+                  
                     if (reportsByPostId.ContainsKey(postId))
                     {
                         // Add entries for each report
@@ -659,10 +659,10 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     }
                     else
                     {
-                        // Add post without report information
+                       
                         allPosts.Add(new CommunityPostWithReports
                         {
-                            Id = Guid.NewGuid(), // Generate a temporary ID for posts without reports
+                            Id = Guid.NewGuid(), 
                             PostId = post.Id,
                             Post = post.Title,
                             Slug = post.Slug,
@@ -675,7 +675,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     }
                 }
 
-                // Apply search filter AFTER collecting all posts
+               
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     string search = searchTerm.ToLower();
