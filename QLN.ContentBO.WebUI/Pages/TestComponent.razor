@@ -1,26 +1,27 @@
 ﻿@page "/blazormarkdown"
+@using System.Text
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 
 <MudGrid Style="padding-top: 18px">
-    <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
-    <hr />
-    @if (!string.IsNullOrEmpty(PastedImage))
-    {
-        <img src="@PastedImage" alt="Pasted" style="max-width: 300px;" />
-    }
-    <h3>Result</h3>
-    @((MarkupString)markdownHtml)
-
-
+    <MudItem>
+        <MudText Typo="Typo.h4">Blazor Markdown Editor with Image Paste</MudText>
+        <div id="pasteTarget" @ref="divRef">
+            Click here and press Ctrl + V to paste image
+            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
+        </div>
+        <hr />
+    </MudItem>
+    <MudItem>
+        @if (!string.IsNullOrEmpty(PastedImage))
+        {
+            <img src="@PastedImage" alt="Pasted" style="max-width: 300px;" />
+        }
+        <br />
+        <h3>Result</h3>
+        @((MarkupString)markdownHtml.ToString())
+    </MudItem>
 </MudGrid>
-
-<h3>Paste an Image (Ctrl + V or Right Click → Paste)</h3>
-
-<div id="pasteTarget" @ref="divRef" style="border:2px dashed #888;padding:20px;width:300px;height:150px;">
-    Click here and press Ctrl + V to paste image
-</div>
-
 
 
 @if (!string.IsNullOrEmpty(base64Image))
@@ -34,7 +35,7 @@
     private string? PastedImage;
 
     string markdownValue = "#Markdown Editor\nThis is a test";
-    string markdownHtml;
+    StringBuilder markdownHtml = new();
 
     private ElementReference divRef;
     private DotNetObjectReference<TestComponent>? _objRef;
@@ -56,7 +57,7 @@
 
     Task OnMarkdownValueHTMLChanged(string value)
     {
-        markdownHtml = value;
+        markdownHtml.Append(value);
         return Task.CompletedTask;
     }
 
@@ -64,6 +65,8 @@
     public void OnImagePasted(string base64)
     {
         base64Image = base64;
+        Guid guid = Guid.NewGuid();
+        markdownHtml.AppendLine($"![image-{guid}]({base64})");
         StateHasChanged();
     }
 
