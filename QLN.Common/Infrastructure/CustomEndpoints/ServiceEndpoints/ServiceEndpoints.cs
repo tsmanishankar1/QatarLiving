@@ -255,7 +255,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 ServiceDto dto,
                 IServices service,
                 HttpContext httpContext,
-                DaprClient dapr,
                 CancellationToken cancellationToken) =>
             {
                 try
@@ -282,74 +281,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                    var mainCategory = await dapr.GetStateAsync<ServicesCategory>(
-                  ConstantValues.Services.StoreName,
-                  dto.CategoryId.ToString(),
-                  cancellationToken: cancellationToken);
-                    string? categoryName = null;
-                    string? l1CategoryName = null;
-                    string? l2CategoryName = null;
-
-                    if (mainCategory != null)
-                    {
-                        categoryName = mainCategory.Category;
-                        var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                        if (l1Category != null)
-                        {
-                            l1CategoryName = l1Category.Name;
-
-                            var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                            if (l2Category != null)
-                            {
-                                l2CategoryName = l2Category.Name;
-                            }
-                        }
-                    }
-                    var request = new ServicesModel
-                    {
-                        CreatedBy = uid,
-                        CreatedAt = DateTime.UtcNow,
-                        UserName = userName,
-                        Id = Guid.NewGuid(),
-                        Status = ServiceStatus.Draft,
-                        AdType = dto.AdType,
-                        IsFeatured = false,
-                        IsPromoted = false,
-                        IsRefreshed = false,
-                        PromotedExpiryDate = null,
-                        FeaturedExpiryDate = null,
-                        RefreshExpiryDate = null,
-                        PublishedDate = null,
-                        ExpiryDate = null,
-                        IsActive = true,
-                        CategoryId = dto.CategoryId,
-                        L1CategoryId = dto.L1CategoryId,
-                        L2CategoryId = dto.L2CategoryId,
-                        CategoryName = categoryName,
-                        L1CategoryName = l1CategoryName,
-                        L2CategoryName = l2CategoryName,
-                        IsPriceOnRequest = dto.IsPriceOnRequest,
-                        Price = dto.Price,
-                        Title = dto.Title,
-                        Description = dto.Description,
-                        PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                        PhoneNumber = dto.PhoneNumber,
-                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                        WhatsappNumber = dto.WhatsappNumber,
-                        EmailAddress = dto.EmailAddress,
-                        Location = dto.Location,
-                        LocationId = dto.LocationId,
-                        //SubscriptionId = dto.SubscriptionId,
-                        ZoneId = dto.ZoneId,
-                        StreetNumber = dto.StreetNumber,
-                        BuildingNumber = dto.BuildingNumber,
-                        LicenseCertificate = dto.LicenseCertificate,
-                        Comments = dto.Comments,
-                        Longitude = dto.Longitude,
-                        Lattitude = dto.Lattitude,
-                        PhotoUpload = dto.PhotoUpload ?? new List<ImageDto>(),
-                    };
-                    var result = await service.CreateServiceAd(request, cancellationToken);
+                   
+                    var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -375,23 +308,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-            ServicesModel dto,
+            ServiceRequest dto,
+            [FromQuery] string uid,
+            [FromQuery] string userName,
             IServices service,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (dto.CreatedBy == string.Empty)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Invalid Data",
-                            Detail = "CreatedBy cannot be null.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    var result = await service.CreateServiceAd(dto, cancellationToken);
+                    dto.CreatedBy = uid;
+                    dto.userName = userName;
+                    var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
