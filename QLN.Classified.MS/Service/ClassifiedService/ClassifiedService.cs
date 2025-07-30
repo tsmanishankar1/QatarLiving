@@ -306,6 +306,7 @@ namespace QLN.Classified.MS.Service
 
         public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
+           
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -333,6 +334,24 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
+                var upsertRequest = await IndexItemsToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdCreatedResponseDto
                 {
@@ -362,6 +381,207 @@ namespace QLN.Classified.MS.Service
                 _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
+        }
+        private async Task<CommonIndexRequest> IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsItemsIndex
+            {
+                Id = dto.Id.ToString(),
+                SubVertical = dto.SubVertical,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                Category = dto.Category,
+                L1Category = dto.L1Category,
+                L2Category = dto.L2Category,
+                Brand = dto.Brand,
+                Model = dto.Model,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                SubscriptionId = dto.SubscriptionId,
+                Price = (double)dto.Price,
+                PriceType = dto.PriceType,
+                Location = dto.Location,
+                Longitude = (double)dto.Longitude,
+                Lattitude = (double)dto.Latitude,
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                UserId = dto.UserId,
+                RefreshExpiryDate = dto.LastRefreshedOn,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                UserName = dto.UserName,
+                AttributesJson = dto.Attributes != null ? JsonSerializer.Serialize(dto.Attributes) : null,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                ClassifiedsItem = indexDoc
+            };
+            return indexRequest;
+        }
+        private async Task<CommonIndexRequest> IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsPrelovedIndex
+            {
+                Id = dto.Id.ToString(),
+                SubscriptionId = dto.SubscriptionId,
+                SubVertical = dto.SubVertical,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                Price = dto.Price,
+                PriceType = dto.PriceType,
+                CategoryId = dto.CategoryId,
+                Category = dto.Category,
+                L1CategoryId = dto.L1CategoryId,
+                L1Category = dto.L1Category,
+                L2CategoryId = dto.L2CategoryId,
+                L2Category = dto.L2Category,
+                Location = dto.Location,
+                CreatedAt = dto.CreatedAt,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Status = dto.Status.ToString(),
+                Lattitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                UserId = dto.UserId,
+                AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                Brand = dto.Brand,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                CreatedBy = dto.CreatedBy,
+                HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                Inclusion = dto.Inclusion,
+                Model = dto.Model,
+                UserName = dto.UserName,
+                IsActive = true,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList(),
+                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+
+                IsFeatured = dto.IsFeatured,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsRefreshed = dto.IsRefreshed,
+
+                RefreshExpiryDate = dto.LastRefreshedOn
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                ClassifiedsPrelovedItem = indexDoc
+            };
+            return indexRequest;
+        }
+        private async Task<CommonIndexRequest> IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsCollectiblesIndex
+            {
+                Id = dto.Id.ToString(),
+                SubVertical = dto.SubVertical,
+                SubscriptionId = dto.SubscriptionId,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                Price = dto.Price,
+                PriceType = dto.PriceType,
+                CategoryId = dto.CategoryId,
+                Category = dto.Category,
+                L1CategoryId = dto.L1CategoryId,
+                L1Category = dto.L1Category,
+                L2CategoryId = dto.L2CategoryId,
+                L2Category = dto.L2Category,
+                Location = dto.Location,
+                CreatedAt = dto.CreatedAt,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Status = dto.Status.ToString(),
+                Lattitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                UserId = dto.UserId,
+                UserName = dto.UserName,
+                IsActive = true,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList(),
+                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+
+                IsFeatured = dto.IsFeatured,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                PromotedExpiryDate = dto.PromotedExpiryDate
+
+
+
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                ClassifiedsCollectiblesItem = indexDoc
+            };
+            return indexRequest;
+        }
+        private async Task<CommonIndexRequest> IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsDealsIndex
+            {
+                Id = dto.Id.ToString(),
+                Subvertical = dto.Subvertical,
+                UserId = dto.UserId,
+                BusinessName = dto.BusinessName,
+                BranchNames = dto.BranchNames,
+                BusinessType = dto.BusinessType,
+                Title = dto.Title,
+                Description = dto.Description,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                FlyerFileUrl = dto.FlyerFileUrl,
+                DataFeedUrl = dto.DataFeedUrl,
+                ContactNumber = dto.ContactNumber,
+                WhatsappNumber = dto.WhatsappNumber,
+                WebsiteUrl = dto.WebsiteUrl,
+                SocialMediaLinks = dto.SocialMediaLinks,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                XMLlink = dto.XMLlink,
+                offertitle = dto.offertitle,
+                ExpiryDate = dto.ExpiryDate,
+                ImageUrl = dto.ImageUrl,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsFeatured = dto.IsFeatured,
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                ClassifiedsDealsItem = indexDoc
+            };
+            return indexRequest;
         }
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
@@ -479,6 +699,24 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+                var upsertRequest = await IndexPrelovedToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdCreatedResponseDto
                 {
@@ -540,6 +778,24 @@ namespace QLN.Classified.MS.Service
                 // Save to state store
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
+                var upsertRequest = await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdCreatedResponseDto
                 {
@@ -600,6 +856,24 @@ namespace QLN.Classified.MS.Service
                 // Save to state store
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+                var upsertRequest = await IndexDealsToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdCreatedResponseDto
                 {
@@ -1015,7 +1289,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -1161,7 +1434,6 @@ namespace QLN.Classified.MS.Service
                              {
                                  return new ImageInfo
                                  {
-                                     AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                                      Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                                      Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                  };
@@ -1526,7 +1798,6 @@ namespace QLN.Classified.MS.Service
                       {
                           return new ImageInfo
                           {
-                              AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                               Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                               Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                           };
@@ -1666,7 +1937,6 @@ namespace QLN.Classified.MS.Service
                         {
                             return new ImageInfo
                             {
-                                AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() : string.Empty,
                                 Url = img.TryGetProperty("url", out var u) ? u.GetString() : string.Empty,
                                 Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                             };
@@ -1924,7 +2194,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2041,7 +2310,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2320,7 +2588,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -2463,7 +2730,6 @@ namespace QLN.Classified.MS.Service
                             {
                                 return new ImageInfo
                                 {
-                                    AdImageFileNames = img.TryGetProperty("adImageFileNames", out var fn) ? fn.GetString() ?? "" : "",
                                     Url = img.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "",
                                     Order = img.TryGetProperty("order", out var o) && o.TryGetInt32(out var ord) ? ord : 0
                                 };
@@ -3013,6 +3279,24 @@ namespace QLN.Classified.MS.Service
                 }
 
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
+                var upsertRequest = await IndexItemsToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdUpdatedResponseDto
                 {
@@ -3070,6 +3354,24 @@ namespace QLN.Classified.MS.Service
                 }
 
                 await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
+                var upsertRequest = await IndexPrelovedToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdUpdatedResponseDto
                 {
@@ -3127,6 +3429,24 @@ namespace QLN.Classified.MS.Service
                 }
 
                 await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
+                var upsertRequest = await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdUpdatedResponseDto
                 {
@@ -3184,6 +3504,24 @@ namespace QLN.Classified.MS.Service
                 }
 
                 await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+                var upsertRequest = await IndexDealsToAzureSearch(dto, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return new AdUpdatedResponseDto
                 {

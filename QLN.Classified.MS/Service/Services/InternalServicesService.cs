@@ -150,11 +150,34 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 ValidateCommon(dto);
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                   ConstantValues.Services.StoreName,
+                   ConstantValues.Services.ServicesIndexKey,
+                   cancellationToken: cancellationToken
+                ) ?? new();
+
+                foreach (var adKey in allAdKeys)
+                {
+                    var existingAd = await _dapr.GetStateAsync<ServicesDto>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == userId &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                    }
+                }
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -261,7 +284,7 @@ namespace QLN.Classified.MS.Service.Services
                     );
                 }
 
-                return entity;
+                return "Service Ad Created Successfully";
             }
             catch (ArgumentException ex)
             {
@@ -477,7 +500,6 @@ namespace QLN.Classified.MS.Service.Services
                 UpdatedBy = dto.UpdatedBy,
                 Images = dto.PhotoUpload.Select(i => new ImageInfo
                 {
-                    AdImageFileNames = i.FileName,
                     Url = i.Url,
                     Order = i.Order
                 }).ToList()
@@ -769,15 +791,37 @@ namespace QLN.Classified.MS.Service.Services
                 id.ToString(),
                 cancellationToken: ct
             );
+            var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+               ConstantValues.Services.StoreName,
+               ConstantValues.Services.ServicesIndexKey,
+               cancellationToken: ct
+            ) ?? new();
 
+            foreach (var adKey in allAdKeys)
+            {
+                var existingAd = await _dapr.GetStateAsync<ServicesDto>(
+                    ConstantValues.Services.StoreName,
+                    adKey,
+                    cancellationToken: ct
+                );
+
+                if (existingAd != null &&
+                    existingAd.CreatedBy == serviceAd.CreatedBy &&
+                    existingAd.L2CategoryId == serviceAd.L2CategoryId &&
+                    existingAd.IsActive &&
+                    existingAd.Status == ServiceStatus.Published)
+                {
+                    throw new InvalidDataException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                }
+            }
             if (serviceAd == null)
                 throw new InvalidDataException("Service Ad not found.");
 
             if (serviceAd.Status == ServiceStatus.Published)
-                throw new InvalidOperationException("Service is already published.");
+                throw new InvalidDataException("Service is already published.");
 
             if (serviceAd.Status != ServiceStatus.Unpublished)
-                throw new InvalidOperationException("Unpublished Service only be published.");
+                throw new InvalidDataException("Unpublished Service only be published.");
 
             serviceAd.Status = ServiceStatus.Published;
             serviceAd.PublishedDate = DateTime.UtcNow;

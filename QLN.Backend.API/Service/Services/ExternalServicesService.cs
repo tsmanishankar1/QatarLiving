@@ -141,7 +141,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
         {
             string? FileName = null;
             try
@@ -187,16 +187,9 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                var createdDto = JsonSerializer.Deserialize<ServicesDto>(responseJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                    await response.Content.ReadAsStringAsync(cancellationToken);
 
-                if (createdDto is null)
-                    throw new InvalidDataException("Invalid service returned from creation.");
-
-                return dto;
+                return "Service Ad Created Successfully";
             }
             catch (Exception ex)
             {

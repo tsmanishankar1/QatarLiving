@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using System.Security.Claims;
 using QLN.Common.Infrastructure.Model;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -1212,7 +1213,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             // itemsAd post
             group.MapPost("items/post", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsItems dto,
+                ClassifiedsItemsDTO dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1226,6 +1227,47 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
                     var name = userData.GetProperty("name").GetString();
+                    var request = new ClassifiedsItems
+                    {
+                        UserId = uid,
+                        Id = new Guid(),
+                        UserName = name,
+                        L2CategoryId = dto.L2CategoryId,
+                        BuildingNumber = dto.BuildingNumber,
+                        SubVertical = "Items",
+                        AdType = dto.AdType,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Price = dto.Price,
+                        PriceType = dto.PriceType,
+                        CategoryId = dto.CategoryId,
+                        Category = dto.Category,
+                        L1CategoryId = dto.L1CategoryId,
+                        L1Category = dto.L1Category,
+                        L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
+                        Location = dto.Location,
+                        Latitude = dto.Latitude,
+                        Longitude = dto.Longitude,
+                        ContactNumber = dto.ContactNumber,
+                        ContactEmail = dto.ContactEmail,
+                        WhatsAppNumber = dto.WhatsAppNumber,
+                        StreetNumber = dto.StreetNumber,
+                        zone = dto.zone,
+                        IsActive = true,
+                        CreatedBy = name,
+                        CreatedAt = DateTime.UtcNow,
+                        Images = dto.Images.Select(i => new ImageInfo
+                        {
+                            Url = i.Url,
+                            Order = i.Order
+                        }).ToList(),
+                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+
+                    };
 
                     if (uid == null && name == null)
                     {
@@ -1236,9 +1278,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    dto.UserId = uid;
-                    dto.UserName = name;
-                    var response = await service.CreateClassifiedItemsAd(dto, token);
+                    var response = await service.CreateClassifiedItemsAd(request, token);
 
 
                     return TypedResults.Created($"/api/classifieds/items/user-ads-by-id/{response.AdId}", response);
@@ -1421,7 +1461,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("preloved/post", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsPreloved dto,
+                ClassifiedsPrelovedDTO dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1437,6 +1477,49 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
+                    var name = userData.GetProperty("name").GetString();
+                    var request = new ClassifiedsPreloved
+                    {
+                        UserId = uid,
+                        Id = new Guid(),
+                        AuthenticityCertificateUrl=dto.AuthenticityCertificateUrl,
+                        HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                        L2CategoryId = dto.L2CategoryId,
+                        BuildingNumber = dto.BuildingNumber,
+                        SubVertical = "Preloved",
+                        AdType = dto.AdType,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Price = dto.Price,
+                        PriceType = dto.PriceType,
+                        CategoryId = dto.CategoryId,
+                        Category = dto.Category,
+                        L1CategoryId = dto.L1CategoryId,
+                        L1Category = dto.L1Category,
+                        L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
+                        Location = dto.Location,
+                        Latitude = dto.Latitude,
+                        Longitude = dto.Longitude,
+                        ContactNumber = dto.ContactNumber,
+                        ContactEmail = dto.ContactEmail,
+                        WhatsAppNumber = dto.WhatsAppNumber,
+                        StreetNumber = dto.StreetNumber,
+                        zone = dto.zone,
+                        IsActive = true,
+                        CreatedBy = name,
+                        CreatedAt = DateTime.UtcNow,
+                        Images = dto.Images.Select(i => new ImageInfo
+                        {
+                            Url = i.Url,
+                            Order = i.Order
+                        }).ToList(),
+                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+
+                    };
 
                     if (uid == null)
                     {
@@ -1447,8 +1530,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    dto.UserId = uid;
-                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
+                    //dto.UserId = uid;
+                    var result = await service.CreateClassifiedPrelovedAd(request, token);
 
                     return TypedResults.Created(
            $"/api/classifieds/preloved/user-ads-by-id/{result.AdId}", result);
@@ -2093,7 +2176,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("collectibles/post", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsCollectibles dto,
+                ClassifiedsCollectablesDTO dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2107,8 +2190,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var name = userData.GetProperty("name").GetString();
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
+                    var request = new ClassifiedsCollectibles
+                    {
+                        UserId = uid,
+                        Id = new Guid(),
+                        UserName = name,
+                        L2CategoryId = dto.L2CategoryId,
+                        BuildingNumber = dto.BuildingNumber,
+                        AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                        HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                        SubVertical = "Collectibles",
+                        AdType = dto.AdType,
+                        Title = dto.Title,
+                        Description = dto.Description,
+                        Price = dto.Price,
+                        PriceType = dto.PriceType,
+                        CategoryId = dto.CategoryId,
+                        Category = dto.Category,
+                        L1CategoryId = dto.L1CategoryId,
+                        L1Category = dto.L1Category,
+                        L2Category = dto.L2Category,
+                        Brand = dto.Brand,
+                        Model = dto.Model,
+                        Color = dto.Color,
+                        Condition = dto.Condition,
+                        Location = dto.Location,
+                        Latitude = dto.Latitude,
+                        Longitude = dto.Longitude,
+                        ContactNumber = dto.ContactNumber,
+                        ContactEmail = dto.ContactEmail,
+                        WhatsAppNumber = dto.WhatsAppNumber,
+                        StreetNumber = dto.StreetNumber,
+                        zone = dto.zone,
+                        IsActive = true,
+                        CreatedBy = name,
+                        CreatedAt = DateTime.UtcNow,
+                        Images = dto.Images.Select(i => new ImageInfo
+                        {
+                            Url = i.Url,
+                            Order = i.Order
+                        }).ToList(),
+                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+
+                    };
 
                     if (uid == null)
                     {
@@ -2119,8 +2246,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    dto.UserId = uid;
-                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+                    var result = await service.CreateClassifiedCollectiblesAd(request, token);
 
                     return TypedResults.Created(
                         $"/api/classifieds/collectibles/user-ads-by-id/{result.AdId}", result);
@@ -2221,7 +2347,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPost("deals/post", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsDeals dto,
+                ClassifiedsDealsDTO dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2235,8 +2361,32 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var name = userData.GetProperty("name").GetString();
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
+                    var request = new ClassifiedsDeals {
+                        UserId = uid,
+                        Id = new Guid(),
+                        Title = dto.Title,
+                        Subvertical = "Deals",
+                        Description = dto.Description,
+                        IsActive = true,
+                        CreatedBy = name,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedBy = name,
+                        UpdatedAt = DateTime.UtcNow,
+                        FlyerFileUrl = dto.FlyerFileUrl,
+                        BusinessName = dto.BusinessName,
+                        BusinessType = dto.BusinessType,
+                        StartDate = dto.StartDate,
+                        EndDate= dto.EndDate,
+                        DataFeedUrl=dto.DataFeedUrl,
+                        WebsiteUrl = dto.WebsiteUrl,
+                        SocialMediaLinks= dto.SocialMediaLinks,
+                        XMLlink = dto.XMLlink,
+                        offertitle = dto.offertitle,
+                        ImageUrl = dto.ImageUrl
+                    }; 
 
                     if (uid == null)
                     {
@@ -2248,8 +2398,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
-                    var result = await service.CreateClassifiedDealsAd(dto, token);
+                    //dto.UserId = uid;
+                    var result = await service.CreateClassifiedDealsAd(request, token);
 
                     return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
 
@@ -5447,7 +5597,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 {
                     Filters = new Dictionary<string, object>
                    {
-                        { "IsFeatured",   true }
+                        { "IsFeatured",   true },
                     }
                 };
 

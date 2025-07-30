@@ -61,10 +61,10 @@ namespace QLN.Notification.MS.Service
                 return;
             }
 
-            using var smtpClient = new SmtpClient(_smtp.Host, int.Parse(_smtp.Port))
+            using var smtpClient = new SmtpClient(_smtp.Host, _smtp.Port)
             {
-                EnableSsl = _smtp.SSL,
-                UseDefaultCredentials = _smtp.DefaultCredential,
+                EnableSsl = _smtp.UseSsL,
+                UseDefaultCredentials = _smtp.UseDefaultCredentials,
                 Credentials = new System.Net.NetworkCredential(_smtp.Username, _smtp.Password)
             };
 
