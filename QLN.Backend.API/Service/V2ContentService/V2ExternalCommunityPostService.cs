@@ -297,7 +297,7 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             try
             {
-                var url = $"/api/v2/community/likeCommentInternal/{likeCommentsDto.CommentId}/{likeCommentsDto.CommunityPostId}/{userId}";
+                var url = $"/api/v2/community/likeCommentInternal/{userId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);

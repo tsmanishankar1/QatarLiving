@@ -7,6 +7,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Common.Infrastructure.Subscriptions;
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
 {
     public static class ServiceBOEndpoint
@@ -67,6 +68,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
                 [AsParameters] PaginationQuery pagination,
                 [FromQuery] string? search,
                 [FromQuery] string? sortBy,
+                [FromQuery] DateTime? startDate,
+                [FromQuery] DateTime? endDate,
+                [FromQuery] string? subscriptionType,
                 IServicesBoService externalService,
                 ILoggerFactory loggerFactory,
                 CancellationToken cancellationToken) =>
@@ -80,6 +84,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
                         pagination.PageSize ?? 12,
                         search,
                         sortBy,
+                        startDate,
+                        endDate,
+                        subscriptionType,
                         cancellationToken);
 
                     return Results.Ok(result);
@@ -104,7 +111,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint
             .WithName("GetAllServiceSubscriptionListing")
             .WithTags("ServicesBo")
             .WithSummary("Get all service ads with Subscription info")
-            .WithDescription("Returns all service ads with basic contact and payment details, with pagination, search, and sorting for subscription.")
+            .WithDescription("Returns all service ads with basic contact and payment details, with pagination, search, sorting, and filtering.")
             .Produces<PaginatedResult<ServiceAdPaymentSummaryDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
