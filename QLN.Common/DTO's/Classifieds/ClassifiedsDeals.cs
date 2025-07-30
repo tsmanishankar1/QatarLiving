@@ -9,8 +9,9 @@ namespace QLN.Common.DTO_s
     public class ClassifiedsDeals
     {
         public Guid Id { get; set; } = new Guid();
-        public string Subvertical { get; set; }
-        public string UserId { get; set; }
+        public string Subvertical { get; set; } = string.Empty;
+        public string? SubscriptionId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public string? BusinessName { get; set; }
         public string? BranchNames { get; set; }
         public string? BusinessType { get; set; }
@@ -20,18 +21,20 @@ namespace QLN.Common.DTO_s
         public DateTime? EndDate { get; set; }
         public string? FlyerFileUrl { get; set; }
         public string? DataFeedUrl { get; set; }
+        public string ContactNumberCountryCode { get; set; } = string.Empty;
         public string? ContactNumber { get; set; }
+        public string WhatsappNumberCountryCode { get; set; } = string.Empty;
         public string? WhatsappNumber { get; set; }
         public string? WebsiteUrl { get; set; }
         public string? SocialMediaLinks { get; set; }
         public bool IsActive { get; set; }
-        public string CreatedBy { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
-        public string XMLlink { get; set; }
+        public string XMLlink { get; set; } = string.Empty;
         public string? offertitle { get; set; }
-        public string ImageUrl { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
         public DateTime? ExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; } = null;
         public DateTime? PromotedExpiryDate { get; set; } = null;

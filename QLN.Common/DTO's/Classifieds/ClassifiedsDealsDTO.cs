@@ -17,7 +17,6 @@ namespace QLN.Common.DTO_s
         public DateTime? EndDate { get; set; }
         public string? FlyerFileUrl { get; set; }
         public string? DataFeedUrl { get; set; }
-        
         public string? WebsiteUrl { get; set; }
         public string? SocialMediaLinks { get; set; }
         public string XMLlink { get; set; }

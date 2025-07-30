@@ -1,9 +1,5 @@
 ﻿using Azure.Search.Documents.Indexes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
@@ -28,10 +24,10 @@ namespace QLN.Common.DTO_s
         public string? BusinessType { get; set; }
 
         [SearchableField]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         [SearchableField]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? StartDate { get; set; }
@@ -46,7 +42,13 @@ namespace QLN.Common.DTO_s
         public string? DataFeedUrl { get; set; }
 
         [SearchableField]
+        public string ContactNumberCountryCode { get; set; }
+
+        [SearchableField]
         public string? ContactNumber { get; set; }
+
+        [SearchableField]
+        public string WhatsappNumberCountryCode { get; set; }
 
         [SearchableField]
         public string? WhatsappNumber { get; set; }
@@ -88,11 +90,14 @@ namespace QLN.Common.DTO_s
         public bool IsFeatured { get; set; } = false;
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? FeaturedExpiryDate { get; set; } = null;
+        public DateTime? FeaturedExpiryDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public bool IsPromoted { get; set; } = false;
+
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? PromotedExpiryDate { get; set; } = null;
+        public DateTime? PromotedExpiryDate { get; set; }
+        [SimpleField(IsFilterable = true)]
+        public string? SubscriptionId { get; set; }
     }
 }
