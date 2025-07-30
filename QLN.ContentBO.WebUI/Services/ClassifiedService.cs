@@ -329,9 +329,27 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request)
+        public async Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v2/classifiedbo/preloved-ads/payment-summary")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedSubscription: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request)

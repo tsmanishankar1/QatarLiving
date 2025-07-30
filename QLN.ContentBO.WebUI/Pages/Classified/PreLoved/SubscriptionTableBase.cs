@@ -13,24 +13,36 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         [Inject] public IDialogService DialogService { get; set; }
 
         [Parameter]
-        public List<SubscriptionListing> Listings { get; set; } = new();
-      
-        protected HashSet<SubscriptionListing> SelectedListings { get; set; } = new();
+        public List<SubscriptionListingModal> Listings { get; set; } = new();
+
+        [Parameter]
+        public bool IsLoading { get; set; }
+        [Parameter]
+        public bool IsEmpty { get; set; }
+        protected HashSet<SubscriptionListingModal> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
-        protected void HandlePageChange(int newPage)
+        [Parameter]
+        public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageChanged { get; set; }
+
+        [Parameter]
+        public EventCallback<int> OnPageSizeChanged { get; set; }
+
+        protected async Task HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChanged.InvokeAsync(newPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async Task HandlePageSizeChange(int newSize)
         {
-            pageSize = newPageSize;
+            pageSize = newSize;
             currentPage = 1;
-            StateHasChanged();
+            await OnPageSizeChanged.InvokeAsync(newSize);
         }
+
 
 
         protected string selectedTab = "pendingApproval";
@@ -95,13 +107,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
+
+
      
-        protected void OnEdit(SubscriptionListing item)
+        protected void OnEdit(SubscriptionListingModal item)
         {
             Console.WriteLine($"Edit clicked: {item.Id}");
         }
 
-        protected void OnPreview(SubscriptionListing item)
+        protected void OnPreview(SubscriptionListingModal item)
         {
             Console.WriteLine($"Preview clicked: {item.Id}");
         }
@@ -113,15 +127,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
-        protected Task Publish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
-        protected Task Unpublish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task Approve(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
+        protected Task Publish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
+        protected Task Unpublish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
+        protected Task OnRemove(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
         }
-        protected Task RequestChanges(SubscriptionListing item)
+        protected Task RequestChanges(SubscriptionListingModal item)
         {
             Console.WriteLine($"Requested changes for: {item.Id}");
             OpenRejectDialog();
