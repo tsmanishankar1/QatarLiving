@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] private IJSRuntime JS { get; set; }
         [Inject] private ILogger<UploadPhotosBase> Logger { get; set; }
 
-        [Parameter] public AdPost AdModel { get; set; } = new();
+        [Parameter] public List<ImageDto> Images { get; set; } = new();
 
         protected const int MaxImages = 9;
 
@@ -30,19 +30,19 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 
        protected void AddImageBox()
         {
-            if (AdModel.Images.Count < MaxImages)
+            if (Images.Count < MaxImages)
             {
-                AdModel.Images.Add(new AdImage { Order = AdModel.Images.Count });
+                Images.Add(new ImageDto { Order = Images.Count });
             }
         }
 
 
         protected async Task OnMultipleFilesSelected(InputFileChangeEventArgs e, Guid targetImageId)
         {
-            var startIndex = AdModel.Images.FindIndex(i => i.Id == targetImageId);
+            var startIndex = Images.FindIndex(i => i.Id == targetImageId);
             if (startIndex == -1) return;
 
-            var files = e.GetMultipleFiles(MaxImages - AdModel.Images.Count + 1);
+            var files = e.GetMultipleFiles(MaxImages - Images.Count + 1);
             int insertIndex = startIndex;
 
             foreach (var file in files)
@@ -56,18 +56,18 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 var base64 = Convert.ToBase64String(ms.ToArray());
                 var url = $"data:image/png;base64,{base64}";
 
-                if (insertIndex < AdModel.Images.Count)
+                if (insertIndex < Images.Count)
                 {
-                    AdModel.Images[insertIndex].Url = url;
-                    AdModel.Images[insertIndex].AdImageFileName = file.Name;
+                    Images[insertIndex].Url = url;
+                    Images[insertIndex].FileName = file.Name;
                 }
                 else
                 {
-                    AdModel.Images.Add(new AdImage
+                    Images.Add(new ImageDto
                     {
                         Order = insertIndex,
                         Url = url,
-                        AdImageFileName = file.Name
+                        FileName = file.Name
                     });
                 }
 
@@ -80,41 +80,40 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 
         protected void RemoveImage(Guid id)
         {
-            var item = AdModel.Images.FirstOrDefault(i => i.Id == id);
+            var item = Images.FirstOrDefault(i => i.Id == id);
             if (item != null)
             {
-                AdModel.Images.Remove(item);
+                Images.Remove(item);
                 ReorderImages();
             }
         }
 
         private void ReorderImages()
         {
-            for (int i = 0; i < AdModel.Images.Count; i++)
+            for (int i = 0; i < Images.Count; i++)
             {
-                AdModel.Images[i].Order = i;
+                Images[i].Order = i;
             }
         }
 
         [JSInvokable]
         public void UpdateOrder(string[] newOrder)
         {
-            var reordered = new List<AdImage>();
+            var reordered = new List<ImageDto>();
             foreach (var idStr in newOrder)
             {
                 if (Guid.TryParse(idStr, out Guid id))
                 {
-                    var image = AdModel.Images.FirstOrDefault(i => i.Id == id);
+                    var image = Images.FirstOrDefault(i => i.Id == id);
                     if (image != null)
                     {
                         image.Order = reordered.Count;
                         reordered.Add(image);
-                        // Logger.LogInformation($"Image reordered: {image.AdImageFileName} to Order {image.Order}");
                     }
                 }
             }
 
-            AdModel.Images = reordered;
+            Images = reordered;
             StateHasChanged();
         }
     }

@@ -58,7 +58,7 @@
                            Height="350" Placeholder="Start Typing"
                            For="@(() => selectedService.Description)">
         </MudExRichTextEdit>
-        @* <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
+        <MudPaper Class="catification-upload-section" Style="margin-top: 20px;">
             <div class="catification-upload-info">
                 <h3 class="catification-upload-label">Certificate / Warranty*</h3>
 
@@ -104,7 +104,7 @@
                     }
                 </ActivatorContent>
             </MudFileUpload>
-        </MudPaper> *@
+        </MudPaper> 
         <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
 
         <h3 class="form-heading">Contact Details</h3>
@@ -160,7 +160,7 @@
 
          <div class="checkbox-section">
             <div class="checkbox-left">
-                <MudCheckBox @bind-Value="Ad.IsAgreed" Color="Color.Primary" />
+                <MudCheckBox @bind-Value="IsAgreed" Color="Color.Primary" />
             </div>
             <div class="checkbox-right">
                 <span>

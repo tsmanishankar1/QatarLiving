@@ -55,6 +55,7 @@ namespace QLN.ContentBO.WebUI.Models
     }
     public class ImageDto
     {
+        public Guid? Id { get; set; } = Guid.NewGuid();
         public string? FileName { get; set; }
         public string? Url { get; set; }
         public int Order { get; set; }

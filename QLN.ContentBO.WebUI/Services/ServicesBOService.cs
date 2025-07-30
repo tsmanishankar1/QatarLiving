@@ -162,8 +162,44 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage> UpdateService(ServicesDto service)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(service, new JsonSerializerOptions { WriteIndented = true });
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/service/update")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UpdateService");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage> ModerateBulkAction(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Logger.LogInformation("Sending payload to update featured event: {Payload}", json);
 
+                var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
 
-        
+                var response = await _httpClient.SendAsync(request);
+                return response;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ModerateBulkAction");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

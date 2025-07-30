@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components.SuccessModal;
+using System.Net;
+using DocumentFormat.OpenXml.EMMA;
 
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
@@ -17,8 +20,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
         protected List<LocationZoneDto> Zones { get; set; } = new();
-
+        public bool IsAgreed { get; set; } = true;
         protected string? ErrorMessage { get; set; }
+        protected Double latitude = 25.32;
+        protected Double Longitude = 51.54;
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
         [Inject] ISnackbar Snackbar { get; set; }
 
@@ -38,27 +43,36 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         protected string? _selectedCategoryId;
         protected string? _selectedL1CategoryId;
         protected string? _selectedL2CategoryId;
+        private bool _shouldUpdateMap = false;
 
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
         protected override async Task OnParametersSetAsync()
         {
-            if (selectedService == null)
-                return;
+            try
+            {
+                if (selectedService == null)
+                    return;
 
-            if (CategoryTrees == null || !CategoryTrees.Any())
-                await LoadCategoryTreesAsync();
+                if (CategoryTrees == null || !CategoryTrees.Any())
+                    await LoadCategoryTreesAsync();
 
-            await LoadZonesAsync();
-            await SetCoordinates(
-        lat: (double)selectedService.Lattitude,
-        lng: (double)selectedService.Longitude
-    );
-            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService.CategoryId);
-            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
-
-            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService.L1CategoryId);
-            _selectedL2Categories = selectedL1?.L2Categories ?? new();
+                await LoadZonesAsync();
+                if (selectedService?.Lattitude != 0 && selectedService?.Longitude != 0)
+                {
+                    latitude = (double)selectedService.Lattitude;
+                    Longitude = (double)selectedService.Longitude;
+                    _shouldUpdateMap = true;
+                }
+                var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
+                _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+                var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
+                _selectedL2Categories = selectedL1?.L2Categories ?? new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+            }
         }
 
         protected void OnCategoryChanged(Guid categoryId)
@@ -167,12 +181,22 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            try
             {
-                _dotNetRef = DotNetObjectReference.Create(this);
+                if (_shouldUpdateMap)
+                {
+                    _shouldUpdateMap = false;
+                    _dotNetRef = DotNetObjectReference.Create(this);
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    await Task.Delay(300);
+                    await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
 
-                await JS.InvokeVoidAsync("resetLeafletMap");
-                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
 
@@ -199,20 +223,45 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         }
         protected override async Task OnInitializedAsync()
         {
-            editContext = new EditContext(Ad);
-            messageStore = new ValidationMessageStore(editContext);
-        }
-         [JSInvokable]
-            public Task SetCoordinates(double lat, double lng)
+            try
             {
-                Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
-                selectedService.Lattitude = (decimal)lat;
-                selectedService.Longitude = (decimal)lng;
-                editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Lattitude));
-                editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Longitude));
-                StateHasChanged(); 
-                return Task.CompletedTask;
+                editContext = new EditContext(Ad);
+                messageStore = new ValidationMessageStore(editContext);
             }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+            }
+            
+        }
+        [JSInvokable]
+        public Task SetCoordinates(double lat, double lng)
+        {
+            Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
+            selectedService.Lattitude = (decimal)lat;
+            selectedService.Longitude = (decimal)lng;
+            editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Lattitude));
+            editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Longitude));
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        private async Task ShowSuccessModal(string title)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SuccessModalBase.Title), title },
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true
+            };
+
+            await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+        }
+
 
         private async Task LoadCategoryTreesAsync()
         {
@@ -226,14 +275,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     CategoryTrees = result ?? new();
                     StateHasChanged();
                 }
-                else
-                {
-                    ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
-                }
             }
             catch (Exception ex)
             {
-                ErrorMessage = "Error loading category trees.";
+                Logger.LogError(ex, "LoadCategoryTreesAsync");
             }
             finally
             {
@@ -243,28 +288,53 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         }
 
 
-        protected void SubmitForm()
+        protected async Task SubmitForm()
         {
-            if (string.IsNullOrWhiteSpace(Ad.Title))
+            if (string.IsNullOrWhiteSpace(selectedService.Title))
                 Snackbar.Add("Title is required.", Severity.Error);
 
-            if (Ad.Price == null && !_priceOnRequest)
+            if (selectedService.Price == null && !selectedService.IsPriceOnRequest)
                 Snackbar.Add("Price is required unless 'Price on request' is checked.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(Ad.PhoneNumber))
+            if (string.IsNullOrWhiteSpace(selectedService.PhoneNumber))
                 Snackbar.Add("Phone number is required.", Severity.Error);
 
-            if (!Ad.IsAgreed)
+            if (!IsAgreed)
                 Snackbar.Add("You must agree to the terms and conditions.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedCategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.CategoryId.ToString()))
                 Snackbar.Add("Category must be selected.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedL1CategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.L1CategoryId.ToString()))
                 Snackbar.Add("Subcategory must be selected.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedL2CategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.L2CategoryId.ToString()))
                 Snackbar.Add("Section must be selected.", Severity.Error);
+            if (!IsAgreed)
+                Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
+            try
+            {
+                var response = await _serviceService.UpdateService(selectedService);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    await ShowSuccessModal("Service Ad Updated Successfully");
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SubmitForm");
+            }
         }
         private async Task LoadZonesAsync()
         {
@@ -283,7 +353,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             }
             catch (Exception ex)
             {
-                ErrorMessage = "An error occurred while loading zones.";
+                Logger.LogError(ex, "LoadZonesAsyn");
             }
         }
 
