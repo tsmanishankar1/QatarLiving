@@ -15,6 +15,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 .MapGetClassifiedsCompanyProfilesByTokenUser()
                 .MapGetClassifiedsStatusByTokenUser()
                 .MapClassifiedsGetCompanyProfile()
+                .MapGetCompanyProfilesByVerticalAndSubVertical()
                 .MapCreateClassifiedsCompanyProfile()
                 .MapUpdateClassifiedsCompanyProfile()
                 .MapDeleteClassifiedsCompanyProfile()

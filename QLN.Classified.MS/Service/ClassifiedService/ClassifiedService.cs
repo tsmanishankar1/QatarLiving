@@ -627,6 +627,7 @@ namespace QLN.Classified.MS.Service
             };
             return indexRequest;
         }
+
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
         {
             try
@@ -712,6 +713,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -791,6 +793,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Preloved ad. Please try again later.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -868,6 +871,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Collectibles ad. Please try again later.", ex);
             }
         }
+
         public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -944,6 +948,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Deals ad. Please try again later.", ex);
             }
         }
+
         public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
