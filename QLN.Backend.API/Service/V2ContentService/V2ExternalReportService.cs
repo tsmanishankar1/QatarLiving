@@ -393,7 +393,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 var queryParams = new List<string>
                 {
                     $"pageNumber={pageNumber ?? 1}",
-                    $"perPage={pageSize ?? 12}"
+                    $"pageSize={pageSize ?? 12}"
                 };
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                     queryParams.Add($"searchTitle={Uri.EscapeDataString(searchTerm)}");
