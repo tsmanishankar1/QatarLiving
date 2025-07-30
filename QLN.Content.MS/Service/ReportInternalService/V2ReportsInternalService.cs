@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using static QLN.Common.DTO_s.V2ReportCommunityPost;
@@ -74,6 +75,29 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
+                var existingKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in existingKeys)
+                {
+                    var existingReport = await _dapr.GetStateAsync<V2ContentReportArticleDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingReport != null &&
+                        existingReport.PostId == dto.PostId &&
+                        existingReport.CommentId == dto.CommentId &&
+                        existingReport.ReporterName == userName)
+                    {
+                        throw new InvalidOperationException("A report for this post/comment already exists.");
+                    }
+                }
+
                 var id = Guid.NewGuid();
                 var entity = new V2ContentReportArticleDto
                 {
@@ -81,7 +105,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     PostId = dto.PostId,
                     CommentId = dto.CommentId,
                     ReporterName = userName,
-                    Router= dto.Router,
+                    Router = dto.Router,
                     ReportDate = DateTime.UtcNow,
                     IsActive = true,
                 };
@@ -93,28 +117,23 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     cancellationToken: cancellationToken
                 );
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
+                existingKeys.Add(id.ToString());
+                await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.ReportsIndexKey,
+                    existingKeys,
                     cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Contains(id.ToString()))
-                {
-                    keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.ReportsIndexKey,
-                        keys,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                );
 
                 return "Report created successfully.";
             }
+            catch (InvalidOperationException ex)
+            {
+                throw new ConflictException(ex.Message);
+            }
             catch (ArgumentException ex)
             {
-                throw new InvalidDataException(ex.Message, ex);
+                throw new InvalidDataException(ex.Message);
             }
             catch (Exception ex)
             {
@@ -131,6 +150,29 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 if (dto.PostId == Guid.Empty || dto.CommentId == Guid.Empty)
                     throw new ArgumentException("PostId and CommentId are required.");
 
+                var existingKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsCommunityCommentsIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in existingKeys)
+                {
+                    var existingReport = await _dapr.GetStateAsync<V2ReportsCommunitycommentsDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingReport != null &&
+                        existingReport.PostId == dto.PostId &&
+                        existingReport.CommentId == dto.CommentId &&
+                        existingReport.ReporterName == userName)
+                    {
+                        throw new InvalidOperationException("A report for this community comment already exists");
+                    }
+                }
+
                 var id = Guid.NewGuid();
 
                 var entity = new V2ReportsCommunitycommentsDto
@@ -139,9 +181,9 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     PostId = dto.PostId,
                     CommentId = dto.CommentId,
                     ReporterName = userName,
-                    Router=dto.Router,
+                    Router = dto.Router,
                     ReportDate = DateTime.UtcNow,
-                    IsActive=true,
+                    IsActive = true,
                 };
 
                 _logger.LogInformation("Saving report: ID={Id}, PostId={PostId}, CommentId={CommentId}, Reporter={Reporter}",
@@ -154,24 +196,20 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     cancellationToken: cancellationToken
                 );
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
+                existingKeys.Add(id.ToString());
+                await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.ReportsCommunityCommentsIndexKey,
+                    existingKeys,
                     cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Contains(id.ToString()))
-                {
-                    keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.ReportsCommunityCommentsIndexKey,
-                        keys,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                );
 
                 return "Report created successfully.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Duplicate community comment report detected.");
+                throw new ConflictException(ex.Message);
             }
             catch (Exception ex)
             {
@@ -183,6 +221,28 @@ namespace QLN.Content.MS.Service.ReportInternalService
         {
             try
             {
+                var existingKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.ReportsCommunityIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in existingKeys)
+                {
+                    var existingReport = await _dapr.GetStateAsync<V2ReportCommunityPostDto>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingReport != null &&
+                        existingReport.PostId == dto.PostId &&
+                        existingReport.ReporterName == userName)
+                    {
+                        throw new InvalidOperationException("A report for this community post already exists.");
+                    }
+                }
+
                 var id = Guid.NewGuid();
                 var entity = new V2ReportCommunityPostDto
                 {
@@ -201,24 +261,19 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     cancellationToken: cancellationToken
                 );
 
-                var keys = await _dapr.GetStateAsync<List<string>>(
+                existingKeys.Add(id.ToString());
+                await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
                     ConstantValues.V2Content.ReportsCommunityIndexKey,
+                    existingKeys,
                     cancellationToken: cancellationToken
-                ) ?? new List<string>();
-
-                if (!keys.Contains(id.ToString()))
-                {
-                    keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.ReportsCommunityIndexKey,
-                        keys,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                );
 
                 return "Community Post Report created successfully.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new ConflictException(ex.Message);
             }
             catch (ArgumentException ex)
             {
@@ -512,7 +567,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination( int? pageNumber, int? pageSize, string? searchTerm = null, string? sortOrder = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
         {
             try
             {
@@ -591,16 +646,16 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     }
                 }
 
-              
-                if (!string.IsNullOrWhiteSpace(searchTerm))
+
+                if (!string.IsNullOrWhiteSpace(searchTitle))
                 {
                     allPosts = allPosts
-                        .Where(p => p.Post != null && p.Post.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => p.Post != null && p.Post.Contains(searchTitle, StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
 
-               
-                var sortKey = sortOrder?.ToLowerInvariant();
+
+                var sortKey = sortBy?.ToLowerInvariant();
                 allPosts = sortKey switch
                 {
                     "title" => allPosts.OrderBy(p => p.Post).ToList(),
@@ -617,20 +672,25 @@ namespace QLN.Content.MS.Service.ReportInternalService
 
                 var totalCount = allPosts.Count;
                 var currentPage = pageNumber ?? 1;
-                var itemsPerPage = pageSize ?? 12; 
+                var pageSize = perPage ?? 12;
+                if ((currentPage - 1) * pageSize >= totalCount && totalCount > 0)
+                {
+                    currentPage = (int)Math.Ceiling((double)totalCount / pageSize);
+                }
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
                 var paginatedPosts = allPosts
-                    .Skip((currentPage - 1) * itemsPerPage)
-                    .Take(itemsPerPage)
-                    .ToList();
+                            .Skip((currentPage - 1) * pageSize)
+                            .Take(pageSize)
+                            .ToList();
 
                 return new PaginatedCommunityPostResponse
                 {
                     Items = paginatedPosts,
                     TotalCount = totalCount,
-                    PageNumber = currentPage,
-                    PageSize = itemsPerPage
+                    Page = currentPage,
+                    PerPage = pageSize,
+                    TotalPages = totalPages
                 };
-
             }
             catch (Exception)
             {

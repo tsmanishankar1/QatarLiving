@@ -1,3 +1,4 @@
+using QLN.ContentBO.WebUI.Models;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -16,7 +17,14 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> CreateSeasonalPicksAsync(object payload);
         Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical);
         Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical);
-        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string userId, string vertical);
+        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments,  string vertical);
+        Task<HttpResponseMessage?> GetFeaturedCategory(string vertical);
+        Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical);
+        Task<HttpResponseMessage?> CreateFeaturedCategoryAsync(object payload);
+        Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical);
+        Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical);
+        Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical);
+        Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
         Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
 

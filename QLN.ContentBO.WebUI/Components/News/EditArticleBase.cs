@@ -202,15 +202,12 @@ namespace QLN.ContentBO.WebUI.Components.News
                     await stream.CopyToAsync(memoryStream);
                     var base64 = Convert.ToBase64String(memoryStream.ToArray());
                     article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleFilesChanged");
-            }
-            finally
-            {
-                _fileUpload?.ResetValidation();
             }
         }
 

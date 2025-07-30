@@ -959,10 +959,13 @@ a, .btn-link {
     font-weight: 500;
 }
 
-    .sort-button:hover {
+.sort-button:hover {
         border-color: var(--color-accent);
         color: var(--color-accent);
-    }
+}
+.sort-button:hover img {
+    filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%) !important;
+}
 
 .filter-row {
     display: flex;

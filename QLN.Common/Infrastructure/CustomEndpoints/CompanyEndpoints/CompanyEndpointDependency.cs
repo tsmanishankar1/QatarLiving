@@ -11,17 +11,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
     {
         public static RouteGroupBuilder MapCompanyEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGetAllCompanyProfiles()
-                .MapGetCompanyProfilesByTokenUser()
-                .MapGetStatusByTokenUser()
-                .MapGetCompanyProfile()
-                .MapCreateCompanyProfile()
-                .MapUpdateCompanyProfile()
-                .MapDeleteCompanyProfile()
-                .MapGetCompanyProfileCompletionStatus()
-                .MapCompanyApproval()
-                .MapGetCompanyApprovalInfo()
-                .MapVerificationStatus();
+            group.MapGetAllClassifiedsCompanyProfiles()
+                .MapGetClassifiedsCompanyProfilesByTokenUser()
+                .MapGetClassifiedsStatusByTokenUser()
+                .MapClassifiedsGetCompanyProfile()
+                .MapCreateClassifiedsCompanyProfile()
+                .MapUpdateClassifiedsCompanyProfile()
+                .MapDeleteClassifiedsCompanyProfile()
+                .MapCompanyClassifiedsApproval()
+                .MapGetCompanyClassifiedsApprovalInfo()
+                .MapClassifiedsVerificationStatus();
             return group;
         }
     }
