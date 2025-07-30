@@ -18,6 +18,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly ILogger<IClassifiedBoLandingService> _logger;
         private readonly IClassifiedService _classified;
         private readonly List<TransactionDto> _mockTransactions;
+        private readonly List<PrelovedTransactionDto> _mockPrelovedTransactions;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -33,6 +34,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mockTransactions = GenerateMockTransactions();
+            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();
         }
 
 
@@ -1554,6 +1556,751 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             "Bulk Refresh" => "Bulk refresh payment",
             _ => "Transaction"
         };
+
+
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null, 
+            string? sortBy = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {               
+                var result = new List<PrelovedAdPaymentSummaryDto>();
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.PrelovedIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                _logger.LogInformation("Fetched {Count} ad keys from index.", keys.Count);
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null)
+                    {                     
+                        continue;
+                    }
+
+                    var dto = new PrelovedAdPaymentSummaryDto
+                    {
+                        AdId = ad.Id,                        
+                        SubscriptionType = "12 Months Super",
+                        UserName = ad.UserName,
+                        EmailAddress = ad.ContactEmail,
+                        Mobile = ad.ContactNumber,
+                        WhatsappNumber = ad.WhatsAppNumber,
+                        Amount = 250, 
+                        Status = ad.Status.ToString(),
+                        StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
+                        ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
+                        : "N/A",
+                        EndDate = ad.ExpiryDate.HasValue && ad.ExpiryDate.Value != DateTime.MinValue
+                        ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
+                        : "N/A",
+
+                        OrderId = ad.Id.ToString().Substring(0, 6) 
+                    };
+
+                    if (string.IsNullOrWhiteSpace(search) ||
+                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                        dto.UserName?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        result.Add(dto);
+                    }
+                }
+                _logger.LogInformation("Total matched ads after filtering: {Count}", result.Count);
+                result = sortBy?.ToLower() switch
+                {
+                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
+                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
+                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                };
+
+                var totalCount = result.Count;
+                int currentPage = pageNumber ?? 1;
+                int currentSize = pageSize ?? 12;
+
+                var paginatedItems = result
+                    .Skip((currentPage - 1) * currentSize)
+                    .Take(currentSize)
+                    .ToList();
+                _logger.LogInformation("Returning {Count} items for page {Page} (pageSize={Size})", paginatedItems.Count, currentPage, currentSize);
+                return new PaginatedResult<PrelovedAdPaymentSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = currentPage,
+                    PageSize = currentSize,
+                    Items = paginatedItems
+                };
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
+            }
+        }
+        
+        public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
+            string? sortBy = "CreationDate",
+            string? search = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            DateTime? publishedFrom = null,
+            DateTime? publishedTo = null,
+            int? status = null,
+            bool? isFeatured = null,
+            bool? isPromoted = null,
+            int pageNumber = 1,
+            int pageSize = 12,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.PrelovedIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                var ads = new List<PrelovedAdSummaryDto>();
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null) continue;
+
+                    ads.Add(new PrelovedAdSummaryDto
+                    {
+                        Id = ad.Id,
+                        UserId = ad.UserId,
+                        UserName = ad.UserName, 
+                        AdTitle = ad.Title,
+                        Category = ad.Category,
+                        SubCategory = ad.L1Category,
+                        Status = ad.Status.ToString(), 
+                        IsFeatured = ad.IsFeatured,
+                        IsPromoted = ad.IsPromoted,
+                        CreationDate = ad.CreatedAt,
+                        DatePublished = ad.PublishedDate,
+                        DateExpiry = ad.ExpiryDate,
+                        ImageUpload = ad.Images?.Select(img => new ImageDto
+                        {
+                            Url = img.Url,
+                        }).ToList(),
+                        OrderId = ad.Id.ToString().Substring(0, 6)
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    var lowerSearch = search.ToLowerInvariant();
+                    ads = ads.Where(ad =>
+                        (!string.IsNullOrEmpty(ad.AdTitle) && ad.AdTitle.ToLowerInvariant().Contains(lowerSearch)) ||
+                        ad.Id.ToString().Contains(lowerSearch) ||
+                        (!string.IsNullOrEmpty(ad.UserId) && ad.UserId.ToLowerInvariant().Contains(lowerSearch)) ||
+                        (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLowerInvariant().Contains(lowerSearch))
+                    ).ToList();
+                }
+
+                if (fromDate.HasValue)
+                    ads = ads.Where(x => x.CreationDate >= fromDate.Value).ToList();
+
+                if (toDate.HasValue)
+                    ads = ads.Where(x => x.CreationDate <= toDate.Value).ToList();
+
+                if (publishedFrom.HasValue)
+                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished >= publishedFrom.Value).ToList();
+
+                if (publishedTo.HasValue)
+                    ads = ads.Where(x => x.DatePublished.HasValue && x.DatePublished <= publishedTo.Value).ToList();
+
+                if (status.HasValue && Enum.IsDefined(typeof(AdStatus), status.Value))
+                {
+                    var statusEnum = ((AdStatus)status.Value).ToString();
+                    ads = ads.Where(x => x.Status != null && x.Status.Equals(statusEnum, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                if (isFeatured.HasValue)
+                    ads = ads.Where(x => x.IsFeatured == isFeatured.Value).ToList();
+
+                if (isPromoted.HasValue)
+                    ads = ads.Where(x => x.IsPromoted == isPromoted.Value).ToList();
+
+                sortBy = sortBy?.ToLowerInvariant();
+                ads = sortBy switch
+                {
+                    "title" => ads.OrderByDescending(x => x.AdTitle).ToList(),
+                    "username" => ads.OrderByDescending(x => x.UserName).ToList(),
+                    "status" => ads.OrderByDescending(x => x.Status).ToList(),
+                    "published" => ads.OrderByDescending(x => x.DatePublished).ToList(),
+                    _ => ads.OrderByDescending(x => x.CreationDate).ToList()
+                };
+
+                // Paginate
+                var totalCount = ads.Count;
+                var pagedItems = ads
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new PaginatedResult<PrelovedAdSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Items = pagedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ads.");
+                throw new InvalidOperationException("Failed to fetch preloved ads.", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(int? pageNumber = 1, int? pageSize = 12, string? search = null,
+    string? sortBy = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = new List<DealsAdSummaryDto>();
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.DealsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null) continue;
+
+                    var dto = new DealsAdSummaryDto
+                    {
+                        AdId = ad.Id,
+                        subscriptiontype = "12 Months Super",
+                        createdby = ad.CreatedBy,
+                        //email = "Milo",
+                        ContactNumber = ad.ContactNumber,
+                        WhatsappNumber = ad.WhatsappNumber,
+                        price = "250",
+                        status = ad.IsActive.ToString(),
+                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
+                        EndDate = ad.ExpiryDate?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A"
+
+,
+                        orderid = ad.Id.ToString().Substring(0, 6) // or fetch from actual payment state
+                    };
+
+                    if (string.IsNullOrWhiteSpace(search) ||
+                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+                       dto.createdby?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+
+                    {
+                        result.Add(dto);
+                    }
+                }
+                result = sortBy?.ToLower() switch
+                {
+                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
+                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
+                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                };
+
+                var totalCount = result.Count;
+                int currentPage = pageNumber ?? 1;
+                int currentSize = pageSize ?? 12;
+
+                var paginatedItems = result
+                    .Skip((currentPage - 1) * currentSize)
+                    .Take(currentSize)
+                    .ToList();
+
+                return new PaginatedResult<DealsAdSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = currentPage,
+                    PageSize = currentSize,
+                    Items = paginatedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
+            }
+        }
+
+        public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
+            int? pageNumber = 1,
+            int? pageSize = 12,
+            string? search = null,
+            string? sortBy = null,string? status = null,
+            bool? isPromoted = null,
+            bool? isFeatured = null,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var result = new List<DealsViewSummaryDto>();
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.DealsIndexKey,
+                    cancellationToken: cancellationToken) ?? new();
+
+                foreach (var key in keys)
+                {
+                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (ad == null) continue;
+
+                    if (!ad.IsActive)
+                    {
+                        continue;
+                    }                                    
+
+                    if (isPromoted.HasValue && ad.IsPromoted != isPromoted.Value)
+                    {
+                        continue;
+                    }
+                    
+                    if (isFeatured.HasValue && ad.IsFeatured != isFeatured.Value)
+                    {
+                        continue;
+                    }
+                    var dto = new DealsViewSummaryDto
+                    {
+                        AdId = ad.Id,
+                        subscriptiontype = "12 Months Super",
+                        createdby = ad.CreatedBy,
+                        ContactNumber = ad.ContactNumber,
+                        WhatsappNumber = ad.WhatsappNumber,
+                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
+                        EndDate = ad.ExpiryDate?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
+                        WebClick = "2",
+                        Weburl = "linkup.com",
+                        Views = "3",
+                        Impression = "5",
+                        Phonelead = "4"
+                    };
+
+
+                    if (string.IsNullOrWhiteSpace(search) ||
+
+                        dto.AdId.ToString().Contains(search, StringComparison.OrdinalIgnoreCase) == true ||
+
+                        dto.createdby?.Contains(search, StringComparison.OrdinalIgnoreCase) == true)
+                    {
+                        result.Add(dto);
+                    }
+                }
+
+
+                result = sortBy?.ToLower() switch
+                {
+                    "startdate" => result.OrderBy(x => x.StartDate).ToList(),
+                    "enddate" => result.OrderBy(x => x.EndDate).ToList(),
+                    _ => result.OrderByDescending(x => x.StartDate).ToList()
+                };
+
+
+                var totalCount = result.Count;
+
+                int currentPage = pageNumber ?? 1;
+
+                int currentSize = pageSize ?? 12;
+
+                var paginatedItems = result
+                    .Skip((currentPage - 1) * currentSize)
+                    .Take(currentSize)
+                    .ToList();
+                return new PaginatedResult<DealsViewSummaryDto>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = currentPage,
+                    PageSize = currentSize,
+                    Items = paginatedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching preloved ad payment summaries.");
+
+                throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
+
+            }
+
+        }
+        
+        public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId == null || dto.AdId.Count == 0)
+            {
+                _logger.LogWarning("Soft delete aborted: No Ad IDs provided. UserId: {UserId}", userId);
+                throw new ArgumentException("At least one Ad ID must be provided.", nameof(dto.AdId));
+            }
+
+            _logger.LogInformation("Soft delete requested for {Count} deals. UserId: {UserId}", dto.AdId.Count, userId);
+
+            
+            var indexKey = ConstantValues.StateStoreNames.DealsIndexKey; 
+            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.StateStoreNames.UnifiedStore, indexKey) ?? new();
+
+            if (index.Count == 0)
+            {
+                _logger.LogWarning("Deals index is empty. Nothing to soft delete.");
+                return "No deals found in index.";
+            }
+
+            var failedDeletes = new List<string>();
+            var deletedDeals = new List<string>();
+
+            foreach (var key in index)
+            {
+                try
+                {
+                    var deal = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        key,
+                        cancellationToken: cancellationToken);
+
+                    if (deal == null)
+                    {
+                        _logger.LogWarning("Deal not found for key: {Key}", key);
+                        continue;
+                    }
+
+                    if (!dto.AdId.Contains(deal.Id.ToString()))
+                    {
+                        continue; 
+                    }
+
+                    if (!deal.IsActive)
+                    {
+                        _logger.LogInformation("Deal already inactive. AdId: {AdId}, skipping.", deal.Id);
+                        continue;
+                    }
+
+                    deal.IsActive = false;
+                    deal.UpdatedAt = DateTime.UtcNow;
+                    deal.UpdatedBy = userId;
+
+                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, key, deal, cancellationToken: cancellationToken);
+
+                    _logger.LogInformation("Soft deleted deal: {AdId}", deal.Id);
+                    deletedDeals.Add(deal.Id.ToString());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to soft delete deal with key: {Key}", key);
+                    failedDeletes.Add(key);
+                }
+            }
+
+            _logger.LogInformation("Soft delete operation completed. Total Requested: {Total}, Deleted: {Deleted}, Failed: {Failed}, UserId: {UserId}",
+                dto.AdId.Count, deletedDeals.Count, failedDeletes.Count, userId);
+
+            return $"Soft delete completed. Deleted: {deletedDeals.Count}, Failed: {failedDeletes.Count}.";
+        }
+
+        public async Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken ct)
+        {
+            try
+            {
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.PrelovedIndexKey,
+                    cancellationToken: ct
+                    ) ?? new();
+                Console.WriteLine(indexKeys);
+                var updated = new List<ClassifiedsPreloved>();
+
+                foreach (var id in request.AdIds)
+                {
+                    var adKey = GetAdKey(id);
+                    if (!indexKeys.Contains(adKey.ToString()))
+                    {
+                        Console.WriteLine("Index Is Null");
+                        continue;
+                    }
+
+                    var ad = await _dapr.GetStateAsync<ClassifiedsPreloved>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        adKey.ToString(),
+                        cancellationToken: ct
+                    );
+
+                    if (ad is null)
+                    {
+                        Console.WriteLine("Ad Is Null");
+                        continue;
+                    }
+
+                    bool shouldUpdate = false;
+
+                    switch (request.Action)
+                    {
+                        case BulkActionEnum.Approve:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                if (request.AdIds.Count == 1)
+                                {
+                                    ad.Status = AdStatus.NeedsModification;
+                                    shouldUpdate = true;
+                                }
+                                else
+                                {
+                                    ad.Status = AdStatus.Published;
+                                    shouldUpdate = true;
+                                }
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Publish:
+                            if (ad.Status == AdStatus.Unpublished)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Unpublish:
+                            if (ad.Status == AdStatus.Published)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Remove:
+                            ad.Status = AdStatus.Rejected;
+                            shouldUpdate = true;
+                            break;
+
+                        default:
+                            throw new InvalidOperationException("Invalid action");
+                    }
+
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+                        await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                        updated.Add(ad);
+                    }
+                }
+                return "Action completed successfully";
+            }
+            catch (ConflictException ex)
+            {
+                throw new ConflictException(ex.Message);
+
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        
+        public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
+            int pageNumber,
+            int pageSize,
+            string? searchText,
+            string? dateCreated,
+            string? datePublished,
+            string? dateStart,
+            string? dateEnd,
+            string? status,
+            string sortBy,
+            string sortOrder,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", pageNumber, pageSize);
+
+                await Task.Delay(50, cancellationToken);
+
+                var allTransactions = _mockPrelovedTransactions.AsQueryable();
+
+
+                if (!string.IsNullOrWhiteSpace(status))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                    t.Status.Equals(status, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateCreated))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                    t.CreationDate.Equals(dateCreated, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(datePublished))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                    t.PublishedDate.Equals(datePublished, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateStart))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                    t.StartDate.Equals(dateStart, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateEnd))
+                {
+                    allTransactions = allTransactions.Where(t =>
+                    t.EndDate.Equals(dateEnd, StringComparison.OrdinalIgnoreCase));
+                }
+
+                if (!string.IsNullOrWhiteSpace(searchText))
+                {
+                    var search = searchText.ToLower();
+                    allTransactions = allTransactions.Where(t =>
+                    t.AdId.ToLower().Contains(search) ||
+                    t.OrderId.ToLower().Contains(search) ||
+                    t.Username.ToLower().Contains(search) ||
+                    t.Email.ToLower().Contains(search) ||
+                    t.Status.ToLower().Contains(search) ||
+                    t.Mobile.Contains(search)
+                    );
+                }
+
+                allTransactions = sortBy.ToLower() switch
+                {
+                    "amount" => sortOrder == "desc" ?
+                   allTransactions.OrderByDescending(t => t.Amount) :
+                   allTransactions.OrderBy(t => t.Amount),
+                    "status" => sortOrder == "desc" ?
+                   allTransactions.OrderByDescending(t => t.Status) :
+                   allTransactions.OrderBy(t => t.Status),
+                    _ => sortOrder == "desc" ?
+                    allTransactions.OrderByDescending(t => ParseDate(t.CreationDate)) :
+                    allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                };
+
+                var totalRecords = allTransactions.Count();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                // Pagination
+                var paginatedTransactions = allTransactions
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                _logger.LogInformation("Returning {Count} transactions out of {Total} total records",
+                paginatedTransactions.Count, totalRecords);
+
+                return new PrelovedTransactionListResponseDto
+                {
+                    Records = paginatedTransactions,
+                    TotalRecords = totalRecords,
+                    CurrentPage = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get transactions");
+                throw;
+            }
+        }
+
+        private List<PrelovedTransactionDto> GenerateMockPrelovedTransactions()
+        {
+            var transactions = new List<PrelovedTransactionDto>();
+            var random = new Random();
+            var statuses = new[] { "Published", "Unpublished", "Pending For Approval" };
+            var subscriptionTypes = new[] { "P2P", "Standard", "Premium" };
+            for (int i = 1; i <= 100; i++)
+            {
+                var creationDate = DateTime.Now.AddDays(-random.Next(1, 60));
+                var publishedDate = creationDate.AddDays(1);
+                var startDate = publishedDate.AddDays(1);
+                var endDate = startDate.AddDays(random.Next(10, 30));
+
+                transactions.Add(new PrelovedTransactionDto
+                {
+                    Id = $"txn_{i:D6}",
+                    AdId = random.Next(20000, 22000).ToString(),
+                    OrderId = random.Next(21000, 22000).ToString(),
+                    SubscriptionType = subscriptionTypes[random.Next(subscriptionTypes.Length)],
+                    UserId = $"usr_{random.Next(1, 5)}",
+                    Username = $"user_{i}",
+                    Email = $"user{i}@example.com",
+                    Mobile = $"+974 {random.Next(5000, 5999)} {random.Next(1000, 9999)}",
+                    Whatsapp = $"+974 {random.Next(3000, 3999)} {random.Next(1000, 9999)}",
+                    Amount = random.Next(100, 150),
+                    Status = statuses[random.Next(statuses.Length)],
+                    CreationDate = creationDate.ToString("dd-MM-yyyy"),
+                    PublishedDate = publishedDate.ToString("dd-MM-yyyy"),
+                    StartDate = startDate.ToString("dd-MM-yyyy"),
+                    EndDate = endDate.ToString("dd-MM-yyyy"),
+                    Views = random.Next(1, 500),
+                    MobileCount = random.Next(1, 100),
+                    WhatsappCount = random.Next(1, 100)
+                });
+
+            }
+
+            return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
+
+        }
+
 
     }
 }

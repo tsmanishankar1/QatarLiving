@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
-using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net;
@@ -21,8 +20,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected List<NewsCategory> Categories = [];
         protected List<Slot> Slots = [];
         protected List<string> WriterTags = [];
-
-        protected MudExRichTextEdit Editor;
 
         protected ArticleCategory Category { get; set; } = new();
 

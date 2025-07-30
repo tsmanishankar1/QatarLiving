@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
     {
         public static RouteGroupBuilder MapCreateDsCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapPost("/create", async Task<Results<
+            group.MapPost("/createds", async Task<Results<
                 Ok<string>,
                 ForbidHttpResult,
                 BadRequest<ProblemDetails>,
@@ -78,7 +78,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .DisableAntiforgery();
 
-            group.MapPost("/createByUserId", async Task<Results<
+            group.MapPost("/createbyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 Conflict<string>,
@@ -142,7 +142,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetDsCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapGet("/getById", async Task<IResult> (
+            group.MapGet("/getdsbyid", async Task<IResult> (
             [FromQuery] Guid id,
             [FromServices] ICompanyDealsStoresService service) =>
             {
@@ -183,7 +183,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetAllDsCompanyProfiles(this RouteGroupBuilder group)
         {
-            group.MapGet("/getAll", async Task<IResult>
+            group.MapGet("/getallds", async Task<IResult>
             ([FromServices] ICompanyDealsStoresService service) =>
             {
                 try
@@ -210,7 +210,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapUpdateDsCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapPut("/update", async Task<Results<
+            group.MapPut("/updateds", async Task<Results<
                 Ok<string>,
                 ForbidHttpResult,
                 NotFound<ProblemDetails>,
@@ -294,7 +294,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .DisableAntiforgery();
 
-            group.MapPut("/updateByUserId", async Task<Results<
+            group.MapPut("/updatebyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 Conflict<string>,
@@ -360,7 +360,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapDeleteDsCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapDelete("/delete", async Task<Results<
+            group.MapDelete("/deleteds", async Task<Results<
                     Ok<string>,
                     NotFound<ProblemDetails>, BadRequest<ProblemDetails>,
                     ProblemHttpResult>> (
@@ -414,7 +414,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapDsCompanyApproval(this RouteGroupBuilder group)
         {
-            group.MapPut("/approve", async Task<IResult> (
+            group.MapPut("/approveds", async Task<IResult> (
                 [FromBody] CompanyDsApproveDto dto,
                 [FromServices] ICompanyDealsStoresService service,
                 HttpContext httpContext,
@@ -422,14 +422,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var userId = httpContext.User.FindFirst("sub")?.Value
-                                 ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(userId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
-                    await service.ApproveCompany(userGuid, dto, cancellationToken);
+                    await service.ApproveCompany(uid, dto, cancellationToken);
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -467,7 +467,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/approveByUserId", async Task<Results<
+            group.MapPut("/approvebyuserid", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -475,12 +475,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             (
                 CompanyDsApproveDto dto,
                 ICompanyDealsStoresService service,
-                Guid userId,
+                string userId,
                 CancellationToken cancellationToken = default) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                         return TypedResults.BadRequest(new ProblemDetails
                         {
                             Title = "Validation Error",
@@ -531,7 +531,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetDsCompanyApprovalInfo(this RouteGroupBuilder group)
         {
-            group.MapGet("/getApproval", async Task<Results<
+            group.MapGet("/getapprovalds", async Task<Results<
                 Ok<CompanyDsApprovalResponseDto>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
@@ -576,7 +576,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapDsVerificationStatus(this RouteGroupBuilder group)
         {
-            group.MapGet("/verifiedstatus", async Task<IResult> (
+            group.MapGet("/verifiedstatusds", async Task<IResult> (
                 [FromQuery] bool isVerified,
                 [FromQuery] VerticalType vertical,
                 HttpContext httpContext,
@@ -585,13 +585,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             {
                 try
                 {
-                    var tokenUserId = httpContext.User.FindFirst("sub")?.Value
-                                    ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
-                    if (!Guid.TryParse(tokenUserId, out var userGuid))
-                        return TypedResults.Forbid();
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
 
-                    var result = await service.VerificationStatus(userGuid, vertical, isVerified, cancellationToken);
+                    var result = await service.VerificationStatus(uid, vertical, isVerified, cancellationToken);
                     if (result == null || result.Count == 0)
                         throw new KeyNotFoundException("Company profile not found");
 
@@ -619,16 +618,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/verifiedstatusbyuserId", async Task<IResult> (
+            group.MapGet("/verifiedstatusbyuserid", async Task<IResult> (
                 [FromQuery] bool isVerified,
                 [FromQuery] VerticalType vertical,
-                [FromQuery] Guid userId,
+                [FromQuery] string userId,
                 [FromServices] ICompanyDealsStoresService service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    if (userId == Guid.Empty)
+                    if (userId == string.Empty)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -672,7 +671,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetDsCompanyProfilesByTokenUser(this RouteGroupBuilder group)
         {
-            group.MapGet("/getByTokenUser", async Task<IResult> (
+            group.MapGet("/getbytokenuserds", async Task<IResult> (
                 HttpContext httpContext,
                 [FromServices] ICompanyDealsStoresService service,
                 CancellationToken cancellationToken = default) =>
@@ -719,7 +718,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/getByUserId", async Task<IResult> (
+            group.MapGet("/getbyuserid", async Task<IResult> (
             [FromQuery] string userId,
             ICompanyDealsStoresService service,
             CancellationToken cancellationToken) =>
@@ -770,7 +769,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetDsStatusByTokenUser(this RouteGroupBuilder group)
         {
-            group.MapGet("/profileStatus", async Task<IResult> (
+            group.MapGet("/profileStatusds", async Task<IResult> (
                 HttpContext httpContext,
                 [FromQuery] VerticalType vertical,
                 [FromQuery] SubVertical subVertical,
@@ -820,7 +819,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/statusByUserId", async Task<IResult> (
+            group.MapGet("/statusbyuserid", async Task<IResult> (
                 [FromQuery] string userId,
                 [FromServices] ICompanyDealsStoresService service,
                 CancellationToken cancellationToken) =>

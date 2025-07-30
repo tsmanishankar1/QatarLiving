@@ -38,13 +38,13 @@ namespace QLN.Common.DTO_s
     }
     public class EventSchedule
     {
-        [Required]
-        public DateOnly StartDate { get; set; }
-        [Required]
-        public DateOnly EndDate { get; set; }
-        public V2EventTimeType TimeSlotType { get; set; }
-        public string? GeneralTextTime { get; set; }
-        public List<TimeSlot>? TimeSlots { get; set; } = [];
+    [Required]
+    public DateOnly StartDate { get; set; }
+    [Required]
+    public DateOnly EndDate { get; set; }
+    public V2EventTimeType TimeSlotType { get; set; }
+    public string? GeneralTextTime { get; set; }
+    public List<TimeSlot>? TimeSlots { get; set; } = [];
     }
     public class TimeSlot
     {
