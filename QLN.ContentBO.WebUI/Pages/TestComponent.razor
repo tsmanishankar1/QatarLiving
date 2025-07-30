@@ -1,7 +1,13 @@
 ﻿@page "/blazormarkdown"
 @using System.Text
+@using QLN.ContentBO.WebUI.Components
+@using QLN.ContentBO.WebUI.Interfaces
+@using System.Net
+@using QLN.ContentBO.WebUI.Models
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
+@inject IFileUploadService fileUploadService
+@inherits QLComponentBase   
 
 <MudGrid Style="padding-top: 18px">
     <MudItem>
@@ -34,13 +40,21 @@
 
     private string? PastedImage;
 
-    string markdownValue = "#Markdown Editor\nThis is a test";
+    string markdownValue = "Test";
     StringBuilder markdownHtml = new();
 
     private ElementReference divRef;
     private DotNetObjectReference<TestComponent>? _objRef;
     private string base64Image = string.Empty;
 
+    protected FileUploadModel fileUploadModel { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize any required services or data here
+        await AuthorizedPage();
+        await base.OnInitializedAsync();
+    }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -62,16 +76,52 @@
     }
 
     [JSInvokable]
-    public void OnImagePasted(string base64)
+    public async Task OnImagePasted(string base64)
     {
         base64Image = base64;
-        Guid guid = Guid.NewGuid();
-        markdownHtml.AppendLine($"![image-{guid}]({base64})");
+
+        var ImageUrl = await UploadFile();
+        if (ImageUrl != null)
+        {
+            PastedImage = ImageUrl;
+            Guid guid = Guid.NewGuid();
+            markdownHtml.AppendLine($"![image-{guid}]({ImageUrl})");
+
+        }
+
         StateHasChanged();
     }
 
     public void Dispose()
     {
         _objRef?.Dispose();
+    }
+
+
+
+    protected async Task<string> UploadFile()
+    {
+        var response = await fileUploadService.UploadFileAsync(fileUploadModel);
+        // Assuming the response contains the URL of the uploaded image
+        PastedImage = await response.Content.ReadAsStringAsync();
+        if (response != null && response.IsSuccessStatusCode)
+        {
+            fileUploadModel = new();
+            StateHasChanged();
+        }
+        else if (response.StatusCode == HttpStatusCode.BadRequest)
+        {
+            Snackbar.Add("Bad Request: Please check the file format or size");
+        }
+        else if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            Snackbar.Add("You are unauthorized to perform this action");
+        }
+        else if (response.StatusCode == HttpStatusCode.InternalServerError)
+        {
+            Snackbar.Add("Internal API Error");
+        }
+
+        return string.Empty;
     }
 }
