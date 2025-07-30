@@ -14,6 +14,9 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsKey = true, IsFilterable = true)]
         public string Id { get; set; }
 
+        [SimpleField(IsFilterable = true)]
+        public string? SubscriptionId { get; set; }
+
         [SearchableField(IsFilterable = true)]
         public string SubVertical { get; set; }
 
@@ -46,6 +49,18 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? L2CategoryId { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Brand { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Model { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Condition { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Color { get; set; }
 
         [SearchableField(IsFilterable = true)]
         public string? L2Category { get; set; }
@@ -96,9 +111,7 @@ namespace QLN.Common.DTO_s
     }
     public class ImageInfo
     {
-        public string AdImageFileNames { get; set; } = string.Empty;
-
-        [SearchableField(IsFilterable = true)]
+        [SimpleField(IsFilterable = true)]
         public string Url { get; set; } = string.Empty;
 
         [SimpleField(IsFilterable = true)]
