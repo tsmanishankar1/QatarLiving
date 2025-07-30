@@ -110,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 if (value != null && CurrentEvent?.EventSchedule != null)
                 {
                     var start = value.Start ?? DateTime.Today;
-                    var end = value.End ?? start; 
+                    var end = value.End ?? start;
                     CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(start);
                     CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(end);
                     _isDateRangeSelected = true;
@@ -221,39 +221,22 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _isTimeDialogOpen = true;
         }
+
         protected void OnTimeSlotTypeChanged(EventTimeType newValue)
         {
             CurrentEvent.EventSchedule.TimeSlotType = newValue;
-            if (newValue == EventTimeType.GeneralTime)
-            {
-                GenerateDayTimeList();
-                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
-            }
-            else if (newValue == EventTimeType.PerDayTime)
-            {
-                StartTimeSpan = null;
-                EndTimeSpan = null;
-                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
-            }
-            else
-            { 
-                StartTimeSpan = null;
-                EndTimeSpan = null;
-                GenerateDayTimeList();
-            }
-        }
 
-        protected void ApplyTimeRange()
-        {
-            if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
+            if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
             {
-                _timeRangeDisplay = $"{DateTime.Today.Add(CurrentEvent.EventSchedule.StartTime.Value.ToTimeSpan()):h:mm tt} to {DateTime.Today.Add(CurrentEvent.EventSchedule.EndTime.Value.ToTimeSpan()):h:mm tt}";
+                DayTimeList = [];
+                CurrentEvent.EventSchedule.TimeSlots = [];
             }
-            else
+            else if (CurrentEvent.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
             {
-                _timeRangeDisplay = string.Empty;
+                GeneralFreeTextTime = null;
+                CurrentEvent.EventSchedule.GeneralTextTime = null;
+                GenerateDayTimeList();
             }
-            _isTimeDialogOpen = false;
         }
 
         protected void AddLocation()
@@ -697,7 +680,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected bool IsValidTimeFormat(string? start)
         {
             return !string.IsNullOrWhiteSpace(start);
-        }  
+        }
         private void ClearForm()
         {
             CurrentEvent = new EventDTO
