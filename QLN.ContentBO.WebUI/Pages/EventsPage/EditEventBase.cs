@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
-using MudExRichTextEditor;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -94,7 +93,6 @@ namespace QLN.ContentBO.WebUI.Pages
         }
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
-        protected MudExRichTextEdit Editor;
         protected string Category;
         protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
         protected string SelectedTimeOption = "General";

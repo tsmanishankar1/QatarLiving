@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
 using MudBlazor;
-using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net;
@@ -21,8 +20,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected List<NewsCategory> Categories = [];
         protected List<Slot> Slots = [];
         protected List<string> WriterTags = [];
-
-        protected MudExRichTextEdit Editor;
 
         protected ArticleCategory Category { get; set; } = new();
 
@@ -54,37 +51,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Logger.LogError(ex, "OnInitializedAsync");
                 throw;
-            }
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (firstRender && !IsEditorReady)
-                {
-                    if (Editor is not null)
-                    {
-                        try
-                        {
-                            // Confirm Editor is fully ready via JSInterop
-                            var html = await Editor.GetHtml();
-                            if (html is not null)
-                            {
-                                IsEditorReady = true;
-                                StateHasChanged();
-                            }
-                        }
-                        catch (JSException jsEx)
-                        {
-                            Logger.LogWarning(jsEx, "MudEx Editor JS not ready yet");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "OnAfterRenderAsync");
             }
         }
 
