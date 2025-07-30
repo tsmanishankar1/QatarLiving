@@ -42,17 +42,20 @@
                 <MudRadio Color="Color.Primary" T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
                 <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
-            <MudTextField T="int?"
-                          Variant="Variant.Outlined"
-                          Label="Price"
-                          InputType="InputType.Number"
-                          Style="background-color: #FFFFFF;"
-                          @bind-Value="CurrentEvent.Price"
-                          For="@(() => CurrentEvent.Price)"
-                          Adornment="Adornment.End"
-                          AdornmentText="QAR"
-                          Class="@PriceFieldClass"
-                          Disabled="@(!IsFeesSelected)" />
+            <MudNumericField T="int?"
+                             Variant="Variant.Outlined"
+                             HideSpinButtons="true"
+                             Label="Price"
+                             @bind-Value="CurrentEvent.Price"
+                             For="@(() => CurrentEvent.Price)"
+                             Adornment="Adornment.End"
+                             AdornmentText="QAR"
+                             Style="background-color: #FFFFFF;"
+                             Class="@PriceFieldClass"
+                             Disabled="@(!IsFeesSelected)"
+                             Immediate="true"
+                             Max=int.MaxValue
+                             InputMode="InputMode.numeric" />
             @if (!string.IsNullOrEmpty(_PriceError))
             {
                 <div class="event-mud-error-text">@_PriceError</div>
