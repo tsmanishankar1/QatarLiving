@@ -8,11 +8,11 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsCollectibles : ClassifiedsBase
     {
+        public DateTime? FeaturedExpiryDate { get; set; } = null;
+        public DateTime? PromotedExpiryDate { get; set; } = null;
         public bool IsFeatured { get; set; }
-        public DateTime? FeaturedExpiryDate { get; set; }
         public bool IsPromoted { get; set; }
-        public DateTime? PromotedExpiryDate { get; set; }
-        public bool HasAuthenticityCertificate { get; set; }
+        public bool? HasAuthenticityCertificate { get; set; } 
         public string? AuthenticityCertificateUrl { get; set; }
         public bool HasWarranty { get; set; }
         public bool IsHandmade { get; set; }

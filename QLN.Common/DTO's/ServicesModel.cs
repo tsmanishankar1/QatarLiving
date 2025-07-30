@@ -2,7 +2,7 @@
 
 namespace QLN.Common.DTO_s
 {
-    public class ServicesDto
+    public class ServicesModel
     {
         public Guid Id { get; set; }
         [Required]
@@ -19,20 +19,27 @@ namespace QLN.Common.DTO_s
         [Required]
         public string Title { get; set; }
         [Required]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
         [Required]
-        public string PhoneNumberCountryCode { get; set; }
+        public string PhoneNumberCountryCode { get; set; } = string.Empty;
         [Required]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
         [Required]
-        public string WhatsappNumberCountryCode { get; set; }
+        public string WhatsappNumberCountryCode { get; set; } = string.Empty;
         [Required]
-        public string WhatsappNumber { get; set; }
+        public string WhatsappNumber { get; set; } = string.Empty;
         [EmailAddress]
         public string? EmailAddress { get; set; }
         [Required]
-        public string Location { get; set; }
+        public string Location { get; set; } = string.Empty;
         public int? LocationId { get; set; }
+        public string? SubscriptionId { get; set; }
+        [Required]
+        public string ZoneId { get; set; } = string.Empty;
+        public string? StreetNumber { get; set; }
+        public string? BuildingNumber { get; set; }
+        public string? LicenseCertificate { get; set; }
+        public string? Comments { get; set; }
         public decimal Longitude { get; set; }
         public decimal Lattitude { get; set; }
         public List<ImageDto>? PhotoUpload { get; set; }
@@ -48,14 +55,13 @@ namespace QLN.Common.DTO_s
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }
-        public string CreatedBy { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
     public class ImageDto
     {
-        public string? FileName { get; set; }
         public string? Url { get; set; }
         public int Order { get; set; }
     }

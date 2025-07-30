@@ -33,15 +33,38 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
+       
+        public async Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var appId = ConstantValues.V2Content.ContentServiceAppId;
+                var path = "/api/v2/news/createtagnamebyuserid";
 
-        public async Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, appId, path);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var result = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                return result; 
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating writer tag via internal service");
+                throw;
+            }
+        }
+        public async Task<List<Writertag>> GetAllWritertagsAsync(CancellationToken cancellationToken)
         {
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
                 var path = "/api/v2/news/writertags";
 
-                return await _dapr.InvokeMethodAsync<WriterTagsResponse>(
+                return await _dapr.InvokeMethodAsync<List<Writertag>>(
                HttpMethod.Get,
                appId,
                path,
@@ -54,7 +77,6 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-
         public async Task<List<V2NewsSlot>> GetAllSlotsAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -287,6 +309,51 @@ namespace QLN.Backend.API.Service.V2ContentService
             {
                 _logger.LogError(ex, "Error calling GetNewsArticlesByIsActiveAsync");
                 throw;
+            }
+        }
+        public async Task<string> DeleteTagName(Guid id, CancellationToken cancellationToken = default)
+        {
+            var url = $"/api/v2/news/tag/{id}";
+            try
+            {
+                return await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Delete,
+                    V2Content.ContentServiceAppId,
+                    url,
+                    cancellationToken: cancellationToken
+                );
+            }
+            catch (InvocationException ex)
+            {
+                var status = ex.Response?.StatusCode ?? HttpStatusCode.BadGateway;
+                string body = ex.Response?.Content is { }
+                    ? await ex.Response.Content.ReadAsStringAsync()
+                    : ex.Message;
+
+                string detail;
+                try
+                {
+                    var pd = JsonSerializer.Deserialize<ProblemDetails>(body,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    detail = pd?.Detail ?? body;
+                }
+                catch
+                {
+                    detail = body;
+                }
+
+                if (status == HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+                else if (status == HttpStatusCode.Conflict)
+                {
+                    throw new InvalidOperationException(detail);
+                }
+                else
+                {
+                    throw new DaprServiceException((int)status, detail);
+                }
             }
         }
 

@@ -2,6 +2,7 @@
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
 
 <MudPaper Class="pa-4" Elevation="0">
@@ -72,7 +73,7 @@
 
             <TemplateColumn Title="Start Date">
                 <CellTemplate>
-                    @(context.Item.CreationDate != default ? context.Item.CreationDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                    @(context.Item.CreationDate != default ? context.Item.CreationDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
                 </CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="End Date">
