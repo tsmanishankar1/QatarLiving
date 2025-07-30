@@ -7,7 +7,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
@@ -1580,6 +1582,137 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+         
+            group.MapGet("/getstoresubscriptions", async Task<Results<
+           Ok<List<StoresSubscriptionDto>>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+           HttpContext context,
+           string? subscriptionType,
+           string? filterDate,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetStoresSubscriptions")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get all subscriptions on stores.")
+           .WithDescription("Fetches all subscriptions of users on stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/create-stores-subscriptions", async Task<Results<
+                Ok<string>,
+                ForbidHttpResult,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                StoresSubscriptionDto dto,
+                IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .RequireAuthorization()
+                .WithName("CreateStoresSubscription")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Create Stores Subscriptions")
+                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            
+            group.MapPost("/create-store-subscriptions", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                StoresSubscriptionDto dto,
+                IClassifiedBoLandingService service,         
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    Console.WriteLine("hits internal bo");
+                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("CreateStoreSubscription")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Create Stores Subscriptions")
+                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
