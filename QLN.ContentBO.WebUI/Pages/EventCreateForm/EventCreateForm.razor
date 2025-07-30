@@ -179,12 +179,8 @@
                     </MudPaper>
                 }
             }
-            <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
-                               Height="444"
-                               Class="m-2"
-                               Placeholder="Start Typing"
-                               For="@(() => CurrentEvent.EventDescription)">
-            </MudExRichTextEdit>
+
+            <MarkdownEditor @bind-Value="@CurrentEvent.EventDescription" Placeholder="Start Typing" />
             @if (!string.IsNullOrEmpty(_descriptionerror))
             {
                 <div class="mud-error-text">@_descriptionerror</div>
