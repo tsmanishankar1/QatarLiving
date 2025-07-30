@@ -567,7 +567,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 throw new InvalidDataException($"Unexpected error: {ex.Message}", ex);
             }
         }
-        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? perPage, string? searchTitle = null, string? sortBy = null, CancellationToken ct = default)
+        public async Task<PaginatedCommunityPostResponse> GetAllCommunityPostsWithPagination(int? pageNumber, int? pageSize, string? searchTerm = null, string? sortBy = null, CancellationToken ct = default)
         {
             try
             {
@@ -601,7 +601,26 @@ namespace QLN.Content.MS.Service.ReportInternalService
                 var reportIds = rawReportsElement?.ValueKind != JsonValueKind.Null
                     ? JsonSerializer.Deserialize<List<Guid>>(rawReportsElement.Value.GetRawText()) ?? new List<Guid>()
                     : new List<Guid>();
+                var reportsByPostId = new Dictionary<Guid, List<V2ReportCommunityPostDto>>();
 
+                foreach (var reportId in reportIds)
+                {
+                    var reportKey = reportId.ToString();
+                    var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(
+                        V2Content.ContentStoreName,
+                        reportKey,
+                        cancellationToken: ct);
+
+                    if (reportElement != null && reportElement.IsActive == true && reportElement.PostId.HasValue)
+                    {
+                        var postId = reportElement.PostId.Value;
+                        if (!reportsByPostId.ContainsKey(postId))
+                        {
+                            reportsByPostId[postId] = new List<V2ReportCommunityPostDto>();
+                        }
+                        reportsByPostId[postId].Add(reportElement);
+                    }
+                }
                 foreach (var postId in postIds)
                 {
                     var postKey = $"community-{postId}";
@@ -618,42 +637,54 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     if (post is null || !post.IsActive)
                         continue;
 
-                    foreach (var reportId in reportIds)
+                    // Check if this post has reports
+                    if (reportsByPostId.ContainsKey(postId))
                     {
-                        var reportKey = reportId.ToString();
-                        var reportElement = await _dapr.GetStateAsync<V2ReportCommunityPostDto?>(
-                            V2Content.ContentStoreName,
-                            reportKey,
-                            cancellationToken: ct);
-
-                        if (reportElement != null &&
-                            reportElement.PostId == postId &&
-                            reportElement.IsActive == true)
+                        // Add entries for each report
+                        foreach (var report in reportsByPostId[postId])
                         {
                             allPosts.Add(new CommunityPostWithReports
                             {
-                                Id = reportId,
+                                Id = Guid.NewGuid(), 
                                 PostId = post.Id,
                                 Post = post.Title,
                                 Slug = post.Slug,
                                 UserName = post.UserName,
                                 PostDate = post.DateCreated,
-                                Reporter = reportElement.ReporterName,
-                                ReportDate = reportElement.ReportDate,
-                                Router = reportElement.Router
+                                Reporter = report.ReporterName,
+                                ReportDate = report.ReportDate,
+                                Router = report.Router
                             });
                         }
                     }
+                    else
+                    {
+                        // Add post without report information
+                        allPosts.Add(new CommunityPostWithReports
+                        {
+                            Id = Guid.NewGuid(), // Generate a temporary ID for posts without reports
+                            PostId = post.Id,
+                            Post = post.Title,
+                            Slug = post.Slug,
+                            UserName = post.UserName,
+                            PostDate = post.DateCreated,
+                            Reporter = null,
+                            ReportDate = null,
+                            Router = null
+                        });
+                    }
                 }
 
-
-                if (!string.IsNullOrWhiteSpace(searchTitle))
+                // Apply search filter AFTER collecting all posts
+                if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    allPosts = allPosts
-                        .Where(p => p.Post != null && p.Post.Contains(searchTitle, StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+                    string search = searchTerm.ToLower();
+                    allPosts = allPosts.Where(r =>
+                        (!string.IsNullOrEmpty(r.Reporter) && r.Reporter.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(r.Post) && r.Post.ToLower().Contains(search)) ||
+                        (!string.IsNullOrEmpty(r.UserName) && r.UserName.ToLower().Contains(search))
+                    ).ToList();
                 }
-
 
                 var sortKey = sortBy?.ToLowerInvariant();
                 allPosts = sortKey switch
@@ -669,18 +700,19 @@ namespace QLN.Content.MS.Service.ReportInternalService
                     _ => allPosts.OrderByDescending(p => p.PostDate).ToList()
                 };
 
-
                 var totalCount = allPosts.Count;
                 var currentPage = pageNumber ?? 1;
-                var pageSize = perPage ?? 12;
-                if ((currentPage - 1) * pageSize >= totalCount && totalCount > 0)
+                var pageSizeItem = pageSize ?? 12;
+
+                if ((currentPage - 1) * pageSizeItem >= totalCount && totalCount > 0)
                 {
-                    currentPage = (int)Math.Ceiling((double)totalCount / pageSize);
+                    currentPage = (int)Math.Ceiling((double)totalCount / pageSizeItem);
                 }
-                var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+                var totalPages = (int)Math.Ceiling((double)totalCount / pageSizeItem);
                 var paginatedPosts = allPosts
-                            .Skip((currentPage - 1) * pageSize)
-                            .Take(pageSize)
+                            .Skip((currentPage - 1) * pageSizeItem)
+                            .Take(pageSizeItem)
                             .ToList();
 
                 return new PaginatedCommunityPostResponse
