@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // reset to first page
+            currentPage = 1; 
             StateHasChanged();
         }
 

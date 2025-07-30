@@ -27,6 +27,10 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
         Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
+        Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request);
 
     }
 }

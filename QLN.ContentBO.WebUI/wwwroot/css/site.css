@@ -2494,3 +2494,9 @@ a, .btn-link {
     font-family: 'Public Sans', sans-serif;
     color: #646464;
 }
+
+/*mud data grid header */
+
+.mud-data-grid .mud-table-cell .column-header {
+    white-space: nowrap !important;
+}

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Markdig.Parsers;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -64,52 +65,53 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
         public bool _isDateRangeSelected = false;
-      
+
         protected ElementReference _popoverDiv;
 
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
-        protected List<PrelovedListing> Listings { get; set; } = new();
-        
+        protected List<QLN.ContentBO.WebUI.Models.SubscriptionListing> Listings { get; set; } = new();
+
         protected override async Task OnInitializedAsync()
         {
-            await LoadListingsAsync();
+            Listings =GetSampleData();
         }
-
-        protected async Task LoadListingsAsync()
+        private List<QLN.ContentBO.WebUI.Models.SubscriptionListing> GetSampleData()
         {
-            try
-            {
-                var filter = new FilterRequest
-                {
-                    Text = SearchText,
-                    PageNumber = 1,
-                    PageSize = 12
-                };
-
-                var response = await ClassifiedService.GetPrelovedListingsAsync(filter);
-
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PrelovedResponse>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                    Listings = result?.ClassifiedsPreloved ?? new();
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed with status: {response?.StatusCode}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Exception in LoadListingsAsync: {ex.Message}");
-            }
+            return new List<QLN.ContentBO.WebUI.Models.SubscriptionListing>
+    {
+        new QLN.ContentBO.WebUI.Models.SubscriptionListing {
+            AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus",
+            UserName = "Rashid",
+            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",SubscriptionType="12 Months Super",
+            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
+        },
+        new QLN.ContentBO.WebUI.Models.SubscriptionListing {
+            AdId = 21435, UserId = 21435, AdTitle = "12 Months Super",
+            UserName = "Rashid",
+            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",SubscriptionType="12 Months Super",
+            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
+        },
+        new QLN.ContentBO.WebUI.Models.SubscriptionListing {
+            AdId = 21342, UserId = 21342, AdTitle = "12 Months Super",
+            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",SubscriptionType="12 Months Super",
+            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
+        },
+        new QLN.ContentBO.WebUI.Models.SubscriptionListing {
+            AdId = 23415, UserId = 23415, AdTitle = "12 Months Super",
+            UserName = "Rashid",
+            CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
+            ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
+            Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"
         }
+    };
+        }
+
+       
         protected void OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString();
@@ -269,7 +271,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected DateRange _dateRange = new();
         protected DateRange _tempDateRange = new();
 
-      
+
 
         protected bool showDatePopover = false;
 

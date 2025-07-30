@@ -103,29 +103,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             return new List<SubscriptionListing>
     {
         new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Plus",
+            AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus",
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
         },
         new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+            AdId = 21435, UserId = 21435, AdTitle = "12 Months Super",
+            UserName = "Rashid",SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
         },
         new SubscriptionListing {
-            AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+            AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", 
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
         },
         new SubscriptionListing {
-            AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+            AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", 
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"

@@ -329,6 +329,24 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+        public Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
