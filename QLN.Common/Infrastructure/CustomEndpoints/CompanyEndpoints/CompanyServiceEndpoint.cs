@@ -441,12 +441,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         return TypedResults.Forbid();
                     }
 
-                    var userId = uidElement.GetString(); // ✅ string userId extracted
+                    var userId = uidElement.GetString(); 
 
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
 
-                    await service.ApproveCompany(userId, dto, cancellationToken); // ✅ use string userId
+                    await service.ApproveCompany(userId, dto, cancellationToken); 
                     return Results.Ok(new { message = "Company approved successfully." });
                 }
                 catch (KeyNotFoundException ex)
@@ -485,7 +485,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            // Internal endpoint via Dapr — uses string userId as query param
             group.MapPut("/approveByUserId", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
@@ -553,10 +552,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-
-
-
-
         public static RouteGroupBuilder MapGetCompanyApprovalInfo(this RouteGroupBuilder group)
         {
             group.MapGet("/getApproval", async Task<Results<
