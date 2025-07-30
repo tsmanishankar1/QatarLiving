@@ -779,7 +779,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
-         
+
                     var companies = await service.GetStatusByTokenUser(uid, cancellationToken);
 
                     var filtered = companies

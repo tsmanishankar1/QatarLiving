@@ -92,6 +92,7 @@ namespace QLN.Common.Infrastructure.Constants
             public const string FeaturedCategoryClassifiedIndex = "featured-category-classified-index";
             public const string FeaturedCategoryServiceIndex = "featured-category-services-index";
             public const string UnifiedStore = "adstore";
+            public const string CommonStore = "commonstore";
             public const string UnifiedIndexKey = "ad-index";
             public const string ItemsIndexKey = "items-ad-index";
             public const string PrelovedIndexKey = "preloved-index";
