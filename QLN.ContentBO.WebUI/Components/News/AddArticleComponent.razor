@@ -90,14 +90,7 @@
                 <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:6px">Article content</MudText>
-                <MudExRichTextEdit @bind-Value="article.Content" @ref="@Editor"
-                                   Height="444"
-                                   Class="m-2"
-                                   Placeholder="Start Typing"
-                                   For="@(() => article.Content)"
-                                   Required="true">
-                </MudExRichTextEdit>
-                <ValidationSummary />
+                <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" />
                 <MudStack Row Class="mt-6 justify-content-between">
                     <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" Style="text-transform: capitalize;" OnClick="@Cancel">Cancel</MudButton>
                     <MudButton Class="ml-2 rounded-lg action-btn" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="text-transform: capitalize;" Color="Color.Primary" Disabled="IsBtnDisabled">Save</MudButton>
