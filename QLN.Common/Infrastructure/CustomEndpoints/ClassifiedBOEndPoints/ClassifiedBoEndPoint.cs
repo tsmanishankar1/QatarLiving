@@ -74,7 +74,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                        .RequireAuthorization()
                         .WithName("CreateFeaturedCategory")
                         .WithTags("ClassifiedBo")
                         .WithSummary("Create Featured Category Slot (auth required)")
@@ -193,6 +192,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
                 .WithName("GetFeaturedCategoriesByVertical")
+                .AllowAnonymous()
                 .WithTags("ClassifiedBo")
                 .WithSummary("Get L1 categories for a given vertical")
                 .WithDescription("Returns a list of L1 categories from the category tree for a vertical. If none found, returns 200 with empty list.")
@@ -232,7 +232,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("ReorderFeaturedCategorySlots")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Reorder slots for featured category (auth required)")
@@ -317,8 +316,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
-            })
-            .RequireAuthorization()
+            })            
             .WithName("ReplaceFeaturedCategorySlots")
             .WithTags("ClassifiedBo")
             .WithSummary("Replace Featured Category Slot (auth required)")
@@ -418,7 +416,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("SoftDeleteFeaturedCategory")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Soft delete a featured category (auth required)")
@@ -503,6 +500,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetSlottedFeaturedCategory")
+            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get slotted Featured Category Slot (internal)")
             .WithDescription("Get slotted featured category (internal use).")
@@ -559,7 +557,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                            .RequireAuthorization()
                             .WithName("CreateSeasonalPick")
                             .WithTags("ClassifiedBo")
                             .WithSummary("Create Seasonal Pick")
@@ -666,6 +663,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
                 .WithName("GetSeasonalPicks")
                 .WithTags("ClassifiedBo")
+                .AllowAnonymous()
                 .WithSummary("Get all active seasonal picks")
                 .WithDescription("Fetches all active seasonal picks sorted by latest updated date.")
                 .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
@@ -692,6 +690,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
                 .WithName("GetSlottedSeasonalPicks")
+                .AllowAnonymous()
                 .WithTags("ClassifiedBo")
                 .WithSummary("Get all slotted seasonal picks")
                 .WithDescription("Returns only seasonal picks that are assigned to slot positions (1–6).")
@@ -732,7 +731,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("ReplaceSeasonalPickSlot")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Add seasonal pick into slot and Replace a seasonal pick into a slot (auth required)")
@@ -817,7 +815,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("ReorderSeasonalPickSlots")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Reorder slots for seasonal picks (auth required)")
@@ -908,7 +905,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("SoftDeleteSeasonalPick")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Soft delete a seasonal pick (auth required)")
@@ -1009,7 +1005,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                            .RequireAuthorization()
                             .WithName("CreateFeaturedStore")
                             .WithTags("ClassifiedBo")
                             .WithSummary("Create Featured Store")
@@ -1114,6 +1109,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
                 .WithName("GetFeaturedStores")
+                .AllowAnonymous()
                 .WithTags("ClassifiedBo")
                 .WithSummary("Get all active featured stores")
                 .WithDescription("Fetches all active featured stores sorted by latest updated date.")
@@ -1142,6 +1138,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
                 .WithName("GetSlottedFeaturedStores")
+                .AllowAnonymous()
                 .WithTags("ClassifiedBo")
                 .WithSummary("Get all slotted featured stores")
                 .WithDescription("Returns only featured stores that are assigned to slot positions (1–6).")
@@ -1181,7 +1178,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("ReplaceFeaturedStoreSlot")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Replace a featured store into a slot (auth required)")
@@ -1263,7 +1259,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("ReorderFeaturedStoreSlots")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Reorder slots for featured stores (auth required)")
@@ -1355,7 +1350,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .RequireAuthorization()
                 .WithName("SoftDeleteFeaturedStore")
                 .WithTags("ClassifiedBo")
                 .WithSummary("Soft delete a featured store (auth required)")
@@ -1409,11 +1403,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/getall-items", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
-          (
-              [FromServices] ISearchService service,
-              [FromBody] CommonSearchRequest request,
-              CancellationToken cancellationToken
-          ) =>
+                (
+                [FromServices] ISearchService service,
+                [FromBody] CommonSearchRequest request,
+                CancellationToken cancellationToken
+                ) =>
             {
                 try
                 {
@@ -1430,8 +1424,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-          .RequireAuthorization()
           .WithName("GetAllItemsAds")
+          .AllowAnonymous()
           .WithTags("ClassifiedBo")
           .WithSummary("Get all classifieds ads")
           .WithDescription("Retrieves all service ads from the system. " +
@@ -1462,6 +1456,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetAllPrelovedAds")
+            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds preloved ads")
             .WithDescription("Retrieves all service ads from the system. This endpoint returns a list of all available classifieds preloved ads, including their details.")
@@ -1490,8 +1485,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .RequireAuthorization()
             .WithName("GetAllCollectiblesAds")
+            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
@@ -1520,10 +1515,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
-            })
-            .RequireAuthorization()
+            })                
             .WithName("GetAllDealsAds")
             .WithTags("ClassifiedBo")
+            .AllowAnonymous()
             .WithSummary("Get all classifieds deals ads")
             .WithDescription("Retrieves all service ads from the system. " +
                            "This endpoint returns a list of all available classifieds deals ads, including their details.")
@@ -1598,8 +1593,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 {
                     return TypedResults.Problem(ex.Message);
                 }
-            })
-                            .RequireAuthorization()
+            })                            
                             .WithName("BulkItemsAction")
                             .WithTags("ClassifiedBo")
                             .WithSummary("Bulk items action classifieds")
@@ -1747,8 +1741,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 {
                     return TypedResults.Problem(ex.Message);
                 }
-            })
-               .RequireAuthorization()
+            })               
                .WithName("BulkCollectiblesAction")
                .WithTags("ClassifiedBo")
                .WithSummary("Bulk collectibles action classifieds")
@@ -1906,6 +1899,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
                 .WithName("GetAllPrelovedAdPaymentSummaries")
                 .WithTags("ClassifiedBo")
+                .AllowAnonymous()
                 .WithSummary("Get all preloved ad payment summaries")
                 .WithDescription("Returns paginated list of preloved ads with payment-style summaries including order ID, status, contact info, and subscription type.")
                 .Produces<PaginatedResult<PrelovedAdPaymentSummaryDto>>(StatusCodes.Status200OK)
@@ -1956,6 +1950,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
                 .WithName("GetAllPrelovedBoAds")
                 .WithTags("ClassifiedBo")
+                .AllowAnonymous()
                 .WithSummary("Get all preloved ads with pagination")
                 .WithDescription("Retrieves a paginated summary of all Preloved ads with optional filters like status, date, promotion and feature state.")
                 .Produces<PaginatedResult<PrelovedAdSummaryDto>>(StatusCodes.Status200OK)
@@ -1993,6 +1988,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
 .WithName("GetDeals")
 .WithTags("ClassifiedBo")
+.AllowAnonymous()
 .WithSummary("Get all deals")
 .WithDescription("Fetches all deals with optional search, pagination, and sorting.")
 .Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
@@ -2035,6 +2031,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             })
 .WithName("DealsViewSummary")
 .WithTags("ClassifiedBo")
+.AllowAnonymous()
 .WithSummary("Get all deals")
 .WithDescription("Fetches all deals with optional search, pagination, sorting, and filters like status, isPromoted, isFeatured.")
 .Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
@@ -2084,7 +2081,6 @@ CancellationToken cancellationToken
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.RequireAuthorization()
 .WithName("DealsSoftDelete")
 .WithTags("ClassifiedBo")
 .WithSummary("Soft delete deal ads (auth required)")
@@ -2205,7 +2201,6 @@ CancellationToken ct
                     return TypedResults.Problem(ex.Message);
                 }
             })
-.RequireAuthorization()
 .WithName("BulkPrelovedAction")
 .WithTags("ClassifiedBo")
 .WithSummary("Bulk preloved action classifieds")
@@ -2346,6 +2341,7 @@ CancellationToken ct
             })
 .WithName("GetPrelovedTransactions")
 .WithTags("ClassifiedBo")
+.AllowAnonymous()
 .WithSummary("Get transactions with filtering")
 .WithDescription("Get paginated preloved transactions with search and filter capabilities")
 .Produces<TransactionListResponseDto>(StatusCodes.Status200OK)
@@ -2353,9 +2349,149 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+            group.MapPost("items/admin/post-by-id", async Task<IResult> (
+              ClassifiedsItems dto,
+              IClassifiedService service,
+              CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var response = await service.CreateClassifiedItemsAd(dto, token);
+                    return TypedResults.Created($"/api/classifieds/items/admin/post-by-id/{response.AdId}", response);
+
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+              .WithName("AdminPostItemsAdById")
+              .WithTags("ClassifiedBo")
+              .WithSummary("Post classified items ad using provided UserId, UserName and Email")
+              .WithDescription("For admin scenarios where the UserId, UserName and Email is passed.")
+              .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
+            group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
+               ClassifiedsPreloved dto,
+               IClassifiedService service,
+               CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
 
+                    var result = await service.CreateClassifiedPrelovedAd(dto, token);
+
+                    return TypedResults.Created($"/api/classifieds/preloved/admin/post-by-id/{result.AdId}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Ad Creation Failed",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+               .WithName("AdminPostPrelovedAdById")
+               .WithTags("ClassifiedBo")
+               .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+  
             return group;
         }
     }

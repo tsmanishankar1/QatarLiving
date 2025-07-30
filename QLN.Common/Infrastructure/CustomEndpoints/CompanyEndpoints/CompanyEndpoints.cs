@@ -206,6 +206,44 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+
+        public static RouteGroupBuilder MapGetCompanyProfilesByVerticalAndSubVertical(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getbyverticalsubvertical", async Task<IResult>
+            (
+                [FromQuery] VerticalType vertical,
+                [FromQuery] SubVertical subVertical,
+                [FromQuery] bool? isVerified,
+                [FromQuery] CompanyStatus? status,
+                [FromServices] ICompanyClassifiedService service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var result = await service.GetCompaniesByVerticalAndSubVerticalAsync(vertical, subVertical, isVerified, status, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanyProfilesByVerticalAndSubVertical")
+            .WithTags("Company")
+            .WithSummary("Get company profiles by vertical and subvertical")
+            .WithDescription("Fetches company profiles filtered by vertical and subvertical values.")
+            .Produces<IEnumerable<CompanyProfileDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
+
         public static RouteGroupBuilder MapUpdateClassifiedsCompanyProfile(this RouteGroupBuilder group)
         {
             group.MapPut("/updateclassifiedcompany", async Task<Results<

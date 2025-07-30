@@ -10,6 +10,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.DTO_s;
 
 namespace QLN.Backend.API.Service.CompanyService
 {
@@ -113,6 +114,48 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAndSubVerticalAsync(
+            VerticalType vertical,
+            SubVertical subVertical,
+            bool? isVerified = null,
+            CompanyStatus? status = null,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new List<string>
+                {
+                    $"vertical={(int)vertical}",
+                    $"subVertical={(int)subVertical}"
+                };
+
+                if (isVerified.HasValue)
+                    queryParams.Add($"isVerified={isVerified.Value.ToString().ToLower()}");
+
+                if (status.HasValue)
+                    queryParams.Add($"status={(int)status.Value}");
+
+                var query = string.Join("&", queryParams);
+                var url = $"api/companyprofile/getbyverticalsubvertical?{query}";
+
+                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
+                    HttpMethod.Get,
+                    ConstantValues.CompanyServiceAppId,
+                    url,
+                    cancellationToken);
+
+                return response ?? new List<CompanyProfileDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving company profiles by vertical and subvertical.");
+                throw;
+            }
+        }
+
+
+
         public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try

@@ -338,7 +338,8 @@ bannerPostGroup.MapBannerPostEndpoints();
 
 
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
-ClassifiedBo.MapClassifiedboEndpoints();
+ClassifiedBo.MapClassifiedboEndpoints()
+    .RequireAuthorization();
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
