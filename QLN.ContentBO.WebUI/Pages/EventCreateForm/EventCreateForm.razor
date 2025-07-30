@@ -2,96 +2,92 @@
 @inherits EventCreateFormBase;
 
 
- <EditForm Model="CurrentEvent"  OnValidSubmit="HandleValidSubmit">
-     <DataAnnotationsValidator />
-<MudGrid Style="padding-top: 0">
-    <!-- Left Form Section -->
-    <MudItem xs="12" md="6">
-        <h2 class="mb-2 mt-3 event-form-title">Event Form</h2>
-           <MudSelect T="int"
-            Label="Category"
-            Placeholder="Choose"
-            Variant="Variant.Outlined"
-            @bind-Value="CurrentEvent.CategoryId"
-            Class="my-2 event-custom-textfield"
-            Style="background-color: #FFFFFF;">
-             <MudSelectItem Value="0" Disabled="true">Category</MudSelectItem>
+<EditForm Model="CurrentEvent" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid Style="padding-top: 0">
+        <!-- Left Form Section -->
+        <MudItem xs="12" md="6">
+            <h2 class="mb-2 mt-3 event-form-title">Event Form</h2>
+            <MudSelect T="int"
+                       Label="Category"
+                       Placeholder="Choose"
+                       Variant="Variant.Outlined"
+                       @bind-Value="CurrentEvent.CategoryId"
+                       Class="my-2 event-custom-textfield"
+                       Style="background-color: #FFFFFF;">
+                <MudSelectItem Value="0" Disabled="true">Category</MudSelectItem>
                 @if (Categories != null && Categories.Any())
                 {
                     @foreach (var category in Categories.Where(c => c.Id != 0))
-                        {
-                            <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
-                        }
+                    {
+                        <MudSelectItem Value="@category.Id">@category.CategoryName</MudSelectItem>
+                    }
 
                 }
             </MudSelect>
 
             <MudTextField Variant="Variant.Outlined" Label="Event Title" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventTitle" For="@(() => CurrentEvent.EventTitle)" Style=" background-color: #FFFFFF;" MaxLength="255" />
             <MudRadioGroup Required="true" RequiredError="Event type is required." T="EventType" @bind-Value="CurrentEvent.EventType" For="@(() => CurrentEvent.EventType)" Class="my-2">
-                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
-                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
-                <MudRadio Color="Color.Primary"T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FreeAcess">Free Access</MudRadio>
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.OpenRegistrations">Open Registrations</MudRadio>
+                <MudRadio Color="Color.Primary" T="EventType" Value="EventType.FeePrice">Fees</MudRadio>
             </MudRadioGroup>
-            <MudNumericField T="int?" 
-              Variant="Variant.Outlined" 
-              HideSpinButtons="true"
-              Label="Price" 
-              MaxLength="5"
-              @bind-Value="CurrentEvent.Price" 
-              For="@(() => CurrentEvent.Price)"
-              Adornment="Adornment.End" 
-              AdornmentText="QAR" 
-              Style="background-color: #FFFFFF;"
-              Class="@PriceFieldClass" 
-              Disabled="@(!IsFeesSelected)" 
-              Immediate="true"/>
-              @if (!string.IsNullOrEmpty(_PriceError))
-             { 
-                <div class="event-mud-error-text">@_PriceError</div>
-            } 
+            <MudNumericField T="int?"
+                             Variant="Variant.Outlined"
+                             HideSpinButtons="true"
+                             Label="Price"
+                             @bind-Value="CurrentEvent.Price"
+                             For="@(() => CurrentEvent.Price)"
+                             Adornment="Adornment.End"
+                             AdornmentText="QAR"
+                             Style="background-color: #FFFFFF;"
+                             Class="@PriceFieldClass"
+                             Disabled="@(!IsFeesSelected)"
+                             Immediate="true"
+                             Max=int.MaxValue />
             <MudTextField Variant="Variant.Outlined" Label="Redirection Link" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.RedirectionLink" For="@(() => CurrentEvent.RedirectionLink)" Style=" background-color: #FFFFFF;" MaxLength="255" />
 
 
-       <MudSelect T="string"
-           Label="Location"
-           Placeholder="Choose"
-           Variant="Variant.Outlined"
-           Value="SelectedLocationId"
-           ValueChanged="OnLocationChanged"
-           ValueExpression="@(() => SelectedLocationId)"
-           Class="my-2 custom-textfield"
-           Style="background-color: #FFFFFF;">
-            @if (Locations?.Any() == true)
-        {
-            @foreach (var location in Locations)
-            {
-                <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
-            }
-        }
-        else
-        {
-            <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
-        }
-        </MudSelect>
-         <ValidationMessage For="@(() => CurrentEvent.Location)" />
+            <MudSelect T="string"
+                       Label="Location"
+                       Placeholder="Choose"
+                       Variant="Variant.Outlined"
+                       Value="SelectedLocationId"
+                       ValueChanged="OnLocationChanged"
+                       ValueExpression="@(() => SelectedLocationId)"
+                       Class="my-2 custom-textfield"
+                       Style="background-color: #FFFFFF;">
+                @if (Locations?.Any() == true)
+                {
+                    @foreach (var location in Locations)
+                    {
+                        <MudSelectItem Value="@location.Id">@location.Name</MudSelectItem>
+                    }
+                }
+                else
+                {
+                    <MudSelectItem T="string" Disabled="true">Choose</MudSelectItem>
+                }
+            </MudSelect>
+            <ValidationMessage For="@(() => CurrentEvent.Location)" />
             <MudTextField Variant="Variant.Outlined" Label="Venue" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.Venue" Style=" background-color: #FFFFFF;" MaxLength="255" />
             <div id="map" style="height: 300px; width: 100%;"></div>
 
             @* Date picker *@
             <div class="event-select-field event-date-picker-field" @onclick="ToggleDatePicker">
                 <MudTextField Label="Date"
-              Value="@SelectedDateLabel"
-              ReadOnly="true"
-              DisableUnderLine="true"
-              Variant="Variant.Outlined"
-              Style="background-color: #FFFFFF;"
-              Class="event-cursor-pointer event-custom-textfield"
-              Adornment="Adornment.End"
-              AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
-              OnAdornmentClick="@ClearSelectedDate"
-              OnClick="ToggleDatePicker" />
+                              Value="@SelectedDateLabel"
+                              ReadOnly="true"
+                              DisableUnderLine="true"
+                              Variant="Variant.Outlined"
+                              Style="background-color: #FFFFFF;"
+                              Class="event-cursor-pointer event-custom-textfield"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@(!string.IsNullOrWhiteSpace(SelectedDateLabel) ? Icons.Material.Filled.Clear : Icons.Material.Filled.DateRange)"
+                              OnAdornmentClick="@ClearSelectedDate"
+                              OnClick="ToggleDatePicker" />
                 <MudPopover Open="@_showDatePicker" AnchorOrigin="Origin.BottomCenter"
-                    TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
+                            TransformOrigin="Origin.TopCenter" Elevation="6" Class="event-popover-container">
                     <div class="event-picker-overlay event-my-orange-theme" @ref="_popoverDiv">
                         <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
                                 <MudDateRangePicker @bind-DateRange="_dateRange"
@@ -101,30 +97,31 @@
                                 DisplayMonths="1"
                                 Class="event-custom-date-range"
                                 Style="min-width: 300px;" 
-                                 MinDate="@DateTime.Today"/>
+                                 MinDate="@DateTime.Today"
+                                 />
 
-                                <!-- Start and End Summary -->
-                                <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
-                                    <div>
-                                        <div class="event-summary-box">
-                                            @( _dateRange?.Start != null ? _dateRange.Start?.ToString("dd-MM-yyyy") : "Start date" )
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div class="event-summary-box">
-                                          @( _dateRange?.End != null ? _dateRange.End?.ToString("dd-MM-yyyy") : "End date" )
-                                        </div>
+                            <!-- Start and End Summary -->
+                            <div style="display: flex; flex-direction: column; gap: 12px; min-width: 160px;">
+                                <div>
+                                    <div class="event-summary-box">
+                                        @( _dateRange?.Start != null ? _dateRange.Start?.ToString("dd-MM-yyyy") : "Start date" )
                                     </div>
                                 </div>
+                                <div>
+                                    <div class="event-summary-box">
+                                        @( _dateRange?.End != null ? _dateRange.End?.ToString("dd-MM-yyyy") : "End date" )
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        
+
 
                         <!-- Actions -->
                         <div class="event-picker-actions" style="display: flex; justify-content: flex-end; gap: 8px;">
                             <button class="event-cancel-button" @onclick="CancelDatePicker">Cancel</button>
                             <button class="event-apply-button"
-                                @onclick="ApplyDatePicker"
-                                disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
+                                    @onclick="ApplyDatePicker"
+                                    disabled="@(_dateRange?.Start == null && _dateRange?.End == null)">
                                 Apply
                             </button>
                         </div>
@@ -137,7 +134,7 @@
 
             @if (CurrentEvent?.EventSchedule != null && _dateRange?.Start != null && _dateRange?.End != null)
             {
-                <MudRadioGroup T="EventTimeType" @bind-Value="CurrentEvent.EventSchedule.TimeSlotType"  Disabled="@string.IsNullOrWhiteSpace(SelectedDateLabel)" Class="my-2">
+                <MudRadioGroup T="EventTimeType" Value="CurrentEvent.EventSchedule.TimeSlotType" ValueChanged="OnTimeSlotTypeChanged" Class="my-2">
                 <MudRadio  Color="Color.Primary"T="EventTimeType" Value="EventTimeType.GeneralTime">General time</MudRadio>
                 <MudRadio Color="Color.Primary"T="EventTimeType" Value="EventTimeType.PerDayTime">Per day time</MudRadio>
                 <MudRadio T="EventTimeType" Color="Color.Primary"Value="EventTimeType.FreeTextTime">Free Text time</MudRadio>
@@ -147,165 +144,160 @@
             {
                 <div style="display: flex; gap: 16px; align-items: center;">
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?" 
-                       Label="Start Time"
-                       Time="@StartTimeSpan"
-                       Class="event-custom-textfield"
-                       Style="background-color: #FFFFFF;"
-                       Variant="Variant.Outlined"
-                       TimeChanged="@((TimeSpan? t) => StartTimeSpan = t)" />
+                        <MudTimePicker T="TimeSpan?"
+                                       Label="Start Time"
+                                       Time="@StartTimeSpan"
+                                       Class="event-custom-textfield"
+                                       Style="background-color: #FFFFFF;"
+                                       Variant="Variant.Outlined"
+                                       TimeChanged="@((TimeSpan? t) => StartTimeSpan = t)" />
                         <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
                     </div>
 
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                        <MudTimePicker T="TimeSpan?" 
-                       Label="End Time"
-                       Time="@EndTimeSpan"
-                       Class="event-custom-textfield"
-                       Style="background-color: #FFFFFF;"
-                       Variant="Variant.Outlined"
-                       TimeChanged="@((TimeSpan? t) => EndTimeSpan = t)" />
+                        <MudTimePicker T="TimeSpan?"
+                                       Label="End Time"
+                                       Time="@EndTimeSpan"
+                                       Class="event-custom-textfield"
+                                       Style="background-color: #FFFFFF;"
+                                       Variant="Variant.Outlined"
+                                       TimeChanged="@((TimeSpan? t) => EndTimeSpan = t)" />
                         <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(_timeError))
-            {
-                <div class="mud-error-text">@_timeError</div>
-            }
+                {
+                    <div class="mud-error-text">@_timeError</div>
+                }
 
             }
             else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.PerDayTime)
             {
-               @foreach (var entry in DayTimeList.Take(7))
+                @foreach (var entry in DayTimeList.Take(7))
                 {
                     <MudPaper Elevation="0" Style="padding: 8px; margin-bottom: 12px; background-color: #FAFAFA; border-radius: 8px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 12px;">
-                             <div >
-                            <input type="checkbox"
-                            checked="@entry.IsSelected"
-                            disabled="@(!IsValidTimeFormat(entry.StartTime, entry.EndTime))"
-                            @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
-                            style="transform: scale(1.5); margin-right: 8px;" />
-                            <label style="font-size: 1rem;">@entry.Day</label>
+                            <div>
+                                <input type="checkbox"
+                                       checked="@entry.IsSelected"
+                                       disabled="@(!IsValidTimeFormat(entry.StartTime, entry.EndTime))"
+                                       @onchange="(e) => OnDaySelectionChanged(entry, (bool)e.Value!)"
+                                       style="transform: scale(1.5); margin-right: 8px;" />
+                                <label style="font-size: 1rem;">@entry.Day</label>
                             </div>
                             <div style="display: flex; gap: 16px; align-items: center;">
                                 <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                                    <MudTimePicker T="TimeSpan?" 
-                                    Label="Start Time"
-                                    @bind-Time="entry.StartTime"
-                                    Class="event-custom-textfield"
-                                    Style="background-color: #FFFFFF;"
-                                    Variant="Variant.Outlined"/>
+                                    <MudTimePicker T="TimeSpan?"
+                                                   Label="Start Time"
+                                                   @bind-Time="entry.StartTime"
+                                                   Class="event-custom-textfield"
+                                                   Style="background-color: #FFFFFF;"
+                                                   Variant="Variant.Outlined" />
                                     <ValidationMessage For="@(() => CurrentEvent.EventSchedule.StartTime)" />
                                 </div>
                                 <div class="custom-timepicker-width" style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-                                    <MudTimePicker T="TimeSpan?" 
-                                    Label="End Time"
-                                    @bind-Time="entry.EndTime"
-                                    Class="event-custom-textfield"
-                                    Style="background-color: #FFFFFF;"
-                                    Variant="Variant.Outlined" />
-                                     <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
+                                    <MudTimePicker T="TimeSpan?"
+                                                   Label="End Time"
+                                                   @bind-Time="entry.EndTime"
+                                                   Class="event-custom-textfield"
+                                                   Style="background-color: #FFFFFF;"
+                                                   Variant="Variant.Outlined" />
+                                    <ValidationMessage For="@(() => CurrentEvent.EventSchedule.EndTime)" />
                                 </div>
                             </div>
                         </div>
                     </MudPaper>
-                    @if(!IsValidTimeFormat(entry.StartTime, entry.EndTime)){
+                    @if (!IsValidTimeFormat(entry.StartTime, entry.EndTime))
+                    {
                         <div class="mud-error-text">Enter Valid Time format</div>
                     }
                 }
             }
             else if (CurrentEvent?.EventSchedule?.TimeSlotType == EventTimeType.FreeTextTime)
             {
-                <MudTextField  Variant="Variant.Outlined" Label="Time" MaxLength="255"  Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;"/>
+                <MudTextField Variant="Variant.Outlined" Label="Time" MaxLength="255" Class="my-2 event-custom-textfield" @bind-Value="@CurrentEvent.EventSchedule.FreeTimeText" For="@(() => CurrentEvent.EventSchedule.FreeTimeText)" Style=" background-color: #FFFFFF;" />
             }
             <MudExRichTextEdit @bind-Value="CurrentEvent.EventDescription" @ref="@Editor"
-                                   Height="444"
-                                   Class="m-2"
-                                   Placeholder="Start Typing"
-                                   For="@(() => CurrentEvent.EventDescription)">
+                               Height="444"
+                               Class="m-2"
+                               Placeholder="Start Typing"
+                               For="@(() => CurrentEvent.EventDescription)">
             </MudExRichTextEdit>
             @if (!string.IsNullOrEmpty(_descriptionerror))
             {
                 <div class="mud-error-text">@_descriptionerror</div>
             }
-             <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
-            <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
-            <button type="submit" class="event-custom-add full-width">
-                  @if (IsLoading)
+            <MudStack Row Class="mt-4" Justify="Justify.SpaceBetween">
+                <button type="button" class="event-custom-close full-width" @onclick="OnCancelClicked">Cancel</button>
+                <button type="submit" class="event-custom-add full-width">
+                    @if (IsLoading)
+                    {
+                        <MudProgressCircular Color="Color.Inherit"
+                                             Size="Size.Small"
+                                             Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <span>Save</span>
+                    }
+                </button>
+            </MudStack>
+
+        </MudItem>
+
+        <!-- Right Cover Image Section -->
+        <MudItem xs="12" md="6">
+
+            <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
+            <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
+                <ActivatorContent>
+                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
+                        @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
                         {
-                            <MudProgressCircular Color="Color.Inherit"
-                                                 Size="Size.Small"
-                                                 Indeterminate="true" />
+                            <img src="@CurrentEvent.CoverImage" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
                         }
                         else
                         {
-                         <span>Save</span>
-                        }
-            </button>
-        </MudStack>
-
-    </MudItem>
-
-    <!-- Right Cover Image Section -->
-    <MudItem xs="12" md="6">
-    
-                    <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
-                        <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
-                        <ActivatorContent>
-                        <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                            @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
-                            {
-                                <img src="@CurrentEvent.CoverImage" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
-                            }
-                            else{
-                                <div class="d-flex flex-column align-center">
-                        <div class="event-icon-circle">
-                        <img src="/qln-images/upload_icon.svg"
-                        class="event-file-upload-style"
-                        alt="Upload"/>
-                        </div>
-                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
-                        </div>
-                                }
-                        </MudPaper>
-                        </ActivatorContent>
-                         </MudFileUpload>
-                          @if (!string.IsNullOrEmpty(_coverImageError))
-                            {
-                                <div class="mud-error-text">@_coverImageError</div>
-                            }
-                         @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage)){
-                            <MudPaper Elevation="0" Class="event-image-picker-style">
-                                <div class="event-upload-action-style">
-                                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="10485760">
-                                <ActivatorContent>
-                                <MudButton>
-                                <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
-                                </MudButton>
-                                </ActivatorContent>
-                                </MudFileUpload>
-                                <MudButton OnClick="EditImage">
-                                <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
-                                </MudButton>
+                            <div class="d-flex flex-column align-center">
+                                <div class="event-icon-circle">
+                                    <img src="/qln-images/upload_icon.svg"
+                                         class="event-file-upload-style"
+                                         alt="Upload" />
                                 </div>
-                                </MudPaper>
-                            }
-               
-</MudItem>
-</MudGrid>
- </EditForm>
+                                <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
+                            </div>
+                        }
+                    </MudPaper>
+                </ActivatorContent>
+            </MudFileUpload>
+            @if (!string.IsNullOrEmpty(_coverImageError))
+            {
+                <div class="mud-error-text">@_coverImageError</div>
+            }
+            @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
+            {
+                <MudPaper Elevation="0" Class="event-image-picker-style">
+                    <div class="event-upload-action-style">
+                        <MudButton OnClick="EditImage">
+                            <img src="/qln-images/edit_icon.svg" alt="Edit" class="event-action-icon-style" />
+                        </MudButton>
+                        <MudButton OnClick="RemoveImage">
+                            <img src="/qln-images/delete_icon.svg" alt="delete" class="event-action-icon-style" />
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
 
-
-
-
+        </MudItem>
+    </MudGrid>
+</EditForm>
 
 
 <style>
-    .main-back{
-
+    .main-back {
     }
-    .event-form-title{
+
+    .event-form-title {
         font-family: 'Public Sans', sans-serif;
         font-size: 18px;
         font-weight: 600;
@@ -313,7 +305,8 @@
         padding: 10px 0;
         text-transform: none;
     }
-   .event-custom-add {
+
+    .event-custom-add {
         background-color: #FF7F38;
         font-family: 'Public Sans', sans-serif;
         font-size: 16px;
@@ -343,29 +336,35 @@
     }
 
     .event-image-picker-style {
-        background-color: #000000CC; 
-        width: 100%; 
-        height: 39px; 
+        background-color: #000000CC;
+        width: 100%;
+        height: 39px;
     }
-    .event-custom-textfield{
-        border-radius: 6px; 
+
+    .event-custom-textfield {
+        border-radius: 6px;
     }
-    .event-custom-textfield .mud-input-root {
-        border-radius: 8px;
-    }
-    .event-custom-timefield{
+
+        .event-custom-textfield .mud-input-root {
+            border-radius: 8px;
+        }
+
+    .event-custom-timefield {
         max-width: 343px;
         background-color: #FFFFFF;
-        border-radius: 6px; 
+        border-radius: 6px;
     }
-    .event-price-field-style{
+
+    .event-price-field-style {
         background-color: #F2F4F7;
         border-radius: 6px;
     }
+
     .event-enable-field-style {
         background-color: #FFFFFF;
         border-radius: 6px;
     }
+
     .event-custom-border .mud-input-root.mud-disabled {
         border: 2px solid #EAECF0 !important;
         background-color: #F2F4F7 !important;
@@ -373,114 +372,129 @@
         color: #D35400;
     }
 
-    
+
     .event-location-textfield .mud-input-adornment .mud-icon-root.mud-svg-icon {
         fill: #FF7F38 !important;
     }
+
     .event-custom-textfield label.mud-input-label {
-        color: #787878 !important; 
+        color: #787878 !important;
     }
+
     .event-date-picker-style {
         background-color: #FFFFFF;
         border-radius: 6px;
     }
+
     .event-mud-picker-inline {
         display: block !important;
     }
+
     .iframe-style {
         width: 100%;
         height: 220px;
     }
-    .event-main-content-style{
+
+    .event-main-content-style {
         background-color: transparent;
         gap: 16px
     }
+
     .event-side-content-style {
         background-color: #FAFAFA;
     }
+
     .event-cover-picker-style {
-        background-color: #FFFFFF; 
-        height: 174px; 
-        display: flex; 
+        background-color: #FFFFFF;
+        height: 174px;
+        display: flex;
         flex-direction: column;
     }
+
     .custom-timepicker-width {
-    width: 150px !important;  
-}
+        width: 150px !important;
+    }
+
     .event-custom-chip {
         background-color: #FAFAFA;
         color: #242424;
         border-radius: 4px !important;
         border: 1px solid #C0C0C0;
     }
+
     .event-image-container-style {
-        width: 100%; 
+        width: 100%;
         height: 170px;
     }
-    .event-file-upload-style{
-        width: 24px; 
+
+    .event-file-upload-style {
+        width: 24px;
         height: 24px;
     }
-    .event-uploaded-image-container{
-        width: 201px; 
-        height: 113px; 
-        overflow: hidden; 
-        border-radius: 8px; 
+
+    .event-uploaded-image-container {
+        width: 201px;
+        height: 113px;
+        overflow: hidden;
+        border-radius: 8px;
         background-color: gray;
     }
-    .event-uploaded-image-style{
-        width: 100%; 
+
+    .event-uploaded-image-style {
+        width: 100%;
         object-fit: cover;
     }
-    .event-upload-action-style{
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
+
+    .event-upload-action-style {
+        display: flex;
+        align-items: center;
+        justify-content: center;
         height: 100%;
     }
-    .event-action-icon-style{
+
+    .event-action-icon-style {
         width: 20px;
         height: 20px;
     }
+
     .event-cursor-pointer {
         cursor: pointer;
     }
-    .no-spinner input::-webkit-outer-spin-button,
-.no-spinner input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
 
-.no-spinner input[type=number] {
-    -moz-appearance: textfield; /* Firefox */
-}
+    .no-spinner input::-webkit-outer-spin-button,
+    .no-spinner input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .no-spinner input[type=number] {
+        -moz-appearance: textfield; /* Firefox */
+    }
+
     .event-picker-overlay {
         background-color: white;
         border-radius: 20px;
         padding: 10px;
         box-sizing: border-box;
     }
+
     .event-my-orange-theme {
+        .mud-picker-calendar .mud-day.mud-range-selection:hover, .mud-picker-calendar .mud-day.mud-range-end, .mud-picker-calendar .mud-day.mud-range-start:hover, .mud-picker-calendar .mud-day.mud-range.mud-range-between, .mud-picker-calendar .mud-day.mud-range-end:hover
 
-        .mud-picker-calendar .mud-day.mud-range-selection:hover,
-        .mud-picker-calendar .mud-day.mud-range-end,
-        .mud-picker-calendar .mud-day.mud-range-start:hover,
-        .mud-picker-calendar .mud-day.mud-range.mud-range-between,
-        .mud-picker-calendar .mud-day.mud-range-end:hover {
-            background-color: #FF7F38 !important;
-            color: white !important;
-        }
+    {
+        background-color: #FF7F38 !important;
+        color: white !important;
+    }
 
-        .mud-picker-calendar:nth-child(2) {
-            display: none !important;
-        }
+    .mud-picker-calendar:nth-child(2) {
+        display: none !important;
+    }
 
 
-        .mud-button-outlined.mud-button-outlined-primary {
-            color: #FF7F38 !important;
-            border-color: #FF7F38 !important;
-
-        }
+    .mud-button-outlined.mud-button-outlined-primary {
+        color: #FF7F38 !important;
+        border-color: #FF7F38 !important;
+    }
 
         .mud-button-outlined.mud-button-outlined-primary:hover {
             border-color: #FF7F38 !important;
@@ -488,75 +502,79 @@
         }
 
 
-        .mud-button-filled.mud-button-filled-primary {
-            background-color: #FF7F38 !important;
-            color: white !important;
-        }
-
-        .mud-primary-text {
-            color: #FF7F38 !important;
-        }
-
-        .mud-theme-primary {
-            background-color: #FF7F38 !important;
-            color: white !important;
-        }
+    .mud-button-filled.mud-button-filled-primary {
+        background-color: #FF7F38 !important;
+        color: white !important;
     }
+
+    .mud-primary-text {
+        color: #FF7F38 !important;
+    }
+
+    .mud-theme-primary {
+        background-color: #FF7F38 !important;
+        color: white !important;
+    }
+
+    }
+
     .event-summary-label {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 4px;
-    display: block;
-}
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 4px;
+        display: block;
+    }
 
-.event-summary-box {
-    border: 1px solid #D0D5DD;
-    border-radius: 6px;
-    padding: 10px 12px;
-    background-color: #FFFFFF;
-    font-size: 14px;
-    font-weight: 500;
-    min-height: 40px;
-    font-family: 'Public Sans', sans-serif;
-}
+    .event-summary-box {
+        border: 1px solid #D0D5DD;
+        border-radius: 6px;
+        padding: 10px 12px;
+        background-color: #FFFFFF;
+        font-size: 14px;
+        font-weight: 500;
+        min-height: 40px;
+        font-family: 'Public Sans', sans-serif;
+    }
 
-.event-cancel-button {
-    padding: 8px 16px;
-    background: #FFFFFF;
-    border: 1px solid #E3E3E3;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-}
+    .event-cancel-button {
+        padding: 8px 16px;
+        background: #FFFFFF;
+        border: 1px solid #E3E3E3;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
 
-.event-apply-button {
-    padding: 8px 16px;
-    background: #FF7F38;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-}
+    .event-apply-button {
+        padding: 8px 16px;
+        background: #FF7F38;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+    }
 
-.event-apply-button:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
-}
-.event-my-checkbox.mud-checkbox-root input[type="checkbox"]:checked + .mud-checkbox-ripple .mud-icon-root {
-    color: #FF7F38 !important;
-}
+        .event-apply-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
 
-.event-my-checkbox.mud-checkbox-root input[type="checkbox"]:not(:checked) + .mud-checkbox-ripple .mud-icon-root {
-    color: #D0D5DD !important;
-}
-.event-icon-circle {
-    background-color: #FAFAFA;
-    border-radius: 50%;
-    width: 64px;
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
+    .event-my-checkbox.mud-checkbox-root input[type="checkbox"]:checked + .mud-checkbox-ripple .mud-icon-root {
+        color: #FF7F38 !important;
+    }
+
+    .event-my-checkbox.mud-checkbox-root input[type="checkbox"]:not(:checked) + .mud-checkbox-ripple .mud-icon-root {
+        color: #D0D5DD !important;
+    }
+
+    .event-icon-circle {
+        background-color: #FAFAFA;
+        border-radius: 50%;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>

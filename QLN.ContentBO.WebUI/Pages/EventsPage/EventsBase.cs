@@ -41,13 +41,17 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected int pageSize = 12;
         protected bool IsLoading = true;
         protected bool IsLoadingEvent = true;
-
+        /// <summary>
+        /// Default status for events as Published
+        /// </summary>
+        protected int? currentStatus = 1;
         protected async Task HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            PaginatedData = await GetEvents(currentPage, pageSize);
+            PaginatedData = await GetEvents(currentPage, pageSize, status: currentStatus);
             StateHasChanged();
         }
+
         private async Task HandleSearch(string value)
         {
             searchText = value;
@@ -55,7 +59,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
             PaginatedData = await GetEvents(currentPage, pageSize, searchText);
             StateHasChanged();
         }
-        protected int? currentStatus = 1;
 
         protected async Task HandleStatusChange(int? status)
         {
@@ -77,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             pageSize = newPageSize;
             currentPage = 1;
-            PaginatedData = await GetEvents(currentPage, pageSize);
+            PaginatedData = await GetEvents(currentPage, pageSize, status: currentStatus);
             StateHasChanged();
         }
 
@@ -86,7 +89,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected async Task HandleSortOrderChange(bool ascending)
         {
             SortAscending = ascending;
-            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc");
+            PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", status: currentStatus);
             StateHasChanged();
         }
 
@@ -101,14 +104,12 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 .Select(slot => slot.Event.Id)
                 .ToHashSet();
 
-            var paginatedData = await GetEvents(1, 50,"","desc",1);
+            var paginatedData = await GetEvents(1, 50,"","desc", status: currentStatus);
             var allEvents = paginatedData.Items;
-            AllEventsList = allEvents
-                 .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
-                  .ToList();
-             AllEventsList = AllEventsList
-                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                        .ToList();
+
+            AllEventsList = [.. allEvents
+                .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)];
         }
         protected EventDTO? draggedItem;
 

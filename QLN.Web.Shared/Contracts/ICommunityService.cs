@@ -18,8 +18,8 @@ namespace QLN.Web.Shared.Contracts
         Task<bool> CreateCommunityPostAsync(CreateCommunityPostDto dto);
         Task<bool> PostCommentAsyncV2(CommentPostRequestDto dto);
         Task<PaginatedCommentResponseV2> GetCommentsByPostIdAsyncV2(string postId, int page, int pageSize);
-        Task<bool> ReportCommunityPostAsync(string postId);
-        Task<bool> ReportCommentAsync(string postId, string commentId);
+        Task<HttpResponseMessage> ReportCommunityPostAsync(string postId);
+        Task<HttpResponseMessage> ReportCommentAsync(string postId, string commentId);
         Task<bool> LikeCommunityPostAsync(string postId);
         Task<bool> LikeCommunityCommentstAsync(string postId,string commentId);
 

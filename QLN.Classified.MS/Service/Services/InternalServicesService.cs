@@ -4,6 +4,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static QLN.Common.DTO_s.NotificationDto;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -148,43 +149,44 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 ValidateCommon(dto);
-                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
-                  ConstantValues.Services.StoreName,
-                  dto.CategoryId.ToString(),
-                  cancellationToken : cancellationToken);
-                string? categoryName = null;
-                string? l1CategoryName = null;
-                string? l2CategoryName = null;
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                   ConstantValues.Services.StoreName,
+                   ConstantValues.Services.ServicesIndexKey,
+                   cancellationToken: cancellationToken
+                ) ?? new();
 
-                if (mainCategory != null)
+                foreach (var adKey in allAdKeys)
                 {
-                    categoryName = mainCategory.Category;
-                    var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                    if (l1Category != null)
-                    {
-                        l1CategoryName = l1Category.Name;
+                    var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
 
-                        var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                        if (l2Category != null)
-                        {
-                            l2CategoryName = l2Category.Name;
-                        }
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == dto.CreatedBy &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
-                var entity = new ServicesDto
+                var entity = new ServicesModel
                 {
+                    AdType = dto.AdType,
                     Id = dto.Id,
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
-                    CategoryName = categoryName,
-                    L1CategoryName = l1CategoryName,
-                    L2CategoryName = l2CategoryName,
+                    CategoryName = dto.CategoryName,
+                    L1CategoryName = dto.L1CategoryName,
+                    L2CategoryName = dto.L2CategoryName,
                     IsPriceOnRequest = dto.IsPriceOnRequest,
                     Price = dto.Price,
                     Title = dto.Title,
@@ -196,19 +198,28 @@ namespace QLN.Classified.MS.Service.Services
                     EmailAddress = dto.EmailAddress,
                     Location = dto.Location,
                     LocationId = dto.LocationId,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    LicenseCertificate = dto.LicenseCertificate,
+                    Comments = dto.Comments,
+                    SubscriptionId = dto.SubscriptionId,
+                    ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
-                    IsFeatured = false,
-                    IsPromoted = false,
-                    AdType = dto.AdType,
-                    Status = dto.Status,
                     UserName = dto.UserName,
+                    Status = dto.Status,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
+                    IsRefreshed = dto.IsRefreshed,
+                    RefreshExpiryDate = dto.RefreshExpiryDate,
+                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                    PromotedExpiryDate = dto.PromotedExpiryDate,
+                    ExpiryDate = dto.ExpiryDate,
                     IsActive = true,
-                    CreatedBy = userId,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = null,
-                    UpdatedBy = null
+                    CreatedBy = dto.CreatedBy,
+                    CreatedAt = dto.CreatedAt,
+                    PublishedDate = dto.PublishedDate ?? DateTime.UtcNow
                 };
 
                 var key = dto.Id.ToString();
@@ -218,6 +229,24 @@ namespace QLN.Classified.MS.Service.Services
                     entity,
                     cancellationToken: cancellationToken
                 );
+                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
+
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
                 var keys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.Services.StoreName,
                     ConstantValues.Services.ServicesIndexKey,
@@ -235,7 +264,7 @@ namespace QLN.Classified.MS.Service.Services
                     );
                 }
 
-                return entity;
+                return "Service Ad Created Successfully";
             }
             catch (ArgumentException ex)
             {
@@ -246,7 +275,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("Error creating service ad", ex);
             }
         }
-        private static void ValidateCommon(ServicesDto dto)
+        private static void ValidateCommon(ServicesModel dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Title))
                 throw new ArgumentException("Title is required.");
@@ -276,33 +305,74 @@ namespace QLN.Classified.MS.Service.Services
 
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
+
+            var therapeuticL2s = new[] { "spa", "wellness centers" };
+
+            bool isTherapeutic =
+                (!string.IsNullOrWhiteSpace(dto.L1CategoryName) && dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrWhiteSpace(dto.L2CategoryName) && therapeuticL2s.Contains(dto.L2CategoryName.Trim().ToLowerInvariant()));
+
+            if (isTherapeutic)
+            {
+                if (string.IsNullOrWhiteSpace(dto.LicenseCertificate))
+                    throw new ArgumentException("License certificate is required for therapeutic services.");
+
+                var validExtensions = new[] { ".pdf", ".png", ".jpg" };
+                var extension = Path.GetExtension(dto.LicenseCertificate)?.ToLowerInvariant();
+
+                if (string.IsNullOrEmpty(extension) || !validExtensions.Contains(extension))
+                    throw new ArgumentException("License certificate must be a PDF, PNG, or JPG file.");
+            }
         }
-        public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 ValidateCommon(dto);
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Service Ad ID is required for update.");
-                var key = dto.Id.ToString();
 
-                var existing = await _dapr.GetStateAsync<ServicesDto>(
+                var key = dto.Id.ToString();
+                var existing = await _dapr.GetStateAsync<ServicesModel>(
                     ConstantValues.Services.StoreName,
                     key,
                     cancellationToken: cancellationToken
                 );
+                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                  ConstantValues.Services.StoreName,
+                  dto.CategoryId.ToString(),
+                  cancellationToken: cancellationToken);
+                string? categoryName = null;
+                string? l1CategoryName = null;
+                string? l2CategoryName = null;
 
+                if (mainCategory != null)
+                {
+                    categoryName = mainCategory.Category;
+                    var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                    if (l1Category != null)
+                    {
+                        l1CategoryName = l1Category.Name;
+
+                        var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                        if (l2Category != null)
+                        {
+                            l2CategoryName = l2Category.Name;
+                        }
+                    }
+                }
                 if (existing == null)
                     throw new InvalidDataException("Service Ad not found for update.");
-                var entity = new ServicesDto
+
+                var entity = new ServicesModel
                 {
                     Id = existing.Id,
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
-                    CategoryName = dto.CategoryName,
-                    L1CategoryName = dto.L1CategoryName,
-                    L2CategoryName = dto.L2CategoryName,
+                    CategoryName = categoryName,
+                    L1CategoryName = l1CategoryName,
+                    L2CategoryName = l2CategoryName,
                     IsPriceOnRequest = dto.IsPriceOnRequest,
                     Price = dto.Price,
                     Title = dto.Title,
@@ -314,12 +384,24 @@ namespace QLN.Classified.MS.Service.Services
                     EmailAddress = dto.EmailAddress,
                     Location = dto.Location,
                     LocationId = dto.LocationId,
+                    StreetNumber = dto.StreetNumber,
+                    BuildingNumber = dto.BuildingNumber,
+                    LicenseCertificate = dto.LicenseCertificate,
+                    Comments = dto.Comments,
+                    SubscriptionId = dto.SubscriptionId,
+                    ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
                     AdType = dto.AdType,
-                    IsFeatured = false,
-                    IsPromoted = false,
+                    IsFeatured = dto.IsFeatured,
+                    IsPromoted = dto.IsPromoted,
+                    IsRefreshed = dto.IsRefreshed,
+                    RefreshExpiryDate = dto.RefreshExpiryDate,
+                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                    PromotedExpiryDate = dto.PromotedExpiryDate,
+                    ExpiryDate = dto.ExpiryDate,
+                    UserName = dto.UserName,
                     PublishedDate = dto.PublishedDate,
                     Status = dto.Status,
                     IsActive = dto.IsActive,
@@ -335,7 +417,39 @@ namespace QLN.Classified.MS.Service.Services
                     entity,
                     cancellationToken: cancellationToken
                 );
+                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
 
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
+                {
+                    Destinations = new List<string> { "email" },
+                    Recipients = new List<RecipientDto>
+                    {
+                        new RecipientDto
+                        {
+                            Name = dto.UserName,
+                            Email = dto.EmailAddress
+                        }
+                    },
+                    Subject = $"Service Ad '{dto.Title}' was updated",
+                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
+                    Html = $"{dto.Title} has been updated."
+                }, cancellationToken);
                 return "Service Ad updated successfully.";
             }
             catch (ArgumentException ex)
@@ -347,12 +461,74 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("Error updating service ad", ex);
             }
         }
+        private async Task<CommonIndexRequest> IndexServiceToAzureSearch(ServicesModel dto, CancellationToken cancellationToken)
+        {
+          
+            var indexDoc = new ServicesIndex
+            {
+                Id = dto.Id.ToString(),
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                CategoryName = dto.CategoryName,
+                L1CategoryName = dto.L1CategoryName,
+                L2CategoryName = dto.L2CategoryName,
+                Price = (double)dto.Price,
+                IsPriceOnRequest = dto.IsPriceOnRequest,
+                Title = dto.Title,
+                Description = dto.Description,
+                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
+                PhoneNumber = dto.PhoneNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsappNumber = dto.WhatsappNumber,
+                EmailAddress = dto.EmailAddress,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                StreetNumber = dto.StreetNumber,
+                BuildingNumber = dto.BuildingNumber,
+                LicenseCertificate = dto.LicenseCertificate,
+                ZoneId = dto.ZoneId,
+                SubscriptionId = dto.SubscriptionId,
+                Comments = dto.Comments,
+                Longitude = (double)dto.Longitude,
+                Lattitude = (double)dto.Lattitude,
+                AdType = dto.AdType.ToString(),
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                RefreshExpiryDate = dto.RefreshExpiryDate,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                UserName = dto.UserName,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Images = dto.PhotoUpload.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ServicesIndex,
+                ServicesItem = indexDoc
+            };
+            return indexRequest;
+
+        }
+
         private static bool IsValidEmail(string email)
         {
             return !string.IsNullOrWhiteSpace(email) &&
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
-        public async Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default)
+        public async Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default)
         {
             var keys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.Services.StoreName,
@@ -361,7 +537,7 @@ namespace QLN.Classified.MS.Service.Services
             ) ?? new();
 
             if (keys.Count == 0)
-                return new List<ServicesDto>();
+                return new List<ServicesModel>();
 
             var items = await _dapr.GetBulkStateAsync(
                 ConstantValues.Services.StoreName,
@@ -381,12 +557,12 @@ namespace QLN.Classified.MS.Service.Services
                 .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                 .Select(i =>
                 {
-                    return JsonSerializer.Deserialize<ServicesDto>(i.Value, options);
+                    return JsonSerializer.Deserialize<ServicesModel>(i.Value, options);
                 })
                 .Where(x => x != null && x.Id != Guid.Empty && !string.IsNullOrWhiteSpace(x.Title) && x.IsActive)!
                 .ToList();
         }
-        public async Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
         {
             var key = id.ToString();
 
@@ -399,7 +575,7 @@ namespace QLN.Classified.MS.Service.Services
             if (!indexKeys.Contains(key))
                 return null; 
 
-            var ad = await _dapr.GetStateAsync<ServicesDto>(
+            var ad = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
                 key,
                 cancellationToken: cancellationToken
@@ -411,7 +587,7 @@ namespace QLN.Classified.MS.Service.Services
         {
             var key = id.ToString();
 
-            var existing = await _dapr.GetStateAsync<ServicesDto>(
+            var existing = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
                 key,
                 cancellationToken: cancellationToken
@@ -430,10 +606,28 @@ namespace QLN.Classified.MS.Service.Services
                 existing,
                 cancellationToken: cancellationToken
             );
+            var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
 
             return "Service Ad soft-deleted successfully.";
         }
-        public async Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
         {
             var indexKeys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.Services.StoreName,
@@ -443,7 +637,7 @@ namespace QLN.Classified.MS.Service.Services
 
             if (indexKeys.Count == 0)
             {
-                return new ServicesPagedResponse<ServicesDto>
+                return new ServicesPagedResponse<ServicesModel>
                 {
                     TotalCount = 0,
                     PageNumber = dto.PageNumber,
@@ -461,7 +655,7 @@ namespace QLN.Classified.MS.Service.Services
 
             var filtered = ads
                 .Where(e => !string.IsNullOrWhiteSpace(e.Value))
-                .Select(e => JsonSerializer.Deserialize<ServicesDto>(e.Value!, _jsonOptions))
+                .Select(e => JsonSerializer.Deserialize<ServicesModel>(e.Value!, _jsonOptions))
                 .Where(e => e != null && e.Status == dto.Status && e.IsActive)
                 .ToList();
 
@@ -473,7 +667,7 @@ namespace QLN.Classified.MS.Service.Services
                 .Take((int)dto.PerPage)
                 .ToList();
 
-            return new ServicesPagedResponse<ServicesDto>
+            return new ServicesPagedResponse<ServicesModel>
             {
                 TotalCount = totalCount,
                 PageNumber = dto.PageNumber,
@@ -487,9 +681,9 @@ namespace QLN.Classified.MS.Service.Services
             PropertyNameCaseInsensitive = true,
             WriteIndented = false
         };
-        public async Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct)
         {
-            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+            var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 cancellationToken: ct
@@ -504,11 +698,29 @@ namespace QLN.Classified.MS.Service.Services
                 serviceAd,
                 cancellationToken: ct
             );
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: message,
+                    cancellationToken: ct
+                );
+            }
             return serviceAd;
         }
-        public async Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct)
         {
-            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+            var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 cancellationToken: ct
@@ -524,12 +736,29 @@ namespace QLN.Classified.MS.Service.Services
                 serviceAd,
                 cancellationToken: ct
             );
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
 
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: message,
+                    cancellationToken: ct
+                );
+            }
             return serviceAd;
         }
-        public async Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct)
         {
-            var serviceAd = await _dapr.GetStateAsync<ServicesDto>(
+            var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
                 request.ServiceId.ToString(),
                 cancellationToken: ct
@@ -545,10 +774,96 @@ namespace QLN.Classified.MS.Service.Services
                 serviceAd,
                 cancellationToken: ct
             );
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
 
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: message,
+                    cancellationToken: ct
+                );
+            }
             return serviceAd;
         }
-        public async Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
+        public async Task<ServicesModel> PublishService(Guid id, CancellationToken ct)
+        {
+            var serviceAd = await _dapr.GetStateAsync<ServicesModel>(
+                ConstantValues.Services.StoreName,
+                id.ToString(),
+                cancellationToken: ct
+            );
+            var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+               ConstantValues.Services.StoreName,
+               ConstantValues.Services.ServicesIndexKey,
+               cancellationToken: ct
+            ) ?? new();
+
+            foreach (var adKey in allAdKeys)
+            {
+                var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                    ConstantValues.Services.StoreName,
+                    adKey,
+                    cancellationToken: ct
+                );
+
+                if (existingAd != null &&
+                    existingAd.CreatedBy == serviceAd.CreatedBy &&
+                    existingAd.L2CategoryId == serviceAd.L2CategoryId &&
+                    existingAd.IsActive &&
+                    existingAd.Status == ServiceStatus.Published)
+                {
+                    throw new InvalidDataException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                }
+            }
+            if (serviceAd == null)
+                throw new InvalidDataException("Service Ad not found.");
+
+            if (serviceAd.Status == ServiceStatus.Published)
+                throw new InvalidDataException("Service is already published.");
+
+            if (serviceAd.Status != ServiceStatus.Unpublished)
+                throw new InvalidDataException("Unpublished Service only be published.");
+
+            serviceAd.Status = ServiceStatus.Published;
+            serviceAd.PublishedDate = DateTime.UtcNow;
+            serviceAd.UpdatedAt = DateTime.UtcNow;
+
+            await _dapr.SaveStateAsync(
+                ConstantValues.Services.StoreName,
+                id.ToString(),
+                serviceAd,
+                cancellationToken: ct
+            );
+            var upsertRequest = await IndexServiceToAzureSearch(serviceAd, ct);
+
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ServicesIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                data: message,
+                    cancellationToken: ct
+                );
+            }
+            return serviceAd;
+        }
+        public async Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
         {
             var indexKeys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.Services.StoreName,
@@ -556,14 +871,14 @@ namespace QLN.Classified.MS.Service.Services
                 cancellationToken: ct
             ) ?? new();
 
-            var updated = new List<ServicesDto>();
+            var updated = new List<ServicesModel>();
 
             foreach (var id in request.AdIds)
             {
                 if (!indexKeys.Contains(id.ToString()))
                     continue;
 
-                var ad = await _dapr.GetStateAsync<ServicesDto>(
+                var ad = await _dapr.GetStateAsync<ServicesModel>(
                     ConstantValues.Services.StoreName,
                     id.ToString(),
                     cancellationToken: ct
@@ -617,6 +932,24 @@ namespace QLN.Classified.MS.Service.Services
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = request.UpdatedBy;
                     await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, id.ToString(), ad, cancellationToken: ct);
+                    var upsertRequest = await IndexServiceToAzureSearch(ad, ct);
+
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ServicesIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                            cancellationToken: ct
+                        );
+                    }
                     updated.Add(ad);
                 }
             }

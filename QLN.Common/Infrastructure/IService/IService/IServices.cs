@@ -13,15 +13,16 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
         Task<List<ServicesCategory>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default);
-        Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default);
-        Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default);
-        Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default);
-        Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default);
+        Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default);
+        Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default);
+        Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default);
+        Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default);
         Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default);
-        Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default);        
-        Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct);
-        Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct);
-        Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct);
-        Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
+        Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default);        
+        Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct);
+        Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct);
+        Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct);
+        Task<ServicesModel> PublishService(Guid id, CancellationToken ct);
+        Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
     }
 }

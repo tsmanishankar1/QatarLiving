@@ -33,6 +33,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected ArticleCategory CategoryTwo { get; set; } = new();
         protected List<NewsSubCategory> FilteredSubCategories = [];
         protected List<NewsSubCategory> FilteredSubCategoriesTwo = [];
+        protected MudFileUpload<IBrowserFile> _fileUpload;
 
         protected override async Task OnInitializedAsync()
         {
@@ -173,10 +174,15 @@ namespace QLN.ContentBO.WebUI.Components.News
                 IsBtnDisabled = false;
             }
         }
+        protected async void EditImage()
+        {
+            await _fileUpload.OpenFilePickerAsync();
+        }
 
         protected void RemoveImage()
         {
             article.CoverImageUrl = null;
+            _fileUpload?.ResetValidation();
         }
 
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
@@ -186,18 +192,17 @@ namespace QLN.ContentBO.WebUI.Components.News
                 var file = e.File;
                 if (file != null)
                 {
-                    using var stream = file.OpenReadStream(5 * 1024 * 1024); // 5MB limit
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
                     using var memoryStream = new MemoryStream();
                     await stream.CopyToAsync(memoryStream);
                     var base64 = Convert.ToBase64String(memoryStream.ToArray());
                     article.CoverImageUrl = $"data:{file.ContentType};base64,{base64}";
+                    _fileUpload?.ResetValidation();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleFilesChanged");
-                ResetForm();
-                StateHasChanged();
             }
         }
 

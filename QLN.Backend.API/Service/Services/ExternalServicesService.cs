@@ -2,14 +2,11 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
-using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
-using QLN.Common.Infrastructure.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using static QLN.Common.DTO_s.NotificationDto;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -17,14 +14,11 @@ namespace QLN.Backend.API.Service.Services
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
-        private readonly IFileStorageBlobService _blobStorage;
         private readonly ISearchService _searchService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger,
-            IFileStorageBlobService blobStorage, ISearchService searchService)
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, ISearchService searchService)
         {
             _dapr = dapr;
             _logger = logger;
-            _blobStorage = blobStorage;
             _searchService = searchService;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
@@ -141,32 +135,10 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> CreateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
         {
-            string? FileName = null;
             try
             {
-                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
-                {
-                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
-                    {
-                        var image = dto.PhotoUpload[i];
-
-                        if (!string.IsNullOrWhiteSpace(image?.Url))
-                        {
-                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url!);
-
-                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
-                                throw new ArgumentException("Only jpg, png, heic and webp images are allowed.");
-
-                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
-                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
-
-                            image.FileName = imageName;
-                            image.Url = blobUrl;
-                        }
-                    }
-                }
                 var url = "/api/service/createbyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -182,154 +154,24 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
-                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                var createdDto = JsonSerializer.Deserialize<ServicesDto>(responseJson, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                    await response.Content.ReadAsStringAsync(cancellationToken);
 
-                if (createdDto is null)
-                    throw new InvalidDataException("Invalid service returned from creation.");
-
-                await IndexServiceToAzureSearch(createdDto, cancellationToken);
-                return createdDto;
+                return "Service Ad Created Successfully";
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error creating service ad");
                 throw;
             }
         }
-        private async Task IndexServiceToAzureSearch(ServicesDto dto, CancellationToken cancellationToken)
+        public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
         {
-            var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
-                 ConstantValues.Services.StoreName,
-                 dto.CategoryId.ToString(),
-                 cancellationToken: cancellationToken);
-            string? categoryName = null;
-            string? l1CategoryName = null;
-            string? l2CategoryName = null;
-
-            if (mainCategory != null)
-            {
-                categoryName = mainCategory.Category;
-                var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                if (l1Category != null)
-                {
-                    l1CategoryName = l1Category.Name;
-
-                    var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                    if (l2Category != null)
-                    {
-                        l2CategoryName = l2Category.Name;
-                    }
-                }
-            }
-            var indexDoc = new ServicesIndex
-            {
-                Id = dto.Id.ToString(),
-                CategoryId = dto.CategoryId.ToString(),
-                L1CategoryId = dto.L1CategoryId.ToString(),
-                L2CategoryId = dto.L2CategoryId.ToString(),
-                CategoryName = categoryName,
-                L1CategoryName = l1CategoryName,
-                L2CategoryName = l2CategoryName,
-                Price = (double)dto.Price,
-                IsPriceOnRequest = dto.IsPriceOnRequest,
-                Title = dto.Title,
-                Description = dto.Description,
-                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                PhoneNumber = dto.PhoneNumber,
-                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                WhatsappNumber = dto.WhatsappNumber,
-                EmailAddress = dto.EmailAddress,
-                Location = dto.Location,
-                LocationId = dto.LocationId,
-                Longitude = (double)dto.Longitude,
-                Lattitude = (double)dto.Lattitude,
-                AdType = dto.AdType.ToString(),
-                IsFeatured = dto.IsFeatured,
-                IsPromoted = dto.IsPromoted,
-                Status = dto.Status.ToString(),
-                FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
-                IsRefreshed = dto.IsRefreshed,
-                PublishedDate = dto.PublishedDate,
-                ExpiryDate = dto.ExpiryDate,
-                UserName = dto.UserName,
-                IsActive = dto.IsActive,
-                CreatedBy = dto.CreatedBy,
-                CreatedAt = dto.CreatedAt,
-                UpdatedAt = dto.UpdatedAt,
-                UpdatedBy = dto.UpdatedBy,
-                Images = dto.PhotoUpload.Select(i => new ImageInfo
-                {
-                    AdImageFileNames = i.FileName,
-                    Url = i.Url,
-                    Order = i.Order
-                }).ToList()
-            };
-            var indexRequest = new CommonIndexRequest
-            {
-                IndexName = ConstantValues.IndexNames.ServicesIndex,
-                ServicesItem = indexDoc
-            };
-
             try
             {
-                await _searchService.UploadAsync(indexRequest);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Payload: {Payload}", JsonSerializer.Serialize(indexRequest.ClassifiedsItem));
-                throw;
-            }
-        }
-        private async Task CleanupUploadedFiles(string? file, CancellationToken cancellationToken)
-        {
-            if (!string.IsNullOrWhiteSpace(file))
-                await _blobStorage.DeleteFile(file, "PhotoUpload", cancellationToken);
-        }
-        public async Task<string> UpdateServiceAd(string userId, ServicesDto dto, CancellationToken cancellationToken = default)
-        {
-            string? FileName = null;
-            try
-            {
-                if (dto.PhotoUpload != null && dto.PhotoUpload.Any())
-                {
-                    for (int i = 0; i < dto.PhotoUpload.Count; i++)
-                    {
-                        var image = dto.PhotoUpload[i];
-
-                        if (string.IsNullOrWhiteSpace(image?.Url))
-                            throw new ArgumentException("Image URL is required.");
-
-                        if (image.Url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                        {
-                            image.FileName = Path.GetFileName(new Uri(image.Url).AbsolutePath);
-                        }
-                        else
-                        {
-                            var (ext, base64Data) = Base64Helper.ParseBase64(image.Url);
-
-                            if (ext is not ("heic" or "png" or "jpg" or "webp"))
-                                throw new ArgumentException("Only heic, jpg, png, and webp images are allowed.");
-
-                            var imageName = $"{dto.Title}_{userId}_{i}.{ext}";
-                            var blobUrl = await _blobStorage.SaveBase64File(base64Data, imageName, "imageurl", cancellationToken);
-
-                            image.FileName = imageName;
-                            image.Url = blobUrl;
-                        }
-                    }
-                }
                 var url = "/api/service/updatebyuserid";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -345,48 +187,30 @@ namespace QLN.Backend.API.Service.Services
                     }
                     catch
                     {
-                        await CleanupUploadedFiles(FileName, cancellationToken);
                         errorMessage = errorJson;
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                await IndexServiceToAzureSearch(dto, cancellationToken);
-                await _dapr.PublishEventAsync("pubsub", "notifications-email", new NotificationRequest
-                {
-                    Destinations = new List<string> { "email" }, 
-                    Recipients = new List<RecipientDto>
-                    {
-                        new RecipientDto
-                        {
-                            Name = dto.UserName,   
-                            Email = dto.EmailAddress    
-                        }
-                    },
-                    Subject = $"Service Ad '{dto.Title}' was updated",
-                    Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
-                    Html = $"{dto.Title} has been updated."
-                }, cancellationToken);
 
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
             {
-                await CleanupUploadedFiles(FileName, cancellationToken);
                 _logger.LogError(ex, "Error updating service ad");
                 throw;
             }
         }
-        public async Task<List<ServicesDto>> GetAllServiceAds(CancellationToken cancellationToken = default)
+        public async Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<ServicesDto>>(
+                var response = await _dapr.InvokeMethodAsync<List<ServicesModel>>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     "/api/service/getall",
                     cancellationToken
                 );
-                return response ?? new List<ServicesDto>();
+                return response ?? new List<ServicesModel>();
             }
             catch (Exception ex)
             {
@@ -394,12 +218,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/service/getbyid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, ServicesDto>(
+                return await _dapr.InvokeMethodAsync<object?, ServicesModel>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -457,12 +281,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<ServicesDto>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = "/api/service/getbystatus";
-                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesDto>>(
+                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesModel>>(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -476,7 +300,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -489,7 +313,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -497,7 +321,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -516,7 +339,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -529,7 +352,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -537,7 +360,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -556,7 +378,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesDto> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct)
         {
             try
             {
@@ -569,7 +391,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesDto>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -577,7 +399,6 @@ namespace QLN.Backend.API.Service.Services
                     if (serviceDto is null)
                         throw new InvalidDataException("Invalid data returned from service.");
 
-                    await IndexServiceToAzureSearch(serviceDto, ct);
                     return serviceDto;
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
@@ -596,7 +417,50 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<ServicesDto>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        public async Task<ServicesModel> PublishService(Guid id, CancellationToken ct)
+        {
+            try
+            {
+                var url = $"/api/service/publish?id={id}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    url
+                );
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
+
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    var json = await response.Content.ReadAsStringAsync(ct);
+                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (serviceDto is null)
+                        throw new InvalidDataException("Invalid data returned from service.");
+
+                    return serviceDto;
+                }
+                else if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException("Service not found.");
+                }
+                else
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    throw new InvalidDataException($"Service error: {errorJson}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error publishing service");
+                throw;
+            }
+        }
+        public async Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -620,18 +484,11 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                var moderatedAds = JsonSerializer.Deserialize<List<ServicesDto>>(json, new JsonSerializerOptions
+                var moderatedAds = JsonSerializer.Deserialize<List<ServicesModel>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
-                if (moderatedAds != null && moderatedAds.Any())
-                {
-                    foreach (var dto in moderatedAds)
-                    {
-                        await IndexServiceToAzureSearch(dto, cancellationToken);
-                    }
-                }
-                return moderatedAds ?? new List<ServicesDto>();
+                return moderatedAds ?? new List<ServicesModel>();
             }
             catch (Exception ex)
             {

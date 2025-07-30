@@ -7,17 +7,14 @@ using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
-using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Pages.EventsPage;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
-using QLN.ContentBO.WebUI.Components;
 using System.Net;
-using Markdig.Syntax;
+
 namespace QLN.ContentBO.WebUI.Pages
 {
     public class EventCreateFormBase : QLComponentBase
@@ -39,6 +36,7 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string? _DateError;
         protected string? _timeError;
         protected string? _PriceError;
+        protected string? _CategoryError;
         protected string? _LocationError;
         protected string? _descriptionerror;
         protected string? _coverImageError;
@@ -87,7 +85,6 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
-
         protected TimeSpan? EndTimeSpan
         {
             get => CurrentEvent.EventSchedule.EndTime.HasValue
@@ -108,6 +105,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
 
         }
+
         [Inject] private IJSRuntime JS { get; set; }
         protected string? uploadedImage;
         protected MudExRichTextEdit Editor;
@@ -124,10 +122,15 @@ namespace QLN.ContentBO.WebUI.Pages
             public TimeSpan? StartTime { get; set; }
             public TimeSpan? EndTime { get; set; }
         }
+
         protected List<DayTimeEntry> DayTimeList = new();
+
         public double EventLat { get; set; } = 48.8584;
+
         public double EventLong { get; set; } = 2.2945;
+
         public bool _isDateRangeSelected = false;
+
         protected DateRange? _dateRange
         {
             get
@@ -144,12 +147,16 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 if (value != null && CurrentEvent?.EventSchedule != null)
                 {
-                    CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(value.Start ?? DateTime.Today);
-                    CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(value.End ?? DateTime.Today);
+                    var start = value.Start ?? DateTime.Today;
+                    var end = value.End ?? start; 
+                    CurrentEvent.EventSchedule.StartDate = DateOnly.FromDateTime(start);
+                    CurrentEvent.EventSchedule.EndDate = DateOnly.FromDateTime(end);
                     _isDateRangeSelected = true;
                 }
+                StateHasChanged();
             }
         }
+
         protected ElementReference _popoverDiv;
 
         protected bool _showDatePicker = false;
@@ -173,6 +180,9 @@ namespace QLN.ContentBO.WebUI.Pages
         public void Closed(MudChip<string> chip) => SelectedLocations.Remove(chip.Text);
         protected string SelectedLocationId;
         private bool _shouldInitializeMap = true;
+
+        protected MudFileUpload<IBrowserFile> _fileUpload;
+
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
@@ -184,19 +194,22 @@ namespace QLN.ContentBO.WebUI.Pages
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse ?? [];
         }
-        protected async  void OnCancelClicked()
+
+        protected async void OnCancelClicked()
         {
-             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
             var dialog = await DialogService.ShowAsync<DiscardArticleDialog>("", options);
             var result = await dialog.Result;
             if (!result.Canceled)
             {
                 ClearForm();
-                  await JS.InvokeVoidAsync("resetLeafletMap");
+                await JS.InvokeVoidAsync("resetLeafletMap");
                 await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                 StateHasChanged();
             }
         }
+
+
         protected Task OpenDialogAsync()
         {
             var options = new DialogOptions
@@ -207,6 +220,7 @@ namespace QLN.ContentBO.WebUI.Pages
             };
             return DialogService.ShowAsync<MessageBox>(string.Empty, options);
         }
+
         protected async Task DeleteEventOnClick()
         {
             var parameters = new DialogParameters
@@ -217,24 +231,56 @@ namespace QLN.ContentBO.WebUI.Pages
             var dialog = DialogService.Show<EventDiscardArticle>("", parameters, options);
             var result = await dialog.Result;
         }
+
         protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
         {
-            var file = e.File;
-            if (file != null)
+            try
             {
-                using var stream = file.OpenReadStream(5 * 1024 * 1024);
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                var base64 = Convert.ToBase64String(memoryStream.ToArray());
-                CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
-                _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
-                _coverImageError = null;
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024);
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    CurrentEvent.CoverImage = $"data:{file.ContentType};base64,{base64}";
+                    _editContext.NotifyFieldChanged(FieldIdentifier.Create(() => CurrentEvent.CoverImage));
+                    _coverImageError = null;
+                    _fileUpload?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleFilesChanged");
             }
         }
+
         public void OpenTimeRangePicker()
         {
             _isTimeDialogOpen = true;
         }
+        protected void OnTimeSlotTypeChanged(EventTimeType newValue)
+        {
+            CurrentEvent.EventSchedule.TimeSlotType = newValue;
+            if (newValue == EventTimeType.GeneralTime)
+            {
+                GenerateDayTimeList();
+                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
+            }
+            else if (newValue == EventTimeType.PerDayTime)
+            {
+                StartTimeSpan = null;
+                EndTimeSpan = null;
+                CurrentEvent.EventSchedule.FreeTimeText = string.Empty;
+            }
+            else
+            { 
+                StartTimeSpan = null;
+                EndTimeSpan = null;
+                GenerateDayTimeList();
+            }
+        }
+
         protected void ApplyTimeRange()
         {
             if (CurrentEvent.EventSchedule.StartTime.HasValue && CurrentEvent.EventSchedule.EndTime.HasValue)
@@ -247,6 +293,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             _isTimeDialogOpen = false;
         }
+
         protected void AddLocation()
         {
             if (!string.IsNullOrWhiteSpace(NewLocation) && !SelectedLocations.Contains(NewLocation))
@@ -255,6 +302,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 NewLocation = string.Empty;
             }
         }
+
         protected void HandleKeyPress(KeyboardEventArgs args)
         {
             if (args.Key == "Enter")
@@ -262,6 +310,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 AddLocation();
             }
         }
+
         protected async Task UploadFiles(IBrowserFile file)
         {
             if (file is not null)
@@ -272,19 +321,28 @@ namespace QLN.ContentBO.WebUI.Pages
                 uploadedImage = $"data:{file.ContentType};base64,{base64}";
             }
         }
-        protected void EditImage()
+
+        protected async void EditImage()
+        {
+            await _fileUpload.OpenFilePickerAsync();
+        }
+
+        protected void RemoveImage()
         {
             CurrentEvent.CoverImage = null;
+            _fileUpload?.ResetValidation();
         }
 
         protected void DeleteImage()
         {
             uploadedImage = null;
         }
+
         protected Task EventAdded(string value)
         {
             return Task.CompletedTask;
         }
+
         protected List<string> SelectedLocations = new()
         {
             "Viva Bahriya - The Pearl Island"
@@ -294,6 +352,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             CurrentEvent.Location = string.Empty;
         }
+
         protected async void CancelDatePicker()
         {
             _showDatePicker = false;
@@ -305,6 +364,7 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             StateHasChanged();
         }
+
         protected async Task ApplyDatePicker()
         {
             if (_dateRange?.Start != null)
@@ -331,6 +391,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
+
         protected void ToggleDatePicker()
         {
             _showDatePicker = !_showDatePicker;
@@ -340,6 +401,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
             }
         }
+
         protected void ClearSelectedDate()
         {
             if (!string.IsNullOrWhiteSpace(SelectedDateLabel))
@@ -347,13 +409,13 @@ namespace QLN.ContentBO.WebUI.Pages
                 SelectedDateLabel = null;
             }
             else
-            { 
+            {
                 _showDatePicker = !_showDatePicker;
 
-            if (_showDatePicker)
-            {
-                _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
-            }
+                if (_showDatePicker)
+                {
+                    _dateRange = new DateRange(_confirmedDateRange.Start, _confirmedDateRange.End);
+                }
             }
 
         }
@@ -380,11 +442,23 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             _DateError = null;
             _descriptionerror = null;
+            _CategoryError = null;
             _PriceError = null;
             _LocationError = null;
             _timeError = null;
             _coverImageError = null;
             bool hasError = false;
+            if (string.IsNullOrWhiteSpace(SelectedDateLabel))
+            {
+                Snackbar.Add("Date is required", severity: Severity.Error);
+                return;
+            }
+            if (CurrentEvent?.CategoryId == 0)
+            {
+                _CategoryError = "Category is required.";
+                Snackbar.Add("Category is required.", severity: Severity.Error);
+                return;
+            }
             if (CurrentEvent?.EventType == 0)
             {
                 _eventTypeError = "Event Type is required.";
@@ -393,11 +467,16 @@ namespace QLN.ContentBO.WebUI.Pages
             }
             if (CurrentEvent?.EventType == EventType.FeePrice && CurrentEvent.Price == null)
             {
-                _PriceError = "Price is required for Fees events.";
                 Snackbar.Add("Price is required for Fees events.", severity: Severity.Error);
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
+            {
+                _LocationError = "Location is required.";
+                Snackbar.Add("Location is required.", severity: Severity.Error);
+                return;
+            }
             if (string.IsNullOrWhiteSpace(CurrentEvent.Location))
             {
                 _LocationError = "Location is required.";
@@ -476,6 +555,8 @@ namespace QLN.ContentBO.WebUI.Pages
                     await JS.InvokeVoidAsync("resetLeafletMap");
                     await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+
                 }
                 else if (response.StatusCode == HttpStatusCode.Unauthorized)
                 {
@@ -496,35 +577,6 @@ namespace QLN.ContentBO.WebUI.Pages
             }
 
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private async Task<List<EventCategoryModel>> GetEventsCategories()
         {
             try
@@ -546,6 +598,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 return [];
             }
         }
+
         private async Task<List<LocationEventDto>> GetEventsLocations()
         {
             var flattenedList = new List<LocationEventDto>();
@@ -583,6 +636,7 @@ namespace QLN.ContentBO.WebUI.Pages
                 return new List<LocationEventDto>();
             }
         }
+
         private DotNetObjectReference<EventCreateFormBase>? _dotNetRef;
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -684,7 +738,6 @@ namespace QLN.ContentBO.WebUI.Pages
             DayTimeList.Clear();
             _timeError = string.Empty;
             _descriptionerror = string.Empty;
-            _PriceError = string.Empty;
             _coverImageError = string.Empty;
             uploadedImage = null;
             SelectedLocationId = null;
@@ -692,8 +745,8 @@ namespace QLN.ContentBO.WebUI.Pages
             StateHasChanged();
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
-    {
-        var parameters = new DialogParameters
+        {
+            var parameters = new DialogParameters
         {
             { "Title", title },
             { "Descrption", description },
@@ -701,17 +754,17 @@ namespace QLN.ContentBO.WebUI.Pages
             { "OnConfirmed", EventCallback.Factory.Create(this, onConfirmedAction) }
         };
 
-        var options = new DialogOptions
-        {
-            CloseButton = false,
-            MaxWidth = MaxWidth.Small,
-            FullWidth = true
-        };
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
 
-        var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
-        var result = await dialog.Result;
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
 
-    }
+        }
     };
 }
 

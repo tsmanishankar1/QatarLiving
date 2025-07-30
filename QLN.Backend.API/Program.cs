@@ -16,6 +16,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
@@ -130,7 +131,7 @@ builder.Services.Configure<IdentityOptions>(options =>
 #endregion
 
 #region Database context
-builder.Services.AddDbContext<QatarlivingDevContext>(options =>
+builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -145,7 +146,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     options.Tokens.EmailConfirmationTokenProvider = "EmailVerification";
     options.Tokens.ChangePhoneNumberTokenProvider = "PhoneVerification";
 })
-.AddEntityFrameworkStores<QatarlivingDevContext>()
+.AddEntityFrameworkStores<QLApplicationContext>()
 .AddDefaultTokenProviders();
 
 WebApplicationBuilder builder1 = builder;
@@ -236,6 +237,7 @@ builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
 
+builder.Services.ServicesBo(builder.Configuration);
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -271,8 +273,17 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyGroup = app.MapGroup("/api/companyprofile");
-companyGroup.MapCompanyEndpoints()
+var companyServiceGroup = app.MapGroup("/api/companyservice");
+companyServiceGroup.MapCompanyServiceEndpoints();
+   // .RequireAuthorization();
+var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
+companyClassifiedsGroup.MapCompanyEndpoints()
+    .RequireAuthorization();
+var companyDsGroup = app.MapGroup("/api/companyds");
+companyDsGroup.MapCompanyDealsStoresEndpoints()
+    .RequireAuthorization();
+var companyVerifiedGroup = app.MapGroup("/api/companyverified");
+companyVerifiedGroup.MapVerifiedCompanyEndpoints()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
@@ -329,6 +340,8 @@ bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
 
+var ServicesBo = app.MapGroup("/api/servicebo");
+ServicesBo.MapAllServiceBoConfiguration();
 
 app.MapGet("/testauth", (HttpContext context) =>
 {

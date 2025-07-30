@@ -29,7 +29,7 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
                 new(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new(ClaimTypes.Email, user.Email ?? string.Empty),
                 new(ClaimTypes.MobilePhone, user.PhoneNumber ?? string.Empty),
-                new(ClaimTypes.Role, user.IsCompany ? "Company" : "User"),
+                new(ClaimTypes.Role, "BasicUser"),
                 new("UserId", user.Id.ToString()),
                 new("UserName", user.UserName ?? string.Empty),
                 new("Email", user.Email ?? string.Empty),
