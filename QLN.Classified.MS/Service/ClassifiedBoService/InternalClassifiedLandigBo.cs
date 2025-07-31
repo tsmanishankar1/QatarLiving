@@ -1,13 +1,19 @@
 ﻿using Dapr.Client;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using QLN.Classified.MS.DBContext;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Subscriptions;
+using System;
+using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.ClassifiedBoService
@@ -19,6 +25,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly IClassifiedService _classified;
         private readonly List<TransactionDto> _mockTransactions;
         private readonly List<PrelovedTransactionDto> _mockPrelovedTransactions;
+        private readonly ClassifiedDevContext _context;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -26,15 +33,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string ServicesFeaturedStoresIndexKey = ConstantValues.StateStoreNames.FeaturedStoreServicesIndexKey;
         private const string FeaturedCategoryClassifiedIndex = ConstantValues.StateStoreNames.FeaturedCategoryClassifiedIndex;
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
+       // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
+        private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
 
-
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
         {
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mockTransactions = GenerateMockTransactions();
             _mockPrelovedTransactions = GenerateMockPrelovedTransactions();
+            _context = context;
         }
 
 
@@ -2305,5 +2314,107 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
 
+
+        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+               
+
+                DateTime filterDateParsed;
+                try
+                {
+                    if (string.IsNullOrEmpty(filterDate))
+                    {
+                        filterDateParsed = DateTime.UtcNow;
+                    }
+                    else if (!DateTime.TryParse(filterDate, out filterDateParsed))
+                    {
+                        _logger.LogWarning("Invalid filterDate format provided: {FilterDate}. Using current UTC date instead.", filterDate);
+                        filterDateParsed = DateTime.UtcNow;
+                    }
+                }
+                catch (FormatException formatEx)
+                {
+                    _logger.LogError(formatEx, "Failed to parse filterDate. Value: {FilterDate}", filterDate);
+                    throw;
+                }
+                var dateThreshold = filterDateParsed.AddDays(-90);
+                var filtered = await _context.StoresSubscriptions
+     .AsNoTracking()
+     .Where(x =>
+         (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
+         x.StartDate >= dateThreshold &&
+         x.StartDate <= filterDateParsed)
+     .ToListAsync(cancellationToken);
+
+                return filtered;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch stores subscriptions.");
+                throw;
+            }
+        }
+        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("create store subscriptions");
+            try
+            {
+
+                _context.StoresSubscriptions.Add(dto);
+                await _context.SaveChangesAsync();
+
+                return "Store Subscription Created successfully";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating stores subscriptions.");
+                throw;
+            }
+        }
+        private async Task<List<string>> GetIndex()
+        {
+            try
+            {
+                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.StateStoreNames.LandingBackOfficeStore, ConstantValues.StateStoreNames.SubscriptionStoresIndexKey);
+                return result ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving index.");
+                throw;
+            }
+        }
+        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _context.StoresSubscriptions
+             .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
+
+                if (subscription == null)
+                {
+                    return "Subscription not found.";
+                }
+
+                subscription.Status = Status;
+                _context.StoresSubscriptions.Update(subscription);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Subscription status updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit stores subscriptions.");
+                throw;
+            }
+        }
     }
 }

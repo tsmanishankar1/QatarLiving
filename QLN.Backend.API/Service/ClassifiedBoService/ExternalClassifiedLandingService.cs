@@ -11,6 +11,7 @@ using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Globalization;
 using System.Net;
@@ -1363,13 +1364,102 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error getting transactions");
-                throw new InvalidOperationException("Error retrieving transactions", ex);
+                _logger.LogError(ex, "Error moderating bulk services");
+                throw;
             }
+
         }
 
+        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}";
+                var response = await _dapr.InvokeMethodAsync<List<StoresSubscriptionDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                   
+                    $"api/v2/classifiedbo/getstoresubscriptions{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? new List<StoresSubscriptionDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in stores subscriptions.");
+                throw new InvalidOperationException("Error fetching stores subscriptions.", ex);
+            }
+        }
+        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "api/v2/classifiedbo/create-store-subscriptions";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
 
 
-    }
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    
+                    throw new InvalidDataException(errorMessage);
+                }
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                   
+                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
+                }
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                
+                _logger.LogError(ex, "Error creating company profile");
+                throw;
+            }
+        }
+        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+  
+                var queryParams = $"?OrderID={OrderID}&Status={Status}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/edit-store-subscriptions{queryParams}",
+                    cancellationToken
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error editing stores subscriptions.");
+                throw;
+            }
+        }
+     }
 }
