@@ -20,7 +20,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
             group.MapGet("/d365", async Task<IResult> (
                 [FromServices] IOptions<D365Config> config,
                 [FromServices] ID365Service service,
-                [FromBody] D365Order[] request,
+                [FromBody] D365Orders request,
                 [FromHeader(Name = "x-api-key")] string XApiKey,
                 CancellationToken cancellationToken) =>
             {
@@ -36,7 +36,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
 
                 try
                 {
-                    var result = await service.D365OrdersAsync(request, cancellationToken);
+                    var result = await service.D365OrdersAsync(request.Orders, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
