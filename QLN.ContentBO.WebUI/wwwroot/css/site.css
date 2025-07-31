@@ -1086,6 +1086,7 @@ a, .btn-link {
 .custom-button {
     width: 100%;
     text-transform: capitalize;
+    box-shadow: none !important;
 }
 
 .form-group {
@@ -1783,6 +1784,7 @@ a, .btn-link {
 
     .action-btn {
         text-transform: capitalize !important;
+        box-shadow: none !important;
         font-weight: 500;
         border-radius: 6px;
         padding: 6px 14px;

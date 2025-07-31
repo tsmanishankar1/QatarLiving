@@ -38,6 +38,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <summary>
         /// Posts a new classified ad.
         Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload);
+        Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UplodAsync(object payload);
 
 

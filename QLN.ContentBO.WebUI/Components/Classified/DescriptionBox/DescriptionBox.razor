@@ -1,0 +1,96 @@
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Models;
+
+<MudPaper Class="pa-4" Elevation="0" Style="border-radius:8px;">
+    <h3 class="box-heading">Description</h3>
+
+    <h3 class="description-text">
+        @if (showMore)
+        {
+            @((MarkupString)fullDescription)
+        }
+        else
+        {
+            @((MarkupString)shortDescription)
+        }
+    </h3>
+
+
+    @if (ShouldShowToggle)
+    {
+       <MudDivider Class="my-3" />
+
+        <h3 id="readMoreButton" class="read-toggle" @onclick="ToggleReadMore">
+            @(showMore ? "Read less" : "Read more")
+        </h3>
+    }
+</MudPaper>
+
+<style>
+    .description-paper {
+        border-radius: 8px;
+        background-color: white;
+        overflow: hidden;
+    }
+     .box-heading {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 25px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+    }
+
+    .description-text {
+        font-family: 'Public Sans', sans-serif !important;
+        font-size: 15px ;
+        font-weight: 400 ;
+        color: var(--color-text-heading);
+        padding: 16px 0;
+    }
+
+    .read-toggle {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 16px ;
+        font-weight: 500 ;
+        color: var(--color--accent) ;
+    }
+</style>
+
+@code {
+    [Parameter] public PreviewAdDto Item { get; set; } = default!;
+
+    private bool showMore = false;
+    private int MaxPreviewLength = 250;
+
+    private string? fullDescription => Item?.Description;
+
+    private string? shortDescription =>
+        string.IsNullOrWhiteSpace(Item?.Description)
+            ? string.Empty
+            : GenerateShortDescription(Item.Description, MaxPreviewLength);
+
+    private bool ShouldShowToggle =>
+        !string.IsNullOrWhiteSpace(Item?.Description) &&
+        StripHtmlTags(Item.Description).Length > MaxPreviewLength;
+
+    private void ToggleReadMore()
+    {
+        showMore = !showMore;
+    }
+
+    private static string StripHtmlTags(string input)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input, "<.*?>", string.Empty);
+    }
+
+    private string GenerateShortDescription(string html, int maxLength)
+    {
+        var plainText = StripHtmlTags(html);
+
+        if (plainText.Length <= maxLength)
+            return html;
+
+        // Cut text and add ellipsis
+        var truncated = plainText.Substring(0, maxLength) + "...";
+        return $"<p>{truncated}</p>";
+    }
+}

@@ -290,9 +290,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
-                    contactNumber = $"{adPostModel.PhoneCode}{adPostModel.PhoneNumber}",
+                    contactNumber = adPostModel.PhoneNumber,
+                    contactNumberCountryCode = adPostModel.PhoneCode,
                     contactEmail = string.IsNullOrWhiteSpace(UserEmail) ? null : UserEmail,
-                    whatsAppNumber = $"{adPostModel.WhatsappCode}{adPostModel.WhatsappNumber}",
+                    whatsAppNumber = adPostModel.WhatsappNumber,
+                    whatsappNumberCountryCode = adPostModel.WhatsappCode,
                     streetNumber = adPostModel.StreetNumber?.ToString(),
                     buildingNumber = adPostModel.BuildingNumber?.ToString(),
                     zone = adPostModel.Zone,
@@ -302,8 +304,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                         .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
                 };
                 // await JS.InvokeVoidAsync("console.log", payload);
-      
-
                 var response = await ClassifiedService.PostAdAsync("items", payload);
 
                 if (response?.IsSuccessStatusCode == true)

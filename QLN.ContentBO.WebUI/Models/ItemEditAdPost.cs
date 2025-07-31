@@ -3,7 +3,7 @@ using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Models
 {
-    public class ItemEditAdPost
+    public class ItemEditAdPost : PreviewAdDto
     {
         // ----------------------------
         // Category Selection
@@ -25,14 +25,6 @@ namespace QLN.ContentBO.WebUI.Models
         [StringLength(100, ErrorMessage = "Title must be less than 100 characters.")]
         public string? Title { get; set; }
 
-        [StringLength(50, ErrorMessage = "Certificate name must be less than 50 characters.")]
-        public string? Certificate { get; set; }
-
-        public string? CertificateFileName { get; set; }
-
-        [Range(0, 100, ErrorMessage = "Battery percentage must be between 0 and 100.")]
-        public int BatteryPercentage { get; set; }
-
         [Required(ErrorMessage = "Description is required.")]
         public string? Description { get; set; }
 
@@ -49,14 +41,14 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         [Required(ErrorMessage = "Phone code is required.")]
         [StringLength(5, ErrorMessage = "Phone code must be less than 5 characters.")]
-        public string? PhoneCode { get; set; }
+        public string? ContactNumberCountryCode { get; set; }
 
         [Required(ErrorMessage = "Phone number is required.")]
         [Phone(ErrorMessage = "Invalid phone number.")]
-        public string? PhoneNumber { get; set; }
+        public string? ContactNumber { get; set; }
 
         [StringLength(5, ErrorMessage = "WhatsApp code must be less than 5 characters.")]
-        public string? WhatsappCode { get; set; }
+        public string? WhatsappNumberCountryCode { get; set; }
 
         [Phone(ErrorMessage = "Invalid WhatsApp number.")]
         public string? WhatsappNumber { get; set; }
@@ -81,7 +73,7 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         [Required(ErrorMessage = "You must agree to the terms.")]
         [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the terms.")]
-        public bool IsAgreed { get; set; }
+        public bool IsAgreed { get; set; } = true;
 
         // ----------------------------
         // Images
@@ -96,10 +88,19 @@ namespace QLN.ContentBO.WebUI.Models
         // ----------------------------
         // NEW FIELDS
         // ----------------------------
+
+         // Main fields
+        public string? Location { get; set; }
+        public string? Brand { get; set; }
+        public string? Model { get; set; }
+        public string? Condition { get; set; }
+        public string? Color { get; set; }
+
+        // Dynamic API attributes
+        public Dictionary<string, string>? Attributes { get; set; }
         public string? Id { get; set; }
         public string? UserId { get; set; }
         public string? UserName { get; set; }
-        public string? ContactNumber { get; set; }
         public string? ContactEmail { get; set; }
     
         public int? Status { get; set; }
@@ -109,9 +110,6 @@ namespace QLN.ContentBO.WebUI.Models
         public DateTime? RefreshExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; }
         public DateTime? PromotedExpiryDate { get; set; }
-
-        [StringLength(100)]
-        public string? Location { get; set; }
 
     }
 }
