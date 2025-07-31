@@ -16,13 +16,14 @@
         <MudText Typo="Typo.h4">Blazor Markdown Editor with Image Paste</MudText>
         <div id="pasteTarget" @ref="divRef">
             Click here and press Ctrl + V to paste image
-            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" @ref="Markdown1">
+            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" @ref="Markdown1" SpellChecker="true"
+                            CustomButtonClicked="@OnCustomButtonClicked">
                 <Toolbar>
                     <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
                     <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
                     <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
 
-                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
                     <MarkdownToolbarButton Action="MarkdownAction.HeadingSmaller" Icon="fa fa-minus" Title="Heading Smaller" />
                     <MarkdownToolbarButton Action="MarkdownAction.HeadingBigger" Icon="fa fa-plus" Title="Heading Bigger" />
                     <MarkdownToolbarButton Action="MarkdownAction.Heading1" Icon="fa fa-header" Title="Heading 1" />
@@ -37,11 +38,9 @@
 
                     <MarkdownToolbarButton Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
                     <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
-                    <MarkdownToolbarButton Name="uploadimage"
-                                           Value="upload"
+                    <MarkdownToolbarButton Name="@UploadImageButtonName"
                                            Icon="fa fa-upload"
-                                           Title="Upload Image"
-                                           OnClick="TriggerCustomImageUpload" />
+                                           Title="Upload Image" />
                     <MarkdownToolbarButton Action="MarkdownAction.Table" Icon="fa fa-table" Title="Table" />
                     <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
 
@@ -54,8 +53,20 @@
         <hr />
     </MudItem>
     <MudItem>
-
+        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
+        </MudFileUpload>
         <h3>Result</h3>
+        <br />
+    </MudItem>
+</MudGrid>
+
+<MudGrid>
+    <MudItem>
+        <MudText Typo="Typo.body1">File Uploded Image:</MudText>
+        @if (!string.IsNullOrEmpty(UploadedImage))
+        {
+            <img src="@UploadedImage" alt="Pasted" style="max-width: 300px;" />
+        }
         <MudText Typo="Typo.body1">Markdown Value:</MudText>
         @((MarkupString)markdownHtml.ToString())
 
@@ -65,8 +76,8 @@
         {
             <img src="@PastedImage" alt="Pasted" style="max-width: 300px;" />
         }
-        <br />
     </MudItem>
+
 </MudGrid>
 
 
@@ -82,6 +93,12 @@
     private string base64Image = string.Empty;
 
     protected FileUploadModel fileUploadModel { get; set; } = new();
+
+    protected string UploadImageButtonName { get; set; } = "";
+
+    protected MudFileUpload<IBrowserFile> _fileUpload;
+
+    protected string UploadedImage { get; set; } = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -179,4 +196,65 @@
         return new();
     }
 
+
+
+    protected void TriggerCustomImageUpload()
+    {
+        UploadedImage = string.Empty;
+        _fileUpload.OpenFilePickerAsync();
+    }
+
+    protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+    {
+        Console.WriteLine("OnCustomButtonClicked -> " + eventArgs.Name);
+        if (eventArgs.Name is not null)
+        {
+            if (eventArgs.Name == UploadImageButtonName)
+            {
+                TriggerCustomImageUpload();
+            }
+
+        }
+        return Task.CompletedTask;
+    }
+
+    protected async Task Upload()
+    {
+        var fileUploadResponse = await UploadFile(fileUploadModel);
+        if (fileUploadResponse?.IsSuccess == true)
+        {
+            PastedImage = fileUploadResponse.FileUrl;
+            var imageMarkdown = $"\n![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+            markdownValue += imageMarkdown;
+            await Markdown1!.SetValueAsync(markdownValue);
+
+            base64Image = string.Empty;
+        }
+    }
+
+
+    protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                UploadedImage = $"data:{file.ContentType};base64,{base64}";
+                if(!string.IsNullOrWhiteSpace(UploadedImage))
+                {
+                    
+                }
+                _fileUpload?.ResetValidation();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "HandleFilesChanged");
+        }
+    }
 }
