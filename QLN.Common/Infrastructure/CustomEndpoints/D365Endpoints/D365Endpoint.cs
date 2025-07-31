@@ -37,7 +37,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
                 try
                 {
                     var result = await service.D365OrdersAsync(request.Orders, cancellationToken);
-                    return TypedResults.Ok(result);
+
+                    if(result)
+                    {
+                        return TypedResults.Ok(new { Message = "Order Processed successfully" });
+                    }
+
+                    return TypedResults.BadRequest("Failed to process the order.");
+
                 }
                 catch (Exception ex)
                 {
@@ -47,8 +54,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints
                 .WithName("D365Payment")
                 .WithTags("Payment")
                 .Produces<string>(StatusCodes.Status200OK)
+                .Produces<string>(StatusCodes.Status400BadRequest)
+                .Produces(StatusCodes.Status401Unauthorized)
                 .ProducesProblem(StatusCodes.Status500InternalServerError)
-                .WithSummary("Handle D365 Payment")
+                .WithSummary("Handle D365 Payments")
                 .WithDescription("This endpoint handles the D365 payment processing.");
 
             return group;

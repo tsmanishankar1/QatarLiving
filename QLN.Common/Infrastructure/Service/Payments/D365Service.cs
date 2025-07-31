@@ -366,18 +366,20 @@ namespace QLN.Common.Infrastructure.Service.Payments
             }
         }
 
-        public async Task<string> D365OrdersAsync(D365Order[] order, CancellationToken cancellationToken)
+        public async Task<bool> D365OrdersAsync(D365Order[] order, CancellationToken cancellationToken)
         {
             if (order == null || order.Length == 0)
             {
-                throw new InvalidOperationException("Order array is missing");
+                _logger.LogError("Order array is missing");
+                return false;
             }
 
             var orderId = order[0]?.OrderId;
 
             if (string.IsNullOrWhiteSpace(orderId))
             {
-                throw new InvalidOperationException("D365 Order id missing");
+                _logger.LogError("D365 Order id missing");
+                return false;
             }
 
             foreach (var item in order)
@@ -388,11 +390,12 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
                 catch (Exception ex)
                 {
-                    throw new InvalidOperationException($"Error processing order: {ex.Message}", ex);
+                    _logger.LogError($"Error processing order: {ex.Message}", ex);
+                    return false;
                 }
             }
 
-            return "All orders processed successfully";
+            return true;
         }
     }
 }
