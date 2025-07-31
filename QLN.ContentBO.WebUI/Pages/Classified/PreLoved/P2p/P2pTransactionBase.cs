@@ -131,7 +131,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 
                     }).ToList() ?? new List<PreLovedTransactionModal>();
 
-                    TotalCount = data?.TotalRecords ?? 0;
+                    TotalCount = data?.TotalCount ?? 0;
                 }
             }
             catch (Exception ex)

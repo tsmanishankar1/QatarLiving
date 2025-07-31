@@ -25,9 +25,9 @@
     }
     public class PrelovedTransactionResponse
     {
-        public int TotalRecords { get; set; }
-        public int CurrentPage { get; set; }
+        public int TotalCount { get; set; }
         public int PageSize { get; set; }
+        public int PageNumber { get; set; }
         public List<PrelovedTransactionItem> Records { get; set; } = new();
     }
 
