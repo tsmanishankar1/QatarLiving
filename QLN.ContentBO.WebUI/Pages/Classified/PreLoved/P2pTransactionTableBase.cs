@@ -109,10 +109,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
 
 
-     
-        protected void OnEdit(PreLovedTransactionModal item)
+
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
+
+        protected void OnEdit()
         {
-            Console.WriteLine($"Edit clicked: {item.Id}");
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
         protected void OnPreview(PreLovedTransactionModal item)

@@ -134,11 +134,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
 
 
-        protected void OnEdit(P2pListingModal item)
-        {
-            Console.WriteLine($"Edit clicked: {item.AdTitle}");
-        }
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
 
+        protected void OnEdit(SubscriptionListingModal item)
+        {
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+        }
         protected void OnPreview(P2pListingModal item)
         {
             Console.WriteLine($"Preview clicked: {item.AdTitle}");

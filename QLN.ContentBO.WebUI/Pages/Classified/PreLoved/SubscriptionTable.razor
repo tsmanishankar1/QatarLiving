@@ -10,6 +10,9 @@
     @if (IsLoading)
     {
         <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
     }
     else if (IsEmpty)
     {
@@ -123,8 +126,9 @@
                 </TemplateColumn>
             </Columns>
         </MudDataGrid>
+        <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                          OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
     }
 
-    <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
-                      OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+ 
 </MudPaper>

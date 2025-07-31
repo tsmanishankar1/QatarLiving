@@ -108,11 +108,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
 
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
 
-     
         protected void OnEdit(SubscriptionListingModal item)
         {
-            Console.WriteLine($"Edit clicked: {item.Id}");
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
         protected void OnPreview(SubscriptionListingModal item)

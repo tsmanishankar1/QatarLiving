@@ -10,6 +10,9 @@
     @if (IsLoading)
     {
         <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
+        <MudSkeleton Height="40px" Width="100%" Count="10" />
     }
     else if (IsEmpty)
     {
@@ -128,7 +131,7 @@
                 <TemplateColumn Title="Actions">
                     <CellTemplate>
                         <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                            <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                            <MudMenuItem OnClick="() => OnEdit()">
                                 <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
                                 <span class="menu-text">Edit</span>
                             </MudMenuItem>

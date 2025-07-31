@@ -79,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         protected void ShowPreview(BusinessVerificationItem item)
         {
-            Navigation.NavigateTo($"/verification/preview/{item.UserId}");
+            Navigation.NavigateTo($"/manage/classified/items/verification/preview/{item.UserId}");
         }
     }
 }
