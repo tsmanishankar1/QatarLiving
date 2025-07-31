@@ -2327,8 +2327,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 return new PrelovedTransactionListResponseDto
                 {
                     Records = paginatedTransactions,
-                    TotalRecords = totalRecords,
-                    CurrentPage = pageNumber,
+                    TotalCount = totalRecords,
+                    PageNumber = pageNumber,
                     PageSize = pageSize,
                     TotalPages = totalPages
                 };
