@@ -202,6 +202,58 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
+        public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAndSubVerticalAsync(
+            VerticalType vertical,
+            SubVertical subVertical,
+            bool? isVerified = null,
+            CompanyStatus? status = null,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                
+                var keys = await GetIndex(); 
+                if (keys == null || !keys.Any())
+                    return new();
+
+                
+                var items = await _dapr.GetBulkStateAsync(
+                    ConstantValues.CompanyStoreName,
+                    keys,
+                    parallelism: 10,
+                    cancellationToken: cancellationToken
+                );
+
+
+                var companies = items
+                    .Where(entry => !string.IsNullOrWhiteSpace(entry.Value))
+                    .Select(entry =>
+                    JsonSerializer.Deserialize<CompanyProfileDto>(
+                    entry.Value!,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    )
+                    )
+                    .Where(company =>
+                    company != null &&
+                    company.Id != Guid.Empty &&
+                    company.Vertical == vertical &&
+                    company.SubVertical == subVertical &&
+                    (isVerified == null || company.IsVerified == isVerified) &&
+                    (status == null || company.Status == status)
+                    )
+                    .ToList();
+
+                return companies;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving companies by vertical and subvertical");
+                throw;
+            }
+        }
+
+
         public async Task<string> UpdateCompany(CompanyProfileDto dto, CancellationToken cancellationToken = default)
         {
             try
