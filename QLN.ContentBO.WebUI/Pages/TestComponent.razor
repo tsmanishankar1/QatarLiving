@@ -88,15 +88,21 @@
             fileUploadModel.File = base64Image;
 
             var fileUploadResponse = await UploadFile(fileUploadModel);
-            if (fileUploadResponse.IsSuccess)
+            if (fileUploadResponse?.IsSuccess == true)
             {
                 PastedImage = fileUploadResponse.FileUrl;
-                var ImageMarkdown = $"\n ![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
-                markdownValue += ImageMarkdown;
+                var imageMarkdown = $"\n![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                markdownValue += imageMarkdown;
+                await Markdown1!.SetValueAsync(markdownValue);
 
-               await Markdown1.SetValueAsync(markdownValue);
                 base64Image = string.Empty;
             }
+            else
+            {
+                Snackbar.Add(fileUploadResponse?.Message ?? "Image upload failed", Severity.Error);
+            }
+
+
 
             StateHasChanged();
         }
