@@ -49,12 +49,13 @@
                     <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
                 </Toolbar>
             </MarkdownEditor>
+            <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
+            </MudFileUpload>
         </div>
         <hr />
     </MudItem>
     <MudItem>
-        <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
-        </MudFileUpload>
+
         <h3>Result</h3>
         <br />
     </MudItem>
@@ -100,6 +101,8 @@
 
     protected string UploadedImage { get; set; } = string.Empty;
 
+    protected string BlobContainerName { get; set; } = "content-images";
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -138,7 +141,7 @@
             fileUploadModel.Container = "content-images";
             fileUploadModel.File = base64Image;
 
-            var fileUploadResponse = await UploadFile(fileUploadModel);
+            var fileUploadResponse = await FileUploadAsync(fileUploadModel);
             if (fileUploadResponse?.IsSuccess == true)
             {
                 PastedImage = fileUploadResponse.FileUrl;
@@ -168,7 +171,7 @@
         _objRef?.Dispose();
     }
 
-    protected async Task<FileUploadResponse> UploadFile(FileUploadModel fileUploadData)
+    protected async Task<FileUploadResponse> FileUploadAsync(FileUploadModel fileUploadData)
     {
         var response = await fileUploadService.UploadFileAsync(fileUploadData);
         var jsonString = await response.Content.ReadAsStringAsync();
@@ -218,9 +221,15 @@
         return Task.CompletedTask;
     }
 
-    protected async Task Upload()
+    protected async Task UploadFile(string base64)
     {
-        var fileUploadResponse = await UploadFile(fileUploadModel);
+        var fileUploadData = new FileUploadModel
+        {
+            Container = BlobContainerName,
+            File = base64
+        };
+
+        var fileUploadResponse = await FileUploadAsync(fileUploadData);
         if (fileUploadResponse?.IsSuccess == true)
         {
             PastedImage = fileUploadResponse.FileUrl;
@@ -231,7 +240,6 @@
             base64Image = string.Empty;
         }
     }
-
 
     protected async Task HandleFilesChanged(InputFileChangeEventArgs e)
     {
@@ -245,9 +253,9 @@
                 await stream.CopyToAsync(memoryStream);
                 var base64 = Convert.ToBase64String(memoryStream.ToArray());
                 UploadedImage = $"data:{file.ContentType};base64,{base64}";
-                if(!string.IsNullOrWhiteSpace(UploadedImage))
+                if (!string.IsNullOrWhiteSpace(UploadedImage))
                 {
-                    
+                    await UploadFile(UploadedImage);
                 }
                 _fileUpload?.ResetValidation();
             }
