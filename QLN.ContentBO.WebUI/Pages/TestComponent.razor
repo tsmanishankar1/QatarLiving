@@ -16,36 +16,24 @@
         <MudText Typo="Typo.h4">Blazor Markdown Editor with Image Paste</MudText>
         <div id="pasteTarget" @ref="divRef">
             Click here and press Ctrl + V to paste image
-            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" @ref="Markdown1" SpellChecker="true"
-                            CustomButtonClicked="@OnCustomButtonClicked">
+            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" CustomButtonClicked="@OnCustomButtonClicked" @ref="Markdown1">
                 <Toolbar>
                     <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
                     <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
                     <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
-
-                    <MarkdownToolbarButton Separator Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
-                    <MarkdownToolbarButton Action="MarkdownAction.HeadingSmaller" Icon="fa fa-minus" Title="Heading Smaller" />
-                    <MarkdownToolbarButton Action="MarkdownAction.HeadingBigger" Icon="fa fa-plus" Title="Heading Bigger" />
-                    <MarkdownToolbarButton Action="MarkdownAction.Heading1" Icon="fa fa-header" Title="Heading 1" />
-                    <MarkdownToolbarButton Action="MarkdownAction.Heading2" Icon="fa fa-header" Title="Heading 2" />
-                    <MarkdownToolbarButton Action="MarkdownAction.Heading3" Icon="fa fa-header" Title="Heading 3" />
-
-                    <MarkdownToolbarButton Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                    
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
                     <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
                     <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
                     <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
-                    <MarkdownToolbarButton Action="MarkdownAction.CleanBlock" Icon="fa fa-eraser" Title="Clean Block" />
-
-                    <MarkdownToolbarButton Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
                     <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
-                    <MarkdownToolbarButton Name="@UploadImageButtonName"
-                                           Icon="fa fa-upload"
-                                           Title="Upload Image" />
-                    <MarkdownToolbarButton Action="MarkdownAction.Table" Icon="fa fa-table" Title="Table" />
-                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
 
-                    <MarkdownToolbarButton Action="MarkdownAction.Preview" Icon="fa fa-eye" Title="Preview" />
-                    <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns" Title="Side by Side" />
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.SideBySide" Icon="fa fa-columns" Title="Side by Side" />
                     <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
                 </Toolbar>
             </MarkdownEditor>
@@ -155,8 +143,6 @@
             {
                 Snackbar.Add(fileUploadResponse?.Message ?? "Image upload failed", Severity.Error);
             }
-
-
 
             StateHasChanged();
         }
