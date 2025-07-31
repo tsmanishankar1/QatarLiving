@@ -1275,6 +1275,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
                     await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    await IndexItemsToAzureSearch(ad, cancellationToken: ct);
                     updated.Add(ad);
                 }
             }
@@ -1424,6 +1425,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
                     await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    await IndexCollectiblesToAzureSearch(ad, cancellationToken: ct);
                     updated.Add(ad);                }
             }
 
@@ -2215,6 +2217,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         ad.UpdatedAt = DateTime.UtcNow;
                         ad.UpdatedBy = userId;
                         await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                        await IndexPrelovedToAzureSearch(ad, cancellationToken: ct);
                         updated.Add(ad);
                     }
                 }
@@ -2444,19 +2447,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-        private async Task<List<string>> GetIndex()
-        {
-            try
-            {
-                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.StateStoreNames.LandingBackOfficeStore, ConstantValues.StateStoreNames.SubscriptionStoresIndexKey);
-                return result ?? new List<string>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving index.");
-                throw;
-            }
-        }
         public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
         {
             try
@@ -2479,6 +2469,251 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 _logger.LogError(ex, "Failed to edit stores subscriptions.");
                 throw;
+            }
+        }
+        private async Task IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsItemsIndex
+            {
+                Id = dto.Id.ToString(),
+                SubVertical = dto.SubVertical,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                CategoryId = dto.CategoryId.ToString(),
+                L1CategoryId = dto.L1CategoryId.ToString(),
+                L2CategoryId = dto.L2CategoryId.ToString(),
+                Category = dto.Category,
+                L1Category = dto.L1Category,
+                L2Category = dto.L2Category,
+                Brand = dto.Brand,
+                Model = dto.Model,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                SubscriptionId = dto.SubscriptionId,
+                Price = (double)dto.Price,
+                PriceType = dto.PriceType,
+                Location = dto.Location,
+                Longitude = (double)dto.Longitude,
+                Latitude = (double)dto.Latitude,
+                IsFeatured = dto.IsFeatured,
+                IsPromoted = dto.IsPromoted,
+                Status = dto.Status.ToString(),
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                UserId = dto.UserId,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                BuildingNumber = dto.BuildingNumber,
+                ContactEmail = dto.ContactEmail,
+                ContactNumber = dto.ContactNumber,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                StreetNumber = dto.StreetNumber,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                Zone = dto.zone,
+                IsRefreshed = dto.IsRefreshed,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                UserName = dto.UserName,
+                AttributesJson = dto.Attributes != null ? System.Text.Json.JsonSerializer.Serialize(dto.Attributes) : null,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList()
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                ClassifiedsItem = indexDoc
+            };
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+        private async Task IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsPrelovedIndex
+            {
+                Id = dto.Id.ToString(),
+                SubscriptionId = dto.SubscriptionId,
+                SubVertical = dto.SubVertical,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                Price = dto.Price,
+                PriceType = dto.PriceType,
+                CategoryId = dto.CategoryId,
+                Category = dto.Category,
+                L1CategoryId = dto.L1CategoryId,
+                L1Category = dto.L1Category,
+                L2CategoryId = dto.L2CategoryId,
+                L2Category = dto.L2Category,
+                Location = dto.Location,
+                CreatedAt = dto.CreatedAt,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Status = dto.Status.ToString(),
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Zone = dto.zone,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                StreetNumber = dto.StreetNumber,
+                LastRefreshedOn = dto.LastRefreshedOn,
+                BuildingNumber = dto.BuildingNumber,
+                ContactEmail = dto.ContactEmail,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                ContactNumber = dto.ContactNumber,
+                UserId = dto.UserId,
+                AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                Brand = dto.Brand,
+                Color = dto.Color,
+                Condition = dto.Condition,
+                CreatedBy = dto.CreatedBy,
+                HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                Inclusion = dto.Inclusion,
+                Model = dto.Model,
+                UserName = dto.UserName,
+                IsActive = true,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList(),
+                AttributesJson = System.Text.Json.JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+
+                IsFeatured = dto.IsFeatured,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsRefreshed = dto.IsRefreshed
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                ClassifiedsPrelovedItem = indexDoc
+            };
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsCollectiblesIndex
+            {
+                Id = dto.Id.ToString(),
+                SubVertical = dto.SubVertical,
+                SubscriptionId = dto.SubscriptionId,
+                AdType = dto.AdType.ToString(),
+                Title = dto.Title,
+                Description = dto.Description,
+                Price = dto.Price,
+                PriceType = dto.PriceType,
+                CategoryId = dto.CategoryId,
+                Category = dto.Category,
+                L1CategoryId = dto.L1CategoryId,
+                L1Category = dto.L1Category,
+                L2CategoryId = dto.L2CategoryId,
+                L2Category = dto.L2Category,
+                Location = dto.Location,
+                CreatedAt = dto.CreatedAt,
+                PublishedDate = dto.PublishedDate,
+                ExpiryDate = dto.ExpiryDate,
+                Status = dto.Status.ToString(),
+                Latitude = dto.Latitude,
+                Color = dto.Color,
+                ContactNumber = dto.ContactNumber,
+                BuildingNumber = dto.BuildingNumber,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                ContactEmail = dto.ContactEmail,
+                StreetNumber = dto.StreetNumber,
+                Model = dto.Model,
+                IsHandmade = dto.IsHandmade,
+                HasWarranty = dto.HasWarranty,
+                Condition = dto.Condition,
+                Brand = dto.Brand,
+                AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
+                CreatedBy = dto.CreatedBy,
+                HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
+                WhatsAppNumber = dto.WhatsAppNumber,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                YearOrEra = dto.YearOrEra,
+                Zone = dto.zone,
+                Longitude = dto.Longitude,
+                UserId = dto.UserId,
+                UserName = dto.UserName,
+                IsActive = true,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Images = dto.Images.Select(i => new ImageInfo
+                {
+                    Url = i.Url,
+                    Order = i.Order
+                }).ToList(),
+                AttributesJson = System.Text.Json.JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+
+                IsFeatured = dto.IsFeatured,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                PromotedExpiryDate = dto.PromotedExpiryDate
+
+
+
+            };
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                ClassifiedsCollectiblesItem = indexDoc
+            };
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
             }
         }
     }
