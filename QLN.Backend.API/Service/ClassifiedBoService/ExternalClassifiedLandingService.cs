@@ -11,6 +11,7 @@ using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Globalization;
 using System.Net;
@@ -1398,6 +1399,8 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
+
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.BadRequest)
                 {
@@ -1436,5 +1439,27 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
-    }
+        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+  
+                var queryParams = $"?OrderID={OrderID}&Status={Status}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/edit-store-subscriptions{queryParams}",
+                    cancellationToken
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error editing stores subscriptions.");
+                throw;
+            }
+        }
+     }
 }

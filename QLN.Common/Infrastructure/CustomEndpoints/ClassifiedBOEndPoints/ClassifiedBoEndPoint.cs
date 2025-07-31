@@ -2417,6 +2417,100 @@ CancellationToken ct
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPut("/edit-stores-subscriptions", async Task<Results<
+          Ok<string>,
+          ForbidHttpResult,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          IClassifiedBoLandingService service,
+          HttpContext httpContext,
+          int OrderID,
+          string Status,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+           .RequireAuthorization()
+          .WithName("EditStoresSubscriptions")
+          .WithTags("ClassifiedBo")
+          .WithSummary("Edit subscriptions on stores.")
+          .WithDescription("Edit the status information of stores subscriptions.")
+          .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/edit-store-subscriptions", async Task<Results<
+         Ok<string>,
+         
+         BadRequest<ProblemDetails>,
+         ProblemHttpResult>>
+         (
+         IClassifiedBoLandingService service,
+         HttpContext httpContext,
+         int OrderID,
+         string Status,
+         CancellationToken cancellationToken
+         ) =>
+            {
+                try
+                {
+                    
+
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+                .ExcludeFromDescription()
+         .WithName("EditStoreSubscriptions")
+         .WithTags("ClassifiedBo")
+         .WithSummary("Edit subscriptions on stores.")
+         .WithDescription("Edit the status information of stores subscriptions.")
+         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }

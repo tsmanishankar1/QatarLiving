@@ -2393,5 +2393,29 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
+        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _context.StoresSubscriptions
+             .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
+
+                if (subscription == null)
+                {
+                    return "Subscription not found.";
+                }
+
+                subscription.Status = Status;
+                _context.StoresSubscriptions.Update(subscription);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Subscription status updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to edit stores subscriptions.");
+                throw;
+            }
+        }
     }
 }
