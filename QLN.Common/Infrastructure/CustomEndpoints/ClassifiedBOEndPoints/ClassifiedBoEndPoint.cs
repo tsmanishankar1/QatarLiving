@@ -9,7 +9,9 @@ using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
@@ -2277,76 +2279,192 @@ CancellationToken ct
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+         
+            group.MapGet("/getstoresubscriptions", async Task<Results<
+           Ok<List<StoresSubscriptionDto>>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+           HttpContext context,
+           string? subscriptionType,
+           string? filterDate,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetStoresSubscriptions")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get all subscriptions on stores.")
+           .WithDescription("Fetches all subscriptions of users on stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-            group.MapGet("/preloved/transactions", async Task<Results<
-                Ok<PrelovedTransactionListResponseDto>,
+            group.MapPost("/create-stores-subscriptions", async Task<Results<
+                Ok<string>,
+                ForbidHttpResult,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
                 (
+                StoresSubscriptionDto dto,
                 IClassifiedBoLandingService service,
-                CancellationToken cancellationToken,
-                [FromQuery] int pageNumber = 1,
-                [FromQuery] int pageSize = 25,
-                [FromQuery] string? searchText = null,
-                [FromQuery] string? dateCreated = null,
-                [FromQuery] string? datePublished = null,
-                [FromQuery] string? dateStart = null,
-                [FromQuery] string? dateEnd = null,
-                [FromQuery] string? status = null,
-                [FromQuery] string sortBy = "CreationDate",
-                [FromQuery] string sortOrder = "desc"
+                HttpContext httpContext,
+                CancellationToken cancellationToken
                 ) =>
             {
                 try
                 {
-                    if (pageNumber < 1)
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Page number must be greater than 0.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
+                        return TypedResults.Forbid();
                     }
-                    if (pageSize < 1 || pageSize > 100)
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
                     {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Page size must be between 1 and 100.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
+                        return TypedResults.Forbid();
                     }
-                    var result = await service.GetPrelovedTransactionsAsync(
-                        pageNumber,
-                        pageSize,
-                        searchText,
-                        dateCreated,
-                        datePublished,
-                        dateStart,
-                        dateEnd,
-                        status,
-                        sortBy,
-                        sortOrder,
-                        cancellationToken);
+
+                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.WithName("GetPrelovedTransactions")
-.WithTags("ClassifiedBo")
-.AllowAnonymous()
-.WithSummary("Get transactions with filtering")
-.WithDescription("Get paginated preloved transactions with search and filter capabilities")
-.Produces<TransactionListResponseDto>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .WithName("CreateStoresSubscription")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Create Stores Subscriptions")
+                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            
+            group.MapPost("/create-store-subscriptions", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                StoresSubscriptionDto dto,
+                IClassifiedBoLandingService service,         
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    Console.WriteLine("hits internal bo");
+                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("CreateStoreSubscription")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Create Stores Subscriptions")
+                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
+                .Produces<string>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/edit-stores-subscriptions", async Task<Results<
+          Ok<string>,
+          ForbidHttpResult,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          IClassifiedBoLandingService service,
+          HttpContext httpContext,
+          int OrderID,
+          string Status,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+           .WithName("EditStoresSubscriptions")
+          .WithTags("ClassifiedBo")
+          .WithSummary("Edit subscriptions on stores.")
+          .WithDescription("Edit the status information of stores subscriptions.")
+          .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
@@ -2415,6 +2533,21 @@ CancellationToken ct
               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPut("/edit-store-subscriptions", async Task<Results<
+         Ok<string>,
+         BadRequest<ProblemDetails>,
+         ProblemHttpResult>>
+         (
+         IClassifiedBoLandingService service,
+         HttpContext httpContext,
+         int OrderID,
+         string Status,
+         CancellationToken cancellationToken
+         ) =>
+            {
+                try
+                {
+                    
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
                ClassifiedsPreloved dto,
@@ -2490,6 +2623,28 @@ CancellationToken ct
                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+         .ExcludeFromDescription()
+         .WithName("EditStoreSubscriptions")
+         .WithTags("ClassifiedBo")
+         .WithSummary("Edit subscriptions on stores.")
+         .WithDescription("Edit the status information of stores subscriptions.")
+         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 ClassifiedsCollectibles dto,
@@ -2614,6 +2769,73 @@ CancellationToken ct
                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+
+            group.MapGet("/preloved/transactions", async Task<Results<
+               Ok<PrelovedTransactionListResponseDto>,
+               BadRequest<ProblemDetails>,
+               ProblemHttpResult>>
+               (
+               IClassifiedBoLandingService service,
+               CancellationToken cancellationToken,
+               [FromQuery] int pageNumber = 1,
+               [FromQuery] int pageSize = 25,
+               [FromQuery] string? searchText = null,
+               [FromQuery] string? dateCreated = null,
+               [FromQuery] string? datePublished = null,
+               [FromQuery] string? dateStart = null,
+               [FromQuery] string? dateEnd = null,
+               [FromQuery] string? status = null,
+               [FromQuery] string sortBy = "CreationDate",
+               [FromQuery] string sortOrder = "desc"
+               ) =>
+            {
+                try
+                {
+                    if (pageNumber < 1)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Page number must be greater than 0.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    if (pageSize < 1 || pageSize > 100)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "Page size must be between 1 and 100.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var result = await service.GetPrelovedTransactionsAsync(
+                        pageNumber,
+                        pageSize,
+                        searchText,
+                        dateCreated,
+                        datePublished,
+                        dateStart,
+                        dateEnd,
+                        status,
+                        sortBy,
+                        sortOrder,
+                        cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+.WithName("GetPrelovedTransactions")
+.WithTags("ClassifiedBo")
+.AllowAnonymous()
+.WithSummary("Get transactions with filtering")
+.WithDescription("Get paginated preloved transactions with search and filter capabilities")
+.Produces<TransactionListResponseDto>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
         }
