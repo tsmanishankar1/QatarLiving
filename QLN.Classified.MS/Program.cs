@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using QLN.Classified.MS.DBContext;
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
@@ -32,7 +34,11 @@ builder.Services.AddSwaggerGen(opts => {
         = new string[] { }
     });
 });
-
+#region Database context
+builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+#endregion
+builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 

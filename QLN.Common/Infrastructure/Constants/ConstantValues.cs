@@ -102,6 +102,8 @@ namespace QLN.Common.Infrastructure.Constants
             public const string PrelovedCategoryIndexKey = "preloved-category-index";
             public const string CollectiblesCategoryIndexKey = "collectibles-category-index";
             public const string DealsCategoryIndexKey = "deals-category-index";
+            public const string SubscriptionStores = "subscriptionstores";
+            public const string SubscriptionStoresIndexKey= "subscription-stores-index";
         }
         public static class PubSubTopics
         {

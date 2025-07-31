@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,5 +20,11 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task<List<CompanyProfileVerificationStatusDto>> VerificationStatus(string userId, VerticalType vertical, bool isVerified, CancellationToken cancellationToken = default);
         Task<List<CompanyProfileDto>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default);
         Task<List<ProfileStatus>> GetStatusByTokenUser(string userId, CancellationToken cancellationToken = default);
+        Task<List<CompanyProfileDto>> GetCompaniesByVerticalAndSubVerticalAsync(
+            VerticalType vertical,
+            SubVertical subVertical,
+            bool? isVerified = null,
+            CompanyStatus? status = null,
+            CancellationToken cancellationToken = default);
     }
 }
