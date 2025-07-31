@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 
         // In PreLovedTableBase.cs
         [Parameter]
-        public string SelectedTab { get; set; }  // Capital S to match parent
+        public string SelectedTab { get; set; }  
 
         [Parameter]
         public EventCallback<string> OnTabChanged { get; set; }
