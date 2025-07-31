@@ -75,6 +75,9 @@
     {
         try
         {
+            base64Image = string.Empty;
+            PastedImage = string.Empty;
+            fileUploadModel = new FileUploadModel();
             if (string.IsNullOrEmpty(base64))
             {
                 Snackbar.Add("No image data found", Severity.Error);
@@ -112,15 +115,10 @@
         var jsonString = await response.Content.ReadAsStringAsync();
         if (response != null && response.IsSuccessStatusCode)
         {
-
             var result = JsonSerializer.Deserialize<FileUploadResponse>(jsonString, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
-
-            fileUploadModel = new();
-            StateHasChanged();
-
             return result ?? new();
         }
         else if (response?.StatusCode == HttpStatusCode.BadRequest)
