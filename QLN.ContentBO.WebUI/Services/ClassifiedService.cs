@@ -333,16 +333,13 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var json = JsonSerializer.Serialize(request, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
+              
 
-                var httpRequest = new HttpRequestMessage(HttpMethod.Get, "/api/v2/classifiedbo/preloved-ads/payment-summary")
-                {
-                    Content = new StringContent(json, Encoding.UTF8, "application/json")
-                };
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
 
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved-ads/payment-summary{query}");
+
+                
                 return await _httpClient.SendAsync(httpRequest);
             }
             catch (Exception ex)
@@ -419,9 +416,24 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request)
+        public async Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+               
+
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved/transactions{query}");
+
+                return await _httpClient.SendAsync(httpRequest);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pTransaction: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
