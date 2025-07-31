@@ -10,7 +10,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using Dapr.Client.Autogen.Grpc.v1;
+
 using Dapr.Client;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
@@ -1081,5 +1081,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+        public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapGet("/getstatuscounts", static async Task<Results<Ok<ServicesStatusCountsDto>, ProblemHttpResult>>
+            (
+                [FromServices] IServices service,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var counts = await service.GetServiceStatusCountsAsync(cancellationToken);
+                    return TypedResults.Ok(counts);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("GetServiceStatusCounts")
+            .WithTags("Service")
+            .WithSummary("Get service status counts")
+            .WithDescription("Returns counts of published, promoted, and featured services.")
+            .Produces<ServicesStatusCountsDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            return group;
+        }
+
     }
 }

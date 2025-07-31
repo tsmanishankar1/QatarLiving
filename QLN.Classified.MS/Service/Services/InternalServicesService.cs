@@ -970,5 +970,44 @@ namespace QLN.Classified.MS.Service.Services
 
             return updated;
         }
+        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(CancellationToken cancellationToken = default)
+        {
+            var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.Services.StoreName,
+                ConstantValues.Services.ServicesIndexKey,
+                cancellationToken: cancellationToken
+            ) ?? new();
+
+            if (indexKeys.Count == 0)
+            {
+                return new ServicesStatusCountsDto
+                {
+                    PublishedCount = 0,
+                    PromotedCount = 0,
+                    FeaturedCount = 0
+                };
+            }
+
+            var ads = await _dapr.GetBulkStateAsync(
+                ConstantValues.Services.StoreName,
+                indexKeys,
+                parallelism: 10,
+                cancellationToken: cancellationToken
+            );
+
+            var serviceList = ads
+                .Where(e => !string.IsNullOrWhiteSpace(e.Value))
+                .Select(e => JsonSerializer.Deserialize<ServicesModel>(e.Value!, _jsonOptions))
+                .Where(e => e != null && e.IsActive)
+                .ToList();
+
+            return new ServicesStatusCountsDto
+            {
+                PublishedCount = serviceList.Count(x => x.Status == ServiceStatus.Published),
+                PromotedCount = serviceList.Count(x => x.IsPromoted),
+                FeaturedCount = serviceList.Count(x => x.IsFeatured)
+            };
+        }
+
     }
 }

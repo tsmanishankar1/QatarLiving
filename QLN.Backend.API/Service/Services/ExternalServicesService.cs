@@ -496,5 +496,26 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
+        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<ServicesStatusCountsDto>(
+                    HttpMethod.Get,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getstatuscounts",
+                    cancellationToken
+                );
+
+                return response ?? new ServicesStatusCountsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching service status counts");
+                throw;
+            }
+        }
+
     }
 }

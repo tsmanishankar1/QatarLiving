@@ -138,4 +138,11 @@ namespace QLN.Common.DTO_s
         public string? Reason { get; set; } 
         public string? UpdatedBy { get; set; } 
     }
+    public class ServicesStatusCountsDto
+    {
+        public int PublishedCount { get; set; }
+        public int PromotedCount { get; set; }
+        public int FeaturedCount { get; set; }
+    }
+
 }
