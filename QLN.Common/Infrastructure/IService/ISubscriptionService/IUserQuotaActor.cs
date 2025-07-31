@@ -10,10 +10,13 @@ namespace QLN.Common.Infrastructure.IService.ISubscriptionService
 {
     public interface IUserQuotaActor : IActor
     {
-        // Add the missing UpsertQuotaAsync method
-        Task UpsertQuotaAsync(GenericUserQuotaDto newQuota, CancellationToken cancellationToken = default);
+       
+            Task<List<GenericUserQuotaDto>> GetQuotasAsync(CancellationToken cancellationToken = default);
 
-        // Existing methods
+           
+
+       
+        Task UpsertQuotaAsync(GenericUserQuotaDto newQuota, CancellationToken cancellationToken = default);
         Task<UserQuotaCollection?> GetAllQuotasAsync(CancellationToken cancellationToken = default);
         Task<List<GenericUserQuotaDto>> GetActiveQuotasAsync(CancellationToken cancellationToken = default);
         Task<bool> UpdateQuotaAsync(Guid transactionId, GenericUserQuotaDto updatedQuota, CancellationToken cancellationToken = default);

@@ -497,14 +497,17 @@ namespace QLN.Backend.API.Service.Services
             }
         }
 
-        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(CancellationToken cancellationToken = default)
+        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ServicesStatusCountsDto>(
-                    HttpMethod.Get,
+                var request = new UserIdRequest { UserId = userId };
+
+                var response = await _dapr.InvokeMethodAsync<UserIdRequest, ServicesStatusCountsDto>(
+                    HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
-                    "/api/service/getstatuscounts",
+                    "/api/service/getstatuscountsbyuserid",
+                    request,
                     cancellationToken
                 );
 
@@ -516,6 +519,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
 
     }
 }

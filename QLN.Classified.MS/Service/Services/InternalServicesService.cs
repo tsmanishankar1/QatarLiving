@@ -1,10 +1,14 @@
-﻿using Dapr.Client;
+﻿using Dapr.Actors.Client;
+using Dapr.Actors;
+using Dapr.Client;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.DTO_s.NotificationDto;
+using QLN.Subscriptions.Actor.ActorClass;
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -970,43 +974,77 @@ namespace QLN.Classified.MS.Service.Services
 
             return updated;
         }
-        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(CancellationToken cancellationToken = default)
+        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(string userId, CancellationToken cancellationToken = default)
         {
+          
+            
             var indexKeys = await _dapr.GetStateAsync<List<string>>(
                 ConstantValues.Services.StoreName,
                 ConstantValues.Services.ServicesIndexKey,
                 cancellationToken: cancellationToken
             ) ?? new();
 
+          
+
             if (indexKeys.Count == 0)
             {
+                
                 return new ServicesStatusCountsDto
                 {
                     PublishedCount = 0,
                     PromotedCount = 0,
-                    FeaturedCount = 0
+                    FeaturedCount = 0,
+                    PromoteTotal = 0,
+                    FeaturedTotal = 0,
+                    PublishedTotal = 0
                 };
             }
 
+            
             var ads = await _dapr.GetBulkStateAsync(
                 ConstantValues.Services.StoreName,
                 indexKeys,
                 parallelism: 10,
                 cancellationToken: cancellationToken
             );
-
             var serviceList = ads
                 .Where(e => !string.IsNullOrWhiteSpace(e.Value))
                 .Select(e => JsonSerializer.Deserialize<ServicesModel>(e.Value!, _jsonOptions))
-                .Where(e => e != null && e.IsActive)
+                .Where(e => e != null && e.IsActive && e.CreatedBy == userId)
                 .ToList();
+            var userQuotaActor = GetUserQuotaActorProxy(userId);
+          
+
+            var allQuotas = await userQuotaActor.GetQuotasAsync(cancellationToken);
+          
+
+            var activeQuotas = allQuotas
+                .Where(q => q.EndDate >= DateTime.UtcNow)
+                .ToList();
+            var promoteBudget = activeQuotas.Sum(q => q.TotalPromoteBudget ?? 0);
+            var featuredBudget = activeQuotas.Sum(q => q.TotalFeatureBudget ?? 0); 
+            var adBudget = activeQuotas.Sum(q => q.TotalAdBudget ?? 0);
+            foreach (var quota in activeQuotas)
+            {
+               
+            }
 
             return new ServicesStatusCountsDto
             {
                 PublishedCount = serviceList.Count(x => x.Status == ServiceStatus.Published),
                 PromotedCount = serviceList.Count(x => x.IsPromoted),
-                FeaturedCount = serviceList.Count(x => x.IsFeatured)
+                FeaturedCount = serviceList.Count(x => x.IsFeatured),
+                PromoteTotal = promoteBudget,
+                FeaturedTotal = featuredBudget,
+                PublishedTotal = adBudget
             };
+        }
+
+        private IUserQuotaActor GetUserQuotaActorProxy(string userId)
+        {
+            Console.WriteLine($"[GetUserQuotaActorProxy] Creating actor proxy for user: {userId}");
+            var actorId = new ActorId(userId);
+            return ActorProxy.Create<IUserQuotaActor>(actorId, nameof(UserQuotaActor));
         }
 
     }

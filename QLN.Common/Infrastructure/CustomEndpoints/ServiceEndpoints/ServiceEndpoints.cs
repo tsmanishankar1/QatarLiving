@@ -1083,15 +1083,39 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/getstatuscounts", static async Task<Results<Ok<ServicesStatusCountsDto>, ProblemHttpResult>>
-            (
+            group.MapGet("/getstatuscounts", async Task<Results<Ok<ServicesStatusCountsDto>, ProblemHttpResult>> (
+                HttpContext httpContext,
                 [FromServices] IServices service,
                 CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var counts = await service.GetServiceStatusCountsAsync(cancellationToken);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var counts = await service.GetServiceStatusCountsAsync(uid, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)
@@ -1102,12 +1126,34 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithName("GetServiceStatusCounts")
             .WithTags("Service")
             .WithSummary("Get service status counts")
-            .WithDescription("Returns counts of published, promoted, and featured services.")
+            .WithDescription("Returns counts of published, promoted, and featured services for the logged-in user.")
             .Produces<ServicesStatusCountsDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            group.MapPost("/getstatuscountsbyuserid", async Task<Results<Ok<ServicesStatusCountsDto>, ProblemHttpResult>> (
+                 [FromBody] UserIdRequest dto,
+                 [FromServices] IServices service,
+                 CancellationToken cancellationToken
+             ) =>
+             {
+                try
+                {
+                    var counts = await service.GetServiceStatusCountsAsync(dto.UserId, cancellationToken);
+                    return TypedResults.Ok(counts);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+             .ExcludeFromDescription()
+             .WithName("GetServiceStatusCountsByUserId")
+             .WithTags("Service");
+
 
             return group;
         }
+
 
     }
 }

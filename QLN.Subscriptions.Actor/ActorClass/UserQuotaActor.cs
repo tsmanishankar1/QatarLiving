@@ -13,8 +13,29 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+        public async Task<List<GenericUserQuotaDto>> GetQuotasAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("[UserQuotaActor {ActorId}] GetQuotasAsync called", Id);
 
-        // Write operation - Contains the original UserQuotaWriter logic
+                // Use the correct state key and data structure
+                var collection = await GetQuotaCollectionAsync(cancellationToken);
+
+                var quotas = collection?.Quotas ?? new List<GenericUserQuotaDto>();
+
+                _logger.LogInformation("[UserQuotaActor {ActorId}] GetQuotasAsync retrieved {Count} quotas",
+                    Id, quotas.Count);
+
+                return quotas;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[UserQuotaActor {ActorId}] Error in GetQuotasAsync", Id);
+                throw;
+            }
+        }
+
         public async Task UpsertQuotaAsync(GenericUserQuotaDto newQuota, CancellationToken cancellationToken = default)
         {
             if (newQuota == null) throw new ArgumentNullException(nameof(newQuota));
@@ -48,8 +69,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
-
-        // Read operations
         public async Task<UserQuotaCollection?> GetAllQuotasAsync(CancellationToken cancellationToken = default)
         {
             try
