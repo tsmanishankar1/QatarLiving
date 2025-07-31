@@ -8,7 +8,7 @@
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject IFileUploadService fileUploadService
-@inherits QLComponentBase   
+@inherits QLComponentBase
 
 <MudGrid Style="padding-top: 18px">
     <MudItem>
@@ -19,32 +19,29 @@
         </div>
         <hr />
     </MudItem>
-
-    <p>@base64Image</p>
     <MudItem>
+
+        <h3>Result</h3>
+        <MudText Typo="Typo.body1">Markdown Value:</MudText>
+        @((MarkupString)markdownHtml.ToString())
+
+        <hr />
+        <MudText Typo="Typo.body1">Uploaded Image:</MudText>
         @if (!string.IsNullOrEmpty(PastedImage))
         {
             <img src="@PastedImage" alt="Pasted" style="max-width: 300px;" />
         }
         <br />
-        <h3>Result</h3>
-        @((MarkupString)markdownHtml.ToString())
     </MudItem>
 </MudGrid>
 
-
-@if (!string.IsNullOrEmpty(base64Image))
-{
-    <h4>Preview:</h4>
-    <img src="@base64Image" style="max-width:300px;" />
-}
 
 @code {
 
     private string? PastedImage;
 
     string markdownValue = "Test";
-    StringBuilder markdownHtml = new();
+    string markdownHtml = string.Empty;
 
     private ElementReference divRef;
     private DotNetObjectReference<TestComponent>? _objRef;
@@ -68,26 +65,40 @@
 
     Task OnMarkdownValueHTMLChanged(string value)
     {
-        markdownHtml.Append(value);
+        markdownHtml = string.Empty;
+        markdownHtml = value;
         return Task.CompletedTask;
     }
 
     [JSInvokable]
     public async Task OnImagePasted(string base64)
     {
-        base64Image = base64;
-        fileUploadModel.Container = "content-images";
-        fileUploadModel.File = base64Image;
-
-        var fileUploadResponse = await UploadFile(fileUploadModel);
-        if (fileUploadResponse.IsSuccess)
+        try
         {
-            PastedImage = fileUploadResponse.FileUrl;
-            markdownHtml.AppendLine($"![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})");
-            base64Image = string.Empty;
-        }
+            if (string.IsNullOrEmpty(base64))
+            {
+                Snackbar.Add("No image data found", Severity.Error);
+                return;
+            }
+            base64Image = base64;
+            fileUploadModel.Container = "content-images";
+            fileUploadModel.File = base64Image;
 
-        StateHasChanged();
+            var fileUploadResponse = await UploadFile(fileUploadModel);
+            if (fileUploadResponse.IsSuccess)
+            {
+                PastedImage = fileUploadResponse.FileUrl;
+                var ImageMarkdown = $"![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                markdownValue += ImageMarkdown;
+                base64Image = string.Empty;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in OnImagePasted");
+        }
     }
 
     public void Dispose()
