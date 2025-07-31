@@ -168,17 +168,14 @@ namespace QLN.SearchService.Service
                     }
                     else
                     {
-                        // UPDATED: Better partial search logic for general searches
-                        // Instead of using wildcards in search text, we'll use search.ismatch in filter
                         if (regularFilters == null)
                             regularFilters = new Dictionary<string, object>();
 
-                        // Add partial search filter using search.ismatch
                         regularFilters["_partialSearch"] = searchTerm;
 
                         modifiedRequest = new CommonSearchRequest
                         {
-                            Text = "*", // Use wildcard as main search text
+                            Text = "*", 
                             Filters = req.Filters,
                             PageNumber = req.PageNumber,
                             PageSize = req.PageSize,
@@ -279,7 +276,6 @@ namespace QLN.SearchService.Service
 
             searchTerm = searchTerm.Trim();
 
-            // Check if it's a complete Ad ID (GUID format)
             if (IsAdId(searchTerm))
             {
                 return new SearchDetectionResult
@@ -290,84 +286,76 @@ namespace QLN.SearchService.Service
                 };
             }
 
-            // Check if it's a partial Ad ID (GUID-like pattern)
             if (IsPartialAdId(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.AdId,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all fields including Id
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
-            // Check if it's an email format - search in searchable fields
             if (IsEmail(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it's a partial email
             if (IsPartialEmail(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it's a phone number format - search in searchable fields
             if (IsPhoneNumber(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it's a partial phone number
             if (IsPartialPhoneNumber(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it looks like a UserId (numeric) - search in UserId field specifically
             if (IsUserId(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'" // Exact match for UserId
+                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'" 
                 };
             }
 
-            // Check if it's a username pattern - could be in UserName field
             if (IsUsername(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields including UserName
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Default to general search
             return new SearchDetectionResult
             {
                 Type = SearchType.General,
@@ -378,10 +366,8 @@ namespace QLN.SearchService.Service
 
         private bool IsUserId(string input)
         {
-            // Check if it's a numeric UserId (like "8353026" from your data)
             if (string.IsNullOrWhiteSpace(input)) return false;
 
-            // Check if it's purely numeric and reasonable length for a user ID
             return input.All(char.IsDigit) && input.Length >= 4 && input.Length <= 15;
         }
 
@@ -394,14 +380,11 @@ namespace QLN.SearchService.Service
 
         private bool IsPartialAdId(string input)
         {
-            // Check if it looks like a partial GUID (hexadecimal characters with possible dashes)
             if (string.IsNullOrWhiteSpace(input) || input.Length < 4) return false;
 
-            // Remove dashes and check if it's hexadecimal
             var cleaned = input.Replace("-", "");
             if (cleaned.Length < 4 || cleaned.Length > 32) return false;
 
-            // Check if all characters are hexadecimal
             return cleaned.All(c => char.IsDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
         }
 
@@ -1002,17 +985,15 @@ namespace QLN.SearchService.Service
         {
             try
             {
-                // ADDED: Handle partial search filter
                 if (key == "_partialSearch")
                 {
                     var searchTerm = val?.ToString()?.Trim();
                     if (!string.IsNullOrEmpty(searchTerm))
                     {
-                        // Create search.ismatch filter for partial text search
                         var searchFields = "Title,Description,Brand,Model,Category,L1Category,L2Category,Location,Condition,Color,UserName";
                         return $"search.ismatch('{searchTerm.Replace("'", "''")}*', '{searchFields}', 'simple', 'any')";
                     }
-                    return ""; // Return empty if no search term
+                    return "";
                 }
 
                 if (val is System.Collections.IEnumerable ie && val is not string)
