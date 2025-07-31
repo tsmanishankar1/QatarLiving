@@ -1,6 +1,7 @@
 ﻿using Dapr.Client;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Utilities;
@@ -295,13 +296,16 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
             try
             {
-                var url = $"/api/v2/community/likeCommentInternal/{userId}";
+                var url = $"/api/v2/community/likeCommentInternal?userId={userId}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, InternalAppId, url);
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
-                response.EnsureSuccessStatusCode();
+                var jsonContent = JsonSerializer.Serialize(likeCommentsDto);
+                request.Content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, ct); response.EnsureSuccessStatusCode();
 
                 var json = await response.Content.ReadAsStringAsync();
 
@@ -318,6 +322,14 @@ namespace QLN.Backend.API.Service.V2ContentService
             }
             catch (Exception ex)
             {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
                 _logger.LogError(ex, "Error invoking LikeCommentAsync via Dapr");
                 throw;
             }
