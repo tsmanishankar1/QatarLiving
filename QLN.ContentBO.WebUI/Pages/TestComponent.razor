@@ -15,7 +15,7 @@
         <MudText Typo="Typo.h4">Blazor Markdown Editor with Image Paste</MudText>
         <div id="pasteTarget" @ref="divRef">
             Click here and press Ctrl + V to paste image
-            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" />
+            <MarkdownEditor @bind-Value="@markdownValue" ValueHTMLChanged="@OnMarkdownValueHTMLChanged" @ref="Markdown1" />
         </div>
         <hr />
     </MudItem>
@@ -37,7 +37,7 @@
 
 
 @code {
-
+    MarkdownEditor Markdown1;
     private string? PastedImage;
 
     string markdownValue = "Test";
@@ -91,8 +91,10 @@
             if (fileUploadResponse.IsSuccess)
             {
                 PastedImage = fileUploadResponse.FileUrl;
-                var ImageMarkdown = $"![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                var ImageMarkdown = $"\n ![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
                 markdownValue += ImageMarkdown;
+
+               await Markdown1.SetValueAsync(markdownValue);
                 base64Image = string.Empty;
             }
 
