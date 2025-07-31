@@ -146,6 +146,11 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ServiceAppId = "qln-classified-ms";
             public const string ServicesIndexKey = "services-index";
         }
+        public static class Audit
+        {
+            public const string StoreName = "auditstore";
+            public const string AuditIndexKey = "audit_index";
+        }
     }
 }
 

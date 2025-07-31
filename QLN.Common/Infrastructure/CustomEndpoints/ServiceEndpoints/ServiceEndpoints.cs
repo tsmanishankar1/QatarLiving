@@ -290,7 +290,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
-                        Detail = ex.Message
+                        Detail = $"{ex.Message}\n{ex.StackTrace}"
                     });
                 }
                 catch (Exception ex)
