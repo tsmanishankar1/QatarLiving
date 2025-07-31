@@ -767,112 +767,201 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
         public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+
         {
+
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
+
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
+
             HttpStatusCode? failedStatusCode = null;
+
             string failedErrorMessage = null;
 
             try
+
             {
-                var url = "api/v2/classifiedbo/bulk-action-userid";
+
+                var url = "api/v2/classifiedbo/bulk-items-action-userid";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
+
                 {
+
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                     string errorMessage;
+
                     try
+
                     {
+
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+
                         errorMessage = problem?.Detail ?? "Unknown validation error.";
+
                     }
+
                     catch
+
                     {
+
                         errorMessage = errorJson;
+
                     }
+
                     failedStatusCode = response.StatusCode;
+
                     failedErrorMessage = errorMessage;
+
                     throw new InvalidDataException(errorMessage);
-                }
-                response.EnsureSuccessStatusCode();
-                return "Status Changed successfully";
-            }
-            catch (Exception ex)
-            {
-                if (failedStatusCode == HttpStatusCode.Conflict)
-                {
-                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
-                    throw new ConflictException(ex.Message);
-                }
-                else if (failedStatusCode == HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
-                    throw new ConflictException(ex.Message);
+
                 }
 
-                _logger.LogError(ex, "Error moderating bulk services");
-                throw;
+                response.EnsureSuccessStatusCode();
+
+                return "Status Changed successfully";
+
             }
+
+            catch (Exception ex)
+
+            {
+
+                if (failedStatusCode == HttpStatusCode.Conflict)
+
+                {
+
+                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
+
+                    throw new ConflictException(ex.Message);
+
+                }
+
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+
+                {
+
+                    throw new KeyNotFoundException(ex.Message);
+
+                }
+
+                _logger.LogError(ex, "Error bulk items action");
+
+                throw;
+
+            }
+
         }
 
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+
         {
+
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
+
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
+
             HttpStatusCode? failedStatusCode = null;
+
             string failedErrorMessage = null;
+
             try
+
             {
+
                 var url = "api/v2/classifiedbo/bulk-collectibles-action-userid";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
+
                 {
+
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                     string errorMessage;
+
                     try
+
                     {
+
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+
                         errorMessage = problem?.Detail ?? "Unknown validation error.";
+
                     }
+
                     catch
+
                     {
+
                         errorMessage = errorJson;
+
                     }
+
                     failedStatusCode = response.StatusCode;
+
                     failedErrorMessage = errorMessage;
+
                     throw new InvalidDataException(errorMessage);
+
                 }
+
                 response.EnsureSuccessStatusCode();
+
                 return "Action Processed successfully";
+
             }
+
             catch (Exception ex)
+
             {
+
                 if (failedStatusCode == HttpStatusCode.Conflict)
+
                 {
+
                     _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
+
                     throw new ConflictException(ex.Message);
+
                 }
+
                 else if (failedStatusCode == HttpStatusCode.NotFound)
+
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
-                    throw new ConflictException(ex.Message);
+
+                    throw new KeyNotFoundException(ex.Message);
+
                 }
+
                 _logger.LogError(ex, "Error bulk collectibles action");
+
                 throw;
+
             }
+
         }
+
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
             TransactionFilterRequestDto request,
             CancellationToken cancellationToken = default)
@@ -1242,7 +1331,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
+                throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
             HttpStatusCode? failedStatusCode = null;
@@ -1260,7 +1349,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     try
                     {
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
                     }
                     catch
                     {
@@ -1271,26 +1360,24 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     throw new InvalidDataException(errorMessage);
                 }
                 response.EnsureSuccessStatusCode();
-                return "Action Processed successfully";
+                return "Action Processed successfully";
             }
             catch (Exception ex)
             {
                 if (failedStatusCode == HttpStatusCode.Conflict)
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
+                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
                     throw new ConflictException(ex.Message);
                 }
                 else if (failedStatusCode == HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
-                    throw new ConflictException(ex.Message);
+                    throw new KeyNotFoundException(ex.Message);
                 }
-                _logger.LogError(ex, "Error bulk preloved action");
+                _logger.LogError(ex, "Error bulk preloved action");
                 throw;
             }
         }
-        
-        
+
         public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(int pageNumber,
             int pageSize,
             string? searchText,

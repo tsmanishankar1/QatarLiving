@@ -1147,7 +1147,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var adKey = GetAdKey(id);
                 if (!indexKeys.Contains(adKey.ToString()))
                 {
-                    Console.WriteLine("Index Is Null");
                     continue;
                 }
 
@@ -1159,7 +1158,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 if (ad is null)
                 {
-                    Console.WriteLine("Ad Is Null");
                     continue;
                 }
 
@@ -1236,6 +1234,30 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         else
                         {
                             throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Promote:
+                        if (!ad.IsPromoted)
+                        {
+                            ad.IsPromoted = true;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Feature:
+                        if (!ad.IsFeatured)
+                        {
+                            ad.IsFeatured = true;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
                         }
                         break;
 
@@ -1267,7 +1289,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 ConstantValues.StateStoreNames.CollectiblesIndexKey,
                 cancellationToken: ct
             ) ?? new();
-            Console.WriteLine(indexKeys);
             var updated = new List<ClassifiedsCollectibles>();
 
             foreach (var id in request.AdIds)
@@ -1275,7 +1296,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var adKey = GetAdKey(id);
                 if (!indexKeys.Contains(adKey.ToString()))
                 {
-                    Console.WriteLine("Index Is Null");
                     continue;
                 }
 
@@ -1287,7 +1307,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 if (ad is null)
                 {
-                    Console.WriteLine("Ad Is Null");
                     continue;
                 }
 
@@ -1364,6 +1383,30 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         else
                         {
                             throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Promote:
+                        if (!ad.IsPromoted)
+                        {
+                            ad.IsPromoted = true;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                        }
+                        break;
+
+                    case BulkActionEnum.Feature:
+                        if (!ad.IsFeatured)
+                        {
+                            ad.IsFeatured = true;
+                            shouldUpdate = true;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
                         }
                         break;
 
@@ -2036,7 +2079,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     ConstantValues.StateStoreNames.PrelovedIndexKey,
                     cancellationToken: ct
                     ) ?? new();
-                Console.WriteLine(indexKeys);
                 var updated = new List<ClassifiedsPreloved>();
 
                 foreach (var id in request.AdIds)
@@ -2044,7 +2086,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     var adKey = GetAdKey(id);
                     if (!indexKeys.Contains(adKey.ToString()))
                     {
-                        Console.WriteLine("Index Is Null");
                         continue;
                     }
 
@@ -2056,7 +2097,6 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                     if (ad is null)
                     {
-                        Console.WriteLine("Ad Is Null");
                         continue;
                     }
 
@@ -2135,6 +2175,31 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                                 throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
                             }
                             break;
+
+                        case BulkActionEnum.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
+                            }
+                            break;
+
 
                         case BulkActionEnum.Remove:
                             ad.Status = AdStatus.Rejected;
