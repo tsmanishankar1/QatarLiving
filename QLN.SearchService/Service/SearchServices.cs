@@ -123,74 +123,50 @@ namespace QLN.SearchService.Service
             {
                 var (regularFilters, jsonFilters) = await SeparateFiltersAsync(req.Filters, indexName);
 
+                var searchDetection = DetectSearchType(req.Text);
                 var modifiedRequest = req;
 
-                if (!string.IsNullOrWhiteSpace(req.Text))
+                if (searchDetection.Type != SearchType.General && !string.IsNullOrEmpty(searchDetection.Filter))
                 {
-                    var searchTerm = req.Text.Trim();
-                    var searchDetection = DetectSearchType(searchTerm);
+                    if (regularFilters == null)
+                        regularFilters = new Dictionary<string, object>();
 
-                    if (searchDetection.Type != SearchType.General && !string.IsNullOrEmpty(searchDetection.Filter))
+                    if (searchDetection.Filter.Contains("search.ismatch"))
                     {
-                        if (regularFilters == null)
-                            regularFilters = new Dictionary<string, object>();
-
-                        if (searchDetection.Filter.Contains("search.ismatch"))
-                        {
-                            modifiedRequest = new CommonSearchRequest
-                            {
-                                Text = searchDetection.SearchTerm,
-                                Filters = req.Filters,
-                                PageNumber = req.PageNumber,
-                                PageSize = req.PageSize,
-                                OrderBy = req.OrderBy
-                            };
-                        }
-                        else
-                        {
-                            var filterParts = searchDetection.Filter.Split(new[] { " eq " }, StringSplitOptions.RemoveEmptyEntries);
-                            if (filterParts.Length == 2)
-                            {
-                                var fieldName = filterParts[0].Trim();
-                                var fieldValue = filterParts[1].Trim().Trim('\'');
-                                regularFilters[fieldName] = fieldValue;
-                            }
-
-                            modifiedRequest = new CommonSearchRequest
-                            {
-                                Text = "*",
-                                Filters = req.Filters,
-                                PageNumber = req.PageNumber,
-                                PageSize = req.PageSize,
-                                OrderBy = req.OrderBy
-                            };
-                        }
-                    }
-                    else
-                    {
-                        if (regularFilters == null)
-                            regularFilters = new Dictionary<string, object>();
-
-                        regularFilters["_partialSearch"] = searchTerm;
-
                         modifiedRequest = new CommonSearchRequest
                         {
-                            Text = "*", 
+                            Text = searchDetection.SearchTerm,
                             Filters = req.Filters,
                             PageNumber = req.PageNumber,
                             PageSize = req.PageSize,
                             OrderBy = req.OrderBy
                         };
+                    }
+                    else
+                    {
+                        var filterParts = searchDetection.Filter.Split(new[] { " eq " }, StringSplitOptions.RemoveEmptyEntries);
+                        if (filterParts.Length == 2)
+                        {
+                            var fieldName = filterParts[0].Trim();
+                            var fieldValue = filterParts[1].Trim().Trim('\'');
+                            regularFilters[fieldName] = fieldValue;
+                        }
 
-                        _logger.LogInformation("Using partial search filter for term: '{SearchTerm}' in index: '{IndexName}'",
-                            searchTerm, indexName);
+                        modifiedRequest = new CommonSearchRequest
+                        {
+                            Text = "*",
+                            Filters = req.Filters,
+                            PageNumber = req.PageNumber,
+                            PageSize = req.PageSize,
+                            OrderBy = req.OrderBy
+                        };
                     }
                 }
                 else
                 {
                     modifiedRequest = new CommonSearchRequest
                     {
-                        Text = "*",
+                        Text = string.IsNullOrWhiteSpace(req.Text) ? "*" : req.Text,
                         Filters = req.Filters,
                         PageNumber = req.PageNumber,
                         PageSize = req.PageSize,
@@ -212,21 +188,21 @@ namespace QLN.SearchService.Service
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsPrelovedItem = items,
-                        true),
+                        true), 
 
                     ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => await HandleSearchWithJsonFilters<ClassifiedsCollectiblesIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsCollectiblesItem = items,
-                        true),
+                        true), 
 
                     ConstantValues.IndexNames.ClassifiedsDealsIndex => await HandleSearchWithJsonFilters<ClassifiedsDealsIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsDealsItem = items,
-                        true),
+                        true), 
 
                     ConstantValues.IndexNames.ServicesIndex => await HandleSearchWithJsonFilters<ServicesIndex>(
                         indexName, modifiedRequest,
@@ -262,6 +238,7 @@ namespace QLN.SearchService.Service
                 throw new InvalidOperationException($"GetAll operation failed for index '{indexName}'. Please try again.", ex);
             }
         }
+
         private SearchDetectionResult DetectSearchType(string searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
@@ -302,7 +279,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
@@ -322,7 +299,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
@@ -352,7 +329,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
@@ -449,7 +426,7 @@ namespace QLN.SearchService.Service
             var cleaned = System.Text.RegularExpressions.Regex.Replace(input, @"[\s\-\(\)\+]", "");
 
             return cleaned.Length >= 3 && cleaned.Length <= 15 &&
-                   cleaned.Count(char.IsDigit) >= (cleaned.Length * 0.7); 
+                   cleaned.Count(char.IsDigit) >= (cleaned.Length * 0.7);
         }
 
         private bool IsUsername(string input)
@@ -482,8 +459,7 @@ namespace QLN.SearchService.Service
             {
                 if (regularFilters?.Any() == true)
                 {
-                    var clauses = regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value))
-                                              .Where(clause => !string.IsNullOrEmpty(clause));
+                    var clauses = regularFilters.Select(kv => BuildClause<T>(kv.Key, kv.Value));
                     baseFilterClauses.AddRange(clauses);
                 }
 
@@ -499,18 +475,16 @@ namespace QLN.SearchService.Service
                         throw new ArgumentException("PageSize must be between 1 and 1000.", nameof(req.PageSize));
                 }
 
-                _logger.LogInformation("Applied filter for {IndexName}: {Filter}, SearchText: '{SearchText}'",
-                    indexName, filterString, req.Text);
+                _logger.LogInformation("Applied filter for {IndexName}: {Filter}", indexName, filterString);
 
                 if (jsonFilters?.Any() == true)
                 {
                     var allResultsOpts = new SearchOptions
                     {
                         IncludeTotalCount = true,
-                        SearchMode = SearchMode.Any,
+                        SearchMode = SearchMode.All,
                         Filter = filterString,
-                        Size = int.MaxValue,
-                        QueryType = SearchQueryType.Simple
+                        Size = int.MaxValue
                     };
 
                     BuildOrderBy<T>(allResultsOpts, req.OrderBy);
@@ -531,11 +505,10 @@ namespace QLN.SearchService.Service
                     var paginatedOpts = new SearchOptions
                     {
                         IncludeTotalCount = true,
-                        SearchMode = SearchMode.Any,
+                        SearchMode = SearchMode.All,
                         Filter = filterString,
                         Skip = hasPaging ? (req.PageNumber - 1) * req.PageSize : 0,
-                        Size = hasPaging ? req.PageSize : int.MaxValue,
-                        QueryType = SearchQueryType.Simple
+                        Size = hasPaging ? req.PageSize : int.MaxValue
                     };
 
                     BuildOrderBy<T>(paginatedOpts, req.OrderBy);
@@ -554,8 +527,8 @@ namespace QLN.SearchService.Service
             }
             catch (RequestFailedException ex)
             {
-                _logger.LogError(ex, "Azure Search request failed for index '{IndexName}' with filter: {Filter}, SearchText: '{SearchText}'",
-                    indexName, string.Join(" and ", baseFilterClauses), req.Text);
+                _logger.LogError(ex, "Azure Search request failed for index '{IndexName}' with filter: {Filter}",
+                    indexName, string.Join(" and ", baseFilterClauses));
                 throw;
             }
             catch (Exception ex)
@@ -564,6 +537,7 @@ namespace QLN.SearchService.Service
                 throw new InvalidOperationException($"Search operation failed unexpectedly for index '{indexName}'.", ex);
             }
         }
+
 
         private async Task<(Dictionary<string, object> regularFilters, Dictionary<string, object> jsonFilters)>
             SeparateFiltersAsync(Dictionary<string, object> filters, string indexName)
@@ -985,17 +959,6 @@ namespace QLN.SearchService.Service
         {
             try
             {
-                if (key == "_partialSearch")
-                {
-                    var searchTerm = val?.ToString()?.Trim();
-                    if (!string.IsNullOrEmpty(searchTerm))
-                    {
-                        var searchFields = "Title,Description,Brand,Model,Category,L1Category,L2Category,Location,Condition,Color,UserName";
-                        return $"search.ismatch('{searchTerm.Replace("'", "''")}*', '{searchFields}', 'simple', 'any')";
-                    }
-                    return "";
-                }
-
                 if (val is System.Collections.IEnumerable ie && val is not string)
                 {
                     var parts = new List<string>();
@@ -1095,6 +1058,7 @@ namespace QLN.SearchService.Service
                 throw new ArgumentException($"Error building filter clause for '{key}'. Please check the filter value format.", ex);
             }
         }
+
         private bool IsDateFilter(string key)
         {
             return DateFilterKeys.Contains(key);
