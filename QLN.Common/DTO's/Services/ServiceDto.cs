@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.DTO_s
 {
@@ -48,5 +43,10 @@ namespace QLN.Common.DTO_s
         public List<ImageDto>? PhotoUpload { get; set; }
         public ServiceStatus? Status { get; set; }
         public ServiceAdType AdType { get; set; }
+    }
+    public class ServiceRequest : ServiceDto
+    {
+        public string CreatedBy { get; set; }
+        public string userName { get; set; }
     }
 }
