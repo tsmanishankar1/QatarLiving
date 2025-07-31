@@ -43,11 +43,4 @@ namespace QLN.Common.DTO_s.Payments
         public DateTime EndDate_dd_mm_yyyy { get; set; }
     }
 
-    public static class D365PaymentOperations
-    {
-        public const string CHECKOUT = "CHECKOUT";
-        public const string SUCCESS = "SUCCESS";
-        public const string FAILURE = "FAILURE";
-    }
-
 }

@@ -133,8 +133,8 @@ namespace QLN.Common.Migrations.QLPayments
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Fee")
-                        .HasColumnType("integer");
+                    b.Property<decimal>("Fee")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Gateway")
                         .IsRequired()

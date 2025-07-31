@@ -49,7 +49,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
 
 
-        public async Task<bool> CreateAndInvoiceSalesOrder(D365Data order)
+        public async Task<bool> CreateAndInvoiceSalesOrder(D365Data order, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Creating and invoicing sales order for user: {UserId}", order.User.Id);
 
@@ -76,7 +76,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             try
             {
                 // Use PostAsJsonAsync for cleaner serialization and posting
-                var response = await _httpClient.PostAsJsonAsync(_d365Config.InvoicePath, data);
+                var response = await _httpClient.PostAsJsonAsync(_d365Config.InvoicePath, data, cancellationToken);
 
                 response.EnsureSuccessStatusCode();
 
@@ -93,7 +93,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return false;
         }
 
-        public async Task<bool> CreateInterimSalesOrder(D365Data order)
+        public async Task<bool> CreateInterimSalesOrder(D365Data order, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Creating interim sales order for user: {UserId}", order.User.Id);
 
@@ -109,11 +109,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync(_d365Config.CheckoutPath, processedOrder);
+                var response = await _httpClient.PostAsJsonAsync(_d365Config.CheckoutPath, processedOrder, cancellationToken);
 
                 response.EnsureSuccessStatusCode();
 
-                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
 
                 // Log the request and response to D365PaymentLogsEntity
                 var paymentLogs = new List<D365PaymentLogsEntity>
@@ -134,8 +134,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     }
                 };
 
-                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs);
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
 
                 if (response.IsSuccessStatusCode)
@@ -180,8 +180,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                     }
                 };
 
-                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs);
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.D365PaymentLogs.AddRangeAsync(paymentLogs, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
             }
 
             _logger.LogError("Failed to send checkout Sale order {StatusText}", statusText);
@@ -189,7 +189,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
             return false;
         }
 
-        public async Task<string> HandleD365OrderAsync(D365Order order)
+        public async Task<string> HandleD365OrderAsync(D365Order order, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Handling D365 order with ID: {OrderId}", order.OrderId);
 
@@ -206,7 +206,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             DateTime.UtcNow,
                             order,
                             1,
-                            new { message = "Add feature processed successfully" }
+                            new { message = "Add feature processed successfully" },
+                            cancellationToken
                         );
 
                         return "Add feature processed successfully";
@@ -217,7 +218,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             DateTime.UtcNow,
                             order,
                             0,
-                            new { message = ex.Message }
+                            new { message = ex.Message },
+                            cancellationToken
                         );
                         throw new InvalidOperationException($"Error processing feature: {ex.Message}", ex);
                     }
@@ -233,7 +235,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             DateTime.UtcNow,
                             order,
                             1,
-                            new { message = "Subscription processed successfully" }
+                            new { message = "Subscription processed successfully" },
+                            cancellationToken
                         );
 
                         return "Subscription processed successfully";
@@ -244,7 +247,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                             DateTime.UtcNow,
                             order,
                             0,
-                            new { message = "Error While processing subscription" }
+                            new { message = "Error While processing subscription" },
+                            cancellationToken
                         );
                         throw new InvalidOperationException($"Error processing subscription: {ex.Message}", ex);
                     }
@@ -311,7 +315,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 }
             };
         }
-        private async Task SaveD365RequestLogsAsync(DateTime createdAt, D365Order payload, int status, object response)
+        private async Task SaveD365RequestLogsAsync(DateTime createdAt, D365Order payload, int status, object response, CancellationToken cancellationToken)
         {
             try
             {
@@ -325,8 +329,8 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 };
 
                 // Replace with your actual persistence logic, e.g. EF Core DbContext or repository
-                await _dbContext.D365RequestsLogs.AddAsync(logEntry);
-                await _dbContext.SaveChangesAsync();
+                await _dbContext.D365RequestsLogs.AddAsync(logEntry, cancellationToken);
+                await _dbContext.SaveChangesAsync(cancellationToken);
 
             }
             catch (Exception ex)
@@ -335,7 +339,7 @@ namespace QLN.Common.Infrastructure.Service.Payments
                 throw;
             }
         }
-        public async Task SendPaymentInfoD365Async(D365Data data)
+        public async Task SendPaymentInfoD365Async(D365Data data, CancellationToken cancellationToken)
         {
             try
             {
@@ -345,11 +349,11 @@ namespace QLN.Common.Infrastructure.Service.Payments
 
                 if (data.Operation == D365PaymentOperations.CHECKOUT)
                 {
-                    await CreateInterimSalesOrder(data);
+                    await CreateInterimSalesOrder(data, cancellationToken);
                 }
                 else if (data.Operation == D365PaymentOperations.SUCCESS)
                 {
-                    await CreateAndInvoiceSalesOrder(data);
+                    await CreateAndInvoiceSalesOrder(data, cancellationToken);
                 }
                 else
                 {
@@ -360,6 +364,35 @@ namespace QLN.Common.Infrastructure.Service.Payments
             {
                 _logger.LogError(ex, "Error processing message");
             }
+        }
+
+        public async Task<string> D365OrdersAsync(D365Order[] order, CancellationToken cancellationToken)
+        {
+            if (order == null || order.Length == 0)
+            {
+                throw new InvalidOperationException("Order array is missing");
+            }
+
+            var orderId = order[0]?.OrderId;
+
+            if (string.IsNullOrWhiteSpace(orderId))
+            {
+                throw new InvalidOperationException("D365 Order id missing");
+            }
+
+            foreach (var item in order)
+            {
+                try
+                {
+                    await HandleD365OrderAsync(item, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Error processing order: {ex.Message}", ex);
+                }
+            }
+
+            return "All orders processed successfully";
         }
     }
 }

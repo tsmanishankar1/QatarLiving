@@ -6,7 +6,14 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.Constants
 {
-    public class PaymentConstants
+    public static class PaymentConstants
     {
+        // Subscription Types
+        public const string SUBSCRIPTION_TYPE_BASIC = "Basic Subscription";
+        public const string SUBSCRIPTION_TYPE_REGULAR = "Regular Subscription";
+        public const string SUBSCRIPTION_TYPE_ALAYA = "À La Carte";
+        public const string SUBSCRIPTION_TYPE_TRIAL = "Trial Subscription";
+
+
     }
 }

@@ -33,6 +33,8 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -277,7 +279,8 @@ authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
-paymentGroup.MapFaturaEndpoints();
+paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
+
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyServiceGroup = app.MapGroup("/api/companyservice");

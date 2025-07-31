@@ -11,28 +11,28 @@ namespace QLN.Common.DTO_s.Payments
     public class PaymentTransactionRequest
     {
         [JsonPropertyName("transaction_id")]
-        public string TransactionId { get; set; }
+        public required string TransactionId { get; set; }
 
         [JsonPropertyName("order_id")]
-        public string OrderId { get; set; }
+        public required string OrderId { get; set; }
 
         [JsonPropertyName("card_token")]
-        public string CardToken { get; set; }
+        public string? CardToken { get; set; }
 
         [JsonPropertyName("mode")]
-        public string Mode { get; set; }
+        public string? Mode { get; set; }
 
         [JsonPropertyName("response_Code")]
-        public string ResponseCode { get; set; }
+        public string? ResponseCode { get; set; }
 
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonPropertyName("platform")]
-        public string Platform { get; set; }
+        public string? Platform { get; set; }
 
         [JsonPropertyName("vertical")]
-        public Vertical Vertical { get; set; }
+        public Vertical? Vertical { get; set; }
 
         [JsonPropertyName("subscriptionTypeId")]
         public int? SubscriptionTypeId { get; set; }

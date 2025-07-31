@@ -1,8 +1,8 @@
 ﻿namespace QLN.Common.DTO_s.Payments
 {
-    public enum Source
+    public enum TriggeredSource
     {
         Web = 0,
-        Mobile = 1,
+        Cron = 1,
     }
 }

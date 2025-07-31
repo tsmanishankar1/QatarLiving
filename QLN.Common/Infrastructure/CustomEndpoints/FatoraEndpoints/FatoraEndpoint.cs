@@ -10,51 +10,11 @@ using QLN.Common.Infrastructure.IService.IPayToFeatureService;
 using System.Net;
 using System.Text.Json;
 
-namespace QLN.Common.Infrastructure.CustomEndpoints.PayToFeatureEndpoint;
+namespace QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 
-public static class FaturaEndpoint
+public static class FatoraEndpoint
 {
-
-    public static RouteGroupBuilder MapFaturaPaymentEndpoint(this RouteGroupBuilder group)
-    {
-        group.MapPost("/", async Task<IResult> (
-            [FromServices] IPaymentService service,
-            [FromHeader] string? Platform,
-            [FromBody] ExternalPaymentRequest request,
-            CancellationToken cancellationToken) =>
-        {
-            try
-            {
-                var result = await service.PayAsync(request, cancellationToken);
-
-                if(result.Status != "success")
-                {
-                    return TypedResults.Problem("Payment Failed", result.Error?.Description, StatusCodes.Status400BadRequest);
-                }
-
-                if (string.IsNullOrEmpty(result.Result?.CheckOutUrl))
-                {
-                    return TypedResults.Problem("Payment URL not found", "The payment URL is missing in the response.", StatusCodes.Status400BadRequest);
-                }
-
-                return TypedResults.Created(result.Result.CheckOutUrl, result);
-            }
-            catch (Exception ex)
-            {
-                return TypedResults.Problem("Internal Server Error", ex.Message, StatusCodes.Status500InternalServerError);
-            }
-        })
-            .WithName("FaturaPayment")
-            .WithTags("Payment")
-            .Produces<PaymentResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .WithSummary("Process Fatura Payment")
-            .WithDescription("This endpoint processes a Fatura payment.");
-        return group;
-    }
-
-    public static RouteGroupBuilder MapFaturaSuccessEndpoint(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapFatoraSuccessEndpoint(this RouteGroupBuilder group)
     {
         group.MapGet("/fatora/webhooks/success", async Task<IResult> (
             [FromServices] IPaymentService service,
@@ -84,7 +44,7 @@ public static class FaturaEndpoint
         return group;
     }
 
-    public static RouteGroupBuilder MapFaturaFailureEndpoint(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapFatoraFailureEndpoint(this RouteGroupBuilder group)
     {
         group.MapGet("/fatora/webhooks/failure", async Task<IResult> (
             [FromServices] IPaymentService service,

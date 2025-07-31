@@ -78,7 +78,7 @@ namespace QLN.Common.Migrations.QLPayments
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     AdId = table.Column<string>(type: "text", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
-                    Fee = table.Column<int>(type: "integer", nullable: false),
+                    Fee = table.Column<decimal>(type: "numeric", nullable: false),
                     PaidByUid = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     PaymentMethod = table.Column<int>(type: "integer", nullable: false),

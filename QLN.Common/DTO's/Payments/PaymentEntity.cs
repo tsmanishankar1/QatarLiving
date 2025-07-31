@@ -23,9 +23,9 @@ namespace QLN.Common.DTO_s.Payments
 
         public string AdId { get; set; }
 
-        public int Status { get; set; }
+        public PaymentStatus Status { get; set; }
 
-        public int Fee { get; set; }
+        public decimal Fee { get; set; }
         public string PaidByUid { get; set; }
 
         [DataType(DataType.DateTime)]
@@ -47,7 +47,7 @@ namespace QLN.Common.DTO_s.Payments
 
         public string Comments { get; set; }
 
-        public int TriggeredSource { get; set; }
+        public TriggeredSource TriggeredSource { get; set; }
 
         [Column(TypeName = "decimal(10,1)")]
         [Required]
