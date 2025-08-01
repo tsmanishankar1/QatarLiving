@@ -61,14 +61,14 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         {
             currentStatus = status;
             currentPage = 1;
-            SortAscending = status == 1; 
+            SortAscending = status == 1;
             PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
             if (status == 1)
             {
                 var sortedList = PaginatedData.Items
                  .OrderBy(e => e.EventSchedule.StartDate)
                  .ToList();
-               PaginatedData.Items = sortedList;
+                PaginatedData.Items = sortedList;
             }
             StateHasChanged();
         }
@@ -101,12 +101,11 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 .Select(slot => slot.Event.Id)
                 .ToHashSet();
 
-            var paginatedData = await GetEvents(1, 50,"","desc", status: currentStatus);
-            var allEvents = paginatedData.Items;
+            // Get all events excluding featured ones for the AllEventsList
+            var filteredEventsData = await GetEvents(1, 50, "", "desc", status: (int)EventStatus.Published);
 
-            AllEventsList = [.. allEvents
-                .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
-                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)];
+            AllEventsList = [.. filteredEventsData.Items
+                .Where(e => !featuredEventIds.Contains(e.Id))];
         }
         protected EventDTO? draggedItem;
 
@@ -135,8 +134,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected Task OpenDialogAsync()
         {
             List<EventDTO> PublishedEventsList = [.. AllEventsList
-                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                .Take(50)];
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)];
 
             var parameters = new DialogParameters
             {
@@ -181,17 +179,28 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                     ReplacedEvent = selectedEvent.Event;
                     ReplacedEvent.FeaturedSlot.Id = ReplaceSlot?.SlotNumber ?? 0;
                     ReplacedEvent.IsFeatured = true;
-                    ReplaceFeaturedEvent();
+                    await ReplaceFeaturedEvent();
                 }
             }
             await Task.CompletedTask;
         }
+
         protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
         {
             ReplaceSlot = selectedEvent;
+            // Refresh the AllEventsList to ensure it has the latest data
+            var featuredEventIds = featuredEventSlots
+                .Where(slot => slot.Event != null)
+                .Select(slot => slot.Event.Id)
+                .ToHashSet();
+            var filteredEventsData = await GetEvents(1, 50, "", "desc", status: (int)EventStatus.Published);
+
+            AllEventsList = [.. filteredEventsData.Items
+                .Where(e => !featuredEventIds.Contains(e.Id))];
             await OpenDialogAsync();
             await Task.CompletedTask;
         }
+
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
         {
             Number = i,
@@ -513,19 +522,6 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
                 {
                     await ShowSuccessModal("Event replaced successfully!");
                     PaginatedData = await GetEvents(currentPage, pageSize, searchText, SortAscending ? "asc" : "desc", currentStatus);
-                    var featuredEventIds = featuredEventSlots
-                            .Where(slot => slot.Event != null)
-                            .Select(slot => slot.Event.Id)
-                            .ToHashSet();
-
-                    var paginatedData = await GetEvents(1, 50,"","desc",1);
-                    var allEvents = paginatedData.Items;
-                    AllEventsList = allEvents
-                        .Where(e => e.Status == EventStatus.Published && !featuredEventIds.Contains(e.Id))
-                        .ToList();
-                    AllEventsList = AllEventsList
-                        .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
-                        .ToList();
                     StateHasChanged();
                 }
                 else
@@ -570,16 +566,16 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         }
         protected async Task DeleteEventOnClick(string id)
         {
-        var parameters = new DialogParameters
+            var parameters = new DialogParameters
         {
             { "Title", "Delete Confirmation" },
             { "Descrption", "Do you want to delete this Event?" },
             { "ButtonTitle", "Delete" },
             { "OnConfirmed",  EventCallback.Factory.Create(this, async () => await UnFeatureEvent(id))}
         };
-        var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
-        var result = await dialog.Result;
-    }
+            var options = new DialogOptions { CloseButton = false, MaxWidth = MaxWidth.Small, FullWidth = true };
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
     }
 }
