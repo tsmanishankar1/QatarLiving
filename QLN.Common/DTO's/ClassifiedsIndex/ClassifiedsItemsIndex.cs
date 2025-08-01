@@ -25,6 +25,6 @@ namespace QLN.Common.DTO_s
         public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? RefreshExpiryDate { get; set; }
+        public DateTime? LastRefreshedOn { get; set; }
     }
 }

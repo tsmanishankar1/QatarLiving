@@ -456,7 +456,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     .WithDescription("Adds a new comment to a community post based on user token and CommunityPostId.")
     .Produces<object>(StatusCodes.Status200OK)
     .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized) // ✅ updated
+    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized) 
     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -521,7 +521,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
  .Produces(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPost("/likeCommentByUserId/{commentId:guid}/{communityPostId:guid}", async Task<Results<
+            group.MapPost("/likeCommentByUserId", async Task<Results<
                 Ok<object>,
                 ForbidHttpResult,
                 ProblemHttpResult>>
@@ -563,7 +563,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Extracts user ID from token and toggles comment like.");
 
 
-            group.MapPost("/likeCommentInternal/{commentId:guid}/{communityPostId:guid}/{userId}", async Task<Results<
+            group.MapPost("/likeCommentInternal", async Task<Results<
     Ok<object>,
     ProblemHttpResult>>
 (

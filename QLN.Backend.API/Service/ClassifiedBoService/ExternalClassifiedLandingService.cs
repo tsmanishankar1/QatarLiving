@@ -11,6 +11,7 @@ using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Globalization;
 using System.Net;
@@ -766,187 +767,214 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
         public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+
         {
+
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
+
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
+
             HttpStatusCode? failedStatusCode = null;
+
             string failedErrorMessage = null;
 
             try
+
             {
-                var url = "api/v2/classifiedbo/bulk-action-userid";
+
+                var url = "api/v2/classifiedbo/bulk-items-action-userid";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
+
                 {
+
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                     string errorMessage;
+
                     try
+
                     {
+
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+
                         errorMessage = problem?.Detail ?? "Unknown validation error.";
+
                     }
+
                     catch
+
                     {
+
                         errorMessage = errorJson;
+
                     }
+
                     failedStatusCode = response.StatusCode;
+
                     failedErrorMessage = errorMessage;
+
                     throw new InvalidDataException(errorMessage);
-                }
-                response.EnsureSuccessStatusCode();
-                return "Status Changed successfully";
-            }
-            catch (Exception ex)
-            {
-                if (failedStatusCode == HttpStatusCode.Conflict)
-                {
-                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
-                    throw new ConflictException(ex.Message);
-                }
-                else if (failedStatusCode == HttpStatusCode.NotFound)
-                {
-                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
-                    throw new ConflictException(ex.Message);
+
                 }
 
-                _logger.LogError(ex, "Error moderating bulk services");
-                throw;
+                response.EnsureSuccessStatusCode();
+
+                return "Status Changed successfully";
+
             }
+
+            catch (Exception ex)
+
+            {
+
+                if (failedStatusCode == HttpStatusCode.Conflict)
+
+                {
+
+                    _logger.LogWarning(ex, "Conflict detected while bulk items action.");
+
+                    throw new ConflictException(ex.Message);
+
+                }
+
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+
+                {
+
+                    throw new KeyNotFoundException(ex.Message);
+
+                }
+
+                _logger.LogError(ex, "Error bulk items action");
+
+                throw;
+
+            }
+
         }
 
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+
         {
+
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
+
                 throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
+
             HttpStatusCode? failedStatusCode = null;
+
             string failedErrorMessage = null;
+
             try
+
             {
+
                 var url = "api/v2/classifiedbo/bulk-collectibles-action-userid";
+
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
+
                 {
+
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
                     string errorMessage;
+
                     try
+
                     {
+
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+
                         errorMessage = problem?.Detail ?? "Unknown validation error.";
+
                     }
+
                     catch
+
                     {
+
                         errorMessage = errorJson;
+
                     }
+
                     failedStatusCode = response.StatusCode;
+
                     failedErrorMessage = errorMessage;
+
                     throw new InvalidDataException(errorMessage);
+
                 }
+
                 response.EnsureSuccessStatusCode();
+
                 return "Action Processed successfully";
+
             }
+
             catch (Exception ex)
+
             {
+
                 if (failedStatusCode == HttpStatusCode.Conflict)
+
                 {
+
                     _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
+
                     throw new ConflictException(ex.Message);
+
                 }
+
                 else if (failedStatusCode == HttpStatusCode.NotFound)
+
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk collectibles action.");
-                    throw new ConflictException(ex.Message);
+
+                    throw new KeyNotFoundException(ex.Message);
+
                 }
+
                 _logger.LogError(ex, "Error bulk collectibles action");
+
                 throw;
+
             }
+
         }
+
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
-                    string subVertical,
-                    int pageNumber,
-                    int pageSize,
-                    string? searchText,
-                    string? transactionType,
-                    string? dateCreated,
-                    string? datePublished,
-                    string? dateStart,
-                    string? dateEnd,
-                    string? status,
-                    string? paymentMethod,
-                    string sortBy,
-                    string sortOrder,
-                    CancellationToken cancellationToken = default)
+            TransactionFilterRequestDto request,
+            CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = new List<string>
-                {
-                    $"subVertical={subVertical}",
-                    $"pageNumber={pageNumber}",
-                    $"pageSize={pageSize}"
-                };
+                var endpoint = $"api/v2/classifiedbo/items/transactions";
 
-                if (!string.IsNullOrWhiteSpace(searchText))
-                {
-                    queryParams.Add($"searchText={Uri.EscapeDataString(searchText)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(transactionType))
-                {
-                    queryParams.Add($"transactionType={Uri.EscapeDataString(transactionType)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(status))
-                {
-                    queryParams.Add($"status={Uri.EscapeDataString(status)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(paymentMethod))
-                {
-                    queryParams.Add($"paymentMethod={Uri.EscapeDataString(paymentMethod)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateCreated))
-                {
-                    queryParams.Add($"dateCreated={Uri.EscapeDataString(dateCreated)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(datePublished))
-                {
-                    queryParams.Add($"datePublished={Uri.EscapeDataString(datePublished)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateStart))
-                {
-                    queryParams.Add($"dateStart={Uri.EscapeDataString(dateStart)}");
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateEnd))
-                {
-                    queryParams.Add($"dateEnd={Uri.EscapeDataString(dateEnd)}");
-                }
-
-                queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-                queryParams.Add($"sortOrder={Uri.EscapeDataString(sortOrder)}");
-
-                var queryString = string.Join("&", queryParams);
-                var endpoint = $"api/v2/classifiedbo/items/transactions?{queryString}";
-
-                var response = await _dapr.InvokeMethodAsync<TransactionListResponseDto>(
-                    HttpMethod.Get,
+                var response = await _dapr.InvokeMethodAsync<TransactionFilterRequestDto, TransactionListResponseDto>(
+                    HttpMethod.Post,
                     SERVICE_APP_ID,
                     endpoint,
+                    request,
                     cancellationToken
                 );
 
@@ -1303,7 +1331,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             ArgumentNullException.ThrowIfNull(request);
 
             if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
+                throw new ArgumentException("UserId is required.");
 
             var uploadedBlobKeys = new List<string>();
             HttpStatusCode? failedStatusCode = null;
@@ -1321,7 +1349,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     try
                     {
                         var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
                     }
                     catch
                     {
@@ -1332,26 +1360,24 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     throw new InvalidDataException(errorMessage);
                 }
                 response.EnsureSuccessStatusCode();
-                return "Action Processed successfully";
+                return "Action Processed successfully";
             }
             catch (Exception ex)
             {
                 if (failedStatusCode == HttpStatusCode.Conflict)
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
+                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
                     throw new ConflictException(ex.Message);
                 }
                 else if (failedStatusCode == HttpStatusCode.NotFound)
                 {
-                    _logger.LogWarning(ex, "Conflict detected while bulk preloved action.");
-                    throw new ConflictException(ex.Message);
+                    throw new KeyNotFoundException(ex.Message);
                 }
-                _logger.LogError(ex, "Error bulk preloved action");
+                _logger.LogError(ex, "Error bulk preloved action");
                 throw;
             }
         }
-        
-        
+
         public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(int pageNumber,
             int pageSize,
             string? searchText,
@@ -1425,13 +1451,102 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error getting transactions");
-                throw new InvalidOperationException("Error retrieving transactions", ex);
+                _logger.LogError(ex, "Error moderating bulk services");
+                throw;
             }
+
         }
 
+        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}";
+                var response = await _dapr.InvokeMethodAsync<List<StoresSubscriptionDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                   
+                    $"api/v2/classifiedbo/getstoresubscriptions{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? new List<StoresSubscriptionDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in stores subscriptions.");
+                throw new InvalidOperationException("Error fetching stores subscriptions.", ex);
+            }
+        }
+        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "api/v2/classifiedbo/create-store-subscriptions";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
 
 
 
-    }
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    
+                    throw new InvalidDataException(errorMessage);
+                }
+                if (response.StatusCode == HttpStatusCode.Conflict)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                   
+                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
+                }
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                
+                _logger.LogError(ex, "Error creating company profile");
+                throw;
+            }
+        }
+        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+  
+                var queryParams = $"?OrderID={OrderID}&Status={Status}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/edit-store-subscriptions{queryParams}",
+                    cancellationToken
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error editing stores subscriptions.");
+                throw;
+            }
+        }
+     }
 }

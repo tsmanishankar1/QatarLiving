@@ -33,34 +33,13 @@ namespace QLN.Backend.API.Service.V2ContentService
             _logger = logger;
             _blobStorage = blobStorage;
         }
-
-        public async Task<WriterTagsResponse> GetWriterTagsAsync(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/writertags";
-
-                return await _dapr.InvokeMethodAsync<WriterTagsResponse>(
-               HttpMethod.Get,
-               appId,
-               path,
-               cancellationToken
-           ) ?? new();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving writer tags from internal service");
-                throw;
-            }
-        }
        
-        public async Task<string> CreateWritertagAsync(WritertagDTO dto, CancellationToken cancellationToken)
+        public async Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken)
         {
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/createtagname";
+                var path = "/api/v2/news/createtagnamebyuserid";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, appId, path);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
@@ -78,14 +57,14 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<WritertagDTO>> GetAllWritertagsAsync(CancellationToken cancellationToken)
+        public async Task<List<Writertag>> GetAllWritertagsAsync(CancellationToken cancellationToken)
         {
             try
             {
                 var appId = ConstantValues.V2Content.ContentServiceAppId;
-                var path = "/api/v2/news/getalltags";
+                var path = "/api/v2/news/writertags";
 
-                return await _dapr.InvokeMethodAsync<List<WritertagDTO>>(
+                return await _dapr.InvokeMethodAsync<List<Writertag>>(
                HttpMethod.Get,
                appId,
                path,

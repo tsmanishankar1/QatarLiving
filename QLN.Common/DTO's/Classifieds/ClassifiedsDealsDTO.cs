@@ -16,13 +16,14 @@ namespace QLN.Common.DTO_s
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public string? FlyerFileUrl { get; set; }
+        public DateTime ExpiryDate { get; set; }
         public string? DataFeedUrl { get; set; }
-        
         public string? WebsiteUrl { get; set; }
         public string? SocialMediaLinks { get; set; }
-        public string XMLlink { get; set; }
+        public string XMLlink { get; set; } = string.Empty;
         public string? offertitle { get; set; }
-        public string ImageUrl { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public List<string> Locations { get; set; } = new List<string>();
     }
 
 }
