@@ -183,6 +183,21 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    await MarkdownEditorRef.SetValueAsync(CurrentEvent.EventDescription);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
+            }
+        }
+
         protected async void OnCancelClicked()
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
