@@ -65,21 +65,6 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (firstRender)
-                {
-                    await MarkdownEditorRef.SetValueAsync(article.Content);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnAfterRenderAsync");
-            }
-        }
-
         protected async override Task OnParametersSetAsync()
         {
             try
