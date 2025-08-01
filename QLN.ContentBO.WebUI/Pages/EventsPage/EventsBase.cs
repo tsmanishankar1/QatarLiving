@@ -1,13 +1,10 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Routing;
-using Microsoft.AspNetCore.WebUtilities;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using System.Net;
 using System.Text.Json;
@@ -137,11 +134,15 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         }
         protected Task OpenDialogAsync()
         {
+            List<EventDTO> PublishedEventsList = [.. AllEventsList
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                .Take(50)];
+
             var parameters = new DialogParameters
             {
                 { nameof(MessageBoxBase.Title), "Featured Event" },
                 { nameof(MessageBoxBase.Placeholder), "Event Title*" },
-                { nameof(MessageBoxBase.events), AllEventsList },
+                { nameof(MessageBoxBase.events), PublishedEventsList },
                 { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
             };
             var options = new DialogOptions
@@ -188,7 +189,7 @@ namespace QLN.ContentBO.WebUI.Pages.EventsPage
         protected async Task ReplaceEventSlot(FeaturedSlot selectedEvent)
         {
             ReplaceSlot = selectedEvent;
-            OpenDialogAsync();
+            await OpenDialogAsync();
             await Task.CompletedTask;
         }
         protected List<PostItem> _posts = Enumerable.Range(1, 12).Select(i => new PostItem
