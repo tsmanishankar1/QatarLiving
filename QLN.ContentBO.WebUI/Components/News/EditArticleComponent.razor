@@ -84,7 +84,7 @@
                 <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
                     @foreach (var item in WriterTags)
                     {
-                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                        <MudSelectItem Value="@item.Tagname">@item.Tagname</MudSelectItem>
                     }
                 </MudSelect>
 
@@ -113,6 +113,9 @@
                         <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
                     </Toolbar>
                 </MarkdownEditor>
+                <MudText Typo="Typo.caption" Color="Color.Error">
+                    <ValidationMessage For="@(() => article.Content)" />
+                </MudText>
                 <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
                 </MudFileUpload>
                 <!-- END Custom Markdown Editor -->
