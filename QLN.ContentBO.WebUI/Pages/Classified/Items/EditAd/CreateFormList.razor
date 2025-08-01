@@ -1,4 +1,5 @@
 @inherits CreateFormListBase
+@using QLN.ContentBO.WebUI.Models;
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
 
      <div class="create-form-list">
@@ -18,7 +19,10 @@
             {
                 @foreach (var cat in CategoryTrees)
                 {
-                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                    if (cat != null && cat.Id != null && cat.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                    }
                 }
             }
         </MudSelect>
@@ -31,9 +35,12 @@
                     ValueChanged="@OnSubCategoryChanged"
                     For="@(() => Ad.L1CategoryId)"
                     FullWidth="true">
-                @foreach (var sub in SelectedCategory.Children)
+                @foreach (var sub in SelectedCategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
                 {
-                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                    if (sub?.Id != null && sub.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                    }
                 }
             </MudSelect>
 
@@ -46,10 +53,13 @@
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => Ad.L2CategoryId)"
                 FullWidth="true">
-            @foreach (var subsub in SelectedSubcategory.Children)
-            {
-                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
-            }
+                 @foreach (var subsub in SelectedSubcategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
+                {
+                    if (subsub?.Id != null && subsub.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+                    }
+                }
         </MudSelect>
 
         }

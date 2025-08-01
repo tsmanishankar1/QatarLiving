@@ -641,11 +641,9 @@ a, .btn-link {
         height: 50px;
     }
     .custom-add-btn {
-        background-color: #FF7F38;
         font-size: 16px;
         font-weight: 600;
-        color: white;
-        text-transform: none;
+        text-transform: capitalize !important;
     }
     .custom-close-btn {
         border-color: #D5D7DA;

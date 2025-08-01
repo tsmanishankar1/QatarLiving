@@ -196,8 +196,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         {
             var parameters = new DialogParameters
             {
-                { "Title", "Discard Event" },
-                { "Description", "Are you sure you want to discard this event? Any unsaved changes will be gone." },
+                { "Title", "Discard Ad" },
+                { "Description", "Are you sure you want to discard this Ad? Any unsaved changes will be gone." },
                 { "OnDiscard", EventCallback.Factory.Create(this, HandleDiscardAsync) }
             };
 

@@ -27,7 +27,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewTransactionAsync(object searchPayload);
-        Task<HttpResponseMessage?> PerformBulkActionAsync(string vertical,object payload);
+        Task<HttpResponseMessage?> PerformBulkActionAsync(string vertical, object payload);
         Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId);
 
         Task<HttpResponseMessage?> GetAllZonesAsync();
@@ -40,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UplodAsync(object payload);
-
+        Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical);
 
     }
 }

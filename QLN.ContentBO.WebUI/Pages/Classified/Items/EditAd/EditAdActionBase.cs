@@ -20,10 +20,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         [Parameter] public int OrderId { get; set; } = 24578;
 
-       protected bool CanPublish => AdModel?.Status == (int)AdStatus.Unpublished;
-       protected bool CanUnpublish => AdModel?.Status == (int)AdStatus.Published;
-       
-         private void OpenRemoveReasonDialog()
+        protected bool CanPublish => AdModel?.Status == (int)AdStatus.Unpublished;
+        protected bool CanUnpublish => AdModel?.Status == (int)AdStatus.Published;
+
+        private void OpenRemoveReasonDialog()
         {
             var parameters = new DialogParameters
             {
@@ -61,14 +61,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             await dialog.Result;
         }
 
-       protected async Task ShowConfirmation(string title, string message, string buttonTitle)
+        protected async Task ShowConfirmation(string title, string message, string buttonTitle)
         {
             var parameters = new DialogParameters
             {
                 { "Title", title },
                 { "Descrption", message },
                 { "ButtonTitle", buttonTitle },
-                { "OnConfirmed", EventCallback.Factory.Create(this, async () => 
+                { "OnConfirmed", EventCallback.Factory.Create(this, async () =>
                     await HandleConfirmedAction(buttonTitle)
                 )}
             };
@@ -93,7 +93,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 return;
             }
 
-            await PerformSingleActionAsync(actionType);
+            if (actionType == AdBulkActionType.Refresh)
+            {
+                await PerformRefreshActionAsync();
+            }
+            else
+            {
+                await PerformSingleActionAsync(actionType);
+            }
+
         }
 
         private AdBulkActionType MapTitleToAction(string title)
@@ -111,7 +119,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 _ => throw new ArgumentException($"Unknown action title: {title}")
             };
         }
-         private void UpdateAdModelState(AdBulkActionType actionType)
+        private void UpdateAdModelState(AdBulkActionType actionType)
         {
             switch (actionType)
             {
@@ -140,51 +148,79 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         }
 
 
-      private async Task PerformSingleActionAsync(AdBulkActionType actionType, string? reason = null)
-    {
-        if (string.IsNullOrWhiteSpace(AdModel?.Id))
+        private async Task PerformSingleActionAsync(AdBulkActionType actionType, string? reason = null)
         {
-            Snackbar.Add("Ad ID is missing.", Severity.Warning);
-            return;
-        }
-
-        var payload = new Dictionary<string, object>
-        {
-            ["adIds"] = new List<string> { AdModel.Id },
-            ["action"] = (int)actionType,
-            ["reason"] = reason ?? string.Empty
-        };
-
-        try
-        {
-            var payloadJson = JsonSerializer.Serialize(payload);
-            Logger.LogInformation("Performing single action: {Payload}", payloadJson);
-
-            var response = await ClassifiedService.PerformBulkActionAsync("bulk-items-action", payload);
-
-            if (response?.IsSuccessStatusCode == true)
+            if (string.IsNullOrWhiteSpace(AdModel?.Id))
             {
-                Snackbar.Add($"Ad {actionType} successfully.", Severity.Success);
-                if (actionType == AdBulkActionType.Remove)
+                Snackbar.Add("Ad ID is missing.", Severity.Warning);
+                return;
+            }
+
+            var payload = new Dictionary<string, object>
+            {
+                ["adIds"] = new List<string> { AdModel.Id },
+                ["action"] = (int)actionType,
+                ["reason"] = reason ?? string.Empty
+            };
+
+            try
+            {
+                var payloadJson = JsonSerializer.Serialize(payload);
+                Logger.LogInformation("Performing single action: {Payload}", payloadJson);
+
+                var response = await ClassifiedService.PerformBulkActionAsync("bulk-items-action", payload);
+
+                if (response?.IsSuccessStatusCode == true)
                 {
-                    // Redirect after successful remove
-                    NavigationManager.NavigateTo("/manage/classified/items/view/listing");
-                    return;
+                    Snackbar.Add($"Ad {actionType} successfully.", Severity.Success);
+                    if (actionType == AdBulkActionType.Remove)
+                    {
+                        // Redirect after successful remove
+                        NavigationManager.NavigateTo("/manage/classified/items/view/listing");
+                        return;
+                    }
+                    UpdateAdModelState(actionType);
+                    StateHasChanged();
                 }
-                UpdateAdModelState(actionType);
-                StateHasChanged();
+                else
+                {
+                    Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Snackbar.Add("Something went wrong while performing the action.", Severity.Error);
+                Logger.LogError(ex, "Error performing single ad action");
+                Snackbar.Add("Unexpected error occurred.", Severity.Error);
             }
         }
-        catch (Exception ex)
+      private async Task PerformRefreshActionAsync()
         {
-            Logger.LogError(ex, "Error performing single ad action");
-            Snackbar.Add("Unexpected error occurred.", Severity.Error);
-        }
-    }
+            if (string.IsNullOrWhiteSpace(AdModel?.Id))
+            {
+                Snackbar.Add("Ad ID is missing.", Severity.Warning);
+                return;
+            }
 
+            try
+            {
+                var response = await ClassifiedService.RefreshAdAsync(AdModel.Id, 1);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    Snackbar.Add("Ad refreshed successfully.", Severity.Success);
+                    UpdateAdModelState(AdBulkActionType.Refresh);
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Failed to refresh the ad.", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error performing refresh action");
+                Snackbar.Add("Unexpected error occurred during refresh.", Severity.Error);
+            }
+        }
     }
 }

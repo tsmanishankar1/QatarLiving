@@ -10,11 +10,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
     public class CreateFormListBase : ComponentBase
     {
-        [Parameter] public List<LocationZoneDto> Zones { get; set; }
         [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
-        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
-        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
+        [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
+        protected CategoryTreeDto? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
+        protected CategoryTreeDto? SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
+        protected CategoryTreeDto? SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
 
         protected List<CategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
@@ -41,43 +41,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
-       public void SetDefaultDynamicFieldsFromApi()
-{
-    // Map main field names to their values from the Ad model
-    var mainFields = new Dictionary<string, string?>
-    {
-        { "Location", Ad.Location },
-        { "Brand", Ad.Brand },
-        { "Model", Ad.Model },
-        { "Condition", Ad.Condition },
-        { "Color", Ad.Color }
-    };
-
-    // Assign values to DynamicFields if the field exists in AvailableFields and is not empty
-    foreach (var field in mainFields)
-    {
-        if (!string.IsNullOrWhiteSpace(field.Value) &&
-            AvailableFields.Any(f => string.Equals(f.Name, field.Key, StringComparison.OrdinalIgnoreCase)))
-        {
-            Ad.DynamicFields[field.Key] = field.Value!;
-        }
-    }
-
-    // Add any attribute values to DynamicFields, if matching field exists
-    if (Ad.Attributes != null)
-    {
-        foreach (var attribute in Ad.Attributes)
-        {
-            if (!string.IsNullOrWhiteSpace(attribute.Value) &&
-                AvailableFields.Any(f => string.Equals(f.Name, attribute.Key, StringComparison.OrdinalIgnoreCase)))
-            {
-                Ad.DynamicFields[attribute.Key] = attribute.Value;
-            }
-        }
-    }
-}
-
-
+  
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
@@ -135,6 +99,24 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
         }
+        protected override async Task OnInitializedAsync()
+        {
+          if (CategoryTrees == null || !CategoryTrees.Any())
+            Logger.LogWarning("CategoryTrees is null or empty");
+
+        foreach (var cat in CategoryTrees)
+        {
+            if (cat == null)
+                Logger.LogWarning("CategoryTree has a null item");
+
+            if (cat?.Id == null || cat?.Name == null)
+                Logger.LogWarning("CategoryTree has null Id or Name: {@cat}", cat);
+        }
+
+
+            await base.OnInitializedAsync();
+        }
+
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {

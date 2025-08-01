@@ -276,7 +276,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         }
          private async Task HandleAdConfirmedAsync()
         {
-            await PostAdToApiAsync();
+            await UpdateAdToApiAsync();
         }
        
 
@@ -301,7 +301,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 || key.Equals("Location", StringComparison.OrdinalIgnoreCase);
         }
 
-        private async Task PostAdToApiAsync()
+        private async Task UpdateAdToApiAsync()
         {
             try
             {
@@ -349,17 +349,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Ad posted successfully!", Severity.Success);
+                    Snackbar.Add("Ad Updated successfully!", Severity.Success);
+                    GoBack();
                 }
                 else
                 {
-                    Snackbar.Add("Failed to post ad.", Severity.Error);
+                    Snackbar.Add("Failed to update ad.", Severity.Error);
                 }
 
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error posting ad");
+                Logger.LogError(ex, "Error update ad");
                 Snackbar.Add("Unexpected error occurred while posting your ad.", Severity.Error);
             }
             finally
@@ -368,7 +369,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             }
         }
 
-         private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
         {
             var uploadedImages = new List<object>();
 
@@ -380,6 +381,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             for (int i = 0; i < orderedImages.Count; i++)
             {
                 var image = orderedImages[i];
+
+                if (IsBlobUrl(image.Url))
+                {
+                    // Logger.LogInformation("Skipping image upload for already hosted URL: {Url}", image.Url);
+                    uploadedImages.Add(new
+                    {
+                        url = image.Url,
+                        order = i
+                    });
+                    continue;
+                }
 
                 var uploadPayload = new FileUploadModel
                 {
@@ -403,17 +415,23 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                     }
                     else
                     {
-                        Logger.LogWarning("Image upload failed: " + result?.Message);
+                        Logger.LogWarning("Image upload failed: {Message}", result?.Message);
                     }
                 }
                 else
                 {
-                    Logger.LogWarning("Image upload HTTP error at index " + i);
+                    Logger.LogWarning("Image upload HTTP error at index {Index}", i);
                 }
             }
 
             return uploadedImages;
         }
+
+        private bool IsBlobUrl(string url)
+        {
+            return url.Contains(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
+        }
+
 
         private async Task LoadCategoryTreesAsync()
         {

@@ -89,7 +89,7 @@ namespace QLN.ContentBO.WebUI.Models
         // NEW FIELDS
         // ----------------------------
 
-         // Main fields
+        // Main fields
         public string? Location { get; set; }
         public string? Brand { get; set; }
         public string? Model { get; set; }
@@ -102,7 +102,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string? UserId { get; set; }
         public string? UserName { get; set; }
         public string? ContactEmail { get; set; }
-    
+
         public int? Status { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
@@ -110,6 +110,8 @@ namespace QLN.ContentBO.WebUI.Models
         public DateTime? RefreshExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; }
         public DateTime? PromotedExpiryDate { get; set; }
+        public string? CreatedBy { get; set; }
+        public DateTime? CreatedAt { get; set; }
 
     }
 }

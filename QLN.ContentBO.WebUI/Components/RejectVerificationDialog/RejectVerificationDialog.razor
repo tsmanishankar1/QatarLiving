@@ -11,7 +11,7 @@
         </MudText>
 
         <MudTextField @bind-Value="Reason"
-                      Label="Reason for Rejection*"
+                      Label="Reason*"
                       Placeholder="@Description"
                       Variant="Variant.Outlined"
                       MaxLength="50"
@@ -22,6 +22,7 @@
         <div class="mt-4 d-flex flex-column gap-2">
             <MudButton Variant="Variant.Filled"
                        Disabled="@IsConfirmDisabled"
+                       Color="Color.Primary"
                        Class="custom-add-btn"
                        OnClick="Confirm">
                  @if (IsLoading)

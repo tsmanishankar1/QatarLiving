@@ -1,4 +1,6 @@
+@inherits ItemInfoBase
 @using QLN.ContentBO.WebUI.Models
+@using QLN.ContentBO.WebUI.Extensions;
 @using MudBlazor
 
 <div class="custom-card-info">
@@ -61,8 +63,8 @@
             <div class="user-info">
                 <img src="/qln-images/classifieds/personIcon.svg" class="person-icon" />
                 <div class="user-text">
-                    <div class="username">Rashid_qatar</div>
-                    <div class="updated-time">Updated 1 hour ago</div>
+                    <div class="username">@Item?.CreatedBy</div>
+                    <div class="updated-time">@GetTimeDifferenceFromNowUtc(Item?.CreatedAt ?? DateTime.UtcNow)</div>
                 </div>
             </div>
             <div class="location-info">
@@ -72,50 +74,6 @@
         </div>
     </div>
 </div>
-
-@code {
-    [Parameter] public PreviewAdDto Item { get; set; } = default!;
-
-    private string? ShowContactType;
-
-    private void ShowCall() => ShowContactType = "call";
-    private void ShowWhatsApp() => ShowContactType = "whatsapp";
-    private void CloseContact() => ShowContactType = null;
-
-    [Inject] IJSRuntime JSRuntime { get; set; } = default!;
-
-    private DotNetObjectReference<ItemInfo>? _dotNetRef;
-
-    private bool IsMobile => false;
-
-    private string FullPhoneNumber =>
-        $"{Item?.ContactNumberCountryCode}{Item?.ContactNumber}".Trim();
-
-    private string FullWhatsAppNumber =>
-        $"{Item?.WhatsappNumberCountryCode}{Item?.WhatsappNumber}".Trim();
-
-    private bool HasPhoneNumber =>
-        !string.IsNullOrWhiteSpace(Item?.ContactNumberCountryCode) &&
-        !string.IsNullOrWhiteSpace(Item?.ContactNumber);
-
-    private bool HasWhatsAppNumber =>
-        !string.IsNullOrWhiteSpace(Item?.WhatsappNumberCountryCode) &&
-        !string.IsNullOrWhiteSpace(Item?.WhatsappNumber);
-
-    private string GetWhatsAppLink(string number)
-    {
-        var clean = number.Replace("+", "").Replace("-", "").Replace(" ", "");
-        return IsMobile
-            ? $"https://wa.me/{clean}"
-            : $"https://web.whatsapp.com/send?phone={clean}";
-    }
-
-    public void Dispose()
-    {
-        _dotNetRef?.Dispose();
-    }
-}
-
 <style>
     .custom-card-info {
         padding: 16px;

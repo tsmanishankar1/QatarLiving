@@ -429,7 +429,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-         public async Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload)
+        public async Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload)
         {
             try
             {
@@ -473,7 +473,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-           public async Task<HttpResponseMessage?> UplodAsync(object payload)
+        public async Task<HttpResponseMessage?> UplodAsync(object payload)
         {
             try
             {
@@ -499,5 +499,21 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical)
+        {
+            try
+            {
+                var url = $"/api/classified/items/refresh/{adId}?subVertical={subVertical}";
+                //  _logger.LogInformation("Calling RefreshAd API at URL: {Url}", url);
+                var response = await _httpClient.PostAsync(url, null); // No body required
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to refresh ad {adId}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
     }
 }
