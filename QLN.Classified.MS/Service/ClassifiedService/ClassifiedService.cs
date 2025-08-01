@@ -1589,8 +1589,8 @@ namespace QLN.Classified.MS.Service
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching classified preloved details by adId: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch classified preloved ad by ID.", ex);
+                _logger.LogError(ex, "Error while fetching classified preloved ad by ID: {AdId}", adId);
+                throw new InvalidOperationException($"Failed to fetch classified preloved ad by ID {adId}.", ex);
             }
         }
 
