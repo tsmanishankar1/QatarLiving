@@ -196,8 +196,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 if(firstRender)
                 {
                     _shouldInitializeMap = true;
-
-                    await MarkdownEditorRef.SetValueAsync(CurrentEvent.EventDescription);
                 }
                 if (_shouldInitializeMap)
                 {
