@@ -53,7 +53,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
-                MarkdownEditorRef?.SetValueAsync(string.Empty);
+                article.Content = string.Empty;
                 IsLoading = false;
             }
             catch (Exception ex)
@@ -132,7 +132,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     article.Categories = [];
                     return;
                 }
-                else if(CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId > 0)
+                else if (CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId > 0)
                 {
                     CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
 
@@ -331,6 +331,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     .FirstOrDefault(c => c.Id == CategoryId)?
                     .SubCategories ?? [];
             }
+            article.Content = string.Empty;
             await MarkdownEditorRef.SetValueAsync(article.Content);
         }
 
