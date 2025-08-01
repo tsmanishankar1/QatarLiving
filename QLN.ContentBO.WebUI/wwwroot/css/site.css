@@ -1699,18 +1699,37 @@ a, .btn-link {
 
     .checkbox-right {
         font-size: 14px;
-        color: #444;
+        color: var(--color-text-heading);
+        font-weight: 400;
     }
 
         .checkbox-right a {
             color: #F37021;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .checkbox-right a:hover {
                 text-decoration: underline;
         }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: var(--color-text-heading);
+            font-weight: 400;
+        }
+
 /* //EditAdAction.razor */
     .ad-preview-container {
         display: flex;
