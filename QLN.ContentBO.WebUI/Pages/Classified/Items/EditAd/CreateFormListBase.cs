@@ -132,8 +132,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         public Task SetCoordinates(double lat, double lng)
         {
             Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
-
-
+            Ad.Longitude = lng;
+            Ad.Latitude = lat;
             StateHasChanged(); // Reflect changes in UI
             return Task.CompletedTask;
         }

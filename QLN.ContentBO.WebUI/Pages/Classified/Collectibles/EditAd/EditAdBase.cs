@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             try
             {
                 IsLoadingId = true;
-                var response = await ClassifiedService.GetAdByIdAsync("collectibles", Id);
+                var response = await ClassifiedService.GetAdByIdAsync("collectibles/ad", Id);
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var json = await response.Content.ReadAsStringAsync();

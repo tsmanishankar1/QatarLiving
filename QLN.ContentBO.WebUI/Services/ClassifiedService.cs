@@ -350,7 +350,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/classified/{vertical}/ad/{adId}");
+                return await _httpClient.GetAsync($"/api/classified/{vertical}/{adId}");
             }
             catch (Exception ex)
             {
