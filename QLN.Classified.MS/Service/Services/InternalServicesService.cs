@@ -1,5 +1,6 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
 using System.Text.Json;
@@ -11,9 +12,11 @@ namespace QLN.Classified.MS.Service.Services
     public class InternalServicesService : IServices
     {
         public readonly DaprClient _dapr;
-        public InternalServicesService(DaprClient dapr)
+        public readonly AuditLogger _auditLogger;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
         {
             _dapr = dapr;
+            _auditLogger = auditLogger;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -280,7 +283,16 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
+                await _auditLogger.CreateAuditLog(
+                    id: Guid.NewGuid(),
+                    module: "Service",
+                    httpMethod: "POST",
+                    apiEndpoint: $"/api/service/createbyuserid?uid={uid}&userName={userName}",
+                    successMessage: "Service Ad Created Successfully",
+                    createdBy: uid,
+                    payload: entity,
+                    cancellationToken: cancellationToken
+                );
                 return "Service Ad Created Successfully";
             }
             catch (ArgumentException ex)
@@ -467,6 +479,18 @@ namespace QLN.Classified.MS.Service.Services
                     Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
                     Html = $"{dto.Title} has been updated."
                 }, cancellationToken);
+
+                await _auditLogger.UpdateAuditLog(
+                   id: Guid.NewGuid(),
+                   module: "Service",
+                   httpMethod: "PUT",
+                   apiEndpoint: $"/api/service/updatebyid?id={dto.Id}",
+                   successMessage: "Service Ad Updated Successfully",
+                   updatedBy: userId,
+                   payload: dto,
+                   cancellationToken: cancellationToken
+               );
+
                 return "Service Ad updated successfully.";
             }
             catch (ArgumentException ex)
@@ -641,6 +665,16 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
             }
+            await _auditLogger.UpdateAuditLog(
+                id: Guid.NewGuid(),
+                module: "Service",
+                httpMethod: "DELETE",
+                apiEndpoint: $"/api/service/deletebyid?id={id}",
+                successMessage: "Service Ad Deleted Successfully",
+                updatedBy: userId,
+                payload: null, 
+                cancellationToken: cancellationToken
+            );
 
             return "Service Ad soft-deleted successfully.";
         }

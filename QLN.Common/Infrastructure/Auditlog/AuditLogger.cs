@@ -1,7 +1,7 @@
 ﻿using Dapr.Client;
-using QLN.Common.DTO_s.AuditLog;
 using QLN.Common.Infrastructure.Constants;
 using System.Text.Json;
+using QLN.Common.DTO_s.AuditLog;
 
 namespace QLN.Common.Infrastructure.Auditlog
 {
@@ -14,25 +14,55 @@ namespace QLN.Common.Infrastructure.Auditlog
             _dapr = dapr;
         }
 
-        public async Task LogAsync(string action, string entity, string entityId, string performedBy, string userName, object details, CancellationToken cancellationToken)
+        public async Task CreateAuditLog(
+            Guid id,
+            string module,
+            string httpMethod,
+            string apiEndpoint,
+            string successMessage,
+            string createdBy,
+            object? payload,
+            CancellationToken cancellationToken)
         {
             var log = new AuditLog
             {
-                Action = action,
-                Entity = entity,
-                EntityId = entityId,
-                PerformedBy = performedBy,
-                UserName = userName,
-                Timestamp = DateTime.UtcNow,
-                Details = JsonSerializer.Serialize(details)
+                Id = id,
+                Module = module,
+                HttpMethod = httpMethod,
+                ApiEndpoint = apiEndpoint,
+                SuccessMessage = successMessage,
+                CreatedBy = createdBy,
+                Payload = payload != null ? JsonSerializer.Serialize(payload) : null,
+                CreatedUtc = DateTime.UtcNow
             };
 
-            var key = $"audit-{log.Id}";
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, log, cancellationToken : cancellationToken);
+            var key = $"auditlog-{module}-{id}";
+            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, log, cancellationToken: cancellationToken);
+        }
+        public async Task UpdateAuditLog(
+           Guid id,
+           string module,
+           string httpMethod,
+           string apiEndpoint,
+           string successMessage,
+           string updatedBy,
+           object? payload,
+           CancellationToken cancellationToken)
+        {
+            var log = new UpdateAuditLog
+            {
+                Id = id,
+                Module = module,
+                HttpMethod = httpMethod,
+                ApiEndpoint = apiEndpoint,
+                SuccessMessage = successMessage,
+                UpdatedBy = updatedBy,
+                Payload = payload != null ? JsonSerializer.Serialize(payload) : null,
+                UpdatedUtc = DateTime.UtcNow
+            };
 
-            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Audit.AuditIndexKey, cancellationToken : cancellationToken ) ?? new();
-            index.Add(key);
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Audit.AuditIndexKey, index, cancellationToken : cancellationToken);
+            var key = $"auditlog-{module}-{id}";
+            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, log, cancellationToken: cancellationToken);
         }
     }
 }

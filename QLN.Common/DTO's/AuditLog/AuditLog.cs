@@ -8,24 +8,24 @@ namespace QLN.Common.DTO_s.AuditLog
 {
     public class AuditLog
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string Action { get; set; } 
-        public string Entity { get; set; } 
-        public string EntityId { get; set; } 
-        public string PerformedBy { get; set; }
-        public string UserName { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public string Details { get; set; } 
+        public Guid Id { get; set; }
+        public string Module { get; set; } = null!;
+        public string HttpMethod { get; set; } = null!;
+        public string ApiEndpoint { get; set; } = null!;
+        public string SuccessMessage { get; set; } = null!;
+        public string CreatedBy { get; set; }
+        public string? Payload { get; set; }
+        public DateTime CreatedUtc { get; set; }
     }
-    public class AuditEntry
+    public class UpdateAuditLog
     {
-        public string Id { get; set; } = default!;
-        public string Action { get; set; } = default!;
-        public string Entity { get; set; } = default!;
-        public string EntityId { get; set; } = default!;
-        public string PerformedBy { get; set; } = default!;
-        public DateTime Timestamp { get; set; }
-        public string Data { get; set; } = default!;
+        public Guid Id { get; set; }
+        public string Module { get; set; } = null!;
+        public string HttpMethod { get; set; } = null!;
+        public string ApiEndpoint { get; set; } = null!;
+        public string SuccessMessage { get; set; } = null!;
+        public string UpdatedBy { get; set; }
+        public string? Payload { get; set; }
+        public DateTime UpdatedUtc { get; set; }
     }
-
 }

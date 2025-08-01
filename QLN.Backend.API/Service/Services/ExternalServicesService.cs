@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.AuditLog;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
@@ -160,26 +161,7 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 await response.Content.ReadAsStringAsync(cancellationToken);
-                try
-                {
-                    var auditEntry = new AuditEntry
-                    {
-                        Id = $"audit-{Guid.NewGuid()}",
-                        Action = "Create",
-                        Entity = "ServiceAd",
-                        EntityId = Guid.NewGuid().ToString(), 
-                        PerformedBy = uid,
-                        Timestamp = DateTime.UtcNow,
-                        Data = JsonSerializer.Serialize(dto)
-                    };
-
-                    await _dapr.SaveStateAsync("auditstore", auditEntry.Id, auditEntry, cancellationToken: cancellationToken);
-                }
-                catch (Exception auditEx)
-                {
-                    _logger.LogError(auditEx, "Audit logging failed for ServiceAd creation");
-                }
-
+               
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)
@@ -211,7 +193,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
