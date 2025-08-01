@@ -96,25 +96,25 @@ namespace QLN.ContentBO.WebUI.Components.News
 
                 // Assign Category to article.Categories and add CategoryTwo if it has value
                 article.Categories = [Category];
-                if (IsValidOptionalCategory(CategoryTwo))
+
+                if (CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId == 0)
+                {
+                    ShowError("Optional Sub Category is required");
+                    article.Categories = [];
+                    return;
+                }
+                else if (CategoryTwo.CategoryId > 0 && CategoryTwo.SubcategoryId > 0)
                 {
                     CategoryTwo.SlotId = CategoryTwo.SlotId == 0 ? 15 : CategoryTwo.SlotId;
 
                     if (IsDuplicate(Category, CategoryTwo))
                     {
                         ShowError("This Category and Sub Category combination already exists");
-                        // Reset article.Categories
                         article.Categories = [];
                         return;
                     }
 
                     article.Categories.Add(CategoryTwo);
-                }
-                else
-                {
-                    ShowError("Optional Category and Sub Category is required");
-                    article.Categories = [];
-                    return;
                 }
 
                 if (article.Categories.Count == 0)
@@ -403,20 +403,6 @@ namespace QLN.ContentBO.WebUI.Components.News
         {
             Snackbar.Add(message, Severity.Error);
             IsBtnDisabled = false;
-        }
-
-        private bool IsValidOptionalCategory(ArticleCategory category)
-        {
-            if (category.CategoryId > 0 && category.SubcategoryId == 0)
-            {
-                return false;
-            }
-            else if (category.CategoryId > 0 && category.SubcategoryId > 0)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         #region Custom Markdown Editor
