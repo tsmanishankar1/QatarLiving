@@ -163,6 +163,7 @@ namespace QLN.ContentBO.WebUI.Pages
             Categories = await GetEventsCategories();
             var locationsResponse = await GetEventsLocations();
             Locations = locationsResponse ?? [];
+            CurrentEvent.EventDescription = string.Empty;
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -171,6 +172,10 @@ namespace QLN.ContentBO.WebUI.Pages
             {
                 if (firstRender)
                 {
+                    _dotNetRef = DotNetObjectReference.Create(this);
+
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
                     await MarkdownEditorRef.SetValueAsync(CurrentEvent.EventDescription);
                 }
             }
