@@ -84,7 +84,7 @@
                 <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
                     @foreach (var item in WriterTags)
                     {
-                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                        <MudSelectItem Value="@item.Tagname">@item.Tagname</MudSelectItem>
                     }
                 </MudSelect>
 

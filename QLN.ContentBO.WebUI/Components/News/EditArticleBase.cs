@@ -22,7 +22,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected List<NewsCategory> Categories = [];
         protected List<Slot> Slots = [];
-        protected List<string> WriterTags = [];
+        protected List<Writertag> WriterTags = [];
 
         protected ArticleCategory Category { get; set; } = new();
 
@@ -239,16 +239,16 @@ namespace QLN.ContentBO.WebUI.Components.News
             }
         }
 
-        private async Task<List<string>> GetWriterTags()
+        private async Task<List<Writertag>> GetWriterTags()
         {
             try
             {
                 var apiResponse = await newsService.GetWriterTags();
                 if (apiResponse.IsSuccessStatusCode)
                 {
-                    var tagResponse = await apiResponse.Content.ReadFromJsonAsync<TagResponse>();
+                    var writerTagResponse = await apiResponse.Content.ReadFromJsonAsync<List<Writertag>>();
 
-                    return tagResponse?.Tags ?? [];
+                    return writerTagResponse ?? [];
                 }
 
                 return [];
