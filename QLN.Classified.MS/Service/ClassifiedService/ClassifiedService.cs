@@ -1532,11 +1532,12 @@ namespace QLN.Classified.MS.Service
             try
             {
                 var key = $"ad-{adId}";
-                var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
+                var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(
+                    UnifiedStore, key, cancellationToken: cancellationToken);
 
-                if (adItem == null)
+                if (adItem == null || adItem.IsActive != true)
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    _logger.LogWarning("Active ad not found with ID: {AdId}", adId);
                     return null;
                 }
 
@@ -1551,14 +1552,26 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
+
             try
             {
                 var key = $"ad-{adId}";
-                var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
 
-                if (adPreloved == null)
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey, cancellationToken) ?? new();
+
+                if (!indexKeys.Contains(key))
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    _logger.LogWarning("Ad ID {AdId} not found in Preloved index. Possibly inactive or deleted.", adId);
+                    return null;
+                }
+
+                var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key, cancellationToken);
+
+                if (adPreloved == null || !adPreloved.IsActive)
+                {
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
                     return null;
                 }
 
@@ -1573,15 +1586,25 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
                 var key = $"ad-{adId}";
 
-                var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey, cancellationToken) ?? new();
 
-                if (adDeals == null)
+                if (!indexKeys.Contains(key))
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    _logger.LogWarning("Ad ID {AdId} not found in Deals index. Possibly inactive or deleted.", adId);
+                    return null;
+                }
+
+                var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key, cancellationToken);
+
+                if (adDeals == null || !adDeals.IsActive)
+                {
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
                     return null;
                 }
 
@@ -1596,16 +1619,26 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
 
                 var key = $"ad-{adId}";
 
-                var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey, cancellationToken) ?? new();
 
-                if (adCollectibles == null)
+                if (!indexKeys.Contains(key))
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
+                    _logger.LogWarning("Ad ID {AdId} not found in Collectibles index. Possibly inactive or deleted.", adId);
+                    return null;
+                }
+
+                var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key, cancellationToken);
+
+                if (adCollectibles == null || !adCollectibles.IsActive)
+                {
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
                     return null;
                 }
 
