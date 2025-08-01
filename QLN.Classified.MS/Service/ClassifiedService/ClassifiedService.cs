@@ -1529,15 +1529,25 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
                 var key = $"ad-{adId}";
-                var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(
-                    UnifiedStore, key, cancellationToken: cancellationToken);
 
-                if (adItem == null || adItem.IsActive != true)
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+
+                if (!indexKeys.Contains(key))
                 {
-                    _logger.LogWarning("Active ad not found with ID: {AdId}", adId);
+                    _logger.LogWarning("Ad ID {AdId} not found in active index. Possibly inactive or deleted.", adId);
+                    return null;
+                }
+
+                var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
+
+                if (adItem == null || !adItem.IsActive)
+                {
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
                     return null;
                 }
 
@@ -1559,7 +1569,7 @@ namespace QLN.Classified.MS.Service
             {
                 var key = $"ad-{adId}";
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey, cancellationToken) ?? new();
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
 
                 if (!indexKeys.Contains(key))
                 {
@@ -1567,7 +1577,7 @@ namespace QLN.Classified.MS.Service
                     return null;
                 }
 
-                var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key, cancellationToken);
+                var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
 
                 if (adPreloved == null || !adPreloved.IsActive)
                 {
@@ -1592,7 +1602,7 @@ namespace QLN.Classified.MS.Service
             {
                 var key = $"ad-{adId}";
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey, cancellationToken) ?? new();
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
 
                 if (!indexKeys.Contains(key))
                 {
@@ -1600,7 +1610,7 @@ namespace QLN.Classified.MS.Service
                     return null;
                 }
 
-                var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key, cancellationToken);
+                var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
 
                 if (adDeals == null || !adDeals.IsActive)
                 {
@@ -1626,7 +1636,7 @@ namespace QLN.Classified.MS.Service
 
                 var key = $"ad-{adId}";
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey, cancellationToken) ?? new();
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
 
                 if (!indexKeys.Contains(key))
                 {
@@ -1634,7 +1644,7 @@ namespace QLN.Classified.MS.Service
                     return null;
                 }
 
-                var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key, cancellationToken);
+                var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
 
                 if (adCollectibles == null || !adCollectibles.IsActive)
                 {
