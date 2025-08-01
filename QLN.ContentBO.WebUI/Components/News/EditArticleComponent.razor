@@ -113,6 +113,9 @@
                         <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
                     </Toolbar>
                 </MarkdownEditor>
+                <MudText Typo="Typo.caption" Color="Color.Error">
+                    <ValidationMessage For="@(() => article.Content)" />
+                </MudText>
                 <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
                 </MudFileUpload>
                 <!-- END Custom Markdown Editor -->

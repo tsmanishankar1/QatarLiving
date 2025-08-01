@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Models
 
         public EventScheduleModel EventSchedule { get; set; }
 
-        [Required(ErrorMessage = "Event description is required.")]
+        [Required(ErrorMessage = "Event description is required")]
         public string EventDescription { get; set; }
         
         public string? CoverImage { get; set; }

@@ -156,11 +156,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                     ShowError("Cover Image is required");
                     return;
                 }
-                if (string.IsNullOrEmpty(article.Content) || string.IsNullOrWhiteSpace(article.Content) || article.Content == "<p></p>" || article.Content == "<p> </p>")
-                {
-                    ShowError("Article Content is required");
-                    return;
-                }
 
                 article.UserId = CurrentUserId.ToString();
                 article.IsActive = true;
