@@ -1,17 +1,15 @@
 @inherits CreateFormListBase
+@using QLN.ContentBO.WebUI.Models;
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
-
-<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
-    <DataAnnotationsValidator />
 
      <div class="create-form-list">
         <h3 class="form-heading-f1">Ad Information</h3>
  
         @* <h3 class="form-heading">Ad Information</h3> *@
             <MudSelect T="string" Class="white-bg" Label="Category" Variant="Variant.Outlined"
-                Value="@Ad.SelectedCategoryId"
+                Value="@Ad.CategoryId"
                 ValueChanged="@OnCategoryChanged"
-                For="@(() => Ad.SelectedCategoryId)"
+                For="@(() => Ad.CategoryId)"
                 FullWidth="true">
              @if (IsLoadingCategories)
             {
@@ -21,38 +19,47 @@
             {
                 @foreach (var cat in CategoryTrees)
                 {
-                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                    if (cat != null && cat.Id != null && cat.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
+                    }
                 }
             }
         </MudSelect>
 
 
-        @if (!string.IsNullOrEmpty(Ad.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.CategoryId) && SelectedCategory?.Children?.Any() == true)
         {
           <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
-                    Value="@Ad.SelectedSubcategoryId"
+                    Value="@Ad.L1CategoryId"
                     ValueChanged="@OnSubCategoryChanged"
-                    For="@(() => Ad.SelectedSubcategoryId)"
+                    For="@(() => Ad.L1CategoryId)"
                     FullWidth="true">
-                @foreach (var sub in SelectedCategory.Children)
+                @foreach (var sub in SelectedCategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
                 {
-                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                    if (sub?.Id != null && sub.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                    }
                 }
             </MudSelect>
 
         }
 
-        @if (!string.IsNullOrEmpty(Ad.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
+        @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Children?.Any() == true)
         {
             <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
-                Value="@Ad.SelectedSubSubcategoryId"
+                Value="@Ad.L2CategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
-                For="@(() => Ad.SelectedSubSubcategoryId)"
+                For="@(() => Ad.L2CategoryId)"
                 FullWidth="true">
-            @foreach (var subsub in SelectedSubcategory.Children)
-            {
-                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
-            }
+                 @foreach (var subsub in SelectedSubcategory?.Children ?? Enumerable.Empty<CategoryTreeDto>())
+                {
+                    if (subsub?.Id != null && subsub.Name != null)
+                    {
+                        <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
+                    }
+                }
         </MudSelect>
 
         }
@@ -101,21 +108,36 @@
                 </div>
             }
         }
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int" Label="Price"
+       <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined"  MaxLength="20" T="int" Label="Price"
                       @bind-Value="Ad.Price" For="@(() => Ad.Price)" FullWidth="true" />
 
         <h3 class="form-heading">Description and Features</h3>
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Title"
+        <MudTextField Class="white-bg"  Immediate="true" Variant="Variant.Outlined" MaxLength="50" T="string" Label="Title"
                       @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
 
         <MudExRichTextEdit @bind-Value="Ad.Description" @ref="Editor"
                            Height="350" Placeholder="Start Typing"
                            For="@(() => Ad.Description)">
         </MudExRichTextEdit>
-
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="XML Link"
-                      @bind-Value="Ad.XmlLink" For="@(() => Ad.XmlLink)" FullWidth="true" />
-          <MudPaper Class="catification-upload-section">
+          <!-- Extra Features Checkboxes -->
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <MudCheckBox @bind-Value="Ad.HasWarranty" Color="Color.Primary" />
+                    <span class="checkbox-label">Has Warranty</span>
+                </div>
+                <div class="checkbox-item">
+                    <MudCheckBox @bind-Value="Ad.IsHandmade" Color="Color.Primary" />
+                    <span class="checkbox-label">Is Handmade</span>
+                </div>
+                <div class="checkbox-item">
+                    <MudCheckBox @bind-Value="Ad.HasAuthenticityCertificate" Color="Color.Primary" />
+                    <span class="checkbox-label">Has Authenticity Certificate</span>
+                </div>
+            </div>
+            
+            @if (Ad.HasAuthenticityCertificate)
+       {
+            <MudPaper Class="catification-upload-section">
             <div class="catification-upload-info">
                 <h3 class="catification-upload-label">Certificate / Warranty*</h3>
 
@@ -148,22 +170,26 @@
                 </ActivatorContent>
             </MudFileUpload>
         </MudPaper>
-        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>              
+        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>  
+        }            
+
 
         <h3 class="form-heading">Contact Details</h3>
         <div class="form-group">
                 <!-- Phone -->
                     <PhoneNumberInput
+                        DefaultCountryCode="@DefaultSelectedPhoneCountry"
                         SelectedCountry="@SelectedPhoneCountry"
                         Placeholder="Phone Number"
                         SelectedCountryChanged="@OnPhoneCountryChanged"
-                        PhoneNumber="@Ad.PhoneNumber"
+                        PhoneNumber="@Ad.ContactNumber"
                         PhoneNumberChanged="@OnPhoneChanged" />
-                <ValidationMessage For="@(() => Ad.PhoneNumber)" />
+                <ValidationMessage For="@(() => Ad.ContactNumber)" />
                 </div>
                 <div class="form-group">
                     <!-- WhatsApp -->
                     <PhoneNumberInput
+                        DefaultCountryCode="@DefaultSelectedWhatsappCountry"
                         SelectedCountry="@SelectedWhatsappCountry"
                         Placeholder="WhatsApp Number"
                         SelectedCountryChanged="@OnWhatsappCountryChanged"
@@ -174,16 +200,40 @@
 
         <h3 class="form-heading">Location</h3>
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
-                      @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
+            <MudSelect T="string" Class="white-bg" Label="Zone" Variant="Variant.Outlined"
+                Value="@Ad.Zone"
+                Immediate="true"
+                ValueChanged="@OnZoneChanged"
+                For="@(() => Ad.Zone)"
+                FullWidth="true">
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
-                      @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />
+             @if (IsLoadingZones)
+            {
+                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
+            }
+            else
+            {
+                @foreach (var zone in Zones)
+                {
+                    <MudSelectItem T="string" Value="@zone.Id.ToString()">@zone.Name</MudSelectItem>
+                }
+            }
+        </MudSelect>
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Street Number"
+                    Value="@Ad.StreetNumber"
+                    ValueChanged="@OnStreetNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.StreetNumber)" FullWidth="true" />
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
-                      @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Building Number"
+                    Value="@Ad.BuildingNumber"
+                    ValueChanged="@OnBuildingNumberChanged"
+                    Immediate="true"
+                    For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+
 
         <div id="map" style="height: 300px; width: 100%;"></div>
+
          <div class="checkbox-section">
             <div class="checkbox-left">
                 <MudCheckBox @bind-Value="Ad.IsAgreed" Color="Color.Primary" />
@@ -198,10 +248,4 @@
             </div>
         </div>
         <ValidationMessage For="@(() => Ad.IsAgreed)" />
-
-        <div class="custom-button-group">
-            <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
-            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Save Change</MudButton>
-        </div>
     </div>
-</EditForm>
