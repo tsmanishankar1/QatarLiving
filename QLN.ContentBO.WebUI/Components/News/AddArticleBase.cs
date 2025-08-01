@@ -53,6 +53,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 Categories = await GetNewsCategories();
                 Slots = await GetSlots();
                 WriterTags = await GetWriterTags();
+                MarkdownEditorRef?.SetValueAsync(string.Empty);
                 IsLoading = false;
             }
             catch (Exception ex)
@@ -60,6 +61,21 @@ namespace QLN.ContentBO.WebUI.Components.News
                 IsLoading = false;
                 Logger.LogError(ex, "OnInitializedAsync");
                 throw;
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            try
+            {
+                if (firstRender)
+                {
+                    await MarkdownEditorRef.SetValueAsync(article.Content);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
 
@@ -295,7 +311,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                 .SubCategoryName;
         }
 
-        protected void ResetForm()
+        protected async void ResetForm()
         {
             article = new();
             Category.CategoryId = 0;
@@ -320,6 +336,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     .FirstOrDefault(c => c.Id == CategoryId)?
                     .SubCategories ?? [];
             }
+            await MarkdownEditorRef.SetValueAsync(article.Content);
         }
 
         protected async Task OnCategoryChanged(int newCategoryId)
