@@ -101,10 +101,7 @@ namespace QLN.Backend.API.ServiceConfiguration
 
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<ICompanyService, ExternalCompanyService>();
-            services.AddTransient<ICompanyVerifiedService, ExternalCompanyVerifiedService>();
-            services.AddTransient<ICompanyDealsStoresService, ExternalCompanyDealsStoresService>();
-            services.AddTransient<ICompanyClassifiedService, ExternalCompanyClassifiedService>();
+            services.AddTransient<ICompanyProfileService, ExternalCompanyProfileService>();
             return services;
         }
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)
