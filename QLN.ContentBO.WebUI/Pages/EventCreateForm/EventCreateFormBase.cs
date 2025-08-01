@@ -165,24 +165,6 @@ namespace QLN.ContentBO.WebUI.Pages
             Locations = locationsResponse ?? [];
         }
 
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (firstRender)
-                {
-                    _dotNetRef = DotNetObjectReference.Create(this);
-
-                    await JS.InvokeVoidAsync("resetLeafletMap");
-                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnAfterRenderAsync");
-            }
-        }
-
         protected async void OnCancelClicked()
         {
             var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
