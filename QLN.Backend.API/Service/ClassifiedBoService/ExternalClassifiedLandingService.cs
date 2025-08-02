@@ -1548,5 +1548,108 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
-     }
+        public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "api/v2/classifiedbo/getall-items";
+
+                var response = await _dapr.InvokeMethodAsync<GetAllSearch, ClassifiedsBoItemsResponseDto>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    url,
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new ClassifiedsBoItemsResponseDto();
+            }
+            catch (DaprException daprEx)
+            {
+                _logger.LogError(daprEx, "Dapr error occurred while calling BulkItems. StatusCode: {StatusCode}", daprEx.Data["StatusCode"]);
+
+                if (daprEx.Data.Contains("StatusCode"))
+                {
+                    var statusCode = daprEx.Data["StatusCode"]?.ToString();
+                    if (statusCode == "409")
+                    {
+                        throw new ConflictException(daprEx.Message);
+                    }
+                    else if (statusCode == "404")
+                    {
+                        throw new KeyNotFoundException(daprEx.Message);
+                    }
+                }
+
+                throw new Exception($"Service communication error: {daprEx.Message}", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP error occurred while calling BulkItems");
+                throw new Exception($"Network error: {httpEx.Message}", httpEx);
+            }
+            catch (TaskCanceledException tcEx) when (tcEx.InnerException is TimeoutException)
+            {
+                _logger.LogError(tcEx, "Timeout occurred while calling BulkItems");
+                throw new Exception("Request timed out", tcEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error occurred while calling BulkItems");
+                throw new Exception($"Unexpected error: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "api/v2/classifiedbo/getall-collectibles";
+
+                var response = await _dapr.InvokeMethodAsync<GetAllSearch, ClassifiedsBoCollectiblesResponseDto>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    url,
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new ClassifiedsBoCollectiblesResponseDto();
+            }
+            catch (DaprException daprEx)
+            {
+                _logger.LogError(daprEx, "Dapr error occurred while calling BulkItems. StatusCode: {StatusCode}", daprEx.Data["StatusCode"]);
+
+                if (daprEx.Data.Contains("StatusCode"))
+                {
+                    var statusCode = daprEx.Data["StatusCode"]?.ToString();
+                    if (statusCode == "409")
+                    {
+                        throw new ConflictException(daprEx.Message);
+                    }
+                    else if (statusCode == "404")
+                    {
+                        throw new KeyNotFoundException(daprEx.Message);
+                    }
+                }
+
+                throw new Exception($"Service communication error: {daprEx.Message}", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP error occurred while calling BulkItems");
+                throw new Exception($"Network error: {httpEx.Message}", httpEx);
+            }
+            catch (TaskCanceledException tcEx) when (tcEx.InnerException is TimeoutException)
+            {
+                _logger.LogError(tcEx, "Timeout occurred while calling BulkItems");
+                throw new Exception("Request timed out", tcEx);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error occurred while calling BulkItems");
+                throw new Exception($"Unexpected error: {ex.Message}", ex);
+            }
+        }
+    }
 }
