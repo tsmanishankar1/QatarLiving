@@ -290,7 +290,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+            if (dto.HasAuthenticityCertificate == true && string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
