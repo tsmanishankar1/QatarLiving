@@ -2607,6 +2607,26 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         request.Status, originalCount, items.Count);
                 }
 
+                if (request.CreatedAt.HasValue)
+                {
+                    var createdDate = request.CreatedAt.Value.Date;
+                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
+                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    var publishedDate = request.PublishedDate.Value.Date;
+                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
+                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                }
+
+                if (request.AdType.HasValue)
+                {
+                    items = items.Where(item => item.AdType == request.AdType).ToList();
+                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
+                }
+
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2778,6 +2798,26 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                     _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
                         request.Status, originalCount, items.Count);
+                }
+
+                if (request.CreatedAt.HasValue)
+                {
+                    var createdDate = request.CreatedAt.Value.Date;
+                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
+                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    var publishedDate = request.PublishedDate.Value.Date;
+                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
+                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                }
+
+                if (request.AdType.HasValue)
+                {
+                    items = items.Where(item => item.AdType == request.AdType).ToList();
+                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
                 }
 
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
