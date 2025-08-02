@@ -5,7 +5,7 @@
 @inject NavigationManager Navigation
 @using MudBlazor
 
-@if (Countries == null || Countries.Count == 0)
+@if (Countries == null || Countries.Count == 0 || SelectedCountry == null)
 {
     <p>Loading countries...</p>
 }
@@ -17,9 +17,12 @@ else
 
     <div class="phone-input-row"> <!-- Row layout -->
         <div class="phone-select-box" @onclick="ToggleDropdown">
+               @if (SelectedCountry != null)
+            {
             <img class="flag-icon" src="@SelectedCountry.Flag" alt="@SelectedCountry.Name" />
             <MudIcon Icon="@Icons.Material.Filled.ArrowDropDown" size="Size.Small" class="dropdown-arrow" />
             <span class="country-code">@SelectedCountry.Code</span>
+            }
         </div>
 
         <input class="phone-number-input"
@@ -99,18 +102,41 @@ else
 
     [Parameter] public string PhoneNumber { get; set; }
     [Parameter] public EventCallback<string> PhoneNumberChanged { get; set; }
+    [Parameter] public string DefaultCountryCode { get; set; }
 
-    protected override async Task OnInitializedAsync()
+
+     private bool _initialized;
+
+    protected override async Task OnParametersSetAsync()
     {
-        Countries = await FetchCountriesAsync();
-        if (SelectedCountry == null && Countries.Count > 0)
+        if (_initialized) return;
+
+            if (Countries == null || Countries.Count == 0)
+            {
+                Countries = await FetchCountriesAsync();
+            }
+
+        if (!string.IsNullOrWhiteSpace(DefaultCountryCode))
         {
-             SelectedCountry = Countries.FirstOrDefault(c => c.Name == "Qatar")
-                      ?? Countries.FirstOrDefault(c => c.Code == "+974") // Qatar's code
-                      ?? Countries.First();
-            await SelectedCountryChanged.InvokeAsync(SelectedCountry);
+            var matchedCountry = Countries.FirstOrDefault(c => c.Code == DefaultCountryCode);
+            if (matchedCountry != null)
+            {
+                SelectedCountry = matchedCountry;
+            }
         }
+
+        if (SelectedCountry == null)
+        {
+            SelectedCountry = Countries.FirstOrDefault(c => c.Name == "Qatar")
+                            ?? Countries.FirstOrDefault(c => c.Code == "+974")
+                            ?? Countries.First();
+        }
+
+        await SelectedCountryChanged.InvokeAsync(SelectedCountry);
+        _initialized = true;
     }
+
+
     [Parameter]
     public string Placeholder { get; set; } = "Enter phone number";
 

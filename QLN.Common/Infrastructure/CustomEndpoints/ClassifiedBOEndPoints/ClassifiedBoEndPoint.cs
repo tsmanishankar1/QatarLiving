@@ -2576,6 +2576,130 @@ CancellationToken ct
          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
+                ClassifiedsCollectibles dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+
+                    return TypedResults.Created(
+                        $"/api/classifieds/collectibles/admin/post-by-id/{result.AdId}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false)
+                        ? TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        })
+                        : TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                }
+            })
+                .WithName("AdminPostCollectiblesAdById")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Post classified collectibles ad using provided UserId, UserName and Email")
+                .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("deals/post-by-id", async Task<IResult> (
+               ClassifiedsDeals dto,
+               IClassifiedService service,
+               CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.CreateClassifiedDealsAd(dto, token);
+
+                    return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
+
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+               .WithName("AdminPostDealsAdById")
+               .WithTags("ClassifiedBo")
+               .WithSummary("Post classified deals ad using provided UserId, UserName and Email")
+               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
             group.MapGet("/preloved/transactions", async Task<Results<
                Ok<PrelovedTransactionListResponseDto>,
                BadRequest<ProblemDetails>,
