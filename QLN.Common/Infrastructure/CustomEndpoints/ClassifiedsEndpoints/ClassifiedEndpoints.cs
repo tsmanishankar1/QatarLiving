@@ -1802,10 +1802,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.Unauthorized();
                     }
 
-                    // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
-                    // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
                     var request = new ClassifiedsCollectibles
                     {
@@ -1814,6 +1812,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
+                        AuthenticityCertificateName = dto.AuthenticityCertificateName,
                         AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                         HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                         SubVertical = "Collectibles",

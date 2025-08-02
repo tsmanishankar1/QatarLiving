@@ -565,6 +565,7 @@ namespace QLN.Classified.MS.Service
                 Brand = dto.Brand,
                 AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                 CreatedBy = dto.CreatedBy,
+                AuthenticityCertificateName = dto.AuthenticityCertificateName,
                 HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
