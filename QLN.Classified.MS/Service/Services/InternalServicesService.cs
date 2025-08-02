@@ -201,9 +201,10 @@ namespace QLN.Classified.MS.Service.Services
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
+
                 var entity = new ServicesModel
                 {
                     AdType = dto.AdType,
@@ -335,22 +336,11 @@ namespace QLN.Classified.MS.Service.Services
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
 
-            var therapeuticL2s = new[] { "spa", "wellness centers" };
-
-            bool isTherapeutic =
-                (!string.IsNullOrWhiteSpace(dto.L1CategoryName) && dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(dto.L2CategoryName) && therapeuticL2s.Contains(dto.L2CategoryName.Trim().ToLowerInvariant()));
-
-            if (isTherapeutic)
+            if (!string.IsNullOrWhiteSpace(dto.L1CategoryName) &&
+                    dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase) &&
+                    string.IsNullOrWhiteSpace(dto.LicenseCertificate))
             {
-                if (string.IsNullOrWhiteSpace(dto.LicenseCertificate))
-                    throw new ArgumentException("License certificate is required for therapeutic services.");
-
-                var validExtensions = new[] { ".pdf", ".png", ".jpg" };
-                var extension = Path.GetExtension(dto.LicenseCertificate)?.ToLowerInvariant();
-
-                if (string.IsNullOrEmpty(extension) || !validExtensions.Contains(extension))
-                    throw new ArgumentException("License certificate must be a PDF, PNG, or JPG file.");
+                throw new ArgumentException("License certificate is required for therapeutic services.");
             }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
@@ -367,7 +357,7 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
                 if (existing == null)
-                    throw new InvalidDataException("Service Ad not found for update.");
+                    throw new ArgumentException("Service Ad not found for update.");
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -389,6 +379,28 @@ namespace QLN.Classified.MS.Service.Services
                         {
                             l2CategoryName = l2Category.Name;
                         }
+                    }
+                }
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                  ConstantValues.Services.StoreName,
+                  ConstantValues.Services.ServicesIndexKey,
+                  cancellationToken: cancellationToken
+               ) ?? new();
+                foreach (var adKey in allAdKeys)
+                {
+                    var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == userId &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
                 ValidateCommon(dto);
