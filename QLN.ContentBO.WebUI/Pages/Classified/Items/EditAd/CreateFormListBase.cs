@@ -21,7 +21,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
                                         new List<CategoryField>();
-        [Parameter] public string[] AllowedFields { get; set; } = Array.Empty<string>();
+        [Parameter] public string[] ExcludedFields { get; set; } = Array.Empty<string>();
         [Parameter] public string? DefaultSelectedPhoneCountry { get; set; }
         [Parameter] public string? DefaultSelectedWhatsappCountry { get; set; }
 

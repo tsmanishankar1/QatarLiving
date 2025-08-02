@@ -48,7 +48,7 @@
 
         @if (!string.IsNullOrEmpty(Ad.L1CategoryId) && SelectedSubcategory?.Children?.Any() == true)
         {
-            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
+            <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
                 Value="@Ad.L2CategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => Ad.L2CategoryId)"
@@ -65,7 +65,7 @@
         }
         @if (AvailableFields != null)
         {
-            @foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
+            @foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
             {
                 if (!Ad.DynamicFields.ContainsKey(field.Name))
                 {

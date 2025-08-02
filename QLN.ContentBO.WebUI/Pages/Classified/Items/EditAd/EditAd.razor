@@ -36,7 +36,7 @@
                     Ad="@adPostModel"
                     editContext="@editContext"
                     DynamicFieldErrors="@DynamicFieldErrors"
-                    AllowedFields="@AllowedFields" 
+                    ExcludedFields="@ExcludedFields" 
                     DefaultSelectedPhoneCountry="@DefaultSelectedPhoneCountry"
                     DefaultSelectedWhatsappCountry="@DefaultSelectedWhatsappCountry"
                     OnAddressFieldsChanged="TrySetCoordinatesFromAddressAsync"
@@ -49,7 +49,6 @@
                     
                 <!-- Button Save Change -->
                 <div class="custom-button-group" style="max-width: 120px ;">
-
                     <MudButton 
                         Class="custom-button"
                         Variant="Variant.Filled"

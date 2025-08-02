@@ -26,6 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         public EventCallback<string> OnTabChange { get; set; }
         [Parameter] public EventCallback<int> OnPageChanged { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter] public EventCallback OnAddClicked { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }

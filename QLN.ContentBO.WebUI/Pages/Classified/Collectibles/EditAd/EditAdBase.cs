@@ -163,12 +163,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
                                         new List<CategoryField>();
-        protected string[] AllowedFields => new[]
+        protected string[] ExcludedFields => new[]
         {
-                "Condition", "Ram", "Model", "Capacity", "Processor", "Brand",
-                "Storage", "Colour", "Gender", "Resolution", "Coverage","Battery Life",
-                "Size" // <== Add these here
-            };
+               "L2 Category" // Add any other fields you want to hide here
+        };
 
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
 
@@ -186,7 +184,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             if (AvailableFields == null)
                 return; // Nothing to validate yet
 
-            foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
+            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
             {
                 if (string.IsNullOrWhiteSpace(adPostModel.DynamicFields.GetValueOrDefault(field.Name)))
                 {
@@ -209,7 +207,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
             if (SelectedSubcategory?.Children?.Any() == true && string.IsNullOrEmpty(adPostModel.L2CategoryId))
             {
-                messageStore.Add(() => adPostModel.L2CategoryId, "Sub Subcategory is required.");
+                messageStore.Add(() => adPostModel.L2CategoryId, "Section is required.");
                 isValid = false;
             }
             int imagesWithUrlCount = adPostModel.Images.Count(i => !string.IsNullOrEmpty(i.Url));
@@ -226,7 +224,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             }
 
             // Manual validation: Dynamic fields
-            foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
+            foreach (var field in AvailableFields.Where(f => !ExcludedFields.Contains(f.Name)))
             {
                 var value = adPostModel.DynamicFields.ContainsKey(field.Name) ? adPostModel.DynamicFields[field.Name] : null;
 

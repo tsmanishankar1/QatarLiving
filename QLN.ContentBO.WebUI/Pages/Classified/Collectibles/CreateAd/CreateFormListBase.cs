@@ -25,7 +25,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                                         SelectedSubcategory?.Fields ??
                                         SelectedCategory?.Fields ??
                                         new List<CategoryField>();
-        [Parameter] public string[] AllowedFields { get; set; } = Array.Empty<string>();
+        [Parameter] public string[] ExcludedFields { get; set; } = Array.Empty<string>();
 
         [Parameter] public CollectiblesAdPost Ad { get; set; } = new();
         [Parameter] public EditContext editContext { get; set; } = default!;

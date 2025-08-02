@@ -1009,8 +1009,9 @@ a, .btn-link {
 }
 
 .add-button {
-    text-transform: capitalize;
+    text-transform: capitalize !important;
     height: 44px;
+    box-shadow: none !important;
 }
 
 .popover-button {
@@ -1218,11 +1219,6 @@ a, .btn-link {
     gap: 8px;
 }
 
-.add-button {
-    text-transform: capitalize;
-    height: 44px;
-}
-
 .popover-button {
     width: 100%;
     text-transform: capitalize;
@@ -1409,10 +1405,6 @@ a, .btn-link {
     justify-content: space-between;
     width: 100%;
     gap: 8px;
-}
-.add-button{
-    text-transform: capitalize !important;
-    height: 44px;
 }
 .popover-button {
     width: 100%;
