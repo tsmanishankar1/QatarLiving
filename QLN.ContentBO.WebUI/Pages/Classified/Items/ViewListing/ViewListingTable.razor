@@ -22,7 +22,7 @@ else if (Items == null || Items.Count == 0)
             Title="@($"No {GetTabTitle()} Items yet.")"
             Subtitle="You haven't posted any ads yet. Create your first one now!"
             ButtonText="Create Ad"
-            OnButtonClick="@(() => NavigationManager.NavigateTo("/manage/classified/items/createform"))" />
+            OnButtonClick="@(async () => await OnAddClicked.InvokeAsync())" />
     </div>
 }
 else

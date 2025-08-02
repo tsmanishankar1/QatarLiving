@@ -1,15 +1,30 @@
 @page "/manage/classified/items/view/transactions"
 @inherits ViewTransactionsBase
-@using QLN.ContentBO.WebUI.Models;
+@using QLN.ContentBO.WebUI.Models
 @layout ItemLayout
 
 <MudGrid Style="padding-top: 18px">
-    <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
-              <div class="community-table">
-              <ViewTransactionsTable/>
+        
+        <!-- Search, Sort, and Date Filter Controls -->
+        <SearchSortBar 
+            Items="Transactions"
+            OnSearch="HandleSearch"
+            OnSort="HandleSort"
+            OnDateFilterChanged="HandleDateFilterChanged" 
+        />
 
-             </div> 
+        <!-- Transactions Table -->
+        <div class="community-table">
+            <ViewTransactionsTable 
+                IsLoading="IsLoading"
+                Transactions="Transactions"
+                TotalRecords="TotalRecords"
+                OnTabChanged="HandleTabChanged"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged"
+            />
+        </div>
+
     </MudItem>
 </MudGrid>

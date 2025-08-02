@@ -1,20 +1,55 @@
 @page "/manage/classified/collectibles/createform"
-
 @using QLN.ContentBO.WebUI.Models
 @inherits CreateAdBase
 
- <button class="back-button" @onclick="GoBack">
-     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
-        Back
+<!-- Back Button -->
+<button class="back-button" @onclick="GoBack">
+    <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+    Back
 </button>
-<div class="create-form-container">
-    <MudGrid GutterSize="24px">
-        <MudItem xs="12" md="5">
-            <CreateFormList UserEmail="@UserEmail" />
-        </MudItem>
 
-        <MudItem xs="12" md="7">
-            <UploadPhotos  AdModel="@adPostModel"/>
-        </MudItem>
-    </MudGrid>
-</div>
+<!-- Main Form -->
+<EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
+    <DataAnnotationsValidator />
+
+    <div class="create-form-container">
+        <MudGrid GutterSize="24px">
+            <!-- Left Column: Form Fields -->
+            <MudItem xs="12" md="5">
+                <CreateFormList 
+                    UserEmail="@UserEmail"
+                    Zones="@Zones"
+                    IsLoadingZones="@IsLoadingZones"
+                    IsLoadingCategories="@IsLoadingCategories"
+                    CategoryTrees="@CategoryTrees"
+                    Ad="@adPostModel"
+                    editContext="@editContext"
+                    DynamicFieldErrors="@DynamicFieldErrors"
+                    ExcludedFields="@ExcludedFields"
+                    OnAddressFieldsChanged="TrySetCoordinatesFromAddressAsync"
+                />
+
+                <!-- Button Group -->
+                <div class="custom-button-group">
+                    <MudButton Class="custom-button" Variant="Variant.Outlined" OnClick="OpenDiscardDialog">
+                        Cancel
+                    </MudButton>
+
+                    <MudButton 
+                        Class="custom-button"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        Disabled="@IsSaving"
+                        ButtonType="ButtonType.Submit">
+                            <span>Submit</span>
+                    </MudButton>
+                </div>
+            </MudItem>
+
+            <!-- Right Column: Photo Upload -->
+            <MudItem xs="12" md="7">
+                <UploadPhotos AdModel="@adPostModel" />
+            </MudItem>
+        </MudGrid>
+    </div>
+</EditForm>
