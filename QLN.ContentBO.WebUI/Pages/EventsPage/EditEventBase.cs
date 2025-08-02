@@ -193,6 +193,10 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             try
             {
+                if(firstRender)
+                {
+                    _shouldInitializeMap = true;
+                }
                 if (_shouldInitializeMap)
                 {
                     _shouldInitializeMap = false;
