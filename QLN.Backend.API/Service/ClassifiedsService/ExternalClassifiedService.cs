@@ -2,6 +2,7 @@
 using Dapr.Client;
 using Microsoft.Spatial;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
@@ -419,7 +420,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items-ad/{adId}",
+                    $"api/classifieds/items/{adId}",
                     cancellationToken
                     );
 
@@ -455,7 +456,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/preloved-ad/{adId}",
+                    $"api/classifieds/preloved/{adId}",
                     cancellationToken
                 );
 
@@ -490,7 +491,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/collectibles-ad/{adId}",
+                    $"api/classifieds/collectibles/{adId}",
                     cancellationToken
                 );
 
@@ -525,7 +526,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/deals-ad/{adId}",
+                    $"api/classifieds/deals/{adId}",
                     cancellationToken
                 );
 
@@ -558,7 +559,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<ClassifiedsItems>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items/ads/{adId}",
+                    $"api/classifieds/items/{adId}",
                     cancellationToken);
 
                 return result;
@@ -580,7 +581,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<ClassifiedsPreloved>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/preloved/ad/{adId}",
+                    $"api/classifieds/preloved/{adId}",
                     cancellationToken);
 
                 return result;
@@ -602,7 +603,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<ClassifiedsDeals>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/deals/ad/{adId}",
+                    $"api/classifieds/deals/{adId}",
                     cancellationToken);
 
                 return result;
@@ -624,7 +625,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var result = await _dapr.InvokeMethodAsync<ClassifiedsCollectibles>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/ad/{adId}",
+                    $"api/classifieds/collectibles/{adId}",
                     cancellationToken);
 
                 return result;
