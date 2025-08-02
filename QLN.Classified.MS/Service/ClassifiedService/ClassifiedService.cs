@@ -21,6 +21,7 @@ using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Utilities;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
@@ -3313,7 +3314,6 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve filters from the category tree.", ex);
             }
         }
-
         public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -3324,51 +3324,41 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
+                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAdElement.ValueKind != JsonValueKind.Object)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
 
                 if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
-                }
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                var existingAd = JsonSerializer.Deserialize<ClassifiedsItems>(existingAdElement.GetRawText());
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                await IndexItemsToAzureSearch(dto, cancellationToken);
+                await IndexItemsToAzureSearch(existingAd, cancellationToken);
+
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Items Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Items Ad.");
+                throw new InvalidOperationException("Failed to update Items ad.", ex);
             }
         }
-
         public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -3379,50 +3369,39 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
+                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAdElement.ValueKind != JsonValueKind.Object)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
 
                 if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
-                }
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                var existingAd = JsonSerializer.Deserialize<ClassifiedsPreloved>(existingAdElement.GetRawText());
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
-                await IndexPrelovedToAzureSearch(dto, cancellationToken);
+                await IndexPrelovedToAzureSearch(existingAd, cancellationToken);
+
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Preloved Ad.");
+                throw new InvalidOperationException("Failed to update Preloved ad.", ex);
             }
         }
 
@@ -3436,50 +3415,39 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
+                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAdElement.ValueKind != JsonValueKind.Object)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
 
                 if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
-                }
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                var existingAd = JsonSerializer.Deserialize<ClassifiedsCollectibles>(existingAdElement.GetRawText());
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
-                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+                await IndexCollectiblesToAzureSearch(existingAd, cancellationToken);
+
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Collectibles Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Collectibles Ad.");
+                throw new InvalidOperationException("Failed to update Collectibles ad.", ex);
             }
         }
 
@@ -3493,50 +3461,39 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
+                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAdElement.ValueKind != JsonValueKind.Object)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
 
                 if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
-                }
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                var existingAd = JsonSerializer.Deserialize<ClassifiedsDeals>(existingAdElement.GetRawText());
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
-                await IndexDealsToAzureSearch(dto, cancellationToken);
+                await IndexDealsToAzureSearch(existingAd, cancellationToken);
+
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Deals Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Deals Ad.");
+                throw new InvalidOperationException("Failed to update Deals ad.", ex);
             }
         }
 
@@ -3680,10 +3637,28 @@ namespace QLN.Classified.MS.Service
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                        if (orderProp != null)
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var sortDirection = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var allowedProps = new[] { "Price", "CreatedAt" };
+                        if (!allowedProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase))
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            _logger.LogWarning("Sorting by '{Property}' is not allowed", propertyName);
+                        }
+                        else
+                        {
+                            var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName,
+                                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                            if (orderProp != null)
+                            {
+                                items = sortDirection == "desc"
+                                    ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                    : items.OrderBy(i => orderProp.GetValue(i)).ToList();
+
+                                _logger.LogInformation("Applied sorting by {Property} {Direction}", propertyName, sortDirection);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -3691,6 +3666,7 @@ namespace QLN.Classified.MS.Service
                         _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
                     }
                 }
+
 
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
@@ -3853,10 +3829,28 @@ namespace QLN.Classified.MS.Service
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsCollectibles).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                        if (orderProp != null)
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var sortDirection = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var allowedProps = new[] { "Price", "CreatedAt" };
+                        if (!allowedProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase))
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            _logger.LogWarning("Sorting by '{Property}' is not allowed", propertyName);
+                        }
+                        else
+                        {
+                            var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName,
+                                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                            if (orderProp != null)
+                            {
+                                items = sortDirection == "desc"
+                                    ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                    : items.OrderBy(i => orderProp.GetValue(i)).ToList();
+
+                                _logger.LogInformation("Applied sorting by {Property} {Direction}", propertyName, sortDirection);
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -3864,6 +3858,7 @@ namespace QLN.Classified.MS.Service
                         _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
                     }
                 }
+
 
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
