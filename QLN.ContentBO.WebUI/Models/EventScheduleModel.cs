@@ -1,21 +1,19 @@
 using System.ComponentModel.DataAnnotations;
-using QLN.ContentBO.WebUI.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace QLN.ContentBO.WebUI.Models
 {
     public class EventScheduleModel
     {
-        [Required(ErrorMessage = "Start date is required.")]
+        [Required(ErrorMessage = "Start date is required")]
         public DateOnly StartDate { get; set; }
-        [Required]
+        
+        [Required(ErrorMessage = "End date is required")]
         public DateOnly EndDate { get; set; }
+        
         public EventTimeType TimeSlotType { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
+        
+        public string? GeneralTextTime { get; set; }
+        
         public List<TimeSlotModel>? TimeSlots { get; set; } = [];
-        public string? FreeTimeText { get; set; } 
-
-
     }
 }

@@ -1,11 +1,6 @@
 ﻿using Azure.Search.Documents.Indexes;
-using Microsoft.Spatial;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
@@ -51,6 +46,12 @@ namespace QLN.Common.DTO_s
         public string? L2CategoryId { get; set; }
 
         [SearchableField(IsFilterable = true)]
+        public string? L2Category { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Location { get; set; }
+
+        [SearchableField(IsFilterable = true)]
         public string? Brand { get; set; }
 
         [SearchableField(IsFilterable = true)]
@@ -61,12 +62,6 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? Color { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? L2Category { get; set; }
-
-        [SearchableField(IsFilterable = true)]
-        public string? Location { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? PublishedDate { get; set; }
@@ -84,13 +79,40 @@ namespace QLN.Common.DTO_s
         public string UserName { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public double? Lattitude { get; set; }
+        public double? Latitude { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public double? Longitude { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string CreatedBy { get; set; } = string.Empty;
+        public string? ContactNumberCountryCode { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? ContactNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? WhatsappNumberCountryCode { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? WhatsAppNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? ContactEmail { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? StreetNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? BuildingNumber { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Zone { get; set; }
+
+        [SimpleField(IsFilterable = true)]
+        public bool IsActive { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string CreatedBy { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime CreatedAt { get; set; }
@@ -101,14 +123,12 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? UpdatedAt { get; set; }
 
-        [SimpleField(IsFilterable = true)]
-        public bool IsActive { get; set; }
         public IList<ImageInfo> Images { get; set; } = new List<ImageInfo>();
 
         [SearchableField(IsFilterable = true)]
         public string? AttributesJson { get; set; }
-
     }
+
     public class ImageInfo
     {
         [SimpleField(IsFilterable = true)]
@@ -117,6 +137,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public int Order { get; set; }
     }
+
     public enum AdTypeEnum
     {
         P2P,

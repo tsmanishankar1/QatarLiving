@@ -475,7 +475,7 @@ namespace QLN.Company.MS.Service
                     })
                     .ToList();
 
-                return companies;
+                return companies.Any() ? companies : null;
             }
             catch (Exception ex)
             {

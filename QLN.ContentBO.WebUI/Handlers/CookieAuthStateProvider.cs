@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using Nextended.Core.Extensions;
 using QLN.ContentBO.WebUI.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;

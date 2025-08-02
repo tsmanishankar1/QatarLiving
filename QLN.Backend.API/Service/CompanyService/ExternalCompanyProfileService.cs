@@ -104,7 +104,7 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileModel>> GetAllVerifiedCompanies(bool? isBasicProfile, VerifiedStatus? status, VerticalType? vertical, SubVertical? subVertical,CancellationToken cancellationToken = default)
+        public async Task<List<CompanyProfileModel>> GetAllVerifiedCompanies(bool? isBasicProfile, VerifiedStatus? status, VerticalType? vertical, SubVertical? subVertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -332,25 +332,40 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<VerificationCompanyProfileStatus>> GetAllVerificationProfiles(VerticalType vertical, SubVertical? subVertical = null, CancellationToken cancellationToken = default)
+        public async Task<List<VerificationCompanyProfileStatus>?> GetAllVerificationProfiles(
+           VerticalType vertical,
+           SubVertical? subVertical,
+           CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/companyprofile/profileStatusbyverified?vertical={vertical}";
-
                 if (subVertical.HasValue)
                 {
                     url += $"&subVertical={subVertical.Value}";
                 }
 
-                var companies = await _dapr.InvokeMethodAsync<List<VerificationCompanyProfileStatus>>(
-                    HttpMethod.Get,
-                    ConstantValues.Company.CompanyServiceAppId,
-                    url,
-                    cancellationToken
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, ConstantValues.Company.CompanyServiceAppId, url);
 
-                return companies ?? new();
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var companies = await JsonSerializer.DeserializeAsync<List<VerificationCompanyProfileStatus>>(
+                    await response.Content.ReadAsStreamAsync(cancellationToken),
+                    _dapr.JsonSerializerOptions,
+                    cancellationToken);
+
+                return companies;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
             }
             catch (Exception ex)
             {
