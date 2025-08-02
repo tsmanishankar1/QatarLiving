@@ -1303,7 +1303,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedItemsAd(dto, token);
 
@@ -1353,7 +1353,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1431,7 +1431,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedPrelovedAd(dto, token);
 
@@ -1481,7 +1481,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1559,7 +1559,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedCollectiblesAd(dto, token);
 
@@ -1609,7 +1609,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1687,7 +1687,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedDealsAd(dto, token);
 
@@ -1737,7 +1737,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {

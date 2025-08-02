@@ -1422,7 +1422,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetAllItemsAds")
-            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds ads")
             .WithDescription("Retrieves all service ads from the system. " +
@@ -1451,7 +1450,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetAllCollectiblesAds")
-            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +

@@ -3273,7 +3273,7 @@ namespace QLN.Classified.MS.Service
         public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
@@ -3328,7 +3328,7 @@ namespace QLN.Classified.MS.Service
         public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
@@ -3385,7 +3385,7 @@ namespace QLN.Classified.MS.Service
         public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
@@ -3442,7 +3442,7 @@ namespace QLN.Classified.MS.Service
         public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
