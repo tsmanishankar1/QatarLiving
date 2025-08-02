@@ -61,8 +61,7 @@ namespace QLN.Common.DTO_s.Company
         public int CRNumber { get; set; }
         [Required]
         public string CRDocument { get; set; } = string.Empty;
-        public bool? IsVerified { get; set; } = false;
-        public CompanyStatus? Status { get; set; }
+        public VerifiedStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
@@ -74,39 +73,11 @@ namespace QLN.Common.DTO_s.Company
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedUtc { get; set; }
     }
-    public class CompanyProfileVerificationStatus
-    {
-        public Guid? CompanyId { get; set; }
-        public string BusinessName { get; set; } = string.Empty;
-        public VerticalType Vertical { get; set; }
-        public bool? IsVerified { get; set; }
-        public CompanyStatus? Status { get; set; }
-    }
     public class CompanyProfileApproveDto
     {
         public Guid? CompanyId { get; set; }
-        public bool? IsBasicProfile { get; set; }
-        public bool? IsVerified { get; set; }
-        public CompanyStatus? Status { get; set; }
+        public VerifiedStatus? Status { get; set; }
         public string? RejectionReason { get; set; }
-    }
-    public class CompanyProfileApprovalResponseDto
-    {
-        public Guid? CompanyId { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public bool? IsVerified { get; set; }
-        public CompanyStatus? StatusId { get; set; }
-        public string StatusName { get; set; } = string.Empty;
-        public DateTime? UpdatedUtc { get; set; }
-    }
-    public class CompanyProfileStatus
-    {
-        public Guid? CompanyId { get; set; }
-        public string? UserId { get; set; }
-        public string BusinessName { get; set; } = string.Empty;
-        public VerticalType Vertical { get; set; }
-        public SubVertical SubVertical { get; set; }
-        public bool IsActive { get; set; }
     }
     public class VerificationCompanyProfileStatus
     {

@@ -42,7 +42,6 @@ namespace QLN.Common.DTO_s
         NeedChanges =6,
         Rejected = 7,
         Pending = 8,
-        Approved = 9
     }
     public enum SubVertical
     {

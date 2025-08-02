@@ -310,9 +310,9 @@ namespace QLN.Backend.API.Service.ServiceBoService
             }
         }
         public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
-    VerticalType verticalId,
-    SubVertical? subVerticalId,
-    CancellationToken cancellationToken = default)
+        VerticalType verticalId,
+        SubVertical? subVerticalId,
+        CancellationToken cancellationToken = default)
         {
             try
             {
@@ -321,7 +321,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
 
                 return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
+                    ConstantValues.Company.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }

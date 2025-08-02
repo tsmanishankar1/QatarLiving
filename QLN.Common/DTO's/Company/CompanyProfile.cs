@@ -57,12 +57,10 @@ namespace QLN.Common.DTO_s.Company
         public int CRNumber { get; set; }
         [Required]
         public string CRDocument { get; set; } = string.Empty;
-        public CompanyStatus? Status { get; set; }
+        public VerifiedStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-        public string? AuthorisedContactPersonName { get; set; }
-        public DateOnly? CRExpiryDate { get; set; }
     }
     public class CompanyRequest : CompanyProfile
     {

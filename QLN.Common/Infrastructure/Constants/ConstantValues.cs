@@ -12,13 +12,6 @@ namespace QLN.Common.Infrastructure.Constants
         public const string ByPassEmail = "testuser@qatarliving.com";
         public const string ByPassMobile = "0000000000";
         public const string ByPass2FA = "000000";
-        //Company Constants
-        public const string CompanyStoreName = "companystatestore";
-        public const string CompanyIndexKey = "company-index";
-        public const string CompanyServiceIndex = "company-service-index";
-        public const string CompanyVerifiedIndex = "company-verified-index";
-        public const string CompanyDsIndex = "company-ds-index";
-        public const string CompanyServiceAppId = "qln-company-ms";
         // Classifieds Constants
         public const string ClassifiedsVertical = "classifieds";
         public const string DocTypeStore = "Store";
@@ -132,7 +125,6 @@ namespace QLN.Common.Infrastructure.Constants
             public const string BannerIndexKey = "banner-index";
 
         }
-        
         public static class V2ClassifiedBo
         {
             public const string ClassifiedBoStoreName = "contentstatestore";
@@ -145,6 +137,12 @@ namespace QLN.Common.Infrastructure.Constants
             public const string IndexKey = "service-category-index";
             public const string ServiceAppId = "qln-classified-ms";
             public const string ServicesIndexKey = "services-index";
+        }
+        public static class Company
+        {
+            public const string CompanyStoreName = "companystatestore";
+            public const string CompanyIndexKey = "company-index";
+            public const string CompanyServiceAppId = "qln-company-ms";
         }
     }
 }
