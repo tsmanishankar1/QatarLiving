@@ -198,6 +198,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             DynamicFieldErrors.Clear();
             // Run automatic validation
             var isValid = editContext.Validate();
+            if (adPostModel.HasAuthenticityCertificate)
+            {
+                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                {
+                    messageStore.Add(() => adPostModel.Certificate, "Certificate is required when authenticity is claimed.");
+                    isValid = false;
+                }
+            }
 
             if (SelectedCategory?.Children?.Any() == true && string.IsNullOrEmpty(adPostModel.L1CategoryId))
             {

@@ -1572,6 +1572,7 @@ a, .btn-link {
         border-radius: 4px !important;      /* slightly rounded */
         padding: 8px 20px !important;
         min-width: 120px;
+        box-shadow: none !important;
     }
 /* //CreateFormList.razor */
 
