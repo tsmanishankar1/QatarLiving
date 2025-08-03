@@ -25,6 +25,9 @@ namespace QLN.Common.DTO_s
         public bool HasAuthenticityCertificate { get; set; }
 
         [SimpleField(IsFilterable = true)]
+        public string? AuthenticityCertificateName { get; set; }
+
+        [SimpleField(IsFilterable = true)]
         public string? AuthenticityCertificateUrl { get; set; }
 
         [SimpleField(IsFilterable = true)]

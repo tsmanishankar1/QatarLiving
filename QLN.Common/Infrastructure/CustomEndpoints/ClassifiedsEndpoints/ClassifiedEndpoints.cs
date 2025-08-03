@@ -29,12 +29,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     {
         public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
-            // SEARCH
-            group.MapPost("/items/search", async (
-                    [FromBody] CommonSearchRequest req,
-                    [FromServices] ISearchService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
+            group.MapPost("/classifieds/search", async (
+                [FromBody] ClassifiedsSearchRequest req,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
             {
                 var logger = logFac.CreateLogger("ClassifiedEndpoints");
 
@@ -50,583 +49,174 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         Title = "Validation Failed",
                         Detail = errorMessages,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/items/search"
+                        Instance = $"/api/classifieds/search"
                     });
                 }
 
-                try
+                string indexName = req.SubVertical.ToLower() switch
                 {
-                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, req);
-                    return Results.Ok(results);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid search request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/items/search"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled exception during search");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/items/search"
-                    );
-                }
-            })
-            .WithName("SearchClassifiedsItems")
-            .WithTags("Classified")
-            .WithSummary("Search classifieds Items")
-            .Produces<IEnumerable<ClassifiedsItemsIndex>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/preloved/search", async (
-        [FromBody] CommonSearchRequest req,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                var validationContext = new ValidationContext(req);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
-                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
-
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Failed",
-                        Detail = errorMessages,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/preloved/search"
-                    });
-                }
-
-                try
-                {
-                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, req);
-                    return Results.Ok(results);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid search request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/preloved/search"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled exception during search");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/preloved/search"
-                    );
-                }
-            })
-.WithName("SearchClassifiedsPreloved")
-.WithTags("Classified")
-.WithSummary("Search classifieds Preloved")
-.Produces<IEnumerable<ClassifiedsPrelovedIndex>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.ProducesProblem(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/collectibles/search", async (
-        [FromBody] CommonSearchRequest req,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                var validationContext = new ValidationContext(req);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
-                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
-
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Failed",
-                        Detail = errorMessages,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/collectibles/search"
-                    });
-                }
-
-                try
-                {
-                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, req);
-                    return Results.Ok(results);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid search request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/collectibles/search"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled exception during search");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/collectibles/search"
-                    );
-                }
-            })
-.WithName("SearchClassifiedsCollectibles")
-.WithTags("Classified")
-.WithSummary("Search classifieds Collectibles")
-.Produces<IEnumerable<ClassifiedsCollectiblesIndex>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.ProducesProblem(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/deals/search", async (
-        [FromBody] CommonSearchRequest req,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                var validationContext = new ValidationContext(req);
-                var validationResults = new List<ValidationResult>();
-                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
-                {
-                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
-                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
-
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Failed",
-                        Detail = errorMessages,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/deals/search"
-                    });
-                }
-
-                try
-                {
-                    var results = await svc.SearchAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, req);
-                    return Results.Ok(results);
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid search request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/deals/search"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unhandled exception during search");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/deals/search"
-                    );
-                }
-            })
-.WithName("SearchClassifiedsDeals")
-.WithTags("Classified")
-.WithSummary("Search classifieds Deals")
-.Produces<IEnumerable<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.ProducesProblem(StatusCodes.Status500InternalServerError);
-
-
-            // GET BY ID
-            group.MapGet("/{id}", async (
-                    [FromRoute] string id,
-                    [FromServices] ISearchService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    logger.LogWarning("GetById called with empty id");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document ID is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/{id}"
-                    });
-                }
-
-                try
-                {
-                    var ad = await svc.GetByIdAsync<ClassifiedsIndex>(ConstantValues.Verticals.Classifieds, id);
-                    if (ad is null)
-                        return Results.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = $"No document '{id}' in 'classifieds'.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = $"/api/classified/{id}"
-                        });
-
-                    return Results.Ok(ad);
-                }
-                catch (KeyNotFoundException)
-                {
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
-                        Status = StatusCodes.Status404NotFound,
-                        Instance = $"/api/classified/{id}"
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid GetById request");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/{id}"
-                    });
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "GetById error");
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classified/{id}"
-                    );
-                }
-            })
-            .WithName("GetClassifiedById")
-            .WithTags("Classified")
-            .WithSummary("Get a classified by its ID")
-            .Produces<ClassifiedsIndex>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/items-details/{id}", async (
-                    [FromRoute] string id,
-                    [FromQuery] int similarPageSize,
-                    [FromServices] ISearchService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    logger.LogWarning("GetDetails called with empty id");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document ID is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-
-                try
-                {
-                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsItemsIndex>(
-                        ConstantValues.IndexNames.ClassifiedsItemsIndex,
-                        id,
-                        similarPageSize
-                    );
-                    return Results.Ok(result);
-                }
-                catch (KeyNotFoundException)
-                {
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
-                        Status = StatusCodes.Status404NotFound,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid arguments for details");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (RequestFailedException ex)
-                {
-                    logger.LogError(ex, "Azure Search error on details");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unexpected error on details");
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-            })
-            .WithName("GetClassifiedItemsWithSimilar")
-            .WithTags("Classified")
-            .WithSummary("Get a classified plus similar items")
-            .WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
-
-            group.MapGet("/preloved-details/{id}", async (
-        [FromRoute] string id,
-        [FromQuery] int similarPageSize,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    logger.LogWarning("GetDetails called with empty id");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document ID is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-
-                try
-                {
-                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsPrelovedIndex>(
-                        ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
-                        id,
-                        similarPageSize
-                    );
-                    return Results.Ok(result);
-                }
-                catch (KeyNotFoundException)
-                {
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
-                        Status = StatusCodes.Status404NotFound,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid arguments for details");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (RequestFailedException ex)
-                {
-                    logger.LogError(ex, "Azure Search error on details");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unexpected error on details");
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-            })
-.WithName("GetClassifiedPrelovedWithSimilar")
-.WithTags("Classified")
-.WithSummary("Get a classified plus similar items")
-.WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
-
-            group.MapGet("/collectibles-details/{id}", async (
-        [FromRoute] string id,
-        [FromQuery] int similarPageSize,
-        [FromServices] ISearchService svc,
-        [FromServices] ILoggerFactory logFac
-    ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-
-                if (string.IsNullOrWhiteSpace(id))
-                {
-                    logger.LogWarning("GetDetails called with empty id");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document ID is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-
-                try
-                {
-                    var result = await svc.GetByIdWithSimilarAsync<ClassifiedsCollectiblesIndex>(
-                        ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
-                        id,
-                        similarPageSize
-                    );
-                    return Results.Ok(result);
-                }
-                catch (KeyNotFoundException)
-                {
-                    return Results.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = $"No document '{id}' in '{ConstantValues.Verticals.Classifieds}'.",
-                        Status = StatusCodes.Status404NotFound,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    logger.LogWarning(ex, "Invalid arguments for details");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    });
-                }
-                catch (RequestFailedException ex)
-                {
-                    logger.LogError(ex, "Azure Search error on details");
-                    return Results.Problem(
-                        title: "Search Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status502BadGateway,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Unexpected error on details");
-                    return Results.Problem(
-                        title: "Lookup Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/{ConstantValues.Verticals.Classifieds}/details/{id}"
-                    );
-                }
-            })
-.WithName("GetClassifiedCollectiblesWithSimilar")
-.WithTags("Classified")
-.WithSummary("Get a classified plus similar items")
-.WithDescription("Returns the requested ClassifiedsIndex along with up to `similarPageSize` others sharing its L2/L1 category.");
-
-
-
-            // UPLOAD
-            group.MapPost("/upload", async (
-                    [FromBody] ClassifiedsItemsIndex doc,
-                    [FromServices] ISearchService svc,
-                    [FromServices] ILoggerFactory logFac
-                ) =>
-            {
-                var logger = logFac.CreateLogger("ClassifiedEndpoints");
-                if (doc is null)
-                {
-                    logger.LogWarning("Upload called with null document");
-                    return Results.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = "Document payload is required.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/upload"
-                    });
-                }
-                var indexDocument = new CommonIndexRequest
-                {
-                    IndexName = ConstantValues.Verticals.Classifieds,
-                    ClassifiedsItem = doc
+                    "items" => ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                    "preloved" => ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                    "collectibles" => ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    _ => null
                 };
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                    OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/classifieds/search"
+                    });
+                }
+
                 try
                 {
-                    var msg = await svc.UploadAsync(indexDocument);
-                    return Results.Ok(msg);
+                    var results = await svc.SearchAsync(indexName, request);
+                    return Results.Ok(results);
                 }
                 catch (ArgumentException ex)
                 {
-                    logger.LogWarning(ex, "Invalid upload request");
+                    logger.LogWarning(ex, "Invalid search request");
                     return Results.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Request",
                         Detail = ex.Message,
                         Status = StatusCodes.Status400BadRequest,
-                        Instance = $"/api/classified/upload"
+                        Instance = $"/api/classifieds/search"
                     });
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Upload error");
+                    logger.LogError(ex, "Unhandled exception during search");
                     return Results.Problem(
-                        title: "Upload Error",
+                        title: "Search Error",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
-                        instance: $"/api/classified/upload"
+                        instance: $"/api/classifieds/search"
                     );
                 }
             })
-            .WithName("UploadClassified")
+            .WithName("SearchClassifiedsUnified")
             .WithTags("Classified")
-            .WithSummary("Upload or create a classified item")
-            .Produces<string>(StatusCodes.Status200OK)
+            .WithSummary("Unified classifieds search by subVertical")
+            .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/classifieds/details/{subVertical}/{id}", async (
+                [FromRoute] string subVertical,
+                [FromRoute] string id,
+                [FromQuery] int similarPageSize,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedEndpoints");
+
+                if (string.IsNullOrWhiteSpace(id))
+                {
+                    logger.LogWarning("GetDetails called with empty id");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = "Document ID is required.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                    });
+                }
+
+                try
+                {
+                    var (indexName, modelType) = subVertical.ToLower() switch
+                    {
+                        "items" => (ConstantValues.IndexNames.ClassifiedsItemsIndex, typeof(ClassifiedsItemsIndex)),
+                        "preloved" => (ConstantValues.IndexNames.ClassifiedsPrelovedIndex, typeof(ClassifiedsPrelovedIndex)),
+                        "collectibles" => (ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, typeof(ClassifiedsCollectiblesIndex)),
+                        _ => (null, null)
+                    };
+
+                    if (indexName == null || modelType == null)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid SubVertical",
+                            Detail = $"Unsupported subVertical: '{subVertical}'",
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                        });
+                    }
+
+                    var method = typeof(ISearchService)
+                        .GetMethod("GetByIdWithSimilarAsync")?
+                        .MakeGenericMethod(modelType);
+
+                    if (method == null)
+                        throw new InvalidOperationException("Method resolution failed");
+
+                    var task = (Task)method.Invoke(svc, new object[] { indexName, id, similarPageSize });
+                    await task.ConfigureAwait(false);
+
+                    var resultProperty = task.GetType().GetProperty("Result");
+                    var result = resultProperty?.GetValue(task);
+
+                    return Results.Ok(result);
+                }
+                catch (KeyNotFoundException)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = $"No document '{id}' in '{subVertical}'.",
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid arguments for details");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/classifieds/details/{subVertical}/{id}"
+                    });
+                }
+                catch (RequestFailedException ex)
+                {
+                    logger.LogError(ex, "Azure Search error on details");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status502BadGateway,
+                        instance: $"/api/classifieds/details/{subVertical}/{id}"
+                    );
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unexpected error on details");
+                    return Results.Problem(
+                        title: "Lookup Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds/details/{subVertical}/{id}"
+                    );
+                }
+            })
+            .WithName("GetClassifiedWithSimilarUnified")
+            .WithTags("Classified")
+            .WithSummary("Get a classified document with similar entries")
+            .WithDescription("Returns a specific classified entry along with similar ones based on category.");
 
             // added save search
             group.MapPost("/search/saveSearch", async Task<Results<
@@ -1211,7 +801,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .ExcludeFromDescription();
 
             // itemsAd post
-            group.MapPost("items/post", async Task<IResult> (
+            group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsItemsDTO dto,
                 IClassifiedService service,
@@ -1257,6 +847,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         WhatsAppNumber = dto.WhatsAppNumber,
                         StreetNumber = dto.StreetNumber,
                         zone = dto.zone,
+                        ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                        ExpiryDate = null,
+                        FeaturedExpiryDate = null,
+                        IsFeatured = false,
+                        IsPromoted = false,
+                        LastRefreshedOn = null,
+                        PromotedExpiryDate = null,
+                        PublishedDate = null,
+                        Status = AdStatus.Draft,
+                        SubscriptionId = null,
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
@@ -1459,7 +1060,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("preloved/post", async Task<IResult> (
+            group.MapPost("preloved", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsPrelovedDTO dto,
                 IClassifiedService service,
@@ -1508,6 +1109,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         ContactEmail = dto.ContactEmail,
                         WhatsAppNumber = dto.WhatsAppNumber,
                         StreetNumber = dto.StreetNumber,
+                        ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                        ExpiryDate = null,
+                        FeaturedExpiryDate = null,
+                        IsFeatured = false,
+                        IsPromoted = false,
+                        LastRefreshedOn = null,
+                        PromotedExpiryDate = null,
+                        PublishedDate = null,
+                        Status = AdStatus.Draft,
+                        SubscriptionId = null,
+                        Inclusion = dto.Inclusion,
+                        UserName = name,
                         zone = dto.zone,
                         IsActive = true,
                         CreatedBy = name,
@@ -1689,7 +1303,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedItemsAd(dto, token);
 
@@ -1739,7 +1353,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1817,7 +1431,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedPrelovedAd(dto, token);
 
@@ -1867,7 +1481,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -1945,7 +1559,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedCollectiblesAd(dto, token);
 
@@ -1995,7 +1609,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -2073,7 +1687,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    dto.UserId = uid;
+                    dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedDealsAd(dto, token);
 
@@ -2123,7 +1737,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.UserId == null)
+                    if (dto.UpdatedBy == null)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -2174,7 +1788,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-            group.MapPost("collectibles/post", async Task<IResult> (
+            group.MapPost("collectibles", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsCollectablesDTO dto,
                 IClassifiedService service,
@@ -2188,10 +1802,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.Unauthorized();
                     }
 
-                    // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
-                    // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
                     var request = new ClassifiedsCollectibles
                     {
@@ -2200,6 +1812,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
+                        AuthenticityCertificateName = dto.AuthenticityCertificateName,
                         AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                         HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                         SubVertical = "Collectibles",
@@ -2224,6 +1837,19 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         ContactEmail = dto.ContactEmail,
                         WhatsAppNumber = dto.WhatsAppNumber,
                         StreetNumber = dto.StreetNumber,
+                        ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                        ExpiryDate = null,
+                        FeaturedExpiryDate = null,
+                        IsFeatured = false,
+                        IsPromoted = false,
+                        PromotedExpiryDate = null,
+                        PublishedDate = null,
+                        Status = AdStatus.Draft,
+                        SubscriptionId = null,
+                        HasWarranty = dto.HasWarranty,
+                        IsHandmade = dto.IsHandmade,
+                        YearOrEra = dto.YearOrEra,
                         zone = dto.zone,
                         IsActive = true,
                         CreatedBy = name,
@@ -2345,7 +1971,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
 
-            group.MapPost("deals/post", async Task<IResult> (
+            group.MapPost("deals", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsDealsDTO dto,
                 IClassifiedService service,
@@ -2359,10 +1985,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         return Results.Unauthorized();
                     }
 
-                    // Deserialize the 'user' claim into a dynamic object
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
-                    // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
                     var request = new ClassifiedsDeals {
                         UserId = uid,
@@ -2373,8 +1997,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         IsActive = true,
                         CreatedBy = name,
                         CreatedAt = DateTime.UtcNow,
-                        UpdatedBy = name,
-                        UpdatedAt = DateTime.UtcNow,
                         FlyerFileUrl = dto.FlyerFileUrl,
                         BusinessName = dto.BusinessName,
                         BusinessType = dto.BusinessType,
@@ -2382,7 +2004,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         EndDate= dto.EndDate,
                         DataFeedUrl=dto.DataFeedUrl,
                         WebsiteUrl = dto.WebsiteUrl,
-                        SocialMediaLinks= dto.SocialMediaLinks,
+                        ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                        WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                        ExpiryDate = dto.ExpiryDate,
+                        FeaturedExpiryDate = null,
+                        IsFeatured = false,
+                        IsPromoted = false,
+                        PromotedExpiryDate = null,
+                        SubscriptionId = null,
+                        SocialMediaLinks = dto.SocialMediaLinks,
                         XMLlink = dto.XMLlink,
                         offertitle = dto.offertitle,
                         ImageUrl = dto.ImageUrl
@@ -2642,7 +2272,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .ExcludeFromDescription()
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapDelete("/items-ad/{adId:guid}", async Task<Results<
+            group.MapDelete("/items/{adId:guid}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -2728,7 +2358,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapDelete("/preloved-ad/{adId:guid}", async Task<Results<
+            group.MapDelete("/preloved/{adId:guid}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -2814,7 +2444,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapDelete("/collectibles-ad/{adId:guid}", async Task<Results<
+            group.MapDelete("/collectibles/{adId:guid}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -2902,7 +2532,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapDelete("/deals-ad/{adId:guid}", async Task<Results<
+            group.MapDelete("/deals/{adId:guid}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -4011,7 +3641,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-            group.MapGet("/items/ads/{adId:guid}", async Task<IResult> (
+            group.MapGet("/items/{adId:guid}", async Task<IResult> (
                 Guid adId,
                 IClassifiedService service,
                 CancellationToken token) =>
@@ -4078,7 +3708,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/preloved/ad/{adId:guid}", async Task<IResult> (
+            group.MapGet("/preloved/{adId:guid}", async Task<IResult> (
                 Guid adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>
@@ -4136,7 +3766,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/deals/ad/{adId:guid}", async Task<IResult> (
+            group.MapGet("/deals/{adId:guid}", async Task<IResult> (
                 Guid adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>
@@ -4193,7 +3823,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/collectibles/ad/{adId:guid}", async Task<IResult> (
+            group.MapGet("/collectibles/{adId:guid}", async Task<IResult> (
                 Guid adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>

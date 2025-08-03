@@ -9,21 +9,21 @@ namespace QLN.Common.DTO_s
     public class ClassifiedsBoItemsResponseDto
     {
         public long? TotalCount { get; set; }
-        public List<ClassifiedsItemsIndex>? ClassifiedsItems { get; set; }
+        public List<ClassifiedsItems>? ClassifiedsItems { get; set; }
     }
     public class ClassifiedsBoPrelovedResponseDto
     {
         public long? TotalCount { get; set; }
-        public List<ClassifiedsPrelovedIndex>? ClassifiedsPreloved { get; set; }
+        public List<ClassifiedsPreloved>? ClassifiedsPreloved { get; set; }
     }
     public class ClassifiedsBoCollectiblesResponseDto
     {
         public long? TotalCount { get; set; }
-        public List<ClassifiedsCollectiblesIndex>? ClassifiedsCollectibles { get; set; }
+        public List<ClassifiedsCollectibles>? ClassifiedsCollectibles { get; set; }
     }
     public class ClassifiedsBoDealsResponseDto
     {
         public long? TotalCount { get; set; }
-        public List<ClassifiedsDealsIndex>? ClassifiedsDeals { get; set; }
+        public List<ClassifiedsDeals>? ClassifiedsDeals { get; set; }
     }
 }

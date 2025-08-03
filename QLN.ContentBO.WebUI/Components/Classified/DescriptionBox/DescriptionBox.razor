@@ -1,0 +1,55 @@
+@inherits DescriptionBoxBase
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Models;
+
+<MudPaper Class="pa-4" Elevation="0" Style="border-radius:8px;">
+    <h3 class="box-heading">Description</h3>
+
+    <h3 class="description-text">
+        @if (showMore)
+        {
+            @((MarkupString)fullDescription)
+        }
+        else
+        {
+            @((MarkupString)shortDescription)
+        }
+    </h3>
+
+
+    @if (ShouldShowToggle)
+    {
+       <MudDivider Class="my-3" />
+
+        <h3 id="readMoreButton" class="read-toggle" @onclick="ToggleReadMore">
+            @(showMore ? "Read less" : "Read more")
+        </h3>
+    }
+</MudPaper>
+
+<style>
+    .description-paper {
+        border-radius: 8px;
+        background-color: white;
+        font-family: 'Public Sans', sans-serif ;
+        overflow: hidden;
+    }
+     .box-heading {
+        font-size: 25px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+    }
+
+    .description-text {
+        font-size: 15px ;
+        font-weight: 400 ;
+        color: var(--color-text-heading);
+        padding: 10px 0;
+    }
+
+    .read-toggle {
+        font-size: 16px ;
+        font-weight: 500 ;
+        color: var(--color-accent) !important ;
+    }
+</style>

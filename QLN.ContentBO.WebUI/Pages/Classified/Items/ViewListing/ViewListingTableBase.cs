@@ -8,6 +8,7 @@ using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 using QLN.ContentBO.WebUI.Interfaces;
 using MudBlazor;
 using System.Linq;
+using QLN.ContentBO.WebUI.Enums;
 using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
@@ -25,6 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         public EventCallback<string> OnTabChange { get; set; }
         [Parameter] public EventCallback<int> OnPageChanged { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter] public EventCallback OnAddClicked { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         protected HashSet<ClassifiedItemViewListing> SelectedListings { get; set; } = new();
         [Inject] public IDialogService DialogService { get; set; }
@@ -35,17 +37,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         protected string rejectionTargetItemId = null;
         protected string removeTargetItemId = null;
         protected bool isBulkRemove = false;
-
-        public enum BulkActionType
-        {
-            Approve = 1,
-            Publish = 2,
-            Unpublish = 3,
-            UnPromote = 5,
-            UnFeature = 6,
-            Remove = 7,
-            NeedChanges = 8
-        }
 
         protected async void HandlePageChange(int newPage)
         {
@@ -162,7 +153,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             Console.WriteLine($"Preview clicked: {item.Title}");
         }
 
-        protected Task ApproveSelected() => PerformBulkAction(BulkActionType.Approve);
+        protected Task ApproveSelected() => PerformBulkAction(AdBulkActionType.Approve);
         protected Task RemoveSelected()
         {
             if (!SelectedListings.Any())
@@ -175,14 +166,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRemoveReasonDialog();
             return Task.CompletedTask;
         }
-        protected Task UnpublishSelected() => PerformBulkAction(BulkActionType.Unpublish);
-        protected Task PublishSelected() => PerformBulkAction(BulkActionType.Publish);
-        protected Task UnpromoteSelected() => PerformBulkAction(BulkActionType.UnPromote);
-        protected Task UnfeatureSelected() => PerformBulkAction(BulkActionType.UnFeature);
+        protected Task UnpublishSelected() => PerformBulkAction(AdBulkActionType.Unpublish);
+        protected Task PublishSelected() => PerformBulkAction(AdBulkActionType.Publish);
+        protected Task UnpromoteSelected() => PerformBulkAction(AdBulkActionType.UnPromote);
+        protected Task UnfeatureSelected() => PerformBulkAction(AdBulkActionType.UnFeature);
 
-        protected Task Approve(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Approve);
-        protected Task Publish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Publish);
-        protected Task Unpublish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, BulkActionType.Unpublish);
+        protected Task Approve(ClassifiedItemViewListing item) => RunSingleAction(item.Id, AdBulkActionType.Approve);
+        protected Task Publish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, AdBulkActionType.Publish);
+        protected Task Unpublish(ClassifiedItemViewListing item) => RunSingleAction(item.Id, AdBulkActionType.Unpublish);
         protected Task OnRemove(ClassifiedItemViewListing item)
         {
             removeTargetItemId = item.Id;
@@ -190,7 +181,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRemoveReasonDialog();
             return Task.CompletedTask;
         }
-        private async Task RunSingleAction(string itemId, BulkActionType action)
+        private async Task RunSingleAction(string itemId, AdBulkActionType action)
         {
             singleItemLoadingId = itemId;
             await PerformBulkAction(action, "", new List<string> { itemId });
@@ -205,7 +196,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
             singleItemLoadingId = rejectionTargetItemId;
 
-            await PerformBulkAction(BulkActionType.NeedChanges, reason, new List<string> { rejectionTargetItemId });
+            await PerformBulkAction(AdBulkActionType.NeedChanges, reason, new List<string> { rejectionTargetItemId });
 
             rejectionTargetItemId = null;
         }
@@ -216,12 +207,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 
             if (isBulkRemove)
             {
-                await PerformBulkAction(BulkActionType.Remove, reason);
+                await PerformBulkAction(AdBulkActionType.Remove, reason);
             }
             else if (!string.IsNullOrWhiteSpace(removeTargetItemId))
             {
                 singleItemLoadingId = removeTargetItemId;
-                await PerformBulkAction(BulkActionType.Remove, reason, new List<string> { removeTargetItemId });
+                await PerformBulkAction(AdBulkActionType.Remove, reason, new List<string> { removeTargetItemId });
                 removeTargetItemId = null;
             }
 
@@ -233,21 +224,21 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             OpenRejectDialog(item.Id);
             return Task.CompletedTask;
         }
-         private string GetSuccessMessage(BulkActionType action)
+         private string GetSuccessMessage(AdBulkActionType action)
         {
             return action switch
             {
-                BulkActionType.Approve => "Items approved successfully.",
-                BulkActionType.Publish => "Items published successfully.",
-                BulkActionType.Unpublish => "Items unpublished successfully.",
-                BulkActionType.UnPromote => "Items un-promoted successfully.",
-                BulkActionType.UnFeature => "Items un-featured successfully.",
-                BulkActionType.Remove => "Items removed successfully.",
-                BulkActionType.NeedChanges => "Request for changes sent successfully.",
+                AdBulkActionType.Approve => "Items approved successfully.",
+                AdBulkActionType.Publish => "Items published successfully.",
+                AdBulkActionType.Unpublish => "Items unpublished successfully.",
+                AdBulkActionType.UnPromote => "Items un-promoted successfully.",
+                AdBulkActionType.UnFeature => "Items un-featured successfully.",
+                AdBulkActionType.Remove => "Items removed successfully.",
+                AdBulkActionType.NeedChanges => "Request for changes sent successfully.",
                 _ => "Action performed successfully."
             };
         }     
-        private async Task PerformBulkAction(BulkActionType action, string reason = "", List<string> adIds = null)
+        private async Task PerformBulkAction(AdBulkActionType action, string reason = "", List<string> adIds = null)
         {
             isBulkActionLoading = adIds == null; // only bulk shows spinner
 
@@ -267,7 +258,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             {
                 var payloadJson = JsonSerializer.Serialize(payload);
                 Logger.LogInformation("Performing bulk action: {Payload}", payloadJson);
-                var response = await ClassifiedService.PerformBulkActionAsync(payload);
+                var response = await ClassifiedService.PerformBulkActionAsync("bulk-items-action",payload);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
