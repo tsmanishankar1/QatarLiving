@@ -83,7 +83,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             try
             {
                 IsLoadingId = true;
-                var response = await ClassifiedService.GetAdByIdAsync("collectibles/ad", Id);
+                var response = await ClassifiedService.GetAdByIdAsync("collectibles", Id);
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -100,25 +100,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                         WriteIndented = true,
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    await JS.InvokeVoidAsync("console.log", modelJson);
+                    // await JS.InvokeVoidAsync("console.log", modelJson);
 
                 }
                 else
                 {
                     // Handle 404 or error gracefully
+                    GoBack();
+                    Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                     adPostModel = new CollectiblesEditAdPost();
                 }
             }
             catch (JsonException jsonEx)
             {
                 // Log and fallback if deserialization fails
-                Console.Error.WriteLine($"Deserialization error: {jsonEx.Message}");
+                GoBack();
+                Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                 adPostModel = new CollectiblesEditAdPost();
             }
             catch (Exception ex)
             {
                 // General fallback
-                Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+                GoBack();
+                Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                 adPostModel = new CollectiblesEditAdPost();
             } finally {
                 IsLoadingId = false;
@@ -315,7 +319,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 var payload = new
                 {
-                    adType = 1,
+                    id = adPostModel.Id,
+                    adType = adPostModel.AdType,
+                    subVertical = adPostModel.SubVertical,
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
