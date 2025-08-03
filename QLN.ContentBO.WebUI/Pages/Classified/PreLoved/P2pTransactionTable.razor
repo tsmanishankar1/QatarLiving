@@ -1,4 +1,4 @@
-@inherits PrelovedSubscriptionTableBase
+@inherits P2pTransactionTableBase
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
@@ -17,13 +17,13 @@
     else if (IsEmpty)
     {
         <div class="empty-card-wrapper">
-            <EmptyCard Title="No Subscription listing found" Subtitle="Please check back later." />
+            <EmptyCard Title="No Preloved P2p Transaction found" Subtitle="Please check back later." />
         </div>
     }
     else
     {
 
-        <MudDataGrid T="SubscriptionListingModal"
+        <MudDataGrid T="PreLovedTransactionModal"
                      Items="@Listings"
                      Hover="true"
                      Dense="true"
@@ -92,21 +92,46 @@
                         @(string.IsNullOrWhiteSpace(context.Item.Status) ? "-" : context.Item.Status)
                     </CellTemplate>
                 </TemplateColumn>
-
-                <TemplateColumn Title="Start Date">
+                <TemplateColumn Title="Created Date">
                     <CellTemplate>
                         @(context.Item.CreationDate != default ? context.Item.CreationDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Published Date">
+                    <CellTemplate>
+                        @(context.Item.PublishedDate != default ? context.Item.PublishedDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Start Date">
+                    <CellTemplate>
+                        @(context.Item.StartDate != default ? context.Item.StartDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="End Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.EndDate != default ? context.Item.EndDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Views">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.Views) ? "-" : context.Item.Views)
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="WhatsApp Click">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.WhatsappCount) ? "-" : context.Item.WhatsappCount)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Phone Click">
+                    <CellTemplate>
+                        @(string.IsNullOrWhiteSpace(context.Item.MobileCount) ? "-" : context.Item.MobileCount)
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
                     <CellTemplate>
                         <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true">
-                            <MudMenuItem OnClick="() => OnEdit(context.Item)">
+                            <MudMenuItem OnClick="() => OnEdit()">
                                 <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Edit" />
                                 <span class="menu-text">Edit</span>
                             </MudMenuItem>
@@ -126,9 +151,9 @@
                 </TemplateColumn>
             </Columns>
         </MudDataGrid>
+
         <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
                           OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
     }
 
- 
 </MudPaper>

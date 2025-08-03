@@ -1,8 +1,8 @@
-﻿@page "/manage/classified/preloved/subscription/listing"
+﻿@page "/manage/classified/preloved/p2p/transaction"
 @layout QLN.ContentBO.WebUI.Pages.Classified.PreLoved.PreLovedLayout
 @using QLN.ContentBO.WebUI.Components.NewCustomSelect
 
-@inherits SubscriptionListingBase
+@inherits P2pTransactionBase
 
 <div style="margin-top:10px">
     <div class="search-sort-container">
@@ -15,8 +15,8 @@
                        placeholder="Search for Preloved"
                        class="search-input"
                        LabelClass="custom-label"
-                         @bind="SearchText"
-                        @oninput="OnSearchChanged"  />
+                       @bind="SearchText"
+                       @oninput="OnSearchChanged" />
             </div>
         </div>
 
@@ -35,14 +35,14 @@
     <!-- Filter row -->
     <div class="filter-row">
 
-      <div class="subscription-types">
-       <NewCustomSelect TItem="string"
-                    Items="SubscriptionTypes"
-                    SelectedId="@SelectedSubscriptionType"
-                    SelectedIdChanged="OnSubscriptionChanged"
-                    GetId="item => item"
-                    GetLabel="item => item"
-                    Placeholder="Subscription type" />
+        <div class="subscription-types">
+            <NewCustomSelect TItem="string"
+                             Items="SubscriptionTypes"
+                             SelectedId="@SelectedSubscriptionType"
+                             SelectedIdChanged="OnSubscriptionChanged"
+                             GetId="item => item"
+                             GetLabel="item => item"
+                             Placeholder="Subscription type" />
         </div>
         @* Date picker *@
         <div class="custom-date-picker-container @(showDatePopover ? "active" : "")" @onclick="ToggleDatePopover">
@@ -96,19 +96,19 @@
                 </div>
             </MudPopover>
         </div>
-       
+
         <button class="preloved-filter-button " @onclick="ClearFilters">Clear Filters</button>
     </div>
 
 </div>
 <div style="margin-top:10px">
-    <SubscriptionTable Listings="Listings" IsLoading="IsLoading" IsEmpty="IsEmpty" TotalCount="TotalCount"
+    <P2pTransactionTable Listings="Listings" IsLoading="IsLoading" IsEmpty="IsEmpty" TotalCount="TotalCount"
                        OnPageChanged="HandlePageChanged"
                        OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 <style>
-  
+
     .no-underline .mud-input-underline::before,
     .no-underline .mud-input-underline::after {
         border-bottom: none !important;

@@ -5,8 +5,18 @@
         public string? Text { get; set; }
         public Dictionary<string, string>? Filters { get; set; }
         public string? OrderBy { get; set; }
-        public int PageNumber { get; set; } = 1;
-        public int PageSize { get; set; } = 10;
+        public int? PageNumber { get; set; } = 1;
+        public int? PageSize { get; set; } = 10;
+        public int? Status { get; set; }
+        public string? SortField { get; set; }
+        public DateTime? CreationDate { get; set; }
+        public DateTime? PublishedDate { get; set; }
+        public string? SortDirection { get; set; }
+        public string? SearchText { get; set; }
+        public bool? IsPromoted { get; set; }
+        public bool? IsFeatured { get; set; }
+        public int? Vertical { get; set; }
+        public int? SubVertical { get; set; }
     }
     public class PrelovedResponse
     {

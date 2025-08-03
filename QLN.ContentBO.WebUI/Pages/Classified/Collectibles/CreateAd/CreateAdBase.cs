@@ -116,9 +116,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             var isValid = editContext.Validate();
             if (adPostModel.HasAuthenticityCertificate)
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                if (string.IsNullOrWhiteSpace(adPostModel.CertificateFileName))
                 {
-                    messageStore.Add(() => adPostModel.Certificate, "Certificate is required when authenticity is claimed.");
+                    messageStore.Add(() => adPostModel.CertificateFileName, "Certificate is required when authenticity is claimed.");
                     isValid = false;
                 }
             }
@@ -301,6 +301,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
                     hasAuthenticityCertificate = adPostModel.HasAuthenticityCertificate,
+                    authenticityCertificateName = adPostModel.CertificateFileName,
                     authenticityCertificateUrl = adPostModel.Certificate,
                     hasWarranty = adPostModel.HasWarranty,
                     isHandmade = adPostModel.IsHandmade,

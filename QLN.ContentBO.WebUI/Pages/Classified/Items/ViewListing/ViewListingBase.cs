@@ -10,6 +10,7 @@ using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Enums;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
@@ -36,13 +37,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             {
                 "featured" => new() { { "isFeatured", true } },
                 "promoted" => new() { { "isPromoted", true } },
-                "pendingApproval" => new() { { "status", "PendingApproval" } },
-                "published" => new() { { "status", "Published" } },
-                "unpublished" => new() { { "status", "Unpublished" } },
-                "p2p" => new() { { "adType", "P2P" } },
+                "pendingApproval" => new() { { "status", (int)AdStatus.PendingApproval } },
+                "published" => new() { { "status", (int)AdStatus.Published } },
+                "unpublished" => new() { { "status", (int)AdStatus.Unpublished } },
+                "p2p" => new() { { "adType", (int)AdType.P2P  } },
+                "approved" => new() { { "status", (int)AdStatus.Approved } },
+                "needChanges" => new() { { "status", (int)AdStatus.NeedsModification } },
+                "removed" => new() { { "status", (int)AdStatus.Rejected  } },
                 _ => new()
             };
         }
+
 
         protected async Task HandleTabChange(string newTab)
         {
@@ -109,18 +114,28 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 };
 
                 // Declare filters regardless of selectedTab
-                var filters = GetFiltersForTab();
-
-                if (DateCreatedFilter.HasValue)
-                    filters["createdAt"] = DateCreatedFilter.Value.ToString("yyyy-MM-dd");
+                 var filters = GetFiltersForTab();
+               if (DateCreatedFilter.HasValue)
+                {
+                    var createdUtc = DateTime.SpecifyKind(DateCreatedFilter.Value, DateTimeKind.Utc);
+                    filters["createdAt"] = createdUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                }
 
                 if (DatePublishedFilter.HasValue)
-                    filters["publishedDate"] = DatePublishedFilter.Value.ToString("yyyy-MM-dd");
+                {
+                    var publishedUtc = DateTime.SpecifyKind(DatePublishedFilter.Value, DateTimeKind.Utc);
+                    filters["publishedDate"] = publishedUtc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+}
 
-
-                //  Only add if there's at least one filter
+                // Only include filters if any were added
                 if (filters.Any())
-                    payload["filters"] = filters;
+                {
+                    foreach (var kvp in filters)
+                    {
+                        payload[kvp.Key] = kvp.Value;
+                    }
+                }
+
 
                 // ✅ Log the actual payload
                 // var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
