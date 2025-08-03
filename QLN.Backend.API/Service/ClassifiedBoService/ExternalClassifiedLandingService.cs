@@ -1650,6 +1650,9 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 _logger.LogError(ex, "Unexpected error occurred while calling BulkItems");
                 throw new Exception($"Unexpected error: {ex.Message}", ex);
             }
-        }
+        }   
+
+       
+
     }
 }

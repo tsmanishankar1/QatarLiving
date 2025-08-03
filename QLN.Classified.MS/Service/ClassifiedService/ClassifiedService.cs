@@ -3358,6 +3358,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to update Items ad.", ex);
             }
         }
+
         public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
