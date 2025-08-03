@@ -2,18 +2,16 @@
 @inherits ServicesBase
 
 <h2 class="main-title-name-style">Services</h2>
-<MudTabs @bind-ActivePanelIndex="ActiveIndex"
-         Rounded="false"
+<MudTabs Rounded="false"
          Class="custom-tabs"
          DisableSlideAnimation="true"
          TabPanelClass="tab-panel-style"
          TextColor="Color.Default"
-         IndicatorColor="Color.Primary">
+         IndicatorColor="Color.Primary"
+         @bind-ActivePanelIndex="ActiveIndex">
 
-    @foreach (var tab in TabTitles)
+    @foreach (var tab in Tabs)
     {
-        <MudTabPanel Text="@tab">
-            @RenderTabContent()
-        </MudTabPanel>
+        <MudTabPanel Text="@tab.Title" />
     }
 </MudTabs>

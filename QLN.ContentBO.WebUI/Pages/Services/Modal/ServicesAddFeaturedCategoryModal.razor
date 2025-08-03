@@ -1,4 +1,4 @@
-﻿@inherits ServicesAddSeasonPickModalBase
+﻿@inherits ServicesAddFeaturedCategoryModalBase
 @using MudBlazor
 
 <MudDialog MaxWidth="MaxWidth.Small" FullWidth="true">
@@ -35,7 +35,7 @@
                     else
                     {
                         <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                        @foreach (var category in CategoryTrees)
+                        @foreach (var category in CategoryTrees )
                         {
                             <MudSelectItem T="string" Value="@category.Id.ToString()">@category.Category</MudSelectItem>
                         }
@@ -45,40 +45,6 @@
 
             </div>
 
-            <!-- Subcategory -->
-            <div class="mx-auto">
-                <MudSelect T="string" Label="Subcategory"
-                           Value="SelectedSubcategoryId"
-                           Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
-                           Class="classified-field no-underline"
-                           Required="true"
-                           RequiredError="Subcategory is required"
-                           ValueChanged="OnSubcategoryChanged">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sub in _selectedL1Categories)
-                    {
-                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
-                    }
-                </MudSelect>
-            </div>
-
-            <!-- Section -->
-            <div class="mx-auto">
-                <MudSelect T="string" Label="Section"
-                           Value="SelectedSectionId"
-                           ValueChanged="OnSectionChanged"
-                           Disabled="@string.IsNullOrEmpty(SelectedSubcategoryId)"
-                           Class="classified-field no-underline"
-                           Required="true"
-                           RequiredError="Section is required">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sec in _selectedL2Categories)
-                    {
-                        <MudSelectItem T="string" Value="@sec.Id.ToString()">@sec.Name</MudSelectItem>
-                    }
-                </MudSelect>
-
-            </div>
             <div class="mx-auto">
                 <MudDatePicker Class="classified-field no-underline" Label="Start Date" @bind-Date="StartDate" Required="true" DisableToolbar="true"
                                MinDate="@DateTime.Today" />
@@ -117,7 +83,7 @@
 
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
                     Add
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
