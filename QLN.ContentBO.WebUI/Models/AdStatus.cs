@@ -22,4 +22,11 @@
         Remove = 6,
         NeedChanges = 7
     }
+    public enum VerifiedStatus
+    {
+        Pending = 1,
+        Approved = 2,
+        NeedChanges = 3,
+        Rejected = 4
+    }
 }

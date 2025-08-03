@@ -33,12 +33,77 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
 
         protected bool showCreatedPopover { get; set; } = false;
         protected bool showPublishedPopover { get; set; } = false;
+
         protected string SelectedTab { get; set; } = ((int)CompanyStatus.Rejected).ToString();
         protected override async Task OnInitializedAsync()
         {
             await LoadData();
         }
 
+        //protected async Task LoadData()
+        //{
+        //    IsLoading = true;
+        //    StateHasChanged();
+
+        //    try
+        //    {
+        //        int? status = null;
+
+        //        if (int.TryParse(SelectedTab, out var tabValue))
+        //        {
+        //            status = tabValue;
+        //        }
+
+        //        var request = new FilterRequest
+        //        {
+        //            PageNumber = currentPage,
+        //            PageSize = pageSize,
+        //            Status = status,
+        //            SearchText = SearchText,
+        //            CreationDate = dateCreated,
+        //            PublishedDate = datePublished,
+        //            Vertical = (int)VerticalType.Classifieds, 
+        //            SubVertical = (int)SubVerticalType.Preloved
+        //        };
+
+
+        //        var response = await ClassifiedService.GetPrelovedUserListing(request);
+
+        //        if (response?.IsSuccessStatusCode ?? false)
+        //        {
+        //            var content = await response.Content.ReadAsStringAsync();
+        //            Console.WriteLine($"API Raw Content: {content}");
+
+        //            var result = JsonSerializer.Deserialize<PagedResult<BusinessVerificationItem>>(content, new JsonSerializerOptions
+        //            {
+        //                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        //            });
+        //            if (result == null)
+        //            {
+        //                Console.WriteLine("Deserialized result is null");
+        //            }
+        //            else
+        //            {
+        //                Console.WriteLine($"Items Count: {result.Items?.Count ?? 0}, TotalCount: {result.TotalCount}");
+        //            }
+        //            Listings = result?.Items ?? new List<BusinessVerificationItem>();
+        //            TotalCount = result?.TotalCount ?? 0;
+        //        }
+        //        else
+        //        {
+        //            Console.WriteLine($"API call failed. StatusCode: {response?.StatusCode}");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error loading data: {ex.Message}");
+        //    }
+        //    finally
+        //    {
+        //        IsLoading = false;
+        //        StateHasChanged();
+        //    }
+        //}
         protected async Task LoadData()
         {
             IsLoading = true;
@@ -47,20 +112,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
             try
             {
                 int? status = null;
-                bool? isPromoted = null;
-                bool? isFeatured = null;
 
                 if (int.TryParse(SelectedTab, out var tabValue))
                 {
                     status = tabValue;
                 }
-                else
-                {
-                    if (SelectedTab == "promoted")
-                        isPromoted = true;
-                    else if (SelectedTab == "featured")
-                        isFeatured = true;
-                }
+
                 var request = new FilterRequest
                 {
                     PageNumber = currentPage,
@@ -69,33 +126,38 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
                     SearchText = SearchText,
                     CreationDate = dateCreated,
                     PublishedDate = datePublished,
-                  
-                    IsPromoted = isPromoted,
-                    IsFeatured = isFeatured
+                    Vertical = (int)VerticalType.Classifieds,
+                    SubVertical = (int)SubVerticalType.Preloved
                 };
 
 
-                var response = await ClassifiedService.GetPrelovedP2pListing(request);
+                var response = await ClassifiedService.GetPrelovedUserListing(request);
 
                 if (response?.IsSuccessStatusCode ?? false)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     Console.WriteLine($"API Raw Content: {content}");
 
-                    var result = JsonSerializer.Deserialize<PagedResult<BusinessVerificationItem>>(content, new JsonSerializerOptions
+                    try
                     {
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                    });
-                    if (result == null)
-                    {
-                        Console.WriteLine("Deserialized result is null");
+                        // Deserialize as List since your JSON shows an array
+                        var result = JsonSerializer.Deserialize<List<BusinessVerificationItem>>(
+                            content,
+                            new JsonSerializerOptions
+                            {
+                                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                                PropertyNameCaseInsensitive = true
+                            });
+
+                        Listings = result ?? new List<BusinessVerificationItem>();
+                        TotalCount = Listings.Count;
                     }
-                    else
+                    catch (JsonException ex)
                     {
-                        Console.WriteLine($"Items Count: {result.Items?.Count ?? 0}, TotalCount: {result.TotalCount}");
+                        Console.WriteLine($"JSON Deserialization Error: {ex.Message}");
+                        Listings = new List<BusinessVerificationItem>();
+                        TotalCount = 0;
                     }
-                    Listings = result?.Items ?? new List<BusinessVerificationItem>();
-                    TotalCount = result?.TotalCount ?? 0;
                 }
                 else
                 {

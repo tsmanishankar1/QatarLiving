@@ -111,7 +111,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments,  string vertical)
+        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string vertical)
         {
             try
             {
@@ -168,7 +168,7 @@ namespace QLN.ContentBO.WebUI.Services
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true 
+                    WriteIndented = true
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
@@ -333,13 +333,13 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-              
+
 
                 var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
 
                 var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved-ads/payment-summary{query}");
 
-                
+
                 return await _httpClient.SendAsync(httpRequest);
             }
             catch (Exception ex)
@@ -420,7 +420,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-               
+
 
                 var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
 
@@ -436,9 +436,31 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
+        public async Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var url = $"/api/companyprofile/getallcompanies?vertical={request.Vertical}&subVertical={request.SubVertical}";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                 return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
         public async Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
         {

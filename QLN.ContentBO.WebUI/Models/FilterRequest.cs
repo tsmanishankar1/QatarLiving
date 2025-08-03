@@ -15,6 +15,8 @@
         public string? SearchText { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
+        public int? Vertical { get; set; }
+        public int? SubVertical { get; set; }
     }
     public class PrelovedResponse
     {
