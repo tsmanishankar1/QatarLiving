@@ -17,6 +17,9 @@
           Hover="true"
           Bordered="true"
           Elevation="0"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
@@ -35,17 +38,17 @@
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd>@context.AddId</MudTd>
-        <MudTd>@context.OrderId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AddId.ToString()) ? "-" : context.AddId)"Class="truncate-text hover-title">@context.AddId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@context?.OrderId</MudTd>
         <MudTd>@context.SubscriptionPlan</MudTd>
-        <MudTd>@context.UserName</MudTd>
-        <MudTd>@context.EmailAddress</MudTd>
-        <MudTd>@context.Mobile</MudTd>
-        <MudTd>@context.WhatsappNumber</MudTd>
-        <MudTd>@context.Amount</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.UserName) ? "-" : context?.UserName)"Class="truncate-text">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.EmailAddress) ? "-" : context.EmailAddress)"Class="truncate-text">@context.EmailAddress</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)"Class="truncate-text">@context.Mobile</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.WhatsappNumber) ? "-" : context.WhatsappNumber)"Class="truncate-text">@context.WhatsappNumber</MudTd>
+        <MudTd Class="truncate-text">@context.Amount</MudTd>
         <MudTd>@((ServiceStatus)context.Status)</MudTd>
-        <MudTd>@context.StartDate</MudTd>
-        <MudTd>@context.EndDate</MudTd>
+        <MudTd Class="truncate-text">@context.StartDate</MudTd>
+        <MudTd Class="truncate-text">@context.EndDate</MudTd>
         <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
                 <MudMenuItem OnClick="() => OnEdit(context)">

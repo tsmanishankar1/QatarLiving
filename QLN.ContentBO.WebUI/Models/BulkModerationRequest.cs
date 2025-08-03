@@ -10,10 +10,13 @@ namespace QLN.ContentBO.WebUI.Models
         public string? UpdatedBy { get; set; }
     }
   public enum BulkModerationAction
-    {
-        Approve = 1,
-        Publish = 2,
-        Unpublish = 3,
-        Remove = 4
-    }
+  {
+      Approve = 1,
+      Publish = 2,
+      Unpublish = 3,
+      UnPromote = 4,
+      feature = 5,
+      Remove = 6,
+      UnFeature = 7,
+  }
 }

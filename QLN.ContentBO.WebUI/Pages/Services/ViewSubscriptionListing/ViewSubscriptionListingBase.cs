@@ -10,17 +10,18 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
     [Inject] ILogger<ViewSubscriptionListingBase> Logger { get; set; }
     protected PaginatedPaymentSummaryResponse PaginatedData { get; set; } = new();
     public List<ServiceAdPaymentSummaryDto> Listings => PaginatedData.items;
-
-
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
     protected int currentPage = 1;
     protected int pageSize = 12;
     protected int? currentStatus = 1;
     public string? SortBy { get; set; }
+    public string? SelectedSubscriptionType { get; set; }
     public string? Search { get; set; }
     protected override async Task OnInitializedAsync()
     {
       currentPage = 1;
-      pageSize = 50;
+      pageSize = 12;
       PaginatedData = await LoadSubscriptionListingsAsync();
     }
 
@@ -32,11 +33,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       PaginatedData = await LoadSubscriptionListingsAsync();
       StateHasChanged();
     }
-
+    protected async Task HandleDateFiltersChanged((DateTime? startDate, DateTime? endDate) dates)
+    {
+      FromDate = dates.startDate;
+      ToDate = dates.endDate;
+      PaginatedData = await LoadSubscriptionListingsAsync();
+      StateHasChanged();
+    }
 
     protected async Task HandleSort(bool sortOption)
     {
       SortBy = sortOption ? "asc" : "desc";
+      PaginatedData = await LoadSubscriptionListingsAsync();
+      StateHasChanged();
+    }
+    protected async Task HandleSubscriptionType(string subscriptionType)
+    {
+      SelectedSubscriptionType = subscriptionType;
       PaginatedData = await LoadSubscriptionListingsAsync();
       StateHasChanged();
     }
@@ -47,12 +60,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       StateHasChanged();
     }
     protected async Task HandlePageSizeChange(int newPageSize)
-        {
+    {
             pageSize = newPageSize;
             currentPage = 1;
             PaginatedData = await LoadSubscriptionListingsAsync();
             StateHasChanged();
-        }
+    }
+    protected async Task HandleClearFilters()
+    {
+      Search = null;
+      SortBy = "asc";
+      FromDate = null;
+      ToDate = null;
+      currentPage = 1;
+      pageSize = 12;
+      PaginatedData = await LoadSubscriptionListingsAsync();
+      StateHasChanged();
+    }
 
     private async Task<PaginatedPaymentSummaryResponse> LoadSubscriptionListingsAsync()
     {
@@ -61,8 +85,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         var response = await _serviceBOService.GetPaginatedSubscriptionListing(
             sortBy: SortBy,
             search: Search,
+            fromDate: FromDate,
+            toDate: ToDate,
             pageNumber: currentPage,
-            pageSize: pageSize
+            pageSize: pageSize,
+            subscriptionType: SelectedSubscriptionType
         );
 
         if (response.IsSuccessStatusCode)

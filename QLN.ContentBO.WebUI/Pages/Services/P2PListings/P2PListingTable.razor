@@ -3,6 +3,7 @@
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.EmptyCard
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Models
 
 <MudPaper Class="pa-4">
     <ToggleTabs Options="@tabOptions"
@@ -15,29 +16,29 @@
                 @if (selectedTab == "pendingApproval")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
-                               OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
+                               OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", () => TriggerUpdate(BulkModerationAction.Approve))'>
                         Approve
                     </MudButton>
                 }
                 else if (selectedTab == "published")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
-                               OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", UnpublishSelected)'>
+                               OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", () => TriggerUpdate(BulkModerationAction.Unpublish))'>
                         Unpublish
                     </MudButton>
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
+                               OnClick="OpenRejectDialog">
                         Remove
                     </MudButton>
                 }
                 else if (selectedTab == "unpublished")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
-                               OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", PublishSelected)'>
+                               OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", () => TriggerUpdate(BulkModerationAction.Publish))'>
                         Publish
                     </MudButton>
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
+                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", () => TriggerUpdate(BulkModerationAction.Remove))'>
                         Remove
                     </MudButton>
                 }
@@ -45,7 +46,7 @@
                 @if (selectedTab == "promoted")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unpromote Items", "Are you sure you want to unpromote selected Items?", "Unpromote", UnpromoteSelected)'>
+                               OnClick='() => ShowConfirmation("Unpromote Items", "Are you sure you want to unpromote selected Items?", "Unpromote", () => TriggerUpdate(BulkModerationAction.UnPromote))'>
                         Unpromote
                     </MudButton>
                 }
@@ -53,7 +54,7 @@
                 @if (selectedTab == "featured")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unfeature Items", "Are you sure you want to unfeature selected Items?", "Unfeature", UnfeatureSelected)'>
+                               OnClick='() => ShowConfirmation("Unfeature Items", "Are you sure you want to unfeature selected Items?", "Unfeature", () => TriggerUpdate(BulkModerationAction.UnFeature))'>
                         Unfeature
                     </MudButton>
                 }
@@ -61,7 +62,7 @@
                 @if (selectedTab == "p2p" || selectedTab == "promoted" || selectedTab == "featured")
                 {
                     <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
+                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", () => TriggerUpdate(BulkModerationAction.Remove))'>
                         Remove
                     </MudButton>
                 }
@@ -87,6 +88,9 @@
           MultiSelection="true"
           RowCheckBoxVisible="true"
           @bind-SelectedItems="SelectedListings"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
@@ -135,9 +139,9 @@
                 <MudMenuItem OnClick="() => OnPreview(context)">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
                 </MudMenuItem>
-                <MudMenuItem OnClick="() => OnRemove(context)" Class="mud-text-error">
+                @* <MudMenuItem OnClick="() => OnRemove(context)" Class="mud-text-error">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
-                </MudMenuItem>
+                </MudMenuItem> *@
             </MudMenu>
         </MudTd>
     </RowTemplate>

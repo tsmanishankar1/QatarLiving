@@ -48,11 +48,13 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                return await _httpClient.GetAsync($"/api/v2/classifiedbo/getSeasonalPicks?vertical={vertical}");
+                var response = await _httpClient.GetAsync($"/api/v2/classifiedbo/getseasonalpicks?vertical={vertical}");
+                return response;
+    
             }
             catch (Exception ex)
             {
-                _logger.LogError("GetFeaturedSeasonalPicks" + ex.Message);
+                _logger.LogError("GetAllSeasonalPicks" + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -66,9 +68,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-                Console.WriteLine("CreateSeasonalPicksAsync" + request);
-                Console.WriteLine("CreateSeasonalPicksAsync Payload:\n" + json);
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -83,8 +82,17 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Put,
-                    $"/api/v2/classifiedbo/seasonal-picks/replace-slot?pickId={pickId}&slot={slot}&vertical={vertical}");
+                var payload = new
+                {
+                    pickId = pickId,
+                    targetSlotId = slot,
+                    vertical = vertical
+                };
+
+                var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/replace-slot")
+                {
+                    Content = JsonContent.Create(payload)
+                };
 
                 return await _httpClient.SendAsync(request);
             }
@@ -101,7 +109,6 @@ namespace QLN.ContentBO.WebUI.Services
             {
                 var request = new HttpRequestMessage(HttpMethod.Delete,
                     $"/api/v2/classifiedbo/seasonal-picks/soft-delete?pickId={pickId}&Vertical={vertical}");
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -122,8 +129,6 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
-
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -172,9 +177,6 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
-
-                Console.WriteLine("Serialized Payload:");
-                Console.WriteLine(json);
                 var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/createfeaturedcategory")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -205,8 +207,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                 });
-                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
-
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/replacefeaturedcategoryslots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -248,8 +248,6 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("Reorder Seasonal Picks Payload:\n" + json);
-
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-category/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -282,7 +280,6 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"SearchClassifiedsAsync Error for {vertical}: " + ex);
                 responses.Add(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
                 return responses;
             }

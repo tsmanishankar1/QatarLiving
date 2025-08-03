@@ -22,7 +22,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
     protected override async Task OnInitializedAsync()
     {
       currentPage = 1;
-      pageSize = 50;
+      pageSize = 12;
       PaginatedData = await LoadP2PListingsAsync();
     }
 

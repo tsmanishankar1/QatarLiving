@@ -18,23 +18,17 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         protected int TotalCount => Listings.Count;
         [Parameter]
         public List<ServiceP2PAdSummaryDto> Listings { get; set; } = new();
-        
-       
-        protected void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChange.InvokeAsync(currentPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
             currentPage = 1;
-            StateHasChanged();
-        }
-        public void OnEdit(ServiceP2PAdSummaryDto item)
-        {
-            Navigation.NavigateTo("/manage/services/editform");
+            await OnPageSizeChange.InvokeAsync(pageSize);
         }
         public void OnPreview(SubscriptionOrder item)
         {

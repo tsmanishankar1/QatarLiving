@@ -59,7 +59,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 if (insertIndex < Images.Count)
                 {
                     Images[insertIndex].Url = url;
-                    Images[insertIndex].FileName = file.Name;
                 }
                 else
                 {
@@ -67,7 +66,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     {
                         Order = insertIndex,
                         Url = url,
-                        FileName = file.Name
                     });
                 }
 

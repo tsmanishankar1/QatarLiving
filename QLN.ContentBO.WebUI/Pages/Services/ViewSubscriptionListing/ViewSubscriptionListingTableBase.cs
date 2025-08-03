@@ -19,21 +19,21 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         protected int TotalCount => Listings.Count;
         [Parameter]
         public List<ServiceAdPaymentSummaryDto> Listings { get; set; } = new();
-        protected void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChange.InvokeAsync(currentPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
             currentPage = 1;
-            StateHasChanged();
+            await OnPageSizeChange.InvokeAsync(pageSize);
         }
         public void OnEdit(ServiceAdPaymentSummaryDto item)
         {
-            Navigation.NavigateTo("/manage/services/editform");
+            Navigation.NavigateTo($"/manage/services/editform/{item.AddId}");
         }
         public void OnPreview(ServiceAdPaymentSummaryDto item)
         {

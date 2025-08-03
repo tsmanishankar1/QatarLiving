@@ -9,22 +9,21 @@ using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 {
-    public class ServicesAddSeasonPickModalBase : QLComponentBase
+    public class ServicesAddFeaturedCategoryModalBase : QLComponentBase
     {
         [CascadingParameter]
         public IMudDialogInstance MudDialog { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
-        [Inject] public IServiceBOService _serviceService { get; set; }
-        [Inject] ILogger<ServicesAddSeasonPickModalBase> Logger { get; set; }
+         [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject]
         public ISnackbar Snackbar { get; set; }
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
-        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
-        protected List<L1Category> _selectedL1Categories = new();
-        protected List<L2Category> _selectedL2Categories = new();
+        protected List<CategoryTreeNode> _categoryTree = new();
+        protected List<CategoryTreeNode> _subcategories = new();
+        protected List<CategoryTreeNode> _sections = new();
         protected bool IsLoadingCategories { get; set; } = true;
 
         protected string? SelectedCategoryId;
@@ -37,6 +36,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected string ImagePreviewWithoutBase64 { get; set; }
 
         protected ElementReference fileInput;
+        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
 
         protected DateTime? StartDate { get; set; } = DateTime.Today;
         protected DateTime? EndDate { get; set; } = DateTime.Today;
@@ -54,13 +54,48 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             {
                 Logger.LogError(ex, "OnInitializedAsync");
             }
+            finally
+            {
+                IsLoadingCategories = false;
+            }
+        }
+
+        protected void OnCategoryChanged(string? categoryId)
+        {
+            SelectedCategoryId = categoryId?.ToString();
+           var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+            SelectedCategory = selected?.Category;
+        }
+
+
+        protected void OnSubcategoryChanged(string? subcategoryId)
+        {
+            Console.WriteLine($"➡️ Subcategory Selected: {subcategoryId}");
+            SelectedSubcategoryId = subcategoryId;
+            SelectedSectionId = null;
+
+            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
+            SelectedSubcategory = sub?.Name ?? string.Empty;
+
+            _sections = sub?.Children ?? new();
+
+            Console.WriteLine($"Sections Count: {_sections.Count}");
+            foreach (var sec in _sections)
+                Console.WriteLine($" - {sec.Name} ({sec.Id})");
+        }
+        protected void OnSectionChanged(string? sectionId)
+        {
+            Console.WriteLine($"➡️ Section Selected: {sectionId}");
+            SelectedSectionId = sectionId;
+
+            var section = _sections.FirstOrDefault(c => c.Id == sectionId);
+            SelectedSection = section?.Name ?? string.Empty;
         }
         private async Task LoadCategoryTreesAsync()
         {
             try
             {
                 var response = await _serviceService.GetServicesCategories();
-
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var result = await response.Content.ReadFromJsonAsync<List<ServiceCategory>>();
@@ -85,45 +120,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
 
 
-
-        protected void OnCategoryChanged(string? categoryId)
-        {
-            SelectedCategoryId = categoryId.ToString();
-            SelectedSubcategoryId = null;
-            SelectedSectionId = null;
-            _selectedL2Categories.Clear();
-            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
-            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            SelectedCategory = selected?.Category;
-        }
-
-
-        protected void OnSubcategoryChanged(string? subcategoryId)
-        {
-           SelectedSubcategoryId = subcategoryId.ToString();
-            SelectedSectionId = null;
-
-            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == subcategoryId);
-            _selectedL2Categories = selectedL1?.L2Categories ?? new();
-        }
-        protected void OnSectionChanged(string? sectionId)
-        {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
-            SelectedSectionId = sectionId;
-
-            var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
-            SelectedSection = section?.Name ?? string.Empty;
-        }
-        
-
-
-
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSubcategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSectionId);
+            return !string.IsNullOrEmpty(SelectedCategoryId);
         }
 
 
@@ -159,27 +158,18 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 vertical = "services",
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
-                l1CategoryId = SelectedSubcategoryId,
-                l1categoryName = SelectedSubcategory,
-                l2categoryId = SelectedSectionId,
-                l2categoryName = SelectedSection,
-                startDate = StartDate?.ToUniversalTime().ToString("o"),
-                endDate = EndDate?.ToUniversalTime().ToString("o"),
-                slotOrder = 0,
+                startDate = StartDate?.ToString("yyyy-MM-dd"),
+                endDate = EndDate?.ToString("yyyy-MM-dd"),
                 imageUrl = ImagePreviewWithoutBase64
             };
 
             try
             {
-                var response = await ClassifiedService.CreateSeasonalPicksAsync(payload);
+                var response = await ClassifiedService.CreateFeaturedCategoryAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
                 else
                 {

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using System.Text.Json;
+using MudBlazor;
 namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
 {
   public partial class P2PListingBase : ComponentBase
@@ -10,6 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     [Inject] ILogger<P2PListingBase> Logger { get; set; }
     protected PaginatedServiceResponse PaginatedData { get; set; } = new();
     public List<ServiceAdSummaryDto> Listings => PaginatedData.items;
+    [Inject] ISnackbar Snackbar { get; set; }
     protected int currentPage = 1;
     protected int pageSize = 12;
     protected int? currentStatus = 1;
@@ -25,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     protected override async Task OnInitializedAsync()
     {
       currentPage = 1;
-      pageSize = 50;
+      pageSize = 12;
       Status = 1;
       PaginatedData = await LoadP2PListingsAsync();
     }
@@ -41,7 +42,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     {
       FromDate = filters.created;
       ToDate = filters.published;
-      pageSize = 50;
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
@@ -63,8 +63,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     {
       currentPage = 1;
       Status = status;
-      IsPromoted = status == 4;
-      IsFeatured = status == 5;
+      IsPromoted = status == 7;
+      IsFeatured = status == 9;
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
@@ -76,12 +76,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       StateHasChanged();
     }
     protected async Task HandlePageSizeChange(int newPageSize)
-        {
-            pageSize = newPageSize;
-            currentPage = 1;
-            PaginatedData = await LoadP2PListingsAsync();
-            StateHasChanged();
-        }
+    {
+      pageSize = newPageSize;
+      currentPage = 1;
+      PaginatedData = await LoadP2PListingsAsync();
+      StateHasChanged();
+    }
 
 
     protected async Task HandleSort(bool sortOption)
@@ -119,6 +119,5 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       }
       return new PaginatedServiceResponse();
     }
-
   }
 }

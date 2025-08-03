@@ -6,6 +6,7 @@ using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
+using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
 using System.Net;
 using DocumentFormat.OpenXml.EMMA;
 
@@ -17,6 +18,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject] public IJSRuntime JSRuntime { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
+        [Inject] public NavigationManager Navigation { get; set; }
+        [Parameter] public EventCallback OnCommentDialogClose { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
         protected List<LocationZoneDto> Zones { get; set; } = new();
@@ -41,9 +44,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
 
         protected string? _selectedCategoryId;
+        protected string? selectedFileName { get; set; } = string.Empty;
         protected string? _selectedL1CategoryId;
         protected string? _selectedL2CategoryId;
-        private bool _shouldUpdateMap = false;
+        private bool _shouldUpdateMap = true;
 
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
@@ -64,6 +68,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     Longitude = (double)selectedService.Longitude;
                     _shouldUpdateMap = true;
                 }
+                selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
                 var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
                 _selectedL1Categories = selectedCategory?.L1Categories ?? new();
                 var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
@@ -104,63 +109,67 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
                 return;
             }
-
             using var stream = file.OpenReadStream();
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-
-            Ad.CertificateFileName = file.Name;
-            Ad.Certificate = Convert.ToBase64String(ms.ToArray());
+            selectedService.LicenseCertificate = Convert.ToBase64String(ms.ToArray());
+            selectedFileName = file.Name;
         }
-        protected void PreviewFile()
+        private string GetFileNameFromUrl(string? url)
         {
-            if (string.IsNullOrWhiteSpace(Ad.Certificate) || string.IsNullOrWhiteSpace(Ad.CertificateFileName))
-                return;
+            if (string.IsNullOrWhiteSpace(url))
+                return string.Empty;
 
-            var fileExtension = Path.GetExtension(Ad.CertificateFileName).ToLowerInvariant();
-            var mimeType = fileExtension switch
+            try
             {
-                ".pdf" => "application/pdf",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                _ => "application/octet-stream"
+                return Path.GetFileName(new Uri(url).AbsolutePath);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+        protected async Task PreviewFile(string fileUrl)
+        {
+            var parameters = new DialogParameters
+            {
+                ["PdfUrl"] = fileUrl
             };
 
-            var base64 = Ad.Certificate;
-            var dataUrl = $"data:{mimeType};base64,{base64}";
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
-            // Open in new browser tab
-            JSRuntime.InvokeVoidAsync("open", dataUrl, "_blank");
+            await DialogService.ShowAsync<FilePreviewDialog>("File Preview", parameters, options);
         }
+
 
         protected void ClearFile()
         {
-            Ad.CertificateFileName = null;
-            Ad.Certificate = null;
+            selectedService.LicenseCertificate = null;
+            selectedFileName = null;
         }
 
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
-            Ad.PhoneCode = model.Code;
+            selectedService.PhoneNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
         {
             SelectedWhatsappCountry = model;
-            Ad.WhatsappCode = model.Code;
+            selectedService.WhatsappNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
         protected Task OnPhoneChanged(string phone)
         {
-            Ad.PhoneNumber = phone;
+            selectedService.PhoneNumber = phone;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappChanged(string phone)
         {
-            Ad.WhatsappNumber = phone;
+            selectedService.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
         protected void OnSubCategoryChanged(Guid subcategoryId)
@@ -259,7 +268,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 FullWidth = true
             };
 
-            await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+             var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+              var result = await dialog.Result;
         }
 
 
