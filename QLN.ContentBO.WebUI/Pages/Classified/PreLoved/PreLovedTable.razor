@@ -192,7 +192,7 @@
 
                             @if (SelectedTab == ((int)AdStatus.PendingApproval).ToString())
                             {
-                                <MudMenuItem OnClick='() => ShowConfirmation("Approve Item", "Are you sure you want to approve this item?", "Approve", () => Approve(context.Item))'>
+                                <MudMenuItem OnClick='() => ShowConfirmation("Approve Item", "Are you sure you want to approve this item?", "Approve",ApproveSelected)'>
                                     <img src="/qln-images/approve_icon.svg" class="menu-icon-style" />
                                     <span class="menu-text">Approve</span>
                                 </MudMenuItem>
@@ -204,11 +204,11 @@
 
                             @if (SelectedTab == ((int)AdStatus.Published).ToString())
                             {
-                                <MudMenuItem OnClick='() => ShowConfirmation("Unpublish Item", "Are you sure you want to unpublish this item?", "Unpublish", () => Unpublish(context.Item))'>
+                                <MudMenuItem OnClick='() => ShowConfirmation("Unpublish Item", "Are you sure you want to unpublish this item?", "Unpublish", UnpublishSelected)'>
                                     <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" />
                                     <span class="menu-text">Unpublish</span>
                                 </MudMenuItem>
-                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context.Item))'
+                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", RemoveSelected)'
                                              Class="mud-text-error">
                                     <img src="/qln-images/remove_icon.svg" class="menu-icon-style" />
                                     <span class="menu-text">Remove</span>
@@ -216,11 +216,11 @@
                             }
                             @if (SelectedTab == ((int)AdStatus.Unpublished).ToString())
                             {
-                                <MudMenuItem OnClick='() => ShowConfirmation("Publish Item", "Are you sure you want to publish this item?", "Publish", () => Publish(context.Item))'>
+                                <MudMenuItem OnClick='() => ShowConfirmation("Publish Item", "Are you sure you want to publish this item?", "Publish", PublishSelected)'>
                                     <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Publish</span>
                                 </MudMenuItem>
-                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context.Item))'
+                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", RemoveSelected)'
                                              Class="mud-text-error">
                                     <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Remove</span>
@@ -228,7 +228,7 @@
                             }
                             @if (SelectedTab == "promoted" || SelectedTab == "featured")
                             {
-                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", () => OnRemove(context.Item))'
+                                <MudMenuItem OnClick='() => ShowConfirmation("Remove Item", "Are you sure you want to remove this item?", "Remove", RemoveSelected)'
                                              Class="mud-text-error">
                                     <img src="/qln-images/remove_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Remove</span>

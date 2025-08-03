@@ -1234,9 +1234,7 @@ a, .btn-link {
     color: #FF7F38;
 }
 
-.active-icon {
-    filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
-}
+
 
 .preloved-select {
     width: 200px;
@@ -1423,9 +1421,7 @@ a, .btn-link {
     color: #FF7F38;
 }
 
-.active-icon {
-    filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
-}
+
 
 /* //UserProfileFields.razor */
 

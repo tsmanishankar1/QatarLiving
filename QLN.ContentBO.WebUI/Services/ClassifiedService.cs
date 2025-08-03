@@ -440,5 +440,23 @@ namespace QLN.ContentBO.WebUI.Services
         {
             throw new NotImplementedException();
         }
+        public async Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-preloved-action")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

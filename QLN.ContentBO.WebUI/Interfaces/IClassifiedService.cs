@@ -31,6 +31,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request);
         Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request);
         Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request);
+        Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload);
 
 
     }

@@ -10,12 +10,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
     public partial class UserProfileTableBase : ComponentBase
     {
-        protected List<BusinessVerificationItem> Listings { get; set; } = new();
         [Inject]
         protected NavigationManager Navigation { get; set; }
+        [Parameter]
+        public List<BusinessVerificationItem> Listings { get; set; }
+        [Parameter]
+        public bool IsLoading { get; set; }
+        [Parameter]
+        public bool IsEmpty { get; set; }
+        [Inject] public IDialogService DialogService { get; set; }
+
+        [Parameter]
+        public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter]
+        public string SelectedTab { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter]
+        public EventCallback<string> OnTabChanged { get; set; }
+
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
         protected void HandlePageChange(int newPage)
         {
             currentPage = newPage;
