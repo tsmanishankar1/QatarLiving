@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Markdig.Parsers;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -10,6 +12,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 {
     public class SubscriptionListingBase : QLComponentBase
     {
+
+        [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
+
         protected string SearchText { get; set; } = string.Empty;
 
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -44,6 +49,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected DateRange _confirmedDateRange = new();
         protected string SelectedDateLabel;
         protected string SelectedCategory { get; set; } = string.Empty;
+        protected bool IsLoading { get; set; } = true;
+        protected bool IsEmpty => !IsLoading && Listings.Count == 0;
+        protected int TotalCount { get; set; }
+        protected int currentPage { get; set; } = 1;
+        protected int pageSize { get; set; } = 12;
 
         protected readonly List<string> Categories = new()
         {
@@ -64,58 +74,101 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         public double EventLat { get; set; } = 48.8584;
         public double EventLong { get; set; } = 2.2945;
         public bool _isDateRangeSelected = false;
-      
+
         protected ElementReference _popoverDiv;
 
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
-        protected List<PrelovedListing> Listings { get; set; } = new();
-        
+        protected List<SubscriptionListingModal> Listings { get; set; } = new();
+
         protected override async Task OnInitializedAsync()
         {
-            await LoadListingsAsync();
+            await LoadPrelovedListingsAsync();
         }
 
-        protected async Task LoadListingsAsync()
+        private async Task LoadPrelovedListingsAsync()
         {
             try
             {
-                var filter = new FilterRequest
+                IsLoading = true;
+
+                var request = new FilterRequest
                 {
-                    Text = SearchText,
-                    PageNumber = 1,
-                    PageSize = 12
+
+                    PageNumber = currentPage,
+                    PageSize = pageSize
                 };
 
-                var response = await ClassifiedService.GetPrelovedListingsAsync(filter);
+                var response = await ClassifiedService.GetPrelovedSubscription(request);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<PrelovedResponse>(content, new JsonSerializerOptions
+                    var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = result?.ClassifiedsPreloved ?? new();
-                }
-                else
-                {
-                    Console.WriteLine($"API call failed with status: {response?.StatusCode}");
+                    Listings = data?.Items.Select(item => new SubscriptionListingModal
+                    {
+                        AdId = item.AdId,
+                        OrderId=item.OrderId,
+                        SubscriptionType = item.SubscriptionType,
+                        UserName = item.UserName ?? "-",
+                        Email = item.EmailAddress ?? "-",
+                        Mobile = item.Mobile ?? "-",
+                        Whatsapp = item.WhatsappNumber ?? "-",
+                        Amount = item.Amount,
+                        Status = item.Status,
+                        CreationDate = ParseDate(item.StartDate),
+                        PublishedDate = ParseDate(item.StartDate),
+                        ExpiryDate = ParseDate(item.EndDate),
+                        AdTitle = item.OrderId,
+                        UserId = 0,
+                        SubscriptionId = 0
+                    }).ToList() ?? new List<SubscriptionListingModal>();
+
+                    TotalCount = data?.TotalCount ?? 0;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in LoadListingsAsync: {ex.Message}");
+                _logger.LogError($"Failed to load preloved subscriptions: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
-        protected void OnSearchChanged(ChangeEventArgs e)
+
+        protected async Task HandlePageChanged(int newPage)
         {
-            SearchText = e.Value?.ToString();
-            // TODO: Trigger filtering logic based on SearchText
+            await LoadPrelovedListingsAsync();
         }
 
+        protected async Task HandlePageSizeChanged(int newSize)
+        {
+            pageSize = newSize;
+            currentPage = 1;
+            await LoadPrelovedListingsAsync();
+        }
+        protected async Task OnSearchChanged(ChangeEventArgs e)
+        {
+            SearchText = e.Value?.ToString() ?? string.Empty;
+            currentPage = 1;
+            await LoadPrelovedListingsAsync();
+        }
+
+
+        private DateTime ParseDate(string date)
+        {
+            return DateTime.TryParse(date, out var result) ? result : DateTime.MinValue;
+        }
+
+
+
+      
         protected void ToggleSort()
         {
             // Example: toggle sort direction and update SortIcon
@@ -269,7 +322,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected DateRange _dateRange = new();
         protected DateRange _tempDateRange = new();
 
-      
+
 
         protected bool showDatePopover = false;
 

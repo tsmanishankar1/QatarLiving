@@ -133,7 +133,7 @@
        {
             <MudPaper Class="catification-upload-section">
             <div class="catification-upload-info">
-                <h3 class="catification-upload-label">Certificate / Warranty*</h3>
+                <h3 class="catification-upload-label">Certificate*</h3>
 
                 @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
                 {
@@ -165,7 +165,8 @@
             </MudFileUpload>
         </MudPaper>
         <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>  
-        }            
+        } 
+        <ValidationMessage For="@(() => Ad.CertificateFileName)" />  
 
 
         <h3 class="form-heading">Contact Details</h3>

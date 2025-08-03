@@ -112,6 +112,8 @@ namespace QLN.ContentBO.WebUI.Models
         public DateTime? PromotedExpiryDate { get; set; }
         public string? CreatedBy { get; set; }
         public DateTime? CreatedAt { get; set; }
+        public int? AdType { get; set; } 
+        public string? SubVertical { get; set; }
 
     }
 }

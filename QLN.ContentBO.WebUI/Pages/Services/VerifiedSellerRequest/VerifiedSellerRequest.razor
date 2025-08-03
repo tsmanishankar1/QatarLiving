@@ -1,12 +1,15 @@
+@page "/manage/services/listing/vertified/seller/request"
 @inherits VerifiedSellerRequestBase
 @using QLN.ContentBO.WebUI.Models;
+@layout ServicesLayout
 
 <MudGrid Style="padding-top: 18px">
     <!-- Left Form Section -->
     <MudItem xs="12" md="12">
-             <SearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
               <div class="community-table">
-
+                    <VerifiedSellerRequestTable Listings="Listings" OnPageChange="HandlePageChange"
+                OnPageSizeChange="HandlePageSizeChange"
+                OnStatusChanged="HandleStatusChange"/>
              </div> 
     </MudItem>
 </MudGrid>

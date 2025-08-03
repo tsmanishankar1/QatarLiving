@@ -19,6 +19,10 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         public const string SubscriptionPrefix = "qln-subscription-actor";
+
+        //Drupal user AutoComplete
+        public const string AutocompleteUserPath = "/qlnapi/user/autocomplete";
+
         //Index constants
         public static class IndexNames
         {

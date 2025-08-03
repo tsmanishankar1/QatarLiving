@@ -15,14 +15,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         public IMudDialogInstance MudDialog { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
+        [Inject] public IServiceBOService _serviceService { get; set; }
+        [Inject] ILogger<ServicesAddSeasonPickModalBase> Logger { get; set; }
         [Inject]
         public ISnackbar Snackbar { get; set; }
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
-        protected List<CategoryTreeNode> _categoryTree = new();
-        protected List<CategoryTreeNode> _subcategories = new();
-        protected List<CategoryTreeNode> _sections = new();
+        [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
+        protected List<L1Category> _selectedL1Categories = new();
+        protected List<L2Category> _selectedL2Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
 
         protected string? SelectedCategoryId;
@@ -45,77 +47,75 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         {
             try
             {
-                var response = await ClassifiedService.GetAllCategoryTreesAsync("items");
-                if (response?.IsSuccessStatusCode == true)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    _categoryTree = JsonSerializer.Deserialize<List<CategoryTreeNode>>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }) ?? new();
+                if (CategoryTrees == null || !CategoryTrees.Any())
+                    await LoadCategoryTreesAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+            }
+        }
+        private async Task LoadCategoryTreesAsync()
+        {
+            try
+            {
+                var response = await _serviceService.GetServicesCategories();
 
-                    Console.WriteLine("✅ Category Tree Loaded:");
-                    foreach (var cat in _categoryTree)
-                        Console.WriteLine($"- {cat.Name} ({cat.Id}) → {cat.Children?.Count ?? 0} subcategories");
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<ServiceCategory>>();
+                    CategoryTrees = result ?? new();
+                    StateHasChanged();
                 }
                 else
                 {
-                    Console.WriteLine("❌ Failed to fetch category tree. Status: " + response?.StatusCode);
+                    Snackbar.Add("Failed to load categoryies", Severity.Warning);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Exception while loading category tree: " + ex.Message);
+                 Logger.LogError(ex, "LoadCategoryTreesAsync");
             }
             finally
             {
                 IsLoadingCategories = false;
+                StateHasChanged();
             }
         }
 
+
+
+
         protected void OnCategoryChanged(string? categoryId)
         {
-            Console.WriteLine($"➡️ Category Selected: {categoryId}");
-            SelectedCategoryId = categoryId;
+            SelectedCategoryId = categoryId.ToString();
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
-
-            var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId);
-            SelectedCategory = category?.Name ?? string.Empty;
-
-            _subcategories = category?.Children ?? new();
-
-            Console.WriteLine($"Subcategories Count: {_subcategories.Count}");
-            foreach (var sub in _subcategories)
-                Console.WriteLine($" - {sub.Name} ({sub.Id})");
-
-            _sections = new();
+            _selectedL2Categories.Clear();
+            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+            SelectedCategory = selected?.Category;
         }
 
 
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
-            Console.WriteLine($"➡️ Subcategory Selected: {subcategoryId}");
-            SelectedSubcategoryId = subcategoryId;
+           SelectedSubcategoryId = subcategoryId.ToString();
             SelectedSectionId = null;
 
-            var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
-            SelectedSubcategory = sub?.Name ?? string.Empty;
-
-            _sections = sub?.Children ?? new();
-
-            Console.WriteLine($"Sections Count: {_sections.Count}");
-            foreach (var sec in _sections)
-                Console.WriteLine($" - {sec.Name} ({sec.Id})");
+            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == subcategoryId);
+            _selectedL2Categories = selectedL1?.L2Categories ?? new();
         }
         protected void OnSectionChanged(string? sectionId)
         {
             Console.WriteLine($"➡️ Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
 
-            var section = _sections.FirstOrDefault(c => c.Id == sectionId);
+            var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }
+        
 
 
 
@@ -156,7 +156,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
             var payload = new
             {
-                vertical = "classifieds",
+                vertical = "services",
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
                 l1CategoryId = SelectedSubcategoryId,
@@ -176,6 +176,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 {
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
                 else
                 {

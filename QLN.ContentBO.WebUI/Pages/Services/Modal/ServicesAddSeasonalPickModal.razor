@@ -35,9 +35,9 @@
                     else
                     {
                         <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                        @foreach (var category in _categoryTree)
+                        @foreach (var category in CategoryTrees)
                         {
-                            <MudSelectItem T="string" Value="@category.Id">@category.Name</MudSelectItem>
+                            <MudSelectItem T="string" Value="@category.Id.ToString()">@category.Category</MudSelectItem>
                         }
                     }
                 </MudSelect>
@@ -55,12 +55,11 @@
                            RequiredError="Subcategory is required"
                            ValueChanged="OnSubcategoryChanged">
                     <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sub in _subcategories)
+                    @foreach (var sub in _selectedL1Categories)
                     {
-                        <MudSelectItem T="string" Value="@sub.Id">@sub.Name</MudSelectItem>
+                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
                     }
                 </MudSelect>
-
             </div>
 
             <!-- Section -->
@@ -73,9 +72,9 @@
                            Required="true"
                            RequiredError="Section is required">
                     <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
-                    @foreach (var sec in _sections)
+                    @foreach (var sec in _selectedL2Categories)
                     {
-                        <MudSelectItem T="string" Value="@sec.Id">@sec.Name</MudSelectItem>
+                        <MudSelectItem T="string" Value="@sec.Id.ToString()">@sec.Name</MudSelectItem>
                     }
                 </MudSelect>
 
@@ -118,7 +117,7 @@
 
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
-                <MudButton Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
                     Add
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
