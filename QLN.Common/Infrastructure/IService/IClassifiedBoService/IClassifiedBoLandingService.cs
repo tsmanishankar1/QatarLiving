@@ -91,6 +91,7 @@ string? sortBy = null, CancellationToken cancellationToken = default);
         Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default);
         Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType,string? filterDate,  CancellationToken cancellationToken = default);
         Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
+        Task<bool> HasActiveQuota(string userId, string verticalName, string subVerticalName, CancellationToken cancellationToken = default);
     }
 }
 

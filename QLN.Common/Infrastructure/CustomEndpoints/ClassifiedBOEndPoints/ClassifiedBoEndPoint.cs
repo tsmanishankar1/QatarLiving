@@ -2837,6 +2837,56 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/userquota/check", async Task<Results<
+                Ok<Dictionary<string, bool>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                [FromServices] IClassifiedBoLandingService service,
+                [FromQuery] string userId,
+                [FromQuery] string verticalName,
+                [FromQuery] string subVerticalName,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(userId) ||
+                        string.IsNullOrWhiteSpace(verticalName) ||
+                        string.IsNullOrWhiteSpace(subVerticalName))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "userId, verticalName, and subVerticalName are required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var hasQuota = await service.HasActiveQuota(userId, verticalName, subVerticalName, cancellationToken);
+
+                    return TypedResults.Ok(new Dictionary<string, bool>
+                    {
+                        ["hasQuota"] = hasQuota
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+                .WithName("CheckUserQuota")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Check if a user has an active quota")
+                .WithDescription("Returns true if the user has an active quota for the given vertical and subvertical.")
+                .Produces<Dictionary<string, bool>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+
             return group;
         }
     }

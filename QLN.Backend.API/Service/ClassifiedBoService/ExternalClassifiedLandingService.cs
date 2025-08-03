@@ -1548,5 +1548,28 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw;
             }
         }
-     }
+
+        public async Task<bool> HasActiveQuota(string userId, string verticalName, string subVerticalName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?userId={userId}&verticalName={verticalName}&subVerticalName={subVerticalName}";
+
+                var response = await _dapr.InvokeMethodAsync<Dictionary<string, bool>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID, 
+                    $"api/v2/userquota/check{queryParams}",
+                    cancellationToken
+                );
+
+                return response.TryGetValue("hasQuota", out var hasQuota) && hasQuota;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while checking user quota via external service.");
+                throw;
+            }
+        }
+
+    }
 }
