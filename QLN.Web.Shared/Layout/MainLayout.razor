@@ -44,14 +44,15 @@
             </div>
 
             <div class="post-button-wrapper">
-                <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <ActivatorContent>
-                        <MudButton id="headerPostButton" Variant="Variant.Filled"
+                  <MudButton id="headerPostButton" Variant="Variant.Filled"
                             Style="background-color: #FF7F38; color: white;" Size="Size.Medium"
                             StartIcon="@Icons.Material.Filled.Add" Class="post-ad-btn desktop-post-btn"
+                             @onclick="OnPostAdClicked"
                             >
                             <span class="post-ad-text">Post Ad</span>
                         </MudButton>
+                <MudMenu OffsetY="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
                     </ActivatorContent>
                        <ChildContent>
                 @foreach (var item in postMenuItems)
