@@ -56,7 +56,7 @@
                        <ChildContent>
                 @foreach (var item in postMenuItems)
                 {
-                  <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route))" Class="menu-item">
+                  <MudMenuItem  OnClick="@(() => NavManager.NavigateTo(item.Route), forceLoad: true)" Class="menu-item">
                 <div id="options-@item.Text" class="menu-item-content">
                     <img src="@item.ImageSrc" alt="@item.Text" class="menu-item-icon" />
                     <span class="menu-item-text">@item.Text</span>
@@ -179,6 +179,7 @@
     private NavigationPath navigationPath;
     private List<MenuItem> profileMenuItems = new();
     private List<MenuItem> nestedProfileMenuItems = new();
+    private List<MenuItem> postMenuItems = new();
     private bool _isDarkMode;
     private MudThemeProvider _mudThemeProvider;
 
@@ -249,6 +250,40 @@
         new MenuItem { Text = "Manage my ads", ImageSrc = "/qln-images/header/manage_my_ads_icon.svg", Route = ManageMyAdsProfileMenu },
         new MenuItem { Text = "Logout", ImageSrc = "/qln-images/header/logout_icon.svg", Route = null }
     };
+       postMenuItems = new List<MenuItem>
+    {
+         new MenuItem {
+        Text = "Properties",
+        ImageSrc = "/qln-images/post-icons/ad_properties.svg",
+        Route = navigationPath.PostAdProperties
+        },
+        new MenuItem {
+        Text = "Vehicles",
+        ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
+       Route = navigationPath.PostAdVehicles
+        },
+        new MenuItem {
+        Text = "Classifieds",
+        ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
+        Route = navigationPath.PostAdClassifieds
+        },
+        new MenuItem {
+        Text = "Services",
+        ImageSrc = "/qln-images/post-icons/ad_services.svg",
+        Route = navigationPath.PostAdServices
+        },
+        new MenuItem {
+        Text = "Jobs",
+        ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
+        Route = navigationPath.PostAdJobs
+        },
+        new MenuItem {
+        Text = "Rewards",
+        ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
+        Route = navigationPath.PostAdRewards
+        }
+
+     };   
 
         StateHasChanged();
     }
@@ -391,39 +426,6 @@
         // ClassifiedsProfileMenuUrl = "qln/classified/dashboard/items"; // reverting so we can release
     }
 
-    private List<MenuItem> postMenuItems = new List<MenuItem>
-    {
-        new MenuItem {
-        Text = "Properties",
-        ImageSrc = "/qln-images/post-icons/ad_properties.svg",
-        Route = "/qln/classifieds/createform"
-        },
-        new MenuItem {
-        Text = "Vehicles",
-        ImageSrc = "/qln-images/post-icons/ad_vehicles.svg",
-        Route = "/qln/classifieds/createform"
-        },
-        new MenuItem {
-        Text = "Classifieds",
-        ImageSrc = "/qln-images/post-icons/ad_classifieds.svg",
-        Route = "qln/classifieds/createform"
-        },
-        new MenuItem {
-        Text = "Services",
-        ImageSrc = "/qln-images/post-icons/ad_services.svg",
-        Route = "/qln/classifieds/createform"
-        },
-        new MenuItem {
-        Text = "Jobs",
-        ImageSrc = "/qln-images/post-icons/ad_jobs.svg",
-        Route = "/qln/classifieds/createform"
-        },
-        new MenuItem {
-        Text = "Rewards",
-        ImageSrc = "/qln-images/post-icons/ad_rewards.svg",
-        Route = "/qln/classifieds/createform"
-        }
-    };
 
     private string ReplaceUrlWithUserID(string url,int userID)
     {
