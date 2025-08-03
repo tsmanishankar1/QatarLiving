@@ -238,6 +238,7 @@ builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
 builder.Services.ServicesBo(builder.Configuration);

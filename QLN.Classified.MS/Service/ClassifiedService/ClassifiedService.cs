@@ -829,7 +829,7 @@ namespace QLN.Classified.MS.Service
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl)) throw new ArgumentException("Certificate URL must be provided.");
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate) throw new ArgumentException("Certificate URL must be provided.");
             if (dto.Id == Guid.Empty) throw new ArgumentException("Id must be provided.");
 
             var adId = dto.Id;
