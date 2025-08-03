@@ -54,7 +54,7 @@ else
 
             <MudTd DataLabel="Username">@(!string.IsNullOrWhiteSpace(context.UserName) ? context.UserName : "-")</MudTd>
             <MudTd DataLabel="Reporter">@(!string.IsNullOrWhiteSpace(context.Reporter) ? context.Reporter : "-")</MudTd>
-            <MudTd DataLabel="Report Date">@context.ReportDate.ToQatarTime("dd-MM-yyyy")</MudTd>
+            <MudTd DataLabel="Report Date"> @(context.ReportDate.HasValue ? context.ReportDate.Value.ToQatarTime("dd-MM-yyyy") : "-")</MudTd>
 
             <MudTd>
                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" Dense="true">

@@ -38,7 +38,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
                     "classifieds-images",
                     "services-images",
                     "content-images",
-                    "banner-assets"
+                    "banner-assets",
+                    "company-assets"
 
                 };
 

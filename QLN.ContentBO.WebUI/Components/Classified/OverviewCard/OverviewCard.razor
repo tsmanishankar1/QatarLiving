@@ -1,0 +1,66 @@
+@inherits OverviewCardBase
+@using QLN.ContentBO.WebUI.Models;
+@using MudBlazor
+
+<div class="overview-card-main">
+    <h3 class="overview-heading">Overview</h3>
+
+    <MudGrid GutterSize="16px">
+        @foreach (var item in OverviewData.Where(x => !string.IsNullOrWhiteSpace(x.Label) && !x.Label.Contains("Unknown") && !x.Label.Contains("Not specified") && !x.Label.Contains("N/A") && !x.Label.Contains("No Warranty")))
+        {
+            <MudItem xs="6" sm="6" md="4">
+                <div class="overview-custom-mudpaper">
+                    <img src="@item.Icon" class="icon-img" />
+                    <h3 class="overview-text">@item.Label</h3>
+                </div>
+            </MudItem>
+        }
+    </MudGrid>
+</div>
+<style>
+    .overview-card-main{
+        width: 100%;
+        padding: 10px;
+        font-family: 'Public Sans', sans-serif ;
+    }
+    .overview-custom-mudpaper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 10px;
+        background: var(--color-background);
+        padding: 16px 10px;
+        border-radius: 8px;
+    }
+
+    .icon-img {
+        width: 24px;
+        height: 24px;
+        object-fit: cover;
+    }
+
+    .overview-text {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 14px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+        text-align: center;
+        margin: 0;
+    }
+
+    .overview-heading {
+        font-family: 'Public Sans', sans-serif ;
+        font-size: 25px ;
+        font-weight: 600 ;
+        color: var(--color-text-heading) ;
+    }
+    @@media (max-width: 770px) {
+        .overview-custom-mudpaper {
+                gap:5px
+            }
+            .overview-text{
+                font-size: 12px;
+            }
+    }
+</style>
