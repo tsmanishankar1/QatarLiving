@@ -3846,6 +3846,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3902,6 +3911,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -3961,6 +3979,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -4017,6 +4044,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {

@@ -569,6 +569,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw new InvalidOperationException($"Failed to retrieve ad details for Ad ID: {adId} from classified microservice.", ex);
             }
+            catch(KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+            }
         }
 
         public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
@@ -590,6 +595,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Preloved ad from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
             }
         }
 
@@ -613,6 +623,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
             }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+            }
         }
 
         public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
@@ -634,6 +649,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Collectibles ad from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
             }
         }
 

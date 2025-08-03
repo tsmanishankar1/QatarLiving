@@ -1527,7 +1527,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in active index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
@@ -1535,7 +1535,7 @@ namespace QLN.Classified.MS.Service
                 if (adItem == null || !adItem.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adItem;
@@ -1561,7 +1561,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Preloved index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
@@ -1569,7 +1569,7 @@ namespace QLN.Classified.MS.Service
                 if (adPreloved == null || !adPreloved.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adPreloved;
@@ -1594,7 +1594,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Deals index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
@@ -1602,7 +1602,7 @@ namespace QLN.Classified.MS.Service
                 if (adDeals == null || !adDeals.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adDeals;
@@ -1628,7 +1628,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Collectibles index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
@@ -1636,7 +1636,7 @@ namespace QLN.Classified.MS.Service
                 if (adCollectibles == null || !adCollectibles.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adCollectibles;
