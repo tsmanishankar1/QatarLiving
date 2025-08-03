@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Subscriptions;
 using System;
@@ -36,13 +37,14 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
        // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
 
+
         public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
         {
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mockTransactions = GenerateMockTransactions();
-            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();
+            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();            
             _context = context;
         }
 
@@ -1850,11 +1852,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         WhatsappNumber = ad.WhatsappNumber,
                         price = "250",
                         status = ad.IsActive.ToString(),
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate.ToString()
-
-,
-                        orderid = ad.Id.ToString().Substring(0, 6) // or fetch from actual payment state
+                        WhatsAppLeads = "12",
+                        PhoneLeads = "14",
+                        StartDate = ad.UpdatedAt.ToString(),                        
+                        EndDate = ad.ExpiryDate.ToString(),
+                        orderid = ad.Id.ToString().Substring(0, 6)
                     };
 
                     if (string.IsNullOrWhiteSpace(search) ||
@@ -1940,11 +1942,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     var dto = new DealsViewSummaryDto
                     {
                         AdId = ad.Id,
+                        Dealtitle = ad.Title,
                         subscriptiontype = "12 Months Super",
                         createdby = ad.CreatedBy,
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
+                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt"),
                         EndDate = ad.ExpiryDate.ToString(),
                         WebClick = "2",
                         Weburl = "linkup.com",
@@ -3102,5 +3105,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 );
             }
         }
+             
+
     }
 }

@@ -3332,6 +3332,8 @@ namespace QLN.Classified.MS.Service
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
 
                 var existingAd = JsonSerializer.Deserialize<ClassifiedsItems>(existingAdElement.GetRawText());
+                _logger.LogInformation("Before Update - Existing Ad JSON: {Json}", JsonSerializer.Serialize(existingAd));
+
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
@@ -3359,6 +3361,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to update Items ad.", ex);
             }
         }
+
         public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
