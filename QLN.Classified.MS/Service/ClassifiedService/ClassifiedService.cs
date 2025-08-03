@@ -3324,15 +3324,12 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
+                var existingAd = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd != null)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
-
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsItems>(existingAdElement.GetRawText());
-                _logger.LogInformation("Before Update - Existing Ad JSON: {Json}", JsonSerializer.Serialize(existingAd));
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
@@ -3372,14 +3369,13 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
+                var existingAd = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd!= null)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsPreloved>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
@@ -3418,14 +3414,13 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
+                var existingAd = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd != null)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
 
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsCollectibles>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
@@ -3464,14 +3459,12 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
+                var existingAd = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key, cancellationToken: cancellationToken);
+                if (existingAd != null)
                     throw new InvalidOperationException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
-
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsDeals>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
