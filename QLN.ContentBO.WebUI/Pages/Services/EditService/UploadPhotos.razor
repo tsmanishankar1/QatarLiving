@@ -22,7 +22,9 @@
     </MudText>
 
     <div id="image-upload-container" class="image-grid">
-        @foreach (var image in AdModel.Images.OrderBy(img => img.Order))
+        @if (Images != null && Images.Any())
+    {
+        @foreach (var image in Images.OrderBy(img => img.Order))
         {
             <div class="item-upload-box" data-id="@image.Id" @key="string.Join('-', image.Id, image.Order)">
                 <label class="upload-label">
@@ -36,13 +38,13 @@
                         </div>
                     }
 
-                    <InputFile OnChange="@(e => OnMultipleFilesSelected(e, image.Id))" multiple class="file-input" />
+                    <InputFile OnChange="@(e => OnMultipleFilesSelected(e, image.Id.Value))" multiple class="file-input" />
 
                     @if (!string.IsNullOrEmpty(image.Url))
                     {
                         <img src="@image.Url" alt="Uploaded Image" class="preview-image" />
                         <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline" Class="delete-icon"
-                                       OnClick="@(() => RemoveImage(image.Id))" />
+                                       OnClick="@(() => RemoveImage(image.Id.Value))" />
                     }
 
                     @if (image.Order == 0)
@@ -52,8 +54,9 @@
                 </label>
             </div>
         }
+        }
 
-        @if (AdModel.Images.Count < MaxImages)
+        @if (Images?.Count < MaxImages)
         {
             <div class="item-upload-box add-more-box" @onclick="AddImageBox">
                 <div class="upload-content">

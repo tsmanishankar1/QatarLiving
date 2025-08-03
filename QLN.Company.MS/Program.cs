@@ -9,10 +9,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICompanyService, InternalCompanyService>();
-builder.Services.AddScoped<ICompanyVerifiedService, InternalVerifiedCompany>();
-builder.Services.AddScoped<ICompanyDealsStoresService, InternalDealsStoresCompany>();
-builder.Services.AddScoped<ICompanyClassifiedService, InternalClassifiedCompanyService>();
+builder.Services.AddScoped<ICompanyProfileService, InternalCompanyProfileService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -20,14 +17,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-var companyServiceGroup = app.MapGroup("/api/companyservice");
-companyServiceGroup.MapCompanyServiceEndpoints();
-var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
-companyClassifiedsGroup.MapCompanyEndpoints();
-var companyDsGroup = app.MapGroup("/api/companyds");
-companyDsGroup.MapCompanyDealsStoresEndpoints();
-var companyVerifiedGroup = app.MapGroup("/api/companyverified");
-companyVerifiedGroup.MapVerifiedCompanyEndpoints();
+var companyProfileGroup = app.MapGroup("/api/companyprofile");
+companyProfileGroup.MapCompanyProfile();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.Run();

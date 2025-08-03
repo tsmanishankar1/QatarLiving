@@ -123,13 +123,13 @@ else
             <img src="@context.Images?.FirstOrDefault()?.Url" style="width: 136px; height: 61px; border-radius: 6px;" />
         </MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Id) ? "-" : context.Id)"Class="truncate-text hover-title">@context.Id</MudTd>
-        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdType) ? "-" : context.AdType)" Class="truncate-text hover-title">@context.AdType</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AdTypeName) ? "-" : context.AdTypeName)" Class="truncate-text hover-title">@context.AdType</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.Title) ? "-" : context.Title)" Class="truncate-text hover-title">@context.Title</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserId) ? "-" : context.UserId)" Class="truncate-text">@context.UserId</MudTd>
         <MudTd title="@(string.IsNullOrWhiteSpace(context.UserName) ? "-" : context.UserName)" Class="truncate-text">@context.UserName</MudTd>
         <MudTd Class="truncate-text">@context.Category</MudTd>
-        <MudTd Class="truncate-text">@context.L2Category</MudTd>
         <MudTd Class="truncate-text">@context.L1Category</MudTd>
+        <MudTd Class="truncate-text">@context.L2Category</MudTd>
         <MudTd Class="truncate-text">@(context.CreatedAt != null ? context.CreatedAt?.ToString("dd-MM-yyyy") : "--")</MudTd>
         <MudTd Class="truncate-text">@(context.PublishedDate != null ? context.PublishedDate?.ToString("dd-MM-yyyy") : "--")</MudTd>
         <MudTd Class="truncate-text"> @(context.ExpiryDate != null ? context.ExpiryDate?.ToString("dd-MM-yyyy") : "--")</MudTd>
