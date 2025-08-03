@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Components;
-using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Interfaces;
@@ -18,6 +17,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback<(DateTime? created, DateTime? published)> OnDateFilterChanged { get; set; }
         [Parameter] public EventCallback OnClearFilters { get; set; }
+        [Parameter] public EventCallback OnAddClicked { get; set; }
+
         [Inject] protected IJSRuntime JS { get; set; } = default!;
         [Inject] protected ISnackbar Snackbar { get; set; } = default!;
         protected bool ascending = true;
@@ -84,39 +85,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             ascending = true;
             searchText = string.Empty;
             await OnClearFilters.InvokeAsync();
-        }
-
-        protected async Task AddEventCallback()
-        {
-            var parameters = new DialogParameters
-        {
-            { "Title", "Create Ad" },
-            { "Label", "User Email*" },
-            { "ButtonText", "Continue" },
-            { "ListItems", new List<DropdownItem>
-                {
-                    new() { Id = 1, Label = "john.doe@hotmail.com" },
-                    new() { Id = 2, Label = "jane.doe@gmail.com" },
-                    new() { Id = 3, Label = "alice@example.com" },
-                    new() { Id = 4, Label = "bob@workmail.com" },
-                    new() { Id = 5, Label = "emma@company.com" }
-                }
-            },
-            { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
-        };
-
-            DialogService.Show<AutoSelectDialog>("", parameters);
-        }
-
-        protected Task HandleSelect(DropdownItem selected)
-        {
-            Console.WriteLine($"Selected: {selected.Label}");
-
-            // Option 1: Pass by query string (recommended for readability)
-            var targetUrl = $"/manage/classified/items/createform?email={selected.Label}";
-            NavManager.NavigateTo(targetUrl);
-
-            return Task.CompletedTask;
         }
 
         protected void ClearDateFilters()

@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         [Inject] private IJSRuntime JS { get; set; }
         [Inject] private ILogger<UploadPhotosBase> Logger { get; set; }
 
-        [Parameter] public AdPost AdModel { get; set; } = new();
+        [Parameter] public CollectiblesAdPost AdModel { get; set; } = new();
 
         protected const int MaxImages = 9;
 

@@ -172,24 +172,8 @@ namespace QLN.ContentBO.WebUI.Pages
                 if (firstRender)
                 {
                     _dotNetRef = DotNetObjectReference.Create(this);
-
                     await JS.InvokeVoidAsync("resetLeafletMap");
                     await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "OnAfterRenderAsync");
-            }
-        }
-
-        protected override async Task OnAfterRenderAsync(bool firstRender)
-        {
-            try
-            {
-                if (firstRender)
-                {
-                    await MarkdownEditorRef.SetValueAsync(CurrentEvent.EventDescription);
                 }
             }
             catch (Exception ex)
@@ -211,7 +195,6 @@ namespace QLN.ContentBO.WebUI.Pages
                 StateHasChanged();
             }
         }
-
 
         protected Task OpenDialogAsync()
         {

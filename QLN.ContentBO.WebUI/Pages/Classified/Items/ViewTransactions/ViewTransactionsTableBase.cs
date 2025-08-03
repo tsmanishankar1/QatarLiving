@@ -10,31 +10,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
 {
     public partial class ViewTransactionsTableBase : ComponentBase
     {
-        protected List<ListingItemsTransaction> Listings { get; set; } = new();
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public List<ItemViewTransaction> Transactions { get; set; } = new();
+        [Parameter] public int TotalRecords { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
+        public string SelectedTab { get; set; } = "paytopublish";
+        [Parameter] public EventCallback<string> OnTabChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
-        protected void HandlePageChange(int newPage)
+        protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChanged.InvokeAsync(currentPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async void HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
-            currentPage = 1; // reset to first page
-            StateHasChanged();
+            currentPage = 1;
+            await OnPageSizeChanged.InvokeAsync(pageSize);
         }
-
-
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
-        }
-        protected string selectedTab = "paytopublish";
-         private void OpenAdDialog(ListingItemsTransaction item)
+         private void OpenAdDialog(ItemViewTransaction item)
         {
             int adId = int.TryParse(item.AdId, out var parsedId) ? parsedId : 0;
 
@@ -70,32 +68,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewTransactions
             new() { Label = "Pay To Feature", Value = "paytofeature" },
             new() { Label = "Bulk Refresh", Value = "bulkrefresh" }
         };
-         protected async Task OnTabChanged(string newTab)
+
+        protected string GetTabTitle()
         {
-            selectedTab = newTab;
-
-            int? status = newTab switch
+            return SelectedTab switch
             {
-                "paytopublish" => 1,
-                "paytopromote" => 2,
-                "paytofeature" => 3,
-                _ => null
-            };
-
-        }
-
-       private List<ListingItemsTransaction> GetSampleData()
-        {
-            return new List<ListingItemsTransaction>
-            {
-                new() { AdId = "21435", OrderId = "21660", ProductType = "P2P", UserName = "Rashid", Status = "Active", Email = "2311", Mobile = "Electronics", WhatsApp = "Phone", Amount = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), StartDate = DateTime.Parse("2025-04-12"), EndDate = DateTime.Parse("2025-04-12") },
-                new() { AdId = "21435", OrderId = "21435", ProductType = "P2F", UserName = "Rashid", Status = "Pending Approval", Email = "2315", Mobile = "Electronics", WhatsApp = "Phone", Amount = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), StartDate = DateTime.Parse("2025-04-12"), EndDate = DateTime.Parse("2025-04-12") },
-                new() { AdId = "N/A", OrderId = "21342", ProductType = "Bulk Refresh", UserName = "Rashid", Status = "N/A", Email = "2315", Mobile = "Electronics", WhatsApp = "Phone", Amount = "Apple" },
-                new() { AdId = "21435", OrderId = "23415", ProductType = "P2P", UserName = "Rashid", Status = "Need Changes", Email = "2315", Mobile = "Electronics", WhatsApp = "Phone", Amount = "Apple", CreationDate = DateTime.Parse("2025-04-12"), PublishedDate = DateTime.Parse("2025-04-12"), StartDate = DateTime.Parse("2025-04-12"), EndDate = DateTime.Parse("2025-04-12") }
+                "paytopublish" => "Pay To Publish",
+                "paytopromote" => "Pay To Promote",
+                "paytofeature" => "Pay To Feature",
+                "bulkrefresh" => "Bulk Refresh",
+                _ => "Classified Items"
             };
         }
+         protected async Task OnTabChangedInternal(string newTab)
+        {
+            SelectedTab = newTab;
+            await OnTabChanged.InvokeAsync(newTab);
+        }
 
-        protected void OnPreview(ListingItemsTransaction item)
+     
+        protected void OnPreview(ItemViewTransaction item)
         {
             OpenAdDialog(item);
             Console.WriteLine($"Preview clicked: {item.AdId}");

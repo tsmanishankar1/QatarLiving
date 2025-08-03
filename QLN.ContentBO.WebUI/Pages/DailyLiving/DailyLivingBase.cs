@@ -372,7 +372,7 @@ public class DailyLivingBase : QLComponentBase
         var parameters = new DialogParameters
             {
                 { nameof(MessageBoxBase.Title), "Featured Event" },
-                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
+                { nameof(MessageBoxBase.Placeholder), "Event Title*" },
                 { nameof(MessageBoxBase.events), PublishedEventsList },
                 { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
             };

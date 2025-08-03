@@ -5,24 +5,34 @@ using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components.SuccessModal;
+using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
+using System.Net;
+using DocumentFormat.OpenXml.EMMA;
 
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 {
     public class EditServiceFormBase : ComponentBase
     {
-        [Inject] public IServiceService _serviceService { get; set; }
+        [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject] public IJSRuntime JSRuntime { get; set; }
-         [Inject] public IDialogService DialogService { get; set; }
-        [Parameter]
-        public string Id { get; set; }
+        [Inject] public IDialogService DialogService { get; set; }
+        [Inject] public NavigationManager Navigation { get; set; }
+        [Parameter] public EventCallback OnCommentDialogClose { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
+        protected List<LocationZoneDto> Zones { get; set; } = new();
+        public bool IsAgreed { get; set; } = true;
         protected string? ErrorMessage { get; set; }
+        protected Double latitude = 25.32;
+        protected Double Longitude = 51.54;
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
         [Inject] ISnackbar Snackbar { get; set; }
 
         public AdPost Ad { get; set; } = new();
+        [Parameter]
+        public ServicesDto selectedService { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
         [Inject] private IJSRuntime JS { get; set; }
@@ -33,31 +43,64 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         protected CountryModel SelectedWhatsappCountry;
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
 
-    protected string? _selectedCategoryId;
-    protected string? _selectedL1CategoryId;
-    protected string? _selectedL2CategoryId;
+        protected string? _selectedCategoryId;
+        protected string? selectedFileName { get; set; } = string.Empty;
+        protected string? _selectedL1CategoryId;
+        protected string? _selectedL2CategoryId;
+        private bool _shouldUpdateMap = true;
 
-    protected List<L1Category> _selectedL1Categories = new();
-    protected List<L2Category> _selectedL2Categories = new();
-    protected void OnCategoryChanged(string? categoryId)
-    {
-        _selectedCategoryId = categoryId;
-        _selectedL1CategoryId = null;
-        _selectedL2CategoryId = null;
-        _selectedL2Categories.Clear();
+        protected List<L1Category> _selectedL1Categories = new();
+        protected List<L2Category> _selectedL2Categories = new();
+        protected override async Task OnParametersSetAsync()
+        {
+            try
+            {
+                if (selectedService == null)
+                    return;
 
-        var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id?.ToString() == categoryId);
-        _selectedL1Categories = selectedCategory?.L1Categories ?? new();
-    }
+                if (CategoryTrees == null || !CategoryTrees.Any())
+                    await LoadCategoryTreesAsync();
 
-    protected void OnL1CategoryChanged(string? l1CategoryId)
-    {
-        _selectedL1CategoryId = l1CategoryId;
-        _selectedL2CategoryId = null;
+                await LoadZonesAsync();
+                if (selectedService?.Lattitude != 0 && selectedService?.Longitude != 0)
+                {
+                    latitude = (double)selectedService.Lattitude;
+                    Longitude = (double)selectedService.Longitude;
+                    _shouldUpdateMap = true;
+                }
+                selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
+                var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
+                _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+                var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
+                _selectedL2Categories = selectedL1?.L2Categories ?? new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
+            }
+        }
 
-        var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == l1CategoryId);
-        _selectedL2Categories = selectedL1?.L2Categories ?? new();
-    }
+        protected void OnCategoryChanged(Guid categoryId)
+        {
+            selectedService.CategoryId = categoryId;
+            _selectedL1CategoryId = null;
+            _selectedL2CategoryId = null;
+            _selectedL2Categories.Clear();
+
+            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+        }
+
+
+        protected void OnL1CategoryChanged(Guid subcategoryId)
+        {
+            selectedService.L1CategoryId = subcategoryId;
+            _selectedL2CategoryId = null;
+
+            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
+            _selectedL2Categories = selectedL1?.L2Categories ?? new();
+        }
+
 
         protected async Task OnCrFileSelected(IBrowserFile file)
         {
@@ -66,113 +109,108 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
                 return;
             }
-
             using var stream = file.OpenReadStream();
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-
-            Ad.CertificateFileName = file.Name;
-            Ad.Certificate = Convert.ToBase64String(ms.ToArray());
+            selectedService.LicenseCertificate = Convert.ToBase64String(ms.ToArray());
+            selectedFileName = file.Name;
         }
-        protected void PreviewFile()
+        private string GetFileNameFromUrl(string? url)
         {
-            if (string.IsNullOrWhiteSpace(Ad.Certificate) || string.IsNullOrWhiteSpace(Ad.CertificateFileName))
-                return;
+            if (string.IsNullOrWhiteSpace(url))
+                return string.Empty;
 
-            var fileExtension = Path.GetExtension(Ad.CertificateFileName).ToLowerInvariant();
-            var mimeType = fileExtension switch
+            try
             {
-                ".pdf" => "application/pdf",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                _ => "application/octet-stream"
+                return Path.GetFileName(new Uri(url).AbsolutePath);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+        protected async Task PreviewFile(string fileUrl)
+        {
+            var parameters = new DialogParameters
+            {
+                ["PdfUrl"] = fileUrl
             };
 
-            var base64 = Ad.Certificate;
-            var dataUrl = $"data:{mimeType};base64,{base64}";
+            var options = new DialogOptions { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
 
-            // Open in new browser tab
-            JSRuntime.InvokeVoidAsync("open", dataUrl, "_blank");
+            await DialogService.ShowAsync<FilePreviewDialog>("File Preview", parameters, options);
         }
+
 
         protected void ClearFile()
         {
-            Ad.CertificateFileName = null;
-            Ad.Certificate = null;
+            selectedService.LicenseCertificate = null;
+            selectedFileName = null;
         }
 
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
-            Ad.PhoneCode = model.Code;
+            selectedService.PhoneNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
         {
             SelectedWhatsappCountry = model;
-            Ad.WhatsappCode = model.Code;
+            selectedService.WhatsappNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
-         protected Task OnPhoneChanged(string phone)
+        protected Task OnPhoneChanged(string phone)
         {
-            Ad.PhoneNumber = phone;
+            selectedService.PhoneNumber = phone;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappChanged(string phone)
         {
-            Ad.WhatsappNumber = phone;
+            selectedService.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-        protected async Task OnSubCategoryChanged(string subcategoryId)
+        protected void OnSubCategoryChanged(Guid subcategoryId)
         {
-            Ad.SelectedSubcategoryId = subcategoryId;
+            selectedService.L2CategoryId = subcategoryId;
             Ad.SelectedSubSubcategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
-
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
         }
 
-        protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
-        {
-            Ad.SelectedSubSubcategoryId = subsubcategoryId;
-            Ad.DynamicFields.Clear();
-            DynamicFieldErrors.Clear();
-
-            editContext.NotifyValidationStateChanged();
-            StateHasChanged();
-        }
         protected string ShortFileName(string name, int max)
-         {
-                if (string.IsNullOrEmpty(name)) return "";
-                return name.Length <= max ? name : name.Substring(0, max) + "...";
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            return name.Length <= max ? name : name.Substring(0, max) + "...";
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (firstRender)
+            try
             {
-                _dotNetRef = DotNetObjectReference.Create(this);
+                if (_shouldUpdateMap)
+                {
+                    _shouldUpdateMap = false;
+                    _dotNetRef = DotNetObjectReference.Create(this);
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    await Task.Delay(300);
+                    await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
 
-                await JS.InvokeVoidAsync("resetLeafletMap");
-                await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnAfterRenderAsync");
             }
         }
-         [JSInvokable]
-        public Task SetCoordinates(double lat, double lng)
-        {
-            Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
 
 
-            StateHasChanged(); // Reflect changes in UI
-            return Task.CompletedTask;
-        }
-
-
-         private void ValidateDynamicField(string fieldName)
+        private void ValidateDynamicField(string fieldName)
         {
             if (!DynamicFieldErrors.ContainsKey(fieldName))
                 DynamicFieldErrors[fieldName] = new List<string>();
@@ -184,7 +222,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 DynamicFieldErrors[fieldName].Add($"{fieldName} is required.");
             }
         }
-       protected List<string> GetDynamicFieldErrors(string fieldName)
+        protected List<string> GetDynamicFieldErrors(string fieldName)
         {
             if (DynamicFieldErrors.TryGetValue(fieldName, out var errors))
             {
@@ -192,14 +230,50 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             }
             return new List<string>();
         }
-       protected override async Task OnInitializedAsync()
+        protected override async Task OnInitializedAsync()
         {
-              editContext = new EditContext(Ad);
-            messageStore = new ValidationMessageStore(editContext);
-            await LoadCategoryTreesAsync();
+            try
+            {
+                editContext = new EditContext(Ad);
+                messageStore = new ValidationMessageStore(editContext);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+            }
+            
+        }
+        [JSInvokable]
+        public Task SetCoordinates(double lat, double lng)
+        {
+            Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
+            selectedService.Lattitude = (decimal)lat;
+            selectedService.Longitude = (decimal)lng;
+            editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Lattitude));
+            editContext.NotifyFieldChanged(FieldIdentifier.Create(() => selectedService.Longitude));
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+        private async Task ShowSuccessModal(string title)
+        {
+            var parameters = new DialogParameters
+            {
+                { nameof(SuccessModalBase.Title), title },
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true
+            };
+
+             var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+              var result = await dialog.Result;
         }
 
-          private async Task LoadCategoryTreesAsync()
+
+        private async Task LoadCategoryTreesAsync()
         {
             try
             {
@@ -211,14 +285,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     CategoryTrees = result ?? new();
                     StateHasChanged();
                 }
-                else
-                {
-                    ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
-                }
             }
             catch (Exception ex)
             {
-                ErrorMessage = "Error loading category trees.";
+                Logger.LogError(ex, "LoadCategoryTreesAsync");
             }
             finally
             {
@@ -228,29 +298,75 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         }
 
 
-        protected void SubmitForm()
+        protected async Task SubmitForm()
         {
-            if (string.IsNullOrWhiteSpace(Ad.Title))
+            if (string.IsNullOrWhiteSpace(selectedService.Title))
                 Snackbar.Add("Title is required.", Severity.Error);
 
-            if (Ad.Price == null && !_priceOnRequest)
+            if (selectedService.Price == null && !selectedService.IsPriceOnRequest)
                 Snackbar.Add("Price is required unless 'Price on request' is checked.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(Ad.PhoneNumber))
+            if (string.IsNullOrWhiteSpace(selectedService.PhoneNumber))
                 Snackbar.Add("Phone number is required.", Severity.Error);
 
-            if (!Ad.IsAgreed)
+            if (!IsAgreed)
                 Snackbar.Add("You must agree to the terms and conditions.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedCategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.CategoryId.ToString()))
                 Snackbar.Add("Category must be selected.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedL1CategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.L1CategoryId.ToString()))
                 Snackbar.Add("Subcategory must be selected.", Severity.Error);
 
-            if (string.IsNullOrWhiteSpace(_selectedL2CategoryId))
+            if (string.IsNullOrWhiteSpace(selectedService.L2CategoryId.ToString()))
                 Snackbar.Add("Section must be selected.", Severity.Error);
+            if (!IsAgreed)
+                Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
+            try
+            {
+                var response = await _serviceService.UpdateService(selectedService);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    await ShowSuccessModal("Service Ad Updated Successfully");
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "SubmitForm");
+            }
         }
+        private async Task LoadZonesAsync()
+        {
+            try
+            {
+                var response = await _serviceService.GetAllZonesAsync();
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<LocationZoneListDto>();
+                    Zones = result.Zones ?? new();
+                }
+                else
+                {
+                    ErrorMessage = $"Failed to load zones. Status: {response?.StatusCode}";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadZonesAsyn");
+            }
+        }
+
 
 
     }

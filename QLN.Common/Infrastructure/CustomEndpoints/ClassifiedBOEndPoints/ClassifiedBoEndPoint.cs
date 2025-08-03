@@ -1405,82 +1405,44 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/getall-items", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
-                (
-                [FromServices] ISearchService service,
-                [FromBody] CommonSearchRequest request,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, request);
-                    var getall = new ClassifiedsBoItemsResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsItems = result.ClassifiedsItem
-                    };
-                    return TypedResults.Ok(getall);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-          .WithName("GetAllItemsAds")
-          .AllowAnonymous()
-          .WithTags("ClassifiedBo")
-          .WithSummary("Get all classifieds ads")
-          .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds ads, including their details.")
-          .Produces<List<ClassifiedsItemsIndex>>(StatusCodes.Status200OK)
-          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/getall-preloved", static async Task<Results<Ok<ClassifiedsBoPrelovedResponseDto>, ProblemHttpResult>>
             (
-                [FromServices] ISearchService service,
-                [FromBody] CommonSearchRequest request,
-                CancellationToken cancellationToken
+            [FromServices] IClassifiedBoLandingService service,
+            [FromBody] GetAllSearch request,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, request);
-                    var getall = new ClassifiedsBoPrelovedResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsPreloved = result.ClassifiedsPrelovedItem
-                    };
-                    return TypedResults.Ok(getall);
+                    var result = await service.GetAllItems(request);
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .WithName("GetAllPrelovedAds")
-            .AllowAnonymous()
+            .WithName("GetAllItemsAds")
             .WithTags("ClassifiedBo")
-            .WithSummary("Get all classifieds preloved ads")
-            .WithDescription("Retrieves all service ads from the system. This endpoint returns a list of all available classifieds preloved ads, including their details.")
-            .Produces<ClassifiedsPrelovedIndex>(StatusCodes.Status200OK)
+            .WithSummary("Get all classifieds ads")
+            .WithDescription("Retrieves all service ads from the system. " +
+            "This endpoint returns a list of all available classifieds ads, including their details.")
+            .Produces<List<ClassifiedItems>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
             group.MapPost("/getall-collectibles", static async Task<Results<Ok<ClassifiedsBoCollectiblesResponseDto>, ProblemHttpResult>>
             (
-              [FromServices] ISearchService service,
-              [FromBody] CommonSearchRequest request,
-              CancellationToken cancellationToken
+            [FromServices] IClassifiedBoLandingService service,
+            [FromBody] GetAllSearch request,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, request);
-                    var getall = new ClassifiedsBoCollectiblesResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsCollectibles = result.ClassifiedsCollectiblesItem
-                    };
-                    return TypedResults.Ok(getall);
+                    var result = await service.GetAllCollectibles(request);
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
@@ -1488,43 +1450,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetAllCollectiblesAds")
-            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
-            .Produces<List<ClassifiedsCollectiblesIndex>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/getall-deals", static async Task<Results<Ok<ClassifiedsBoDealsResponseDto>, ProblemHttpResult>>
-            (
-              [FromServices] ISearchService service,
-              [FromBody] CommonSearchRequest request,
-              CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, request);
-                    var getall = new ClassifiedsBoDealsResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsDeals = result.ClassifiedsDealsItem
-                    };
-                    return TypedResults.Ok(getall);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })                
-            .WithName("GetAllDealsAds")
-            .WithTags("ClassifiedBo")
-            .AllowAnonymous()
-            .WithSummary("Get all classifieds deals ads")
-            .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds deals ads, including their details.")
-            .Produces<List<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
+            "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
+            .Produces<List<ClassifiedCollectibles>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<
@@ -2837,52 +2767,7 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/userquota/check", async Task<Results<
-                Ok<Dictionary<string, bool>>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                [FromServices] IClassifiedBoLandingService service,
-                [FromQuery] string userId,
-                [FromQuery] string verticalName,
-                [FromQuery] string subVerticalName,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(userId) ||
-                        string.IsNullOrWhiteSpace(verticalName) ||
-                        string.IsNullOrWhiteSpace(subVerticalName))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "userId, verticalName, and subVerticalName are required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var hasQuota = await service.HasActiveQuota(userId, verticalName, subVerticalName, cancellationToken);
-
-                    return TypedResults.Ok(new Dictionary<string, bool>
-                    {
-                        ["hasQuota"] = hasQuota
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .WithName("CheckUserQuota")
-                .WithTags("ClassifiedBo")
-                .AllowAnonymous()
-                .WithSummary("Check if a user has an active quota")
-                .WithDescription("Returns true if the user has an active quota for the given vertical and subvertical.")
-                .Produces<Dictionary<string, bool>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+           
 
 
 
