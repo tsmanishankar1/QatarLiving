@@ -1,5 +1,6 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
 using System.Text.Json;
@@ -11,9 +12,11 @@ namespace QLN.Classified.MS.Service.Services
     public class InternalServicesService : IServices
     {
         public readonly DaprClient _dapr;
-        public InternalServicesService(DaprClient dapr)
+        public readonly AuditLogger _auditLogger;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
         {
             _dapr = dapr;
+            _auditLogger = auditLogger;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -198,9 +201,10 @@ namespace QLN.Classified.MS.Service.Services
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
+
                 var entity = new ServicesModel
                 {
                     AdType = dto.AdType,
@@ -280,7 +284,16 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
+                await _auditLogger.CreateAuditLog(
+                    id: Guid.NewGuid(),
+                    module: "Service",
+                    httpMethod: "POST",
+                    apiEndpoint: $"/api/service/createbyuserid?uid={uid}&userName={userName}",
+                    successMessage: "Service Ad Created Successfully",
+                    createdBy: uid,
+                    payload: entity,
+                    cancellationToken: cancellationToken
+                );
                 return "Service Ad Created Successfully";
             }
             catch (ArgumentException ex)
@@ -323,22 +336,11 @@ namespace QLN.Classified.MS.Service.Services
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
 
-            var therapeuticL2s = new[] { "spa", "wellness centers" };
-
-            bool isTherapeutic =
-                (!string.IsNullOrWhiteSpace(dto.L1CategoryName) && dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(dto.L2CategoryName) && therapeuticL2s.Contains(dto.L2CategoryName.Trim().ToLowerInvariant()));
-
-            if (isTherapeutic)
+            if (!string.IsNullOrWhiteSpace(dto.L1CategoryName) &&
+                    dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase) &&
+                    string.IsNullOrWhiteSpace(dto.LicenseCertificate))
             {
-                if (string.IsNullOrWhiteSpace(dto.LicenseCertificate))
-                    throw new ArgumentException("License certificate is required for therapeutic services.");
-
-                var validExtensions = new[] { ".pdf", ".png", ".jpg" };
-                var extension = Path.GetExtension(dto.LicenseCertificate)?.ToLowerInvariant();
-
-                if (string.IsNullOrEmpty(extension) || !validExtensions.Contains(extension))
-                    throw new ArgumentException("License certificate must be a PDF, PNG, or JPG file.");
+                throw new ArgumentException("License certificate is required for therapeutic services.");
             }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
@@ -355,7 +357,7 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
                 if (existing == null)
-                    throw new InvalidDataException("Service Ad not found for update.");
+                    throw new ArgumentException("Service Ad not found for update.");
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -377,6 +379,28 @@ namespace QLN.Classified.MS.Service.Services
                         {
                             l2CategoryName = l2Category.Name;
                         }
+                    }
+                }
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                  ConstantValues.Services.StoreName,
+                  ConstantValues.Services.ServicesIndexKey,
+                  cancellationToken: cancellationToken
+               ) ?? new();
+                foreach (var adKey in allAdKeys)
+                {
+                    var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == userId &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
                 ValidateCommon(dto);
@@ -467,6 +491,18 @@ namespace QLN.Classified.MS.Service.Services
                     Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
                     Html = $"{dto.Title} has been updated."
                 }, cancellationToken);
+
+                await _auditLogger.UpdateAuditLog(
+                   id: Guid.NewGuid(),
+                   module: "Service",
+                   httpMethod: "PUT",
+                   apiEndpoint: $"/api/service/updatebyid?id={dto.Id}",
+                   successMessage: "Service Ad Updated Successfully",
+                   updatedBy: userId,
+                   payload: dto,
+                   cancellationToken: cancellationToken
+               );
+
                 return "Service Ad updated successfully.";
             }
             catch (ArgumentException ex)
@@ -641,6 +677,16 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
             }
+            await _auditLogger.UpdateAuditLog(
+                id: Guid.NewGuid(),
+                module: "Service",
+                httpMethod: "DELETE",
+                apiEndpoint: $"/api/service/deletebyid?id={id}",
+                successMessage: "Service Ad Deleted Successfully",
+                updatedBy: userId,
+                payload: null, 
+                cancellationToken: cancellationToken
+            );
 
             return "Service Ad soft-deleted successfully.";
         }

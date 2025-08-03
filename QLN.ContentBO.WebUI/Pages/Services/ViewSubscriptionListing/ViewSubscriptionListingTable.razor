@@ -2,83 +2,24 @@
 @using MudBlazor
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Models
 
 <MudPaper Class="pa-4">
-    <ToggleTabs Options="@tabOptions"
-                ActiveValue="@selectedTab"
-                OnChange="@OnTabChanged" />
-    <div class="tab-content">
-        @if (SelectedListings.Count > 0)
-        {
-            <div class="action-buttons">
-                @if (selectedTab == "pendingApproval")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
-                               OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
-                        Approve
-                    </MudButton>
-                }
-                else if (selectedTab == "published")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
-                               OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", UnpublishSelected)'>
-                        Unpublish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-                else if (selectedTab == "unpublished")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
-                               OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", PublishSelected)'>
-                        Publish
-                    </MudButton>
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
+    @if(Listings == null || !Listings.Any()){
 
-                @if (selectedTab == "promoted")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unpromote Items", "Are you sure you want to unpromote selected Items?", "Unpromote", UnpromoteSelected)'>
-                        Unpromote
-                    </MudButton>
-                }
+<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
 
-                @if (selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled"
-                               OnClick='() => ShowConfirmation("Unfeature Items", "Are you sure you want to unfeature selected Items?", "Unfeature", UnfeatureSelected)'>
-                        Unfeature
-                    </MudButton>
-                }
-
-                @if (selectedTab == "p2p" || selectedTab == "promoted" || selectedTab == "featured")
-                {
-                    <MudButton Class="capitalize-button" Color="Color.Error" Variant="Variant.Filled" StartIcon="@Icons.Material.Rounded.Close"
-                               OnClick='() => ShowConfirmation("Remove Items", "Are you sure you want to remove selected Items?", "Remove", RemoveSelected)'>
-                        Remove
-                    </MudButton>
-                }
-            </div>
-
-            <div class="alert-container">
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Primary" />
-                @($"{SelectedListings.Count} item(s) selected.")
-            </div>
-        }
-    </div>
+        
+    }
+    else{
    <MudTable Items="Listings"
           Hover="true"
           Bordered="true"
           Elevation="0"
-           MultiSelection="true"
-          RowCheckBoxVisible="true"
-            @bind-SelectedItems="SelectedListings"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
@@ -97,17 +38,17 @@
     </HeaderContent>
 
     <RowTemplate>
-        <MudTd>@context.AdId</MudTd>
-        <MudTd>@context.OrderId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.AddId.ToString()) ? "-" : context.AddId)"Class="truncate-text hover-title">@context.AddId</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.OrderId) ? "-" : context.OrderId)"Class="truncate-text hover-title">@context?.OrderId</MudTd>
         <MudTd>@context.SubscriptionPlan</MudTd>
-        <MudTd>@context.Username</MudTd>
-        <MudTd>@context.Email</MudTd>
-        <MudTd>@context.Mobile</MudTd>
-        <MudTd>@context.Whatsapp</MudTd>
-        <MudTd>@context.Amount</MudTd>
-        <MudTd>@context.Status</MudTd>
-        <MudTd>@context.StartDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
-        <MudTd>@context.EndDate.ToString("dd-MM-yyyy hh:mmtt")</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context?.UserName) ? "-" : context?.UserName)"Class="truncate-text">@context.UserName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.EmailAddress) ? "-" : context.EmailAddress)"Class="truncate-text">@context.EmailAddress</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Mobile) ? "-" : context.Mobile)"Class="truncate-text">@context.Mobile</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.WhatsappNumber) ? "-" : context.WhatsappNumber)"Class="truncate-text">@context.WhatsappNumber</MudTd>
+        <MudTd Class="truncate-text">@context.Amount</MudTd>
+        <MudTd>@((ServiceStatus)context.Status)</MudTd>
+        <MudTd Class="truncate-text">@context.StartDate</MudTd>
+        <MudTd Class="truncate-text">@context.EndDate</MudTd>
         <MudTd>
             <MudMenu Icon="@Icons.Material.Filled.MoreVert">
                 <MudMenuItem OnClick="() => OnEdit(context)">
@@ -116,13 +57,14 @@
                 <MudMenuItem OnClick="() => OnPreview(context)">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
                 </MudMenuItem>
-                <MudMenuItem OnClick="() => OnRemove(context)" Class="mud-text-error">
+                <MudMenuItem  Class="mud-text-error">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
                 </MudMenuItem>
             </MudMenu>
         </MudTd>
     </RowTemplate>
 </MudTable>
+}
      <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
                 OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
 </MudPaper>
