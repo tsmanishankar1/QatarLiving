@@ -1,4 +1,4 @@
-﻿@inherits DealsListingBase
+﻿@inherits P2pListingBase
 @page "/manage/classified/preloved/p2p/listing"
 @layout QLN.ContentBO.WebUI.Pages.Classified.PreLoved.PreLovedLayout
 
@@ -78,7 +78,14 @@
 
 </div>
 <div style="margin-top:10px">
-<PreLovedTable />
+    <PreLovedTable Listings="Listings"
+                   IsLoading="IsLoading"
+                   IsEmpty="IsEmpty"
+                   TotalCount="TotalCount"
+                   SelectedTab=@SelectedTab
+                   OnTabChanged="HandleTabChange"
+                   OnPageChanged="HandlePageChanged"
+                   OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 <style>
@@ -212,7 +219,7 @@
     }
 
     .active-icon {
-        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%) !important;
     }
 
 </style>

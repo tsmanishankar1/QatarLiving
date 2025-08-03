@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Markdig.Parsers;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -8,67 +6,66 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
 
-namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
+namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
 {
-    public class SubscriptionListingBase : QLComponentBase
+    public class P2pTransactionBase :QLComponentBase
     {
+        [Inject] protected ILogger<P2pTransactionBase> _logger { get; set; } = default!;
 
-        [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
+    protected string SearchText { get; set; } = string.Empty;
 
-        protected string SearchText { get; set; } = string.Empty;
+    protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
 
-        protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
+    protected DateTime? dateCreated { get; set; }
+    protected DateTime? datePublished { get; set; }
 
-        protected DateTime? dateCreated { get; set; }
-        protected DateTime? datePublished { get; set; }
+    protected DateTime? tempCreatedDate { get; set; }
+    protected DateTime? tempPublishedDate { get; set; }
 
-        protected DateTime? tempCreatedDate { get; set; }
-        protected DateTime? tempPublishedDate { get; set; }
+    protected bool showCreatedPopover { get; set; } = false;
+    protected bool showPublishedPopover { get; set; } = false;
 
-        protected bool showCreatedPopover { get; set; } = false;
-        protected bool showPublishedPopover { get; set; } = false;
+    protected bool _showDatePicker = false;
+    public string? _timeTypeError;
+    public string? _eventTypeError;
+    protected List<LocationEventDto> Locations = new();
+    public EventDTO CurrentEvent { get; set; } = new EventDTO();
+    public string selectedLocation { get; set; } = string.Empty;
+    public bool _isTimeDialogOpen = true;
+    protected string? _DateError;
+    protected string? _timeError;
+    protected string? _PriceError;
+    protected string? _LocationError;
+    protected string? _descriptionerror;
+    protected string? _coverImageError;
+    public string? _timeRangeDisplay;
+    protected EditContext _editContext;
+    protected DateTime? EventDate;
 
-        protected bool _showDatePicker = false;
-        public string? _timeTypeError;
-        public string? _eventTypeError;
-        protected List<LocationEventDto> Locations = new();
-        public EventDTO CurrentEvent { get; set; } = new EventDTO();
-        public string selectedLocation { get; set; } = string.Empty;
-        public bool _isTimeDialogOpen = true;
-        protected string? _DateError;
-        protected string? _timeError;
-        protected string? _PriceError;
-        protected string? _LocationError;
-        protected string? _descriptionerror;
-        protected string? _coverImageError;
-        public string? _timeRangeDisplay;
-        protected EditContext _editContext;
-        protected DateTime? EventDate;
+    protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
+    protected DateRange _confirmedDateRange = new();
+    protected string SelectedDateLabel;
+    protected string SelectedCategory { get; set; } = string.Empty;
+    protected bool IsLoading { get; set; } = true;
+    protected bool IsEmpty => !IsLoading && Listings.Count == 0;
+    protected int TotalCount { get; set; }
+    protected int currentPage { get; set; } = 1;
+    protected int pageSize { get; set; } = 12;
 
-        protected DateRange SelectedDateRange = new DateRange(DateTime.Today, DateTime.Today.AddDays(1));
-        protected DateRange _confirmedDateRange = new();
-        protected string SelectedDateLabel;
-        protected string SelectedCategory { get; set; } = string.Empty;
-        protected bool IsLoading { get; set; } = true;
-        protected bool IsEmpty => !IsLoading && Listings.Count == 0;
-        protected int TotalCount { get; set; }
-        protected int currentPage { get; set; } = 1;
-        protected int pageSize { get; set; } = 12;
-
-        protected readonly List<string> Categories = new()
+    protected readonly List<string> Categories = new()
         {
             "12 Months Basic",
     "12 Months Plus",
     "12 Months Super"
         };
 
-        public class DayTimeEntry
-        {
-            public DateTime Date { get; set; }
-            public string Day => Date.ToString("dddd");
-            public bool IsSelected { get; set; }
-            public TimeSpan? StartTime { get; set; }
-            public TimeSpan? EndTime { get; set; }
+    public class DayTimeEntry
+    {
+        public DateTime Date { get; set; }
+        public string Day => Date.ToString("dddd");
+        public bool IsSelected { get; set; }
+        public TimeSpan? StartTime { get; set; }
+        public TimeSpan? EndTime { get; set; }
         }
         protected List<DayTimeEntry> DayTimeList = new();
         public double EventLat { get; set; } = 48.8584;
@@ -80,7 +77,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
-        protected List<SubscriptionListingModal> Listings { get; set; } = new();
+        protected List<PreLovedTransactionModal> Listings { get; set; } = new();
 
         protected override async Task OnInitializedAsync()
         {
@@ -100,34 +97,39 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
                     PageSize = pageSize
                 };
 
-                var response = await ClassifiedService.GetPrelovedSubscription(request);
+                var response = await ClassifiedService.GetPrelovedP2pTransaction(request);
 
                 if (response?.IsSuccessStatusCode == true)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
+                    var data = JsonSerializer.Deserialize<PrelovedTransactionResponse>(content, new JsonSerializerOptions
                     {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                         PropertyNameCaseInsensitive = true
+,
                     });
 
-                    Listings = data?.Items.Select(item => new SubscriptionListingModal
+                    Listings = data?.Records.Select(item => new PreLovedTransactionModal
                     {
                         AdId = item.AdId,
-                        OrderId=item.OrderId,
+                        OrderId = item.OrderId,
                         SubscriptionType = item.SubscriptionType,
-                        UserName = item.UserName ?? "-",
-                        Email = item.EmailAddress ?? "-",
-                        Mobile = item.Mobile ?? "-",
-                        Whatsapp = item.WhatsappNumber ?? "-",
+                        UserName = item.UserName ,
+                        Email = item.Email ,
+                        Mobile = item.Mobile ,
+                        Whatsapp = item.Whatsapp ,
                         Amount = item.Amount,
                         Status = item.Status,
-                        CreationDate = ParseDate(item.StartDate),
-                        PublishedDate = ParseDate(item.StartDate),
-                        ExpiryDate = ParseDate(item.EndDate),
-                        AdTitle = item.OrderId,
-                        UserId = 0,
-                        SubscriptionId = 0
-                    }).ToList() ?? new List<SubscriptionListingModal>();
+                        CreationDate = ParseDate(item.CreationDate),
+                        PublishedDate = ParseDate(item.PublishedDate),
+                        StartDate = ParseDate(item.StartDate),
+                        EndDate = ParseDate(item.EndDate),
+                        Views= item.Views.ToString(),
+                        WhatsappCount = item.WhatsappCount.ToString(),
+                        MobileCount = item.MobileCount.ToString(),
+
+
+                    }).ToList() ?? new List<PreLovedTransactionModal>();
 
                     TotalCount = data?.TotalCount ?? 0;
                 }
@@ -168,7 +170,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 
 
 
-      
+
         protected void ToggleSort()
         {
             // Example: toggle sort direction and update SortIcon
