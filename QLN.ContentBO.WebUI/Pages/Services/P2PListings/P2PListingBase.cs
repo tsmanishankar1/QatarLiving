@@ -7,10 +7,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
   public partial class P2PListingBase : ComponentBase
   {
     [Inject] public IServiceBOService _serviceBOService { get; set; }
+     [Inject] public IDialogService DialogService { get; set; }
     [Inject] ILogger<P2PListingBase> Logger { get; set; }
     protected PaginatedServiceResponse PaginatedData { get; set; } = new();
     public List<ServiceAdSummaryDto> Listings => PaginatedData.items;
     [Inject] ISnackbar Snackbar { get; set; }
+     [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
     protected int currentPage = 1;
     protected int pageSize = 12;
     protected int? currentStatus = 1;
@@ -57,8 +59,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
-
-
     protected async Task HandleStatusChange(int? status)
     {
       currentPage = 1;

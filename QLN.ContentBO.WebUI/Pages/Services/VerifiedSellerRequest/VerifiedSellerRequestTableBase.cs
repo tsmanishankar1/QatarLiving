@@ -35,8 +35,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             int? status = newTab switch
             {
                 "verificationRequests" => 1,
-                "rejected" => 2,
-                "approved" => 3,
+                "rejected" => 4,
+                "approved" => 2,
                 _ => null
             };
             await OnStatusChanged.InvokeAsync(status); 

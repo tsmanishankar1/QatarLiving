@@ -116,7 +116,8 @@
                         Placeholder="Phone Number"
                         SelectedCountryChanged="@OnPhoneCountryChanged"
                         PhoneNumber="@selectedService.PhoneNumber"
-                        PhoneNumberChanged="@OnPhoneChanged" />
+                        PhoneNumberChanged="@OnPhoneChanged"
+                        DefaultCountryCode="@selectedService.PhoneNumberCountryCode" />
                 <ValidationMessage For="@(() => @selectedService.PhoneNumber)" />
                 </div>
                 <div class="form-group">
@@ -126,7 +127,8 @@
                         Placeholder="WhatsApp Number"
                         SelectedCountryChanged="@OnWhatsappCountryChanged"
                         PhoneNumber="@selectedService.WhatsappNumber"
-                        PhoneNumberChanged="@OnWhatsappChanged" />
+                        PhoneNumberChanged="@OnWhatsappChanged" 
+                        DefaultCountryCode="@selectedService.WhatsappNumberCountryCode"/>
                 <ValidationMessage For="@(() => selectedService.WhatsappNumber)" />
                 </div>
                 <div class="form-group">

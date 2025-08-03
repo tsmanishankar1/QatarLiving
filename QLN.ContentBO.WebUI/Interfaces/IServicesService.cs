@@ -37,7 +37,11 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetAllZonesAsync();
         Task<HttpResponseMessage> UpdateService(ServicesDto service);
         Task<HttpResponseMessage> ModerateBulkAction(object payload);
-        Task<HttpResponseMessage> GetVerifiedSellerRequestAsync(int vertical);
+        Task<HttpResponseMessage> GetAllCompaniesAsync(
+    bool? isBasicProfile = null,
+    int? status = null,
+    int? vertical = null,
+    int? subVertical = null);
         Task<HttpResponseMessage> GetPaginatedSubscriptionAdsListing(
         string? sortBy = null,
         string? search = null,

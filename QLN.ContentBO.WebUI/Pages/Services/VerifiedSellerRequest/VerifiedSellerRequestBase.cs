@@ -60,12 +60,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
 
     protected async Task HandleStatusChange(int? status)
     {
-      // currentPage = 1;
-      // Status = status;
-      // IsPromoted = status == 4;
-      // IsFeatured = status == 5;
-      // PaginatedData = await LoadP2PListingsAsync();
-      // StateHasChanged();
+      currentPage = 1;
+      pageSize = 12;
+      Status = status;
+      Listings = await GetVerifiedSellerRequest();
+      StateHasChanged();
     }
 
     protected async Task HandlePageChange(int newPage)
@@ -93,7 +92,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
     {
       try
       {
-        var response = await _serviceBOService.GetVerifiedSellerRequestAsync(4);
+        var response = await _serviceBOService.GetAllCompaniesAsync(
+            isBasicProfile: false,
+            status: Status,
+            vertical: 4,
+            subVertical: null
+        );
         if (response.IsSuccessStatusCode)
         {
           var result = await response.Content.ReadFromJsonAsync<List<VerificationProfileStatus>>();
@@ -102,12 +106,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
       }
       catch (Exception ex)
       {
-        Logger.LogError(ex, "LoadP2PListingsAsync");
+        Logger.LogError(ex, "GetVerifiedSellerRequest");
       }
 
       return new List<VerificationProfileStatus>();
     }
-
-
   }
 }

@@ -264,20 +264,43 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage> GetVerifiedSellerRequestAsync(int vertical)
+        public async Task<HttpResponseMessage> GetAllCompaniesAsync(
+    bool? isBasicProfile = null,
+    int? status = null,
+    int? vertical = null,
+    int? subVertical = null)
         {
             try
             {
-                var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyverified/profileStatusbyverified?vertical={vertical}");
+                var queryParams = new List<string>();
+
+                if (isBasicProfile.HasValue)
+                    queryParams.Add($"isBasicProfile={isBasicProfile.Value.ToString().ToLower()}");
+
+                if (status.HasValue)
+                    queryParams.Add($"status={status.Value}");
+
+                if (vertical.HasValue)
+                    queryParams.Add($"vertical={vertical.Value}");
+
+                if (subVertical.HasValue)
+                    queryParams.Add($"subVertical={subVertical.Value}");
+
+                var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
+
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyprofile/getallcompanies{queryString}");
+                Console.Write("the query string is " + queryString);
+
                 var response = await _httpClient.SendAsync(request);
                 return response;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "GetProfileStatusByVerifiedAsync");
+                Logger.LogError(ex, "GetAllCompaniesAsync");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
         public async Task<HttpResponseMessage> UpdateServiceStatus(BulkModerationRequest requestModel)
         {
             try

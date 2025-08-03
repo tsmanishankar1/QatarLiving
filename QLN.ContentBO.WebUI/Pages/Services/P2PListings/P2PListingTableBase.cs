@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Pages.Services.PreviewServiceAd;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
@@ -16,6 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
+         [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
         public string? rejectReason { get; set; } = string.Empty;
         [Parameter]
@@ -108,9 +110,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             Navigation.NavigateTo($"/manage/services/editform/{item.Id}");
         }
-        public void OnPreview(ServiceAdSummaryDto item)
-        {
-        }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
             var parameters = new DialogParameters
@@ -131,6 +130,46 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
+        protected async Task OpenPreviewDialog(ServiceAdSummaryDto source)
+        {
+            AdModel = MapToItemEditAdPost(source);
+            var parameters = new DialogParameters { { "AdModel", AdModel } };
+            var options = new DialogOptions
+            {
+                FullScreen = true,
+                CloseButton = true,
+                MaxWidth = MaxWidth.ExtraLarge,
+            };
+            var dialog = DialogService.Show<PreviewAd>("Ad Preview", parameters, options);
+            await dialog.Result;
+        }
+    public ItemEditAdPost MapToItemEditAdPost(ServiceAdSummaryDto source)
+    {
+      var item = new ItemEditAdPost
+      {
+        Id = source.Id.ToString(),
+        UserId = source.UserId,
+        UserName = source.UserName,
+        Title = source.AdTitle,
+        Status = (int?)source.Status,
+        IsPromoted = source.IsPromoted ?? false,
+        IsFeatured = source.IsFeatured ?? false,
+        CreatedAt = source.CreationDate,
+        RefreshExpiryDate = source.DateExpiry, 
+        Images = source.ImageUpload != null
+              ? source.ImageUpload.Select(img => new AdImage
+              {
+                Id = img.Id ?? Guid.NewGuid(),
+                Url = img.Url ?? string.Empty,
+                AdImageFileName = System.IO.Path.GetFileName(img.Url ?? string.Empty),
+                Order = img.Order
+              }).ToList()
+              : new List<AdImage>()
+      };
+
+      return item;
+    }
+
         protected async Task UpdateStatus(BulkModerationRequest statusRequest)
         {
             var response = await _serviceBOService.UpdateServiceStatus(statusRequest);
