@@ -3324,9 +3324,9 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd != null)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetItemAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
@@ -3369,9 +3369,9 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd!= null)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetPrelovedAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
@@ -3414,9 +3414,9 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd != null)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetCollectiblesAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
@@ -3459,9 +3459,9 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd != null)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetDealsAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
