@@ -141,14 +141,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 // var payloadJson = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
                 // Logger.LogInformation("Classified Payload:\n{Payload}", payloadJson);
 
-                var responses = await ClassifiedService.SearchClassifiedsViewListingAsync("getall-items", payload);
+                var responses = await ClassifiedService.SearchClassifiedsViewListingAsync("getall-collectibles", payload);
 
                 if (responses.Any() && responses[0].IsSuccessStatusCode)
                 {
-                    var result = await responses[0].Content.ReadFromJsonAsync<ClassifiedsApiResponse>();
+                    var result = await responses[0].Content.ReadFromJsonAsync<ClassifiedsCollectiblesApiResponse>();
                     if (result != null)
                     {
-                        ClassifiedItems = result.ClassifiedsItems;
+                        ClassifiedItems = result.ClassifiedsCollectibles;
                         TotalCount = result.TotalCount;
                         return;
                     }

@@ -187,13 +187,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
 
-             Ad.CertificateFileName = file.Name;
-             Ad.Certificate = Convert.ToBase64String(ms.ToArray());
+             Ad.AuthenticityCertificateName = file.Name;
+             Ad.AuthenticityCertificateUrl = Convert.ToBase64String(ms.ToArray());
         }
         protected void ClearFile()
         {
-            Ad.CertificateFileName = null;
-            Ad.Certificate = null;
+            Ad.AuthenticityCertificateName = null;
+            Ad.AuthenticityCertificateUrl = null;
         }
 
     }

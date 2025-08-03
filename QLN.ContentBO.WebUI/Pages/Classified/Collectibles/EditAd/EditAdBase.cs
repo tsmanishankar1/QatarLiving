@@ -204,9 +204,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             var isValid = editContext.Validate();
             if (adPostModel.HasAuthenticityCertificate)
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                if (string.IsNullOrWhiteSpace(adPostModel.AuthenticityCertificateName))
                 {
-                    messageStore.Add(() => adPostModel.Certificate, "Certificate is required when authenticity is claimed.");
+                    messageStore.Add(() => adPostModel.AuthenticityCertificateName, "Certificate is required when authenticity is claimed.");
                     isValid = false;
                 }
             }
@@ -317,6 +317,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             {
                 IsSaving = true;
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
+                string? certificateUrl = await UploadCertificateAsync();
+                adPostModel.AuthenticityCertificateUrl = certificateUrl; // save it
                 var payload = new
                 {
                     id = adPostModel.Id,
@@ -341,6 +343,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
+                    hasAuthenticityCertificate = adPostModel.HasAuthenticityCertificate,
+                    authenticityCertificateName = adPostModel.AuthenticityCertificateName,
+                    authenticityCertificateUrl = adPostModel.AuthenticityCertificateUrl,
+                    hasWarranty = adPostModel.HasWarranty,
+                    isHandmade = adPostModel.IsHandmade,
                     contactNumberCountryCode = adPostModel.ContactNumberCountryCode,
                     contactNumber = adPostModel.ContactNumber,
                     contactEmail = adPostModel.ContactEmail,
@@ -443,7 +450,39 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         {
             return url.Contains(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
         }
+       private async Task<string?> UploadCertificateAsync()
+        {
+            if (adPostModel.AuthenticityCertificateUrl == null)
+                return null;
+                 //  Skip upload if already a blob URL
+                if (IsBlobUrl(adPostModel.AuthenticityCertificateUrl))
+                {
+                    return adPostModel.AuthenticityCertificateUrl;
+                }
+            var fileUploadModel = new FileUploadModel
+            {
+                Container = "classifieds-images",
+                File = adPostModel.AuthenticityCertificateUrl
+            };
 
+            var uploadResponse = await FileUploadService.UploadFileAsync(fileUploadModel);
+
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                Logger.LogWarning("Certificate upload failed: " + result?.Message);
+            }
+            else
+            {
+                Logger.LogWarning("Certificate upload HTTP error");
+            }
+
+            return null;
+        }
 
         private async Task LoadCategoryTreesAsync()
         {
