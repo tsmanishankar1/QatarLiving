@@ -2631,10 +2631,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
@@ -2824,10 +2831,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsCollectibles).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
