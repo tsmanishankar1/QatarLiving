@@ -1,6 +1,7 @@
 ﻿@inherits UserProfileBase
 @page "/manage/classified/preloved/user/profile"
 @layout QLN.ContentBO.WebUI.Pages.Classified.PreLoved.PreLovedLayout
+@using QLN.ContentBO.WebUI.Components.ToggleTabs;
 
 <div style="margin-top:10px">
     <div class="search-sort-container">
@@ -24,8 +25,18 @@
         </div>
     </div>
 </div>
+<ToggleTabs Options="@tabOptions"
+            ActiveValue="@selectedTab"
+            OnChange="@OnTabChanged" />
 <div style="margin-top:10px">
-    <UserProfileTable />
+    <UserProfileTable Listings="Listings"
+                      IsLoading="IsLoading"
+                      IsEmpty="IsEmpty"
+                      TotalCount="TotalCount"
+                      SelectedTab=@SelectedTab
+                      OnTabChanged="HandleTabChange"
+                      OnPageChanged="HandlePageChanged"
+                      OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 <style>

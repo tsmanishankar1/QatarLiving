@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.ToggleTabs;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
 {
@@ -18,6 +20,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
 
         protected bool showCreatedPopover { get; set; } = false;
         protected bool showPublishedPopover { get; set; } = false;
+        protected string SelectedTab { get; set; } = ((int)CompanyStatus.Rejected).ToString();
 
         protected void OnSearchChanged(ChangeEventArgs e)
         {
@@ -29,6 +32,26 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
             SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
                 ? Icons.Material.Filled.ArrowUpward
                 : Icons.Material.Filled.ArrowDownward;
+
+        }
+        protected string selectedTab = "verificationrequests";
+        protected List<ToggleTabs.TabOption> tabOptions = new()
+        {
+            new() { Label = "Verification Requests", Value = "verificationrequests" },
+            new() { Label = "Rejected", Value = "rejected" },
+            new() { Label = "Approved", Value = "approved" },
+        };
+        protected async Task OnTabChanged(string newTab)
+        {
+            selectedTab = newTab;
+
+            int? status = newTab switch
+            {
+                "verificationrequests" => 1,
+                "rejected" => 2,
+                "approved" => 3,
+                _ => null
+            };
 
         }
 
