@@ -391,12 +391,16 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var queryParams = new List<string>
-                {
-                    $"pageNumber={pageNumber ?? 1}",
-                    $"perPage={pageSize ?? 12}"
-                };
+        {
+            $"pageNumber={pageNumber ?? 1}",
+            $"pageSize={pageSize ?? 12}"
+        };
+
+               
                 if (!string.IsNullOrWhiteSpace(searchTerm))
-                    queryParams.Add($"searchTitle={Uri.EscapeDataString(searchTerm)}");
+                    queryParams.Add($"searchTerm={Uri.EscapeDataString(searchTerm)}");
+
+              
                 if (!string.IsNullOrWhiteSpace(sortOrder))
                     queryParams.Add($"sortBy={Uri.EscapeDataString(sortOrder)}");
 

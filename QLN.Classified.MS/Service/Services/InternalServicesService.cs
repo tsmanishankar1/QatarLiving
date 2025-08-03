@@ -149,11 +149,35 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                ValidateCommon(dto);
+                string? categoryName = null;
+                string? l1CategoryName = null;
+                string? l2CategoryName = null;
+                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                    ConstantValues.Services.StoreName,
+                    dto.CategoryId.ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (mainCategory != null)
+                {
+                    dto.CategoryName = mainCategory.Category;
+                    var l1Category = mainCategory.L1Categories?.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                    if (l1Category != null)
+                    {
+                        dto.L1CategoryName = l1Category.Name;
+                        l1CategoryName = l1Category.Name;
+                        var l2Category = l1Category.L2Categories?.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                        if (l2Category != null)
+                        {
+                            dto.L2CategoryName = l2Category.Name;
+                            l2CategoryName = l2Category.Name;
+                        }
+                    }
+                }
+
                 var allAdKeys = await _dapr.GetStateAsync<List<string>>(
                    ConstantValues.Services.StoreName,
                    ConstantValues.Services.ServicesIndexKey,
@@ -169,7 +193,7 @@ namespace QLN.Classified.MS.Service.Services
                     );
 
                     if (existingAd != null &&
-                        existingAd.CreatedBy == dto.CreatedBy &&
+                        existingAd.CreatedBy == uid &&
                         existingAd.L2CategoryId == dto.L2CategoryId &&
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
@@ -180,11 +204,11 @@ namespace QLN.Classified.MS.Service.Services
                 var entity = new ServicesModel
                 {
                     AdType = dto.AdType,
-                    Id = dto.Id,
+                    Id = Guid.NewGuid(),
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
-                    CategoryName = dto.CategoryName,
+                    CategoryName = mainCategory.Category,
                     L1CategoryName = dto.L1CategoryName,
                     L2CategoryName = dto.L2CategoryName,
                     IsPriceOnRequest = dto.IsPriceOnRequest,
@@ -202,27 +226,20 @@ namespace QLN.Classified.MS.Service.Services
                     BuildingNumber = dto.BuildingNumber,
                     LicenseCertificate = dto.LicenseCertificate,
                     Comments = dto.Comments,
-                    SubscriptionId = dto.SubscriptionId,
+                    SubscriptionId = uid,
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
-                    UserName = dto.UserName,
+                    UserName = userName,
                     Status = dto.Status,
-                    IsFeatured = dto.IsFeatured,
-                    IsPromoted = dto.IsPromoted,
-                    IsRefreshed = dto.IsRefreshed,
-                    RefreshExpiryDate = dto.RefreshExpiryDate,
-                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                    PromotedExpiryDate = dto.PromotedExpiryDate,
-                    ExpiryDate = dto.ExpiryDate,
                     IsActive = true,
-                    CreatedBy = dto.CreatedBy,
-                    CreatedAt = dto.CreatedAt,
-                    PublishedDate = dto.PublishedDate ?? DateTime.UtcNow
+                    CreatedBy = uid,
+                    CreatedAt = DateTime.UtcNow
                 };
+                ValidateCommon(entity);
 
-                var key = dto.Id.ToString();
+                var key = entity.Id.ToString();
                 await _dapr.SaveStateAsync(
                     ConstantValues.Services.StoreName,
                     key,
@@ -328,7 +345,6 @@ namespace QLN.Classified.MS.Service.Services
         {
             try
             {
-                ValidateCommon(dto);
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Service Ad ID is required for update.");
 
@@ -338,6 +354,8 @@ namespace QLN.Classified.MS.Service.Services
                     key,
                     cancellationToken: cancellationToken
                 );
+                if (existing == null)
+                    throw new InvalidDataException("Service Ad not found for update.");
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -361,8 +379,7 @@ namespace QLN.Classified.MS.Service.Services
                         }
                     }
                 }
-                if (existing == null)
-                    throw new InvalidDataException("Service Ad not found for update.");
+                ValidateCommon(dto);
 
                 var entity = new ServicesModel
                 {
@@ -913,6 +930,20 @@ namespace QLN.Classified.MS.Service.Services
                         if (ad.Status == ServiceStatus.Published)
                         {
                             ad.Status = ServiceStatus.Unpublished;
+                            shouldUpdate = true;
+                        }
+                        break;
+                    case BulkModerationAction.UnPromote:
+                        if (ad.Status == ServiceStatus.Promote)
+                        {
+                            ad.Status = ServiceStatus.UnPromote;
+                            shouldUpdate = true;
+                        }
+                        break;
+                        case BulkModerationAction.UnFeature:
+                        if (ad.Status == ServiceStatus.Feature)
+                        {
+                            ad.Status = ServiceStatus.UnFeature;
                             shouldUpdate = true;
                         }
                         break;

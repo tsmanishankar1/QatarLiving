@@ -123,23 +123,19 @@ namespace QLN.SearchService.Service
             {
                 var (regularFilters, jsonFilters) = await SeparateFiltersAsync(req.Filters, indexName);
 
-                // Auto-detect search term type and modify search accordingly (only for GetAllAsync)
                 var searchDetection = DetectSearchType(req.Text);
                 var modifiedRequest = req;
 
                 if (searchDetection.Type != SearchType.General && !string.IsNullOrEmpty(searchDetection.Filter))
                 {
-                    // Add the detected filter to regular filters
                     if (regularFilters == null)
                         regularFilters = new Dictionary<string, object>();
 
-                    // Parse and add the filter
                     if (searchDetection.Filter.Contains("search.ismatch"))
                     {
-                        // For partial matches, use the search term directly with search.ismatch
                         modifiedRequest = new CommonSearchRequest
                         {
-                            Text = searchDetection.SearchTerm, // Use the detected search term
+                            Text = searchDetection.SearchTerm,
                             Filters = req.Filters,
                             PageNumber = req.PageNumber,
                             PageSize = req.PageSize,
@@ -148,7 +144,6 @@ namespace QLN.SearchService.Service
                     }
                     else
                     {
-                        // For exact matches
                         var filterParts = searchDetection.Filter.Split(new[] { " eq " }, StringSplitOptions.RemoveEmptyEntries);
                         if (filterParts.Length == 2)
                         {
@@ -157,10 +152,9 @@ namespace QLN.SearchService.Service
                             regularFilters[fieldName] = fieldValue;
                         }
 
-                        // Clear the text search for exact matches
                         modifiedRequest = new CommonSearchRequest
                         {
-                            Text = "*", // Use wildcard for exact matches
+                            Text = "*",
                             Filters = req.Filters,
                             PageNumber = req.PageNumber,
                             PageSize = req.PageSize,
@@ -170,10 +164,9 @@ namespace QLN.SearchService.Service
                 }
                 else
                 {
-                    // For empty search or general search, use wildcard to get all records
                     modifiedRequest = new CommonSearchRequest
                     {
-                        Text = string.IsNullOrWhiteSpace(req.Text) ? "*" : req.Text, // Use wildcard for empty search, keep original for non-empty
+                        Text = string.IsNullOrWhiteSpace(req.Text) ? "*" : req.Text,
                         Filters = req.Filters,
                         PageNumber = req.PageNumber,
                         PageSize = req.PageSize,
@@ -188,35 +181,35 @@ namespace QLN.SearchService.Service
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsItem = items,
-                        true), // isGetAllMethod = true
+                        true),
 
                     ConstantValues.IndexNames.ClassifiedsPrelovedIndex => await HandleSearchWithJsonFilters<ClassifiedsPrelovedIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsPrelovedItem = items,
-                        true), // isGetAllMethod = true
+                        true), 
 
                     ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => await HandleSearchWithJsonFilters<ClassifiedsCollectiblesIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsCollectiblesItem = items,
-                        true), // isGetAllMethod = true
+                        true), 
 
                     ConstantValues.IndexNames.ClassifiedsDealsIndex => await HandleSearchWithJsonFilters<ClassifiedsDealsIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsDealsItem = items,
-                        true), // isGetAllMethod = true
+                        true), 
 
                     ConstantValues.IndexNames.ServicesIndex => await HandleSearchWithJsonFilters<ServicesIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ServicesItems = items,
-                        true), // isGetAllMethod = true
+                        true),
 
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
@@ -260,7 +253,6 @@ namespace QLN.SearchService.Service
 
             searchTerm = searchTerm.Trim();
 
-            // Check if it's a complete Ad ID (GUID format)
             if (IsAdId(searchTerm))
             {
                 return new SearchDetectionResult
@@ -271,84 +263,76 @@ namespace QLN.SearchService.Service
                 };
             }
 
-            // Check if it's a partial Ad ID (GUID-like pattern)
             if (IsPartialAdId(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.AdId,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all fields including Id
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
-            // Check if it's an email format - search in searchable fields
             if (IsEmail(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
-            // Check if it's a partial email
             if (IsPartialEmail(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it's a phone number format - search in searchable fields
             if (IsPhoneNumber(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
-            // Check if it's a partial phone number
             if (IsPartialPhoneNumber(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
-            // Check if it looks like a UserId (numeric) - search in UserId field specifically
             if (IsUserId(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'" // Exact match for UserId
+                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'" 
                 };
             }
 
-            // Check if it's a username pattern - could be in UserName field
             if (IsUsername(searchTerm))
             {
                 return new SearchDetectionResult
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" // Search across all searchable fields including UserName
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
                 };
             }
 
-            // Default to general search
             return new SearchDetectionResult
             {
                 Type = SearchType.General,
@@ -359,38 +343,30 @@ namespace QLN.SearchService.Service
 
         private bool IsUserId(string input)
         {
-            // Check if it's a numeric UserId (like "8353026" from your data)
             if (string.IsNullOrWhiteSpace(input)) return false;
 
-            // Check if it's purely numeric and reasonable length for a user ID
             return input.All(char.IsDigit) && input.Length >= 4 && input.Length <= 15;
         }
 
         private bool IsAdId(string input)
         {
-            // Check if input is a valid GUID format
             if (string.IsNullOrWhiteSpace(input)) return false;
 
-            // Try to parse as GUID
             return Guid.TryParse(input, out _);
         }
 
         private bool IsPartialAdId(string input)
         {
-            // Check if it looks like a partial GUID (hexadecimal characters with possible dashes)
             if (string.IsNullOrWhiteSpace(input) || input.Length < 4) return false;
 
-            // Remove dashes and check if it's hexadecimal
             var cleaned = input.Replace("-", "");
             if (cleaned.Length < 4 || cleaned.Length > 32) return false;
 
-            // Check if all characters are hexadecimal
             return cleaned.All(c => char.IsDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'));
         }
 
         private bool IsOrderId(string input)
         {
-            // Customize this based on your Order ID format
             if (input.Length < 3) return false;
 
             var orderPrefixes = new[] { "ORD", "ord", "ORDER", "order" };
@@ -400,12 +376,10 @@ namespace QLN.SearchService.Service
 
         private bool IsPartialOrderId(string input)
         {
-            // Check if it starts with partial order prefixes or looks like order ID pattern
             if (string.IsNullOrWhiteSpace(input) || input.Length < 2) return false;
 
             var orderPrefixes = new[] { "ORD", "ord", "ORDER", "order" };
 
-            // Check if it's a partial prefix match or contains order-like pattern
             return orderPrefixes.Any(prefix =>
                 prefix.StartsWith(input, StringComparison.OrdinalIgnoreCase) ||
                 input.StartsWith(prefix.Substring(0, Math.Min(prefix.Length, input.Length)), StringComparison.OrdinalIgnoreCase));
@@ -430,23 +404,18 @@ namespace QLN.SearchService.Service
         {
             if (string.IsNullOrWhiteSpace(input) || input.Length < 2) return false;
 
-            // Check if it contains @ symbol or looks like email parts
             if (input.Contains("@")) return true;
 
-            // Check if it looks like an email domain (contains dot and valid characters)
             if (input.Contains(".") && input.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '-'))
                 return true;
 
-            // Check if it looks like email username part (before @)
             return input.All(c => char.IsLetterOrDigit(c) || c == '.' || c == '_' || c == '%' || c == '+' || c == '-');
         }
 
         private bool IsPhoneNumber(string input)
         {
-            // Remove common phone number characters
             var cleaned = System.Text.RegularExpressions.Regex.Replace(input, @"[\s\-\(\)\+]", "");
 
-            // Check if remaining characters are digits and reasonable length
             return cleaned.All(char.IsDigit) && cleaned.Length >= 7 && cleaned.Length <= 15;
         }
 
@@ -454,18 +423,14 @@ namespace QLN.SearchService.Service
         {
             if (string.IsNullOrWhiteSpace(input) || input.Length < 3) return false;
 
-            // Remove common phone number characters
             var cleaned = System.Text.RegularExpressions.Regex.Replace(input, @"[\s\-\(\)\+]", "");
 
-            // Check if it's mostly digits and reasonable length for partial phone
             return cleaned.Length >= 3 && cleaned.Length <= 15 &&
-                   cleaned.Count(char.IsDigit) >= (cleaned.Length * 0.7); // At least 70% digits
+                   cleaned.Count(char.IsDigit) >= (cleaned.Length * 0.7);
         }
 
         private bool IsUsername(string input)
         {
-            // Username typically contains letters, numbers, underscore, dash
-            // Not an email, not a phone, not an ID, not a UserId
             if (input.Length < 2 || input.Length > 50) return false;
 
             var usernameRegex = new System.Text.RegularExpressions.Regex(@"^[a-zA-Z0-9_-\s]+$");
@@ -473,7 +438,7 @@ namespace QLN.SearchService.Service
                    !IsEmail(input) &&
                    !IsPhoneNumber(input) &&
                    !IsAdId(input) &&
-                   !IsUserId(input) && // Don't treat numeric IDs as usernames
+                   !IsUserId(input) && 
                    !IsPartialEmail(input) &&
                    !IsPartialPhoneNumber(input) &&
                    !IsPartialAdId(input);
@@ -573,7 +538,6 @@ namespace QLN.SearchService.Service
             }
         }
 
-        // Remove the GetSearchFieldForType method since we're not using SearchFields anymore
 
         private async Task<(Dictionary<string, object> regularFilters, Dictionary<string, object> jsonFilters)>
             SeparateFiltersAsync(Dictionary<string, object> filters, string indexName)

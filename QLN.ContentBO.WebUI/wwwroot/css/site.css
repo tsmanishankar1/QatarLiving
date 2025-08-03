@@ -641,11 +641,9 @@ a, .btn-link {
         height: 50px;
     }
     .custom-add-btn {
-        background-color: #FF7F38;
         font-size: 16px;
         font-weight: 600;
-        color: white;
-        text-transform: none;
+        text-transform: capitalize !important;
     }
     .custom-close-btn {
         border-color: #D5D7DA;
@@ -1011,8 +1009,9 @@ a, .btn-link {
 }
 
 .add-button {
-    text-transform: capitalize;
+    text-transform: capitalize !important;
     height: 44px;
+    box-shadow: none !important;
 }
 
 .popover-button {
@@ -1086,6 +1085,7 @@ a, .btn-link {
 .custom-button {
     width: 100%;
     text-transform: capitalize;
+    box-shadow: none !important;
 }
 
 .form-group {
@@ -1217,11 +1217,6 @@ a, .btn-link {
     justify-content: space-between;
     width: 100%;
     gap: 8px;
-}
-
-.add-button {
-    text-transform: capitalize;
-    height: 44px;
 }
 
 .popover-button {
@@ -1411,10 +1406,6 @@ a, .btn-link {
     width: 100%;
     gap: 8px;
 }
-.add-button{
-    text-transform: capitalize !important;
-    height: 44px;
-}
 .popover-button {
     width: 100%;
     text-transform: capitalize !important;
@@ -1581,6 +1572,7 @@ a, .btn-link {
         border-radius: 4px !important;      /* slightly rounded */
         padding: 8px 20px !important;
         min-width: 120px;
+        box-shadow: none !important;
     }
 /* //CreateFormList.razor */
 
@@ -1700,18 +1692,37 @@ a, .btn-link {
 
     .checkbox-right {
         font-size: 14px;
-        color: #444;
+        color: var(--color-text-heading);
+        font-weight: 400;
     }
 
         .checkbox-right a {
             color: #F37021;
             text-decoration: none;
-            font-weight: 500;
+            font-weight: 400;
         }
 
         .checkbox-right a:hover {
                 text-decoration: underline;
         }
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: var(--color-text-heading);
+            font-weight: 400;
+        }
+
 /* //EditAdAction.razor */
     .ad-preview-container {
         display: flex;
@@ -1755,6 +1766,10 @@ a, .btn-link {
         font-size: 18px;
         color: var(--color-text-heading);
         margin-bottom: 4px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .status-chip {
@@ -1779,6 +1794,7 @@ a, .btn-link {
 
     .action-btn {
         text-transform: capitalize !important;
+        box-shadow: none !important;
         font-weight: 500;
         border-radius: 6px;
         padding: 6px 14px;

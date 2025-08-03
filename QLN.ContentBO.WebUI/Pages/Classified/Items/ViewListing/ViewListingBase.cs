@@ -8,13 +8,16 @@ using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Text.Json;
+using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using MudBlazor;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
 {
     public partial class ViewListingBase : ComponentBase
     {
-        [Inject]
-        public IClassifiedService ClassifiedService { get; set; }
+        [Inject] protected IDialogService DialogService { get; set; } = default!;
+        [Inject] protected NavigationManager NavManager { get; set; } = default!;
+        [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] private ILogger<ViewListingBase> Logger { get; set; } = default!;
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending { get; set; } = true;
@@ -92,7 +95,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
             await LoadClassifiedsAsync();
         }
 
-          private async Task LoadClassifiedsAsync()
+        private async Task LoadClassifiedsAsync()
         {
             try
             {
@@ -105,14 +108,14 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                     ["pageSize"] = PageSize
                 };
 
-                 // Declare filters regardless of selectedTab
+                // Declare filters regardless of selectedTab
                 var filters = GetFiltersForTab();
 
-              if (DateCreatedFilter.HasValue)
-                filters["createdAt"] = DateCreatedFilter.Value.ToString("yyyy-MM-dd");
+                if (DateCreatedFilter.HasValue)
+                    filters["createdAt"] = DateCreatedFilter.Value.ToString("yyyy-MM-dd");
 
-              if (DatePublishedFilter.HasValue)
-                filters["publishedDate"] = DatePublishedFilter.Value.ToString("yyyy-MM-dd");
+                if (DatePublishedFilter.HasValue)
+                    filters["publishedDate"] = DatePublishedFilter.Value.ToString("yyyy-MM-dd");
 
 
                 //  Only add if there's at least one filter
@@ -151,5 +154,35 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 IsLoading = false;
             }
         }
+          protected async Task HandleAddClicked()
+        {
+            var parameters = new DialogParameters
+        {
+            { "Title", "Create Ad" },
+            { "Label", "User Email*" },
+            { "ButtonText", "Continue" },
+            { "ListItems", new List<DropdownItem>
+                {
+                    new() { Id = 1, Label = "john.doe@hotmail.com" },
+                    new() { Id = 2, Label = "jane.doe@gmail.com" },
+                    new() { Id = 3, Label = "alice@example.com" },
+                    new() { Id = 4, Label = "bob@workmail.com" },
+                    new() { Id = 5, Label = "emma@company.com" }
+                }
+            },
+            { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
+        };
+
+            DialogService.Show<AutoSelectDialog>("", parameters);
+        }
+
+
+        private Task HandleSelect(DropdownItem selected)
+        {
+            var targetUrl = $"/manage/classified/items/createform?email={selected.Label}";
+            NavManager.NavigateTo(targetUrl);
+            return Task.CompletedTask;
+        }
+        
     }
 }

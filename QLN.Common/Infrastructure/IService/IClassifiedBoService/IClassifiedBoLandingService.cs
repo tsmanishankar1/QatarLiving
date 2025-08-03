@@ -1,6 +1,7 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,21 +50,49 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
-        Task<TransactionListResponseDto> GetTransactionsAsync(
-                    string subVertical,
-                    int pageNumber,
-                    int pageSize,
-                    string? searchText,
-                    string? transactionType,
-                    string? dateCreated,
-                    string? datePublished,
-                    string? dateStart,
-                    string? dateEnd,
-                    string? status,
-                    string? paymentMethod,
-                    string sortBy,
-                    string sortOrder,
-                    CancellationToken cancellationToken = default);
+        Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
+            string? sortBy = null, CancellationToken cancellationToken = default);
+
+        Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(string? sortBy = "CreationDate", string? search = null, DateTime? fromDate = null,
+            DateTime? toDate = null, DateTime? publishedFrom = null, DateTime? publishedTo = null, int? status = null, bool? isFeatured = null,
+            bool? isPromoted = null, int pageNumber = 1, int pageSize = 12, CancellationToken cancellationToken = default);
+
+        Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(int? pageNumber = 1, int? pageSize = 12, string? search = null,
+string? sortBy = null, CancellationToken cancellationToken = default);
+
+        Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
+            int? pageNumber = 1,
+            int? pageSize = 12,
+            string? search = null,
+            string? sortBy = null, string? status = null,
+            bool? isPromoted = null,
+            bool? isFeatured = null,
+            CancellationToken cancellationToken = default);
+
+        Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default);
+
+        Task<string> BulkPrelovedAction(BulkActionRequest request, string userId, CancellationToken ct);
+
+        Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
+                 int pageNumber,
+                 int pageSize,
+                 string? searchText,
+                 string? dateCreated,
+                 string? datePublished,
+                 string? dateStart,
+                 string? dateEnd,
+                 string? status,
+                 string sortBy,
+                 string sortOrder,
+                 CancellationToken cancellationToken = default);
+        Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
+       
+
+        Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default);
+        Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType,string? filterDate,  CancellationToken cancellationToken = default);
+        Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
+        Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
+        Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
     }
 }
 

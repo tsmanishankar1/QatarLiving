@@ -42,7 +42,7 @@
 
         @if (!string.IsNullOrEmpty(reports.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
         {
-            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
+            <MudSelect T="string"Class="white-bg" Label="Section" Variant="Variant.Outlined"
                 Value="@reports.SelectedSubSubcategoryId"
                 ValueChanged="@OnSubSubCategoryChanged"
                 For="@(() => reports.SelectedSubSubcategoryId)"

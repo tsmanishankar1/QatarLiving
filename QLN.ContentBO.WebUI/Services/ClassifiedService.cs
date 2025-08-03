@@ -118,7 +118,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments,  string vertical)
+        public async Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string vertical)
         {
             try
             {
@@ -173,7 +173,7 @@ namespace QLN.ContentBO.WebUI.Services
                 var options = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    WriteIndented = true 
+                    WriteIndented = true
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
@@ -284,12 +284,30 @@ namespace QLN.ContentBO.WebUI.Services
                 return responses;
             }
         }
-        public async Task<HttpResponseMessage?> PerformBulkActionAsync(object payload)
+        public async Task<List<HttpResponseMessage>> SearchClassifiedsViewTransactionAsync(object searchPayload)
+        {
+            var responses = new List<HttpResponseMessage>();
+
+            try
+            {
+                var endpoint = $"/api/v2/classifiedbo/items/transactions";
+                var response = await _httpClient.PostAsJsonAsync(endpoint, searchPayload);
+                responses.Add(response);
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"SearchClassifiedsViewTransactionAsync Error for " + ex);
+                responses.Add(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+                return responses;
+            }
+        }
+        public async Task<HttpResponseMessage?> PerformBulkActionAsync(string vertical, object payload)
         {
             try
             {
                 var json = JsonSerializer.Serialize(payload);
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-action")
+                var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v2/classifiedbo/{vertical}")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -325,7 +343,174 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/{vertical}/{adId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetAdByIdAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
+        public async Task<HttpResponseMessage?> GetAllZonesAsync()
+        {
+            try
+            {
+                return await _httpClient.GetAsync("/api/v2/location/getAllZones");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("GetAllZonesAsync Error: " + ex);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetAddressByDetailsAsync(int zone, int street, int building, string location)
+        {
+            try
+            {
+                var url = $"/api/v2/location/findAddress?zone={zone}&street={street}&building={building}&location={Uri.EscapeDataString(location)}";
+                return await _httpClient.GetAsync(url);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetAddressByDetailsAsync Error: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/{vertical}/post";
+
+                // Create request manually with correct headers
+                using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = JsonContent.Create(payload, options: new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    })
+                };
+
+                // Send request
+                var response = await _httpClient.SendAsync(request);
+
+                Console.WriteLine($"Post response status: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error body: {errorBody}");
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("HTTP request timed out.");
+                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unhandled error in PostClassifiedItemAsync: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/{vertical}/update";
+
+                using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
+                {
+                    Content = JsonContent.Create(payload, options: new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    })
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                Console.WriteLine($"Update response status: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error body: {errorBody}");
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("HTTP request timed out.");
+                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> UplodAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+                var request = new HttpRequestMessage(HttpMethod.Post, $"/files/upload")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                Console.WriteLine("PostAdAsync Request Payload:");
+                Console.WriteLine(json);
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PostAdAsync: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical)
+        {
+            try
+            {
+                var url = $"/api/classified/items/refresh/{adId}?subVertical={subVertical}";
+                //  _logger.LogInformation("Calling RefreshAd API at URL: {Url}", url);
+                var response = await _httpClient.PostAsync(url, null); // No body required
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to refresh ad {adId}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
 
     }
 }

@@ -108,9 +108,11 @@ namespace QLN.Backend.API.Service.ServiceBoService
       int? pageSize = 12,
       string? search = null,
       string? sortBy = null,
+      DateTime? startDate = null,
+      DateTime? endDate = null,
+      string? subscriptionType = null,
       CancellationToken cancellationToken = default)
         {
-            // Properly encode query params
             var queryParams = new List<string>
     {
         $"pageNumber={pageNumber ?? 1}",
@@ -118,14 +120,19 @@ namespace QLN.Backend.API.Service.ServiceBoService
     };
 
             if (!string.IsNullOrWhiteSpace(search))
-            {
                 queryParams.Add($"search={Uri.EscapeDataString(search)}");
-            }
 
             if (!string.IsNullOrWhiteSpace(sortBy))
-            {
                 queryParams.Add($"sortBy={Uri.EscapeDataString(sortBy)}");
-            }
+
+            if (startDate.HasValue)
+                queryParams.Add($"startDate={Uri.EscapeDataString(startDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (endDate.HasValue)
+                queryParams.Add($"endDate={Uri.EscapeDataString(endDate.Value.ToString("yyyy-MM-dd"))}");
+
+            if (!string.IsNullOrWhiteSpace(subscriptionType))
+                queryParams.Add($"subscriptionType={Uri.EscapeDataString(subscriptionType)}");
 
             var url = $"/api/servicebo/getalladpayments?{string.Join("&", queryParams)}";
 
@@ -152,9 +159,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (result == null)
-                {
                     throw new InvalidOperationException("Failed to deserialize response content to PaginatedResult.");
-                }
 
                 return result;
             }
@@ -310,9 +315,9 @@ namespace QLN.Backend.API.Service.ServiceBoService
             }
         }
         public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(
-    VerticalType verticalId,
-    SubVertical? subVerticalId,
-    CancellationToken cancellationToken = default)
+        VerticalType verticalId,
+        SubVertical? subVerticalId,
+        CancellationToken cancellationToken = default)
         {
             try
             {
@@ -321,7 +326,7 @@ namespace QLN.Backend.API.Service.ServiceBoService
 
                 return await _dapr.InvokeMethodAsync<List<CompanyProfileDto>>(
                     HttpMethod.Get,
-                    ConstantValues.CompanyServiceAppId,
+                    ConstantValues.Company.CompanyServiceAppId,
                     url,
                     cancellationToken);
             }
