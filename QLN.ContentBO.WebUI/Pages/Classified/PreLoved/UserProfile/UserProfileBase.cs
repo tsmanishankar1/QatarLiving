@@ -126,8 +126,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.UserProfile
                     SearchText = SearchText,
                     CreationDate = dateCreated,
                     PublishedDate = datePublished,
-                    Vertical = (int)VerticalType.Classifieds,
-                    SubVertical = (int)SubVerticalType.Preloved
+                    Vertical = (int)VerticalTypeEnum.Classifieds,
+                    SubVertical = (int)SubVerticalTypeEnum.Preloved
                 };
 
 

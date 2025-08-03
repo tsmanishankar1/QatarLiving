@@ -430,6 +430,50 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+        public async Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getallcompanies?vertical={request.Vertical}&subVertical={request.SubVertical}";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-preloved-action")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
         {
             try
@@ -577,11 +621,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public async Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
-        {
-            try
-            {
-                var url = $"/api/companyprofile/getallcompanies?vertical={request.Vertical}&subVertical={request.SubVertical}";
+      
         public async Task<HttpResponseMessage?> UplodAsync(object payload)
         {
             try
@@ -624,32 +664,12 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-                var queryParams = new List<string>
-        {
-            $"pageNumber={request.PageNumber}",
-            $"pageSize={request.PageSize}"
-        };
-
-                if (request.Status.HasValue)
-                {
-                    queryParams.Add($"status={request.Status.Value}");
-                }
-
-                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
-                 return await _httpClient.SendAsync(httpRequest);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
-            }
-        }
-        public async Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
+        public async Task<HttpResponseMessage?> PerformBulkActionAsync(object payload)
         {
             try
             {
                 var json = JsonSerializer.Serialize(payload);
-                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-preloved-action")
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-action")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
@@ -662,5 +682,6 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
     }
 }

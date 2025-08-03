@@ -1,6 +1,6 @@
 ﻿namespace QLN.ContentBO.WebUI.Models
 {
-    public enum AdStatus
+    public enum AdStatusEnum
     {
         Draft = 0,
         PendingApproval = 1,

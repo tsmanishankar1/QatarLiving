@@ -55,7 +55,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             }
             else
             {
-                _activeTab = ((int)AdStatus.PendingApproval).ToString();
+                _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
             }
             Console.WriteLine($"Active tab set to: {_activeTab}");
         }

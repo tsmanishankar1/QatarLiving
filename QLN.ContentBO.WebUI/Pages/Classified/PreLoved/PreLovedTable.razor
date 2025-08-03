@@ -32,14 +32,14 @@
             @if (SelectedListings.Count > 0)
             {
                 <div class="action-buttons">
-                    @if (SelectedTab == ((int)AdStatus.PendingApproval).ToString())
+                    @if (SelectedTab == ((int)AdStatusEnum.PendingApproval).ToString())
                     {
                         <MudButton Class="capitalize-button" Color="Color.Success" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Check"
                                    OnClick='() => ShowConfirmation("Approve Items", "Are you sure you want to approve selected Items?", "Approve", ApproveSelected)'>
                             Approve
                         </MudButton>
                     }
-                    @if (SelectedTab == ((int)AdStatus.Published).ToString())
+                    @if (SelectedTab == ((int)AdStatusEnum.Published).ToString())
                     {
                         <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.VisibilityOff"
                                    OnClick='() => ShowConfirmation("Unpublish Items", "Are you sure you want to unpublish selected Items?", "Unpublish", UnpublishSelected)'>
@@ -50,7 +50,7 @@
                             Remove
                         </MudButton>
                     }
-                    @if (SelectedTab == ((int)AdStatus.Unpublished).ToString())
+                    @if (SelectedTab == ((int)AdStatusEnum.Unpublished).ToString())
                     {
                         <MudButton Class="capitalize-button" Color="Color.Primary" Variant="Variant.Filled" StartIcon="@Icons.Material.Outlined.RemoveRedEye"
                                    OnClick='() => ShowConfirmation("Publish Items", "Are you sure you want to publish selected Items?", "Publish", PublishSelected)'>
@@ -177,7 +177,7 @@
                     <CellTemplate>
                         <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomLeft"
                                  TransformOrigin="Origin.BottomLeft">
-@*                             @if (SelectedTab != ((int)AdStatus.Published).ToString())
+@*                             @if (SelectedTab != ((int)AdStatusEnum.Published).ToString())
                             {
                                 <MudMenuItem OnClick="() => OnEdit(context.Item)">
                                     <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
@@ -190,7 +190,7 @@
                             } *@
                          
 
-                            @if (SelectedTab == ((int)AdStatus.PendingApproval).ToString())
+                            @if (SelectedTab == ((int)AdStatusEnum.PendingApproval).ToString())
                             {
                                 <MudMenuItem OnClick='() => ShowConfirmation("Approve Item", "Are you sure you want to approve this item?", "Approve",ApproveSelected)'>
                                     <img src="/qln-images/approve_icon.svg" class="menu-icon-style" />
@@ -202,7 +202,7 @@
                                 </MudMenuItem>
                             }
 
-                            @if (SelectedTab == ((int)AdStatus.Published).ToString())
+                            @if (SelectedTab == ((int)AdStatusEnum.Published).ToString())
                             {
                                 <MudMenuItem OnClick='() => ShowConfirmation("Unpublish Item", "Are you sure you want to unpublish this item?", "Unpublish", UnpublishSelected)'>
                                     <img src="/qln-images/eye_close_icon.svg" class="menu-icon-style" />
@@ -214,7 +214,7 @@
                                     <span class="menu-text">Remove</span>
                                 </MudMenuItem>
                             }
-                            @if (SelectedTab == ((int)AdStatus.Unpublished).ToString())
+                            @if (SelectedTab == ((int)AdStatusEnum.Unpublished).ToString())
                             {
                                 <MudMenuItem OnClick='() => ShowConfirmation("Publish Item", "Are you sure you want to publish this item?", "Publish", PublishSelected)'>
                                     <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="Ignore" />

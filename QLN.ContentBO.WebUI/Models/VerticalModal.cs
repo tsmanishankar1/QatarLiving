@@ -1,13 +1,13 @@
 ﻿namespace QLN.ContentBO.WebUI.Models
 {
-    public enum VerticalType
+    public enum VerticalTypeEnum
     {
         Jobs = 1,
         Properties = 2,
         Classifieds = 3,
         Services = 4
     }
-    public enum SubVerticalType
+    public enum SubVerticalTypeEnum
     {
         Items = 1,
         Deals = 2,

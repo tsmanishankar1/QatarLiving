@@ -35,7 +35,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.P2p
         protected int TotalCount { get; set; }
         protected int currentPage { get; set; } = 1;
         protected int pageSize { get; set; } = 12;
-        protected string SelectedTab { get; set; } = ((int)AdStatus.PendingApproval).ToString();
+        protected string SelectedTab { get; set; } = ((int)AdStatusEnum.PendingApproval).ToString();
 
         protected override async Task OnInitializedAsync()
         {

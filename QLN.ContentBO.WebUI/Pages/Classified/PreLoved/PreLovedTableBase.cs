@@ -50,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected int currentPage = 1;
         protected int pageSize = 12;
 
-        //protected string selectedTab = ((int)AdStatus.PendingApproval).ToString();
+        //protected string selectedTab = ((int)AdStatusEnum.PendingApproval).ToString();
         protected string _activeTab;
         [Parameter]
         public EventCallback<string> selectedTabChanged { get; set; }
@@ -75,15 +75,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             }
             else
             {
-                _activeTab = ((int)AdStatus.PendingApproval).ToString();
+                _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
             }
             Console.WriteLine($"Active tab set to: {_activeTab}");
         }
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {
-    new() { Label = "Pending Approval", Value = ((int)AdStatus.PendingApproval).ToString() },
-    new() { Label = "Published", Value = ((int)AdStatus.Published).ToString() },
-    new() { Label = "Unpublished", Value = ((int)AdStatus.Unpublished).ToString() },
+    new() { Label = "Pending Approval", Value = ((int)AdStatusEnum.PendingApproval).ToString() },
+    new() { Label = "Published", Value = ((int)AdStatusEnum.Published).ToString() },
+    new() { Label = "Unpublished", Value = ((int)AdStatusEnum.Unpublished).ToString() },
     new() { Label = "Promoted", Value = "promoted" },
     new() { Label = "Featured", Value = "featured"  }
 };
