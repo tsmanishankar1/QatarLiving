@@ -49,5 +49,10 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> UplodAsync(object payload);
         Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical);
 
+        //Deals
+        Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request);
+        Task<HttpResponseMessage?> GetDealsListing(FilterRequest request);
+        Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload);
+
     }
 }

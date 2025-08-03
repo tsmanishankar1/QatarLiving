@@ -683,5 +683,33 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+        public async Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request)
+        {
+            try
+            {
+
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/getdealsSummary{query}");
+
+
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetDealsSubscription: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public Task<HttpResponseMessage?> GetDealsListing(FilterRequest request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
