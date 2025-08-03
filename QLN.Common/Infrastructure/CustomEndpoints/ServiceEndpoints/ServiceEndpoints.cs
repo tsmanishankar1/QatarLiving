@@ -349,7 +349,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPut("/update", async Task<Results<Ok<string>, NotFound, ProblemHttpResult>> (
+            group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServicesModel dto,
                 HttpContext httpContext,
                 IServices service,
@@ -387,7 +387,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    return TypedResults.NotFound();
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -423,6 +427,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     var result = await service.UpdateServiceAd(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
                 }
                 catch (Exception ex)
                 {

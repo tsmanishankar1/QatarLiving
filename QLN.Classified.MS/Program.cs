@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using QLN.Classified.MS.DBContext;
 using QLN.Classifieds.MS.ServiceConfiguration;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
@@ -41,6 +42,7 @@ builder.Services.AddDbContext<ClassifiedDevContext>(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
 
 var app = builder.Build();
 

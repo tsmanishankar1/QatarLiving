@@ -158,8 +158,8 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                    await response.Content.ReadAsStringAsync(cancellationToken);
-
+                await response.Content.ReadAsStringAsync(cancellationToken);
+               
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)
@@ -191,7 +191,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
