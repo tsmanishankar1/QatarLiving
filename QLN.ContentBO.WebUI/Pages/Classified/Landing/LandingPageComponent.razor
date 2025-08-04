@@ -87,6 +87,12 @@ else
                                      alt="replace" 
                                      class="action-icon-style" />
                             </div>
+                            <div class="custom-edit-button">
+                                <img src="/qln-images/edit_dark_icon.svg"
+                                     @onclick="@(() => ReplaceItem.InvokeAsync(context.Item))"
+                                     alt="Edit"
+                                     class="action-icon-style" />
+                            </div>
                             <div class="custom-delete-button"
                                  @onclick="@(() => DeleteItemAsync(context.Item.Id.ToString()))">
                                 <img src="/qln-images/delete_icon.svg" 

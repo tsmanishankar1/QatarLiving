@@ -16,6 +16,18 @@
                     @Title
                 </MudText>
             </div>
+            <div class="mx-auto">
+
+            <MudTextField @bind-Value="TitleName"
+                 Label="Title"
+                 Class="classified-field white-bg"
+                 Required="true"
+                 RequiredError="Title is required"
+                 Immediate="true"
+                          For="@(() => TitleName)">
+        <HelperText>Enter a descriptive title for your listing</HelperText>
+    </MudTextField>
+                </div>
 
             <!-- Category -->
             <div class="mx-auto">
