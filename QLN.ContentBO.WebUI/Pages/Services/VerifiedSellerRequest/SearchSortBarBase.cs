@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
 {
@@ -10,9 +12,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
+        [Parameter] public List<VerificationProfileStatus> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
 
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
@@ -72,6 +76,55 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
             dateCreated = null;
             datePublished = null;
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+    {
+        try
+        {
+            if (Items == null || !Items.Any())
+            {
+                Snackbar.Add("No data available to export.", Severity.Warning);
+                return;
+            }
+                var exportData = Items.Select(x => new Dictionary<string, object?>
+                {
+                    ["Business Name"] = x.BusinessName,
+                    ["User Name"] = x.Username,
+                    ["CR file"] = x.CRFile,
+                    ["CR License"] = x.CRLicense, 
+                    ["End Date"] = x.Enddate,
+                }).ToList();
+
+            await JS.InvokeVoidAsync("exportToExcel", exportData, "Services_VerifiedSellerRequests.xlsx", "Transactions");
+
+            Snackbar.Add("Export successful!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+
 
         protected async Task AddEventCallback()
         {

@@ -78,7 +78,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       StateHasChanged();
     }
 
-    private async Task<PaginatedPaymentSummaryResponse> LoadSubscriptionListingsAsync()
+    protected async Task<PaginatedPaymentSummaryResponse> LoadSubscriptionListingsAsync()
     {
       try
       {

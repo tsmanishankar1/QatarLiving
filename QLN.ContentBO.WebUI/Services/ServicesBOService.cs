@@ -306,8 +306,7 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
-                Console.WriteLine("the json is" + json);
-                var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
+                var request = new HttpRequestMessage(HttpMethod.Put, "api/service/moderatebulk")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };

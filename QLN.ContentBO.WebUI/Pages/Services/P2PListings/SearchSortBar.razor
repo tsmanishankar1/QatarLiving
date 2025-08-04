@@ -15,7 +15,7 @@
         </div>
 
         <div class="right-section">
-            <button class="sort-button">
+            <button class="sort-button" @onclick="ShowConfirmationExport">
                 <img src="/qln-images/file_icon.svg" />
                 Export data
             </button>
@@ -27,52 +27,112 @@
     </div>
 
     <!-- Filter row -->
-    <div class="filter-row">
-        <div class="filter-button @(showCreatedPopover ? "active-filter" : "")" @onclick="ToggleCreatedPopover">
-            <img src="/qln-images/date_icon.svg" class="filter-icon @(showCreatedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Date Created")</span>
-             <MudPopover Open="@showCreatedPopover"
-                AnchorOrigin="Origin.BottomCenter"
-                TransformOrigin="Origin.TopCenter"
-                Elevation="6"
-                Class="popover-container">
-                <div class="popover-content">
-                    <MudDatePicker @bind-Date="tempCreatedDate"
-                                DisableToolbar="true"
-                                ShowToolbar="false"
-                                PickerVariant="PickerVariant.Static" />
-                    <div class="popover-footer">
-                        <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelCreatedPopover">Cancel</MudButton>
-                        <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmCreatedPopover">OK</MudButton>
+    <div style="display: flex; gap: 15px;">
+   <div class="custom-date-picker-container @(showCreatedPopover ? "active" : "")" @onclick="ToggleCreatedPopover">
+            <div class="label-and-value">
+                <div class="custom-label">Date Created</div>
+                <div class="custom-value">
+                    @if (_createDateRange != null && _createDateRange.Start.HasValue && _createDateRange.End.HasValue)
+                    {
+                        <text>@_createDateRange.Start.Value.ToString("dd MMM yyyy") - @_createDateRange.End.Value.ToString("dd MMM yyyy")</text>
+                    }
+                    else
+                    {
+                        <span class="date-placeholder">Choose</span>
+                    }
+                </div>
+            </div>
+            <MudIcon Icon="@(showCreatedPopover ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+                     Class="custom-date-icon" />
+            <MudPopover Open="@showCreatedPopover"
+                        AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter"
+                        Elevation="6"
+                        Class="popover-container"
+                        Style="padding:0;">
+                <div class="custom-range-picker-container">
+                    <!-- Left: Calendar -->
+                    <div class="range-calendar">
+                        <MudDateRangePicker @bind-DateRange="_createTempDateRange"
+                                            PickerVariant="PickerVariant.Static"
+                                            DisableToolbar="true"
+                                            ShowToolbar="false"
+                                            DisplayMonths="1"
+                                            Class="event-custom-date-range"
+                                            Style="min-width: 300px;" />
+                    </div>
+                    <!-- Right: Range Info + Controls -->
+                    <div class="range-sidebar">
+                        <div class="range-header-col">
+                            <span class="date-value">
+                                @(_createTempDateRange?.Start?.ToString("dd MMM yyyy") ?? "Start date")
+                            </span>
+                            <span class="date-value">
+                                @(_createTempDateRange?.End?.ToString("dd MMM yyyy") ?? "End date")
+                            </span>
+                        </div>
+                        <div class="range-footer">
+                            <MudButton Variant="Variant.Filled" Class="popover-button" OnClick="CancelCreatedPopover">Cancel</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="popover-button" OnClick="ConfirmCreatedPopover">Apply</MudButton>
+                        </div>
                     </div>
                 </div>
             </MudPopover>
         </div>
-
-        <div class="filter-button @(showPublishedPopover ? "active-filter" : "")" @onclick="TogglePublishedPopover">
-            <img src="/qln-images/date_icon.svg" class="filter-icon @(showPublishedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(datePublished.HasValue ? datePublished.Value.ToString("dd MMM yyyy") : "Date Published")</span>
-                        <!-- Popover for Date Published -->
-                <MudPopover Open="@showPublishedPopover"
-                            AnchorOrigin="Origin.BottomCenter"
-                            TransformOrigin="Origin.TopCenter"
-                            Elevation="6"
-                            Class="popover-container">
-                    <div class="popover-content">
-                        <MudDatePicker @bind-Date="tempPublishedDate"
-                                    DisableToolbar="true"
-                                    ShowToolbar="false"
-                                    PickerVariant="PickerVariant.Static" />
-                        <div class="popover-footer">
-                            <MudButton class="popover-button" Variant="Variant.Filled" OnClick="CancelPublishedPopover">Cancel</MudButton>
-                            <MudButton class="popover-button" Variant="Variant.Filled" Color="Color.Primary" OnClick="ConfirmPublishedPopover">OK</MudButton>
+        <div class="custom-date-picker-container @(showPublishedPopover ? "active" : "")" @onclick="TogglePublishedPopover">
+            <div class="label-and-value">
+                <div class="custom-label">Date Published</div>
+                <div class="custom-value">
+                    @if (_publishDateRange != null && _publishDateRange.Start.HasValue && _publishDateRange.End.HasValue)
+                    {
+                        <text>@_publishDateRange.Start.Value.ToString("dd MMM yyyy") - @_publishDateRange.End.Value.ToString("dd MMM yyyy")</text>
+                    }
+                    else
+                    {
+                        <span class="date-placeholder">Choose</span>
+                    }
+                </div>
+            </div>
+            <MudIcon Icon="@(showPublishedPopover ? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+                     Class="custom-date-icon" />
+            <MudPopover Open="@showPublishedPopover"
+                        AnchorOrigin="Origin.BottomCenter"
+                        TransformOrigin="Origin.TopCenter"
+                        Elevation="6"
+                        Class="popover-container"
+                        Style="padding:0;">
+                <div class="custom-range-picker-container">
+                    <!-- Left: Calendar -->
+                    <div class="range-calendar">
+                        <MudDateRangePicker @bind-DateRange="_publishTempDateRange"
+                                            PickerVariant="PickerVariant.Static"
+                                            DisableToolbar="true"
+                                            ShowToolbar="false"
+                                            DisplayMonths="1"
+                                            Class="event-custom-date-range"
+                                            Style="min-width: 300px;" />
+                    </div>
+                    <!-- Right: Range Info + Controls -->
+                    <div class="range-sidebar">
+                        <div class="range-header-col">
+                            <span class="date-value">
+                                @( _publishTempDateRange?.Start?.ToString("dd MMM yyyy") ?? "Start date")
+                            </span>
+                            <span class="date-value">
+                                @(_publishTempDateRange?.End?.ToString("dd MMM yyyy") ?? "End date")
+                            </span>
+                        </div>
+                        <div class="range-footer">
+                            <MudButton Variant="Variant.Filled" Class="popover-button" OnClick="CancelCreatedPopover">Cancel</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="popover-button" OnClick="ConfirmPublishedPopover">Apply</MudButton>
                         </div>
                     </div>
-                </MudPopover>
+                </div>
+            </MudPopover>
+        </div>
+         <button class="filter-button" @onclick="ClearFilters">Clear Filters</button>
         </div>
 
-        <button class="filter-button" @onclick="ClearFilters">Clear Filters</button>
-    </div>
 
 </div>
 <style>

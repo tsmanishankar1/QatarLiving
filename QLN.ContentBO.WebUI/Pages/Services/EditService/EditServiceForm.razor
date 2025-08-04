@@ -1,5 +1,6 @@
 @inherits EditServiceFormBase
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
+@using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
 @using QLN.ContentBO.WebUI.Models
 
 <EditForm EditContext="@editContext" OnSubmit="@SubmitForm">
@@ -35,7 +36,6 @@
         <MudSelectItem T="Guid" Value="@l2.Id">@l2.Name</MudSelectItem>
     }
 </MudSelect>
-
         <h3 class="form-heading">Price</h3>
         <MudCheckBox T="bool" @bind-Checked="selectedService.IsPriceOnRequest" Label="This Price on request services" />
 
@@ -110,6 +110,7 @@
 
         <h3 class="form-heading">Contact Details</h3>
         <div class="form-group">
+
                 <!-- Phone -->
                     <PhoneNumberInput
                         SelectedCountry="@SelectedPhoneCountry"

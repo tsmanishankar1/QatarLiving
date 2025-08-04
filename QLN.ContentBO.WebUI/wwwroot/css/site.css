@@ -2281,7 +2281,7 @@ a, .btn-link {
     padding: 3px 12px;
     background-color: #fff;
     min-height: 48px;
-    min-width: 230px;
+    width: 230px;
     cursor: pointer;
     transition: border-color 0.3s;
 }

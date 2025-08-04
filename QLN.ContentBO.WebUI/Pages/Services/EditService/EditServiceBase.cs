@@ -17,7 +17,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         private BulkModerationAction _selectedAction;
         protected void GoBack()
         {
-            Navigation.NavigateTo("/manage/services/listing");
+            Navigation.NavigateTo("manage/services/listing/subscriptions");
         }
         protected AdPost adPostModel { get; set; } = new();
         [Parameter]

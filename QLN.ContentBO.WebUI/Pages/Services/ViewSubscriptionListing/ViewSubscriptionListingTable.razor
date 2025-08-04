@@ -57,8 +57,8 @@
                 <MudMenuItem OnClick="() => OnPreview(context)">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
                 </MudMenuItem>
-                <MudMenuItem  Class="mud-text-error">
-                    <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
+                <MudMenuItem Class="mud-text-error" @onclick="() => OpenRejectDialog(context.AddId)">
+                 <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
                 </MudMenuItem>
             </MudMenu>
         </MudTd>

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
+using Microsoft.JSInterop;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.AutoSelectDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
@@ -12,7 +14,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] protected IJSRuntime JS { get; set; } = default!;
         protected string searchText = string.Empty;
+        [Parameter] public List<ServiceAdPaymentSummaryDto> Items { get; set; } = new();
         [Parameter] public EventCallback<string> OnTypeChange { get; set; }
         [Parameter] public EventCallback<(DateTime? startDate, DateTime? endDate)> OnDateFilterChanged { get; set; }
         [Parameter] public EventCallback OnClearFilters { get; set; }
@@ -35,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         protected string SelectedSubscriptionType { get; set; } = null;
         protected bool showDatePopover = false;
         protected DateRange? _tempDateRange = new();
-         protected void CancelDatePopover()
+        protected void CancelDatePopover()
         {
             showDatePopover = false;
         }
@@ -81,5 +86,60 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
             await OnClearFilters.InvokeAsync();
             StateHasChanged();
         }
+        protected async Task ShowConfirmationExport()
+        {
+            var parameters = new DialogParameters
+            {
+                { "Title", "Export Classified Items" },
+                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "ButtonTitle", "Export" },
+                { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
+            };
+
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+
+            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var result = await dialog.Result;
+        }
+        private async Task ExportToExcel()
+        {
+            try
+            {
+                if (Items == null || !Items.Any())
+                {
+                    Snackbar.Add("No data available to export.", Severity.Warning);
+                    return;
+                }
+                var exportData = Items.Select(x => new Dictionary<string, object?>
+                {
+                    ["Ad ID"] = x.AddId,
+                    ["Order ID"] = x.OrderId,
+                    ["Subscription Plan"] = x.SubscriptionPlan,
+                    ["Username"] = x.UserName,
+                    ["Email"] = x.EmailAddress, 
+                    ["Mobile"] = x.Mobile,
+                    ["Whatsapp"] = x.WhatsappNumber,
+                    ["Amount"] = x.Amount,
+                    ["Status"] = x.Status?.ToString(),
+                    ["Start Date"] = x.StartDate,
+                    ["End Date"] = x.EndDate,
+                }).ToList();
+
+                await JS.InvokeVoidAsync("exportToExcel", exportData, "Services_VerifiedSellerRequests.xlsx", "Transactions");
+
+                Snackbar.Add("Export successful!", Severity.Success);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+            }
+        }
+
+
     }
 }

@@ -46,7 +46,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 "pendingApproval" => 2,
                 "published" => 3,
                 "unpublished" => 4,
-                "Promoted" => 7,
+                "promoted" => 7,
                 "featured" => 9,
                 _ => null
             };
@@ -66,7 +66,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var parameters = new DialogParameters
             {
-                { "Title", "Reject Verification" },
+                { "Title", "Remove Verification" },
                 { "Description", "Please enter a reason before rejecting" },
                 { "ButtonTitle", "Reject" },
                 { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRejection) }

@@ -7,6 +7,7 @@ using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
+using System.Text.Json;
 using System.Net;
 using DocumentFormat.OpenXml.EMMA;
 
@@ -17,6 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
     {
         [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject] public IJSRuntime JSRuntime { get; set; }
+        [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback OnCommentDialogClose { get; set; }
@@ -28,6 +30,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         protected Double latitude = 25.32;
         protected Double Longitude = 51.54;
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
+        private bool IsBase64String(string? base64)
+        {
+            if (string.IsNullOrWhiteSpace(base64))
+                return false;
+
+            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out _);
+        }
+
         [Inject] ISnackbar Snackbar { get; set; }
 
         public AdPost Ad { get; set; } = new();
@@ -241,7 +252,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Logger.LogError(ex, "OnInitializedAsync");
             }
-            
+
         }
         [JSInvokable]
         public Task SetCoordinates(double lat, double lng)
@@ -268,8 +279,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 FullWidth = true
             };
 
-             var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
-              var result = await dialog.Result;
+            var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+            var result = await dialog.Result;
         }
 
 
@@ -324,22 +335,27 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
             try
             {
+                 if (IsBase64String(selectedService.LicenseCertificate))
+                {
+                    string? certificateUrl = await UploadCertificateAsync();
+                    selectedService.LicenseCertificate = certificateUrl;
+                }
                 var response = await _serviceService.UpdateService(selectedService);
                 if (response != null && response.IsSuccessStatusCode)
-                {
-                    await ShowSuccessModal("Service Ad Updated Successfully");
-                    await JS.InvokeVoidAsync("resetLeafletMap");
-                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
-                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                }
-                else if (response.StatusCode == HttpStatusCode.Unauthorized)
-                {
-                    Snackbar.Add("You are unauthorized to perform this action");
-                }
-                else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                {
-                    Snackbar.Add("Internal API Error");
-                }
+                    {
+                        await ShowSuccessModal("Service Ad Updated Successfully");
+                        await JS.InvokeVoidAsync("resetLeafletMap");
+                        await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                    }
+                    else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        Snackbar.Add("You are unauthorized to perform this action");
+                    }
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                    {
+                        Snackbar.Add("Internal API Error");
+                    }
             }
             catch (Exception ex)
             {
@@ -366,8 +382,80 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Logger.LogError(ex, "LoadZonesAsyn");
             }
         }
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        {
+            var uploadedImages = new List<object>();
 
+            var orderedImages = images
+                .Where(img => !string.IsNullOrWhiteSpace(img.Url))
+                .OrderBy(img => img.Order)
+                .ToList();
 
+            for (int i = 0; i < orderedImages.Count; i++)
+            {
+                var image = orderedImages[i];
 
+                var uploadPayload = new FileUploadModel
+                {
+                    Container = "services-images",
+                    File = image.Url
+                };
+
+                var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+
+                if (uploadResponse.IsSuccessStatusCode)
+                {
+                    var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+
+                    if (result?.IsSuccess == true)
+                    {
+                        uploadedImages.Add(new
+                        {
+                            url = result.FileUrl,
+                            order = i
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Image upload failed: " + result?.Message);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload HTTP error at index " + i);
+                }
+            }
+
+            return uploadedImages;
+        }
+        private async Task<string?> UploadCertificateAsync()
+        {
+            if (selectedService.LicenseCertificate == null)
+                return null;
+
+            var fileUploadModel = new FileUploadModel
+            {
+                Container = "services-images",
+                File = selectedService.LicenseCertificate
+            };
+
+            var uploadResponse = await FileUploadService.UploadFileAsync(fileUploadModel);
+
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                Logger.LogWarning("Certificate upload failed: " + result?.Message);
+            }
+            else
+            {
+                Logger.LogWarning("Certificate upload HTTP error");
+            }
+
+            return null;
+        }
     }
 }

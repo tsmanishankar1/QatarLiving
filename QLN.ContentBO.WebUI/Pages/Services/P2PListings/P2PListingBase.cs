@@ -29,7 +29,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     {
       currentPage = 1;
       pageSize = 12;
-      Status = 1;
+      Status = 2;
       PaginatedData = await LoadP2PListingsAsync();
     }
 
@@ -40,10 +40,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
-    protected async Task HandleDateFiltersChanged((DateTime? created, DateTime? published) filters)
+    protected async Task HandleDateFiltersChanged((DateTime? createdFrom,DateTime? createdTo ,DateTime? publishedFrom,DateTime? publishedTo) filters)
     {
-      FromDate = filters.created;
-      ToDate = filters.published;
+      FromDate = filters.createdFrom;
+      ToDate = filters.createdTo;
+      PublishedFrom = filters.publishedFrom;
+      PublishedTo = filters.publishedTo;
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
@@ -63,8 +65,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
     {
       currentPage = 1;
       Status = status;
-      IsPromoted = status == 7;
-      IsFeatured = status == 9;
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
