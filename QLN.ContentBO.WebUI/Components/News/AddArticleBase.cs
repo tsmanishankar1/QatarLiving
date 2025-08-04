@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Amazon.Runtime;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using PSC.Blazor.Components.MarkdownEditor;
@@ -41,6 +42,8 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
         protected string UploadImageButtonName { get; set; } = "uploadImage";
         protected string BlobContainerName { get; set; } = "content-images";
+
+        protected string[] HiddenIcons = ["fullscreen"];
 
         protected override async Task OnInitializedAsync()
         {
@@ -416,7 +419,7 @@ namespace QLN.ContentBO.WebUI.Components.News
                     TriggerCustomImageUpload();
                 }
 
-                if (eventArgs.Name == "Preview")
+                if (eventArgs.Name == "CustomPreview")
                 {
                     ToggleMarkdownPreview();
                 }

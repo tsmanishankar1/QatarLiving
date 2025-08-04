@@ -100,7 +100,7 @@ else
 
                     <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:6px">Article content</MudText>
                     <!-- START Custom Markdown Editor -->
-                    <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                    <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" HideIcons="@HiddenIcons" @ref="MarkdownEditorRef">
                         <Toolbar>
                             <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
                             <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
@@ -117,7 +117,8 @@ else
                             <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
                             <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
 
-                            <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="Preview" Icon="fa fa-eye" Title="Preview" />
+                            <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                            <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
                             <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
                         </Toolbar>
                     </MarkdownEditor>
