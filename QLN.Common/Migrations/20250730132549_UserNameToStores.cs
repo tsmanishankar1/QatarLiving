@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace QLN.Classified.MS.Migrations
+namespace QLN.Common.Migrations
 {
     /// <inheritdoc />
     public partial class UserNameToStores : Migration

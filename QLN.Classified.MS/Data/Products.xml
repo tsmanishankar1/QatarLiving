@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Products xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="products.xsd">
+
+	<Product>
+		<ProductName>Smartphone X10</ProductName>
+		<ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/IPhone_X_vector.svg/512px-IPhone_X_vector.svg.png</ProductLogo>
+		<ProductPrice>699.99</ProductPrice>
+		<Currency>USD</Currency>
+		<ProductDetails>
+			<ProductName>Smartphone X10</ProductName>
+			<ProductSummary>Flagship smartphone with AI camera</ProductSummary>
+			<ProductDescription>High-resolution OLED screen, 128GB storage, 5G support</ProductDescription>
+			<Images>
+				<ProductImage>https://images.unsplash.com/photo-1511707171634-5f897ff02aa9</ProductImage>
+				<ProductImage>https://images.unsplash.com/photo-1510552776732-03e61cf4b144</ProductImage>
+			</Images>
+			<Features>
+				<Feature>Waterproof</Feature>
+				<Feature>Face Recognition</Feature>
+				<Feature>Fast Charging</Feature>
+			</Features>
+		</ProductDetails>
+	</Product>
+
+
+</Products>

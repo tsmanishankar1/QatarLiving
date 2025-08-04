@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using QLN.Classified.MS.DBContext;
+using QLN.Common.Infrastructure.DbContext;
 
 #nullable disable
 
-namespace QLN.Classified.MS.Migrations
+namespace QLN.Common.Migrations
 {
     [DbContext(typeof(ClassifiedDevContext))]
-    [Migration("20250730132549_UserNameToStores")]
-    partial class UserNameToStores
+    [Migration("20250730133821_OrderIDToKey")]
+    partial class OrderIDToKey
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -155,6 +155,12 @@ namespace QLN.Classified.MS.Migrations
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoresSubscriptionDto", b =>
                 {
+                    b.Property<int>("OrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OrderId"));
+
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
 
@@ -169,9 +175,6 @@ namespace QLN.Classified.MS.Migrations
 
                     b.Property<string>("Mobile")
                         .HasColumnType("text");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
 
                     b.Property<int>("PhoneLeads")
                         .HasColumnType("integer");
@@ -199,6 +202,8 @@ namespace QLN.Classified.MS.Migrations
 
                     b.Property<int>("WhatsappLeads")
                         .HasColumnType("integer");
+
+                    b.HasKey("OrderId");
 
                     b.ToTable("StoresSubscriptions");
                 });

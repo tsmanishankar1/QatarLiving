@@ -144,6 +144,8 @@ namespace QLN.Company.MS.Service
                         throw new ArgumentException("Therapeutic certificate is required when therapeutic service is selected.");
                 }
             }
+            if (dto.CRNumber < 100000 || dto.CRNumber > 99999999)
+                throw new ArgumentException("CR Number must be between 6 to 8 digits.", nameof(dto.CRNumber));
         }
         private CompanyProfileModel EntityForCreate(CompanyProfile dto, Guid id, string uid, string userName)
         {

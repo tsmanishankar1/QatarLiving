@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using QLN.Classified.MS.DBContext;
+using QLN.Common.Infrastructure.DbContext;
 
 #nullable disable
 
-namespace QLN.Classified.MS.Migrations
+namespace QLN.Common.Migrations
 {
     [DbContext(typeof(ClassifiedDevContext))]
-    [Migration("20250730130713_StoresSubscriptionDto")]
-    partial class StoresSubscriptionDto
+    [Migration("20250730124802_StoresDto")]
+    partial class StoresDto
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -148,56 +148,6 @@ namespace QLN.Classified.MS.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("storesDtos");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoresSubscriptionDto", b =>
-                {
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
-
-                    b.Property<int>("EmailLeads")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Mobile")
-                        .HasColumnType("text");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PhoneLeads")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubscriptionType")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("text");
-
-                    b.Property<int>("WebLeads")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("WebUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Whatsapp")
-                        .HasColumnType("text");
-
-                    b.Property<int>("WhatsappLeads")
-                        .HasColumnType("integer");
-
-                    b.ToTable("StoresSubscriptions");
                 });
 #pragma warning restore 612, 618
         }
