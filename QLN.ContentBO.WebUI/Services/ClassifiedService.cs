@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -702,14 +703,90 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage?> GetDealsListing(FilterRequest request)
+        public async Task<HttpResponseMessage?> GetDealsListing(FilterRequest request)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var url = "/api/v2/classifiedbo/DealsViewSummary";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                if (!string.IsNullOrEmpty(request.SearchText))
+                {
+                    queryParams.Add($"search={Uri.EscapeDataString(request.SearchText)}");
+                }
+
+                if (request.CreationDate.HasValue)
+                {
+                    queryParams.Add($"creationDate={request.CreationDate.Value:yyyy-MM-dd}");
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    queryParams.Add($"datePublished={request.PublishedDate.Value:yyyy-MM-dd}");
+                }
+                if (request.IsPromoted == true)
+                {
+                    queryParams.Add("isPromoted=true");
+                }
+
+                if (request.IsFeatured == true)
+                {
+                    queryParams.Add("isFeatured=true");
+                }
+
+
+                //if (!string.IsNullOrEmpty(request.SortField))
+                //{
+                //    queryParams.Add($"sortField={request.SortField}");
+                //}
+
+                //if (!string.IsNullOrEmpty(request.SortDirection))
+                //{
+                //    queryParams.Add($"sortDirection={request.SortDirection}");
+                //}
+
+                if (queryParams.Count > 0)
+                {
+                    url += "?" + string.Join("&", queryParams);
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
-        public Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload)
+        public async Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/getdealsSummary")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformDealsBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
     }
 }
