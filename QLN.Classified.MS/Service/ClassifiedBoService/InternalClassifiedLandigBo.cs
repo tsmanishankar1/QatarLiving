@@ -3165,7 +3165,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
@@ -3196,7 +3196,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Url;
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
