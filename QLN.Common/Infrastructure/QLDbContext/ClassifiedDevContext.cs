@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using System.Reflection.Metadata;
 
-namespace QLN.Common.Infrastructure.DbContext
+namespace QLN.Common.Infrastructure.QLDbContext
 {
-    public class ClassifiedDevContext:Microsoft.EntityFrameworkCore.DbContext
+    public class ClassifiedDevContext : DbContext
     {
         public ClassifiedDevContext(DbContextOptions<ClassifiedDevContext> options)
             : base(options)
