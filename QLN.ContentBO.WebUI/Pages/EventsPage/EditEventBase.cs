@@ -129,6 +129,8 @@ namespace QLN.ContentBO.WebUI.Pages
         protected string UploadImageButtonName { get; set; } = "uploadImage";
         protected string BlobContainerName { get; set; } = "content-images";
 
+        protected string[] HiddenIcons = ["fullscreen"];
+
         protected override async Task OnParametersSetAsync()
         {
             IsPageLoading = true;
@@ -774,6 +776,10 @@ namespace QLN.ContentBO.WebUI.Pages
                     TriggerCustomImageUpload();
                 }
 
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
             }
             return Task.CompletedTask;
         }
@@ -827,7 +833,14 @@ namespace QLN.ContentBO.WebUI.Pages
             }
         }
 
-        #endregion
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
 
+        #endregion
     };
 }
