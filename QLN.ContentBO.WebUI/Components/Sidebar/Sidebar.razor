@@ -21,7 +21,7 @@
                         <div @onclick="() => HandleRouterClick(item.Url)"
                              class="non-group-link @(isItemActive ? "active-parent" : "inactive-parent")"
                              style="cursor: pointer;">
-                            <img src="@item.IconPath" class="nav-icon-style @(isItemActive ? "active-icon" : "")" />
+                            <img src="@item.IconPath" class="nav-icon-style @(isItemActive ? "active-icon-sidebar" : "")" />
                             <span class="nav-item-text @(isItemActive ? "active-text" : "")">@item.Title</span>
                         </div>
                     }
@@ -38,7 +38,7 @@
                             <div class="expandable-header @(isGroupExpanded || isGroupActive ? "active" : "")"
                                  @onclick="() => ToggleGroup(item.Title)">
                                 <div class="left-section">
-                                    <img src="@item.IconPath" class="nav-icon-style @(isGroupExpanded || isGroupActive ? "active-icon" : "")" />
+                                    <img src="@item.IconPath" class="nav-icon-style @(isGroupExpanded || isGroupActive ? "active-icon-sidebar" : "")" />
                                     <span class="nav-item @(isGroupExpanded || isGroupActive ? "active-text" : "")">@item.Title</span>
                                 </div>
                                 <MudIcon Icon="@((isGroupExpanded) ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
@@ -129,8 +129,8 @@
     color: white !important;
 }
 
-.active-icon {
-    filter: brightness(0) invert(1);
+.active-icon-sidebar {
+    filter: brightness(0) invert(1) !important;
 }
 
 .expandable-group {

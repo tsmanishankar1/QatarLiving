@@ -2,14 +2,16 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
-using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Interfaces;
-using System.Text.Json;
 using MudBlazor;
-using QLN.ContentBO.WebUI.Components.SuccessModal;
-using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
+using PSC.Blazor.Components.MarkdownEditor;
+using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.SuccessModal;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
 using System.Net;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages
 {
@@ -121,6 +123,14 @@ namespace QLN.ContentBO.WebUI.Pages
 
         protected MudFileUpload<IBrowserFile> _fileUpload;
 
+        // Custom Markdown Editor Properties
+        protected MarkdownEditor MarkdownEditorRef;
+        protected MudFileUpload<IBrowserFile> _markdownfileUploadRef;
+        protected string UploadImageButtonName { get; set; } = "uploadImage";
+        protected string BlobContainerName { get; set; } = "content-images";
+
+        protected string[] HiddenIcons = ["fullscreen"];
+
         protected override async Task OnParametersSetAsync()
         {
             IsPageLoading = true;
@@ -185,6 +195,10 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             try
             {
+                if(firstRender)
+                {
+                    _shouldInitializeMap = true;
+                }
                 if (_shouldInitializeMap)
                 {
                     _shouldInitializeMap = false;
@@ -686,6 +700,7 @@ namespace QLN.ContentBO.WebUI.Pages
         {
             entry.IsSelected = (bool)value;
         }
+
         private void ClearForm()
         {
             CurrentEvent = new EventDTO
@@ -709,5 +724,123 @@ namespace QLN.ContentBO.WebUI.Pages
             StateHasChanged();
         }
 
+        #region Custom Markdown Editor
+
+        protected async Task<FileUploadResponse> FileUploadAsync(FileUploadModel fileUploadData)
+        {
+            try
+            {
+                var response = await FileUploadService.UploadFileAsync(fileUploadData);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    FileUploadResponse? result = JsonSerializer.Deserialize<FileUploadResponse>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    return result ?? new();
+                }
+                else if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add($"Bad Request: {jsonString}", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error", Severity.Error);
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FileUploadAsync");
+                return new();
+            }
+        }
+
+        protected void TriggerCustomImageUpload()
+        {
+            _markdownfileUploadRef.OpenFilePickerAsync();
+        }
+
+        protected Task OnCustomButtonClicked(MarkdownButtonEventArgs eventArgs)
+        {
+            if (eventArgs.Name is not null)
+            {
+                if (eventArgs.Name == UploadImageButtonName)
+                {
+                    TriggerCustomImageUpload();
+                }
+
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
+            }
+            return Task.CompletedTask;
+        }
+
+        protected async Task UploadFile(string base64)
+        {
+            try
+            {
+                var fileUploadData = new FileUploadModel
+                {
+                    Container = BlobContainerName,
+                    File = base64
+                };
+
+                var fileUploadResponse = await FileUploadAsync(fileUploadData);
+                if (fileUploadResponse?.IsSuccess == true)
+                {
+                    var imageMarkdown = $"\n![image-{fileUploadResponse.FileName}]({fileUploadResponse.FileUrl})";
+                    CurrentEvent.EventDescription += imageMarkdown;
+                    await MarkdownEditorRef!.SetValueAsync(CurrentEvent.EventDescription);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "UploadFile");
+            }
+        }
+
+        protected async Task HandleMarkdownFilesChanged(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var file = e.File;
+                if (file != null)
+                {
+                    using var stream = file.OpenReadStream(2 * 1024 * 1024); // 2MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    var uploadedImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                    if (!string.IsNullOrWhiteSpace(uploadedImageBase64))
+                    {
+                        await UploadFile(uploadedImageBase64);
+                    }
+                    _markdownfileUploadRef?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleMarkdownFilesChanged");
+            }
+        }
+
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            }
+        }
+
+        #endregion
     };
 }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Handlers;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Security.Claims;
 
@@ -14,6 +15,7 @@ namespace QLN.ContentBO.WebUI.Components
         [Inject] public ISnackbar Snackbar { get; set; } = default!;
         [Inject] public IOptions<NavigationPath> NavigationPath { get; set; } = default!;
         [Inject] public ILogger<QLComponentBase> Logger { get; set; } = default!;
+        [Inject] public IFileUploadService FileUploadService { get; set; } = default!;
 
         public string CurrentUserName { get; set; } = string.Empty;
         public string CurrentUserEmail { get; set; } = string.Empty;

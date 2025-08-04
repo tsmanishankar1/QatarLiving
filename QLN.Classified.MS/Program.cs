@@ -1,9 +1,13 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+
 using QLN.Classifieds.MS.ServiceConfiguration;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
+using QLN.Common.Infrastructure.DbContext;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,9 +37,13 @@ builder.Services.AddSwaggerGen(opts => {
     });
 });
 
+builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
 
+builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

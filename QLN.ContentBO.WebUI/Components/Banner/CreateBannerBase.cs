@@ -150,6 +150,7 @@ namespace QLN.ContentBO.WebUI.Components.Banner
             {
                 _selectedBannerIds.Add(id);
                 UpdateDisplayText();
+                 FindAndAddBannerTypeRequest(bannerPageTypes,id);
             }
             await base.OnParametersSetAsync();
         }
@@ -319,6 +320,30 @@ namespace QLN.ContentBO.WebUI.Components.Banner
                 IsLoading = false;
             }
 
+        }
+        public void FindAndAddBannerTypeRequest(List<BannerPageLocationDto> bannerPageLocations, Guid targetId)
+        {
+            foreach (var page in bannerPageLocations)
+            {
+                foreach (var bannerType in page.bannertypes)
+                {
+                    if (bannerType.Id == targetId)
+                    {
+                        var request = new BannerTypeRequest
+                        {
+                            BannerTypeId = bannerType.Id,
+                            PageId = page.Id,
+                            VerticalId = (Vertical)(page.VerticalId ?? 0), 
+                            SubVerticalId = page.SubVerticalId.HasValue
+                                ? (SubVertical?)page.SubVerticalId.Value
+                                : null
+                        };
+
+                        _selectedBannerTypeRequests.Add(request);
+                        return; 
+                    }
+                }
+            }
         }
         private async Task<List<BannerType>> GetBannerTypes()
         {

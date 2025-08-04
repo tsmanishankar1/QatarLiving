@@ -158,8 +158,8 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                    await response.Content.ReadAsStringAsync(cancellationToken);
-
+                await response.Content.ReadAsStringAsync(cancellationToken);
+               
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)
@@ -191,7 +191,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
@@ -286,13 +285,24 @@ namespace QLN.Backend.API.Service.Services
             try
             {
                 var url = "/api/service/getbystatus";
-                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesModel>>(
-                    HttpMethod.Post,
-                    ConstantValues.Services.ServiceAppId,
-                    url,
-                    dto,
-                    cancellationToken
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    throw new InvalidDataException(problem?.Detail ?? "Unknown error occurred.");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ServicesPagedResponse<ServicesModel>>(cancellationToken: cancellationToken);
+                return result!;
             }
             catch (Exception ex)
             {
@@ -446,7 +456,23 @@ namespace QLN.Backend.API.Service.Services
                 }
                 else if (response.StatusCode == HttpStatusCode.NotFound)
                 {
-                    throw new KeyNotFoundException("Service not found.");
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    throw new KeyNotFoundException(problem?.Detail ?? "Service not found.");
+                }
+                else if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(ct);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    throw new InvalidDataException(problem?.Detail ?? "Bad request.");
                 }
                 else
                 {
@@ -496,5 +522,9 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+
+     
+
+
     }
 }

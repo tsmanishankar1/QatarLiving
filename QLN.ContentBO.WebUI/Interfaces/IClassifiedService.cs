@@ -17,7 +17,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> CreateSeasonalPicksAsync(object payload);
         Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical);
         Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical);
-        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments,  string vertical);
+        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string vertical);
         Task<HttpResponseMessage?> GetFeaturedCategory(string vertical);
         Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical);
         Task<HttpResponseMessage?> CreateFeaturedCategoryAsync(object payload);
@@ -27,6 +27,27 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
         Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
+        Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request);
+        Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload);
+
+        Task<List<HttpResponseMessage>> SearchClassifiedsViewTransactionAsync(object searchPayload);
+        Task<HttpResponseMessage?> PerformBulkActionAsync(string vertical, object payload);
+        Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId);
+
+        Task<HttpResponseMessage?> GetAllZonesAsync();
+
+        /// <summary>
+        /// Gets the address coordinates by zone, street, building, and location.
+        Task<HttpResponseMessage?> GetAddressByDetailsAsync(int zone, int street, int building, string location);
+        /// <summary>
+        /// Posts a new classified ad.
+        Task<HttpResponseMessage?> PostAdAsync(string vertical, object payload);
+        Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload);
+        Task<HttpResponseMessage?> UplodAsync(object payload);
+        Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical);
 
     }
 }

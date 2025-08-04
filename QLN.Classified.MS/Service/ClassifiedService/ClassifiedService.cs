@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -13,12 +14,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Service.FileStorage;
+using QLN.Common.Infrastructure.Utilities;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
 
@@ -334,24 +337,7 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                var upsertRequest = await IndexItemsToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexItemsToAzureSearch(dto, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
@@ -382,7 +368,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
         }
-        private async Task<CommonIndexRequest> IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+        private async Task IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsItemsIndex
             {
@@ -443,9 +429,24 @@ namespace QLN.Classified.MS.Service
                 IndexName = ConstantValues.IndexNames.ClassifiedsItemsIndex,
                 ClassifiedsItem = indexDoc
             };
-            return indexRequest;
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
-        private async Task<CommonIndexRequest> IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
+        private async Task IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsPrelovedIndex
             {
@@ -510,9 +511,25 @@ namespace QLN.Classified.MS.Service
                 IndexName = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
                 ClassifiedsPrelovedItem = indexDoc
             };
-            return indexRequest;
+
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
-        private async Task<CommonIndexRequest> IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsCollectiblesIndex
             {
@@ -549,6 +566,7 @@ namespace QLN.Classified.MS.Service
                 Brand = dto.Brand,
                 AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                 CreatedBy = dto.CreatedBy,
+                AuthenticityCertificateName = dto.AuthenticityCertificateName,
                 HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                 WhatsAppNumber = dto.WhatsAppNumber,
                 WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
@@ -572,17 +590,30 @@ namespace QLN.Classified.MS.Service
                 IsPromoted = dto.IsPromoted,
                 PromotedExpiryDate = dto.PromotedExpiryDate
 
-
-
             };
             var indexRequest = new CommonIndexRequest
             {
                 IndexName = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
                 ClassifiedsCollectiblesItem = indexDoc
             };
-            return indexRequest;
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
-        private async Task<CommonIndexRequest> IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsDealsIndex
             {
@@ -625,7 +656,22 @@ namespace QLN.Classified.MS.Service
                 IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
                 ClassifiedsDealsItem = indexDoc
             };
-            return indexRequest;
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
 
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
@@ -745,24 +791,7 @@ namespace QLN.Classified.MS.Service
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
-                var upsertRequest = await IndexPrelovedToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexPrelovedToAzureSearch(dto, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
@@ -800,7 +829,7 @@ namespace QLN.Classified.MS.Service
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl)) throw new ArgumentException("Certificate URL must be provided.");
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate) throw new ArgumentException("Certificate URL must be provided.");
             if (dto.Id == Guid.Empty) throw new ArgumentException("Id must be provided.");
 
             var adId = dto.Id;
@@ -812,36 +841,15 @@ namespace QLN.Classified.MS.Service
                 if (existing != null)
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
 
-                // Mutate necessary fields
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
-                // Update index
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
                 index.Add(key);
 
-                // Save to state store
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
-                var upsertRequest = await IndexCollectiblesToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
-
+                await IndexCollectiblesToAzureSearch(dto, cancellationToken);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -889,36 +897,15 @@ namespace QLN.Classified.MS.Service
                 var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
                 if (existing != null)
                     throw new InvalidOperationException($"Ad with key {key} already exists.");
-
-                // Mutate necessary fields
                 //dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
                 index.Add(key);
 
-                // Save to state store
                 await _dapr.SaveStateAsync(UnifiedStore, key, dto);
                 await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
-                var upsertRequest = await IndexDealsToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
-
+                await IndexDealsToAzureSearch(dto, cancellationToken);
                 return new AdCreatedResponseDto
                 {
                     AdId = adId,
@@ -1529,15 +1516,26 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
                 var key = $"ad-{adId}";
+
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
+
+                if (!indexKeys.Contains(key))
+                {
+                    _logger.LogWarning("Ad ID {AdId} not found in active index. Possibly inactive or deleted.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                }
+
                 var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
 
-                if (adItem == null)
+                if (adItem == null || !adItem.IsActive)
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
-                    return null;
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adItem;
@@ -1551,38 +1549,60 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
+
             try
             {
                 var key = $"ad-{adId}";
+
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
+
+                if (!indexKeys.Contains(key))
+                {
+                    _logger.LogWarning("Ad ID {AdId} not found in Preloved index. Possibly inactive or deleted.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                }
+
                 var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
 
-                if (adPreloved == null)
+                if (adPreloved == null || !adPreloved.IsActive)
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
-                    return null;
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adPreloved;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while fetching classified preloved details by adId: {AdId}", adId);
-                throw new InvalidOperationException("Failed to fetch classified preloved ad by ID.", ex);
+                _logger.LogError(ex, "Error while fetching classified preloved ad by ID: {AdId}", adId);
+                throw new InvalidOperationException($"Failed to fetch classified preloved ad by ID {adId}.", ex);
             }
         }
 
         public async Task<ClassifiedsDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
                 var key = $"ad-{adId}";
 
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
+
+                if (!indexKeys.Contains(key))
+                {
+                    _logger.LogWarning("Ad ID {AdId} not found in Deals index. Possibly inactive or deleted.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                }
+
                 var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
 
-                if (adDeals == null)
+                if (adDeals == null || !adDeals.IsActive)
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
-                    return null;
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adDeals;
@@ -1596,17 +1616,27 @@ namespace QLN.Classified.MS.Service
 
         public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
         {
+            if (adId == Guid.Empty)
+                throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
 
                 var key = $"ad-{adId}";
 
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
+
+                if (!indexKeys.Contains(key))
+                {
+                    _logger.LogWarning("Ad ID {AdId} not found in Collectibles index. Possibly inactive or deleted.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                }
+
                 var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
 
-                if (adCollectibles == null)
+                if (adCollectibles == null || !adCollectibles.IsActive)
                 {
-                    _logger.LogWarning("Ad not found with ID: {AdId}", adId);
-                    return null;
+                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adCollectibles;
@@ -1685,7 +1715,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while bulk unpublishing ads.", ex);
             }
         }
-
+         
         public async Task<BulkAdActionResponse> BulkPublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
         {
             try
@@ -3284,305 +3314,567 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve filters from the category tree.", ex);
             }
         }
-
         public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
+                var existingAd = await GetItemAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
-                }
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                var upsertRequest = await IndexItemsToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsItemsIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexItemsToAzureSearch(existingAd, cancellationToken);
 
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Items Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Items Ad.");
+                throw new InvalidOperationException("Failed to update Items ad.", ex);
             }
         }
 
         public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
+                var existingAd = await GetPrelovedAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
-                }
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
-                var upsertRequest = await IndexPrelovedToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexPrelovedToAzureSearch(existingAd, cancellationToken);
 
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Preloved Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Preloved Ad.");
+                throw new InvalidOperationException("Failed to update Preloved ad.", ex);
             }
         }
 
         public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
+                var existingAd = await GetCollectiblesAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
-                }
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
-                var upsertRequest = await IndexCollectiblesToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexCollectiblesToAzureSearch(existingAd, cancellationToken);
 
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Collectibles Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Collectibles Ad.");
+                throw new InvalidOperationException("Failed to update Collectibles ad.", ex);
             }
         }
 
         public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
             var key = $"ad-{dto.Id}";
 
             try
             {
-                var existingAd = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (existingAd.ValueKind != JsonValueKind.Object)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
-                }
+                var existingAd = await GetDealsAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
-                {
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
-                }
+                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
+                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
 
                 var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
                 if (!index.Contains(key))
                 {
                     index.Add(key);
+                    await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
                 }
 
-                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
-                var upsertRequest = await IndexDealsToAzureSearch(dto, cancellationToken);
-
-                if (upsertRequest != null)
-                {
-                    var message = new IndexMessage
-                    {
-                        Action = "Upsert",
-                        Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
-                        UpsertRequest = upsertRequest
-                    };
-
-                    await _dapr.PublishEventAsync(
-                        pubsubName: ConstantValues.PubSubName,
-                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                        data: message,
-                        cancellationToken: cancellationToken
-                    );
-                }
+                await IndexDealsToAzureSearch(existingAd, cancellationToken);
 
                 return new AdUpdatedResponseDto
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title ?? existingAd.GetProperty("title").GetString(),
+                    AdId = existingAd.Id,
+                    Title = existingAd.Title,
                     UpdatedAt = DateTime.UtcNow,
                     Message = "Deals Ad updated successfully"
                 };
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Ad not found or conflict occurred during update.");
-                throw new InvalidOperationException("Ad does not exist or conflict occurred.", ex);
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "Validation failed during ad update.");
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during ad update.");
-                throw new InvalidOperationException("An unexpected error occurred while updating the ad. Please try again later.", ex);
+                _logger.LogError(ex, "Error updating Deals Ad.");
+                throw new InvalidOperationException("Failed to update Deals ad.", ex);
             }
         }
 
+        public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken ct)
+        {
+            try
+            {
+                _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
+                    JsonSerializer.Serialize(request));
 
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.ItemsIndexKey,
+                    cancellationToken: ct
+                ) ?? new List<string>();
+
+                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
+
+                if (!indexKeys.Any())
+                {
+                    return new ClassifiedsBoItemsResponseDto
+                    {
+                        TotalCount = 0,
+                        ClassifiedsItems = new List<ClassifiedsItems>()
+                    };
+                }
+
+                var items = new List<ClassifiedsItems>();
+                var failedKeys = new List<string>();
+
+                foreach (var key in indexKeys)
+                {
+                    try
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        var dto = await _dapr.GetStateAsync<ClassifiedsItems>(
+                            ConstantValues.StateStoreNames.UnifiedStore,
+                            key,
+                            cancellationToken: ct);
+
+                        if (dto != null)
+                        {
+                            items.Add(dto);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Item with key {Key} returned null", key);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
+                        failedKeys.Add(key);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
+                {
+                    items = items.Where(item =>
+                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
+                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
+                    ).ToList();
+
+                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                }
+
+                if (request.IsFeatured.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as bool?;
+                            return value == request.IsFeatured;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
+                        request.IsFeatured, originalCount, items.Count);
+                }
+
+                if (request.IsPromoted.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as bool?;
+                            return value == request.IsPromoted;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
+                        request.IsPromoted, originalCount, items.Count);
+                }
+
+                if (request.Status.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as AdStatus?;
+                            return value == request.Status;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying Status filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
+                        request.Status, originalCount, items.Count);
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.OrderBy))
+                {
+                    try
+                    {
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var sortDirection = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var allowedProps = new[] { "Price", "CreatedAt" };
+                        if (!allowedProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase))
+                        {
+                            _logger.LogWarning("Sorting by '{Property}' is not allowed", propertyName);
+                        }
+                        else
+                        {
+                            var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName,
+                                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                            if (orderProp != null)
+                            {
+                                items = sortDirection == "desc"
+                                    ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                    : items.OrderBy(i => orderProp.GetValue(i)).ToList();
+
+                                _logger.LogInformation("Applied sorting by {Property} {Direction}", propertyName, sortDirection);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                    }
+                }
+
+
+                int page = Math.Max(1, request.PageNumber);
+                int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
+
+                var totalCount = items.Count;
+                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+
+                return new ClassifiedsBoItemsResponseDto
+                {
+                    TotalCount = totalCount,
+                    ClassifiedsItems = pagedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAllItems");
+                throw new Exception($"GetAllItems failed: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken ct)
+        {
+            try
+            {
+                _logger.LogInformation("Starting GetAllCollectibles processing for request: {Request}",
+                    JsonSerializer.Serialize(request));
+
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.CollectiblesIndexKey,
+                    cancellationToken: ct
+                ) ?? new List<string>();
+
+                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
+
+                if (!indexKeys.Any())
+                {
+                    return new ClassifiedsBoCollectiblesResponseDto
+                    {
+                        TotalCount = 0,
+                        ClassifiedsCollectibles = new List<ClassifiedsCollectibles>()
+                    };
+                }
+
+                var items = new List<ClassifiedsCollectibles>();
+                var failedKeys = new List<string>();
+
+                foreach (var key in indexKeys)
+                {
+                    try
+                    {
+                        ct.ThrowIfCancellationRequested();
+
+                        var dto = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
+                            ConstantValues.StateStoreNames.UnifiedStore,
+                            key,
+                            cancellationToken: ct);
+
+                        if (dto != null)
+                        {
+                            items.Add(dto);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Collectible with key {Key} returned null", key);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
+                        failedKeys.Add(key);
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
+                {
+                    items = items.Where(item =>
+                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
+                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
+                    ).ToList();
+
+                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                }
+
+                if (request.IsFeatured.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as bool?;
+                            return value == request.IsFeatured;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
+                        request.IsFeatured, originalCount, items.Count);
+                }
+
+                if (request.IsPromoted.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as bool?;
+                            return value == request.IsPromoted;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
+                        request.IsPromoted, originalCount, items.Count);
+                }
+
+                if (request.Status.HasValue)
+                {
+                    var originalCount = items.Count;
+                    items = items.Where(item =>
+                    {
+                        try
+                        {
+                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null) return false;
+
+                            var value = prop.GetValue(item) as AdStatus?;
+                            return value == request.Status;
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Error applying Status filter to item");
+                            return false;
+                        }
+                    }).ToList();
+
+                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
+                        request.Status, originalCount, items.Count);
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.OrderBy))
+                {
+                    try
+                    {
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var sortDirection = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var allowedProps = new[] { "Price", "CreatedAt" };
+                        if (!allowedProps.Contains(propertyName, StringComparer.OrdinalIgnoreCase))
+                        {
+                            _logger.LogWarning("Sorting by '{Property}' is not allowed", propertyName);
+                        }
+                        else
+                        {
+                            var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName,
+                                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
+                            if (orderProp != null)
+                            {
+                                items = sortDirection == "desc"
+                                    ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                    : items.OrderBy(i => orderProp.GetValue(i)).ToList();
+
+                                _logger.LogInformation("Applied sorting by {Property} {Direction}", propertyName, sortDirection);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                    }
+                }
+
+
+                int page = Math.Max(1, request.PageNumber);
+                int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
+
+                var totalCount = items.Count;
+                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+
+                return new ClassifiedsBoCollectiblesResponseDto
+                {
+                    TotalCount = totalCount,
+                    ClassifiedsCollectibles = pagedItems
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetAllCollectibles");
+                throw new Exception($"GetAllCollectibles failed: {ex.Message}", ex);
+            }
+        }
     }
 }

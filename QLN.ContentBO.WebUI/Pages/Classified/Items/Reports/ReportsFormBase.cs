@@ -22,8 +22,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.Reports
 
         protected override async Task OnInitializedAsync()
         {
-            editContext = new EditContext(reports);
-            messageStore = new ValidationMessageStore(editContext);
+            InitializeEditContext();
             await LoadCategoryTreesAsync();
         }
 
@@ -50,14 +49,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.Reports
             protected int SelectedFilterCount =>
                reports.ItemFieldFilters.Values.Sum(list => list.Count);
 
-
-        protected string[] AllowedFields => new[]
+       private void InitializeEditContext()
         {
-            "Condition", "Ram", "Model", "Capacity", "Processor", "Brand",
-            "Storage", "Colour", "Gender", "Resolution", "Coverage", "Battery Life",
-            "Size"
-        };
+            editContext = new EditContext(reports);
+            messageStore = new ValidationMessageStore(editContext);
 
+            editContext.OnValidationRequested += (_, __) =>
+            {
+                messageStore.Clear();
+            };
+        }
         private async Task LoadCategoryTreesAsync()
         {
             try
@@ -68,6 +69,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.Reports
                 {
                     var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
                     CategoryTrees = result ?? new();
+                    InitializeEditContext();
                 }
                 else
                 {

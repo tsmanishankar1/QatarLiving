@@ -1,5 +1,6 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
@@ -138,6 +140,8 @@ builder.Services.AddDbContext<QLApplicationContext>(options =>
 
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -242,9 +246,12 @@ builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
 
 builder.Services.ServicesBo(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -274,6 +281,7 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
@@ -283,17 +291,8 @@ paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
 
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyServiceGroup = app.MapGroup("/api/companyservice");
-companyServiceGroup.MapCompanyServiceEndpoints()
-    .RequireAuthorization();
-var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
-companyClassifiedsGroup.MapCompanyEndpoints()
-    .RequireAuthorization();
-var companyDsGroup = app.MapGroup("/api/companyds");
-companyDsGroup.MapCompanyDealsStoresEndpoints()
-    .RequireAuthorization();
-var companyVerifiedGroup = app.MapGroup("/api/companyverified");
-companyVerifiedGroup.MapVerifiedCompanyEndpoints()
+var companyProfileGroup = app.MapGroup("/api/companyprofile");
+companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
@@ -311,8 +310,6 @@ var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-//var bannerGroup = app.MapGroup("/api/banner");
-//bannerGroup.MapBannerEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
@@ -344,9 +341,6 @@ communityPostGroup.MapCommunityPostEndpoints();
 
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
-//.RequireAuthorization();
-
-
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints()
     .RequireAuthorization();

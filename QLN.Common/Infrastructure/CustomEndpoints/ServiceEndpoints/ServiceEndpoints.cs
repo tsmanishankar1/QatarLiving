@@ -10,7 +10,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using Dapr.Client.Autogen.Grpc.v1;
+
 using Dapr.Client;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
@@ -349,7 +349,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPut("/update", async Task<Results<Ok<string>, NotFound, ProblemHttpResult>> (
+            group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServicesModel dto,
                 HttpContext httpContext,
                 IServices service,
@@ -387,7 +387,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    return TypedResults.NotFound();
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -423,6 +427,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     var result = await service.UpdateServiceAd(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -700,6 +712,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.GetServicesByStatusWithPagination(dto, cancellationToken);
                     return Results.Ok(result);
                 }
+                catch(InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        title: "Invalid request",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest
+                    );
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -748,6 +768,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             title: "Service Not Found");
                     }
                     return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
                 }
                 catch (Exception ex)
                 {
@@ -800,6 +834,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     return Results.Ok(resultMessage);
                 }
+                catch(KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -814,6 +862,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Feature a service ad")
             .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
             .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -847,6 +896,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     return Results.Ok(resultMessage);
                 }
+                catch(KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -861,6 +924,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Refresh a service ad")
             .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
             .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
@@ -884,6 +948,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
 
                     return Results.Ok(result);
+                }
+                catch(KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch(InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
                 }
                 catch (Exception ex)
                 {
@@ -1009,5 +1087,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+      
+
+
+
     }
 }

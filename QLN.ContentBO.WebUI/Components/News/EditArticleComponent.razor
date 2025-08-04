@@ -1,4 +1,5 @@
 ﻿@page "/manage/news/editarticle/{ArticleId}"
+@using PSC.Blazor.Components.MarkdownEditor.Enums
 @inherits EditArticleBase
 
 <MudContainer MaxWidth="MaxWidth.False">
@@ -9,7 +10,7 @@
             <MudItem xs="12" md="7">
                 <MudText Class="mb-4 title-style">Edit Article Form</MudText>
 
-                
+
                 <!-- Add Category -->
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px">Required Category</MudText>
                 <MudGrid GutterSize="16px" Class="mb-4">
@@ -83,14 +84,42 @@
                 <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
                     @foreach (var item in WriterTags)
                     {
-                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                        <MudSelectItem Value="@item.Tagname">@item.Tagname</MudSelectItem>
                     }
                 </MudSelect>
 
                 <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
                 <MudText Typo="Typo.body2" Class="mt-4 mb-1">Article content</MudText>
-                <MarkdownEditor @bind-Value="@article.Content"  Placeholder="Start Typing" />
+                <!-- START Custom Markdown Editor -->
+                <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" HideIcons="@HiddenIcons" @ref="MarkdownEditorRef">
+                    <Toolbar>
+                        <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+
+                        <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                        <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                        <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                        <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+
+                        <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+
+                        <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                        <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
+                        <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                    </Toolbar>
+                </MarkdownEditor>
+                <MudText Typo="Typo.caption" Color="Color.Error">
+                    <ValidationMessage For="@(() => article.Content)" />
+                </MudText>
+                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
+                </MudFileUpload>
+                <!-- END Custom Markdown Editor -->
                 <ValidationSummary />
                 <MudStack Row Class="mt-6 justify-content-between">
                     <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" Style="text-transform: capitalize;" OnClick="@Cancel">Cancel</MudButton>
@@ -143,7 +172,7 @@
 </MudContainer>
 @if (IsLoading)
 {
-    <MudOverlay @bind-Visible="IsLoading" DarkBackground AutoClose="false" >
+    <MudOverlay @bind-Visible="IsLoading" DarkBackground AutoClose="false">
         <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
     </MudOverlay>
 }

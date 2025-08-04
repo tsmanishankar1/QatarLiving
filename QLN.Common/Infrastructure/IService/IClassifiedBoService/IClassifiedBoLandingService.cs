@@ -1,6 +1,8 @@
-﻿using QLN.Common.DTO_s;
+﻿using Microsoft.AspNetCore.Http;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,6 +87,20 @@ string? sortBy = null, CancellationToken cancellationToken = default);
                  string sortOrder,
                  CancellationToken cancellationToken = default);
         Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
+       
+
+        Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default);
+        Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType,string? filterDate,  CancellationToken cancellationToken = default);
+        Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
+        Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
+        Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
+       
+
+        Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default);
+        Task<SubscriptionTypes> GetSubscriptionById(int Id,CancellationToken cancellationToken = default);
+        Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default);
+      
+        Task<string> GetProcessStoresXML(string Url,string CompanyId,int SubscriptionId, string UserName, CancellationToken cancellationToken = default);
     }
 }
 

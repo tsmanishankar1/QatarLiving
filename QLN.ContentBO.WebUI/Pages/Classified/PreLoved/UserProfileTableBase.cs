@@ -10,12 +10,63 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
     public partial class UserProfileTableBase : ComponentBase
     {
-        protected List<BusinessVerificationItem> Listings { get; set; } = new();
         [Inject]
         protected NavigationManager Navigation { get; set; }
+        [Parameter]
+        public List<BusinessVerificationItem> Listings { get; set; }
+        [Parameter]
+        public bool IsLoading { get; set; }
+        [Parameter]
+        public bool IsEmpty { get; set; }
+        [Inject] public IDialogService DialogService { get; set; }
+
+        [Parameter]
+        public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageChanged { get; set; }
+        [Parameter]
+        public string SelectedTab { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageSizeChanged { get; set; }
+        [Parameter]
+        public EventCallback<string> OnTabChanged { get; set; }
+        protected string _activeTab;
+        [Parameter]
+        public EventCallback<string> selectedTabChanged { get; set; }
+
+        protected async Task HandleTabChanged(string newTab)
+        {
+            if (_activeTab != newTab)
+            {
+                _activeTab = newTab;
+                await OnTabChanged.InvokeAsync(newTab);
+                await selectedTabChanged.InvokeAsync(newTab); // Notify parent of change
+            }
+        }
+        protected string _activeProfileTab = ((int)VerifiedStatus.Pending).ToString();
+        protected override void OnParametersSet()
+        {
+            Console.WriteLine($"Parent SelectedTab: {SelectedTab}");
+            Console.WriteLine($"Child received selectedTab: {SelectedTab}");
+            Console.WriteLine($"Received selectedTab: {SelectedTab}");
+            if (!string.IsNullOrEmpty(SelectedTab))
+            {
+                _activeTab = SelectedTab;
+            }
+            else
+            {
+                _activeTab = ((int)AdStatusEnum.PendingApproval).ToString();
+            }
+            Console.WriteLine($"Active tab set to: {_activeTab}");
+        }
+        protected List<ToggleTabs.TabOption> profileTabOptions = new()
+        {
+            new() { Label = "Verification Request", Value = ((int)VerifiedStatus.Pending).ToString() },
+            new() { Label = "Approved", Value = ((int)VerifiedStatus.Approved).ToString() },
+            new() { Label = "Rejected", Value = ((int)VerifiedStatus.Rejected).ToString() }
+        };
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
         protected void HandlePageChange(int newPage)
         {
             currentPage = newPage;
@@ -30,56 +81,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         }
 
 
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
-        }
-        private List<BusinessVerificationItem> GetSampleData()
-        {
-            return new List<BusinessVerificationItem>
-            {
-                new BusinessVerificationItem
-                {
-                    UserId = 101,
-                    BusinessName = "Beethoven's",
-                    UserName = "Rashid",
-                    CRFile = "PDF",
-                    CRLicense = "446558",
-                    EndDate = DateTime.Parse("2025-12-05")
-                },
-                new BusinessVerificationItem
-                {
-                    UserId = 102,
-                    BusinessName = "LEGO® Shows 2025",
-                    UserName = "LEGO® Shows 2",
-                    CRFile = "N/A",
-                    CRLicense = "446558",
-                    EndDate = DateTime.Parse("2025-12-05")
-                },
-                new BusinessVerificationItem
-                {
-                    UserId = 103,
-                    BusinessName = "Tech Galaxy",
-                    UserName = "Ayaan Khan",
-                    CRFile = "DOCX",
-                    CRLicense = "992134",
-                    EndDate = DateTime.Parse("2025-11-20")
-                },
-                new BusinessVerificationItem
-                {
-                    UserId = 104,
-                    BusinessName = "Sunrise Traders",
-                    UserName = "Meera Sharma",
-                    CRFile = "PDF",
-                    CRLicense = "781245",
-                    EndDate = DateTime.Parse("2025-10-15")
-                }
-            };
-        }
+       
 
         protected void ShowPreview(BusinessVerificationItem item)
         {
-            Navigation.NavigateTo($"/verification/preview/{item.UserId}");
+            Navigation.NavigateTo($"/manage/classified/preloved/verification/preview/{item.UserId}");
         }
     }
 }

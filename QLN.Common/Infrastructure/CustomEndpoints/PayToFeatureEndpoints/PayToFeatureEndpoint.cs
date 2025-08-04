@@ -310,7 +310,7 @@ public static class PayToFeatureEndpoints
                 );
             }
         })
-        .RequireAuthorization(policy => policy.RequireRole("Admin"))
+       // .RequireAuthorization(policy => policy.RequireRole("Admin"))
         .WithName("CreatePayToFeatureBasicPrice")
         .WithTags("PayToFeature")
         .WithSummary("Create a new PayToFeature Basic Price")

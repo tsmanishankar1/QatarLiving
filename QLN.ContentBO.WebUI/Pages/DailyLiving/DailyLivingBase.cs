@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Pages.DailyLiving.Components.RadioAutoCompleteDialog;
-using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.DailyLiving.Components;
+using QLN.ContentBO.WebUI.Pages.DailyLiving.Components.RadioAutoCompleteDialog;
 using QLN.ContentBO.WebUI.Pages.EventCreateForm.MessageBox;
-using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using System.Text.Json;
-using QLN.ContentBO.WebUI.Services;
 
 public class DailyLivingBase : QLComponentBase
 {
@@ -49,9 +48,6 @@ public class DailyLivingBase : QLComponentBase
             }
             var paginatedData = await GetEvents(1, 50, "", "desc", 1);
             var allEvents = paginatedData.Items;
-            AllEventsList = allEvents
-                   .Where(e => e.Status == EventStatus.Published)
-                   .ToList();
             await OnTabChanged(0);
             featuredEventSlots = await GetFeaturedSlotsAsync();
             Categories = await GetEventsCategories();
@@ -60,6 +56,10 @@ public class DailyLivingBase : QLComponentBase
             {
                 selectedTopic = ActiveTopics.First();
             }
+
+            AllEventsList = [.. allEvents
+                .Where(e => e.Status == EventStatus.Published)
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)];
         }
         catch (Exception ex)
         {
@@ -358,11 +358,22 @@ public class DailyLivingBase : QLComponentBase
 
     protected Task OpenDReplaceDialogAsync()
     {
+        var featuredEventIds = featuredEventSlots
+                            .Where(slot => slot.Event != null)
+                            .Select(slot => slot.Event.Id)
+                            .ToHashSet();
+        
+        // Filter out featured events from AllEventsList
+        List<EventDTO> PublishedEventsList = [.. AllEventsList
+                 .Where(e => !featuredEventIds.Contains(e.Id))
+                .OrderByDescending(e => e.PublishedDate ?? DateTime.MinValue)
+                .Take(50)];
+
         var parameters = new DialogParameters
             {
                 { nameof(MessageBoxBase.Title), "Featured Event" },
-                { nameof(MessageBoxBase.Placeholder), "Article Title*" },
-                { nameof(MessageBoxBase.events), AllEventsList },
+                { nameof(MessageBoxBase.Placeholder), "Event Title*" },
+                { nameof(MessageBoxBase.events), PublishedEventsList },
                 { nameof(MessageBoxBase.OnAdd), EventCallback.Factory.Create<FeaturedSlot>(this, HandleEventSelected) }
             };
         var options = new DialogOptions

@@ -4,46 +4,79 @@ namespace QLN.ContentBO.WebUI.Pages
 {
     public partial class ServicesBase : ComponentBase
     {
-        protected int ActiveIndex { get; set; } = 0;
+        [Inject] protected NavigationManager NavigationManager { get; set; } = default!;
 
-        protected List<string> TabTitles { get; set; } = new()
+        protected int ActiveIndex { get; set; }
+
+        protected readonly List<TabItem> Tabs = new()
         {
-            "View  Subscription  Listing",
-            "P2p Listings",
-            "P2p Transactions",
-            "Subscription Ads",
-            "Verified Seller Request"
+            new TabItem("View  Subscription  Listing", "/manage/services/listing/subscriptions"),
+            new TabItem("P2P Listings", "/manage/services/listing/p2p/listing"),
+            new TabItem("P2P Transactions", "/manage/services/listing/p2p/transactions"),
+            new TabItem("Subscription Ads", "/manage/services/listing/subscription/ads"),
+            new TabItem("Verified Seller Request", "/manage/services/listing/vertified/seller/request")
         };
 
-          protected RenderFragment RenderTabContent() => builder =>
+        protected class TabItem
         {
-            switch (ActiveIndex)
+            public string Title { get; }
+            public string Url { get; }
+
+            public TabItem(string title, string url)
             {
-                case 0:
-                    builder.OpenComponent(0, typeof(QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing.ViewSubscriptionListing));
-                    builder.CloseComponent();
-                    break;
-                case 1:
-                    builder.OpenComponent(1, typeof(QLN.ContentBO.WebUI.Pages.Services.P2PListings.P2PListing));
-                    builder.CloseComponent();
-                    break;
-                case 2:
-                    builder.OpenComponent(2, typeof(QLN.ContentBO.WebUI.Pages.Services.P2PTransaction.P2PTransaction));
-                    builder.CloseComponent();
-                    break;
-                case 3:
-                    builder.OpenComponent(3, typeof(QLN.ContentBO.WebUI.Pages.Services.SubscriptionAds.SubscriptionAds));
-                    builder.CloseComponent();
-                    break;
-                case 4:
-                    builder.OpenComponent(3, typeof(QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest.VerifiedSellerRequest));
-                    builder.CloseComponent();
-                    break;
-                default:
-                    builder.AddContent(4, "Invalid tab");
-                    break;
+                Title = title;
+                Url = url;
             }
-        };
+        }
+
+        protected override void OnInitialized()
+        {
+            // Set initial tab index based on URL
+            ActiveIndex = GetActiveTabIndex();
+        }
+
+        protected override void OnParametersSet()
+        {
+            // Watch for route changes
+            var newIndex = GetActiveTabIndex();
+            if (ActiveIndex != newIndex)
+                ActiveIndex = newIndex;
+        }
+
+        protected override void OnAfterRender(bool firstRender)
+        {
+            if (firstRender)
+            {
+                // Optional: Log or perform diagnostics
+            }
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (!firstRender)
+            {
+                var expectedUrl = Tabs[ActiveIndex].Url;
+                var current = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLower();
+
+                if (!current.StartsWith(expectedUrl.TrimStart('/').ToLower()))
+                {
+                    NavigationManager.NavigateTo(expectedUrl);
+                }
+            }
+        }
+
+        private int GetActiveTabIndex()
+        {
+            var currentUri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri).ToLower();
+
+            for (int i = 0; i < Tabs.Count; i++)
+            {
+                if (currentUri.StartsWith(Tabs[i].Url.TrimStart('/').ToLower()))
+                    return i;
+            }
+
+            return 0;
+        }
 
     }
 }
