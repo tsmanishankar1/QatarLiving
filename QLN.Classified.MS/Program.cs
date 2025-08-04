@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-
 using QLN.Classifieds.MS.ServiceConfiguration;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
 

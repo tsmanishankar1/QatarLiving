@@ -4,8 +4,6 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.DbContext;
-
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -16,6 +14,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Reflection;
