@@ -24,6 +24,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         protected List<CategoryTreeNode> _subcategories = new();
         protected List<CategoryTreeNode> _sections = new();
         protected bool IsLoadingCategories { get; set; } = true;
+        public string TitleName { get; set; }
 
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
@@ -54,18 +55,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                         PropertyNameCaseInsensitive = true
                     }) ?? new();
 
-                    Console.WriteLine("✅ Category Tree Loaded:");
                     foreach (var cat in _categoryTree)
                         Console.WriteLine($"- {cat.Name} ({cat.Id}) → {cat.Children?.Count ?? 0} subcategories");
                 }
                 else
                 {
-                    Console.WriteLine("❌ Failed to fetch category tree. Status: " + response?.StatusCode);
+                    Console.WriteLine(" Failed to fetch category tree. Status: " + response?.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Exception while loading category tree: " + ex.Message);
+                Console.WriteLine(" Exception while loading category tree: " + ex.Message);
             }
             finally
             {
@@ -75,7 +75,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
         protected void OnCategoryChanged(string? categoryId)
         {
-            Console.WriteLine($"➡️ Category Selected: {categoryId}");
+            Console.WriteLine($" Category Selected: {categoryId}");
             SelectedCategoryId = categoryId;
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
@@ -110,7 +110,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         }
         protected void OnSectionChanged(string? sectionId)
         {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
+            Console.WriteLine($" Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
 
             var section = _sections.FirstOrDefault(c => c.Id == sectionId);
@@ -131,6 +131,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         {
             var newItem = new LandingPageItem
             {
+                
                 Category = SelectedCategory,
                 Subcategory = SelectedSubcategory,
                 Section = SelectedSection,
@@ -155,10 +156,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             var payload = new
             {
                 vertical = "classifieds",
+                title=Title,
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,
-                //l1CategoryId = SelectedSubcategoryId,
-                //l1categoryName = SelectedSubcategory,
+                l1CategoryId = SelectedSubcategoryId,
+                l1categoryName = SelectedSubcategory,
                 //l2categoryId = SelectedSectionId,
                 //l2categoryName = SelectedSection,
                 startDate = StartDate?.ToString("yyyy-MM-dd"),

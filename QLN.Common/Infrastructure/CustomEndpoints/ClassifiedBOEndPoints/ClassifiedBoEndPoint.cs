@@ -1428,7 +1428,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds ads, including their details.")
-            .Produces<List<ClassifiedItems>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsItems>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -1456,7 +1456,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
-            .Produces<List<ClassifiedCollectibles>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsCollectibles>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<

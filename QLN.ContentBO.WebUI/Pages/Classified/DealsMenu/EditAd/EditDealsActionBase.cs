@@ -2,15 +2,18 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
 {
-    public class EditDealsActionBase : ComponentBase
+    public class EditDealsActionBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
+        [Parameter] public DealsModal AdModel { get; set; } = new();
         [Parameter] public string UserName { get; set; } = "Rashid";
         [Parameter] public string Category { get; set; } = "Electronics";
+        [Inject] ILogger<EditDealsActionBase> Logger { get; set; }
         [Parameter] public int AdId { get; set; } = 21660;
         [Parameter] public int OrderId { get; set; } = 24578;
         protected async Task OpenPreviewDialog()
