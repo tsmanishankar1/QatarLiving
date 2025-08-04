@@ -2,6 +2,7 @@
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
@@ -208,7 +209,7 @@ namespace QLN.Classified.MS.Service.Services
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
                 if (string.Equals(dto.L1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase))
@@ -319,6 +320,10 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
                 return "Service Ad Created Successfully";
+            }
+            catch(ConflictException ex)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -431,7 +436,7 @@ namespace QLN.Classified.MS.Service.Services
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
                 ValidateCommon(dto);
@@ -493,6 +498,10 @@ namespace QLN.Classified.MS.Service.Services
                );
 
                 return "Service Ad updated successfully.";
+            }
+            catch(ConflictException ex)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -893,7 +902,7 @@ namespace QLN.Classified.MS.Service.Services
                     existingAd.IsActive &&
                     existingAd.Status == ServiceStatus.Published)
                 {
-                    throw new InvalidDataException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                    throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 }
             }
 
