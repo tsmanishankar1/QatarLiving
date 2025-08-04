@@ -41,7 +41,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 "published" => new() { { "status", (int)AdStatus.Published } },
                 "unpublished" => new() { { "status", (int)AdStatus.Unpublished } },
                 "p2p" => new() { { "adType", (int)AdType.P2P  } },
-                "approved" => new() { { "status", (int)AdStatus.Approved } },
                 "needChanges" => new() { { "status", (int)AdStatus.NeedsModification } },
                 "removed" => new() { { "status", (int)AdStatus.Rejected  } },
                 _ => new()
@@ -176,25 +175,19 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             { "Title", "Create Ad" },
             { "Label", "User Email*" },
             { "ButtonText", "Continue" },
-            { "ListItems", new List<DropdownItem>
-                {
-                    new() { Id = 1, Label = "john.doe@hotmail.com" },
-                    new() { Id = 2, Label = "jane.doe@gmail.com" },
-                    new() { Id = 3, Label = "alice@example.com" },
-                    new() { Id = 4, Label = "bob@workmail.com" },
-                    new() { Id = 5, Label = "emma@company.com" }
-                }
-            },
             { "OnSelect", EventCallback.Factory.Create<DropdownItem>(this, HandleSelect) }
         };
 
             DialogService.Show<AutoSelectDialog>("", parameters);
         }
 
-
         private Task HandleSelect(DropdownItem selected)
         {
-            var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}";
+            if (selected == null || string.IsNullOrWhiteSpace(selected.Label))
+            {
+                return Task.CompletedTask;
+            }
+            var targetUrl = $"/manage/classified/collectibles/createform?email={selected.Label}&uid={selected.Id}";
             NavManager.NavigateTo(targetUrl);
             return Task.CompletedTask;
         }

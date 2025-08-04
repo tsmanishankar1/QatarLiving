@@ -55,7 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pending Approval", Value = "pendingApproval" },
-            new() { Label = "Approved", Value = "approved" },
             new() { Label = "Need Changes", Value = "needChanges" },
             new() { Label = "All", Value = "all" },
             new() { Label = "Published", Value = "published" },
@@ -76,6 +75,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.ViewListing
                 "p2p" => "P2P",
                 "promoted" => "Promoted",
                 "featured" => "Featured",
+                "needChanges" => "Need Changes",
+                "removed" => "Removed",
                 _ => "Classified"
             };
         }
