@@ -9,7 +9,7 @@ namespace QLN.Classified.MS.Utilities
     {
         private readonly string _xsdPath;
 
-        public ProductXmlManager(string xsdPath = "./Data/Products.xsd")
+        public ProductXmlManager(string xsdPath = "./Data/Products.XSD")
         {
             _xsdPath = xsdPath;
         }

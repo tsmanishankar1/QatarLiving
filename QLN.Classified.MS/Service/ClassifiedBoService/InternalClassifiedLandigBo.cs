@@ -1951,16 +1951,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         AdId = ad.Id,
                         Dealtitle = ad.Title,
                         subscriptiontype = "12 Months Super",
+                        DateCreated = ad.CreatedAt,
                         createdby = ad.CreatedBy,
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt"),
-                        EndDate = ad.ExpiryDate.ToString(),
-                        WebClick = "2",
+                        StartDate = ad.UpdatedAt ?? DateTime.UtcNow,
+                        EndDate = ad.ExpiryDate,
+                        WebClick = 2,
                         Weburl = "linkup.com",
-                        Views = "3",
-                        Impression = "5",
-                        Phonelead = "4"
+                        Location = ad.Locations,
+                        Views = 3,
+                        Impression = 5,
+                        Phonelead = 4
                     };
 
 
@@ -3125,8 +3127,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     cancellationToken: cancellationToken
                 );
             }
-        }
-             
+        }       
+
 
       
 
@@ -3165,7 +3167,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
@@ -3196,7 +3198,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Url;
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))

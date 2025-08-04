@@ -24,13 +24,10 @@
                      style="@(imageLoaded ? "display: block;" : "display: none;")" @onload="OnImageLoaded"
                      @onerror="OnImageError" key="@Item.CoverImage" />
             }
+            <div class="date">
+                @Item.EventSchedule.StartDate.ToString("dd MMM yyyy") to @Item.EventSchedule.EndDate.ToString("dd MMM yyyy")
+            </div>
 
-            @if (!string.IsNullOrEmpty(Item.EventSchedule.StartDate) && !string.IsNullOrEmpty(Item.EventSchedule.EndDate))
-            {
-                <div class="date">
-                    @DateHelper.FormatDate(Item.EventSchedule.StartDate) to @DateHelper.FormatDate(Item.EventSchedule.EndDate)
-                </div>
-            }
         </div>
 
 
