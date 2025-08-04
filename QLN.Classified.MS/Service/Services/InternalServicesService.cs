@@ -9,7 +9,7 @@ using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.DTO_s.NotificationDto;
-using QLN.Subscriptions.Actor.ActorClass;
+
 
 namespace QLN.Classified.MS.Service.Services
 {
