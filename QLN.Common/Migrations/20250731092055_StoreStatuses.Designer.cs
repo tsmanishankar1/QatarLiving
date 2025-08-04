@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using QLN.Classified.MS.DBContext;
+using QLN.Common.Infrastructure.DbContext;
 
 #nullable disable
 
-namespace QLN.Classified.MS.Migrations
+namespace QLN.Common.Migrations
 {
     [DbContext(typeof(ClassifiedDevContext))]
-    [Migration("20250730133821_OrderIDToKey")]
-    partial class OrderIDToKey
+    [Migration("20250731092055_StoreStatuses")]
+    partial class StoreStatuses
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,6 +25,23 @@ namespace QLN.Classified.MS.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreStatus", b =>
+                {
+                    b.Property<int>("StoreStatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StoreStatusId"));
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("StoreStatusId");
+
+                    b.ToTable("StoreStatuses");
+                });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoresDto", b =>
                 {
@@ -206,6 +223,23 @@ namespace QLN.Classified.MS.Migrations
                     b.HasKey("OrderId");
 
                     b.ToTable("StoresSubscriptions");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.SubscriptionTypes", b =>
+                {
+                    b.Property<int>("SubscriptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SubscriptionId"));
+
+                    b.Property<string>("SubscriptionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("SubscriptionId");
+
+                    b.ToTable("SubscriptionType");
                 });
 #pragma warning restore 612, 618
         }
