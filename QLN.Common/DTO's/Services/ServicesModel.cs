@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s
 {
@@ -135,7 +136,8 @@ namespace QLN.Common.DTO_s
     {
         public List<Guid> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
-        public string? Reason { get; set; } 
+        public string? Reason { get; set; }
+        [JsonIgnore]
         public string? UpdatedBy { get; set; } 
     }
 }

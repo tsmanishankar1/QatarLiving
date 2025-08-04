@@ -20,6 +20,7 @@ namespace QLN.Common.Infrastructure.IService.IContentService
                 int categoryId,
                 int subCategoryId,
                 ArticleStatus status,
+                string? search,
                 int? page,
                 int? pageSize,
                 CancellationToken cancellationToken);
