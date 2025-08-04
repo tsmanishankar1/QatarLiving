@@ -155,5 +155,6 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IServicesBoService,ExternalServicesBoService>();
             return services;
         }
+        
     }
 }

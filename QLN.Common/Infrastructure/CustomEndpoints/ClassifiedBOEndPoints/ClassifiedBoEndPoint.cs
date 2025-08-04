@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -2713,7 +2715,207 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/get-subscription-types", async Task<Results<
+           Ok<List<SubscriptionTypes>>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetSubscriptionTypes(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetSubscriptionTypes")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get all subscription types on stores.")
+           .WithDescription("Fetches all subscription types of stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-subscription-id", async Task<Results<
+           Ok<SubscriptionTypes>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+            int Id,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetSubscriptionById(Id,cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetSubscriptionTypeById")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get subscription type on stores.")
+           .WithDescription("Fetches specific subscription type of stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-test-xml-validation", async Task<Results<
+           Ok<string>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetTestXMLValidation(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetTestXMLValidation")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Test XML Validation.")
+           .WithDescription("Testing validation from XSD")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapGet("/get-process-stores-xml",
+    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+        string Url,
+        string CompanyId,
+        int SubscriptionId,
+        IClassifiedBoLandingService service,
+        HttpContext context,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+            if (string.IsNullOrEmpty(userClaim))
+                return TypedResults.Forbid();
+
+            var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+            var userId = userData.GetProperty("uid").GetString();
+            var UserName = userData.GetProperty("name").GetString();
+
+            if (string.IsNullOrWhiteSpace(userId))
+                return TypedResults.Forbid();
+
+            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName?.ToString(), cancellationToken);
+
+            if (result?.ToString() == "created")
+            {
+                return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+            }
+
+            return TypedResults.BadRequest(new ProblemDetails
+            {
+                Title = "Store Processing Failed",
+                Detail = result?.ToString() ?? "Unknown error occurred.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+            );
+        }
+    })
+.WithName("GetProcessStoresXML")
+.WithTags("ClassifiedBo")
+.WithSummary("Test XML process.")
+.WithDescription("Testing processing from XSD")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-process-store-xml",
+    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+        string Url,
+        string CompanyId,
+        int SubscriptionId,
+        string UserName,
+        IClassifiedBoLandingService service,
+        HttpContext context,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName, cancellationToken);
+            return TypedResults.Ok(result);
+            
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+            );
+        }
+    })
+.ExcludeFromDescription()
+.WithName("GetProcessStoreXML")
+.WithTags("ClassifiedBo")
+.WithSummary("Test XML process.")
+.WithDescription("Testing processing from XSD")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
+
+  
 }
