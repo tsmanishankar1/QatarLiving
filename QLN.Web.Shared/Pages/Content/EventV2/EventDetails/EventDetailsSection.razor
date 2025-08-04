@@ -227,9 +227,9 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
 
                     <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
                     <span class="info-text">
-                        @Item.EventSchedule.StartDate
+                        @Item.EventSchedule.StartDate.ToString("dd MMM yyyy")
                         <text> to </text>
-                        @Item.EventSchedule.EndDate)
+                        @Item.EventSchedule.EndDate.ToString("dd MMM yyyy")
                     </span>
                 </div>
 
@@ -245,15 +245,16 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
                 }
                 else if (Item.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
                 {
-                    foreach (var timeSlot in Item.EventSchedule.TimeSlots)
-                    {
-                        <div class="info-item">
-                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                            <span class="info-text">
+                    <div class="info-item">
+                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                        @foreach (var timeSlot in Item.EventSchedule.TimeSlots)
+                        {
+                            <p class="info-text">
                                 @($"{timeSlot.DayOfWeek.ToString()} {timeSlot.TextTime}")
-                            </span>
-                        </div>
-                    }
+                            </p>
+                            <br />
+                        }
+                    </div>
                 }
             }
         </div>
@@ -263,7 +264,7 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
             <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
         </div> *@
 
-        </div>
+
 
         @if (!string.IsNullOrWhiteSpace(Item?.Venue))
         {
@@ -272,7 +273,6 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
                 <span class="location-text">@Item.Venue</span>
             </div>
         }
-
     };
 
     private async Task OnCalendarConfirmed(string calendarId)
