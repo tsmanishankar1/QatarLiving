@@ -423,7 +423,6 @@ namespace QLN.ContentBO.WebUI.Components.News
                 {
                     ToggleMarkdownPreview();
                 }
-
             }
             return Task.CompletedTask;
         }
