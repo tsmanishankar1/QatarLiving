@@ -12,8 +12,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLPayments
 {
     [DbContext(typeof(QLPaymentsContext))]
-    [Migration("20250731142138_PaymentsDbContext")]
-    partial class PaymentsDbContext
+    [Migration("20250804120934_InitialSchema")]
+    partial class InitialSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -120,13 +120,12 @@ namespace QLN.Common.Migrations.QLPayments
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
 
                     b.Property<string>("AdId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("AttachedPaymentId")
                         .HasColumnType("integer");
 
-                    b.Property<int>("CardType")
+                    b.Property<int?>("CardType")
                         .HasColumnType("integer");
 
                     b.Property<string>("Comments")
@@ -139,18 +138,17 @@ namespace QLN.Common.Migrations.QLPayments
                     b.Property<decimal>("Fee")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("Gateway")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<int>("Gateway")
+                        .HasColumnType("integer");
 
-                    b.Property<int>("GatewayResponse")
+                    b.Property<int?>("GatewayResponse")
                         .HasColumnType("integer");
 
                     b.Property<string>("PaidByUid")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("PaymentMethod")
+                    b.Property<int?>("PaymentMethod")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Points")
@@ -166,11 +164,9 @@ namespace QLN.Common.Migrations.QLPayments
                         .HasColumnType("integer");
 
                     b.Property<string>("SubscriptionFeaturedAddonsId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("SubscriptionRefreshedAddonsId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("TransactionId")
@@ -181,7 +177,6 @@ namespace QLN.Common.Migrations.QLPayments
                         .HasColumnType("integer");
 
                     b.Property<string>("UserSubscriptionId")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<int>("Vertical")
@@ -221,53 +216,67 @@ namespace QLN.Common.Migrations.QLPayments
                                 .HasColumnType("integer");
 
                             b1.Property<int>("AdId")
-                                .HasColumnType("integer");
+                                .HasColumnType("integer")
+                                .HasAnnotation("Relational:JsonPropertyName", "AdId");
 
                             b1.Property<string>("Classification")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "Classification");
 
                             b1.Property<string>("D365CustId")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "D365CustId");
 
                             b1.Property<string>("D365Itemid")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "D365Itemid");
 
                             b1.Property<string>("Email")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "Email");
 
                             b1.Property<DateTime?>("EndDate")
-                                .HasColumnType("timestamp with time zone");
+                                .HasColumnType("timestamp with time zone")
+                                .HasAnnotation("Relational:JsonPropertyName", "end_date");
 
                             b1.Property<string>("Mobile")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "Mobile");
 
                             b1.Property<string>("OrderId")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "OrderId");
 
                             b1.Property<decimal?>("Price")
-                                .HasColumnType("numeric");
+                                .HasColumnType("numeric")
+                                .HasAnnotation("Relational:JsonPropertyName", "Price");
 
                             b1.Property<int>("QLUserId")
-                                .HasColumnType("integer");
+                                .HasColumnType("integer")
+                                .HasAnnotation("Relational:JsonPropertyName", "QLUserId");
 
                             b1.Property<string>("QLUsername")
                                 .IsRequired()
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "QLUsername");
 
                             b1.Property<int?>("Qty")
-                                .HasColumnType("integer");
+                                .HasColumnType("integer")
+                                .HasAnnotation("Relational:JsonPropertyName", "Qty");
 
                             b1.Property<string>("SalesType")
-                                .HasColumnType("text");
+                                .HasColumnType("text")
+                                .HasAnnotation("Relational:JsonPropertyName", "SalesType");
 
                             b1.Property<DateTime?>("StartDate")
-                                .HasColumnType("timestamp with time zone");
+                                .HasColumnType("timestamp with time zone")
+                                .HasAnnotation("Relational:JsonPropertyName", "start_date");
 
                             b1.HasKey("D365RequestsLogsEntityId");
 
