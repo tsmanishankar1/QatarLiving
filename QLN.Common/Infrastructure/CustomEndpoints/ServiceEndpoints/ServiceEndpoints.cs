@@ -12,6 +12,7 @@ using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 
 using Dapr.Client;
+using QLN.Common.Infrastructure.CustomException;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -281,9 +282,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                   
+
                     var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -306,6 +316,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServiceRequest dto,
@@ -330,6 +341,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
+                catch(ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -344,6 +364,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
@@ -393,6 +414,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
+                catch(ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -407,6 +437,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces(StatusCodes.Status404NotFound)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPut("/updatebyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServicesModel dto,
@@ -436,6 +467,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -451,6 +491,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces(StatusCodes.Status404NotFound)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
@@ -949,6 +990,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     return Results.Ok(result);
                 }
+                catch(ConflictException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Conflict");
+                }
                 catch(KeyNotFoundException ex)
                 {
                     return Results.Problem(
@@ -979,6 +1027,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
