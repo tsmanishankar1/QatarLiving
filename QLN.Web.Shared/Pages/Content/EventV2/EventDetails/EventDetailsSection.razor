@@ -20,8 +20,8 @@
                     <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="421px" />
                 }
                 <img src="@(!string.IsNullOrWhiteSpace(Item?.CoverImage) ? Item.CoverImage : "/images/not_found.svg")"
-                    alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
-                    @onload="OnImageLoaded" @onerror="OnImageError" />
+                     alt="Event Image" class="event-image" style="@(imageLoaded ? "display: block;" : "display: none;")"
+                     @onload="OnImageLoaded" @onerror="OnImageError" />
 
 
                 <div class="event-info-bar">
@@ -33,7 +33,7 @@
                     <div class="icons">
                         @* <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" Class="icons-color" /> *@
                         <MudMenu OffsetY="true" CloseOnClick="true" Class="custom-share-menu"
-                            AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
+                                 AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight">
                             <ActivatorContent>
                                 <MudIconButton Icon="@Icons.Material.Filled.Share" Class="icons-color" />
                             </ActivatorContent>
@@ -83,20 +83,20 @@
     <MudItem xs="12" md="4">
         <div class="card-container">
             <div class="card-desktop-only">
-               @if (!string.IsNullOrWhiteSpace(Item?.CategoryName))
+                @if (!string.IsNullOrWhiteSpace(Item?.CategoryName))
                 {
                     <h3 class="section-title">
                         @(!string.IsNullOrWhiteSpace(Item?.CategoryName)
                                             ? Item.CategoryName
                                             : Item.CategoryName )
-                                      </h3>
+                </h3>
                                 }
-                 @EventInfoBlock()
+                @EventInfoBlock()
                 @ActionButtons()
             </div>
 
             <!-- Always visible map & ad -->
-              @if (Enum.IsDefined(typeof(EventType), Item.EventType))
+            @if (Enum.IsDefined(typeof(EventType), Item.EventType))
             {
                 <span class="map-access-name">Event Fees:</span>
                 <div class="eventv2-price">
@@ -122,8 +122,8 @@
                 {
                     <span class="map-access-name">Location:</span>
                     <iframe frameborder="0" scrolling="no" marginheight="0" marginwidth="0"
-                        src="https://www.openstreetmap.org/export/embed.html?bbox=@Item.Longitude,@Item.Latitude,@Item.Longitude,@Item.Latitude&layer=mapnik&marker=@Item.Latitude,@Item.Longitude"
-                        class="map-frame">
+                            src="https://www.openstreetmap.org/export/embed.html?bbox=@Item.Longitude,@Item.Latitude,@Item.Longitude,@Item.Latitude&layer=mapnik&marker=@Item.Latitude,@Item.Longitude"
+                            class="map-frame">
                     </iframe>
                 }
             </div>
@@ -221,67 +221,47 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
     RenderFragment EventInfoBlock() => __builder =>
     {
         <div class="info-section">
-            @if(Item.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+            @if (Item?.EventSchedule is not null)
             {
-                @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) || !string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
-                {
-                    <div class="info-item">
+                <div class="info-item">
 
-                        <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
-                        <span class="info-text">
-                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
-                            {
-                                @DateHelper.FormatDate(Item.EventSchedule.StartDate)
-                            }
-                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate) && !string.IsNullOrWhiteSpace(Item?.EventSchedule.StartDate))
-                            {
-                                <text> to </text>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(Item?.EventSchedule.EndDate))
-                            {
-                                @DateHelper.FormatDate(Item.EventSchedule.EndDate)
-                            }
-                        </span>
-                    </div>
+                    <img src="/qln-images/events_date_icon.svg" alt="Date Icon" class="info-icon" />
+                    <span class="info-text">
+                        @Item.EventSchedule.StartDate
+                        <text> to </text>
+                        @Item.EventSchedule.EndDate)
+                    </span>
+                </div>
+
+                @if (Item.EventSchedule.TimeSlotType == EventTimeType.GeneralTime)
+                {
+                    @if (!string.IsNullOrEmpty(Item.EventSchedule.GeneralTextTime))
+                    {
+                        <div class="info-item">
+                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                            <span class="info-text">@Item.EventSchedule.GeneralTextTime</span>
+                        </div>
+                    }
                 }
-
-                @if (Item.EventSchedule.StartTime.HasValue && Item.EventSchedule.EndTime.HasValue)
+                else if (Item.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
                 {
-                    <div class="info-item">
-                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                        <span class="info-text">@Item.EventSchedule.StartTime to @Item.EventSchedule.EndTime</span>
-                    </div>
+                    foreach (var timeSlot in Item.EventSchedule.TimeSlots)
+                    {
+                        <div class="info-item">
+                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
+                            <span class="info-text">
+                                @($"{timeSlot.DayOfWeek.ToString()} {timeSlot.TextTime}")
+                            </span>
+                        </div>
+                    }
                 }
-                
             }
-            else if(Item.EventSchedule.TimeSlotType == EventTimeType.PerDayTime)
-            {
-                <!-- Display per day time slots -->
-                @if (Item.EventSchedule.TimeSlots != null && Item.EventSchedule.TimeSlots.Any())
-                {
-                    <div class="info-item">
-                        <MudIcon Icon="@Icons.Material.Filled.AccessTime" Style="color: #555;" />
-                        <span class="info-text">
-                            @foreach (var slot in Item.EventSchedule.TimeSlots)
-                            {
-                                @if (slot.DayOfWeek.HasValue)
-                                {
-                                    <text>@slot.DayOfWeek.Value.ToString() - @slot.Time</text>
-                                }
-                                else
-                                {
-                                    <text>Week Day - @slot.Time</text>
-                                }
+        </div>
 
-                                @if (slot != Item.EventSchedule.TimeSlots.Last())
-                                {
-                                    <text>, </text>
-                                }
-                            }
-                        </span>
-                    </div>
-                }       
-            }
+        @* <div class="info-Access">
+            <span class="access-name">Access Fees:</span>
+            <span class="price-text">250 - 3,500 <span class="qar">QAR</span></span>
+        </div> *@
 
         </div>
 
@@ -303,8 +283,9 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
         var location = Uri.EscapeDataString(Item?.Venue ?? "");
 
         // Parse start and end dates from Item
-        DateTime startDate = DateTime.TryParse(Item?.EventSchedule.StartDate, out var dtStart) ? dtStart : DateTime.Now;
-        DateTime endDate = DateTime.TryParse(Item?.EventSchedule.EndDate, out var dtEnd) ? dtEnd : startDate.AddHours(2);
+        DateTime startDate = Item?.EventSchedule?.StartDate.ToDateTime(TimeOnly.MinValue) ?? DateTime.Now;
+        DateTime endDate = Item?.EventSchedule?.EndDate.ToDateTime(TimeOnly.MinValue) ?? startDate.AddHours(2);
+
 
         string startUtc = startDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
         string endUtc = endDate.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
@@ -344,14 +325,14 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
                 <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowRight" Style="margin-left: 125px; color:white;" />
             </a>
         }
-    
+
         <button class="calendar-button" @onclick="() => IsModalOpen = true">
             Add to Calendar
             <img src="/qln-images/add_to_calendar_Icons.svg" alt="Date Icon" class="add-to-info-icon" />
         </button>
 
         <AddToCalendarDialog @bind-IsVisible="IsModalOpen" Message="You will be notified 1 day ahead of this event"
-            OnConfirm="OnCalendarConfirmed" />
+                             OnConfirm="OnCalendarConfirmed" />
     };
 }
 
@@ -380,7 +361,7 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
         height: 32px;
     }
 
-        /* Target all popover menus that are open and belong to the share menu */
+    /* Target all popover menus that are open and belong to the share menu */
     .mud-popover:has(.share-icon) .mud-list {
         display: flex !important;
         flex-direction: row !important;
@@ -517,23 +498,23 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
         max-width: 100%;
     }
 
-    .event-description p {
-        margin-bottom: 1rem;
-    }
+        .event-description p {
+            margin-bottom: 1rem;
+        }
 
-    .event-description img {
-        max-width: 100%;
-        height: auto;
-        display: block;
-        margin: 1rem auto;
-        border-radius: 8px;
-    }
+        .event-description img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem auto;
+            border-radius: 8px;
+        }
 
-    .event-description iframe {
-        height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
-        max-width: 100%;
-        border: none;
-    }
+        .event-description iframe {
+            height: revert-layer; /* This is will load the iframe in the correct height to override MudBlazor CSS */
+            max-width: 100%;
+            border: none;
+        }
 
     .card-container {
         background-color: white;
@@ -656,18 +637,19 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
     .event-mobile-info {
         display: none;
     }
-      .eventv2-price {
+
+    .eventv2-price {
         font-size: 25px;
         font-weight: 600;
-        color: var(--color-primary) ;
-    }
-
-    .eventv2-price .currency {
-        font-size: 14px;
-        font-weight: 500;
-        margin-left: 4px;
         color: var(--color-primary);
     }
+
+        .eventv2-price .currency {
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 4px;
+            color: var(--color-primary);
+        }
 
     @@media (max-width: 768px) {
         .event-image-container {
@@ -720,6 +702,5 @@ Snackbar.Add("Failed to copy link. Please try again.", Severity.Error);
             display: flex;
             padding: 5px 0;
         }
-  
     }
 </style>
