@@ -4,89 +4,60 @@ using Microsoft.JSInterop;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using MudExRichTextEditor;
-using QLN.ContentBO.WebUI.Interfaces;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 {
     public class CreateFormListBase : ComponentBase
     {
-        [Inject] public IClassifiedService _classifiedsService { get; set; } 
-        protected bool IsLoadingCategories { get; set; } = true;
-        protected string? ErrorMessage { get; set; }
-        protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
-        protected CategoryTreeDto SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedCategoryId);
-        protected CategoryTreeDto SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubcategoryId);
-        protected CategoryTreeDto SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.SelectedSubSubcategoryId);
+        [Parameter] public List<CategoryTreeDto> CategoryTrees { get; set; } = new();
+        [Parameter] public List<LocationZoneDto> Zones { get; set; } = new();
+        protected CategoryTreeDto? SelectedCategory => CategoryTrees.FirstOrDefault(x => x.Id.ToString() == Ad.CategoryId);
+        protected CategoryTreeDto? SelectedSubcategory => SelectedCategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L1CategoryId);
+        protected CategoryTreeDto? SelectedSubSubcategory => SelectedSubcategory?.Children?.FirstOrDefault(x => x.Id.ToString() == Ad.L2CategoryId);
 
-        protected List<CategoryField> AvailableFields => 
+        protected List<CategoryField> AvailableFields =>
                                         SelectedSubSubcategory?.Fields ??
                                         SelectedSubcategory?.Fields ??
-                                        SelectedCategory?.Fields ?? 
+                                        SelectedCategory?.Fields ??
                                         new List<CategoryField>();
+        [Parameter] public string[] ExcludedFields { get; set; } = Array.Empty<string>();
+        [Parameter] public string? DefaultSelectedPhoneCountry { get; set; }
+        [Parameter] public string? DefaultSelectedWhatsappCountry { get; set; }
 
+        [Parameter] public CollectiblesEditAdPost Ad { get; set; } = new();
+        [Parameter] public EditContext editContext { get; set; } = default!;
+        [Parameter] public Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
 
-        protected string[] AllowedFields => new[]
-    {
-        "Condition", "Ram", "Model", "Capacity", "Processor", "Brand",
-        "Storage", "Colour", "Gender", "Resolution", "Coverage","Battery Life",
-        "Size" // <== Add these here
-    };
+        [Parameter] public bool IsLoadingZones { get; set; } = false;
+        [Parameter] public EventCallback OnAddressFieldsChanged { get; set; }
+        [Parameter] public bool IsLoadingCategories { get; set; } = true;
+        protected string? ErrorMessage { get; set; }
 
-
-        protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
         [Inject] ISnackbar Snackbar { get; set; }
-        [Parameter] public EditAdPost Ad { get; set; } = new();
-        protected EditContext editContext;
-        private ValidationMessageStore messageStore;
         [Inject] private IJSRuntime JS { get; set; }
         protected MudExRichTextEdit Editor;
         private DotNetObjectReference<CreateFormListBase>? _dotNetRef;
         [Inject] ILogger<CreateFormListBase> Logger { get; set; }
         protected CountryModel SelectedPhoneCountry;
         protected CountryModel SelectedWhatsappCountry;
-         protected string ShortFileName(string name, int max)
-         {
-                if (string.IsNullOrEmpty(name)) return "";
-                return name.Length <= max ? name : name.Substring(0, max) + "...";
-        }
-
-        protected async Task OnCrFileSelected(IBrowserFile file)
-        {
-            if (file.Size > 10 * 1024 * 1024)
-            {
-                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
-                return;
-            }
-
-            using var stream = file.OpenReadStream();
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-
-            Ad.CertificateFileName = file.Name;
-            Ad.Certificate = Convert.ToBase64String(ms.ToArray());
-        }
-        protected void ClearFile()
-        {
-            Ad.CertificateFileName = null;
-            Ad.Certificate = null;
-        }
-
+  
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
-            Ad.PhoneCode = model.Code;
+            Ad.ContactNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
 
         protected Task OnWhatsappCountryChanged(CountryModel model)
         {
             SelectedWhatsappCountry = model;
-            Ad.WhatsappCode = model.Code;
+            Ad.WhatsappNumberCountryCode = model.Code;
             return Task.CompletedTask;
         }
          protected Task OnPhoneChanged(string phone)
         {
-            Ad.PhoneNumber = phone;
+            Ad.ContactNumber = phone;
             return Task.CompletedTask;
         }
 
@@ -95,11 +66,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
             Ad.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-        protected async Task OnCategoryChanged(string categoryId)
+         protected async Task OnCategoryChanged(string categoryId)
         {
-            Ad.SelectedCategoryId = categoryId;
-            Ad.SelectedSubcategoryId = null;
-            Ad.SelectedSubSubcategoryId = null;
+            Ad.CategoryId = categoryId;
+            Ad.L1CategoryId = null;
+            Ad.L2CategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
@@ -110,8 +81,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
         protected async Task OnSubCategoryChanged(string subcategoryId)
         {
-            Ad.SelectedSubcategoryId = subcategoryId;
-            Ad.SelectedSubSubcategoryId = null;
+            Ad.L1CategoryId = subcategoryId;
+            Ad.L2CategoryId = null;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
@@ -121,14 +92,30 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
 
         protected async Task OnSubSubCategoryChanged(string subsubcategoryId)
         {
-            Ad.SelectedSubSubcategoryId = subsubcategoryId;
+            Ad.L2CategoryId = subsubcategoryId;
             Ad.DynamicFields.Clear();
             DynamicFieldErrors.Clear();
 
             editContext.NotifyValidationStateChanged();
             StateHasChanged();
         }
+        protected override async Task OnInitializedAsync()
+        {
+          if (CategoryTrees == null || !CategoryTrees.Any())
+            Logger.LogWarning("CategoryTrees is null or empty");
 
+        foreach (var cat in CategoryTrees)
+        {
+            if (cat == null)
+                Logger.LogWarning("CategoryTree has a null item");
+
+            if (cat?.Id == null || cat?.Name == null)
+                Logger.LogWarning("CategoryTree has null Id or Name: {@cat}", cat);
+        }
+
+
+            await base.OnInitializedAsync();
+        }
 
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -145,130 +132,69 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.EditAd
         public Task SetCoordinates(double lat, double lng)
         {
             Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
-
+            Ad.Longitude = lng;
+            Ad.Latitude = lat;
 
             StateHasChanged(); // Reflect changes in UI
             return Task.CompletedTask;
         }
-
-
-         private void ValidateDynamicField(string fieldName)
+        protected async Task OnZoneChanged(string zoneId)
         {
-            if (!DynamicFieldErrors.ContainsKey(fieldName))
-                DynamicFieldErrors[fieldName] = new List<string>();
+            var isChanged = Ad.Zone != zoneId;
+            Ad.Zone = zoneId;
 
-            DynamicFieldErrors[fieldName].Clear();
-
-            if (!Ad.DynamicFields.TryGetValue(fieldName, out var value) || string.IsNullOrWhiteSpace(value))
+            if (isChanged)
             {
-                DynamicFieldErrors[fieldName].Add($"{fieldName} is required.");
-            }
-        }
-       protected override async Task OnInitializedAsync()
-        {
-            editContext = new EditContext(Ad);
-            messageStore = new ValidationMessageStore(editContext);
-
-            editContext.OnValidationRequested += (_, __) =>
-            {
-                messageStore.Clear();
-                ValidateDynamicFields();
-            };
-
-            await LoadCategoryTreesAsync();
-        }
-        private void ValidateDynamicFields()
-        {
-            if (AvailableFields == null)
-                return; // Nothing to validate yet
-
-            foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
-            {
-                if (string.IsNullOrWhiteSpace(Ad.DynamicFields.GetValueOrDefault(field.Name)))
-                {
-                    messageStore.Add(new FieldIdentifier(Ad.DynamicFields, field.Name), $"{field.Name} is required.");
-                }
+                await OnAddressFieldsChanged.InvokeAsync();
             }
         }
 
-          private async Task LoadCategoryTreesAsync()
+        protected async Task OnStreetNumberChanged(string? street)
         {
-            try
-            {
-                var response = await _classifiedsService.GetAllCategoryTreesAsync("collectibles");
+            var changed = Ad.StreetNumber != street;
+            Ad.StreetNumber = street;
 
-                if (response is { IsSuccessStatusCode: true })
-                {
-                    var result = await response.Content.ReadFromJsonAsync<List<CategoryTreeDto>>();
-                    CategoryTrees = result ?? new();
-                    StateHasChanged();
-                }
-                else
-                {
-                    ErrorMessage = $"Failed to load category trees. Status: {response?.StatusCode}";
-                }
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrEmpty(Ad.Zone) && changed)
             {
-                ErrorMessage = "Error loading category trees.";
-            }
-            finally
-            {
-                IsLoadingCategories = false;
-                StateHasChanged();
+                await OnAddressFieldsChanged.InvokeAsync();
             }
         }
 
-
-         protected void SubmitForm()
+        protected async Task OnBuildingNumberChanged(string? building)
         {
-            messageStore.Clear();
-            DynamicFieldErrors.Clear();
+            var changed = Ad.BuildingNumber != building;
+            Ad.BuildingNumber = building;
 
-            // Run automatic validation
-            var isValid = editContext.Validate();
-
-            if (SelectedCategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.SelectedSubcategoryId))
+            if (!string.IsNullOrEmpty(Ad.Zone) && changed)
             {
-                messageStore.Add(() => Ad.SelectedSubcategoryId, "Subcategory is required.");
-                isValid = false;
+                await OnAddressFieldsChanged.InvokeAsync();
             }
-
-            if (SelectedSubcategory?.Children?.Any() == true && string.IsNullOrEmpty(Ad.SelectedSubSubcategoryId))
+        }
+         protected string ShortFileName(string name, int max)
+        {
+            if (string.IsNullOrEmpty(name)) return "";
+            return name.Length <= max ? name : name.Substring(0, max) + "...";
+        }
+          protected async Task OnCrFileSelected(IBrowserFile file)
+        {
+            if (file.Size > 10 * 1024 * 1024)
             {
-                messageStore.Add(() => Ad.SelectedSubSubcategoryId, "Sub Subcategory is required.");
-                isValid = false;
-            }
-
-            // Manual validation: Dynamic fields
-            foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
-            {
-                var value = Ad.DynamicFields.ContainsKey(field.Name) ? Ad.DynamicFields[field.Name] : null;
-
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    messageStore.Add(new FieldIdentifier(Ad.DynamicFields, field.Name), $"{field.Name} is required.");
-                    if (!DynamicFieldErrors.ContainsKey(field.Name))
-                        DynamicFieldErrors[field.Name] = new List<string>();
-                    DynamicFieldErrors[field.Name].Add($"{field.Name} is required.");
-                    isValid = false;
-                }
-            }
-
-            // Show the errors
-            editContext.NotifyValidationStateChanged();
-
-            if (!isValid)
-            {
-                Snackbar.Add("Please fill all required fields.", Severity.Error);
+                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
                 return;
             }
 
-            // All good!
-            Snackbar.Add("Form is valid and ready to submit!", Severity.Success);
-            // Proceed with form submission
-        }
+            using var stream = file.OpenReadStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
 
+             Ad.AuthenticityCertificateName = file.Name;
+             Ad.AuthenticityCertificateUrl = Convert.ToBase64String(ms.ToArray());
+        }
+        protected void ClearFile()
+        {
+            Ad.AuthenticityCertificateName = null;
+            Ad.AuthenticityCertificateUrl = null;
+        }
 
     }
 }

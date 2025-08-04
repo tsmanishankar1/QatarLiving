@@ -7,10 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTO%27s\D\**" />
     <Compile Remove="Infrastructure\RepositoryConfiguration\**" />
     <Compile Remove="Infrastructure\Repository\**" />
+    <EmbeddedResource Remove="DTO%27s\D\**" />
     <EmbeddedResource Remove="Infrastructure\RepositoryConfiguration\**" />
     <EmbeddedResource Remove="Infrastructure\Repository\**" />
+    <None Remove="DTO%27s\D\**" />
     <None Remove="Infrastructure\RepositoryConfiguration\**" />
     <None Remove="Infrastructure\Repository\**" />
   </ItemGroup>
@@ -54,10 +57,6 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DTO%27s\D\" />
   </ItemGroup>
 
 </Project>

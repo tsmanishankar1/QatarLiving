@@ -494,7 +494,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
             try
             {
                 var result = await _dapr.GetBulkStateAsync<CompanyProfileDto>(
-                    storeName: ConstantValues.CompanyStoreName,
+                    storeName: ConstantValues.Company.CompanyStoreName,
                     keys: await GetAllCompanyIdsAsync(cancellationToken), 
                     parallelism: 10,
                     metadata: null,
@@ -519,8 +519,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
         private async Task<IReadOnlyList<string>> GetAllCompanyIdsAsync(CancellationToken cancellationToken)
         {
-            var indexKey = ConstantValues.CompanyIndexKey; 
-            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.CompanyStoreName, indexKey, cancellationToken: cancellationToken);
+            var indexKey = ConstantValues.Company.CompanyIndexKey; 
+            var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.Company.CompanyStoreName, indexKey, cancellationToken: cancellationToken);
             return index ?? new List<string>();
         }
 

@@ -135,11 +135,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = "/api/service/createbyuserid";
+                var url = $"/api/service/createbyuserid?uid={uid}&userName={userName}";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
@@ -158,8 +158,8 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                    await response.Content.ReadAsStringAsync(cancellationToken);
-
+                await response.Content.ReadAsStringAsync(cancellationToken);
+               
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)
@@ -191,7 +191,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)

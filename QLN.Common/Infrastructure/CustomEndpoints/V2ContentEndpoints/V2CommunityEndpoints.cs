@@ -563,7 +563,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .WithDescription("Extracts user ID from token and toggles comment like.");
 
 
-            group.MapPost("/likeCommentInternal/{commentId:guid}/{communityPostId:guid}/{userId}", async Task<Results<
+            group.MapPost("/likeCommentInternal", async Task<Results<
     Ok<object>,
     ProblemHttpResult>>
 (

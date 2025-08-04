@@ -1,6 +1,7 @@
 @page "/content/events/edit"
 @page "/content/events/edit/{Id:guid}"
 @inherits EditEventBase;
+@using PSC.Blazor.Components.MarkdownEditor.Enums
 @using QLN.ContentBO.WebUI.Components.LoadingOverlay;
 @using QLN.ContentBO.WebUI.Models
 
@@ -191,7 +192,34 @@
                     </MudPaper>
                 }
             }
-            <MarkdownEditor @bind-Value="@CurrentEvent.EventDescription" Placeholder="Start Typing" />
+            <!-- START Custom Markdown Editor -->
+            <MarkdownEditor @bind-Value="@CurrentEvent.EventDescription" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
+                <Toolbar>
+                    <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                    <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                    <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                    <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+
+                    <MarkdownToolbarButton Separator Action="MarkdownAction.SideBySide" Icon="fa fa-columns" Title="Side by Side" />
+                    <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                </Toolbar>
+            </MarkdownEditor>
+            <MudText Typo="Typo.caption" Color="Color.Error">
+                <ValidationMessage For="@(() => CurrentEvent.EventDescription)" />
+            </MudText>
+            <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
+            </MudFileUpload>
+            <!-- END Custom Markdown Editor -->
             @if (!string.IsNullOrEmpty(_descriptionerror))
             {
                 <div class="mud-error-text">@_descriptionerror</div>

@@ -2,46 +2,87 @@
 @using MudBlazor
 
 <div class="ad-preview-container">
-    <!-- Left Column -->
     <div class="left-column">
         <div class="user-info">
             <div class="label">Username</div>
-            <div class="value">@($"{UserName} {Category}")</div>
+            <div class="value">@AdModel.UserName</div>
             <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
                 <span class="dot"></span> Active
             </MudChip>
         </div>
 
         <div class="button-row">
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Unfeature Ad", "Are you sure you want to unfeature this ad?", "Unfeature"))'>
-                <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
-                Unfeatured
-            </MudButton>
 
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Unpromote Ad", "Are you sure you want to unpromote this ad?", "Unpromote"))'>
-                <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
-                Unpromoted
-            </MudButton>
+            @* Feature Button *@
+            @if (AdModel.IsFeatured)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Unfeature Ad", "Are you sure you want to unfeature this ad?", "Unfeature"))'>
+                    <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                    Unfeature
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Feature Ad", "Do you want to feature this ad?", "Feature"))'>
+                    <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                    Feature
+                </MudButton>
+            }
 
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
-                       OnClick='@(() => ShowConfirmation("Refresh Ad", "Do you want to refresh this ad?", "Refresh"))'>
-                <img src="/qln-images/refresh_icon.svg" class="btn-icon" />
-                Refresh
-            </MudButton>
+            @* Promote Button *@
+            @if (AdModel.IsPromoted)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Unpromote Ad", "Are you sure you want to unpromote this ad?", "Unpromote"))'>
+                    <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                    Unpromote
+                </MudButton>
+            }
+            else
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Promote Ad", "Do you want to promote this ad?", "Promote"))'>
+                    <img src="/qln-images/unfeatured_icon.svg" class="btn-icon" />
+                    Promote
+                </MudButton>
+            }
+
+            @* Refresh Button *@
+            @if (!AdModel.IsRefreshed)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           OnClick='@(() => ShowConfirmation("Refresh Ad", "Do you want to refresh this ad?", "Refresh"))'>
+                    <img src="/qln-images/refresh_icon.svg" class="btn-icon" />
+                    Refresh
+                </MudButton>
+            }
 
             <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
                        StartIcon="@Icons.Material.Outlined.RemoveRedEye" OnClick="OpenPreviewDialog">
                 Preview
             </MudButton>
 
-            <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
-                       StartIcon="@Icons.Material.Outlined.VisibilityOff"
-                       OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to unpublish this ad?", "Unpublish"))'>
-                Unpublish
-            </MudButton>
+            @* Publish/Unpublish *@
+            @if (CanUnpublish)
+            {
+                <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
+                           StartIcon="@Icons.Material.Outlined.VisibilityOff"
+                           OnClick='@(() => ShowConfirmation("Unpublish Ad", "Are you sure you want to unpublish this ad?", "Unpublish"))'>
+                    Unpublish
+                </MudButton>
+            }
+            else if (CanPublish)
+            {
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="action-btn"
+                           StartIcon="@Icons.Material.Rounded.PublishedWithChanges"
+                           OnClick='@(() => ShowConfirmation("Publish Ad", "Do you want to publish this ad?", "Publish"))'>
+                    Publish
+                </MudButton>
+            }
 
+            @* Remove Button *@
             <MudButton Color="Color.Error" Variant="Variant.Filled" Class="action-btn"
                        OnClick='@(() => ShowConfirmation("Remove Ad", "Do you really want to delete this ad?", "Remove"))'>
                 <img src="/qln-images/delete_icon.svg" class="btn-icon" />
@@ -50,11 +91,10 @@
         </div>
     </div>
 
-    <!-- Right Column -->
     <div class="right-column">
         <div class="ad-info">
-            <div class="value"><span class="label">Ad ID:</span> @AdId</div>
-            <div class="value"><span class="label">Order ID:</span> @OrderId</div>
+            <div class="value"><span title="@AdModel.Id" class="label">Ad ID:</span> @AdModel.Id</div>
+            @* <div class="value"><span class="label">Order ID:</span> @OrderId</div> *@
         </div>
     </div>
 </div>

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
@@ -202,6 +203,7 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 {
     opts.SerializerOptions.Converters
         .Add(new MicrosoftSpatialGeoJsonConverter());
+    opts.SerializerOptions.Converters.Add(new AttributesJsonConverter());
 });
 builder.Services.AddResponseCaching();
 builder.Services.AddResponseCompression(options =>
@@ -236,6 +238,8 @@ builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
 
 builder.Services.ServicesBo(builder.Configuration);
 var app = builder.Build();
@@ -273,17 +277,8 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
-var companyServiceGroup = app.MapGroup("/api/companyservice");
-companyServiceGroup.MapCompanyServiceEndpoints()
-    .RequireAuthorization();
-var companyClassifiedsGroup = app.MapGroup("/api/companyprofile");
-companyClassifiedsGroup.MapCompanyEndpoints()
-    .RequireAuthorization();
-var companyDsGroup = app.MapGroup("/api/companyds");
-companyDsGroup.MapCompanyDealsStoresEndpoints()
-    .RequireAuthorization();
-var companyVerifiedGroup = app.MapGroup("/api/companyverified");
-companyVerifiedGroup.MapVerifiedCompanyEndpoints()
+var companyProfileGroup = app.MapGroup("/api/companyprofile");
+companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
@@ -301,8 +296,6 @@ var reportsGroup = app.MapGroup("/api/v2/report");
 reportsGroup.MapReportsEndpoints();
 var contentGroup = app.MapGroup("/api/content");
 contentGroup.MapContentLandingEndpoints();
-//var bannerGroup = app.MapGroup("/api/banner");
-//bannerGroup.MapBannerEndpoints();
 var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
@@ -334,11 +327,9 @@ communityPostGroup.MapCommunityPostEndpoints();
 
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
-//.RequireAuthorization();
-
-
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
-ClassifiedBo.MapClassifiedboEndpoints();
+ClassifiedBo.MapClassifiedboEndpoints()
+    .RequireAuthorization();
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();

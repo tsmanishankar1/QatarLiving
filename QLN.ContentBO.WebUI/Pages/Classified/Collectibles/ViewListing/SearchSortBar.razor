@@ -6,7 +6,7 @@
         <div class="left-section">
             <MudButton StartIcon="@Icons.Material.Outlined.Add" class="add-button"
                        Variant="Variant.Filled" Color="Color.Primary"
-                       OnClick="AddEventCallback">
+                       OnClick="@(async () => await OnAddClicked.InvokeAsync())">
                 Create Ad
             </MudButton>
 

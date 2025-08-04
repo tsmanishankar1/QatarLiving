@@ -3,6 +3,7 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 {
@@ -10,34 +11,59 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
     {
         [Inject] public NavigationManager Navigation { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
-
+        [Inject] IServiceBOService serviceBOService { get; set; }
+        [Inject] ISnackbar Snackbar { get; set; }
+        [Inject] ILogger<EditServiceBase> Logger { get; set; }
+        private BulkModerationAction _selectedAction;
         protected void GoBack()
         {
             Navigation.NavigateTo("/manage/services/listing");
         }
         protected AdPost adPostModel { get; set; } = new();
-
-        protected string? Id { get; set; }
-
-        protected override void OnInitialized()
+        [Parameter]
+        public Guid? Id { get; set; }
+        public ServicesDto selectedService { get; set; } = new ServicesDto();
+        protected override async Task OnParametersSetAsync()
         {
-            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
-
-            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("id", out var id))
+            try
             {
-                Id = id;
+                if (Id.HasValue)
+                {
+                    selectedService = await GetServiceById(Id.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnParametersSetAsync");
             }
         }
-        protected async Task ShowConfirmation(string title, string message, string buttonTitle)
+        private async Task<ServicesDto> GetServiceById(Guid Id)
         {
+            try
+            {
+                var apiResponse = await serviceBOService.GetServiceById(Id);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<ServicesDto>();
+                    return response ?? new ServicesDto();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetEventsLocations");
+            }
+            return new ServicesDto();
+        }
+        protected async Task ShowConfirmation(string title, string message, string buttonTitle, BulkModerationAction status)
+        {
+            _selectedAction = status;
             var parameters = new DialogParameters
             {
                 { "Title", title },
                 { "Descrption", message },
                 { "ButtonTitle", buttonTitle },
                 { "OnConfirmed", EventCallback.Factory.Create(this, async () => {
-                    // Placeholder: handle actual action logic here.
-                    Console.WriteLine($"{buttonTitle} confirmed.");
+                    await UpdateStatus();
                 })}
             };
 
@@ -51,6 +77,46 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             await dialog.Result;
         }
+        private async Task UpdateStatus()
+        {
+            var request = new BulkModerationRequest
+            {
+                AdIds = new List<Guid> { selectedService.Id },
+                Action = _selectedAction,
+                Reason = null,
+            };
+            var response = await serviceBOService.UpdateServiceStatus(request);
+            if (response.IsSuccessStatusCode)
+            {
+                var status = _selectedAction switch
+                {
+                    BulkModerationAction.Approve => ServiceStatus.Published,
+                    BulkModerationAction.Publish => ServiceStatus.Published,
+                    BulkModerationAction.Unpublish => ServiceStatus.Unpublished,
+                    BulkModerationAction.Remove => ServiceStatus.Rejected,
+                    _ => ServiceStatus.Draft
+                };
+                selectedService.Status = status;
+
+                Snackbar.Add(
+                _selectedAction switch
+                {
+                    BulkModerationAction.Approve => "Service Ad Approved Successfully",
+                    BulkModerationAction.Publish => "Service Ad Published Successfully",
+                    BulkModerationAction.Unpublish => "Service Ad Unpublished Successfully",
+                    BulkModerationAction.Remove => "Service Ad Removed Successfully",
+                    _ => "Service Ad Updated Successfully"
+                },
+                    Severity.Success
+                );
+
+            }
+            else
+            {
+                Snackbar.Add("Failed to update ad status", Severity.Error);
+            }
+        }
+
         protected async Task OpenNeedChangesDialog()
         {
             var options = new DialogOptions
@@ -63,14 +129,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             var result = await dialog.Result;
             if (!result.Canceled)
             {
-                string userComment = result.Data?.ToString() ?? "";
+                selectedService.Comments = result.Data?.ToString() ?? "";
             }
-            else
-            {
-                Console.WriteLine("User skipped the dialog.");
-            }
-    
         }
-    
     }
 }

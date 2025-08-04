@@ -3,7 +3,7 @@ namespace QLN.ContentBO.WebUI.Models
 {
     public class ServiceCategory
     {
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; }
         public string Category { get; set; } = default!;
         public List<L1Category> L1Categories { get; set; } = new();
     }

@@ -2,6 +2,7 @@
 using Dapr.Actors;
 using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
@@ -15,9 +16,11 @@ namespace QLN.Classified.MS.Service.Services
     public class InternalServicesService : IServices
     {
         public readonly DaprClient _dapr;
-        public InternalServicesService(DaprClient dapr)
+        public readonly AuditLogger _auditLogger;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
         {
             _dapr = dapr;
+            _auditLogger = auditLogger;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -153,11 +156,35 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        public async Task<string> CreateServiceAd(ServicesModel dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                ValidateCommon(dto);
+                string? categoryName = null;
+                string? l1CategoryName = null;
+                string? l2CategoryName = null;
+                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                    ConstantValues.Services.StoreName,
+                    dto.CategoryId.ToString(),
+                    cancellationToken: cancellationToken);
+
+                if (mainCategory != null)
+                {
+                    dto.CategoryName = mainCategory.Category;
+                    var l1Category = mainCategory.L1Categories?.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                    if (l1Category != null)
+                    {
+                        dto.L1CategoryName = l1Category.Name;
+                        l1CategoryName = l1Category.Name;
+                        var l2Category = l1Category.L2Categories?.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                        if (l2Category != null)
+                        {
+                            dto.L2CategoryName = l2Category.Name;
+                            l2CategoryName = l2Category.Name;
+                        }
+                    }
+                }
+
                 var allAdKeys = await _dapr.GetStateAsync<List<string>>(
                    ConstantValues.Services.StoreName,
                    ConstantValues.Services.ServicesIndexKey,
@@ -173,22 +200,23 @@ namespace QLN.Classified.MS.Service.Services
                     );
 
                     if (existingAd != null &&
-                        existingAd.CreatedBy == dto.CreatedBy &&
+                        existingAd.CreatedBy == uid &&
                         existingAd.L2CategoryId == dto.L2CategoryId &&
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
+
                 var entity = new ServicesModel
                 {
                     AdType = dto.AdType,
-                    Id = dto.Id,
+                    Id = Guid.NewGuid(),
                     CategoryId = dto.CategoryId,
                     L1CategoryId = dto.L1CategoryId,
                     L2CategoryId = dto.L2CategoryId,
-                    CategoryName = dto.CategoryName,
+                    CategoryName = mainCategory.Category,
                     L1CategoryName = dto.L1CategoryName,
                     L2CategoryName = dto.L2CategoryName,
                     IsPriceOnRequest = dto.IsPriceOnRequest,
@@ -206,27 +234,20 @@ namespace QLN.Classified.MS.Service.Services
                     BuildingNumber = dto.BuildingNumber,
                     LicenseCertificate = dto.LicenseCertificate,
                     Comments = dto.Comments,
-                    SubscriptionId = dto.SubscriptionId,
+                    SubscriptionId = uid,
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
-                    UserName = dto.UserName,
+                    UserName = userName,
                     Status = dto.Status,
-                    IsFeatured = dto.IsFeatured,
-                    IsPromoted = dto.IsPromoted,
-                    IsRefreshed = dto.IsRefreshed,
-                    RefreshExpiryDate = dto.RefreshExpiryDate,
-                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                    PromotedExpiryDate = dto.PromotedExpiryDate,
-                    ExpiryDate = dto.ExpiryDate,
                     IsActive = true,
-                    CreatedBy = dto.CreatedBy,
-                    CreatedAt = dto.CreatedAt,
-                    PublishedDate = dto.PublishedDate ?? DateTime.UtcNow
+                    CreatedBy = uid,
+                    CreatedAt = DateTime.UtcNow
                 };
+                ValidateCommon(entity);
 
-                var key = dto.Id.ToString();
+                var key = entity.Id.ToString();
                 await _dapr.SaveStateAsync(
                     ConstantValues.Services.StoreName,
                     key,
@@ -267,7 +288,16 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
+                await _auditLogger.CreateAuditLog(
+                    id: Guid.NewGuid(),
+                    module: "Service",
+                    httpMethod: "POST",
+                    apiEndpoint: $"/api/service/createbyuserid?uid={uid}&userName={userName}",
+                    successMessage: "Service Ad Created Successfully",
+                    createdBy: uid,
+                    payload: entity,
+                    cancellationToken: cancellationToken
+                );
                 return "Service Ad Created Successfully";
             }
             catch (ArgumentException ex)
@@ -310,29 +340,17 @@ namespace QLN.Classified.MS.Service.Services
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
 
-            var therapeuticL2s = new[] { "spa", "wellness centers" };
-
-            bool isTherapeutic =
-                (!string.IsNullOrWhiteSpace(dto.L1CategoryName) && dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(dto.L2CategoryName) && therapeuticL2s.Contains(dto.L2CategoryName.Trim().ToLowerInvariant()));
-
-            if (isTherapeutic)
+            if (!string.IsNullOrWhiteSpace(dto.L1CategoryName) &&
+                    dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase) &&
+                    string.IsNullOrWhiteSpace(dto.LicenseCertificate))
             {
-                if (string.IsNullOrWhiteSpace(dto.LicenseCertificate))
-                    throw new ArgumentException("License certificate is required for therapeutic services.");
-
-                var validExtensions = new[] { ".pdf", ".png", ".jpg" };
-                var extension = Path.GetExtension(dto.LicenseCertificate)?.ToLowerInvariant();
-
-                if (string.IsNullOrEmpty(extension) || !validExtensions.Contains(extension))
-                    throw new ArgumentException("License certificate must be a PDF, PNG, or JPG file.");
+                throw new ArgumentException("License certificate is required for therapeutic services.");
             }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                ValidateCommon(dto);
                 if (dto.Id == Guid.Empty)
                     throw new ArgumentException("Service Ad ID is required for update.");
 
@@ -342,6 +360,8 @@ namespace QLN.Classified.MS.Service.Services
                     key,
                     cancellationToken: cancellationToken
                 );
+                if (existing == null)
+                    throw new ArgumentException("Service Ad not found for update.");
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -365,8 +385,29 @@ namespace QLN.Classified.MS.Service.Services
                         }
                     }
                 }
-                if (existing == null)
-                    throw new InvalidDataException("Service Ad not found for update.");
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                  ConstantValues.Services.StoreName,
+                  ConstantValues.Services.ServicesIndexKey,
+                  cancellationToken: cancellationToken
+               ) ?? new();
+                foreach (var adKey in allAdKeys)
+                {
+                    var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == userId &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new ArgumentException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                    }
+                }
+                ValidateCommon(dto);
 
                 var entity = new ServicesModel
                 {
@@ -454,6 +495,18 @@ namespace QLN.Classified.MS.Service.Services
                     Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
                     Html = $"{dto.Title} has been updated."
                 }, cancellationToken);
+
+                await _auditLogger.UpdateAuditLog(
+                   id: Guid.NewGuid(),
+                   module: "Service",
+                   httpMethod: "PUT",
+                   apiEndpoint: $"/api/service/updatebyid?id={dto.Id}",
+                   successMessage: "Service Ad Updated Successfully",
+                   updatedBy: userId,
+                   payload: dto,
+                   cancellationToken: cancellationToken
+               );
+
                 return "Service Ad updated successfully.";
             }
             catch (ArgumentException ex)
@@ -628,6 +681,16 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
             }
+            await _auditLogger.UpdateAuditLog(
+                id: Guid.NewGuid(),
+                module: "Service",
+                httpMethod: "DELETE",
+                apiEndpoint: $"/api/service/deletebyid?id={id}",
+                successMessage: "Service Ad Deleted Successfully",
+                updatedBy: userId,
+                payload: null, 
+                cancellationToken: cancellationToken
+            );
 
             return "Service Ad soft-deleted successfully.";
         }

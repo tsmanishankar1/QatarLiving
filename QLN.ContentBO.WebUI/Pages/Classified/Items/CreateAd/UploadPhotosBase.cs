@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         [Inject] private IJSRuntime JS { get; set; }
         [Inject] private ILogger<UploadPhotosBase> Logger { get; set; }
 
-        [Parameter] public AdPost AdModel { get; set; } = new();
+        [Parameter] public AdPost AdModel { get; set; } 
 
         protected const int MaxImages = 9;
 
@@ -27,12 +27,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 await JS.InvokeVoidAsync("initSortable", DotNetObjectReference.Create(this));
             }
         }
-
-       protected void AddImageBox()
+        protected void AddImageBox()
         {
             if (AdModel.Images.Count < MaxImages)
             {
-                AdModel.Images.Add(new AdImage { Order = AdModel.Images.Count });
+                AdModel.Images.Add(new AdImage
+                {
+                    Id = Guid.NewGuid(), // Ensure unique Id
+                    Order = AdModel.Images.Count
+                });
             }
         }
 
@@ -40,7 +43,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
         protected async Task OnMultipleFilesSelected(InputFileChangeEventArgs e, Guid targetImageId)
         {
             var startIndex = AdModel.Images.FindIndex(i => i.Id == targetImageId);
-            if (startIndex == -1) return;
+            if (startIndex == -1)
+            {
+                return;
+            }
 
             var files = e.GetMultipleFiles(MaxImages - AdModel.Images.Count + 1);
             int insertIndex = startIndex;
@@ -63,12 +69,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
                 }
                 else
                 {
-                    AdModel.Images.Add(new AdImage
+                    var newImage = new AdImage
                     {
+                        Id = Guid.NewGuid(),
                         Order = insertIndex,
                         Url = url,
                         AdImageFileName = file.Name
-                    });
+                    };
+                    AdModel.Images.Add(newImage);
+
+                    Logger.LogInformation($"[Add] New image added at index {insertIndex}: {file.Name}, Url length: {url?.Length}");
                 }
 
                 insertIndex++;
