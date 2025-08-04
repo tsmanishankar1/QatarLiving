@@ -143,7 +143,6 @@ namespace QLN.Common.DTO_s
         public int PublishedCount { get; set; }
         public int PromotedCount { get; set; }
         public int FeaturedCount { get; set; }
-
         public int? PromoteTotal { get; set; }
         public int? FeaturedTotal { get; set; }
         public int? PublishedTotal { get; set; }
@@ -153,5 +152,11 @@ namespace QLN.Common.DTO_s
     {
         public string UserId { get; set; } = default!;
     }
+    public class SubverticalStatusRequest
+    {
+        public string UserId { get; set; } = default!;
+        public string SubVerticalName { get; set; } = default!;
+    }
+
 
 }
