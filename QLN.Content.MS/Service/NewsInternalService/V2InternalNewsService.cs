@@ -29,7 +29,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<string> CreateWritertagAsync(WritertagDTO dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateWritertagAsync(Writertag dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -38,20 +38,9 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     throw new ArgumentException("Tagname is required.");
                 }
 
-                var normalizedTag = dto.Tagname.Trim().ToLowerInvariant();
-                var tagId = Guid.NewGuid();
-                var key = $"writertag-{normalizedTag}";
-
-                var tagEntity = new WritertagDTO
-                {
-                    
-                    Tagname = normalizedTag,
-                    tagId=tagId
-                    
-                };
-
+                var key = $"writertag-{dto.tagId}";
                 string storeName = V2Content.ContentStoreName;
-                await _dapr.SaveStateAsync(storeName, key, tagEntity, cancellationToken: cancellationToken);
+                await _dapr.SaveStateAsync(storeName, key, dto, cancellationToken: cancellationToken);
 
                 string indexKey = "writertags-index";
                 var currentTags = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
@@ -69,7 +58,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 throw new Exception("Unexpected error during writer tag creation", ex);
             }
         }
-        public async Task<List<WritertagDTO>> GetAllWritertagsAsync(CancellationToken cancellationToken)
+        public async Task<List<Writertag>> GetAllWritertagsAsync(CancellationToken cancellationToken)
         {
             try
             {
@@ -78,11 +67,11 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 var tagKeys = await _dapr.GetStateAsync<List<string>>(storeName, indexKey) ?? new();
 
-                var tags = new List<WritertagDTO>();
+                var tags = new List<Writertag>();
 
                 foreach (var key in tagKeys)
                 {
-                    var tag = await _dapr.GetStateAsync<WritertagDTO>(storeName, key);
+                    var tag = await _dapr.GetStateAsync<Writertag>(storeName, key);
                     if (tag != null)
                     {
                         tags.Add(tag);

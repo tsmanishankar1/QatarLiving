@@ -1,6 +1,7 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
+using QLN.Common.Infrastructure.DTO_s;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,21 +50,6 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);
-        Task<TransactionListResponseDto> GetTransactionsAsync(
-                    string subVertical,
-                    int pageNumber,
-                    int pageSize,
-                    string? searchText,
-                    string? transactionType,
-                    string? dateCreated,
-                    string? datePublished,
-                    string? dateStart,
-                    string? dateEnd,
-                    string? status,
-                    string? paymentMethod,
-                    string sortBy,
-                    string sortOrder,
-                    CancellationToken cancellationToken = default);
         Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default);
 
@@ -99,6 +85,15 @@ string? sortBy = null, CancellationToken cancellationToken = default);
                  string sortBy,
                  string sortOrder,
                  CancellationToken cancellationToken = default);
+        Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
+       
+
+        Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default);
+        Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType,string? filterDate,  CancellationToken cancellationToken = default);
+        Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
+        Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
+        Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
+       
     }
 }
 

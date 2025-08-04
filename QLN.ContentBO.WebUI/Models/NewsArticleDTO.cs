@@ -11,8 +11,8 @@ namespace QLN.ContentBO.WebUI.Models
         [Required]
         public string Title { get; set; }
 
-        [Required]
-        public string Content { get; set; }
+        [Required(ErrorMessage = "The Article Content is required.")]
+        public string Content { get; set; } = string.Empty;
 
         [Required]
         public string WriterTag { get; set; }

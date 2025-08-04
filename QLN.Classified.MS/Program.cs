@@ -1,11 +1,12 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using QLN.Classified.MS.DBContext;
 using QLN.Classifieds.MS.ServiceConfiguration;
-using QLN.Common.Infrastructure.CustomEndpoints;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
-using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,10 +35,14 @@ builder.Services.AddSwaggerGen(opts => {
         = new string[] { }
     });
 });
-
+#region Database context
+builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+#endregion
 builder.Services.AddAuthorization();
 builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
 
 var app = builder.Build();
 
@@ -58,15 +63,9 @@ var ServiceGroup = app.MapGroup("/api/service");
 ServiceGroup.MapAllServiceConfiguration();
 var servicesGroup = app.MapGroup("/api/services");
 servicesGroup.MapServicesEndpoints();
-
-
-
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
-
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
-
-
 
 app.Run();

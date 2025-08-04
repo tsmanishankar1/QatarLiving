@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s.Classified
     {
         public AdTypeEnum AdType { get; set; }
 
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
 
@@ -38,14 +38,21 @@ namespace QLN.Common.DTO_s.Classified
 
         public double? Longitude { get; set; }
 
-        [RegularExpression(@"^\+?[1-9]\d{7,14}$", ErrorMessage = "Invalid contact number format.")]
-        public string ContactNumber { get; set; }
+        [RegularExpression(@"^\+?\d{1,4}$", ErrorMessage = "Country code must be between 1 and 4 digits.")]
+        public string ContactNumberCountryCode { get; set; } = string.Empty;
+
+        [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Phone number must be between 7 and 15 digits.")]
+        public string ContactNumber { get; set; } = string.Empty;
 
         [EmailAddress(ErrorMessage = "Invalid email address.")]
-        public string ContactEmail { get; set; }
+        public string ContactEmail { get; set; } = string.Empty;
 
-        [RegularExpression(@"^\+?[1-9]\d{7,14}$", ErrorMessage = "Invalid WhatsApp number format.")]
-        public string WhatsAppNumber { get; set; }
+        [RegularExpression(@"^\+?\d{1,4}$", ErrorMessage = "Country code must be between 1 and 4 digits.")]
+        public string WhatsappNumberCountryCode { get; set; } = string.Empty;
+
+
+        [RegularExpression(@"^\d{7,15}$", ErrorMessage = "WhatsApp number must be between 7 and 15 digits.")]
+        public string WhatsAppNumber { get; set; } = string.Empty;
 
         public string? StreetNumber { get; set; }
 
@@ -53,7 +60,7 @@ namespace QLN.Common.DTO_s.Classified
 
         public string? zone { get; set; }
 
-        public List<ImageInfo> Images { get; set; }
+        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
 
         public Dictionary<string, string>? Attributes { get; set; }
     }

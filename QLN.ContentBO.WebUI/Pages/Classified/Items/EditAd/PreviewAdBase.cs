@@ -7,7 +7,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class PreviewAdBase : ComponentBase
     {
         [CascadingParameter] protected IMudDialogInstance MudDialog { get; set; } = default!;
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
+        [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
 
         [Parameter] public string UserName { get; set; }
         [Parameter] public string Category { get; set; }

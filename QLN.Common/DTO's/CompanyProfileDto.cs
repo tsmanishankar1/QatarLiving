@@ -16,7 +16,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public string BusinessName { get; set; } = string.Empty;
         public VerticalType Vertical { get; set; }
         public bool? IsVerified { get; set; }
-        public CompanyStatus? Status { get; set; } 
+        public CompanyStatus? Status { get; set; }
     }
     public class CompanyApproveDto
     {
@@ -39,7 +39,7 @@ namespace QLN.Common.Infrastructure.DTO_s
         public Guid? CompanyId { get; set; }
         public string? UserId { get; set; }
         public string BusinessName { get; set; } = string.Empty;
-        public VerticalType Vertical { get; set; } 
+        public VerticalType Vertical { get; set; }
         public SubVertical SubVertical { get; set; }
         public bool IsActive { get; set; }
     }

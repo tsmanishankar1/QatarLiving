@@ -28,18 +28,14 @@ namespace QLN.ContentBO.WebUI.Models
         [StringLength(100, ErrorMessage = "Title must be less than 100 characters.")]
         public string? Title { get; set; }
 
-        [StringLength(50, ErrorMessage = "Certificate name must be less than 50 characters.")]
         public string? Certificate { get; set; }
 
         public string? CertificateFileName { get; set; }
 
-        [Range(0, 100, ErrorMessage = "Battery percentage must be between 0 and 100.")]
-        public int BatteryPercentage { get; set; }
 
         [Required(ErrorMessage = "Description is required.")]
         public string? Description { get; set; }
 
-        [Url(ErrorMessage = "Invalid XML link URL.")]
         public string? XmlLink { get; set; }
 
 
@@ -61,7 +57,8 @@ namespace QLN.ContentBO.WebUI.Models
         [StringLength(5, ErrorMessage = "WhatsApp code must be less than 5 characters.")]
         public string? WhatsappCode { get; set; }
 
-        [Phone(ErrorMessage = "Invalid WhatsApp number.")]
+        [Required(ErrorMessage = "Whatsapp number is required.")]
+        [RegularExpression(@"^\d{7,15}$", ErrorMessage = "Invalid whatsapp number (7-15 digits only).")]
         public string? WhatsappNumber { get; set; }
 
         // ----------------------------

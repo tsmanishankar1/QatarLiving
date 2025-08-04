@@ -1,0 +1,80 @@
+@inherits VerifiedSellerRequestTableBase
+@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.EmptyCard
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+
+<MudPaper Class="pa-4">
+    <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+    @if(Listings == null || !Listings.Any()){
+<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
+    }
+    else{
+        <MudTable Items="Listings"
+          Hover="true"
+          Bordered="true"
+          Elevation="0"
+          Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
+    font-family: 'Public Sans', sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+          Class="mud-table event-custom-table">
+
+   <HeaderContent>
+        <MudTh class="header-cell">Business Name</MudTh>
+        <MudTh class="header-cell">UserName</MudTh>
+        <MudTh class="header-cell">CR File</MudTh>
+        <MudTh class="header-cell">CR Licence</MudTh>
+        <MudTh class="header-cell">End Date</MudTh>
+        <MudTh class="header-cell">Actions</MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.BusinessName) ? "-" : context.BusinessName)"Class="truncate-text">@context.BusinessName</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.Username) ? "-" : context.Username)"Class="truncate-text">@context.Username</MudTd>
+        <MudTd title="@(string.IsNullOrWhiteSpace(context.CRFile) ? "-" : context.CRFile)"Class="truncate-text hover-title">@context.CRFile</MudTd>
+         <MudTd Class="truncate-text">@context.CRLicense</MudTd>
+        <MudTd Class="truncate-text">@context.Enddate</MudTd>
+       <MudTd>
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                <MudMenuItem>
+                    <MudIcon Icon="@Icons.Material.Filled.Visibility" /> View
+                </MudMenuItem>
+            </MudMenu>
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+
+    }
+     <PaginationFooter TotalItems="@TotalCount" CurrentPage="@currentPage" PageSize="@pageSize"
+                OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
+</MudPaper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

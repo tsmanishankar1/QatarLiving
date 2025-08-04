@@ -12,7 +12,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         {
             new("View Subscription Listing", "/manage/classified/preloved/subscription/listing"),
             new("P2p Listing", "/manage/classified/preloved/p2p/listing"),
-            new("P2p Transaction", "/manage/classified/preloved/p2p/listing"),
+            new("P2p Transaction", "/manage/classified/preloved/p2p/transaction"),
             new("User Verification Profile", "/manage/classified/preloved/user/profile")
         };
 

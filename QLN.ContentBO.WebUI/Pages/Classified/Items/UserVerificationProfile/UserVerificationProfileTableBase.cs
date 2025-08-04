@@ -40,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile
             {
                 new BusinessVerificationItem
                 {
-                    UserId = 101,
+                    UserId = "101",
                     BusinessName = "Beethoven's",
                     UserName = "Rashid",
                     CRFile = "PDF",
@@ -49,7 +49,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile
                 },
                 new BusinessVerificationItem
                 {
-                    UserId = 102,
+                    UserId = "102",
                     BusinessName = "LEGO® Shows 2025",
                     UserName = "LEGO® Shows 2",
                     CRFile = "N/A",
@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile
                 },
                 new BusinessVerificationItem
                 {
-                    UserId = 103,
+                    UserId = "103",
                     BusinessName = "Tech Galaxy",
                     UserName = "Ayaan Khan",
                     CRFile = "DOCX",
@@ -67,7 +67,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.UserVerificationProfile
                 },
                 new BusinessVerificationItem
                 {
-                    UserId = 104,
+                    UserId = "104",
                     BusinessName = "Sunrise Traders",
                     UserName = "Meera Sharma",
                     CRFile = "PDF",

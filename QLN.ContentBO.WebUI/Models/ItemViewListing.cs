@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using QLN.ContentBO.WebUI.Enums;
 
 namespace QLN.ContentBO.WebUI.Models
 {
@@ -26,7 +27,10 @@ namespace QLN.ContentBO.WebUI.Models
     {
         public string Id { get; set; }
         public string SubVertical { get; set; }
-        public string AdType { get; set; }
+        public int AdType { get; set; }
+        public string AdTypeName => Enum.IsDefined(typeof(AdType), AdType)
+        ? ((AdType)AdType).ToString()
+        : "Unknown";
         public string? Title { get; set; }
         public string? Description { get; set; }
         public decimal Price { get; set; }
@@ -40,7 +44,10 @@ namespace QLN.ContentBO.WebUI.Models
         public string Location { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public string? Status { get; set; }
+        public int Status { get; set; } 
+        public string StatusName => Enum.IsDefined(typeof(AdStatus), Status)
+        ? ((AdStatus)Status).ToString()
+        : "Unknown";
         public string UserId { get; set; }
         public string UserName { get; set; }
         public double Lattitude { get; set; }

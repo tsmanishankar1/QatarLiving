@@ -71,7 +71,7 @@
         public string PropertiesProfileMenu { get; set; } = "https://qlp.qatarliving.com/en/properties/dashboard?status=published";
         public string VehiclesProfileMenu { get; set; } = "https://qlv.qatarliving.com/en/vehicles/dashboard";
         public string RewardsProfileMenu { get; set; } = "https://qlr.qatarliving.com/en/rewards/dashboard";
-        public string MySavedSearchesProfileMenu { get; set; } =  "https://qlv.qatarliving.com/en/vehicles/favourites?tab=saved-searches";
+        public string MySavedSearchesProfileMenu { get; set; } = "https://qlv.qatarliving.com/en/vehicles/favourites?tab=saved-searches";
 
         public string ClassifiedsProfileMenu { get; set; } = "https://www.qatarliving.com/classifieds/dashboard/<ALIAS>";
         public string ServicesProfileMenu { get; set; } = "https://www.qatarliving.com/services/dashboard/<ALIAS>";
@@ -87,9 +87,16 @@
         public string ContentNewsDetail { get; set; } = "/content/article/details";
         public string ContentNewsDailyDetails { get; set; } = "/content/daily/article/details/";
         public string ContentEvents { get; set; } = "/content/events";
-        public string ContentEventsDetail { get; set; } = "/content/events/details";
+        public string ContentEventsDetail { get; set; } = "/content/events/details/";
         public string ContentCommunity { get; set; } = "/content/v2/community";
         public string ContentCommunityPostCreate { get; set; } = "/content/v2/community/post/create";
         public string ContentCommunityPostDetails { get; set; } = "/content/v2/community/post/detail/";
+        public string PostAdProperties { get; set; } = "https://www.qatarliving.com/user/login?destination=/qlnext/qlp/en/properties/create";
+        public string PostAdVehicles { get; set; } = "https://www.qatarliving.com/user/login?destination=node/add/classified?type=vehicles";
+        public string PostAdClassifieds { get; set; } = "https://www.qatarliving.com/user/login?destination=node/add/classified?type=classified";
+        public string PostAdServices { get; set; } = "https://www.qatarliving.com/user/login?destination=node/add/classified?type=service";
+        public string PostAdJobs { get; set; } = "https://www.qatarliving.com/user/login?destination=node/add/classified?type=job";
+        public string PostAdRewards { get; set; } = "https://www.qatarliving.com/user/login?destination=/qlnext/qlr/en/rewards/create";
+
     }
 }

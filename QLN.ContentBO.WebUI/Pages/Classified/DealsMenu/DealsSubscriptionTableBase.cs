@@ -17,8 +17,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         {
             Listings = GetSampleData();
         }
-        protected List<SubscriptionListing> Listings { get; set; } = new();
-        protected HashSet<SubscriptionListing> SelectedListings { get; set; } = new();
+        protected List<SubscriptionListingModal> Listings { get; set; } = new();
+        protected HashSet<SubscriptionListingModal> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected int TotalCount => Listings.Count;
@@ -98,34 +98,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-        private List<SubscriptionListing> GetSampleData()
+        private List<SubscriptionListingModal> GetSampleData()
         {
-            return new List<SubscriptionListing>
+            return new List<SubscriptionListingModal>
     {
-        new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Plus",
+        new SubscriptionListingModal {
+             UserId = 21435, AdTitle = "12 Months Plus",
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
         },
-        new SubscriptionListing {
-            AdId = 21435, UserId = 21435, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+        new SubscriptionListingModal {
+             UserId = 21435, AdTitle = "12 Months Super",
+            UserName = "Rashid",SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
         },
-        new SubscriptionListing {
-            AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+        new SubscriptionListingModal {
+            UserId = 21342, AdTitle = "12 Months Super", 
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
         },
-        new SubscriptionListing {
-            AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", InternalUserId = 23,
-            UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
+        new SubscriptionListingModal {
+            UserId = 23415, AdTitle = "12 Months Super", 
+            UserName = "Rashid", SubscriptionType = "12 Months Plus",
             CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
             ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
             Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"
@@ -133,13 +133,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
     };
         }
 
-        protected void OnEdit(SubscriptionListing item)
+        protected void OnEdit(SubscriptionListingModal item)
         {
             var name = "Rashid";
             NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
-        protected void OnPreview(SubscriptionListing item)
+        protected void OnPreview(SubscriptionListingModal item)
         {
             Console.WriteLine($"Preview clicked: {item.AdTitle}");
         }
@@ -151,16 +151,16 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
-        protected Task Publish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
-        protected Task Unpublish(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
-        protected Task OnRemove(SubscriptionListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+        protected Task Approve(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.AdId}"));
+        protected Task Publish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Published: {item.AdId}"));
+        protected Task Unpublish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.AdId}"));
+        protected Task OnRemove(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
             // Send to API or handle in state
         }
-        protected Task RequestChanges(SubscriptionListing item)
+        protected Task RequestChanges(SubscriptionListingModal item)
         {
             Console.WriteLine($"Requested changes for: {item.AdId}");
             OpenRejectDialog();
