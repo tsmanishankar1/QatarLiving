@@ -10,7 +10,7 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using Dapr.Client.Autogen.Grpc.v1;
+
 using Dapr.Client;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
@@ -1087,5 +1087,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
+      
+
+
+
     }
 }
