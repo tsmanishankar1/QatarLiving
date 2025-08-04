@@ -417,19 +417,20 @@ CancellationToken cancellationToken
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
         group.MapGet("/categories/{categoryId}/sub/{subCategoryId}", async Task<Results<
-         Ok<List<V2NewsArticleDTO>>,
-         BadRequest<ProblemDetails>,
-         NotFound<ProblemDetails>,
-         ProblemHttpResult>>
-   (
-       int categoryId,
-       int subCategoryId,
-       ArticleStatus status,
-       int? page,
-       int? pageSize,
-       IV2NewsService service,
-       CancellationToken cancellationToken
-   ) =>
+              Ok<List<V2NewsArticleDTO>>,
+              BadRequest<ProblemDetails>,
+              NotFound<ProblemDetails>,
+              ProblemHttpResult>>
+        (
+            int categoryId,
+            int subCategoryId,
+            ArticleStatus status,
+            string? search,
+            int? page,
+            int? pageSize,
+            IV2NewsService service,
+            CancellationToken cancellationToken
+        ) =>
         {
             try
             {
@@ -446,6 +447,7 @@ CancellationToken cancellationToken
                     categoryId,
                     subCategoryId,
                     status,
+                    search,
                     page,
                     pageSize,
                     cancellationToken);
@@ -470,12 +472,12 @@ CancellationToken cancellationToken
                 });
             }
         })
-   .WithName("GetArticlesBySubCategory")
-   .WithTags("News")
-   .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
-   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-   .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+        .WithName("GetArticlesBySubCategory")
+        .WithTags("News")
+        .Produces<List<V2NewsArticleDTO>>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
