@@ -20,7 +20,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
@@ -287,8 +286,6 @@ companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-var servicesGroup = app.MapGroup("/api/services");
-servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();

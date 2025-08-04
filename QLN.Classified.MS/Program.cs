@@ -61,8 +61,6 @@ app.MapGroup("/api/classifieds")
    .MapClassifiedEndpoints();
 var ServiceGroup = app.MapGroup("/api/service");
 ServiceGroup.MapAllServiceConfiguration();
-var servicesGroup = app.MapGroup("/api/services");
-servicesGroup.MapServicesEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
 var ServicesBo = app.MapGroup("/api/servicebo");
