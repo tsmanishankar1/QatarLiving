@@ -32,7 +32,7 @@
 		<Content Include="Data\Products.xml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="Data\Products.xsd">
+		<Content Include="Data\Products.XSD">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 		<Content Include="Data\Products-Incorrect.xml">
