@@ -44,7 +44,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected string? DefaultSelectedWhatsappCountry { get; set; }
         public void SetDefaultDynamicFieldsFromApi()
         {
-            // Map main field names to their values from the Ad model
             var mainFields = new Dictionary<string, string?>
             {
                 { "Location", adPostModel.Location },
@@ -54,7 +53,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 { "Color", adPostModel.Color }
             };
 
-            // Assign values to DynamicFields if the field exists in AvailableFields and is not empty
             foreach (var field in mainFields)
             {
                 if (!string.IsNullOrWhiteSpace(field.Value) &&
@@ -64,7 +62,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 }
             }
 
-            // Add any attribute values to DynamicFields, if matching field exists
             if (adPostModel.Attributes != null)
             {
                 foreach (var attribute in adPostModel.Attributes)

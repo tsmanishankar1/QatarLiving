@@ -16,7 +16,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
         [Inject] private IJSRuntime JS { get; set; }
         [Inject] private ILogger<UploadDealsPhotosBase> Logger { get; set; }
 
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
+        [Parameter] public DealsModal AdModel { get; set; } = new();
 
         protected const int MaxImages = 9;
 

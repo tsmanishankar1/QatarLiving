@@ -1,4 +1,6 @@
-﻿namespace QLN.ContentBO.WebUI.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace QLN.ContentBO.WebUI.Models
 {
     public class PagedResult<T>
     {
@@ -30,25 +32,73 @@
         public string Id {  get; set; }
         public string AdId { get; set; } = string.Empty;
         public string DealTitle { get; set; } = string.Empty;
-        public string Location { get; set; } = string.Empty;
+        public List<string> Location { get; set; } = new List<string>();
         public string ContactNumber {  get; set; } = string.Empty;
         public string WhatsappNumber { get; set; } = string.Empty;
-        public string? WebUrL { get; set; }
+        public string? WebUrl { get; set; }
         public string? SubscriptionType { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-
+        public DateTime? StartDate { get; set; }
         public DateTime? DateCreated { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public List<ImageUpload>? ImageUpload { get; set; }
         public string OrderId { get; set; } = string.Empty;
-        public string WebClick { get; set; }
-        public string Views { get; set; }
-        public string Impression {  get; set; }
-        public string PhoneLead { get; set; }
+        public int WebClick { get; set; }
+        public int Views { get; set; }
+        public int Impression {  get; set; }
+        public int PhoneLead { get; set; }
     }
     public class ImageUpload
     {
         public string Url { get; set; } = string.Empty;
         public int Order { get; set; }
+    }
+    public class DealsModal
+    {
+        public string Id { get; set; }
+        public string Subvertical { get; set; }
+        public string SubscriptionId { get; set; }
+        public string UserId { get; set; }
+        public string BusinessName { get; set; }
+        public List<string> BranchNames { get; set; } = new List<string>();
+        public string BusinessType { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public string FlyerFileName { get; set; }
+        public string FlyerFileUrl { get; set; }
+        public string DataFeedUrl { get; set; }
+        public string ContactNumberCountryCode { get; set; }
+        public string ContactNumber { get; set; }
+        public string WhatsappNumberCountryCode { get; set; }
+        public string WhatsappNumber { get; set; }
+        public string WebsiteUrl { get; set; }
+        public string SocialMediaLinks { get; set; }
+        public bool IsActive { get; set; }
+        public List<string> Locations { get; set; } = new List<string>();
+        public string CreatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string UpdatedBy { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string XmlLink { get; set; }
+        public string OfferTitle { get; set; }
+        public string ImageUrl { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public DateTime? FeaturedExpiryDate { get; set; }
+        public DateTime? PromotedExpiryDate { get; set; }
+        public bool IsFeatured { get; set; }
+        public bool IsPromoted { get; set; }
+        [Required(ErrorMessage = "You must agree to the terms.")]
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the terms.")]
+        public bool IsAgreed { get; set; } = true;
+
+     
+        public List<AdImage> Images { get; set; } = new()
+        {
+            new AdImage { Order = 0 },
+            new AdImage { Order = 1 },
+            new AdImage { Order = 2 }
+        };
     }
 }

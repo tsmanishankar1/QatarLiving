@@ -9,6 +9,7 @@ using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.Classified.PreLoved;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Interfaces;
+using static MudBlazor.Colors;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
 {
@@ -81,7 +82,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         {
           new() { Label = "Published", Value = ((int)AdStatusEnum.Published).ToString() },
           new() { Label = "Unpublished", Value = ((int)AdStatusEnum.Unpublished).ToString() },
-           new() { Label = "P2p", Value = ((int)AdStatusEnum.Unpublished).ToString() },
+           new() { Label = "P2p", Value = ((int)AdStatusEnum.P2p).ToString() },
            new() { Label = "Promoted", Value = "promoted" },
            new() { Label = "Featured", Value = "featured"  }
 };
@@ -147,10 +148,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
         [Inject]
         public NavigationManager NavigationManager { get; set; } = default!;
 
-        protected void OnEdit()
+        protected void OnEdit(string adId)
         {
-            var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            NavigationManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
         }
         protected void OnPreview(DealsListingModal item)
         {

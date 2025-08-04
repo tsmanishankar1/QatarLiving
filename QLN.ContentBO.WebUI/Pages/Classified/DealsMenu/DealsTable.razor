@@ -87,7 +87,14 @@
 
                 <PropertyColumn Property="x => x.Location" Title="Location">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.Location) ? "-" : context.Item.Location)
+                        @if (context.Item.Location?.Any() == true)
+                        {
+                            @string.Join(", ", context.Item.Location)
+                        }
+                        else
+                        {
+                            @("-")
+                        }
                     </CellTemplate>
                 </PropertyColumn>
 
@@ -121,7 +128,7 @@
                 </TemplateColumn>
                 <TemplateColumn Title="Web URL">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.WebUrL) ? "-" : context.Item.WebUrL)
+                        @(string.IsNullOrWhiteSpace(context.Item.WebUrl) ? "-" : context.Item.WebUrl)
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Web Clicks">
@@ -148,8 +155,8 @@
                     <CellTemplate>
                         <MudMenu Class="mud-table-menu" Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomLeft"
                                  TransformOrigin="Origin.BottomLeft">
-                                                  
-                              <MudMenuItem OnClick="() => OnEdit()">
+
+                            <MudMenuItem @onclick="() => OnEdit(context.Item.AdId)">
                                     <img src="/qln-images/edit_dark_icon.svg" class="menu-icon-style" alt="Ignore" />
                                     <span class="menu-text">Edit</span>
                                 </MudMenuItem>

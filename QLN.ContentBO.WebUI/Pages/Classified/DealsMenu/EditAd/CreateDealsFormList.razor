@@ -7,27 +7,7 @@
      <div class="create-form-list">
         <h3 class="form-heading">Ad Category</h3>
  
-       @* <h3 class="form-heading">Ad Information</h3> 
-            <MudSelect T="string" Class="white-bg" Label="Sub Vertical" Variant="Variant.Outlined"
-                Value="@Ad.SelectedCategoryId"
-                ValueChanged="@OnCategoryChanged"
-                For="@(() => Ad.SelectedCategoryId)"
-                FullWidth="true">
-          @*    @if (IsLoadingCategories)
-            {
-                  <MudSelectItem T="string" Value="@("__loading__")" Disabled="true">Loading...</MudSelectItem>
-            }
-            else
-            {
-                @foreach (var cat in CategoryTrees)
-                {
-                    <MudSelectItem T="string" Value="@cat.Id.ToString()">@cat.Name</MudSelectItem>
-                }
-            } *@
-          @*   <MudSelectItem T="string" Value="@CategoryTrees.FirstOrDefault()?.Id.ToString()">Deals</MudSelectItem>
-
-        </MudSelect>  *@
-
+  
         <MudSelect T="string"
                    Label="Sub Vertical"
                    Variant="Variant.Outlined"
@@ -37,92 +17,19 @@
             <MudSelectItem T="string" Value="@("deals")">Deals</MudSelectItem>
         </MudSelect>
 
-        @if (!string.IsNullOrEmpty(Ad.SelectedCategoryId) && SelectedCategory?.Children?.Any() == true)
-        {
-          <MudSelect T="string" Class="white-bg" Label="Subcategory" Variant="Variant.Outlined"
-                    Value="@Ad.SelectedSubcategoryId"
-                    ValueChanged="@OnSubCategoryChanged"
-                    For="@(() => Ad.SelectedSubcategoryId)"
-                    FullWidth="true">
-                @foreach (var sub in SelectedCategory.Children)
-                {
-                    <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
-                }
-            </MudSelect>
-
-        }
-
-        @if (!string.IsNullOrEmpty(Ad.SelectedSubcategoryId) && SelectedSubcategory?.Children?.Any() == true)
-        {
-            <MudSelect T="string"Class="white-bg" Label="Sub Subcategory" Variant="Variant.Outlined"
-                Value="@Ad.SelectedSubSubcategoryId"
-                ValueChanged="@OnSubSubCategoryChanged"
-                For="@(() => Ad.SelectedSubSubcategoryId)"
-                FullWidth="true">
-            @foreach (var subsub in SelectedSubcategory.Children)
-            {
-                <MudSelectItem T="string" Value="@subsub.Id.ToString()">@subsub.Name</MudSelectItem>
-            }
-        </MudSelect>
-
-        }
-        @if (AvailableFields != null)
-        {
-            @foreach (var field in AvailableFields.Where(f => AllowedFields.Contains(f.Name)))
-            {
-                if (!Ad.DynamicFields.ContainsKey(field.Name))
-                {
-                    Ad.DynamicFields[field.Name] = string.Empty;
-                }
-
-                <div class="mt-2">
-                    @if (field.Type == "dropdown" || field.Type == "Dropdown")
-                    {
-                        <MudSelect T="string"
-                                Label="@field.Name"
-                                Variant="Variant.Outlined"
-                                @bind-Value="Ad.DynamicFields[field.Name]"
-                                FullWidth="true"
-                                Class="white-bg"
-                                Immediate="true">
-                            @foreach (var option in field.Options)
-                            {
-                                <MudSelectItem T="string" Value="@option">@option</MudSelectItem>
-                            }
-                        </MudSelect>
-                    }
-                    else if (field.Type == "Free Text")
-                    {
-                        <MudTextField T="string"
-                                    Label="@field.Name"
-                                    Variant="Variant.Outlined"
-                                    @bind-Value="Ad.DynamicFields[field.Name]"
-                                    FullWidth="true"
-                                    Class="white-bg" />
-                    }
-
-                        @if (DynamicFieldErrors.TryGetValue(field.Name, out var errors))
-                    {
-                        @foreach (var error in errors)
-                        {
-                            <div class="mud-input-error">@error</div>
-                        }
-                    }
-                </div>
-            }
-        }
+       
       
         <h3 class="form-heading">Description and Features</h3>
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Offer Title"
                       @bind-Value="Ad.Title" For="@(() => Ad.Title)" FullWidth="true" />
 
-        <MudPaper Class="d-flex align-center mt-2 p-2 doc-input no-underline">
+        <MudPaper  Class="d-flex align-center mt-2 p-2 doc-input no-underline">
             <MudText Typo="Typo.body1">
                 Flyer File
-                @if (!string.IsNullOrEmpty(Ad.CertificateFileName))
+                @if (!string.IsNullOrEmpty(Ad.FlyerFileName))
                 {
 
-                    <MudText Typo="Typo.caption" Class="ml-2">@Ad.CertificateFileName</MudText>
+                    <MudText Typo="Typo.caption" Class="ml-2">@Ad.FlyerFileName</MudText>
                     <MudIconButton Icon="@Icons.Material.Outlined.Close"
                                    Size="Size.Small"
                                    Color="Color.Error"
@@ -146,7 +53,7 @@
             </MudFileUpload>
 
         </MudPaper>
-        <MudText Typo="Typo.caption">Supported file formats: PDF, PNG, JPG. Max: 10MB</MudText>
+        <MudText Typo="Typo.caption">Supported file formats: PDF . Max: 10MB</MudText>
 
 
      
@@ -155,7 +62,7 @@
 
         <MudDatePicker Label="Expiry Date"
                        T="DateTime?"
-                       @bind-Date="EndDay"
+                       @bind-Date="Ad.ExpiryDate"
                        Adornment="Adornment.End"
                        AdornmentIcon="@Icons.Material.Filled.Event"
                        Class="white-bg"
@@ -167,9 +74,9 @@
                         SelectedCountry="@SelectedPhoneCountry"
                         Placeholder="Phone Number"
                         SelectedCountryChanged="@OnPhoneCountryChanged"
-                        PhoneNumber="@Ad.PhoneNumber"
+                        PhoneNumber="@Ad.ContactNumber"
                         PhoneNumberChanged="@OnPhoneChanged" />
-                <ValidationMessage For="@(() => Ad.PhoneNumber)" />
+                <ValidationMessage For="@(() => Ad.ContactNumber)" />
                 </div>
                 <div class="form-group">
                     <!-- WhatsApp -->
@@ -183,8 +90,17 @@
                 </div>
 
         <h3 class="form-heading">Location</h3>
+       @*  <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
+                      @bind-Value="Ad.Locations" For="@(() => Ad.Locations)" FullWidth="true" />
+      *@
+        <MudTextField Class="white-bg"
+                      Variant="Variant.Outlined"
+                      Label="Locations "
+                      @bind-Value="locationsString"
+                      For="@(() => locationsString)"
+                      FullWidth="true" />
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
+        @* <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Zone"
                       @bind-Value="Ad.Zone" For="@(() => Ad.Zone)" FullWidth="true" />
 
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
@@ -193,7 +109,7 @@
         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
                       @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
 
-        <div id="map" style="height: 300px; width: 100%;"></div>
+        <div id="map" style="height: 300px; width: 100%;"></div> *@
 
         <MudCheckBox Color="Color.Primary" T="bool" Label="I agree to terms"
                       @bind-Value="Ad.IsAgreed" For="@(() => Ad.IsAgreed)" />
