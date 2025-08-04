@@ -72,6 +72,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             var quota = new GenericUserQuotaDto
             {
+                Id = Guid.NewGuid(),
                 UserId = dto.UserId,
                 SourceType = "Subscription",
                 PaymentTransactionId = dto.PaymentTransactionId,

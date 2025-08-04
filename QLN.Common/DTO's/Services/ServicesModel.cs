@@ -140,4 +140,6 @@ namespace QLN.Common.DTO_s
         [JsonIgnore]
         public string? UpdatedBy { get; set; } 
     }
+    
+
 }

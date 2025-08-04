@@ -13,8 +13,7 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-
-        // Write operation - Contains the original UserQuotaWriter logic
+        
         public async Task UpsertQuotaAsync(GenericUserQuotaDto newQuota, CancellationToken cancellationToken = default)
         {
             if (newQuota == null) throw new ArgumentNullException(nameof(newQuota));
@@ -48,8 +47,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 throw;
             }
         }
-
-        // Read operations
         public async Task<UserQuotaCollection?> GetAllQuotasAsync(CancellationToken cancellationToken = default)
         {
             try

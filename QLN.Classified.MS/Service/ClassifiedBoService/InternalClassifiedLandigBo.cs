@@ -4,7 +4,7 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
@@ -3167,7 +3167,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
@@ -3198,7 +3198,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Url;
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
