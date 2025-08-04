@@ -1,6 +1,7 @@
 ﻿@inherits UserProfileBase
 @page "/manage/classified/preloved/user/profile"
 @layout QLN.ContentBO.WebUI.Pages.Classified.PreLoved.PreLovedLayout
+@using QLN.ContentBO.WebUI.Components.ToggleTabs;
 
 <div style="margin-top:10px">
     <div class="search-sort-container">
@@ -24,8 +25,18 @@
         </div>
     </div>
 </div>
+<ToggleTabs Options="@tabOptions"
+            ActiveValue="@selectedTab"
+            OnChange="@OnTabChanged" />
 <div style="margin-top:10px">
-    <UserProfileTable />
+    <UserProfileTable Listings="Listings"
+                      IsLoading="IsLoading"
+                      IsEmpty="IsEmpty"
+                      TotalCount="TotalCount"
+                      SelectedTab=@SelectedTab
+                      OnTabChanged="HandleTabChange"
+                      OnPageChanged="HandlePageChanged"
+                      OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 <style>
@@ -159,7 +170,7 @@
     }
 
     .active-icon {
-        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%);
+        filter: brightness(0) saturate(100%) invert(54%) sepia(98%) saturate(670%) hue-rotate(340deg) brightness(105%) contrast(102%) !important;
     }
 
 </style>

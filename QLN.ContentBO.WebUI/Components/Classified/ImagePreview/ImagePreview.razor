@@ -1,0 +1,322 @@
+@inherits ImagePreviewBase
+@using QLN.ContentBO.WebUI.Components.EmptyCard;
+
+<div class="image-modal-overlay" id="@_uniqueId">
+     <div class="image-modal-container" >
+    <div class="image-modal-header">
+    <div class="modal-title-wrapper">
+        <div class="modal-title">Photos</div>
+        <div class="title-underline"></div>
+    </div>
+    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                   Size="Size.Small"
+                   Color="Color.Default"
+                   Class="modal-close-btn"
+                   OnClick="CloseGallery"
+                   AriaLabel="Close" />
+</div>
+
+<div class="image-preview-container">
+    <div class="swiper swiper-main-preview">
+
+     <div class="swiper-wrapper">
+        @foreach (var img in Item.Images)
+        {
+            <div class="swiper-slide">
+                @if (imageFailedMap.TryGetValue(img.Url, out var failed) && failed)
+                {
+                    <div class="main-image-emty">
+                        <EmptyCard Title="No image found." Subtitle="Please check back later for updates." />
+                    </div>
+                }
+                else
+                {
+                    @if (!imageLoadedMap.TryGetValue(img.Url, out var loaded) || !loaded)
+                    {
+                        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="490px" />
+                    }
+
+                    <img
+                        alt="Main Image"
+                        src="@img.Url"
+                        class="item-main-image-preview"
+                        onload="@(() => OnImageLoaded(img.Url))"
+                        onerror="@(() => OnImageError(img.Url))"
+                        style="display:@(
+                            currentImageUrl == img.Url &&
+                            imageLoadedMap.TryGetValue(img.Url, out var l) && l &&
+                            (!imageFailedMap.TryGetValue(img.Url, out var f) || !f)
+                            ? "block" : "none"
+                        )" />
+                }
+            </div>
+        }
+    </div>
+       
+    </div>
+     <div class="image-count-container">
+            <div class="image-count">@($"{CurrentIndex + 1}/{Item.Images?.Count ?? 0}")</div>
+        </div>
+
+    <div class="thumbs-container">
+        <div class="thumbs-prev-preview">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronLeft" />
+        </div>
+        <div class="swiper swiper-thumbs-preview">
+        <div class="swiper-wrapper">
+            @if (Item?.Images != null)
+            {
+                @for (int i = 0; i < Item.Images.Count; i++)
+                {
+                    var img = Item.Images[i];
+                    var failed = imageFailedMap.TryGetValue(img.Url, out var isFailed) && isFailed;
+
+                    <div class="swiper-slide" @onclick="@(() => OnThumbnailClicked(i))" style="cursor:pointer;">
+                        @if (!imageLoadedMap.TryGetValue(img.Url, out var loaded) || !loaded)
+                        {
+                            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="100%" Height="100%" />
+                        }
+
+                        @if (!failed)
+                        {
+                            <img src="@img.Url" onload="@(() => OnImageLoaded(img.Url))" onerror="@(() => OnImageError(img.Url))" />
+                        }
+                        else
+                        {
+                            <div class="thumb-placeholder">
+                                <span>Image failed</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+        <div class="thumbs-next-preview">
+            <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+        </div>
+    </div>
+   </div>
+    </div>
+   </div>
+<style>
+  .image-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(6px);
+    z-index: 1000000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-modal-container {
+    width: 90%;
+    max-width: 860px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.image-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: transparent;
+}
+
+.modal-title-wrapper {
+    flex-grow: 1;
+    text-align: center;
+    position: relative;
+    padding-right: 40px; /* Reserve space for close button so it doesn’t overlap */
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-accent);
+}
+
+.title-underline {
+    width: 40px;
+    height: 3px;
+    background-color: var(--color-accent, #ff6600);
+    border-radius: 2px;
+    margin: 4px auto 0 auto;
+}
+
+.modal-close-btn {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+}
+
+
+/* Main Image */
+.image-preview-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.swiper-main-preview {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.item-main-image-preview,
+.main-image-emty {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Image Count */
+.image-count-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.image-count {
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Thumbnails */
+.thumbs-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin-top: 5px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
+.swiper-thumbs-preview .swiper-slide {
+    width: 134px;
+    height: 90px;
+    margin: 0 4px;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: border 0.3s;
+    cursor: pointer;
+}
+
+.swiper-thumbs-preview .swiper-slide-thumb-active {
+    border-color: var(--color-accent);
+}
+
+.swiper-thumbs-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.thumb-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 13px;
+    color: var(--color-text-primary);
+    width: 100%;
+    height: 100%;
+}
+
+/* Arrows */
+.thumbs-prev-preview,
+.thumbs-next-preview {
+    opacity: 0.7;
+    width: 40px;
+    height: 90px;
+    background-color: var(--color-text-heading);
+    color: var(--color-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    z-index: 10;
+    cursor: pointer;
+}
+.thumbs-prev-preview:hover,
+.thumbs-next-preview:hover {
+    background-color: rgba(255, 255, 255, 0.2); /* light gray on hover */
+}
+
+/* Click effect */
+.thumbs-prev-preview:active,
+.thumbs-next-preview:active {
+    background-color: rgba(255, 255, 255, 0.35); /* slightly brighter gray on click */
+}
+/* === Desktop View === */
+@@media (min-width: 769px) {
+    .swiper-main-preview {
+        height: 80%;
+    }
+
+    .item-main-image-preview,
+    .main-image-emty {
+        height: 100%;
+    }
+
+    .thumbs-container {
+        height: 20%;
+        margin-top: 8px;
+    }
+}
+
+/* === Mobile View === */
+@@media (max-width: 768px) {
+ .swiper-main-preview {
+        height: 80%;
+    }
+
+    .item-main-image-preview,
+    .main-image-emty {
+        height: 100%;
+    }
+
+    .thumbs-container {
+        height: 20%;
+        margin-top: 8px;
+    }
+    .image-preview-container{
+        padding: 8px;
+    }
+ 
+    .thumbs-prev-preview,
+    .thumbs-next-preview {
+        display: none;
+    }
+}
+
+
+
+</style>

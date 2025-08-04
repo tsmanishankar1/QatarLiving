@@ -1407,82 +1407,44 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/getall-items", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
-                (
-                [FromServices] ISearchService service,
-                [FromBody] CommonSearchRequest request,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, request);
-                    var getall = new ClassifiedsBoItemsResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsItems = result.ClassifiedsItem
-                    };
-                    return TypedResults.Ok(getall);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-          .WithName("GetAllItemsAds")
-          .AllowAnonymous()
-          .WithTags("ClassifiedBo")
-          .WithSummary("Get all classifieds ads")
-          .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds ads, including their details.")
-          .Produces<List<ClassifiedsItemsIndex>>(StatusCodes.Status200OK)
-          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/getall-preloved", static async Task<Results<Ok<ClassifiedsBoPrelovedResponseDto>, ProblemHttpResult>>
             (
-                [FromServices] ISearchService service,
-                [FromBody] CommonSearchRequest request,
-                CancellationToken cancellationToken
+            [FromServices] IClassifiedBoLandingService service,
+            [FromBody] GetAllSearch request,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, request);
-                    var getall = new ClassifiedsBoPrelovedResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsPreloved = result.ClassifiedsPrelovedItem
-                    };
-                    return TypedResults.Ok(getall);
+                    var result = await service.GetAllItems(request);
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-            .WithName("GetAllPrelovedAds")
-            .AllowAnonymous()
+            .WithName("GetAllItemsAds")
             .WithTags("ClassifiedBo")
-            .WithSummary("Get all classifieds preloved ads")
-            .WithDescription("Retrieves all service ads from the system. This endpoint returns a list of all available classifieds preloved ads, including their details.")
-            .Produces<ClassifiedsPrelovedIndex>(StatusCodes.Status200OK)
+            .WithSummary("Get all classifieds ads")
+            .WithDescription("Retrieves all service ads from the system. " +
+            "This endpoint returns a list of all available classifieds ads, including their details.")
+            .Produces<List<ClassifiedItems>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
             group.MapPost("/getall-collectibles", static async Task<Results<Ok<ClassifiedsBoCollectiblesResponseDto>, ProblemHttpResult>>
             (
-              [FromServices] ISearchService service,
-              [FromBody] CommonSearchRequest request,
-              CancellationToken cancellationToken
+            [FromServices] IClassifiedBoLandingService service,
+            [FromBody] GetAllSearch request,
+            CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, request);
-                    var getall = new ClassifiedsBoCollectiblesResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsCollectibles = result.ClassifiedsCollectiblesItem
-                    };
-                    return TypedResults.Ok(getall);
+                    var result = await service.GetAllCollectibles(request);
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
@@ -1490,43 +1452,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 }
             })
             .WithName("GetAllCollectiblesAds")
-            .AllowAnonymous()
             .WithTags("ClassifiedBo")
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
-            .Produces<List<ClassifiedsCollectiblesIndex>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/getall-deals", static async Task<Results<Ok<ClassifiedsBoDealsResponseDto>, ProblemHttpResult>>
-            (
-              [FromServices] ISearchService service,
-              [FromBody] CommonSearchRequest request,
-              CancellationToken cancellationToken
-            ) =>
-            {
-                try
-                {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ClassifiedsDealsIndex, request);
-                    var getall = new ClassifiedsBoDealsResponseDto
-                    {
-                        TotalCount = result.TotalCount,
-                        ClassifiedsDeals = result.ClassifiedsDealsItem
-                    };
-                    return TypedResults.Ok(getall);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })                
-            .WithName("GetAllDealsAds")
-            .WithTags("ClassifiedBo")
-            .AllowAnonymous()
-            .WithSummary("Get all classifieds deals ads")
-            .WithDescription("Retrieves all service ads from the system. " +
-                           "This endpoint returns a list of all available classifieds deals ads, including their details.")
-            .Produces<List<ClassifiedsDealsIndex>>(StatusCodes.Status200OK)
+            "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
+            .Produces<List<ClassifiedCollectibles>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<
@@ -2647,6 +2577,130 @@ CancellationToken ct
          .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
+                ClassifiedsCollectibles dto,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.CreateClassifiedCollectiblesAd(dto, token);
+
+                    return TypedResults.Created(
+                        $"/api/classifieds/collectibles/admin/post-by-id/{result.AdId}", result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false)
+                        ? TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        })
+                        : TypedResults.Problem(
+                            title: "Internal Server Error",
+                            detail: ex.Message,
+                            statusCode: StatusCodes.Status500InternalServerError
+                        );
+                }
+            })
+                .WithName("AdminPostCollectiblesAdById")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Post classified collectibles ad using provided UserId, UserName and Email")
+                .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+                .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("deals/post-by-id", async Task<IResult> (
+               ClassifiedsDeals dto,
+               IClassifiedService service,
+               CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.UserId == null)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "User ID must not be empty.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var result = await service.CreateClassifiedDealsAd(dto, token);
+
+                    return TypedResults.Created($"/api/classifieds/deals/user-ads-by-id/{result.AdId}", result);
+
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested resource or reference was not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+               .WithName("AdminPostDealsAdById")
+               .WithTags("ClassifiedBo")
+               .WithSummary("Post classified deals ad using provided UserId, UserName and Email")
+               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapGet("/preloved/transactions", async Task<Results<
                Ok<PrelovedTransactionListResponseDto>,

@@ -8,32 +8,41 @@ using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
-    public partial class DealsSubscriptionTableBase : ComponentBase
+    public partial class PrelovedSubscriptionTableBase : ComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
 
         [Parameter]
-        public List<PrelovedListing> Listings { get; set; } = new();
-        //protected override void OnInitialized()
-        //{
-        //    Listings = GetSampleData();
-        //}
-        protected HashSet<PrelovedListing> SelectedListings { get; set; } = new();
+        public List<SubscriptionListingModal> Listings { get; set; } = new();
+
+        [Parameter]
+        public bool IsLoading { get; set; }
+        [Parameter]
+        public bool IsEmpty { get; set; }
+        protected HashSet<SubscriptionListingModal> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
-        protected void HandlePageChange(int newPage)
+        [Parameter]
+        public int TotalCount { get; set; }
+        [Parameter]
+        public EventCallback<int> OnPageChanged { get; set; }
+
+        [Parameter]
+        public EventCallback<int> OnPageSizeChanged { get; set; }
+
+        protected async Task HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            await OnPageChanged.InvokeAsync(newPage);
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async Task HandlePageSizeChange(int newSize)
         {
-            pageSize = newPageSize;
+            pageSize = newSize;
             currentPage = 1;
-            StateHasChanged();
+            await OnPageSizeChanged.InvokeAsync(newSize);
         }
+
 
 
         protected string selectedTab = "pendingApproval";
@@ -98,47 +107,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             };
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
-    //    private List<PrelovedListing> GetSampleData()
-    //    {
-    //        return new List<PrelovedListing>
-    //{
-    //    new PrelovedListing {
-    //        AdId = 21435, UserId = 21435, AdTitle = "12 Months Plus", InternalUserId = 23,
-    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Plus",
-    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
-    //    },
-    //    new PrelovedListing {
-    //        AdId = 21435, UserId = 21435, AdTitle = "12 Months Super", InternalUserId = 23,
-    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "On Hold"
-    //    },
-    //    new PrelovedListing {
-    //        AdId = 21342, UserId = 21342, AdTitle = "12 Months Super", InternalUserId = 23,
-    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Active"
-    //    },
-    //    new PrelovedListing {
-    //        AdId = 23415, UserId = 23415, AdTitle = "12 Months Super", InternalUserId = 23,
-    //        UserName = "Rashid", Category = "", SubCategory = "", Section = "12 Months Super",
-    //        CreationDate = DateTime.Parse("2025-04-12 00:00"), PublishedDate = DateTime.Parse("2025-04-12 00:00"),
-    //        ExpiryDate = DateTime.Parse("2025-04-12 00:00"), Email = "Rashid.r@gmail.com",
-    //        Mobile = "+974 5030537", Whatsapp = "+974 5030537", Amount = 250, Status = "Cancelled"
-    //    }
-    //};
-    //    }
 
-        protected void OnEdit(PrelovedListing item)
+        [Inject]
+        public NavigationManager NavigationManager { get; set; } = default!;
+
+        protected void OnEdit(SubscriptionListingModal item)
         {
-            Console.WriteLine($"Edit clicked: {item.Id}");
+            var name = "Rashid";
+            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
         }
 
-        protected void OnPreview(PrelovedListing item)
+        protected void OnPreview(SubscriptionListingModal item)
         {
             Console.WriteLine($"Preview clicked: {item.Id}");
         }
@@ -150,16 +129,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
 
-        protected Task Approve(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
-        protected Task Publish(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
-        protected Task Unpublish(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(PrelovedListing item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task Approve(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
+        protected Task Publish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
+        protected Task Unpublish(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
+        protected Task OnRemove(SubscriptionListingModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
-            // Send to API or handle in state
         }
-        protected Task RequestChanges(PrelovedListing item)
+        protected Task RequestChanges(SubscriptionListingModal item)
         {
             Console.WriteLine($"Requested changes for: {item.Id}");
             OpenRejectDialog();

@@ -62,6 +62,8 @@ namespace QLN.Common.DTO_s
         UnPromote = 4,
         UnFeature = 5,
         Remove = 6,
-        NeedChanges = 7
+        NeedChanges = 7,
+        Promote = 8,
+        Feature = 9,
     }
 }

@@ -98,13 +98,24 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
+        public static IServiceCollection DrupalUserServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupalUser"] ?? throw new ArgumentNullException("LegacyDrupalUser");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalUserService, ExternalDrupalUserService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
 
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
-            services.AddTransient<ICompanyService, ExternalCompanyService>();
-            services.AddTransient<ICompanyVerifiedService, ExternalCompanyVerifiedService>();
-            services.AddTransient<ICompanyDealsStoresService, ExternalCompanyDealsStoresService>();
-            services.AddTransient<ICompanyClassifiedService, ExternalCompanyClassifiedService>();
+            services.AddTransient<ICompanyProfileService, ExternalCompanyProfileService>();
             return services;
         }
         public static IServiceCollection EventConfiguration(this IServiceCollection services, IConfiguration config)

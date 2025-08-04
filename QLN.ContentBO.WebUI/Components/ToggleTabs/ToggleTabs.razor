@@ -6,8 +6,8 @@
         var isFirst = i == 0;
         var isLast = i == Options.Count - 1;
 
-        <div class="tab-item @(isActive ? "active" : "") 
-                              @(isFirst ? "first" : "") 
+        <div class="tab-item @(isActive ? "active" : "")
+                              @(isFirst ? "first" : "")
                               @(isLast ? "last" : "")"
              @onclick="@(() => OnSelect(option.Value))">
             @option.Label

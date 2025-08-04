@@ -20,6 +20,8 @@ public class ServicesReplaceDialogModalBase : ComponentBase
 
     [CascadingParameter]
     IMudDialogInstance MudDialog { get; set; } = default!;
+     [Parameter]
+    public int ActiveIndex { get; set; }
 
     [Parameter]
     public string Placeholder { get; set; } = "Item Name*";
@@ -54,26 +56,52 @@ public class ServicesReplaceDialogModalBase : ComponentBase
             StateHasChanged();
             return;
         }
+        string successMessage = ActiveIndex switch
+        {
+            0 => "Featured category replaced successfully in services.",
+            1 => "Seasonal pick replaced successfully.",
+            _ => "Item replaced successfully."
+        };
 
-        var response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "services");
+        string errorMessage = ActiveIndex switch
+        {
+            0 => "Failed to replace featured category.",
+            1 => "Failed to replace seasonal pick.",
+            _ => "Failed to replace item."
+        };
+        HttpResponseMessage? response = null;
+
+        switch (ActiveIndex)
+        {
+            case 0:
+                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, "services");
+                break;
+            case 1:
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "services");
+                break;
+            default:
+                Snackbar.Add("Unknown item type.", Severity.Error);
+                return;
+        }
+
 
         if (response?.IsSuccessStatusCode == true)
         {
-            Snackbar.Add("Seasonal pick replaced successfully.", Severity.Success);
+            Snackbar.Add(successMessage, Severity.Success);
 
             if (OnAdd.HasDelegate)
             {
                 await OnAdd.InvokeAsync(selected);
             }
 
-            MudDialog.Close(DialogResult.Ok(selected));
+            //MudDialog.Close(DialogResult.Ok(selected));
+            MudDialog.Close(DialogResult.Ok(true));
         }
         else
         {
-            Snackbar.Add("Failed to replace seasonal pick.", Severity.Error);
+            Snackbar.Add(errorMessage, Severity.Error);
         }
     }
-
     protected Task<IEnumerable<SeasonalPickDto>> SearchEventTitles(string value, CancellationToken token)
     {
         IEnumerable<SeasonalPickDto> result;
