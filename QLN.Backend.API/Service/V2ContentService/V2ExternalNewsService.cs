@@ -170,18 +170,22 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-   int categoryId,
-   int subCategoryId,
-   ArticleStatus status,
-   int? page,
-   int? pageSize,
-   CancellationToken cancellationToken)
+    int categoryId,
+    int subCategoryId,
+    ArticleStatus status,
+    string? search,
+    int? page,
+    int? pageSize,
+    CancellationToken cancellationToken)
         {
             var queryParams = new List<string>();
             if (status != ArticleStatus.None)
                 queryParams.Add($"status={(int)status}");
             if (page.HasValue) queryParams.Add($"page={page.Value}");
             if (pageSize.HasValue) queryParams.Add($"pageSize={pageSize.Value}");
+
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
 
             var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
             var url = $"api/v2/news/categories/{categoryId}/sub/{subCategoryId}{query}";

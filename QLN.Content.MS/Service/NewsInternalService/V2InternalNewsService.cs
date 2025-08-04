@@ -543,12 +543,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
         }
 
         public async Task<List<V2NewsArticleDTO>> GetArticlesBySubCategoryIdAsync(
-            int categoryId,
-            int subCategoryId,
-            ArticleStatus status,
-            int? page,
-            int? pageSize,
-            CancellationToken cancellationToken)
+               int categoryId,
+               int subCategoryId,
+               ArticleStatus status,
+               string? search,
+               int? page,
+               int? pageSize,
+               CancellationToken cancellationToken)
         {
             try
             {
@@ -586,7 +587,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 a.Categories.Any(c => c.CategoryId == categoryId && c.SubcategoryId == subCategoryId))
                     .ToList();
 
-                // ✅ Apply status filter only if valid
+                // Apply ArticleStatus filter
                 if (status != ArticleStatus.None)
                 {
                     switch (status)
@@ -619,32 +620,41 @@ namespace QLN.Content.MS.Service.NewsInternalService
                                 .ToList();
                             break;
 
-                        // Optional: ignore invalid statuses
                         default:
                             _logger.LogWarning("Unknown status filter: {Status}", status);
                             break;
                     }
                 }
 
+                // Normalize categories per article
                 foreach (var article in articles)
                 {
                     article.Categories = article.Categories
                         .Where(c =>
-                        c.CategoryId == categoryId &&
-                        c.SubcategoryId == subCategoryId &&
-                        (
-                        status == ArticleStatus.None ||
-                        (status == ArticleStatus.Published && c.SlotId == 14) ||
-                        (status == ArticleStatus.Unpublished && c.SlotId == 15) ||
-                        (status == ArticleStatus.Live && Enumerable.Range(1, 13).Contains(c.SlotId))
-                        )
-                        )
+                            c.CategoryId == categoryId &&
+                            c.SubcategoryId == subCategoryId &&
+                            (
+                                status == ArticleStatus.None ||
+                                (status == ArticleStatus.Published && c.SlotId == 14) ||
+                                (status == ArticleStatus.Unpublished && c.SlotId == 15) ||
+                                (status == ArticleStatus.Live && Enumerable.Range(1, 13).Contains(c.SlotId))
+                            ))
                         .ToList();
                 }
 
-                // ✅ Apply pagination only if page and pageSize are provided
-                int currentPage = page.HasValue && page.Value > 0 ? page.Value : 1;
-                int currentPageSize = pageSize.HasValue && pageSize.Value > 0 ? pageSize.Value : 50;
+                // Apply search filter on Title
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    articles = articles
+                        .Where(a =>
+                            !string.IsNullOrWhiteSpace(a.Title) &&
+                            a.Title.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+
+                // Apply pagination
+                int currentPage = page.GetValueOrDefault(1);
+                int currentPageSize = pageSize.GetValueOrDefault(50);
 
                 return articles
                     .Skip((currentPage - 1) * currentPageSize)
@@ -1384,7 +1394,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var status = ArticleStatus.None;
                 var page = 1;
                 var pageSize = 50;
-                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status,page, pageSize, cancellationToken);
+                string? search = "";
+                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status, search, page, pageSize, cancellationToken);
                 _logger.LogInformation("Fetched {Count} articles for CategoryId={CategoryId} and SubCategoryId={SubCategoryId}", dtos.Count, categoryId, subCategoryId);
 
                 var articlesInSlot1to4 = dtos
