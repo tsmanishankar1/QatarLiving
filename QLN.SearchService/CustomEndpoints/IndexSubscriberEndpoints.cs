@@ -67,8 +67,7 @@ namespace QLN.SearchService.CustomEndpoints
                                 return Results.BadRequest("UpsertRequest cannot be null for Upsert action");
                             }
 
-                            var id = msg.UpsertRequest.MasterItem?.Id ??
-                                    msg.UpsertRequest.ServicesItem?.Id ??
+                            var id =msg.UpsertRequest.ServicesItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsDealsItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsPrelovedItem?.Id ??

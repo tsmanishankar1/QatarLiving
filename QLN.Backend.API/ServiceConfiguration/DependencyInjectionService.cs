@@ -7,7 +7,6 @@ using QLN.Backend.API.Service.DrupalAuthService;
 using QLN.Backend.API.Service.SearchService;
 using QLN.Backend.API.Service.ServiceBoService;
 using QLN.Backend.API.Service.Services;
-using QLN.Backend.API.Service.ServicesService;
 using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.Infrastructure.IService;
@@ -37,7 +36,6 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
-            services.AddTransient<IServicesService, ExternalServiceService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
             return services;
