@@ -2,12 +2,16 @@
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 {
     public class SubscriptionListingBase : QLComponentBase
     {
+        [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
+
         protected string SearchText { get; set; } = string.Empty;
 
         protected string SortIcon { get; set; } = Icons.Material.Filled.Sort;
@@ -42,6 +46,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
         protected DateRange _confirmedDateRange = new();
         protected string SelectedDateLabel;
         protected string SelectedCategory { get; set; } = string.Empty;
+        protected bool IsLoading { get; set; } = true;
+        protected bool IsEmpty => !IsLoading && Listings.Count == 0;
+        protected int TotalCount { get; set; }
+        protected int currentPage { get; set; } = 1;
+        protected int pageSize { get; set; } = 12;
 
         protected readonly List<string> Categories = new()
         {
@@ -67,12 +76,96 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
 
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
+        [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
+        protected List<SubscriptionListingModal> Listings { get; set; } = new();
 
-        protected void OnSearchChanged(ChangeEventArgs e)
+        protected override async Task OnInitializedAsync()
         {
-            SearchText = e.Value?.ToString();
-            // TODO: Trigger filtering logic based on SearchText
+            await LoadPrelovedListingsAsync();
         }
+
+        private async Task LoadPrelovedListingsAsync()
+        {
+            try
+            {
+                IsLoading = true;
+
+                var request = new FilterRequest
+                {
+
+                    PageNumber = currentPage,
+                    PageSize = pageSize
+                };
+
+                var response = await ClassifiedService.GetPrelovedSubscription(request);
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    Listings = data?.Items.Select(item => new SubscriptionListingModal
+                    {
+                        OrderId = item.OrderId,
+                        SubscriptionType = item.SubscriptionType,
+                        UserName = item.UserName ?? "-",
+                        Email = item.EmailAddress ?? "-",
+                        Mobile = item.Mobile ?? "-",
+                        Whatsapp = item.WhatsappNumber ?? "-",
+                        Amount = item.Amount,
+                        Status = item.Status,
+                        CreationDate = ParseDate(item.StartDate),
+                        PublishedDate = ParseDate(item.StartDate),
+                        ExpiryDate = ParseDate(item.EndDate),
+                        AdTitle = item.OrderId,
+                        UserId = 0,
+                        SubscriptionId = 0,
+                        WhatsAppCount = item.WhatsAppCount,
+                        PhoneCount = item.PhoneCount,
+                    }).ToList() ?? new List<SubscriptionListingModal>();
+
+                    TotalCount = data?.TotalCount ?? 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to load preloved subscriptions: {ex.Message}");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        protected async Task HandlePageChanged(int newPage)
+        {
+            await LoadPrelovedListingsAsync();
+        }
+
+        protected async Task HandlePageSizeChanged(int newSize)
+        {
+            pageSize = newSize;
+            currentPage = 1;
+            await LoadPrelovedListingsAsync();
+        }
+        protected async Task OnSearchChanged(ChangeEventArgs e)
+        {
+            SearchText = e.Value?.ToString() ?? string.Empty;
+            currentPage = 1;
+            await LoadPrelovedListingsAsync();
+        }
+
+
+        private DateTime ParseDate(string date)
+        {
+            return DateTime.TryParse(date, out var result) ? result : DateTime.MinValue;
+        }
+
+
+
 
         protected void ToggleSort()
         {
@@ -123,6 +216,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             dateCreated = null;
             datePublished = null;
             SearchText = string.Empty;
+            _dateRange = new();
+            _tempDateRange = new();
         }
         protected async void CancelDatePicker()
         {
@@ -246,6 +341,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
             showDatePopover = false;
             StateHasChanged();
         }
+
 
     }
 }

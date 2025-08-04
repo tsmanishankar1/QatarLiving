@@ -252,7 +252,17 @@ a, .btn-link {
         height: 40px;
         cursor: pointer;
     }
-
+.custom-edit-button {
+    background-color: white;
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
 
     /* Event razor styles */
 
@@ -761,7 +771,7 @@ a, .btn-link {
 }
 
 .classified-table {
-    width: 500px;
+    width: 600px;
     border-collapse: separate;
     border-spacing: 0;
     border-radius: 8px;
