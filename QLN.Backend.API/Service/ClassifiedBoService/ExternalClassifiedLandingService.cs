@@ -1656,7 +1656,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
        
 
-    }
+
 
         public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         {

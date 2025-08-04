@@ -74,9 +74,6 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int OrderID { get; set; } = 0;
         public int StoreStatusId { get; set; }
 
-        //public virtual ICollection<StoreAddresses> Addresses { get; set; }
-        //public virtual ICollection<StoreLicenseDocuments> LicenseDocuments { get; set; }
-        //public virtual ICollection<StoreProductDocuments> ProductDocuments { get; set; }
     }
 
     public class ViewStoresDto
@@ -112,8 +109,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string CreatedUser { get; set; }
         public string UpdatedUser { get; set; }
         public bool Status { get; set; }
-        //public Guid StoresID { get; set; }
-        //public virtual Stores Store { get; set; }
+        
     }
     public class StoreLicenseDocuments
     {
@@ -127,8 +123,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string CreatedUser { get; set; }
         public string UpdatedUser { get; set; }
         public bool Status { get; set; } = true;
-        //public Guid StoresID { get; set; }
-        //public virtual Stores Store { get; set; }
+       
     }
     public class StoreProductDocuments
     {
@@ -142,8 +137,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string CreatedUser { get; set; }
         public string UpdatedUser { get; set; }
         public bool Status { get; set; } = true;
-        //public Guid StoresID { get; set; }
-        //public virtual Stores Store { get; set; }
+       
     }
 
     

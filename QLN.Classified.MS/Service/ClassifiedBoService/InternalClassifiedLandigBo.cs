@@ -2486,7 +2486,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             try
             {
                 _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
-                    JsonSerializer.Serialize(request));
+                    System.Text.Json.JsonSerializer.Serialize(request));
 
                 var indexKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.StateStoreNames.UnifiedStore,
@@ -3128,7 +3128,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
              
 
-        }
+      
 
         public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
         {
