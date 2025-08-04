@@ -829,7 +829,7 @@ namespace QLN.Classified.MS.Service
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl)) throw new ArgumentException("Certificate URL must be provided.");
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate) throw new ArgumentException("Certificate URL must be provided.");
             if (dto.Id == Guid.Empty) throw new ArgumentException("Id must be provided.");
 
             var adId = dto.Id;
@@ -1527,7 +1527,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in active index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
@@ -1535,7 +1535,7 @@ namespace QLN.Classified.MS.Service
                 if (adItem == null || !adItem.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adItem;
@@ -1561,7 +1561,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Preloved index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
@@ -1569,7 +1569,7 @@ namespace QLN.Classified.MS.Service
                 if (adPreloved == null || !adPreloved.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adPreloved;
@@ -1594,7 +1594,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Deals index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
@@ -1602,7 +1602,7 @@ namespace QLN.Classified.MS.Service
                 if (adDeals == null || !adDeals.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adDeals;
@@ -1628,7 +1628,7 @@ namespace QLN.Classified.MS.Service
                 if (!indexKeys.Contains(key))
                 {
                     _logger.LogWarning("Ad ID {AdId} not found in Collectibles index. Possibly inactive or deleted.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
@@ -1636,7 +1636,7 @@ namespace QLN.Classified.MS.Service
                 if (adCollectibles == null || !adCollectibles.IsActive)
                 {
                     _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    return null;
+                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
                 }
 
                 return adCollectibles;
@@ -3324,15 +3324,12 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetItemAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
-
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsItems>(existingAdElement.GetRawText());
-                _logger.LogInformation("Before Update - Existing Ad JSON: {Json}", JsonSerializer.Serialize(existingAd));
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
@@ -3372,14 +3369,13 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetPrelovedAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsPreloved>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
@@ -3418,14 +3414,13 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetCollectiblesAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
 
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsCollectibles>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
@@ -3464,14 +3459,12 @@ namespace QLN.Classified.MS.Service
 
             try
             {
-                var existingAdElement = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                if (existingAdElement.ValueKind != JsonValueKind.Object)
-                    throw new InvalidOperationException($"Ad with key {key} does not exist.");
+                var existingAd = await GetDealsAdById(dto.Id, cancellationToken);
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
                 if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
-
-                var existingAd = JsonSerializer.Deserialize<ClassifiedsDeals>(existingAdElement.GetRawText());
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);

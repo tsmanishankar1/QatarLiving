@@ -20,7 +20,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
                 .MapSendPhoneOtpEndpoint()
                 .MapVerifyPhoneOtpEndpoint()
                 .MapLogoutEndpoint()
-                .MapSend2FAOtpEndpoint();
+                .MapSend2FAOtpEndpoint()
+                .MapUserAutoCompleteEndpoint();
             return group;
         }
     }
