@@ -4,7 +4,7 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
