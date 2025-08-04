@@ -12,7 +12,7 @@ using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 
-public static class FatoraEndpoint
+public static class FatoraEndpoints
 {
     public static RouteGroupBuilder MapFatoraSuccessEndpoint(this RouteGroupBuilder group)
     {

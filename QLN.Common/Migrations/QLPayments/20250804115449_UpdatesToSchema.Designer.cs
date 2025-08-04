@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.Infrastructure.QLDbContext;
@@ -11,9 +12,11 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLPayments
 {
     [DbContext(typeof(QLPaymentsContext))]
-    partial class QLPaymentsContextModelSnapshot : ModelSnapshot
+    [Migration("20250804115449_UpdatesToSchema")]
+    partial class UpdatesToSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

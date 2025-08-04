@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.PayToFeatureEndpoint;
 
-public static class FaturaEndpoints
+public static class PayToFeatureEndpoints
 {
     public static RouteGroupBuilder MapCreatePayToFeatureEndpoints(this RouteGroupBuilder group)
     {

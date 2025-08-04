@@ -1,5 +1,6 @@
 ﻿namespace QLN.Common.DTO_s.Payments
 {
+    // this may be replaced with our own product type definitions
     public enum ProductType
     {
         PUBLISH = 100,

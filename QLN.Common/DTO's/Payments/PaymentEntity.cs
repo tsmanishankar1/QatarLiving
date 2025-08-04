@@ -15,13 +15,13 @@ namespace QLN.Common.DTO_s.Payments
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int PaymentId { get; set; }
 
-        public int ProductType { get; set; }
-        public string UserSubscriptionId { get; set; }
-        public string SubscriptionFeaturedAddonsId { get; set; }
-        public string SubscriptionRefreshedAddonsId { get; set; }
+        public ProductType ProductType { get; set; }
+        public string? UserSubscriptionId { get; set; } // optional for buying a subscription
+        public string? SubscriptionFeaturedAddonsId { get; set; } // optional for buying featured addon
+        public string? SubscriptionRefreshedAddonsId { get; set; } // optional for buying refresh addon
         public Vertical Vertical { get; set; }
 
-        public string AdId { get; set; }
+        public string? AdId { get; set; } // optional for pay to purchase
 
         public PaymentStatus Status { get; set; }
 
@@ -29,21 +29,21 @@ namespace QLN.Common.DTO_s.Payments
         public string PaidByUid { get; set; }
 
         [DataType(DataType.DateTime)]
-        public DateTime Date { get; set; }
+        public DateTime Date { get; set; } = DateTime.UtcNow;
 
-        public PaymentMethod PaymentMethod { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
 
-        public CardType CardType { get; set; }
+        public CardType? CardType { get; set; } // what if not paying by card ?
 
         public Source Source { get; set; }
 
-        public string Gateway { get; set; }
+        public Gateway Gateway { get; set; }
 
         public string TransactionId { get; set; }
 
-        public int AttachedPaymentId { get; set; }
+        public int AttachedPaymentId { get; set; } // not sure what this is for
 
-        public int GatewayResponse { get; set; }
+        public GatewayResponse? GatewayResponse { get; set; } // not sure of the purpose of this one
 
         public string Comments { get; set; }
 
