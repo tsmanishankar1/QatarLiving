@@ -1,12 +1,10 @@
-﻿using Markdig;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using PSC.Blazor.Components.MarkdownEditor;
 using PSC.Blazor.Components.MarkdownEditor.EventsArgs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
 
@@ -418,6 +416,11 @@ namespace QLN.ContentBO.WebUI.Components.News
                     TriggerCustomImageUpload();
                 }
 
+                if (eventArgs.Name == "Preview")
+                {
+                    ToggleMarkdownPreview();
+                }
+
             }
             return Task.CompletedTask;
         }
@@ -469,6 +472,14 @@ namespace QLN.ContentBO.WebUI.Components.News
             {
                 Logger.LogError(ex, "HandleMarkdownFilesChanged");
             }
+        }
+
+        protected async void ToggleMarkdownPreview()
+        {
+            if(MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
+            } 
         }
 
         #endregion
