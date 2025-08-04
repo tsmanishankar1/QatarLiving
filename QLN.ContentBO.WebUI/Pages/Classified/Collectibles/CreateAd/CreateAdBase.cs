@@ -37,9 +37,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         protected CollectiblesAdPost adPostModel { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
-
-
         protected string? UserEmail { get; set; }
+        protected string? UserId { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -57,6 +56,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("email", out var email))
             {
                 UserEmail = email;
+            }
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("uid", out var uid))
+            {
+                // If needed: parse uid to int or whatever your logic requires
+                UserId = uid;
             }
 
             if (Zones == null || Zones.Count == 0)
