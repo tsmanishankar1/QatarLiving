@@ -1,4 +1,5 @@
-﻿using Dapr;
+﻿using Azure.Storage.Blobs;
+using Dapr;
 using Dapr.Client;
 using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using static QLN.Backend.API.Service.V2ClassifiedBoService.ExternalClassifiedLandingService;
 
 namespace QLN.Backend.API.Service.V2ClassifiedBoService
@@ -1653,6 +1655,94 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }   
 
        
+
+
+
+        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+               
+                var response = await _dapr.InvokeMethodAsync<List<SubscriptionTypes>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-types",
+                    cancellationToken
+                );
+
+                return response ?? new List<SubscriptionTypes>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in listing subscription types.");
+                throw new InvalidOperationException("Error fetching in listing subscription types.", ex);
+            }
+        }
+        public async Task<SubscriptionTypes> GetSubscriptionById(int Id,CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?SubscriptionId={Id}";
+                var response = await _dapr.InvokeMethodAsync<SubscriptionTypes>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-id{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionTypes();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in selecting subscription types.");
+                throw new InvalidOperationException("Error in selecting subscription types.", ex);
+            }
+        }
+
+        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-test-xml-validation",
+                    cancellationToken
+                );
+
+                return response ?? "";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in testing validation xml");
+                throw new InvalidOperationException("Error in testing validation xml", ex);
+            }
+        }
+
+       
+        public async Task<string> GetProcessStoresXML(string Url, string CompanyId, int SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var queryParams = $"?Url={Url}&CompanyId={CompanyId}&SubscriptionId={SubscriptionId}&UserName={UserName}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-process-store-xml{queryParams}",
+                    cancellationToken
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error in processing the xml file.");
+                throw;
+            }
+        }
 
     }
 }

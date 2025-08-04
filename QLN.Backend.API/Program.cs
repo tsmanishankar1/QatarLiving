@@ -1,5 +1,6 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +135,8 @@ builder.Services.Configure<IdentityOptions>(options =>
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -242,6 +245,7 @@ builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
 builder.Services.ServicesBo(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -270,6 +274,7 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 }
 app.UseHttpsRedirection();
 app.UseAuthorization();
+
 
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
