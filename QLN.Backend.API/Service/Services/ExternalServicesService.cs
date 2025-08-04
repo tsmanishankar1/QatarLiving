@@ -496,55 +496,7 @@ namespace QLN.Backend.API.Service.Services
             }
         }
 
-        public async Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var request = new UserIdRequest { UserId = userId };
-
-                var response = await _dapr.InvokeMethodAsync<UserIdRequest, ServicesStatusCountsDto>(
-                    HttpMethod.Post,
-                    ConstantValues.Services.ServiceAppId,
-                    "/api/service/getstatuscountsbyuserid",
-                    request,
-                    cancellationToken
-                );
-
-                return response ?? new ServicesStatusCountsDto();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching service status counts");
-                throw;
-            }
-        }
-
-        public async Task<ServicesStatusCountsDto> GetSubverticalStatusCountsAsync(string userId, string subVerticalName, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var request = new SubverticalStatusRequest
-                {
-                    UserId = userId,
-                    SubVerticalName = subVerticalName
-                };
-
-                var response = await _dapr.InvokeMethodAsync<SubverticalStatusRequest, ServicesStatusCountsDto>(
-                    HttpMethod.Post,
-                    ConstantValues.Services.ServiceAppId,
-                    "/api/service/getsubverticalstatuscountsbyuserid",
-                    request,
-                    cancellationToken
-                );
-
-                return response ?? new ServicesStatusCountsDto();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching subvertical status counts for UserId: {UserId}, SubVertical: {SubVertical}", userId, subVerticalName);
-                throw;
-            }
-        }
+     
 
 
     }

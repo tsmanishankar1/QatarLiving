@@ -138,25 +138,6 @@ namespace QLN.Common.DTO_s
         public string? Reason { get; set; } 
         public string? UpdatedBy { get; set; } 
     }
-    public class ServicesStatusCountsDto
-    {
-        public int PublishedCount { get; set; }
-        public int PromotedCount { get; set; }
-        public int FeaturedCount { get; set; }
-        public int? PromoteTotal { get; set; }
-        public int? FeaturedTotal { get; set; }
-        public int? PublishedTotal { get; set; }
-    }
-
-    public class UserIdRequest
-    {
-        public string UserId { get; set; } = default!;
-    }
-    public class SubverticalStatusRequest
-    {
-        public string UserId { get; set; } = default!;
-        public string SubVerticalName { get; set; } = default!;
-    }
-
+    
 
 }

@@ -24,8 +24,7 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct);
         Task<ServicesModel> PublishService(Guid id, CancellationToken ct);
         Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
-        Task<ServicesStatusCountsDto> GetServiceStatusCountsAsync(string userId, CancellationToken cancellationToken = default);
-        Task<ServicesStatusCountsDto> GetSubverticalStatusCountsAsync(string userId, string subVerticalName, CancellationToken cancellationToken = default);
+       
 
     }
 }

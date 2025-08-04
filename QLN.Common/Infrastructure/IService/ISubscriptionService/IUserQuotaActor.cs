@@ -11,8 +11,7 @@ namespace QLN.Common.Infrastructure.IService.ISubscriptionService
     public interface IUserQuotaActor : IActor
     {
        
-            Task<List<GenericUserQuotaDto>> GetQuotasAsync(CancellationToken cancellationToken = default);
-
+           
            
 
        

@@ -29,9 +29,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapRefreshEndpoint()
                  .MapPublishEndpoint()
                  .MapDetailedGetByIdEndpoint()
-                 .MapBulkActionsEndpoint()
-                 .MapServiceCountEndpoints()
-                 .MapClassifiedsCountEndpoints();
+                 .MapBulkActionsEndpoint();
+                
             return group;
         }
     }
