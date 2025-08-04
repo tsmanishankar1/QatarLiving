@@ -645,7 +645,7 @@ namespace QLN.Content.MS.Service.ReportInternalService
                         {
                             allPosts.Add(new CommunityPostWithReports
                             {
-                                Id = Guid.NewGuid(), 
+                                Id = report.Id, 
                                 PostId = post.Id,
                                 Post = post.Title,
                                 Slug = post.Slug,

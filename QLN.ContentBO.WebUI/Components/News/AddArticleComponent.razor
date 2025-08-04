@@ -4,49 +4,57 @@
 
 @inherits AddArticleBase
 
-<MudContainer MaxWidth="MaxWidth.False">
-    <EditForm Model="@article" OnValidSubmit="HandleValidSubmit">
-        <DataAnnotationsValidator />
-        <MudGrid GutterSize="24px">
-            <!-- Left Column -->
-            <MudItem xs="12" md="7">
-                <MudText Class="mb-4 title-style">Article Form</MudText>
+@if (IsLoading)
+{
+    <MudOverlay @bind-Visible="IsLoading" DarkBackground AutoClose="false">
+        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
+    </MudOverlay>
+}
+else
+{
+    <MudContainer MaxWidth="MaxWidth.False">
+        <EditForm Model="@article" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid GutterSize="24px">
+                <!-- Left Column -->
+                <MudItem xs="12" md="7">
+                    <MudText Class="mb-4 title-style">Article Form</MudText>
 
-                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px">Required Category</MudText>
-                <MudGrid GutterSize="16px" Class="mb-4">
-                    <MudItem xs="4">
-                        <MudSelect T="int" Value="Category.CategoryId" ValueChanged="OnCategoryChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => Category.CategoryId)">
-                            <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                            @foreach (var item in Categories)
-                            {
-                                <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
+                    <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px">Required Category</MudText>
+                    <MudGrid GutterSize="16px" Class="mb-4">
+                        <MudItem xs="4">
+                            <MudSelect T="int" Value="Category.CategoryId" ValueChanged="OnCategoryChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => Category.CategoryId)">
+                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
+                                @foreach (var item in Categories)
+                                {
+                                    <MudSelectItem Value="@item.Id">@item.CategoryName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
 
-                    <MudItem xs="4">
-                        <MudSelect T="int" @bind-Value="Category.SubcategoryId" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" For="@(() => Category.SubcategoryId)">
-                            <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                            @foreach (var item in FilteredSubCategories)
-                            {
-                                <MudSelectItem Value="@item.Id">@item.SubCategoryName</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
+                        <MudItem xs="4">
+                            <MudSelect T="int" @bind-Value="Category.SubcategoryId" Class="w-100" Variant="Variant.Filled" Label="Subcategory" Placeholder="Choose" For="@(() => Category.SubcategoryId)">
+                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
+                                @foreach (var item in FilteredSubCategories)
+                                {
+                                    <MudSelectItem Value="@item.Id">@item.SubCategoryName</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
 
-                    <MudItem xs="3">
+                        <MudItem xs="3">
 
-                        <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" For="@(() => Category.SlotId)">
-                            <MudSelectItem Value="@(0)">Choose</MudSelectItem>
-                            @foreach (var item in Slots)
-                            {
-                                <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
-                            }
-                        </MudSelect>
-                    </MudItem>
-                </MudGrid>
-                
-                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px;font-style: italic;">Optional Category</MudText>
+                            <MudSelect T="int" @bind-Value="Category.SlotId" Class="w-100" Variant="Variant.Filled" Placeholder="Slot" For="@(() => Category.SlotId)">
+                                <MudSelectItem Value="@(0)">Choose</MudSelectItem>
+                                @foreach (var item in Slots)
+                                {
+                                    <MudSelectItem Value="@item.Id">@item.Name</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:4px;font-style: italic;">Optional Category</MudText>
                     <MudGrid GutterSize="16px" Class="mb-4">
                         <MudItem xs="4">
                             <MudSelect T="int" Value="CategoryTwo.CategoryId" ValueChanged="OnCategoryTwoChanged" Class="w-100" Variant="Variant.Filled" Label="Category" Placeholder="Choose" For="@(() => CategoryTwo.CategoryId)">
@@ -81,100 +89,96 @@
                         </MudItem>
                     </MudGrid>
 
-                <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
-                    @foreach (var item in WriterTags)
-                    {
-                        <MudSelectItem Value="@item.Tagname">@item.Tagname</MudSelectItem>
-                    }
-                </MudSelect>
+                    <MudSelect T="string" @bind-Value="article.WriterTag" Label="Writer" Variant="Variant.Filled" Placeholder="Choose" Class="mt-4 w-100" For="@(() => article.WriterTag)">
+                        @foreach (var item in WriterTags)
+                        {
+                            <MudSelectItem Value="@item.Tagname">@item.Tagname</MudSelectItem>
+                        }
+                    </MudSelect>
 
-                <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
+                    <MudTextField Label="Article Title" Variant="Variant.Filled" Class="mt-4 w-100" @bind-Value="article.Title" MaxLength="255" For="@(() => article.Title)" />
 
-                <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:6px">Article content</MudText>
-                <!-- START Custom Markdown Editor -->
-                <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" @ref="MarkdownEditorRef">
-                    <Toolbar>
-                        <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
+                    <MudText Typo="Typo.body2" Class="mt-4 mb-1" Style="margin-left:6px">Article content</MudText>
+                    <!-- START Custom Markdown Editor -->
+                    <MarkdownEditor @bind-Value="@article.Content" Placeholder="Start Typing" CustomButtonClicked="@OnCustomButtonClicked" HideIcons="@HiddenIcons" @ref="MarkdownEditorRef">
+                        <Toolbar>
+                            <MarkdownToolbarButton Action="MarkdownAction.Bold" Icon="fa fa-bold" Title="Bold" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Italic" Icon="fa fa-italic" Title="Italic" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Heading" Icon="fa fa-header" Title="Heading" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Strikethrough" Icon="fa fa-strikethrough" Title="Strikethrough" />
 
-                        <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
-                        <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
-                        <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
-                        <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
+                            <MarkdownToolbarButton Separator Action="MarkdownAction.Code" Icon="fa fa-code" Title="Code Block" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Quote" Icon="fa fa-quote-right" Title="Quote" />
+                            <MarkdownToolbarButton Action="MarkdownAction.HorizontalRule" Icon="fa fa-minus" Title="Horizontal Rule" />
+                            <MarkdownToolbarButton Action="MarkdownAction.UnorderedList" Icon="fa fa-list-ul" Title="Unordered List" />
+                            <MarkdownToolbarButton Action="MarkdownAction.OrderedList" Icon="fa fa-list-ol" Title="Ordered List" />
 
-                        <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
+                            <MarkdownToolbarButton Separator Action="MarkdownAction.Link" Icon="fa fa-link" Title="Link" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Custom" Name="@UploadImageButtonName" Icon="fa fa-upload" Title="Upload Image" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Image" Icon="fa fa-image" Title="Image" />
 
-                        <MarkdownToolbarButton Separator Action="MarkdownAction.SideBySide" Icon="fa fa-columns" Title="Side by Side" />
-                        <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
-                    </Toolbar>
-                </MarkdownEditor>
-                <MudText Typo="Typo.caption" Color="Color.Error">
-                    <ValidationMessage For="@(() => article.Content)" />
-                </MudText>
+                            <MarkdownToolbarButton Separator Action="MarkdownAction.Custom" Name="CustomPreview" Icon="fa fa-eye no-disable" Title="Toggle Preview (Ctrl-P)" />
+                            <MarkdownToolbarButton Action="MarkdownAction.SideBySide" Icon="fa fa-columns no-disable no-mobile" Title="Side by Side" />
+                            <MarkdownToolbarButton Action="MarkdownAction.Guide" Icon="fa fa-question-circle" Title="Markdown Guide" />
+                        </Toolbar>
+                    </MarkdownEditor>
+                    <MudText Typo="Typo.caption" Color="Color.Error">
+                        <ValidationMessage For="@(() => article.Content)" />
+                    </MudText>
 
 
-                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
-                </MudFileUpload>
-                <!-- END Custom Markdown Editor -->
-                <MudStack Row Class="mt-6 justify-content-between">
-                    <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" Style="text-transform: capitalize;" OnClick="@Cancel">Cancel</MudButton>
-                    <MudButton Class="ml-2 rounded-lg action-btn" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="text-transform: capitalize;" Color="Color.Primary" Disabled="IsBtnDisabled">Save</MudButton>
-                </MudStack>
-            </MudItem>
+                    <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleMarkdownFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_markdownfileUploadRef">
+                    </MudFileUpload>
+                    <!-- END Custom Markdown Editor -->
+                    <MudStack Row Class="mt-6 justify-content-between">
+                        <MudButton Class="action-btn rounded-lg" Variant="Variant.Filled" Color="Color.Default" Style="text-transform: capitalize;" OnClick="@Cancel">Cancel</MudButton>
+                        <MudButton Class="ml-2 rounded-lg action-btn" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Style="text-transform: capitalize;" Color="Color.Primary" Disabled="IsBtnDisabled">Save</MudButton>
+                    </MudStack>
+                </MudItem>
 
-            <!-- Right Column -->
-            <MudItem xs="12" md="5">
-                <MudText Class="mb-4 title-style">Image</MudText>
+                <!-- Right Column -->
+                <MudItem xs="12" md="5">
+                    <MudText Class="mb-4 title-style">Image</MudText>
 
-                <!-- Cover Image Upload -->
-                <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
-                    <ActivatorContent>
-                        <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                            @if (!string.IsNullOrEmpty(article.CoverImageUrl))
-                            {
-                                <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
-                            }
-                            else
-                            {
-                                <div class="d-flex flex-column align-center">
-                                    <div class="icon-circle">
-                                        <img src="/qln-images/upload_icon.svg"
-                                             class="file-upload-style"
-                                             alt="Upload" />
+                    <!-- Cover Image Upload -->
+                    <MudFileUpload T="IBrowserFile" Accept="image/*" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
+                        <ActivatorContent>
+                            <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
+                                @if (!string.IsNullOrEmpty(article.CoverImageUrl))
+                                {
+                                    <img src="@article.CoverImageUrl" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <div class="d-flex flex-column align-center">
+                                        <div class="icon-circle">
+                                            <img src="/qln-images/upload_icon.svg"
+                                                 class="file-upload-style"
+                                                 alt="Upload" />
+                                        </div>
+                                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
                                     </div>
-                                    <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
-                                </div>
-                            }
+                                }
+                            </MudPaper>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                    @if (!string.IsNullOrEmpty(article.CoverImageUrl))
+                    {
+                        <MudPaper Elevation="0" Class="image-picker-style">
+                            <div class="upload-action-style">
+                                <MudButton OnClick="EditImage">
+                                    <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
+                                </MudButton>
+                                <MudButton OnClick="RemoveImage">
+                                    <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
+                                </MudButton>
+                            </div>
                         </MudPaper>
-                    </ActivatorContent>
-                </MudFileUpload>
-                @if (!string.IsNullOrEmpty(article.CoverImageUrl))
-                {
-                    <MudPaper Elevation="0" Class="image-picker-style">
-                        <div class="upload-action-style">
-                            <MudButton OnClick="EditImage">
-                                <img src="/qln-images/edit_icon.svg" alt="Edit" class="action-icon-style" />
-                            </MudButton>
-                            <MudButton OnClick="RemoveImage">
-                                <img src="/qln-images/delete_icon.svg" alt="delete" class="action-icon-style" />
-                            </MudButton>
-                        </div>
-                    </MudPaper>
-                }
-            </MudItem>
-        </MudGrid>
-    </EditForm>
-</MudContainer>
-@if (IsLoading)
-{
-    <MudOverlay @bind-Visible="IsLoading" DarkBackground AutoClose="false">
-        <MudProgressCircular Color="Color.Warning" Rounded="true" Indeterminate="true" />
-    </MudOverlay>
+                    }
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudContainer>
 }
 
 
