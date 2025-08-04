@@ -27,7 +27,8 @@ namespace QLN.Common.Infrastructure.Utilities
         "SubVertical",
         "UserName",
         "UserId",
-        "Status"
+        "Status",
+        "RefreshExpiryDate"
     };
 
         public static void ApplySelectiveUpdates<T>(T existing, T updated)
