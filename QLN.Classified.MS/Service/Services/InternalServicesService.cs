@@ -253,7 +253,7 @@ namespace QLN.Classified.MS.Service.Services
                     BuildingNumber = dto.BuildingNumber,
                     LicenseCertificate = dto.LicenseCertificate,
                     Comments = dto.Comments,
-                    SubscriptionId = uid,
+                    SubscriptionId = null,
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
