@@ -1282,14 +1282,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    // Retrieve user claim from the token
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
                         return Results.Unauthorized();
                     }
 
-                    // Deserialize the user data from the claim
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
 
@@ -1309,32 +1307,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateItemsClassifiedAd")
@@ -1367,32 +1387,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateItemsClassifiedAdById")
@@ -1437,32 +1479,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdatePrelovedClassifiedAd")
@@ -1495,32 +1559,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdatePrelovedClassifiedAdById")
@@ -1565,32 +1651,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                .WithName("UpdateCollectiblesClassifiedAd")
@@ -1623,32 +1731,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateCollectiblesClassifiedAdById")
@@ -1693,32 +1823,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
              .WithName("UpdateDealsClassifiedAd")
@@ -1751,32 +1903,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateDealsClassifiedAdById")
@@ -3672,6 +3846,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3728,6 +3911,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -3787,6 +3979,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3843,6 +4044,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
