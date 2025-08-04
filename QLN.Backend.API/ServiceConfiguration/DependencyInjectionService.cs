@@ -98,6 +98,20 @@ namespace QLN.Backend.API.ServiceConfiguration
 
             return services;
         }
+        public static IServiceCollection DrupalUserServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupalUser"] ?? throw new ArgumentNullException("LegacyDrupalUser");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalUserService, ExternalDrupalUserService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
 
         public static IServiceCollection CompanyConfiguration(this IServiceCollection services, IConfiguration config)
         {
@@ -152,5 +166,6 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IServicesBoService,ExternalServicesBoService>();
             return services;
         }
+        
     }
 }

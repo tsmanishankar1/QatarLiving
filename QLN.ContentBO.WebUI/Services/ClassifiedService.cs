@@ -517,7 +517,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var endpoint = $"/api/classified/{vertical}/post";
+                var endpoint = $"/api/classified/{vertical}";
 
                 // Create request manually with correct headers
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)

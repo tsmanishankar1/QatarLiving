@@ -1,7 +1,12 @@
-﻿using Dapr.Client;
+﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Dapr.Client;
+using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using QLN.Classified.MS.DBContext;
+using Newtonsoft.Json;
+using QLN.Common.Infrastructure.QLDbContext;
+
+using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
@@ -9,11 +14,14 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
+using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.ClassifiedBoService
@@ -33,8 +41,9 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string ServicesFeaturedStoresIndexKey = ConstantValues.StateStoreNames.FeaturedStoreServicesIndexKey;
         private const string FeaturedCategoryClassifiedIndex = ConstantValues.StateStoreNames.FeaturedCategoryClassifiedIndex;
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
-       // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
+        // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
+
 
         public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
         {
@@ -42,7 +51,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mockTransactions = GenerateMockTransactions();
-            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();
+            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();            
             _context = context;
         }
 
@@ -182,7 +191,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
         public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
-        {            
+        {
             try
             {
                 if (string.IsNullOrWhiteSpace(vertical))
@@ -192,8 +201,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 string indexKey = vertical.ToLower() switch
                 {
-                    Verticals.Classifieds => ItemsIndexKey,        
-                    Verticals.Services => ItemsServiceIndexKey,    
+                    Verticals.Classifieds => ItemsIndexKey,
+                    Verticals.Services => ItemsServiceIndexKey,
                     _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
                 };
 
@@ -214,7 +223,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var slottedPicks = seasonalPicks
                     .Where(p => p != null && p.IsActive == true && (p.SlotOrder >= 1 && p.SlotOrder <= 6) &&
                     (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
-                    .OrderBy(p => p.SlotOrder) 
+                    .OrderBy(p => p.SlotOrder)
                     .ToList();
 
                 _logger.LogInformation("Fetched {Count} slotted seasonal picks.", slottedPicks.Count);
@@ -240,8 +249,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 string indexKey = dto.Vertical.ToLower() switch
                 {
-                    Verticals.Classifieds => ItemsIndexKey,         
-                    Verticals.Services => ItemsServiceIndexKey,    
+                    Verticals.Classifieds => ItemsIndexKey,
+                    Verticals.Services => ItemsServiceIndexKey,
                     _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
@@ -295,7 +304,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
         public async Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
-            const int MaxSlot = 6;           
+            const int MaxSlot = 6;
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
@@ -410,7 +419,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return $"Pick '{pick.CategoryName}' has been deleted.";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing soft delete on pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
                 throw;
@@ -951,7 +960,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _dapr.GetStateAsync<FeaturedCategory>(StoreName, id, cancellationToken: cancellationToken)).ToList();
 
                 var featuredCategories = await Task.WhenAll(stateTasks);
-                
+
                 var slottedFeaturedCategories = featuredCategories
                     .Where(p => p != null &&
                                 p.IsActive == true &&
@@ -1440,7 +1449,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", request.PageNumber, request.PageSize);
 
-                await Task.Delay(50, cancellationToken); 
+                await Task.Delay(50, cancellationToken);
 
                 var allTransactions = _mockTransactions.AsQueryable();
 
@@ -1612,11 +1621,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         };
 
 
-        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null, 
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default)
         {
             try
-            {               
+            {
                 var result = new List<PrelovedAdPaymentSummaryDto>();
 
                 var keys = await _dapr.GetStateAsync<List<string>>(
@@ -1634,19 +1643,19 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         cancellationToken: cancellationToken);
 
                     if (ad == null)
-                    {                     
+                    {
                         continue;
                     }
 
                     var dto = new PrelovedAdPaymentSummaryDto
                     {
-                        AdId = ad.Id,                        
+                        AdId = ad.Id,
                         SubscriptionType = "12 Months Super",
                         UserName = ad.UserName,
                         EmailAddress = ad.ContactEmail,
                         Mobile = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsAppNumber,
-                        Amount = 250, 
+                        Amount = 250,
                         Status = ad.Status.ToString(),
                         StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
                         ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
@@ -1655,7 +1664,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
                         : "N/A",
 
-                        OrderId = ad.Id.ToString().Substring(0, 6) 
+                        OrderId = ad.Id.ToString().Substring(0, 6)
                     };
 
                     if (string.IsNullOrWhiteSpace(search) ||
@@ -1697,7 +1706,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
             }
         }
-        
+
         public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
             string? sortBy = "CreationDate",
             string? search = null,
@@ -1734,11 +1743,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     {
                         Id = ad.Id,
                         UserId = ad.UserId,
-                        UserName = ad.UserName, 
+                        UserName = ad.UserName,
                         AdTitle = ad.Title,
                         Category = ad.Category,
                         SubCategory = ad.L1Category,
-                        Status = ad.Status.ToString(), 
+                        Status = ad.Status.ToString(),
                         IsFeatured = ad.IsFeatured,
                         IsPromoted = ad.IsPromoted,
                         CreationDate = ad.CreatedAt,
@@ -1850,11 +1859,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         WhatsappNumber = ad.WhatsappNumber,
                         price = "250",
                         status = ad.IsActive.ToString(),
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate.ToString()
-
-,
-                        orderid = ad.Id.ToString().Substring(0, 6) // or fetch from actual payment state
+                        WhatsAppLeads = "12",
+                        PhoneLeads = "14",
+                        StartDate = ad.UpdatedAt.ToString(),                        
+                        EndDate = ad.ExpiryDate.ToString(),
+                        orderid = ad.Id.ToString().Substring(0, 6)
                     };
 
                     if (string.IsNullOrWhiteSpace(search) ||
@@ -1900,7 +1909,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             int? pageNumber = 1,
             int? pageSize = 12,
             string? search = null,
-            string? sortBy = null,string? status = null,
+            string? sortBy = null, string? status = null,
             bool? isPromoted = null,
             bool? isFeatured = null,
             CancellationToken cancellationToken = default)
@@ -1926,13 +1935,13 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     if (!ad.IsActive)
                     {
                         continue;
-                    }                                    
+                    }
 
                     if (isPromoted.HasValue && ad.IsPromoted != isPromoted.Value)
                     {
                         continue;
                     }
-                    
+
                     if (isFeatured.HasValue && ad.IsFeatured != isFeatured.Value)
                     {
                         continue;
@@ -1940,17 +1949,20 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     var dto = new DealsViewSummaryDto
                     {
                         AdId = ad.Id,
+                        Dealtitle = ad.Title,
                         subscriptiontype = "12 Months Super",
+                        DateCreated = ad.CreatedAt,
                         createdby = ad.CreatedBy,
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate.ToString(),
-                        WebClick = "2",
+                        StartDate = ad.UpdatedAt ?? DateTime.UtcNow,
+                        EndDate = ad.ExpiryDate,
+                        WebClick = 2,
                         Weburl = "linkup.com",
-                        Views = "3",
-                        Impression = "5",
-                        Phonelead = "4"
+                        Location = ad.Locations,
+                        Views = 3,
+                        Impression = 5,
+                        Phonelead = 4
                     };
 
 
@@ -2000,7 +2012,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
 
         }
-        
+
         public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
         {
             if (dto.AdId == null || dto.AdId.Count == 0)
@@ -2011,8 +2023,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             _logger.LogInformation("Soft delete requested for {Count} deals. UserId: {UserId}", dto.AdId.Count, userId);
 
-            
-            var indexKey = ConstantValues.StateStoreNames.DealsIndexKey; 
+
+            var indexKey = ConstantValues.StateStoreNames.DealsIndexKey;
             var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.StateStoreNames.UnifiedStore, indexKey) ?? new();
 
             if (index.Count == 0)
@@ -2041,7 +2053,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                     if (!dto.AdId.Contains(deal.Id.ToString()))
                     {
-                        continue; 
+                        continue;
                     }
 
                     if (!deal.IsActive)
@@ -2233,7 +2245,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-        
+
         public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
             int pageNumber,
             int pageSize,
@@ -2388,7 +2400,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             try
             {
 
-               
+
 
                 DateTime filterDateParsed;
                 try
@@ -2476,7 +2488,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             try
             {
                 _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
-                    JsonSerializer.Serialize(request));
+                    System.Text.Json.JsonSerializer.Serialize(request));
 
                 var indexKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.StateStoreNames.UnifiedStore,
@@ -2631,10 +2643,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
@@ -2824,10 +2843,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsCollectibles).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
@@ -3101,6 +3127,177 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     cancellationToken: cancellationToken
                 );
             }
+        }       
+
+
+      
+
+        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
+                return getSubscriptionTypes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return new List<SubscriptionTypes>();
+            }
         }
+        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
+                return getSubscriptionType ?? new SubscriptionTypes();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return new SubscriptionTypes();
+            }
+        }
+
+        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string result = string.Empty;
+                string errors = string.Empty;
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
+                var manager = new ProductXmlManager(xsdPath);
+                errors = manager.ValidateXml(xmlPath);
+                if (string.IsNullOrEmpty(errors))
+                {
+                    result = "Valid XML";
+                    return result;
+                }
+                else
+                {
+                    return errors;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return ex.Message;
+            }
+        }
+
+       
+        public async Task<string> GetProcessStoresXML(string Url, string CompanyId, int SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        {
+            try
+            { 
+                string result = string.Empty;
+                string errors = string.Empty;
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string xmlPath = Url;
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
+                var manager = new ProductXmlManager(xsdPath);
+                errors = manager.ValidateXml(xmlPath);
+                if (string.IsNullOrEmpty(errors))
+                {
+                    //result = "Valid XML";
+                    using var httpClient = new HttpClient();
+                    string xml = await httpClient.GetStringAsync(xmlPath);
+                    //string xml = File.ReadAllText(xmlPath);
+                    XmlSerializer serializer = new XmlSerializer(typeof(Products));
+                    using StringReader reader = new StringReader(xml);
+                    Products xmlproducts = (Products)serializer.Deserialize(reader);
+                    if (xmlproducts != null && xmlproducts.ProductList != null && xmlproducts.ProductList.Count > 0)
+                    {
+                        await DeleteProductsByCompanyIdAsync(Guid.Parse(CompanyId), UserName);
+                        foreach (var xmlproduct in xmlproducts.ProductList)
+                        {
+
+                            StoreProducts storeProducts = new StoreProducts();
+                            Guid StoreProductId = Guid.NewGuid();
+                            storeProducts.StoreProductId = StoreProductId;
+                            DateTime now = DateTime.UtcNow;
+                            storeProducts.CompanyId = Guid.Parse(CompanyId);
+                            storeProducts.SubscriptionId = SubscriptionId;
+                            storeProducts.ProductName = xmlproduct.ProductName;
+                            storeProducts.ProductLogo = xmlproduct.ProductLogo;
+                            storeProducts.ProductPrice = xmlproduct.ProductPrice;
+                            storeProducts.Currency = xmlproduct.Currency; storeProducts.ProductSummary = xmlproduct.ProductDetails.ProductSummary;
+                            storeProducts.ProductDescription = xmlproduct.ProductDetails.ProductDescription;
+                            storeProducts.CreatedDate = now;
+                            storeProducts.UpdatedDate = now;
+                            storeProducts.CreatedUser = UserName;
+                            storeProducts.UpdatedUser = UserName;
+                            storeProducts.Features = xmlproduct.ProductDetails.Features.Select(f => new ProductFeatures
+                            {
+                                ProductFeaturesId = Guid.NewGuid(),
+                                Features = f,
+                                CreatedDate = now,
+                                UpdatedDate = now,
+                                CreatedUser = UserName,
+                                UpdatedUser = UserName,
+                                StoreProductId = StoreProductId
+                            }).ToList();
+                            storeProducts.Images = xmlproduct.ProductDetails.Images.Select(img => new ProductImages
+                            {
+                                ProductImagesId = Guid.NewGuid(),
+                                Images = img,
+                                CreatedDate = now,
+                                UpdatedDate = now,
+                                CreatedUser = UserName,
+                                UpdatedUser = UserName,
+                                StoreProductId = StoreProductId
+                            }).ToList();
+
+                            _context.StoreProduct.Add(storeProducts);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+
+                    return "created";
+                }
+                else
+                {
+                    return errors;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return ex.Message;
+            }
+        }
+        public async Task DeleteProductsByCompanyIdAsync(Guid companyId, string UserName)
+        {
+            var products = await _context.StoreProduct
+                                .Where(p => p.CompanyId == companyId && p.Status == true)
+                                .Include(p => p.Features)
+                                .Include(p => p.Images)
+                                .ToListAsync();
+
+            foreach (var product in products)
+            {
+                product.Status = false;
+                foreach (var feature in product.Features)
+                {
+                    feature.Status = false; // or "InActive" if you change type
+                    feature.UpdatedDate = DateTime.UtcNow;
+                    feature.UpdatedUser = UserName;
+                }
+                foreach (var image in product.Images)
+                {
+                    image.Status = false;
+                    image.UpdatedDate = DateTime.UtcNow;
+                    image.UpdatedUser = UserName;
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
+
     }
 }

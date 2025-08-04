@@ -25,7 +25,7 @@ namespace QLN.Common.DTO_s.Company
         public string WhatsAppCountryCode { get; set; }
 
         [Required, EmailAddress]
-        public string? Email { get; set; }
+        public string Email { get; set; }
         [Url]
         public string? WebsiteUrl { get; set; }
         [Url]

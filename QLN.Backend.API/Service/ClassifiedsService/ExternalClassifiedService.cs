@@ -569,6 +569,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw new InvalidOperationException($"Failed to retrieve ad details for Ad ID: {adId} from classified microservice.", ex);
             }
+            catch(KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+            }
         }
 
         public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
@@ -590,6 +595,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Preloved ad from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
             }
         }
 
@@ -613,6 +623,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Deals ad from classified microservice.", ex);
             }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+            }
         }
 
         public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
@@ -634,6 +649,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve Collectibles ad from classified microservice.", ex);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _log.LogException(ex);
+                throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
             }
         }
 
@@ -1284,10 +1304,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    "Failed to update classified item ad in the classifieds microservice.",
-                    ex);
+                _log.LogError(ex, "Dapr invocation failed for Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("Error while invoking classifieds microservice.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogError(ex, "HTTP request failed while updating Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("HTTP connection to classifieds microservice failed.", ex);
+            }
+            catch (TaskCanceledException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                _log.LogWarning("Operation cancelled for Ad ID: {AdId}", dto.Id);
+                throw new OperationCanceledException("The request was cancelled.", ex, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Unexpected exception while updating Ad ID {AdId}", dto.Id);
+                throw;
             }
         }
 
@@ -1311,8 +1344,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to update classified preloved ad in the classifieds microservice.", ex);
+                _log.LogError(ex, "Dapr invocation failed for Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("Error while invoking classifieds microservice.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogError(ex, "HTTP request failed while updating Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("HTTP connection to classifieds microservice failed.", ex);
+            }
+            catch (TaskCanceledException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                _log.LogWarning("Operation cancelled for Ad ID: {AdId}", dto.Id);
+                throw new OperationCanceledException("The request was cancelled.", ex, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Unexpected exception while updating Ad ID {AdId}", dto.Id);
+                throw;
             }
         }
 
@@ -1335,8 +1383,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to update classified collectibles ad in the classifieds microservice.", ex);
+                _log.LogError(ex, "Dapr invocation failed for Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("Error while invoking classifieds microservice.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogError(ex, "HTTP request failed while updating Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("HTTP connection to classifieds microservice failed.", ex);
+            }
+            catch (TaskCanceledException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                _log.LogWarning("Operation cancelled for Ad ID: {AdId}", dto.Id);
+                throw new OperationCanceledException("The request was cancelled.", ex, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Unexpected exception while updating Ad ID {AdId}", dto.Id);
+                throw;
             }
         }
 
@@ -1360,8 +1423,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             catch (InvocationException ex)
             {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to update classified deals ad in the classifieds microservice.", ex);
+                _log.LogError(ex, "Dapr invocation failed for Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("Error while invoking classifieds microservice.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                _log.LogError(ex, "HTTP request failed while updating Ad ID {AdId}", dto.Id);
+                throw new InvalidOperationException("HTTP connection to classifieds microservice failed.", ex);
+            }
+            catch (TaskCanceledException ex) when (cancellationToken.IsCancellationRequested)
+            {
+                _log.LogWarning("Operation cancelled for Ad ID: {AdId}", dto.Id);
+                throw new OperationCanceledException("The request was cancelled.", ex, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _log.LogError(ex, "Unexpected exception while updating Ad ID {AdId}", dto.Id);
+                throw;
             }
         }
     }

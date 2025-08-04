@@ -148,7 +148,8 @@ namespace QLN.ContentBO.WebUI.Services
                                                                         int subCategoryId,
                                                                         int? status = 0,
                                                                         int? page = null,
-                                                                        int? pageSize = null)
+                                                                        int? pageSize = null,
+                                                                        string? search = null)
         {
             try
             {
@@ -156,6 +157,11 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     $"status={status}"
                 };
+
+                if (!string.IsNullOrWhiteSpace(search))
+                {
+                    query.Add($"search={Uri.EscapeDataString(search)}");
+                }
 
                 if (page.HasValue)
                     query.Add($"page={page.Value}");
