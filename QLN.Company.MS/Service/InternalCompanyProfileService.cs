@@ -135,8 +135,8 @@ namespace QLN.Company.MS.Service
 
             if (dto.Vertical == VerticalType.Services)
             {
-                if (!dto.IsTherapeuticService.Value)
-                    throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
+                if(dto.IsTherapeuticService == null)
+                throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
 
                 if (dto.IsTherapeuticService == true)
                 {
