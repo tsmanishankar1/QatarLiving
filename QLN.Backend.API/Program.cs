@@ -139,7 +139,7 @@ builder.Services.AddDbContext<QLApplicationContext>(options =>
 
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
