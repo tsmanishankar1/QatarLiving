@@ -552,7 +552,7 @@ namespace QLN.Classified.MS.Service.Services
                 Status = dto.Status.ToString(),
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
+                LastRefreshedOn = dto.LastRefreshedOn,
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
@@ -846,8 +846,7 @@ namespace QLN.Classified.MS.Service.Services
             );
             if (serviceAd == null)
                 throw new KeyNotFoundException("Service Ad not found.");
-            serviceAd.IsRefreshed = request.IsRefreshed;
-            serviceAd.RefreshExpiryDate = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.LastRefreshedOn = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dapr.SaveStateAsync(

@@ -1181,7 +1181,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
             })
             .WithName($"GetFeatured_{ConstantValues.Verticals.Services}_Items")
-            .WithTags("Services")
+            .WithTags("Service")
             .WithSummary("Get all featured service items")
             .WithDescription("Fetches every ServicesIndex document where IsFeatured = true.")
             .Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
