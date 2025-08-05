@@ -14,8 +14,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.UserSecrets;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
@@ -3876,5 +3878,202 @@ namespace QLN.Classified.MS.Service
                 throw new Exception($"GetAllCollectibles failed: {ex.Message}", ex);
             }
         }
+
+        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                object adItem = null;
+                Console.WriteLine(userId);
+                switch (dto.SubVertical)
+                {
+                    case SubVertical.Items:
+                        adItem = await GetItemAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Preloved:
+                        adItem = await GetPrelovedAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Collectibles:
+                        adItem = await GetCollectiblesAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Deals:
+                        adItem = await GetDealsAdById(dto.AdId, cancellationToken);
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
+                }
+                if (adItem == null)
+                {
+                    _logger.LogError($"Ad with id {dto.AdId} not found in the {dto.SubVertical} vertical.");
+                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found.");
+                }
+                if (adItem is ClassifiedItems itemAd)
+                {
+                    if (itemAd.IsFeatured == true)
+                    {
+                        throw new ConflictException("This ad is already featured.");
+                    }
+                    itemAd.IsFeatured = true;
+                    itemAd.ModifiedDate = DateTime.UtcNow;
+                    itemAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                }
+                else if (adItem is ClassifiedPreloved prelovedAd)
+                {
+                    if (prelovedAd.IsFeatured == true)
+                    {
+                        throw new ConflictException("This ad is already featured.");
+                    }
+                    prelovedAd.IsFeatured = true;
+                    prelovedAd.ModifiedDate = DateTime.UtcNow;
+                    prelovedAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
+                }
+                else if (adItem is ClassifiedCollectibles collectiblesAd)
+                {
+                    if (collectiblesAd.IsFeatured == true)
+                    {
+                        throw new ConflictException("This ad is already featured.");
+                    }
+                    collectiblesAd.IsFeatured = true;
+                    collectiblesAd.ModifiedDate = DateTime.UtcNow;
+                    collectiblesAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
+                }
+                else if (adItem is ClassifiedDeals dealsAd)
+                {
+                    if (dealsAd.IsFeatured == true)
+                    {
+                        throw new ConflictException("This ad is already featured.");
+                    }
+                    dealsAd.IsFeatured = true;
+                    dealsAd.ModifiedDate = DateTime.UtcNow;
+                    dealsAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
+                return "The ad has been successfully marked as featured.";
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
+                throw new ArgumentException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
+        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                object adItem = null;
+                Console.WriteLine(userId);
+                switch (dto.SubVertical)
+                {
+                    case SubVertical.Items:
+                        adItem = await GetItemAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Preloved:
+                        adItem = await GetPrelovedAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Collectibles:
+                        adItem = await GetCollectiblesAdById(dto.AdId, cancellationToken);
+                        break;
+                    case SubVertical.Deals:
+                        adItem = await GetDealsAdById(dto.AdId, cancellationToken);
+                        break;
+                    default:
+                        throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
+                }
+                if (adItem == null)
+                {
+                    _logger.LogError($"Ad with id {dto.AdId} not found in the {dto.SubVertical} vertical.");
+                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found.");
+                }
+                if (adItem is ClassifiedItems itemAd)
+                {
+                    if (itemAd.IsPromoted == true)
+                    {
+                        throw new ConflictException("This ad is already promoted.");
+                    }
+                    itemAd.IsPromoted = true;
+                    itemAd.ModifiedDate = DateTime.UtcNow;
+                    itemAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                }
+                else if (adItem is ClassifiedPreloved prelovedAd)
+                {
+                    if (prelovedAd.IsPromoted == true)
+                    {
+                        throw new ConflictException("This ad is already promoted.");
+                    }
+                    prelovedAd.IsPromoted = true;
+                    prelovedAd.ModifiedDate = DateTime.UtcNow;
+                    prelovedAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
+                }
+                else if (adItem is ClassifiedCollectibles collectiblesAd)
+                {
+                    if (collectiblesAd.IsPromoted == true)
+                    {
+                        throw new ConflictException("This ad is already promoted.");
+                    }
+                    collectiblesAd.IsPromoted = true;
+                    collectiblesAd.ModifiedDate = DateTime.UtcNow;
+                    collectiblesAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
+                }
+                else if (adItem is ClassifiedDeals dealsAd)
+                {
+                    if (dealsAd.IsPromoted == true)
+                    {
+                        throw new ConflictException("This ad is already promoted.");
+                    }
+                    dealsAd.IsPromoted = true;
+                    dealsAd.ModifiedDate = DateTime.UtcNow;
+                    dealsAd.UserId = userId;
+                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
+                }
+                return "The ad has been successfully marked as promoted.";
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
+                throw new ArgumentException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
+
+
     }
 }

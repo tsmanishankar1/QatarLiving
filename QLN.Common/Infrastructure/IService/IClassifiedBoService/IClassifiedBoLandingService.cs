@@ -93,7 +93,9 @@ string? sortBy = null, CancellationToken cancellationToken = default);
         Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
         Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
         Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
-       
+        Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct);
+
+
     }
 }
 

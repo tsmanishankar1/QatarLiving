@@ -1,7 +1,9 @@
 ﻿using Dapr;
 using Dapr.Client;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Spatial;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -12,6 +14,7 @@ using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Utilities;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
@@ -1440,6 +1443,149 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogError(ex, "Unexpected exception while updating Ad ID {AdId}", dto.Id);
                 throw;
+            }
+        }
+
+        public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+            try
+            {
+                var url = $"/api/classifieds/items/promoted/{dto.AdId}?subVertical={dto.SubVertical}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    if (!string.IsNullOrWhiteSpace(errorJson))
+                    {
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                            errorMessage = problem?.Detail ?? "Unknown validation error.";
+                        }
+                        catch (JsonException)
+                        {
+                            errorMessage = errorJson;
+                        }
+                    }
+                    else
+                    {
+                        errorMessage = "No error details returned from service.";
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                return "The ad has been successfully marked as promoted.";
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
+
+        public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
+        {
+            if (dto.AdId == Guid.Empty)
+            {
+                throw new ArgumentException("AdId is required.");
+            }
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+            try
+            {
+                var url = $"/api/classifieds/items/featured/{dto.AdId}?subVertical={dto.SubVertical}";
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                return "The ad has been successfully marked as featured.";
+            }
+            catch (ArgumentException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("AdId is required and must be valid.", ex);
+            }
+            catch (DaprException daprEx)
+            {
+                _log.LogException(daprEx);
+                throw new InvalidOperationException("Failed to invoke internal service through Dapr.", daprEx);
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _log.LogException(httpEx);
+                throw new InvalidOperationException("Failed to communicate with the internal service.", httpEx);
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
     }

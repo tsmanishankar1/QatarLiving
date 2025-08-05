@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Classifieds;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Model;
@@ -57,5 +58,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default);
+        Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
+        Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
     }
 }

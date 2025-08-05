@@ -2767,7 +2767,189 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-           
+
+            group.MapPost("/bulk-deals-action", async Task<Results<
+               Ok<string>,
+               BadRequest<ProblemDetails>,
+               NotFound<ProblemDetails>,
+               Conflict<ProblemDetails>,
+               ProblemHttpResult
+>> (
+               BulkActionRequest deleteRequest,
+               HttpContext httpContext,
+               IClassifiedBoLandingService service,
+               CancellationToken cancellationToken
+           ) =>
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+
+                if (string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(userName))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId!, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .WithName("BulkDealsAction")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Bulk deals action classifieds")
+           .WithDescription("Performs bulk deals actions (approve, publish, unpublish, promote, feature, remove) on selected classified ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-deals-action-userid", async Task<Results<
+     Ok<string>,
+     BadRequest<ProblemDetails>,
+     Conflict<ProblemDetails>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult
+ >> (
+     BulkActionRequest deleteRequest,
+     string userId,
+     IClassifiedBoLandingService service,
+     CancellationToken cancellationToken
+ ) =>
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = "UserId cannot be null or empty.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+ .ExcludeFromDescription()
+ .WithName("BulkDealsActionByUserId")
+ .WithTags("ClassifiedBo")
+ .WithSummary("Internal bulk deals action")
+ .WithDescription("Performs bulk actions on deals (approve, publish, unpublish, promote, feature, remove) using provided User ID. " +
+                  "Intended for internal services. 'Remove' action requires a reason.")
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
 
 
