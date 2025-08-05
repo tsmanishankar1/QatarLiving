@@ -41,7 +41,7 @@ builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
-builder.Services.AddDbContext<ClassifiedDevContext>(options =>
+builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 var app = builder.Build();
 

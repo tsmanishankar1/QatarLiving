@@ -224,53 +224,103 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
-            const int MaxSlot = 13;
+            const int MaxSlotToShift = 50;
             string storeName = V2Content.ContentStoreName;
 
-            for (int currentSlot = MaxSlot; currentSlot >= desiredSlot; currentSlot--)
+            try
             {
-                var currentSlotKey = GetSlotKey(categoryId, subCategoryId, currentSlot);
-                var existingArticleId = await _dapr.GetStateAsync<string>(storeName, currentSlotKey, cancellationToken: cancellationToken);
+                _logger.LogInformation($"Start shifting articles for category: {categoryId}, subcategory: {subCategoryId}, starting at slot {desiredSlot}");
 
-                if (!string.IsNullOrEmpty(existingArticleId))
+                for (int currentSlot = MaxSlotToShift; currentSlot >= desiredSlot; currentSlot--)
                 {
-                    var articleToMove = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, existingArticleId, cancellationToken: cancellationToken);
+                    var currentSlotKey = GetSlotKey(categoryId, subCategoryId, currentSlot);
+                    var nextSlotKey = GetSlotKey(categoryId, subCategoryId, currentSlot + 1);
 
-                    if (articleToMove != null)
+                    _logger.LogDebug($"Checking slot {currentSlot} (key: {currentSlotKey})");
+
+                    string existingArticleId = null;
+                    try
                     {
+                        existingArticleId = await _dapr.GetStateAsync<string>(storeName, currentSlotKey, cancellationToken: cancellationToken);
+                    }
+                    catch (Exception daprEx)
+                    {
+                        _logger.LogWarning(daprEx, $"Dapr error when fetching state for slot {currentSlotKey}");
+                        continue;
+                    }
+
+                    if (!string.IsNullOrEmpty(existingArticleId))
+                    {
+                        V2NewsArticleDTO articleToMove = null;
+                        try
+                        {
+                            articleToMove = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, existingArticleId, cancellationToken: cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, $"Failed to get article {existingArticleId} from state store.");
+                            continue;
+                        }
+
+                        if (articleToMove?.Categories == null)
+                        {
+                            _logger.LogWarning($"Article {existingArticleId} has no categories. Skipping.");
+                            continue;
+                        }
+
                         var articleCat = articleToMove.Categories.FirstOrDefault(c =>
                             c.CategoryId == categoryId && c.SubcategoryId == subCategoryId);
 
-                        if (articleCat != null)
+                        if (articleCat == null)
                         {
-                            articleCat.SlotId = currentSlot + 1;
-
-                            await _dapr.SaveStateAsync(storeName, articleToMove.Id.ToString(), articleToMove, cancellationToken: cancellationToken);
-
-                            var nextSlotKey = GetSlotKey(categoryId, subCategoryId, currentSlot + 1);
-                            await _dapr.SaveStateAsync(storeName, nextSlotKey, articleToMove.Id.ToString(), cancellationToken: cancellationToken);
-
-                            await _dapr.DeleteStateAsync(storeName, currentSlotKey, cancellationToken: cancellationToken);
+                            _logger.LogWarning($"No matching category/subcategory found in article {existingArticleId}. Skipping.");
+                            continue;
                         }
+
+                        articleCat.SlotId = currentSlot + 1;
+
+                        await _dapr.SaveStateAsync(storeName, articleToMove.Id.ToString(), articleToMove, cancellationToken: cancellationToken);
+                        await _dapr.SaveStateAsync(storeName, nextSlotKey, articleToMove.Id.ToString(), cancellationToken: cancellationToken);
+                        await _dapr.DeleteStateAsync(storeName, currentSlotKey, cancellationToken: cancellationToken);
+
+                        _logger.LogInformation($"Shifted article {existingArticleId} from slot {currentSlot} to {currentSlot + 1}");
                     }
                 }
-            }
 
-            var newArticleCat = newArticle.Categories.FirstOrDefault(c =>
-                c.CategoryId == categoryId && c.SubcategoryId == subCategoryId);
+                // Place new article in the desired slot
+                if (newArticle.Categories == null)
+                {
+                    _logger.LogError($"New article {newArticle.Id} has no categories defined.");
+                    throw new InvalidOperationException("New article is missing categories.");
+                }
 
-            if (newArticleCat != null)
-            {
+                var newArticleCat = newArticle.Categories.FirstOrDefault(c =>
+                    c.CategoryId == categoryId && c.SubcategoryId == subCategoryId);
+
+                if (newArticleCat == null)
+                {
+                    _logger.LogError($"New article {newArticle.Id} has no matching category/subcategory for slot assignment.");
+                    throw new InvalidOperationException("Cannot place article in slot without matching category.");
+                }
+
                 newArticleCat.SlotId = desiredSlot;
+
+                await _dapr.SaveStateAsync(storeName, newArticle.Id.ToString(), newArticle, cancellationToken: cancellationToken);
+
+                var desiredSlotKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
+                await _dapr.SaveStateAsync(storeName, desiredSlotKey, newArticle.Id.ToString(), cancellationToken: cancellationToken);
+
+                _logger.LogInformation($"New article {newArticle.Id} placed into slot {desiredSlot}");
+
+                return $"Article placed in slot {desiredSlot} and older articles shifted.";
             }
-
-            await _dapr.SaveStateAsync(storeName, newArticle.Id.ToString(), newArticle, cancellationToken: cancellationToken);
-
-            var desiredSlotKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
-            await _dapr.SaveStateAsync(storeName, desiredSlotKey, newArticle.Id.ToString(), cancellationToken: cancellationToken);
-
-            return $"Article placed in slot {desiredSlot} of category {categoryId}/{subCategoryId}";
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Slot shift failed for category {categoryId}/{subCategoryId}, desiredSlot {desiredSlot}");
+                throw; // Rethrow to let caller see original exception
+            }
         }
+
         private string GetSlotKey(int categoryId, int subCategoryId, int slot) =>
            $"slot-article-{categoryId}-{subCategoryId}-slot{slot}";
 
@@ -646,13 +696,10 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
 
         public async Task<string> UpdateNewsArticleAsync(
-      V2NewsArticleDTO dto,
-      CancellationToken cancellationToken = default)
+V2NewsArticleDTO dto,
+CancellationToken cancellationToken = default)
         {
             const int MaxLiveSlot = 13;
-            const int UnpublishedId = (int)Slot.UnPublished;
-            const int PublishedId = (int)Slot.Published;
-
             var store = V2Content.ContentStoreName;
             var articleId = dto.Id;
 
@@ -674,70 +721,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var newCat = dto.Categories.First();
                 var newSlot = newCat.SlotId;
 
-                if (newSlot == UnpublishedId)
-                {
-                    var topSlotTasks = Enumerable.Range(1, 9)
-                        .Select(i => _dapr.GetStateAsync<DailyTopSectionSlot>(
-                            DailyStore,
-                            $"daily-slot-{i}",
-                            cancellationToken: cancellationToken))
-                        .ToArray();
-
-                    var topSlots = (await Task.WhenAll(topSlotTasks))
-                        .Where(s => s != null)
-                        .ToList();
-
-                    foreach (var slot in topSlots)
-                    {
-                        _logger.LogInformation("Top Slot#{SlotNumber}: Type={ContentType}, RelatedId={RelatedId}",
-                            slot.SlotNumber, slot.ContentType, slot.RelatedContentId);
-                    }
-
-                    var usedInTop = topSlots
-                        .FirstOrDefault(s => s.ContentType == DailyContentType.Article
-                                          && s.RelatedContentId == dto.Id);
-
-                    if (usedInTop != null)
-                    {
-                        _logger.LogWarning("Cannot unpublish news article {ArticleId}: It’s used in Daily Top Section slot #{SlotNumber}",
-                            dto.Id, usedInTop.SlotNumber);
-
-                        throw new InvalidOperationException(
-                            $"Cannot unpublish news {dto.Id}: it’s used in Daily Top Section slot #{usedInTop.SlotNumber}");
-                    }
-
-                    var topicIds = await GetAllDailyTopicIdsAsync(cancellationToken);
-                    foreach (var topicId in topicIds)
-                    {
-                        var topicSlots = await GetSlotsByTopicIdAsync(topicId, cancellationToken);
-
-                        foreach (var slot in topicSlots)
-                        {
-                            _logger.LogInformation("Topic {TopicId} Slot#{SlotNumber}: Type={ContentType}, RelatedId={RelatedId}",
-                                topicId, slot.SlotNumber, slot.ContentType, slot.RelatedContentId);
-                        }
-
-                        var usedInTopic = topicSlots
-                            .FirstOrDefault(ts => ts.ContentType == DailyContentType.Article
-                                               && ts.RelatedContentId == dto.Id);
-
-                        if (usedInTopic != null)
-                        {
-                            _logger.LogWarning("Cannot unpublish news article {ArticleId}: It’s used in Topic {TopicId}, Slot #{SlotNumber}",
-                                dto.Id, topicId, usedInTopic.SlotNumber);
-
-                            throw new InvalidOperationException(
-                                $"Cannot unpublish news {dto.Id}: it’s used in Topic '{topicId}' slot #{usedInTopic.SlotNumber}");
-                        }
-                    }
-
-                    dto.PublishedDate = null; 
-                }
-                else if (oldSlot == UnpublishedId && (newSlot >= 1 && newSlot <= MaxLiveSlot))
-                {
-                    dto.PublishedDate = DateTime.UtcNow;
-                }
-
+                // Moving into a valid slot (1-13): perform shifting
                 if (newSlot >= 1 && newSlot <= MaxLiveSlot)
                 {
                     await HandleSlotShiftAsync(
@@ -749,20 +733,15 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
                 else
                 {
+                    // Not in live slots anymore, remove old live slot pointer if necessary
                     if (oldSlot >= 1 && oldSlot <= MaxLiveSlot)
                     {
                         var oldSlotKey = GetSlotKey(oldCat.CategoryId, oldCat.SubcategoryId, oldSlot);
                         await _dapr.DeleteStateAsync(store, oldSlotKey, cancellationToken: cancellationToken);
                     }
 
-                    if (oldSlot == UnpublishedId || oldSlot == PublishedId)
-                    {
-                        var oldStatusKey = GetStatusSlotKey(oldCat.CategoryId, oldCat.SubcategoryId, oldSlot);
-                        await _dapr.DeleteStateAsync(store, oldStatusKey, cancellationToken: cancellationToken);
-                    }
-
-                    var statusKey = GetStatusSlotKey(newCat.CategoryId, newCat.SubcategoryId, newSlot);
-                    await _dapr.SaveStateAsync(store, statusKey, dto.Id.ToString(), cancellationToken: cancellationToken);
+                    // Directly save article state without assigning slot reference
+                    await _dapr.SaveStateAsync(store, key, dto, cancellationToken: cancellationToken);
                 }
 
                 dto.UpdatedAt = DateTime.UtcNow;
@@ -772,27 +751,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 return "News article updated successfully.";
             }
-            catch (InvalidDataException ex)
-            {
-                _logger.LogError(ex, "Validation failed while updating news article {ArticleId}", articleId);
-                throw;
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Blocked update for news article {ArticleId} due to slot constraint", articleId);
-                throw;
-            }
-            catch (KeyNotFoundException ex)
-            {
-                _logger.LogWarning(ex, "News article not found for update: {ArticleId}", articleId);
-                throw;
-            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error while updating news article {ArticleId}", articleId);
+                _logger.LogError(ex, "Error while updating news article {ArticleId}", articleId);
                 throw new Exception("Something went wrong while updating the news article.", ex);
             }
         }
+
 
 
         public async Task<string> ReorderSlotsAsync(

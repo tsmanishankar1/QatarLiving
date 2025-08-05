@@ -18,7 +18,7 @@ namespace QLN.Common.DTO_s
         public string Certificate { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateExpiry { get; set; }
         public List<ImageDto>? ImageUpload { get; set; }
@@ -54,7 +54,8 @@ namespace QLN.Common.DTO_s
         public ServiceStatus? Status { get; set; }
         public string? OrderId { get; set; }
         public decimal? Amount { get; set; }
-      
+        public DateTime CreatedAt { get; set; }
+
     }
     public class ServiceP2PAdSummaryDto
     {
@@ -72,7 +73,7 @@ namespace QLN.Common.DTO_s
        
         public ServiceStatus? Status { get; set; }
        
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt{ get; set; }
         public DateTime? DatePublished { get; set; }
      
         public string? OrderId { get; set; }
@@ -93,7 +94,7 @@ namespace QLN.Common.DTO_s
         public ServiceStatus? Status { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateExpiry { get; set; }
         public string? Favorites { get; set; }

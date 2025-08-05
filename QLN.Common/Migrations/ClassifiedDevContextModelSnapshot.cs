@@ -10,8 +10,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 namespace QLN.Common.Migrations
 {
-    [DbContext(typeof(ClassifiedDevContext))]
-    partial class ClassifiedDevContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(QLClassifiedContext))]
+    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
