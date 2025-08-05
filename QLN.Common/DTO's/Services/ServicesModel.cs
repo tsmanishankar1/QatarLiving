@@ -92,7 +92,7 @@ namespace QLN.Common.DTO_s
         UnPromote =4,
         feature =5,
         Remove = 6,
-        UnFeature = 7,
+        UnFeature = 7
     }
     public enum ServiceAdType
     {

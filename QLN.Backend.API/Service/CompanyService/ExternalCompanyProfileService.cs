@@ -187,55 +187,6 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<string> UpdateVerifiedCompany(CompanyProfileModel dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var id = dto.Id != Guid.Empty ? dto.Id : Guid.NewGuid();
-                dto.Id = id;
-                var url = $"/api/companyprofile/updateverifiedcompanybyuserid";
-                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, ConstantValues.Company.CompanyServiceAppId, url);
-                request.Content = new StringContent(
-                    JsonSerializer.Serialize(dto),
-                    Encoding.UTF8,
-                    "application/json");
-
-                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-                if (response.StatusCode == HttpStatusCode.BadRequest)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-                    string errorMessage;
-                    try
-                    {
-                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                        errorMessage = problem?.Detail ?? "Unknown validation error.";
-                    }
-                    catch
-                    {
-                        errorMessage = errorJson;
-                    }
-
-                    throw new InvalidDataException(errorMessage);
-                }
-
-                if (response.StatusCode == HttpStatusCode.Conflict)
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
-                    throw new ConflictException(problem?.Detail ?? "Conflict error.");
-                }
-                response.EnsureSuccessStatusCode();
-
-                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error updating company profile");
-                throw;
-            }
-        }
         public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
         {
             try
