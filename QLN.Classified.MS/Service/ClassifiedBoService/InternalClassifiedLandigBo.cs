@@ -2395,13 +2395,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
 
 
-        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
-
-
-
                 DateTime filterDateParsed;
                 try
                 {
@@ -2429,7 +2426,27 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
          x.StartDate <= filterDateParsed)
      .ToListAsync(cancellationToken);
 
-                return filtered;
+
+                int currentPage = Math.Max(1, Page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
+                int totalCount = filtered.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = filtered
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .ToList();
+
+                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
+                {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
+                    TotalCount = totalCount,
+                    Items = paginated
+                };
 
             }
             catch (Exception ex)

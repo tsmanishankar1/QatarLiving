@@ -11,6 +11,14 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 namespace QLN.Common.DTO_s.ClassifiedsBo
 {
+    public class ClassifiedBOPageResponse<T>
+    {
+        public List<T> Items { get; set; } = new List<T>();
+        public int TotalCount { get; set; }
+        public int? Page { get; set; }
+        public int? PerPage { get; set; }
+       
+    }
     public class XMLFileUploadDto
     {
         public string FileUrl { get; set; }
@@ -19,6 +27,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     {
         [Key]
         public int OrderId { get; set; }
+        public string? CompanyId { get; set; } = null;
+        public string? SubscriptionId { get; set; } = null;
         public string? SubscriptionType { get; set; } = null;
         public string? UserName { get; set; } = null;
         public string? Email { get; set; } = null;

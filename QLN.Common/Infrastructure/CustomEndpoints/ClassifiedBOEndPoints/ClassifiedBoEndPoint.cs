@@ -2214,7 +2214,7 @@ CancellationToken ct
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
          
             group.MapGet("/getstoresubscriptions", async Task<Results<
-           Ok<List<StoresSubscriptionDto>>,
+           Ok<ClassifiedBOPageResponse<StoresSubscriptionDto>>,
            BadRequest<ProblemDetails>,
            ProblemHttpResult>>
            (
@@ -2222,12 +2222,13 @@ CancellationToken ct
            HttpContext context,
            string? subscriptionType,
            string? filterDate,
+           int? Page, int? PageSize, string? Search,
            CancellationToken cancellationToken
            ) =>
             {
                 try
                 {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,cancellationToken);
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,Page,PageSize,Search,cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -2246,7 +2247,7 @@ CancellationToken ct
            .WithTags("ClassifiedBo")
            .WithSummary("Get all subscriptions on stores.")
            .WithDescription("Fetches all subscriptions of users on stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
