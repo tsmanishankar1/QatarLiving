@@ -144,13 +144,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
 
-
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
-
         protected void OnEdit(string adId)
         {
-            NavigationManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
+            NavManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
         }
         protected void OnPreview(DealsListingModal item)
         {
