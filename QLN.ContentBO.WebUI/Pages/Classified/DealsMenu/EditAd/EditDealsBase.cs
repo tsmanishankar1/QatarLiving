@@ -71,7 +71,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                     else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                     {
                         Snackbar.Add("Invalid advertisement ID", Severity.Warning);
-                        NavManager.NavigateTo("/manage/classified/deals/listing", true);
                     }
                     else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
                     {
@@ -80,7 +79,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                     else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                     {
                         Snackbar.Add("Advertisement not found", Severity.Warning);
-                        NavManager.NavigateTo("/manage/classified/deals/listing", true);
                     }
                     else
                     {
