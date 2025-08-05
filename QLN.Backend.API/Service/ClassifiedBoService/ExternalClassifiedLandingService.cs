@@ -1652,9 +1652,68 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 _logger.LogError(ex, "Unexpected error occurred while calling BulkItems");
                 throw new Exception($"Unexpected error: {ex.Message}", ex);
             }
-        }   
+        }
 
-       
+        public async Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+
+            try
+            {
+                var url = $"api/v2/classifiedbo/bulk-deals-action-userid?userId={userId}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+                return "Action Processed successfully";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk deals action.");
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+
+                _logger.LogError(ex, "Error during bulk deals action.");
+                throw;
+            }
+        }
+
+
 
 
 

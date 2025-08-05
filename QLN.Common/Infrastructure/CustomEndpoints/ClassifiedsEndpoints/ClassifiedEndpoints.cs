@@ -3192,6 +3192,305 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     });
                 }
 
+            group.MapPut("/items/promote", async Task<IResult> (
+                HttpContext httpContext,
+                ClassifiedsPromoteDto dto,
+    IClassifiedService service,
+    CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+                    await service.PromoteClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as promoted."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+    .RequireAuthorization()
+    .WithName("PromoteItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+    .WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/items/promoted", async Task<IResult> (
+    ClassifiedsPromoteDto dto,
+    string userId,
+IClassifiedService service,
+CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    await service.PromoteClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as promoted."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+.ExcludeFromDescription()
+.WithName("PromotedItemsAd")
+.WithTags("Classified")
+.WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPut("/items/feature", async Task<IResult> (
+              HttpContext httpContext,
+             ClassifiedsPromoteDto dto,
+ IClassifiedService service,
+ CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+                    await service.FeatureClassifiedAd(dto, userId!, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+ .RequireAuthorization()
+ .WithName("FeatureItemssAd")
+ .WithTags("Classified")
+ .WithSummary("Feature the ad's 'IsFeatured' field, set the 'CreatedDate' to current date")
+ .WithDescription("Updates the ad's 'IsFeatured' field to true, the 'CreatedDate' to the current date")
+ .Produces(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/items/featured", async Task<IResult> (
+   ClassifiedsPromoteDto dto,
+   string userId,
+IClassifiedService service,
+CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    await service.FeatureClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+.ExcludeFromDescription()
+.WithName("FeaturedItemssAd")
+.WithTags("Classified")
+.WithSummary("Feature the ad's 'IsFeatured' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsFeatured' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
                 if (string.IsNullOrWhiteSpace(subVertical))
                 {
