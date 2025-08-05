@@ -31,20 +31,18 @@ else if (adPostModel != null)
     <div class="create-form-container">
         <MudGrid GutterSize="24px">
             <MudItem xs="12" md="5">
-                <EditForm Model="@adPostModel" OnValidSubmit="HandleValidSubmit" >
+                <EditForm Model="@adPostModel" OnValidSubmit="HandleValidSubmit">
                     <DataAnnotationsValidator />
 
                     <div class="create-form-list">
                         <h3 class="form-heading">Ad Category</h3>
-                      <MudTextField Label="Sub Vertical"
+                        <MudTextField Label="Sub Vertical"
                                       Variant="Variant.Outlined"
                                       Class="white-bg"
                                       Value="adPostModel.Subvertical"
                                       FullWidth="true"
                                       Disabled="true">
                         </MudTextField>
-
-
 
                         <h3 class="form-heading">Description and Features</h3>
                         <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Offer Title"
@@ -62,7 +60,6 @@ else if (adPostModel != null)
                                                    Color="Color.Error"
                                                    OnClick="ClearFile" />
                                 }
-
                             </MudText>
                             <MudSpacer />
                             <MudFileUpload T="IBrowserFile"
@@ -118,8 +115,8 @@ else if (adPostModel != null)
                         <MudTextField Class="white-bg"
                                       Variant="Variant.Outlined"
                                       Label="Locations "
-                                      @bind-Value="adPostModel.Locations"
-                                      For="@(() => adPostModel.Locations)"
+                                      @bind-Value="LocationsString"
+                                      For="@(() => LocationsString)"
                                       FullWidth="true" />
 
                         <MudCheckBox Color="Color.Primary" T="bool" Label="I agree to terms"
@@ -127,7 +124,7 @@ else if (adPostModel != null)
 
                         <div class="custom-button-group">
                             <MudButton Class="custom-button" Variant="Variant.Outlined">Cancel</MudButton>
-                            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit">Submit</MudButton>
+                            <MudButton Class="custom-button" Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Disabled="IsBtnDisabled">Submit</MudButton>
                         </div>
                     </div>
                 </EditForm>

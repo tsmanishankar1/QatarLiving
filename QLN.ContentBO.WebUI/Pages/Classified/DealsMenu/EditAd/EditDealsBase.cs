@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services;
+using System.Net;
 using System.Text.Json;
 using System.Web;
 
@@ -36,9 +38,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected CountryModel SelectedPhoneCountry { get; set; } = new();
         protected CountryModel SelectedWhatsappCountry { get; set; } = new();
+
+        protected bool IsBtnDisabled { get; set; } = false;
+
         protected async override Task OnParametersSetAsync()
         {
-            IsLoading = true;
             try
             {
                 if (!string.IsNullOrEmpty(AdId))
@@ -50,16 +54,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
             }
-            finally
-            {
-                IsLoading = false;
-            }
         }
 
         private async Task LoadDealAdData(string adId)
         {
             try
             {
+                IsLoading = true;
                 var response = await ClassifiedService.GetDealsByIdAsync("classifieds", adId);
 
                 if (response != null)
@@ -68,15 +69,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                     {
                         adPostModel = await response.Content.ReadFromJsonAsync<DealsModal>() ?? new();
                     }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    else if (response.StatusCode == HttpStatusCode.BadRequest)
                     {
                         Snackbar.Add("Invalid advertisement ID", Severity.Warning);
                     }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
                     {
                         Snackbar.Add("Server error while loading advertisement", Severity.Error);
                     }
-                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    else if (response.StatusCode == HttpStatusCode.NotFound)
                     {
                         Snackbar.Add("Advertisement not found", Severity.Warning);
                     }
@@ -91,6 +92,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             {
                 Logger.LogError(ex, "LoadDealAdData");
             }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         protected void GoBack()
@@ -98,9 +103,34 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             NavManager.NavigateTo("/manage/classified/deals/listing");
         }
 
-        protected async void HandleValidSubmit()
+        protected async Task HandleValidSubmit()
         {
-
+            try
+            {
+                IsBtnDisabled = true;
+                var response = await ClassifiedService.UpdateDealsAsync("classifieds", adPostModel);
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    await LoadDealAdData(adPostModel.Id);
+                    Snackbar.Add("Deal Data Updated", Severity.Success);
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleValidSubmit");
+            }
+            finally
+            {
+                IsBtnDisabled = false;
+            }
         }
 
         protected void ClearFile()
@@ -148,6 +178,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         {
             adPostModel.WhatsappNumber = phone;
             return Task.CompletedTask;
+        }
+
+        protected string LocationsString
+        {
+            get => adPostModel.Locations != null ? string.Join(", ", adPostModel.Locations) : "";
+            set => adPostModel.Locations = value?.Split(',')
+                                    .Select(x => x.Trim())
+                                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                                    .ToList() ?? [];
         }
     }
 }

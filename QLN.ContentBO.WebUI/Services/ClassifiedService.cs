@@ -804,7 +804,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var endpoint = $"/api/classified/{vertical}/update";
+                var endpoint = $"/api/classified/deals/update";
 
                 using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
                 {
