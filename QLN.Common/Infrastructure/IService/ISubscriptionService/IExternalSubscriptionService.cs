@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 public interface IExternalSubscriptionService
 {
-    Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(  int verticalTypeId,  int categoryId,CancellationToken cancellationToken = default);
+    Task<SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAndCategoryAsync(  int verticalTypeId,  int? categoryId,CancellationToken cancellationToken = default);
     Task<List<SubscriptionResponseDto>> GetAllSubscriptionsAsync(CancellationToken cancellationToken = default);
     Task CreateSubscriptionAsync(SubscriptionRequestDto request, CancellationToken cancellationToken = default);
 

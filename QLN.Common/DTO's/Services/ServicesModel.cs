@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s
 {
@@ -47,10 +48,10 @@ namespace QLN.Common.DTO_s
         public ServiceStatus? Status { get; set; }
         public bool IsFeatured { get; set; }
         public bool IsPromoted { get; set; }
-        public bool IsRefreshed { get; set; }
+        public bool IsRefreshed => LastRefreshedOn.HasValue && LastRefreshedOn.Value > DateTime.UtcNow;
         public DateTime? PromotedExpiryDate { get; set; }
         public DateTime? FeaturedExpiryDate { get; set; }
-        public DateTime? RefreshExpiryDate { get; set; }
+        public DateTime? LastRefreshedOn { get; set; }
         public ServiceAdType AdType { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
@@ -135,7 +136,10 @@ namespace QLN.Common.DTO_s
     {
         public List<Guid> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
-        public string? Reason { get; set; } 
+        public string? Reason { get; set; }
+        [JsonIgnore]
         public string? UpdatedBy { get; set; } 
     }
+    
+
 }

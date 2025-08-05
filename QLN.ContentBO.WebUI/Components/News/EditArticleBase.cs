@@ -46,6 +46,7 @@ namespace QLN.ContentBO.WebUI.Components.News
         protected string UploadImageButtonName { get; set; } = "uploadImage";
         protected string BlobContainerName { get; set; } = "content-images";
 
+        protected string[] HiddenIcons = ["fullscreen"];
         protected override async Task OnInitializedAsync()
         {
             try
@@ -451,6 +452,10 @@ namespace QLN.ContentBO.WebUI.Components.News
                     TriggerCustomImageUpload();
                 }
 
+                if (eventArgs.Name == "CustomPreview")
+                {
+                    ToggleMarkdownPreview();
+                }
             }
             return Task.CompletedTask;
         }
@@ -501,6 +506,14 @@ namespace QLN.ContentBO.WebUI.Components.News
             catch (Exception ex)
             {
                 Logger.LogError(ex, "HandleMarkdownFilesChanged");
+            }
+        }
+
+        protected async void ToggleMarkdownPreview()
+        {
+            if (MarkdownEditorRef != null)
+            {
+                await MarkdownEditorRef.TogglePreviewAsync();
             }
         }
 

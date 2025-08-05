@@ -67,7 +67,7 @@ public static class SubscriptionEndpoints
     {
         group.MapGet("/getsubscription", async Task<IResult> (
             [FromQuery] int verticalTypeId,
-            [FromQuery] int categoryId,
+            [FromQuery] int? categoryId,
             [FromServices] IExternalSubscriptionService service,
             CancellationToken cancellationToken) =>
         {

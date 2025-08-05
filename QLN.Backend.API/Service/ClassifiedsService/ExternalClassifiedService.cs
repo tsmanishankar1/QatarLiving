@@ -40,48 +40,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             _fileStorageBlob = fileStorageBlob;
             _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
         }
-
-
-        public async Task<ItemAdsAndDashboardResponse> GetUserItemsAdsWithDashboard(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<ItemAdsAndDashboardResponse>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/itemsAd-dashboard-byId?userId={userId}",
-                    cancellationToken
-                );
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
-        public async Task<PrelovedAdsAndDashboardResponse> GetUserPrelovedAdsAndDashboard(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<PrelovedAdsAndDashboardResponse>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/prelovedAd-dashboard-byId?userId={userId}",
-                    cancellationToken
-                );
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(ex);
-                throw;
-            }
-        }
-
         public async Task<bool> SaveSearch(SaveSearchRequestDto dto, string userId, CancellationToken cancellationToken = default)
         {
             try
@@ -368,49 +326,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-
-        public async Task<CollectiblesResponse> GetCollectibles(string userId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new ArgumentException("User ID is required", nameof(userId));
-
-                _log.LogException(new Exception($"Starting to fetch collectibles for userId: {userId}"));
-
-                var result = await _dapr.InvokeMethodAsync<CollectiblesResponse>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/{Vertical}/collectibles-by-id?userId={userId}",
-                    cancellationToken
-                );
-
-                _log.LogException(new Exception($"Successfully fetched collectibles for userId: {userId}"));
-
-                return result ?? new CollectiblesResponse();
-            }
-            catch (DaprException dex)
-            {
-                _log.LogException(new Exception($"DaprException while fetching collectibles for userId: {userId}. Message: {dex.Message}", dex));
-                if (dex.InnerException != null)
-                {
-                    _log.LogException(new Exception($"Inner exception: {dex.InnerException.Message}", dex.InnerException));
-                }
-
-                throw new InvalidOperationException("Failed to fetch collectibles due to Dapr error.", dex);
-            }
-            catch (Exception ex)
-            {
-                _log.LogException(new Exception($"Unexpected error while fetching collectibles for userId: {userId}. Message: {ex.Message}", ex));
-                if (ex.InnerException != null)
-                {
-                    _log.LogException(new Exception($"Inner exception: {ex.InnerException.Message}", ex.InnerException));
-                }
-
-                throw new InvalidOperationException("An unexpected error occurred while fetching collectibles.", ex);
-            }
-        }
-
         public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -660,306 +575,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<PaginatedAdResponseDto> GetUserPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.");
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-
-                if (page.HasValue)
-                    queryParams.Add("page", page.Value.ToString());
-
-                if (pageSize.HasValue)
-                    queryParams.Add("pageSize", pageSize.Value.ToString());
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                var result = await _dapr.InvokeMethodAsync<PaginatedAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/user-ads-by-id/{userId}/published{queryString}",
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to retrieve user's item ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedAdResponseDto> GetUserUnPublishedItemsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.");
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-
-                if (page.HasValue)
-                    queryParams.Add("page", page.Value.ToString());
-
-                if (pageSize.HasValue)
-                    queryParams.Add("pageSize", pageSize.Value.ToString());
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-                var result = await _dapr.InvokeMethodAsync<PaginatedAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/user-ads-by-id/{userId}/unpublished{queryString}",
-                    cancellationToken);
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to retrieve user's unpublished item ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.");
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-
-                if (page.HasValue)
-                    queryParams.Add("page", page.Value.ToString());
-
-                if (pageSize.HasValue)
-                    queryParams.Add("pageSize", pageSize.Value.ToString());
-
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                var result = await _dapr.InvokeMethodAsync<PaginatedPrelovedAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/user-ads-by-id/{userId}/published{queryString}",
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to retrieve user's published preloved ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedPrelovedAdResponseDto> GetUserUnPublishedPrelovedAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.");
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-
-                if (page.HasValue)
-                    queryParams.Add("page", page.Value.ToString());
-
-                if (pageSize.HasValue)
-                    queryParams.Add("pageSize", pageSize.Value.ToString());
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                var result = await _dapr.InvokeMethodAsync<PaginatedPrelovedAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/user-ads-by-id/{userId}/unpublished{queryString}",
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to retrieve user's unpublished preloved ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.", nameof(userId));
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (page.HasValue) queryParams["page"] = page.Value.ToString();
-                if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                return await _dapr.InvokeMethodAsync<PaginatedCollectiblesAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/published{queryString}",
-                    cancellationToken);
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    "Failed to retrieve user's published collectibles ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedCollectiblesAdResponseDto> GetUserUnPublishedCollectiblesAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.", nameof(userId));
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (page.HasValue) queryParams["page"] = page.Value.ToString();
-                if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                return await _dapr.InvokeMethodAsync<PaginatedCollectiblesAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/unpublished{queryString}",
-                    cancellationToken);
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    "Failed to retrieve user's unpublished collectibles ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<PaginatedDealsAdResponseDto> GetUserPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.", nameof(userId));
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (page.HasValue) queryParams["page"] = page.Value.ToString();
-                if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                return await _dapr.InvokeMethodAsync<PaginatedDealsAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/user-ads-by-id/{userId}/published{queryString}",
-                    cancellationToken);
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    "Failed to retrieve user's published deals ads from classified microservice.",
-                    ex);
-            }
-        }
-
-        public async Task<PaginatedDealsAdResponseDto> GetUserUnPublishedDealsAds(string userId, int? page, int? pageSize, AdSortOption? sortOption = null, string? search = null, CancellationToken cancellationToken = default)
-        {
-            if (userId == null)
-                throw new ArgumentException("User ID must not be empty.", nameof(userId));
-
-            try
-            {
-                var queryParams = new Dictionary<string, string>();
-                if (page.HasValue) queryParams["page"] = page.Value.ToString();
-                if (pageSize.HasValue) queryParams["pageSize"] = pageSize.Value.ToString();
-
-                if (sortOption.HasValue)
-                    queryParams.Add("sortOption", ((int)sortOption.Value).ToString());
-
-                if (!string.IsNullOrWhiteSpace(search))
-                    queryParams.Add("search", search);
-
-                var queryString = queryParams.Count > 0
-                    ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                    : string.Empty;
-
-                return await _dapr.InvokeMethodAsync<PaginatedDealsAdResponseDto>(
-                    HttpMethod.Get,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/user-ads-by-id/{userId}/unpublished{queryString}",
-                    cancellationToken);
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException(
-                    "Failed to retrieve user's unpublished deals ads from classified microservice.",
-                    ex);
-            }
-        }
-
         public async Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken)
         {
             if (dto == null)
@@ -1077,190 +692,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
             {
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to retrieve category tree list from classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkUnpublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk publish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/user-ads-by-id/{userId}/unpublish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to unpublish ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkPublishItemsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk publish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/items/user-ads-by-id/{userId}/publish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to publish ads to classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkPublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk publish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/user-ads-by-id/{userId}/publish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to publish preloved ads to classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkUnpublishPrelovedAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk unpublish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/preloved/user-ads-by-id/{userId}/unpublish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to unpublish preloved ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkPublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk publish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/user-ads-by-id/{userId}/publish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to publish deals ads to classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkUnpublishDealsAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk unpublish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/deals/user-ads-by-id/{userId}/unpublish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to unpublish deals ads from classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkPublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk publish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/publish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to publish collectibles ads to classified microservice.", ex);
-            }
-        }
-
-        public async Task<BulkAdActionResponse> BulkUnpublishCollectiblesAds(string userId, List<Guid> adIds, CancellationToken cancellationToken = default)
-        {
-            if (userId == null || adIds == null || adIds.Count == 0)
-                throw new ArgumentException("Invalid bulk unpublish request.");
-
-            try
-            {
-                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
-                    HttpMethod.Post,
-                    SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/user-ads-by-id/{userId}/unpublish",
-                    adIds,
-                    cancellationToken);
-
-                return result;
-            }
-            catch (InvocationException ex)
-            {
-                _log.LogException(ex);
-                throw new InvalidOperationException("Failed to unpublish collectibles ads from classified microservice.", ex);
             }
         }
 
@@ -1586,6 +1017,69 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 }
                 _log.LogException(ex);
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+            }
+        }
+        public async Task<PaginatedAdResponseDto> GetFilteredAds(string subVertical,bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken cancellationToken = default)
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(userId))
+                        throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+                    var queryParams = new Dictionary<string, string>
+                    {
+                        { "subVertical", subVertical },
+                        { "page", page.ToString() },
+                        { "pageSize", pageSize.ToString() },
+                        { "userId", userId } 
+                    };
+
+                    if (isPublished.HasValue)
+                        queryParams["isPublished"] = isPublished.Value.ToString();
+
+                    if (!string.IsNullOrWhiteSpace(search))
+                        queryParams["search"] = search;
+
+                    var queryString = "?" + string.Join("&", queryParams.Select(kv =>
+                        $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
+
+                    var result = await _dapr.InvokeMethodAsync<PaginatedAdResponseDto>(
+                        HttpMethod.Get,
+                        SERVICE_APP_ID,
+                        $"api/classifieds/user-dashborad/{userId}/{queryString}",
+                        cancellationToken);
+
+                    return result;
+                }
+                catch (InvocationException ex)
+                {
+                    throw;
+                }
+            }
+        public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync( string subVertical, string userId, List<Guid> adIds, bool isPublished, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(subVertical) || string.IsNullOrWhiteSpace(userId) || adIds == null || adIds.Count == 0)
+                throw new ArgumentException("Invalid bulk publish/unpublish request.");
+
+            try
+            {
+                var lowerSubVertical = subVertical.ToLowerInvariant();
+
+                var route = $"api/classifieds/user-dashboard/bulk-action-by-id?subVertical={Uri.EscapeDataString(lowerSubVertical)}&isPublished={isPublished.ToString().ToLowerInvariant()}&userId={Uri.EscapeDataString(userId)}";
+
+                var result = await _dapr.InvokeMethodAsync<List<Guid>, BulkAdActionResponse>(
+                    HttpMethod.Post,
+                    SERVICE_APP_ID,
+                    route,
+                    adIds,
+                    cancellationToken);
+
+                return result;
+            }
+            catch (InvocationException ex)
+            {
+                _log.LogException(ex);
+                throw new InvalidOperationException("Failed to update ad publish status from classified microservice.", ex);
             }
         }
     }

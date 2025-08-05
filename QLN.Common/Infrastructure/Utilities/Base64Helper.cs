@@ -29,6 +29,8 @@ namespace QLN.Common.Infrastructure.Utilities
                     "image/webp" => "webp",
                     "image/heic" => "heic",
                     "application/pdf" => "pdf",
+                    "application/xml" => "xml",
+                    "text/xml" => "xml",
                     _ => throw new ArgumentException($"Unsupported MIME type: {mime}")
                 };
 
@@ -73,7 +75,9 @@ namespace QLN.Common.Infrastructure.Utilities
             if (Encoding.ASCII.GetString(bytes.Take(4).ToArray()) == "RIFF" &&
                 Encoding.ASCII.GetString(bytes.Skip(8).Take(4).ToArray()) == "WEBP")
                 return "webp";
-
+            var headerString = Encoding.ASCII.GetString(bytes.Take(5).ToArray());
+            if (headerString == "<?xml")
+                return "xml";
             return "bin";
         }
     }

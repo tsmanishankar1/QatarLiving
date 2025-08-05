@@ -182,6 +182,11 @@ namespace QLN.Classified.MS.Service.ServicesBoService
 
                 if (serviceAd == null) continue;
 
+               
+                if (serviceAd.Status == ServiceStatus.Rejected)
+                    continue;
+
+
                 var dto = new ServiceAdPaymentSummaryDto
                 {
                     AddId = serviceAd.Id,
@@ -212,7 +217,6 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     continue;
                 }
 
-                // Parse date strings to DateTime for filtering
                 if (DateTime.TryParseExact(dto.StartDate, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var adStartDate) &&
                     DateTime.TryParseExact(dto.EndDate, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var adEndDate))
                 {
@@ -250,6 +254,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 Items = paginatedItems
             };
         }
+
 
         public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
        string? sortBy = "CreationDate",

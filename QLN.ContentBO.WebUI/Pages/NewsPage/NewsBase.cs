@@ -274,11 +274,12 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
                                                                             int subCategoryId,
                                                                             int? status = 0,
                                                                             int? page = null,
-                                                                            int? pageSize = null)
+                                                                            int? pageSize = null,
+                                                                            string? search = null)
         {
             try
             {
-                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId, status, page, pageSize);
+                var apiResponse = await newsService.GetArticlesBySubCategory(categoryId, subCategoryId, status, page, pageSize, search);
 
                 if (apiResponse.IsSuccessStatusCode)
                 {
@@ -654,10 +655,22 @@ namespace QLN.ContentBO.WebUI.Pages.NewsPage
         {
             try
             {
+                int? statusTab = selectedTab switch
+                {
+                    "live" => 1,
+                    "published" => 2,
+                    "unpublished" => 3,
+                    _ => null
+                };
                 IsSearchEnabled = true;
                 IsLoadingDataGrid = true;
-                selectedTab = string.Empty;
-                SearchListOfNewsArticles = await SearchArticlesAsync(SearchString);
+                if (statusTab == 1)
+                {
+                    await OnTabChanged("published");
+                    statusTab = 2;
+                }
+
+                SearchListOfNewsArticles = await GetNewsBySubCategories(CategoryId, SelectedSubcategory.Id, status: statusTab, search: SearchString);
                 IsLoadingDataGrid = false;
                 StateHasChanged();
             }
