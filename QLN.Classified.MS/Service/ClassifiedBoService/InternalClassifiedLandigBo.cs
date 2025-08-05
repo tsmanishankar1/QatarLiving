@@ -4,8 +4,6 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.QLDbContext;
-
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -16,7 +14,9 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
+
 using System;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
@@ -3224,56 +3224,69 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     using var httpClient = new HttpClient();
                     string xml = await httpClient.GetStringAsync(xmlPath);
                     //string xml = File.ReadAllText(xmlPath);
-                    XmlSerializer serializer = new XmlSerializer(typeof(Products));
+                    XmlSerializer serializer = new XmlSerializer(typeof(StoreFlyer));
                     using StringReader reader = new StringReader(xml);
-                    Products xmlproducts = (Products)serializer.Deserialize(reader);
-                    if (xmlproducts != null && xmlproducts.ProductList != null && xmlproducts.ProductList.Count > 0)
+                    StoreFlyer xmlproducts = (StoreFlyer)serializer.Deserialize(reader);
+                    if (xmlproducts == null || xmlproducts.Products == null || xmlproducts.Products.Count == 0)
+                        return "No products found in the XML.";
+
+                    if (xmlproducts != null && xmlproducts.Products != null && xmlproducts.Products.Count > 0)
                     {
-                        await DeleteProductsByCompanyIdAsync(Guid.Parse(CompanyId), UserName);
-                        foreach (var xmlproduct in xmlproducts.ProductList)
+                        await DeleteStoreFlyer(Guid.Parse(xmlproducts.FlyerId));
+                        StoreFlyers storeFlyer =new StoreFlyers();
+                        storeFlyer.SubscriptionId = Guid.Parse(xmlproducts.SubscriptionId);
+                        storeFlyer.FlyerId = Guid.Parse(xmlproducts.FlyerId);
+                        storeFlyer.CompanyId = Guid.Parse(xmlproducts.CompanyId);
+                        storeFlyer.Products = new List<StoreProducts>();
+                        storeFlyer.OrderId = SubscriptionId.ToString();
+                        foreach (var xmlproduct in xmlproducts.Products)
                         {
 
                             StoreProducts storeProducts = new StoreProducts();
                             Guid StoreProductId = Guid.NewGuid();
                             storeProducts.StoreProductId = StoreProductId;
                             DateTime now = DateTime.UtcNow;
-                            storeProducts.CompanyId = Guid.Parse(CompanyId);
-                            storeProducts.SubscriptionId = SubscriptionId;
+                           
                             storeProducts.ProductName = xmlproduct.ProductName;
                             storeProducts.ProductLogo = xmlproduct.ProductLogo;
                             storeProducts.ProductPrice = xmlproduct.ProductPrice;
-                            storeProducts.Currency = xmlproduct.Currency; storeProducts.ProductSummary = xmlproduct.ProductDetails.ProductSummary;
-                            storeProducts.ProductDescription = xmlproduct.ProductDetails.ProductDescription;
-                            storeProducts.CreatedDate = now;
-                            storeProducts.UpdatedDate = now;
-                            storeProducts.CreatedUser = UserName;
-                            storeProducts.UpdatedUser = UserName;
-                            storeProducts.Features = xmlproduct.ProductDetails.Features.Select(f => new ProductFeatures
+                            storeProducts.Currency = xmlproduct.Currency; storeProducts.ProductSummary = xmlproduct.ProductSummary;
+                            storeProducts.ProductDescription = xmlproduct.ProductDescription;
+                            storeProducts.PageNumber = xmlproduct.PageNumber;
+                            ProductPageCoordinates coordinates = new ProductPageCoordinates();
+                            if (xmlproduct.PageCoordinates != null)
+                            {
+                                coordinates.PageCoordinatesId = Guid.NewGuid();
+                                coordinates.StartPixVertical= xmlproduct.PageCoordinates.StartPixVertical;
+                                coordinates.StartPixHorizontal = xmlproduct.PageCoordinates.StartPixHorizontal;
+                                coordinates.Height = xmlproduct.PageCoordinates.Height;
+                                coordinates.Width = xmlproduct.PageCoordinates.Width;
+                                coordinates.StoreProductId = StoreProductId;
+                            }
+
+                            storeProducts.PageCoordinates = coordinates;
+                            storeProducts.Features = xmlproduct.Features.Select(f => new ProductFeatures
                             {
                                 ProductFeaturesId = Guid.NewGuid(),
                                 Features = f,
-                                CreatedDate = now,
-                                UpdatedDate = now,
-                                CreatedUser = UserName,
-                                UpdatedUser = UserName,
+                                
                                 StoreProductId = StoreProductId
                             }).ToList();
-                            storeProducts.Images = xmlproduct.ProductDetails.Images.Select(img => new ProductImages
+                            storeProducts.Images = xmlproduct.Images.Select(img => new ProductImages
                             {
                                 ProductImagesId = Guid.NewGuid(),
                                 Images = img,
-                                CreatedDate = now,
-                                UpdatedDate = now,
-                                CreatedUser = UserName,
-                                UpdatedUser = UserName,
+                                
                                 StoreProductId = StoreProductId
                             }).ToList();
 
-                            _context.StoreProduct.Add(storeProducts);
-                            await _context.SaveChangesAsync();
+                            storeFlyer.Products.Add(storeProducts);
+                           
                         }
+                        _context.StoreFlyer.Add(storeFlyer);
+                        await _context.SaveChangesAsync();
                     }
-
+                    
                     return "created";
                 }
                 else
@@ -3289,32 +3302,20 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 return ex.Message;
             }
         }
-        public async Task DeleteProductsByCompanyIdAsync(Guid companyId, string UserName)
+        
+        public async Task DeleteStoreFlyer(Guid FlyerId)
         {
-            var products = await _context.StoreProduct
-                                .Where(p => p.CompanyId == companyId && p.Status == true)
-                                .Include(p => p.Features)
-                                .Include(p => p.Images)
+            var flyers = await _context.StoreFlyer
+                                .Where(p => p.FlyerId == FlyerId)
+                                .Include(p => p.Products)
                                 .ToListAsync();
-
-            foreach (var product in products)
+            if (flyers.Any())
             {
-                product.Status = false;
-                foreach (var feature in product.Features)
-                {
-                    feature.Status = false; // or "InActive" if you change type
-                    feature.UpdatedDate = DateTime.UtcNow;
-                    feature.UpdatedUser = UserName;
-                }
-                foreach (var image in product.Images)
-                {
-                    image.Status = false;
-                    image.UpdatedDate = DateTime.UtcNow;
-                    image.UpdatedUser = UserName;
-                }
+                _context.StoreFlyer.RemoveRange(flyers);
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
-        }
 
+
+        }
     }
 }

@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Products xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="products.xsd">
-
-	<Product>
-		<ProductName>Smartphone X10</ProductName>
-		<ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/IPhone_X_vector.svg/512px-IPhone_X_vector.svg.png</ProductLogo>
-		<ProductPrice>699.99</ProductPrice>
-		<Currency>USD</Currency>
-		<ProductDetails>
-			<ProductName>Smartphone X10</ProductName>
-			<ProductSummary>Flagship smartphone with AI camera</ProductSummary>
-			<ProductDescription>High-resolution OLED screen, 128GB storage, 5G support</ProductDescription>
-			<Images>
-				<ProductImage>https://images.unsplash.com/photo-1511707171634-5f897ff02aa9</ProductImage>
-				<ProductImage>https://images.unsplash.com/photo-1510552776732-03e61cf4b144</ProductImage>
-			</Images>
-			<Features>
-				<Feature>Waterproof</Feature>
-				<Feature>Face Recognition</Feature>
-				<Feature>Fast Charging</Feature>
-			</Features>
-		</ProductDetails>
-	</Product>
-
-
-</Products>
+<StoreFlyer>
+  <SubscriptionId>2145</SubscriptionId>
+  <CompanyId>3d6f0a98-8c5c-4f3d-9f79-15b1bcd32f64</CompanyId>
+  <FlyerId>c1f4c3b6-75d0-4bdf-8db7-4fe6d21b912e</FlyerId>
+  <Products>
+    <Product>
+      <ProductName>Smart Kettle</ProductName>
+      <ProductLogo>kettle.png</ProductLogo>
+      <ProductPrice>39.99</ProductPrice>
+      <Currency>USD</Currency>
+      <ProductSummary>Smart electric kettle</ProductSummary>
+      <ProductDescription>Boils water fast with temperature control.</ProductDescription>
+      <PageNumber>1</PageNumber>
+      <PageCoordinates>
+        <StartPixHorizontal>100</StartPixHorizontal>
+        <StartPixVertical>200</StartPixVertical>
+        <Height>150</Height>
+        <Width>120</Width>
+      </PageCoordinates>
+      <Images>
+        <ProductImage>kettle1.jpg</ProductImage>
+        <ProductImage>kettle2.jpg</ProductImage>
+      </Images>
+      <Features>
+        <Feature>Auto Shut-off</Feature>
+        <Feature>Keep Warm</Feature>
+      </Features>
+    </Product>
+  </Products>
+</StoreFlyer>
