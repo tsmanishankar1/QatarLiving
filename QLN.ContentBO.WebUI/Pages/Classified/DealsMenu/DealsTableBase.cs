@@ -122,7 +122,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
