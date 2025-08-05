@@ -40,7 +40,8 @@ namespace QLN.Common.DTO_s
         public DateTime? FeaturedExpiryDate { get; set; } = null;
         public DateTime? PromotedExpiryDate { get; set; } = null;
         public bool IsFeatured { get; set; }
-        public bool IsPromoted { get; set; }        
+        public bool IsPromoted { get; set; }    
+        public AdStatus Status { get; set; }
     }
 
 }

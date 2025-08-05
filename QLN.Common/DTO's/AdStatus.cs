@@ -15,6 +15,8 @@ namespace QLN.Common.DTO_s
         Unpublished = 4,        
         Rejected = 5,
         Expired = 6,
-        NeedsModification = 7
+        NeedsModification = 7,
+        Hold = 8,
+        Onhold = 9
     }
 }

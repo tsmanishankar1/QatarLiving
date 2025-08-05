@@ -24,5 +24,6 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public List<string> Location { get; set; } = new List<string>();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string Status { get; set; }
     }
 }

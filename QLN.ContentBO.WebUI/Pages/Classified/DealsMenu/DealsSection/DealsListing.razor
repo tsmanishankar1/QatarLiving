@@ -79,7 +79,14 @@
 
 </div>
 <div style="margin-top:10px">
-<DealsTable />
+    <DealsTable Listings="Listings"
+                IsLoading="IsLoading"
+                IsEmpty="IsEmpty"
+                TotalCount="TotalCount"
+                SelectedTab=@SelectedTab
+                OnTabChanged="HandleTabChange"
+                OnPageChanged="HandlePageChanged"
+                OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 

@@ -967,7 +967,6 @@ public static class CommonIndexRequestExtensions
             ?? request.ClassifiedsCollectiblesItem?.Id
             ?? request.ClassifiedsDealsItem?.Id
             ?? request.ServicesItem?.Id
-            ?? request.MasterItem?.Id
             ?? "unknown";
     }
 }

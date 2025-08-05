@@ -1,25 +1,23 @@
 @inherits ViewStoreTableBase
-@using QLN.ContentBO.WebUI.Components.PaginationFooter
 @using MudBlazor
+@using QLN.ContentBO.WebUI.Components.PaginationFooter
+@using QLN.ContentBO.WebUI.Components.ToggleTabs
+@using QLN.ContentBO.WebUI.Components.TableSkeleton
 
-<div class="community-table">
-    <MudPaper Class="pa-4">
-        @if (Listings == null || !Listings.Any())
+<MudPaper Class="pa-4">
+        <ToggleTabs Options="@tabOptions"
+                ActiveValue="@selectedTab"
+                OnChange="@OnTabChanged" />
+
+@if (IsLoading)
+{
+    <TableSkeleton Rows="10" />
+}
+
+        else if (Listings == null || !Listings.Any())
         {
-            <div class="empty-card-wrapper d-flex flex-column align-items-center justify-content-center">
-                <img src="/qln-images/emty_icon.svg" alt="Empty Icon" class="empty-icon" />
-                <MudText Class="mx-6 py-4" Style="color: #242424; font-size: 15px;">
-                    No Stores yet.
-                </MudText>
-                <MudButton Style="background-color: white; 
-                          border: 1px solid #FF7F38; 
-                          color: #FF7F38; 
-                          text-transform: none; 
-                          padding-left: 67px; 
-                          padding-right: 67px;
-                          margin-bottom: 300px;" Class="daily-compact-button mt-2">
-                    Add Stores
-                </MudButton>
+            <div class="empty-card-wrapper">
+             <EmptyCard Title="No Stores found" Subtitle="Please check back later or explore other categories." />
             </div>
         }
         else
@@ -52,6 +50,10 @@
                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true"
                                  AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight"
                                  Class="menu-icon-dark">
+                                <MudMenuItem OnClick="@(() => EditStore(context))">
+                                        <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" /> 
+                                         <span class="menu-text">Edit</span>
+                                </MudMenuItem>
                             <MudMenuItem OnClick="@(() => OnViewClicked.InvokeAsync(context))">
                                 <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="eye" />
                                 <span class="menu-text">View</span>
@@ -68,4 +70,3 @@
                               OnPageSizeChange="@OnPageSizeChange" />
         }
     </MudPaper>
-</div>

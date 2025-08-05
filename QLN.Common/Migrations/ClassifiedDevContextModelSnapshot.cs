@@ -4,14 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
 namespace QLN.Common.Migrations
 {
-    [DbContext(typeof(ClassifiedDevContext))]
-    partial class ClassifiedDevContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(QLClassifiedContext))]
+    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

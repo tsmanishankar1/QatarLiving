@@ -1,4 +1,6 @@
+using QLN.Common.DTO_s;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace QLN.Common.Infrastructure.DTO_s
 {
@@ -46,12 +48,12 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class EventScheduleModel
     {
-        public string StartDate { get; set; }
-        public string EndDate { get; set; }
+        public DateOnly StartDate { get; set; }
+
+        public DateOnly EndDate { get; set; }
         public EventTimeType TimeSlotType { get; set; }
-        public TimeOnly? StartTime { get; set; }
-        public TimeOnly? EndTime { get; set; }
-        public List<TimeSlotModel> TimeSlots { get; set; } = [];
+        public string? GeneralTextTime { get; set; }
+        public List<TimeSlotModel>? TimeSlots { get; set; } = [];
     }
 
     public enum EventTimeType
@@ -63,7 +65,7 @@ namespace QLN.Common.Infrastructure.DTO_s
     public class TimeSlotModel
     {
         public DayOfWeek? DayOfWeek { get; set; }
-        public string? Time { get; set; }
+        public string? TextTime { get; set; }
     }
 
     public class Slot

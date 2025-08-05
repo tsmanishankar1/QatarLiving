@@ -4,7 +4,7 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
@@ -33,7 +33,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly IClassifiedService _classified;
         private readonly List<TransactionDto> _mockTransactions;
         private readonly List<PrelovedTransactionDto> _mockPrelovedTransactions;
-        private readonly ClassifiedDevContext _context;
+        private readonly QLClassifiedContext _context;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -45,7 +45,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
         {
             _classified = classified;
             _dapr = dapr;
@@ -1946,6 +1946,18 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     {
                         continue;
                     }
+
+                    if (!string.IsNullOrWhiteSpace(status) && int.TryParse(status, out int statusValue))
+                    {
+                        if (!Enum.IsDefined(typeof(AdStatus), statusValue))
+                            continue;
+
+                        var parsedStatus = (AdStatus)statusValue;
+                        if (ad.Status != parsedStatus)
+                            continue;
+                    }
+
+
                     var dto = new DealsViewSummaryDto
                     {
                         AdId = ad.Id,
@@ -1962,7 +1974,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         Location = ad.Locations,
                         Views = 3,
                         Impression = 5,
-                        Phonelead = 4
+                        Phonelead = 4,
+                        Status = ad.Status.ToString()
                     };
 
 
@@ -2395,13 +2408,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
 
 
-        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
-
-
-
                 DateTime filterDateParsed;
                 try
                 {
@@ -2429,7 +2439,27 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
          x.StartDate <= filterDateParsed)
      .ToListAsync(cancellationToken);
 
-                return filtered;
+
+                int currentPage = Math.Max(1, Page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
+                int totalCount = filtered.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = filtered
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .ToList();
+
+                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
+                {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
+                    TotalCount = totalCount,
+                    Items = paginated
+                };
 
             }
             catch (Exception ex)
@@ -3127,7 +3157,251 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     cancellationToken: cancellationToken
                 );
             }
-        }       
+        }
+
+        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsDealsIndex
+            {
+                Id = dto.Id.ToString(),
+                Subvertical = dto.Subvertical,
+                UserId = dto.UserId,
+                BusinessName = dto.BusinessName,
+                BranchNames = dto.BranchNames,
+                BusinessType = dto.BusinessType,
+                Title = dto.Title,
+                Description = dto.Description,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                FlyerFileUrl = dto.FlyerFileUrl,
+                DataFeedUrl = dto.DataFeedUrl,
+                ContactNumber = dto.ContactNumber,
+                WhatsappNumber = dto.WhatsappNumber,
+                WebsiteUrl = dto.WebsiteUrl,
+                SocialMediaLinks = dto.SocialMediaLinks,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                XMLlink = dto.XMLlink,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                SubscriptionId = dto.SubscriptionId,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                offertitle = dto.offertitle,
+                ExpiryDate = dto.ExpiryDate,
+                ImageUrl = dto.ImageUrl,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsFeatured = dto.IsFeatured,
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                ClassifiedsDealsItem = indexDoc
+            };
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+
+        public async Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct)
+        {
+            try
+            {
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.DealsIndexKey,
+                    cancellationToken: ct
+                ) ?? new();
+
+                var updated = new List<ClassifiedsDeals>();
+
+                foreach (var id in request.AdIds)
+                {
+                    var adKey = GetAdKey(id);
+                    if (!indexKeys.Contains(adKey.ToString()))
+                        continue;
+
+                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        adKey.ToString(),
+                        cancellationToken: ct
+                    );
+
+                    if (ad is null)
+                        continue;
+
+                    bool shouldUpdate = false;
+
+                    switch (request.Action)
+                    {
+                        case BulkActionEnum.Approve:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.NeedChanges:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Publish:
+                            if (ad.Status == AdStatus.Unpublished)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Unpublish:
+                            if (ad.Status == AdStatus.Published)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot feature an ad that is already featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Remove:
+                            ad.Status = AdStatus.Rejected;
+                            shouldUpdate = true;
+                            break;
+                        case BulkActionEnum.Hold:
+                            if (ad.Status == AdStatus.Published || ad.Status == AdStatus.Unpublished || ad.Status == AdStatus.PendingApproval || ad.Status == AdStatus.NeedsModification || ad.Status != AdStatus.Hold)
+                            {
+                                ad.Status = AdStatus.Hold;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Ad is already on hold.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Onhold:
+                            if (ad.Status != AdStatus.Onhold)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Ad is not on hold.");
+                            }
+                            break;
+
+
+                        default:
+                            throw new InvalidOperationException("Invalid action");
+                    }
+
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+
+                        await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                        await IndexDealsToAzureSearch(ad, cancellationToken: ct);
+                        updated.Add(ad);
+                    }
+                }
+
+                return "Action completed successfully";
+            }
+            catch (ConflictException ex)
+            {
+                throw new ConflictException(ex.Message);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
 
 
       
@@ -3167,7 +3441,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))
@@ -3198,7 +3472,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
                 string xmlPath = Url;
-                string xsdPath = Path.Combine(basePath, "Data", "Products.xsd");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
                 if (string.IsNullOrEmpty(errors))

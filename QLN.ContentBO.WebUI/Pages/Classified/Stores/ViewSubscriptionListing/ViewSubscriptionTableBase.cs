@@ -14,12 +14,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
         protected void EditOrder(ViewSubscriptionListingDto order)
-    {
-        if (!string.IsNullOrEmpty(order?.UserName))
         {
-            NavigationManager.NavigateTo($"/manage/classified/stores/edit/compnay/{order.UserName}");
+            if (!string.IsNullOrEmpty(order?.UserName))
+            {
+                NavigationManager.NavigateTo($"/manage/classified/stores/edit/compnay/{order.UserName}");
+            }
         }
-    }
 
     protected void CancelOrder(ViewSubscriptionListingDto order)
     {
