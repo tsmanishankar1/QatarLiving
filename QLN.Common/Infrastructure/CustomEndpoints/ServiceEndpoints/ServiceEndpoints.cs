@@ -1073,12 +1073,30 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
                         return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
                 req.UpdatedBy = uid;
-                    try
+                try
+                {
+                    var result = await service.ModerateBulkService(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch(InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
                     {
-                        var result = await service.ModerateBulkService(req, ct);
-                        return TypedResults.Ok(result);
-                    }
-                    catch (Exception ex)
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
                     {
                         return TypedResults.Problem(ex.Message);
                     }
@@ -1092,6 +1110,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
                Ok<List<ServicesModel>>,
@@ -1118,6 +1137,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.ModerateBulkService(req, ct);
                     return TypedResults.Ok(result);
                 }
+                catch(InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(ex.Message);
@@ -1133,6 +1170,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<string>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
