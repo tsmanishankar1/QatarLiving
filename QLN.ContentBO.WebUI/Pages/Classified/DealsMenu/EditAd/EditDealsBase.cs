@@ -14,10 +14,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
     public class EditDealsBase : QLComponentBase
     {
         [Parameter]
-        public string AdId { get; set; }
+        public string? AdId { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         protected DealsModal adPostModel { get; set; } = new();
-      
+
         [Inject] public IClassifiedService ClassifiedService { get; set; }
         [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] protected IDialogService DialogService { get; set; }
@@ -35,73 +35,70 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected bool IsLoading { get; set; } = true;
 
         protected bool HasData { get; set; }
-        protected override async Task OnInitializedAsync()
-        {
-            if (!string.IsNullOrEmpty(AdId))
-            {
-                await LoadAdData(AdId);
-            }
-        }
 
-        protected async Task LoadAdData(string adId)
+        protected async override Task OnParametersSetAsync()
         {
+            IsLoading = true;
             try
             {
-                IsLoading = true;
-                StateHasChanged();
-
-                Logger.LogInformation("Loading ad data for {AdId}", adId);
-                var response = await ClassifiedService.GetDealsByIdAsync("classifieds", adId);
-
-                if (response.IsSuccessStatusCode)
+                if (!string.IsNullOrEmpty(AdId))
                 {
-                    var content = await response.Content.ReadAsStringAsync();
-                    adPostModel = JsonSerializer.Deserialize<DealsModal>(content);
-                    HasData = adPostModel != null;
-
-                    if (!HasData)
-                    {
-                        Logger.LogWarning("No data returned for ad {AdId}", adId);
-                        Snackbar.Add("Advertisement data not found", Severity.Warning);
-                    }
+                    await LoadDealAdData(AdId);
                 }
-                else
-                {
-                    Logger.LogWarning("Failed to load ad {AdId}. Status: {StatusCode}",
-                        adId, response.StatusCode);
-                    ErrorMessage = $"Failed to load data (HTTP {response.StatusCode})";
-                    Snackbar.Add("Failed to load advertisement", Severity.Error);
-                }
-            }
-            catch (JsonException jsonEx)
-            {
-                Logger.LogError(jsonEx, "JSON parsing error for ad {AdId}", adId);
-                ErrorMessage = "Invalid data format received";
-                Snackbar.Add("Error parsing advertisement data", Severity.Error);
-            }
-            catch (HttpRequestException httpEx)
-            {
-                Logger.LogError(httpEx, "HTTP error loading ad {AdId}", adId);
-                ErrorMessage = "Network error loading data";
-                Snackbar.Add("Network error occurred", Severity.Error);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Unexpected error loading ad {AdId}", adId);
-                ErrorMessage = "Unexpected error occurred";
-                Snackbar.Add("An unexpected error occurred", Severity.Error);
+                Logger.LogError(ex, "OnParametersSetAsync");
             }
             finally
             {
                 IsLoading = false;
-                StateHasChanged();
+            }
+        }
+
+        private async Task LoadDealAdData(string adId)
+        {
+            try
+            {
+                var response = await ClassifiedService.GetDealsByIdAsync("classifieds", adId);
+
+                if (response != null)
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        adPostModel = await response.Content.ReadFromJsonAsync<DealsModal>() ?? new();
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        Snackbar.Add("Invalid advertisement ID", Severity.Warning);
+                        NavManager.NavigateTo("/manage/classified/deals/listing", true);
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                    {
+                        Snackbar.Add("Server error while loading advertisement", Severity.Error);
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    {
+                        Snackbar.Add("Advertisement not found", Severity.Warning);
+                        NavManager.NavigateTo("/manage/classified/deals/listing", true);
+                    }
+                    else
+                    {
+                        ErrorMessage = $"Failed to load Deals data (HTTP {response.StatusCode})";
+                        Snackbar.Add(ErrorMessage, Severity.Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadDealAdData");
             }
         }
 
         protected void GoBack()
         {
-            Navigation.NavigateTo("/manage/classified/deals/listing");
+            NavManager.NavigateTo("/manage/classified/deals/listing");
         }
-        
+
     }
 }
