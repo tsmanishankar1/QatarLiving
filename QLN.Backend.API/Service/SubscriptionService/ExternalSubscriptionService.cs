@@ -52,11 +52,11 @@ public class ExternalSubscriptionService : IExternalSubscriptionService
             var data = await actor.GetDataAsync(cancellationToken);
 
             if (data != null &&
-    data.VerticalTypeId == verticalEnum &&
-    data.CategoryId == categoryEnum &&
-    data.StatusId != Status.Expired)
+            data.VerticalTypeId == verticalEnum &&
+            data.CategoryId == categoryEnum &&
+            data.StatusId != Status.Expired)
             {
-                var duration = data.Duration; // Already a TimeSpan
+                var duration = data.Duration; 
 
                 resultList.Add(new SubscriptionResponseDto
                 {
