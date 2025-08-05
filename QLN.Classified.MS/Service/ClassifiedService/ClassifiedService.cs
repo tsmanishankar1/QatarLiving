@@ -1418,6 +1418,7 @@ namespace QLN.Classified.MS.Service
                     if (!string.Equals(adDynamic.UserId, userId, StringComparison.OrdinalIgnoreCase)) continue;
 
                     if (!string.Equals(adDynamic.SubVertical, subVertical, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (adDynamic.IsActive != true) continue;
 
                     if (isPublished == true &&
                         adDynamic.Status != AdStatus.Published &&
@@ -1489,7 +1490,9 @@ namespace QLN.Classified.MS.Service
                         ? (AdStatus)val
                         : AdStatus.Draft;
 
-                    if (storedUserId != userId || currentStatus == targetStatus)
+                    var isActive = state.TryGetProperty("isActive", out var activeProp) && activeProp.GetBoolean();
+
+                    if (storedUserId != userId || currentStatus == targetStatus || !isActive)
                     {
                         failedAds.Add(adId);
                     }
