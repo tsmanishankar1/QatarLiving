@@ -26,7 +26,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
-
+        protected DateRange? dateRange
+        {
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            set
+            {
+                StartDate = value?.Start;
+                EndDate = value?.End;
+            }
+        }
+        protected string? featuredCategoryTitle;
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
         protected string? SelectedSectionId;

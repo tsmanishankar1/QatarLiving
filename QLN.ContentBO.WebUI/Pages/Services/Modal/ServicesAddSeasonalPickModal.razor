@@ -16,6 +16,10 @@
                     @Title
                 </MudText>
             </div>
+             <div class="mx-auto">
+            <MudTextField  Class="classified-text-field no-underline" T="string" Placeholder="Seasonal Pick Title*"
+                      @bind-Value="featuredCategoryTitle"   />
+            </div>
 
             <!-- Category -->
             <div class="mx-auto">
@@ -79,16 +83,10 @@
                 </MudSelect>
 
             </div>
-            <div class="mx-auto">
-                <MudDatePicker Class="classified-field no-underline" Label="Start Date" @bind-Date="StartDate" Required="true" DisableToolbar="true"
-                               MinDate="@DateTime.Today" />
-
-            </div>
-            <div class="mx-auto">
-                <MudDatePicker Class="classified-field no-underline" Label="End Date" @bind-Date="EndDate" Required="true" DisableToolbar="true"
-                               MinDate="@DateTime.Today" />
-
-            </div>
+            <div class="mx-auto" style="width: 330px;">
+                <MudDateRangePicker Class="classified-datepicker-field no-underline" Style="border: 1px solid #D0D5DD; border-radius: 6px;" @bind-Date="dateRange" Required="true" 
+                               MinDate="@DateTime.Today"DisplayMonths="1"/>
+            </div> 
 
             <!-- Image Upload -->
             <div class="mx-auto">
@@ -98,7 +96,6 @@
                     @if (!string.IsNullOrEmpty(ImagePreviewUrl))
                     {
                         <img src="@ImagePreviewUrl" style="max-width: 100%; max-height: 200px;" />
-                       
                     }
                     else
                     {
@@ -141,5 +138,15 @@
     .classified-field .mud-input-label {
         color: #A1A1A1 !important;
     }
+    .classified-datepicker-field {
+    height: 60px;
+}
+.classified-text-field {
+    width: 330px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px solid #D0D5DD !important;
+    padding: 10px !important;
+}
 
 </style>

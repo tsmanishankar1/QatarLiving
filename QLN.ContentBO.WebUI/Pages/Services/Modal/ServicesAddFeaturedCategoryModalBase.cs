@@ -21,11 +21,22 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
         [Parameter]
         public string Title { get; set; } = "Add Seasonal Pick";
+        protected DateRange? dateRange
+        {
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            set
+            {
+                StartDate = value?.Start;
+                EndDate = value?.End;
+            }
+        }
+
         protected List<CategoryTreeNode> _categoryTree = new();
         protected List<CategoryTreeNode> _subcategories = new();
+        protected List<L1Category> _selectedL1Categories = new();
         protected List<CategoryTreeNode> _sections = new();
         protected bool IsLoadingCategories { get; set; } = true;
-
+        protected string? featuredCategoryTitle;
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
         protected string? SelectedSectionId;
@@ -59,14 +70,13 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 IsLoadingCategories = false;
             }
         }
-
         protected void OnCategoryChanged(string? categoryId)
         {
             SelectedCategoryId = categoryId?.ToString();
-           var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
             SelectedCategory = selected?.Category;
+            _selectedL1Categories = selected?.L1Categories ?? new();
         }
-
 
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
@@ -113,7 +123,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId);
+            return !string.IsNullOrEmpty(SelectedCategoryId)
+                && !string.IsNullOrEmpty(SelectedSubcategoryId)
+                && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
+                && StartDate.HasValue
+                && EndDate.HasValue;
         }
 
 
