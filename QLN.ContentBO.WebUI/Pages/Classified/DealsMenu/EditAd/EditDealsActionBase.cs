@@ -10,9 +10,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Parameter] public DealsModal AdModel { get; set; } = new();
-        [Parameter] public string UserName { get; set; } = "Rashid";
-        [Parameter] public string Category { get; set; } = "Electronics";
-        [Inject] ILogger<EditDealsActionBase> Logger { get; set; }
         [Parameter] public int AdId { get; set; } = 21660;
         [Parameter] public int OrderId { get; set; } = 24578;
         protected async Task OpenPreviewDialog()
