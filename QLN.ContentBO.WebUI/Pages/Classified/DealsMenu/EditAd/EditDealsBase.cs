@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.WebUtilities;
-using System.Web;
-using QLN.ContentBO.WebUI.Models;
-using System.Text.Json;
-using QLN.ContentBO.WebUI.Services;
 using Microsoft.JSInterop;
 using MudBlazor;
-using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
+using QLN.ContentBO.WebUI.Services;
+using System.Text.Json;
+using System.Web;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
@@ -31,11 +32,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 
         protected string? ErrorMessage { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
-        [Inject] private IJSRuntime JS { get; set; }
         protected bool IsLoading { get; set; } = true;
 
-        protected bool HasData { get; set; }
-
+        protected CountryModel SelectedPhoneCountry { get; set; } = new();
+        protected CountryModel SelectedWhatsappCountry { get; set; } = new();
         protected async override Task OnParametersSetAsync()
         {
             IsLoading = true;
@@ -98,5 +98,56 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             NavManager.NavigateTo("/manage/classified/deals/listing");
         }
 
+        protected async void HandleValidSubmit()
+        {
+
+        }
+
+        protected void ClearFile()
+        {
+            adPostModel.FlyerFileName = string.Empty;
+            adPostModel.FlyerFileUrl = string.Empty;
+        }
+
+        protected async Task OnCrFileSelected(IBrowserFile file)
+        {
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
+                return;
+            }
+
+            using var stream = file.OpenReadStream();
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            adPostModel.FlyerFileName = file.Name;
+            adPostModel.FlyerFileUrl = Convert.ToBase64String(ms.ToArray());
+        }
+
+        protected Task OnPhoneCountryChanged(CountryModel model)
+        {
+            SelectedPhoneCountry = model;
+            adPostModel.ContactNumberCountryCode = model.Code;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappCountryChanged(CountryModel model)
+        {
+            SelectedWhatsappCountry = model;
+            adPostModel.WhatsappNumberCountryCode = model.Code;
+            return Task.CompletedTask;
+        }
+        protected Task OnPhoneChanged(string phone)
+        {
+            adPostModel.ContactNumber = phone;
+            return Task.CompletedTask;
+        }
+
+        protected Task OnWhatsappChanged(string phone)
+        {
+            adPostModel.WhatsappNumber = phone;
+            return Task.CompletedTask;
+        }
     }
 }
