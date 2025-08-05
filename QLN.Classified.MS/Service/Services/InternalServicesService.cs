@@ -975,6 +975,7 @@ namespace QLN.Classified.MS.Service.Services
                     case BulkModerationAction.Approve:
                         if (ad.Status == ServiceStatus.PendingApproval)
                         {
+                            await EnsureNoActiveAdConflict(ad, indexKeys, ct);
                             ad.Status = ServiceStatus.Published;
                             ad.PublishedDate = DateTime.UtcNow;
                             shouldUpdate = true;
@@ -984,6 +985,7 @@ namespace QLN.Classified.MS.Service.Services
                     case BulkModerationAction.Publish:
                         if (ad.Status == ServiceStatus.Unpublished)
                         {
+                            await EnsureNoActiveAdConflict(ad, indexKeys, ct);
                             ad.Status = ServiceStatus.Published;
                             ad.PublishedDate = DateTime.UtcNow;
                             shouldUpdate = true;
@@ -1004,7 +1006,7 @@ namespace QLN.Classified.MS.Service.Services
                             shouldUpdate = true;
                         }
                         break;
-                        case BulkModerationAction.UnFeature:
+                    case BulkModerationAction.UnFeature:
                         if (ad.Status == ServiceStatus.Feature)
                         {
                             ad.Status = ServiceStatus.UnFeature;
@@ -1051,13 +1053,28 @@ namespace QLN.Classified.MS.Service.Services
 
             return updated;
         }
-     
+        private async Task EnsureNoActiveAdConflict(ServicesModel currentAd, List<string> allKeys, CancellationToken ct)
+        {
+            var otherKeys = allKeys.Where(k => k != currentAd.Id.ToString()).ToList();
 
+            foreach (var key in otherKeys)
+            {
+                var existing = await _dapr.GetStateAsync<ServicesModel>(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    cancellationToken: ct
+                );
 
-
-
-
-
-
+                if (existing != null &&
+                    existing.CreatedBy == currentAd.CreatedBy &&
+                    existing.L2CategoryId == currentAd.L2CategoryId &&
+                    existing.IsActive &&
+                    existing.Status == ServiceStatus.Published)
+                {
+                    throw new ConflictException(
+                        $"Ad '{currentAd.Title}' cannot be published. An active ad already exists in the same category by this user.");
+                }
+            }
+        }
     }
 }
