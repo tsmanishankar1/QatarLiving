@@ -17,6 +17,7 @@
             Label="@Label"
             Variant="Variant.Outlined"
             @bind-Value="SelectedItem"
+            Placeholder="Search user (min 3 letters)"
             @bind-SearchText="_searchText"
             Adornment="Adornment.None"
             SearchFunc="SearchItems"
@@ -24,6 +25,7 @@
             ResetValueOnEmptyText="true"
             CoerceText="true"
             Clearable="true"
+            MaxLength="50"
             OnSearchTextChanged="ValidateTypedText">
             <ItemTemplate Context="item">
                 <MudText>@item.Label</MudText>
@@ -36,7 +38,7 @@
         }
 
         <div class="mt-4 d-flex flex-column gap-2">
-            <MudButton Variant="Variant.Filled" Class="custom-add-btn" OnClick="AddClicked">
+            <MudButton Variant="Variant.Filled" Class="custom-add-btn" Color="Color.Primary" OnClick="AddClicked">
                 @ButtonText
             </MudButton>
             <MudButton Variant="Variant.Outlined" OnClick="Cancel" Class="custom-close-btn">

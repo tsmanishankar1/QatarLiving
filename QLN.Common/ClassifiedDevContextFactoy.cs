@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 using System;
 using System.Collections.Generic;
 using System.Linq;

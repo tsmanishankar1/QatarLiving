@@ -55,7 +55,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
         protected List<ToggleTabs.TabOption> tabOptions = new()
         {
             new() { Label = "Pending Approval", Value = "pendingApproval" },
-            new() { Label = "Approved", Value = "approved" },
             new() { Label = "Need Changes", Value = "needChanges" },
             new() { Label = "All", Value = "all" },
             new() { Label = "Published", Value = "published" },
@@ -63,8 +62,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
             new() { Label = "P2P", Value = "p2p" },
             new() { Label = "Promoted", Value = "promoted" },
             new() { Label = "Featured", Value = "featured" },
-            new() { Label = "Removed", Value = "removed" }
-
+            new() { Label = "Removed", Value = "removed" },
         };
         protected string GetTabTitle()
         {
@@ -77,6 +75,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.ViewListing
                 "p2p" => "P2P",
                 "promoted" => "Promoted",
                 "featured" => "Featured",
+                "needChanges" => "Need Changes",
+                "removed" => "Removed",
                 _ => "Classified"
             };
         }

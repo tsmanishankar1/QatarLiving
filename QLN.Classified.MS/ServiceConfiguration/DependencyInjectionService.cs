@@ -1,6 +1,5 @@
 ﻿using QLN.Classified.MS.Service;
 using QLN.Classified.MS.Service.Services;
-using QLN.Classified.MS.Service.ServicesAdService;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
@@ -20,7 +19,6 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
             services.AddScoped<IClassifiedBoLandingService, InternalClassifiedLandigBo>();
             
             services.AddTransient<IClassifiedService, ClassifiedService>();
-            services.AddTransient<IServicesService, ServicesAdService>();
             services.AddTransient<IServices, InternalServicesService>();
             services.AddTransient<IServicesBoService, InternalServicesBo>();
             return services;

@@ -41,6 +41,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
 
         protected string? UserEmail { get; set; }
 
+        protected string? UserId { get; set; }
+
         protected override async Task OnInitializedAsync()
         {
             editContext = new EditContext(adPostModel);
@@ -58,6 +60,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.CreateAd
             {
                 UserEmail = email;
             }
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("uid", out var uid))
+            {
+                // If needed: parse uid to int or whatever your logic requires
+                UserId = uid;
+            }
+
 
             if (Zones == null || Zones.Count == 0)
             {

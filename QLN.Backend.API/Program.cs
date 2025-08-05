@@ -20,14 +20,13 @@ using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
@@ -35,6 +34,8 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -134,6 +135,9 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<ClassifiedDevContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -243,6 +247,7 @@ builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
 builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
+builder.Services.PaymentsConfiguration(builder.Configuration);
 
 builder.Services.ServicesBo(builder.Configuration);
 
@@ -280,6 +285,9 @@ var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
+var paymentGroup = app.MapGroup("/api/pay");
+paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
+
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -287,8 +295,6 @@ companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-var servicesGroup = app.MapGroup("/api/services");
-servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();

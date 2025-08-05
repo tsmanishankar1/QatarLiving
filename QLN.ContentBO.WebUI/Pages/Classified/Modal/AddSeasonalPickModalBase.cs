@@ -24,6 +24,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         protected List<CategoryTreeNode> _subcategories = new();
         protected List<CategoryTreeNode> _sections = new();
         protected bool IsLoadingCategories { get; set; } = true;
+        public string TitleName { get; set; }
 
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
@@ -156,6 +157,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             var payload = new
             {
+                title =Title,
                 vertical = "classifieds",
                 categoryId = SelectedCategoryId,
                 categoryName = SelectedCategory,

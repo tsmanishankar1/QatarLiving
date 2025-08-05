@@ -99,6 +99,10 @@ try
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
+   builder.Services.AddHttpClient<IDrupalUserService, DrupalUserService>(client =>
+    {
+        client.BaseAddress = new Uri(contentBOAPIURL);
+    }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
     var app = builder.Build();
 
