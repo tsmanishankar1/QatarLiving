@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.Infrastructure.Model;
 using System.Reflection.Metadata;
 
 namespace QLN.Common.Infrastructure.QLDbContext
@@ -26,6 +27,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<StoreProducts> StoreProduct { get; set; }
         public DbSet<ProductFeatures> ProductFeature { get; set; }
         public DbSet<ProductImages> ProductImage { get; set; }
+        
+        public DbSet<Items> Item { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreProducts>()
