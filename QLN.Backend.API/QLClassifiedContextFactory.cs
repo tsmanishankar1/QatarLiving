@@ -8,13 +8,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace QLN.Common
+namespace QLN.Backend.API
 {
     public class QLClassifiedContextFactory : IDesignTimeDbContextFactory<QLClassifiedContext>
     {
         public QLClassifiedContext CreateDbContext(string[] args)
         {
-            var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../QLN.BackEndAPI");
+            var basePath = Path.Combine(Directory.GetCurrentDirectory());
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(basePath)
                 .AddJsonFile("appsettings.Development.json", optional: true)
