@@ -3,6 +3,7 @@ using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Pages.Services.PreviewServiceAd;
 using MudBlazor;
+using System.Text.Json;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
@@ -108,7 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(ServiceAdSummaryDto item)
         {
-            Navigation.NavigateTo($"/manage/services/editform/{item.Id}");
+            Navigation.NavigateTo($"/manage/services/editform/{item.Id}/p2plistings");
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -145,6 +146,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
     public ItemEditAdPost MapToItemEditAdPost(ServiceAdSummaryDto source)
     {
+         var json = JsonSerializer.Serialize(source, new JsonSerializerOptions
+    {
+        WriteIndented = true,
+    });
+
+    Console.WriteLine("Serialized ServiceAdSummaryDto:");
+    Console.WriteLine(json);
+
       var item = new ItemEditAdPost
       {
         Id = source.Id.ToString(),
@@ -154,6 +163,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         Status = (int?)source.Status,
         IsPromoted = source.IsPromoted ?? false,
         IsFeatured = source.IsFeatured ?? false,
+        CreatedBy = source.UserName,
         CreatedAt = source.CreationDate,
         RefreshExpiryDate = source.DateExpiry, 
         Images = source.ImageUpload != null

@@ -142,6 +142,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
             }
                 var exportData = Items.Select(x => new Dictionary<string, object?>
                 {
+                    ["Item Image"] = x.ImageUpload?.FirstOrDefault()?.Url,
                     ["Ad ID"] = x.Id,
                     ["User Id"] = x.UserId, 
                     ["Ad Title"] = x.AdTitle,

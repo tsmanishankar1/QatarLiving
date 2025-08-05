@@ -36,7 +36,7 @@
     <div class="filter-row">
         <div class="filter-button @(showCreatedPopover ? "active-filter" : "")" @onclick="ToggleCreatedPopover">
             <img src="/qln-images/date_icon.svg" class="filter-icon @(showCreatedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Date Created")</span>
+            <span>@(dateCreated.HasValue ? dateCreated.Value.ToString("dd MMM yyyy") : "Create Date From")</span>
              <MudPopover Open="@showCreatedPopover"
                 AnchorOrigin="Origin.BottomCenter"
                 TransformOrigin="Origin.TopCenter"
@@ -57,7 +57,7 @@
 
         <div class="filter-button @(showPublishedPopover ? "active-filter" : "")" @onclick="TogglePublishedPopover">
             <img src="/qln-images/date_icon.svg" class="filter-icon @(showPublishedPopover ? "active-icon" : "")" style="width:16px;" />
-            <span>@(datePublished.HasValue ? datePublished.Value.ToString("dd MMM yyyy") : "Date Published")</span>
+            <span>@(datePublished.HasValue ? datePublished.Value.ToString("dd MMM yyyy") : "Create Date To")</span>
                         <!-- Popover for Date Published -->
                 <MudPopover Open="@showPublishedPopover"
                             AnchorOrigin="Origin.BottomCenter"

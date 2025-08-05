@@ -114,8 +114,6 @@ public class ServicesReplaceDialogModalBase : ComponentBase
             result = events
                 .Where(e => e.CategoryName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
         }
-        Console.WriteLine("result", result);
-
         return Task.FromResult(result);
     }
     protected void ValidateTypedText(string text)

@@ -61,10 +61,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
     }
     protected async Task HandlePageSizeChange(int newPageSize)
     {
-            pageSize = newPageSize;
-            currentPage = 1;
-            PaginatedData = await LoadSubscriptionListingsAsync();
-            StateHasChanged();
+      pageSize = newPageSize;
+      currentPage = 1;
+      PaginatedData = await LoadSubscriptionListingsAsync();
+      StateHasChanged();
     }
     protected async Task HandleClearFilters()
     {
@@ -91,7 +91,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
             pageSize: pageSize,
             subscriptionType: SelectedSubscriptionType
         );
-
         if (response.IsSuccessStatusCode)
         {
           var result = await response.Content.ReadFromJsonAsync<PaginatedPaymentSummaryResponse>();
@@ -104,6 +103,32 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       }
       return new PaginatedPaymentSummaryResponse();
     }
+    protected async Task ReloadLoadSubscriptionListingsAsync()
+    {
+      try
+      {
+        var response = await _serviceBOService.GetPaginatedSubscriptionListing(
+            sortBy: SortBy,
+            search: Search,
+            fromDate: FromDate,
+            toDate: ToDate,
+            pageNumber: currentPage,
+            pageSize: pageSize,
+            subscriptionType: SelectedSubscriptionType
+        );
+        if (response.IsSuccessStatusCode)
+        {
+          var result = await response.Content.ReadFromJsonAsync<PaginatedPaymentSummaryResponse>();
+          PaginatedData = result ?? new PaginatedPaymentSummaryResponse();
+          PaginatedData.items = result.items;
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "LoadSubscriptionListingsAsync");
+      }
+    }
+
 
 
     }

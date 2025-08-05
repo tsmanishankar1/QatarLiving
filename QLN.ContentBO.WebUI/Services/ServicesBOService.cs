@@ -221,7 +221,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetAllZonesAsync Error: " + ex);
+                Logger.LogError(ex, "GetAllZonesAsync");
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -248,8 +248,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Logger.LogInformation("Sending payload to update featured event: {Payload}", json);
-
                 var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -289,7 +287,6 @@ namespace QLN.ContentBO.WebUI.Services
                 var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : string.Empty;
 
                 var request = new HttpRequestMessage(HttpMethod.Get, $"api/companyprofile/getallcompanies{queryString}");
-                Console.Write("the query string is " + queryString);
 
                 var response = await _httpClient.SendAsync(request);
                 return response;
@@ -305,13 +302,30 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
-                var request = new HttpRequestMessage(HttpMethod.Put, "api/service/moderatebulk")
+                if (requestModel.Action == BulkModerationAction.Publish)
                 {
-                    Content = new StringContent(json, Encoding.UTF8, "application/json")
-                };
-                var response = await _httpClient.SendAsync(request);
-                return response;
+                    if (requestModel.AdIds != null && requestModel.AdIds.Any())
+                    {
+                        var id = requestModel.AdIds.First();
+                        var response = await _httpClient.PostAsync($"api/service/publish?id={id}", null);
+                        return response;
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Publish action requested, but no IDs were provided.");
+                        return new HttpResponseMessage(HttpStatusCode.BadRequest);
+                    }
+                }
+                else
+                {
+                    var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
+                    var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
+                    {
+                        Content = new StringContent(json, Encoding.UTF8, "application/json")
+                    };
+                    var response = await _httpClient.SendAsync(request);
+                    return response;
+                }
             }
             catch (Exception ex)
             {

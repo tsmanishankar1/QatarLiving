@@ -109,9 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         }
         protected void OnSectionChanged(string? sectionId)
         {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
-
             var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }

@@ -150,12 +150,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
 
         protected Task HandleSelect(DropdownItem selected)
         {
-            Console.WriteLine($"Selected: {selected.Label}");
-
-            // Option 1: Pass by query string (recommended for readability)
             var targetUrl = $"/manage/classified/items/createform?email={selected.Label}";
             NavManager.NavigateTo(targetUrl);
-
             return Task.CompletedTask;
         }
 

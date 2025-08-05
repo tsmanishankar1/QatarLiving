@@ -70,24 +70,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
-            Console.WriteLine($"➡️ Subcategory Selected: {subcategoryId}");
             SelectedSubcategoryId = subcategoryId;
             SelectedSectionId = null;
-
             var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
             SelectedSubcategory = sub?.Name ?? string.Empty;
-
             _sections = sub?.Children ?? new();
-
-            Console.WriteLine($"Sections Count: {_sections.Count}");
-            foreach (var sec in _sections)
-                Console.WriteLine($" - {sec.Name} ({sec.Id})");
         }
         protected void OnSectionChanged(string? sectionId)
         {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
-
             var section = _sections.FirstOrDefault(c => c.Id == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }

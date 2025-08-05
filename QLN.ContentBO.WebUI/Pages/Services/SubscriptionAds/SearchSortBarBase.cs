@@ -113,6 +113,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.SubscriptionAds
             }
                 var exportData = Items.Select(x => new Dictionary<string, object?>
                 {
+                    ["Item Image"] = x.ImageUpload?.FirstOrDefault()?.Url,
                     ["Ad ID"] = x.Id,
                     ["User ID"] = x.UserId,
                     ["Ad Title"] = x.AdTitle,

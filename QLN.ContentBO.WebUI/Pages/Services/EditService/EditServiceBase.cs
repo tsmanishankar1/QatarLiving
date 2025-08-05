@@ -3,6 +3,7 @@ using QLN.ContentBO.WebUI.Models;
 using Microsoft.AspNetCore.WebUtilities;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using MudBlazor;
+using System.Net;
 using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
@@ -17,11 +18,30 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         private BulkModerationAction _selectedAction;
         protected void GoBack()
         {
-            Navigation.NavigateTo("manage/services/listing/subscriptions");
+            switch (Source?.ToLower())
+            {
+                case "subscription":
+                    Navigation.NavigateTo("manage/services/listing/subscriptions");
+                    break;
+                case "p2plistings":
+                    Navigation.NavigateTo("manage/services/listing/p2p/listing");
+                    break;
+                case "p2ptransactions":
+                    Navigation.NavigateTo("manage/services/listing/p2p/transactions");
+                    break;
+                case "subscriptionads":
+                    Navigation.NavigateTo("manage/services/listing/subscription/ads");
+                    break;
+                default:
+                    Navigation.NavigateTo("manage/services/listing/subscriptions");
+                    break;
+            }
         }
         protected AdPost adPostModel { get; set; } = new();
         [Parameter]
         public Guid? Id { get; set; }
+        [Parameter]
+        public string? Source { get; set; }
         public ServicesDto selectedService { get; set; } = new ServicesDto();
         protected override async Task OnParametersSetAsync()
         {
@@ -109,7 +129,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 },
                     Severity.Success
                 );
-
+            }
+            else if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                Snackbar.Add("You already have an active ad in this category. Please unpublish or remove it before posting another.", Severity.Error);
             }
             else
             {
