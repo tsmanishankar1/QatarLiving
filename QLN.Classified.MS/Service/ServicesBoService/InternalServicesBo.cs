@@ -22,7 +22,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         }
 
         public async Task<PaginatedResult<ServiceAdSummaryDto>> GetAllServiceBoAds(
-        string? sortBy = "CreationDate",
+        string? sortBy = "CreatedAt",
         string? search = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
@@ -75,7 +75,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         IsPromoted = serviceAd.IsPromoted,
                         IsFeatured = serviceAd.IsFeatured,
                         Status = serviceAd.Status,
-                        CreationDate = serviceAd.CreatedAt,
+                        CreatedAt = serviceAd.CreatedAt,
                         DatePublished = serviceAd.PublishedDate,
                         DateExpiry = serviceAd.ExpiryDate,
                         ImageUpload = serviceAd.PhotoUpload,
@@ -98,10 +98,10 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 }
 
                 if (fromDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate >= fromDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt >= fromDate.Value).ToList();
 
                 if (toDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate <= toDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt <= toDate.Value).ToList();
 
                 if (publishedFrom.HasValue)
                     serviceAds = serviceAds.Where(ad => ad.DatePublished.HasValue && ad.DatePublished.Value >= publishedFrom.Value).ToList();
@@ -121,17 +121,13 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 if (isPromoted.HasValue)
                     serviceAds = serviceAds.Where(ad => ad.IsPromoted == isPromoted.Value).ToList();
 
-                // Sort
-                sortBy = sortBy?.ToLowerInvariant();
+
+                sortBy = (sortBy?.ToLowerInvariant() == "asc") ? "asc" : "desc";
                 serviceAds = sortBy switch
                 {
-                    "title" => serviceAds.OrderByDescending(x => x.AdTitle).ToList(),
-                    "username" => serviceAds.OrderByDescending(x => x.UserName).ToList(),
-                    "status" => serviceAds.OrderByDescending(x => x.Status).ToList(),
-                    "published" => serviceAds.OrderByDescending(x => x.DatePublished).ToList(),
-                    _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
+                    "asc" => serviceAds.OrderBy(x => x.CreatedAt).ToList(),
+                    _ => serviceAds.OrderByDescending(x => x.CreatedAt).ToList(), 
                 };
-
                 // Pagination
                 int totalCount = serviceAds.Count;
                 var pagedItems = serviceAds
@@ -155,14 +151,14 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         }
 
         public async Task<PaginatedResult<ServiceAdPaymentSummaryDto>> GetAllServiceAdPaymentSummaries(
-     int? pageNumber = 1,
-     int? pageSize = 12,
-     string? search = null,
-     string? sortBy = null,
-     DateTime? filterStartDate = null,
-     DateTime? filterEndDate = null,
-     string? subscriptionType = null,
-     CancellationToken cancellationToken = default)
+    int? pageNumber = 1,
+    int? pageSize = 12,
+    string? search = null,
+    string? sortBy = "CreatedAt",
+    DateTime? filterStartDate = null,
+    DateTime? filterEndDate = null,
+    string? subscriptionType = null,
+    CancellationToken cancellationToken = default)
         {
             var result = new List<ServiceAdPaymentSummaryDto>();
 
@@ -180,12 +176,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     key,
                     cancellationToken: cancellationToken);
 
-                if (serviceAd == null) continue;
-
-               
-                if (serviceAd.Status == ServiceStatus.Rejected)
+                if (serviceAd == null || serviceAd.Status == ServiceStatus.Rejected)
                     continue;
-
 
                 var dto = new ServiceAdPaymentSummaryDto
                 {
@@ -200,7 +192,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     Status = serviceAd.Status,
                     OrderId = "102",
                     Amount = 100,
-                    SubscriptionPlan = "2 Months"
+                    SubscriptionPlan = "2 Months",
+                    CreatedAt = serviceAd.CreatedAt 
                 };
 
                 if (!string.IsNullOrWhiteSpace(search) &&
@@ -230,11 +223,13 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 matchedAds.Add(dto);
             }
 
-            matchedAds = sortBy?.ToLower() switch
+
+            sortBy = sortBy?.ToLowerInvariant() ?? "desc";
+
+            matchedAds = sortBy switch
             {
-                "startdate" => matchedAds.OrderBy(x => x.StartDate).ToList(),
-                "enddate" => matchedAds.OrderBy(x => x.EndDate).ToList(),
-                _ => matchedAds.OrderByDescending(x => x.StartDate).ToList()
+                "asc" => matchedAds.OrderBy(x => x.CreatedAt).ToList(),
+                _ => matchedAds.OrderByDescending(x => x.CreatedAt).ToList()
             };
 
             var totalCount = matchedAds.Count;
@@ -256,8 +251,9 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         }
 
 
+
         public async Task<PaginatedResult<ServiceP2PAdSummaryDto>> GetAllP2PServiceBoAds(
-       string? sortBy = "CreationDate",
+       string? sortBy = "CreatedAt",
        string? search = null,
        DateTime? fromDate = null,
        DateTime? toDate = null,
@@ -304,7 +300,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         Amount = "200",
                         UserName = serviceAd.UserName,
                         Status = serviceAd.Status,
-                        CreationDate = serviceAd.CreatedAt,
+                        CreatedAt = serviceAd.CreatedAt,
                         DatePublished = serviceAd.PublishedDate,
                         StartDate= "25/04/2025",
                         EndDate = "25/04/2025",
@@ -328,22 +324,19 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 }
 
                 if (fromDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate >= fromDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt >= fromDate.Value).ToList();
 
                 if (toDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate <= toDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt <= toDate.Value).ToList();
 
-               
 
-              
-                sortBy = sortBy?.ToLowerInvariant();
+
+
+                sortBy = sortBy?.ToLowerInvariant() ?? "desc";
                 serviceAds = sortBy switch
                 {
-                    "title" => serviceAds.OrderByDescending(x => x.AdTitle).ToList(),
-                    "username" => serviceAds.OrderByDescending(x => x.UserName).ToList(),
-                    "status" => serviceAds.OrderByDescending(x => x.Status).ToList(),
-                    "published" => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
-                    _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
+                    "asc" => serviceAds.OrderBy(x => x.CreatedAt).ToList(),
+                _ => serviceAds.OrderByDescending(x => x.CreatedAt).ToList() 
                 };
 
               
@@ -369,7 +362,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         }
 
         public async Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
-                string? sortBy = "CreationDate",
+                string? sortBy = "createdAt",
                 string? search = null,
                 DateTime? fromDate = null,
                 DateTime? toDate = null,
@@ -419,7 +412,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         IsPromoted = serviceAd.IsPromoted,
                         IsFeatured = serviceAd.IsFeatured,
                         Status = serviceAd.Status,
-                        CreationDate = serviceAd.CreatedAt,
+                        CreatedAt = serviceAd.CreatedAt,
                         DatePublished = serviceAd.PublishedDate,
                         DateExpiry = serviceAd.ExpiryDate,
                         ImageUpload = serviceAd.PhotoUpload,
@@ -444,10 +437,10 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 }
 
                 if (fromDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate >= fromDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt >= fromDate.Value).ToList();
 
                 if (toDate.HasValue)
-                    serviceAds = serviceAds.Where(ad => ad.CreationDate <= toDate.Value).ToList();
+                    serviceAds = serviceAds.Where(ad => ad.CreatedAt <= toDate.Value).ToList();
 
                 if (publishedFrom.HasValue)
                     serviceAds = serviceAds.Where(ad => ad.DatePublished.HasValue && ad.DatePublished.Value >= publishedFrom.Value).ToList();
@@ -455,17 +448,14 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 if (publishedTo.HasValue)
                     serviceAds = serviceAds.Where(ad => ad.DatePublished.HasValue && ad.DatePublished.Value <= publishedTo.Value).ToList();
 
-               
+
 
                 // Sort
-                sortBy = sortBy?.ToLowerInvariant();
+                sortBy = sortBy?.ToLowerInvariant() ?? "desc";
                 serviceAds = sortBy switch
                 {
-                    "title" => serviceAds.OrderByDescending(x => x.AdTitle).ToList(),
-                    "username" => serviceAds.OrderByDescending(x => x.UserName).ToList(),
-                    "status" => serviceAds.OrderByDescending(x => x.Status).ToList(),
-                    "published" => serviceAds.OrderByDescending(x => x.DatePublished).ToList(),
-                    _ => serviceAds.OrderByDescending(x => x.CreationDate).ToList(),
+                    "asc" => serviceAds.OrderBy(x => x.CreatedAt).ToList(),
+                    _ => serviceAds.OrderByDescending(x => x.CreatedAt).ToList()
                 };
 
                 // Pagination
