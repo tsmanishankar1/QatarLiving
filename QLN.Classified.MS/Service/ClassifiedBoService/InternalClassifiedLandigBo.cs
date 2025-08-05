@@ -33,7 +33,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly IClassifiedService _classified;
         private readonly List<TransactionDto> _mockTransactions;
         private readonly List<PrelovedTransactionDto> _mockPrelovedTransactions;
-        private readonly ClassifiedDevContext _context;
+        private readonly QLClassifiedContext _context;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -45,7 +45,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
         {
             _classified = classified;
             _dapr = dapr;

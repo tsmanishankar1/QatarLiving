@@ -27,8 +27,6 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     {
         [Key]
         public int OrderId { get; set; }
-        public string? CompanyId { get; set; } = null;
-        public string? SubscriptionId { get; set; } = null;
         public string? SubscriptionType { get; set; } = null;
         public string? UserName { get; set; } = null;
         public string? Email { get; set; } = null;
