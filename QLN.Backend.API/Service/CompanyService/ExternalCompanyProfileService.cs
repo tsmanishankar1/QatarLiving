@@ -104,33 +104,47 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanyProfileModel>> GetAllVerifiedCompanies(bool? isBasicProfile, VerifiedStatus? status, VerticalType? vertical, SubVertical? subVertical, CancellationToken cancellationToken = default)
+        public async Task<CompanyPaginatedResponse<CompanyProfileModel>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = new List<string>();
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Company.CompanyServiceAppId, "api/companyprofile/getallcompanies", filter);
+                var httpResponse = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
 
-                if (isBasicProfile.HasValue)
-                    queryParams.Add($"isBasicProfile={isBasicProfile.Value.ToString().ToLower()}");
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    var body = await httpResponse.Content.ReadAsStringAsync();
 
-                if (status.HasValue)
-                    queryParams.Add($"status={(int)status.Value}");
+                    if (httpResponse.StatusCode == HttpStatusCode.BadRequest)
+                    {
+                        _logger.LogWarning("400 Bad Request from internal service: {0}", body);
 
-                if (vertical.HasValue)
-                    queryParams.Add($"vertical={(int)vertical.Value}");
+                        try
+                        {
+                            var problem = JsonSerializer.Deserialize<ProblemDetails>(body, new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            });
 
-                if (subVertical.HasValue)
-                    queryParams.Add($"subVertical={(int)subVertical.Value}");
+                            throw new InvalidDataException(problem?.Detail ?? "Invalid input.");
+                        }
+                        catch (JsonException)
+                        {
+                            throw new InvalidDataException("Invalid input: " + body);
+                        }
+                    }
 
-                var query = queryParams.Any() ? "?" + string.Join("&", queryParams) : string.Empty;
+                    throw new Exception($"Internal service returned {httpResponse.StatusCode}: {body}");
+                }
 
-                var response = await _dapr.InvokeMethodAsync<List<CompanyProfileModel>>(
-                    HttpMethod.Get,
-                    ConstantValues.Company.CompanyServiceAppId,
-                    $"api/companyprofile/getallcompanies{query}",
-                    cancellationToken);
-
-                return response ?? new List<CompanyProfileModel>();
+                var content = await httpResponse.Content.ReadFromJsonAsync<CompanyPaginatedResponse<CompanyProfileModel>>();
+                return content ?? new CompanyPaginatedResponse<CompanyProfileModel>
+                {
+                    TotalCount = 0,
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize,
+                    Items = new List<CompanyProfileModel>()
+                };
             }
             catch (Exception ex)
             {

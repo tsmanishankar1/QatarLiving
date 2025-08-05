@@ -492,30 +492,67 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileModel>> GetAllVerifiedCompanies(bool? isBasicProfile, VerifiedStatus? status, VerticalType? vertical, SubVertical? subVertical, CancellationToken cancellationToken = default)
+        public async Task<CompanyPaginatedResponse<CompanyProfileModel>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (filter.PageNumber <= 0)
+                    throw new InvalidDataException("PageNumber must be greater than 0.");
+
+                if (filter.PageSize <= 0)
+                    throw new InvalidDataException("PageSize must be greater than 0.");
                 var keys = await GetIndex();
-                if (!keys.Any()) return new List<CompanyProfileModel>();
+                if (!keys.Any()) return new CompanyPaginatedResponse<CompanyProfileModel>();
 
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.Company.CompanyStoreName, keys, parallelism: 10);
+                var items = await _dapr.GetBulkStateAsync(ConstantValues.Company.CompanyStoreName, keys, parallelism: 12);
 
-                return items
+                var companies = items
                     .Where(i => !string.IsNullOrWhiteSpace(i.Value))
                     .Select(i => JsonSerializer.Deserialize<CompanyProfileModel>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
                     .Where(e =>
                         e.Id != Guid.Empty &&
                         e.IsActive &&
-                        (isBasicProfile == null || e.IsBasicProfile == isBasicProfile.Value) &&
-                        (status == null || e.Status == status) &&
-                        (vertical == null || e.Vertical == vertical) &&
-                        (subVertical == null || e.SubVertical == subVertical))
+                        (filter.IsBasicProfile == null || e.IsBasicProfile == filter.IsBasicProfile.Value) &&
+                        (filter.Status == null || e.Status == filter.Status) &&
+                        (filter.Vertical == null || e.Vertical == filter.Vertical) &&
+                        (filter.SubVertical == null || e.SubVertical == filter.SubVertical) &&
+                        (string.IsNullOrWhiteSpace(filter.Search) || e.CompanyName.Contains(filter.Search, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
+
+                var sortParts = filter.SortBy?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var sortField = sortParts?.ElementAtOrDefault(0)?.ToLower();
+                var sortDirection = sortParts?.ElementAtOrDefault(1)?.ToLower() ?? "desc";
+
+                companies = (sortField, sortDirection) switch
+                {
+                    ("name", "asc") => companies.OrderBy(c => c.CompanyName).ToList(),
+                    ("name", "desc") => companies.OrderByDescending(c => c.CompanyName).ToList(),
+                    ("date", "asc") => companies.OrderBy(c => c.CreatedUtc).ToList(),
+                    ("date", "desc") => companies.OrderByDescending(c => c.CreatedUtc).ToList(),
+                    _ => companies.OrderByDescending(c => c.CreatedUtc).ToList() 
+                };
+                var totalCount = companies.Count;
+
+                var paged = companies
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
+                return new CompanyPaginatedResponse<CompanyProfileModel>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize,
+                    Items = paged
+                };
+            }
+            catch(InvalidDataException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while retrieving all verified company profiles.");
+                _logger.LogError(ex, "Error while retrieving verified company profiles.");
                 throw;
             }
         }

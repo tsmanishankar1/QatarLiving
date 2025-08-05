@@ -645,33 +645,39 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapGetAllCompanyProfiles(this RouteGroupBuilder group)
         {
-            group.MapGet("/getallcompanies", async Task<IResult> (
+            group.MapPost("/getallcompanies", async Task<IResult> (
                 [FromServices] ICompanyProfileService service,
-                [FromQuery] bool? isBasicProfile,
-                [FromQuery] VerifiedStatus? status,
-                [FromQuery] VerticalType? vertical,
-                [FromQuery] SubVertical? subVertical,
+                [FromBody] CompanyProfileFilterRequest filter,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.GetAllVerifiedCompanies(isBasicProfile, status, vertical, subVertical, cancellationToken);
+                    var result = await service.GetAllVerifiedCompanies(filter, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch(InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Filter",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
                 }
                 catch (Exception)
                 {
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: "An unexpected error occurred.",
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
-            .WithName("GetAllCompanies")
+            .WithName("PostGetAllCompanies")
             .WithTags("Company")
-            .WithSummary("Get all verified company profiles")
-            .WithDescription("Fetches all verified company profiles with optional filters for basic profile and status.")
-            .Produces<IEnumerable<CompanyProfileDto>>(StatusCodes.Status200OK)
+            .WithSummary("Get all verified company profiles with filters")
+            .WithDescription("Fetches verified companies using a filter object with search, pagination, and sorting.")
+            .Produces<CompanyPaginatedResponse<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
