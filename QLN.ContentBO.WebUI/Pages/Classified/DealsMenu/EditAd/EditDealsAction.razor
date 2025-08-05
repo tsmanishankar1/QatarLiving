@@ -7,30 +7,31 @@
             <div class="label">Company Name</div>
             <div class="value">@(AdModel.BusinessName)</div>
 
-            @if(AdModel.ExpiryDate.HasValue && AdModel.ExpiryDate.Value < DateTime.Now)
+            @if (AdModel.ExpiryDate.HasValue && AdModel.ExpiryDate.Value < DateTime.Now)
             {
                 <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Class="status-chip">
-                    <span class="dot"></span> Expired
+                    <span class="dot warning-dot"></span> Expired
                 </MudChip>
             }
             else if (AdModel.IsFeatured)
             {
                 <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Class="status-chip">
-                    <span class="dot"></span> Featured
+                    <span class="dot info-dot"></span> Featured
                 </MudChip>
             }
             else if (AdModel.IsPromoted)
             {
                 <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Class="status-chip">
-                    <span class="dot"></span> Promoted
+                    <span class="dot primary-dot"></span> Promoted
                 </MudChip>
             }
-            else if(AdModel.IsActive)
+            else if (AdModel.IsActive)
             {
                 <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
-                    <span class="dot"></span> Active
+                    <span class="dot success-dot"></span> Active
                 </MudChip>
             }
+
            
         </div>
 
@@ -127,14 +128,30 @@
         margin-top: 6px;
     }
 
-    .status-chip .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #53B47B;
-        display: inline-block;
-        margin-right: 6px;
+        .status-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+    .warning-dot {
+        background-color: #ffa000 !important; /* amber/orange */
     }
+
+    .info-dot {
+        background-color: #2196f3 !important; /* blue */
+    }
+
+    .primary-dot {
+        background-color: #1976d2 !important; /* dark blue */
+    }
+
+    .success-dot {
+        background-color: #2e7d32 !important; /* green */
+    }
+
 
     .button-row {
         display: flex;
