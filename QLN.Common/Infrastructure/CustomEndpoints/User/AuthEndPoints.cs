@@ -37,7 +37,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
             {
                 try
                 {
-                    var result = await authService.Register(request, context);
+                    var result = await authService.Register(request);
                     return TypedResults.Ok(result); 
                 }
                 catch (VerificationRequiredException ex)
@@ -663,6 +663,45 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
              .WithTags("Manage Account")
              .WithSummary("Get user profile information")
              .WithDescription("Retrieves profile data using logged-in user's ID.")
+             .Produces<object>(StatusCodes.Status200OK)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+             .RequireAuthorization();
+
+            return group;
+        }
+
+        // get manageinfo
+        public static RouteGroupBuilder MapGetUserSyncEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/sync", async Task<IResult>
+                (HttpContext context,
+                  [FromServices] IAuthService authService,
+                  [FromServices] IEventlogger log) =>
+            {
+                try
+                {
+                    var user = context.User.GetDrupalUserInfo(); // Extension method
+                    if (user == null)
+                    {
+                        return TypedResults.Unauthorized();
+                    }
+
+                    return await authService.UserSync(user);
+                }
+                catch (Exception ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: "An unexpected error occurred. Please try again later.",
+                        statusCode: StatusCodes.Status500InternalServerError);
+                }
+            })
+             .WithName("UserSync")
+             .WithTags("Authentication")
+             .WithSummary("Sync user information")
+             .WithDescription("Creates user if not yet synchronised")
              .Produces<object>(StatusCodes.Status200OK)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status404NotFound)

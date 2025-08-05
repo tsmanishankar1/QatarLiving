@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace QLN.Web.Shared.Models
+namespace QLN.Common.Infrastructure.Model
 {
     public class DrupalJWTToken
     {

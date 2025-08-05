@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.Model
         public List<UserCompany>? Companies { get; set; }
         public List<UserSubscription>? Subscriptions { get; set; }
         public long? LegacyUid { get; set; }
-        public List<UserLegacyData>? LegacyData { get; set; }
+        public UserLegacyData? LegacyData { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; }
         public bool IsCompany { get; set; } // need to come back to this as by doing this we inherit a limitation of an existing system, but at this time "whatever" ....

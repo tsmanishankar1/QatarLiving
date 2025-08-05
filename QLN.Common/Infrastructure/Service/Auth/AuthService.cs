@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
@@ -61,7 +62,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         }
 
 
-        public async Task<string> Register(RegisterRequest request, HttpContext context)
+        public async Task<string> Register(RegisterRequest request)
         {
             var isBypassUser = _env.IsDevelopment() &&
                                request.Emailaddress == ConstantValues.ByPassEmail &&
@@ -987,5 +988,141 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
 
+        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser)
+        {
+            try
+            {
+                if (!long.TryParse(drupalUser.Uid, out var userId))
+                {
+                    Dictionary<string, string[]> errors = new Dictionary<string, string[]>
+                    {
+                        { nameof(drupalUser.Uid), new[] { "Invalid or missing Drupal UID. Must be a valid integer value." } }
+                    };
+
+                    return TypedResults.ValidationProblem(errors, title: "Parsing Drupal ID Error");
+                }
+
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
+
+                if (user == null)
+                {
+                    // Create new user with mapped values from DrupalUser
+                    var randomPassword = GenerateRandomPassword();
+                    
+                    user = new ApplicationUser
+                    {
+                        UserName = drupalUser.Alias,
+                        Email = drupalUser.Email,
+                        PhoneNumber = drupalUser.Phone ?? null,
+                        FirstName = drupalUser.Name,
+                        LastName = null,
+                        LegacyUid = userId,
+                        EmailConfirmed = true,
+                        PhoneNumberConfirmed = string.IsNullOrEmpty(drupalUser.Phone) ? true : false,
+                        TwoFactorEnabled = false,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        CreatedAt = long.TryParse(drupalUser.Created, out var createdAt) ? EpochTime.DateTime(createdAt) : DateTime.UtcNow,
+                        // Map any available fields from DrupalUser if they exist
+                        LanguagePreferences = !string.IsNullOrEmpty(drupalUser.Language) ? drupalUser.Language : "en", // Default language,
+                        LegacyData = new UserLegacyData()
+                        {
+                            Access = drupalUser.Access,
+                            Created = drupalUser.Created,
+                            Init = drupalUser.Init,
+                            Status = drupalUser.Status,
+                            Uid = userId,
+                            Alias = drupalUser.Alias,
+                            Email = drupalUser.Email,
+                            IsAdmin = drupalUser.IsAdmin ?? false,
+                            Language = drupalUser.Language,
+                            Name = drupalUser.Name,
+                            Path = drupalUser.Path,
+                            Image = drupalUser.Image,
+                            Permissions = drupalUser.Permissions,
+                            Phone = drupalUser.Phone,
+                            QlnextUserId = drupalUser.QlnextUserId,
+                            Roles = drupalUser.Roles,
+                            Subscription = drupalUser.Subscription != null ? new LegacySubscription()
+                            { 
+                                ExpireDate = drupalUser.Subscription.ExpireDate,
+                                ProductClass = drupalUser.Subscription.ProductClass,
+                                AccessDashboard = drupalUser.Subscription.AccessDashboard,
+                                ProductType = drupalUser.Subscription.ProductType,
+                                ReferenceId = drupalUser.Subscription.ReferenceId,
+                                Snid = drupalUser.Subscription.Snid,
+                                StartDate = drupalUser.Subscription.StartDate,
+                                Status = drupalUser.Subscription.Status,
+                                Uid = long.TryParse(drupalUser.Subscription.Uid, out var subscriptionUid) ? subscriptionUid : 0,
+                                SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
+                                Categories = drupalUser.Subscription.Categories
+                            } : null
+                        }
+                    };
+
+                    var createResult = await _userManager.CreateAsync(user, randomPassword);
+                    if (!createResult.Succeeded)
+                    {
+                        var errors = createResult.Errors
+                            .GroupBy(e => e.Code)
+                            .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                        throw new RegistrationValidationException(errors);
+                    }
+
+                    var roles = new List<string>
+                    {
+                        "User",
+                    };
+
+                    if(drupalUser.Roles != null)
+                    {
+                        roles.AddRange(drupalUser.Roles);
+                    }
+
+                    foreach(var role in roles)
+                    {
+                        if (!await _roleManager.RoleExistsAsync(role))
+                            await _roleManager.CreateAsync(new IdentityRole<Guid>(role));
+                    }
+
+                    await _userManager.AddToRolesAsync(user, roles);
+                }
+
+                // Generate tokens for existing or newly created user
+                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser);
+
+                // RefreshToken not required yet
+
+                //var refreshToken = _tokenService.GenerateRefreshToken(); 
+
+                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshToken, refreshToken);
+                //await _userManager.SetAuthenticationTokenAsync(user, Constants.ConstantValues.QLNProvider, Constants.ConstantValues.RefreshTokenExpiry, DateTime.UtcNow.AddDays(7).ToString("o"));
+
+                return TypedResults.Ok(new LoginResponse
+                {
+                    Username = user.UserName,
+                    Emailaddress = user.Email,
+                    Mobilenumber = user.PhoneNumber,
+                    AccessToken = accessToken,
+                    RefreshToken = string.Empty,
+                    IsTwoFactorEnabled = false // Assuming 2FA is not enabled for Drupal users
+                });
+            }
+            catch (Exception ex)
+            {
+                _log.LogException(ex);
+                return TypedResults.Problem(
+                    title: "Server Error",
+                    detail: "An unexpected error occurred. Please try again later.",
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        }
+
+        private string GenerateRandomPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, 12)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
     }
 }
