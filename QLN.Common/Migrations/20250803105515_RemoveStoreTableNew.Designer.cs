@@ -11,7 +11,7 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 namespace QLN.Common.Migrations.ClassifiedDev
 {
-    [DbContext(typeof(ClassifiedDevContext))]
+    [DbContext(typeof(QLClassifiedContext))]
     [Migration("20250803105515_RemoveStoreTableNew")]
     partial class RemoveStoreTableNew
     {

@@ -12,7 +12,7 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 namespace QLN.Common.Migrations
 {
-    [DbContext(typeof(ClassifiedDevContext))]
+    [DbContext(typeof(QLClassifiedContext))]
     [Migration("20250801102631_StoreProducts")]
     partial class StoreProducts
     {

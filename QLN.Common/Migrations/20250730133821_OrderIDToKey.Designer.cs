@@ -12,7 +12,7 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 namespace QLN.Common.Migrations
 {
-    [DbContext(typeof(ClassifiedDevContext))]
+    [DbContext(typeof(QLClassifiedContext))]
     [Migration("20250730133821_OrderIDToKey")]
     partial class OrderIDToKey
     {

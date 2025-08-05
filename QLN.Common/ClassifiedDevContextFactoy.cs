@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace QLN.Common
 {
-    public class ClassifiedDevContextFactory : IDesignTimeDbContextFactory<ClassifiedDevContext>
+    public class QLClassifiedContextFactory : IDesignTimeDbContextFactory<QLClassifiedContext>
     {
-        public ClassifiedDevContext CreateDbContext(string[] args)
+        public QLClassifiedContext CreateDbContext(string[] args)
         {
             var basePath = Path.Combine(Directory.GetCurrentDirectory(), "../QLN.BackEndAPI");
             var configuration = new ConfigurationBuilder()
@@ -23,10 +23,10 @@ namespace QLN.Common
 
             var connectionString = configuration.GetConnectionString("DefaultConnection");
             Console.WriteLine(connectionString);
-            var optionsBuilder = new DbContextOptionsBuilder<ClassifiedDevContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<QLClassifiedContext>();
             optionsBuilder.UseNpgsql(connectionString);
 
-            return new ClassifiedDevContext(optionsBuilder.Options);
+            return new QLClassifiedContext(optionsBuilder.Options);
         }
     }
 }

@@ -92,4 +92,22 @@ namespace QLN.Common.DTO_s.Company
         public SubVertical SubVertical { get; set; }
         public bool IsActive { get; set; }
     }
+    public class CompanyProfileFilterRequest
+    {
+        public bool? IsBasicProfile { get; set; }
+        public VerifiedStatus? Status { get; set; }
+        public VerticalType? Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public string? Search { get; set; }
+        public string? SortBy { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+    }
+    public class CompanyPaginatedResponse<T>
+    {
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public IEnumerable<T> Items { get; set; } = new List<T>();
+    }
 }

@@ -7,9 +7,9 @@ using System.Reflection.Metadata;
 
 namespace QLN.Common.Infrastructure.QLDbContext
 {
-    public class ClassifiedDevContext : DbContext
+    public class QLClassifiedContext : DbContext
     {
-        public ClassifiedDevContext(DbContextOptions<ClassifiedDevContext> options)
+        public QLClassifiedContext(DbContextOptions<QLClassifiedContext> options)
             : base(options)
         {
         }
