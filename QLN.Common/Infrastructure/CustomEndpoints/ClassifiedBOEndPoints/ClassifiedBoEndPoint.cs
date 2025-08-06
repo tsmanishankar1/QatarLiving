@@ -2228,7 +2228,9 @@ CancellationToken ct
             {
                 try
                 {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,Page,PageSize,Search,cancellationToken);
+                    int page = Page ?? 1;
+                    int pageSize = PageSize ?? 12;
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate, page, pageSize, Search,cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
