@@ -45,6 +45,7 @@ namespace QLN.Common.DTO_s.Company
         public string? CoverImage2 { get; set; }
         public bool? IsTherapeuticService { get; set; }
         public string? TherapeuticCertificate { get; set; }
+        public string? LicenseNumber { get; set; }
         [Required]
         public CompanyType CompanyType { get; set; }
         [Required]

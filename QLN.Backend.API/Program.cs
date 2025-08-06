@@ -136,13 +136,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
