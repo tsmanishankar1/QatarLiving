@@ -5,6 +5,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Model;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -22,7 +23,7 @@ namespace QLN.Backend.API.Service.Services
             _logger = logger;
             _searchService = searchService;
         }
-        public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public  async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -111,12 +112,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ServicesCategoryDto?> GetCategoryById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/service/getbycategoryid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, ServicesCategory>(
+                return await _dapr.InvokeMethodAsync<object?, ServicesCategoryDto>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     url,
