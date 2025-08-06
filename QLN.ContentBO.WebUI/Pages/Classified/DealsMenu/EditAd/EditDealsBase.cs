@@ -186,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 {
                     if (file.Size > MaxPdfFileSizeInMb * 1024 * 1024)
                     {
-                        Snackbar.Add($"File is too large. Max {MaxPdfFileSizeInMb} is allowed.", Severity.Warning);
+                        Snackbar.Add($"File is too large. Max {MaxPdfFileSizeInMb} MB is allowed.", Severity.Warning);
                         return;
                     }
 
@@ -270,7 +270,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 {
                     if (file.Size > MaxCoverImageSizeInMb * 1024 * 1024)
                     {
-                        Snackbar.Add($"Image size is too large. Max {MaxCoverImageSizeInMb} is allowed.", Severity.Warning);
+                        Snackbar.Add($"Image size is too large. Max {MaxCoverImageSizeInMb} MB is allowed.", Severity.Warning);
                         return;
                     }
 
