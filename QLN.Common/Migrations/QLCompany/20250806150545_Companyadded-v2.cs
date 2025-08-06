@@ -8,7 +8,7 @@ using QLN.Common.DTO_s;
 namespace QLN.Common.Migrations.QLCompany
 {
     /// <inheritdoc />
-    public partial class Company : Migration
+    public partial class Companyaddedv2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,7 +18,7 @@ namespace QLN.Common.Migrations.QLCompany
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    CompanyName = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CompanyName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Country = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     PhoneNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
@@ -27,10 +27,10 @@ namespace QLN.Common.Migrations.QLCompany
                     WhatsAppNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     WhatsAppCountryCode = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
                     Email = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    WebsiteUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    FacebookUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    InstagramUrl = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    CompanyLogo = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    WebsiteUrl = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    FacebookUrl = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    InstagramUrl = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    CompanyLogo = table.Column<string>(type: "character varying(70)", maxLength: 70, nullable: false),
                     StartDay = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     EndDay = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     StartHour = table.Column<string>(type: "text", nullable: true),
@@ -39,16 +39,17 @@ namespace QLN.Common.Migrations.QLCompany
                     AuthorisedContactPersonName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     CRExpiryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    CoverImage1 = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
-                    CoverImage2 = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    CoverImage1 = table.Column<string>(type: "character varying(70)", maxLength: 70, nullable: true),
+                    CoverImage2 = table.Column<string>(type: "character varying(70)", maxLength: 70, nullable: true),
                     IsTherapeuticService = table.Column<bool>(type: "boolean", nullable: true),
                     TherapeuticCertificate = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    LicenseNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     CompanyType = table.Column<int>(type: "integer", nullable: false),
                     CompanySize = table.Column<int>(type: "integer", nullable: false),
                     NatureOfBusiness = table.Column<List<NatureOfBusiness>>(type: "jsonb", nullable: false),
                     BusinessDescription = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     CRNumber = table.Column<int>(type: "integer", nullable: false),
-                    CRDocument = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    CRDocument = table.Column<string>(type: "character varying(70)", maxLength: 70, nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     SubVertical = table.Column<int>(type: "integer", nullable: true),

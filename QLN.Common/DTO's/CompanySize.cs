@@ -91,6 +91,6 @@ namespace QLN.Common.DTO_s
         VeterinaryAndPetServices = 42,
         WasteManagementAndRecycling = 43,
         WholesaleAndDistribution = 44,
-        Other = 45
+        Other = 9999
     }
 }

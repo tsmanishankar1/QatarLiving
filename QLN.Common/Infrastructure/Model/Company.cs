@@ -13,7 +13,7 @@ namespace QLN.Common.Infrastructure.Model
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required, MaxLength(255)]
+        [Required, MaxLength(100)]
         public string CompanyName { get; set; } = string.Empty;
 
         [Required, MaxLength(100)]
@@ -40,16 +40,16 @@ namespace QLN.Common.Infrastructure.Model
         [Required, EmailAddress, MaxLength(100)]
         public string Email { get; set; } = string.Empty;
 
-        [Url, MaxLength(255)]
+        [Url, MaxLength(100)]
         public string? WebsiteUrl { get; set; }
 
-        [Url, MaxLength(255)]
+        [Url, MaxLength(100)]
         public string? FacebookUrl { get; set; }
 
-        [Url, MaxLength(255)]
+        [Url, MaxLength(100)]
         public string? InstagramUrl { get; set; }
 
-        [Required, MaxLength(255)]
+        [Required, MaxLength(70)]
         public string CompanyLogo { get; set; } = string.Empty;
 
         [MaxLength(20)]
@@ -75,15 +75,15 @@ namespace QLN.Common.Infrastructure.Model
 
         public DateOnly? CRExpiryDate { get; set; } 
 
-        [MaxLength(255)]
+        [MaxLength(70)]
         public string? CoverImage1 { get; set; }
 
-        [MaxLength(255)]
+        [MaxLength(70)]
         public string? CoverImage2 { get; set; }
 
         public bool? IsTherapeuticService { get; set; }
 
-        [MaxLength(255)]
+        [MaxLength(70)]
         public string? TherapeuticCertificate { get; set; }
 
         [MaxLength(50)]
@@ -104,7 +104,7 @@ namespace QLN.Common.Infrastructure.Model
         [Required]
         public int CRNumber { get; set; }
 
-        [Required, MaxLength(255)]
+        [Required, MaxLength(70)]
         public string CRDocument { get; set; } = string.Empty;
 
         public VerifiedStatus? Status { get; set; }
