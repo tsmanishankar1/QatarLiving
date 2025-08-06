@@ -164,7 +164,7 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 await response.Content.ReadAsStringAsync(cancellationToken);
-               
+
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)

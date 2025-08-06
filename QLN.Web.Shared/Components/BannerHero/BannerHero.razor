@@ -121,7 +121,7 @@
                 : (int)AnalyticType.BANNER_CLICK,
             Url = new Uri(NavigationManager.Uri).AbsolutePath,
             Lead = AnalyticsLead.SMS_REVEAL,
-            VerticalTag = (int)VerticalTag.CONTENT,
+            VerticalTag = (int)VerticalTag.VEHICLES, // Hot Fix You need to send vertical = 1 always so that it should store into vehicles stats server for now
             AdditionalTag = new Dictionary<string, string>
             {
                 { "BannerCode", bannerCode },
