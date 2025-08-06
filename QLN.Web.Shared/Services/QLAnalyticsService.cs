@@ -233,7 +233,7 @@ namespace QLN.Web.Shared.Services
                 }
 
                 var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-                var url = $"/analytics{urlSuffix}?{queryString}";
+                var url = $"{_httpClient.BaseAddress}analytics{urlSuffix}?{queryString}";
 
                 // Compose the body
                 var body = new Dictionary<string, object?>();
