@@ -515,6 +515,11 @@ namespace QLN.Backend.API.Service.Services
                     {
                         errorMessage = errorJson;
                     }
+
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        throw new ConflictException(errorMessage);
+                    }
                     throw new InvalidDataException(errorMessage);
                 }
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -530,9 +535,5 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-
-     
-
-
     }
 }

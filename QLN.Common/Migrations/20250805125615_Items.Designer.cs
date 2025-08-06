@@ -11,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250805125615_Items")]
+    partial class Items
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,12 +33,29 @@ namespace QLN.Common.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Features")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("ProductFeaturesId");
 
@@ -51,12 +70,29 @@ namespace QLN.Common.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Images")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("ProductImagesId");
 
@@ -65,74 +101,25 @@ namespace QLN.Common.Migrations
                     b.ToTable("ProductImage");
                 });
 
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", b =>
-                {
-                    b.Property<Guid>("PageCoordinatesId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Height")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("StartPixHorizontal")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("StartPixVertical")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("StoreProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Width")
-                        .HasColumnType("integer");
-
-                    b.HasKey("PageCoordinatesId");
-
-                    b.HasIndex("StoreProductId")
-                        .IsUnique();
-
-                    b.ToTable("ProductPageCoordinate");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
-                {
-                    b.Property<Guid>("StoreFlyersId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("FlyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("OrderId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("StoreFlyersId");
-
-                    b.ToTable("StoreFlyer");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
                 {
                     b.Property<Guid>("StoreProductId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Currency")
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("FlyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PageNumber")
-                        .HasColumnType("integer");
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("ProductDescription")
                         .IsRequired()
@@ -153,9 +140,20 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("StoreProductId");
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
 
-                    b.HasIndex("FlyerId");
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("StoreProductId");
 
                     b.ToTable("StoreProduct");
                 });
@@ -454,41 +452,11 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreProduct");
                 });
 
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", b =>
-                {
-                    b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")
-                        .WithOne("PageCoordinates")
-                        .HasForeignKey("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", "StoreProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StoreProduct");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
-                {
-                    b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", "StoreFlyer")
-                        .WithMany("Products")
-                        .HasForeignKey("FlyerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StoreFlyer");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
-                {
-                    b.Navigation("Products");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
                 {
                     b.Navigation("Features");
 
                     b.Navigation("Images");
-
-                    b.Navigation("PageCoordinates")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

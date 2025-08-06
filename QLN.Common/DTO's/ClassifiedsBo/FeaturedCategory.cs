@@ -65,5 +65,7 @@ namespace QLN.Common.DTO_s
         NeedChanges = 7,
         Promote = 8,
         Feature = 9,
+        Hold = 10,
+        Onhold = 11
     }
 }
