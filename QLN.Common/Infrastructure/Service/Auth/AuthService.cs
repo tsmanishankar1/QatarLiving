@@ -988,7 +988,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
 
-        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser)
+        public async Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry)
         {
             try
             {
@@ -1073,7 +1073,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     var roles = new List<string>
                     {
-                        "User",
+                        "BasicUser",
                     };
 
                     if(drupalUser.Roles != null)
@@ -1106,7 +1106,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     await _userManager.AddToRolesAsync(user, roles);
 
-                    if(isCompany)
+                    if (isCompany)
                     {
                         // go off and create a company then save the company GUID to the user
                     }
@@ -1117,8 +1117,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     }
                 }
 
+                var assignedRoles = await _userManager.GetRolesAsync(user);
+
                 // Generate tokens for existing or newly created user
-                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser);
+                var accessToken = await _tokenService.GenerateEnrichedAccessToken(user, drupalUser, expiry, assignedRoles);
 
                 // RefreshToken not required yet
 

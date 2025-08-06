@@ -1,20 +1,23 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Routing;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
-using Microsoft.AspNetCore.Builder;
-using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
+using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.IService.IAuthService;
 using QLN.Common.Infrastructure.Utilities;
-using QLN.Common.Infrastructure.DTO_s;
-using QLN.Common.Infrastructure.CustomException;
-using QLN.Common.Infrastructure.Constants;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
-using QLN.Common.Infrastructure.IService.IAuth;
+using static QLN.Common.Infrastructure.DTO_s.OtpDTO;
 
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.User
@@ -688,7 +691,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
                         return TypedResults.Unauthorized();
                     }
 
-                    return await authService.UserSync(user);
+                    // Try parse the expiry time into a long
+                    long.TryParse(context.User.Claims.First(x => x.Type == JwtRegisteredClaimNames.Exp).Value, out var expiryDateTime);
+
+                    // convert this to a DateTime
+                    var expiry = EpochTime.DateTime(expiryDateTime);
+
+                    // initiate the UserSync function
+                    return await authService.UserSync(user, expiry);
+                }
+                catch(RegistrationValidationException ex)
+                {
+                    log.LogException(ex);
+                    return TypedResults.Problem(
+                        detail: $"Registration Issue: {ex.Message}",
+                        statusCode: StatusCodes.Status500InternalServerError);
                 }
                 catch (Exception ex)
                 {
