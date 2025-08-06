@@ -1,16 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
-using QLN.ContentBO.WebUI.Components.News;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using QLN.ContentBO.WebUI.Services;
 using System.Net;
 using System.Text.Json;
-using System.Web;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
@@ -40,6 +35,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected CountryModel SelectedWhatsappCountry { get; set; } = new();
 
         protected bool IsBtnDisabled { get; set; } = false;
+
+        protected MudFileUpload<IBrowserFile> _pdfFileUploadRef = default!;
+
+        protected int MaxPdfFileSizeInMb { get; set; } = 10; // 10 MB
 
         protected async override Task OnParametersSetAsync()
         {
@@ -187,6 +186,90 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                                     .Select(x => x.Trim())
                                     .Where(x => !string.IsNullOrWhiteSpace(x))
                                     .ToList() ?? [];
+        }
+
+
+        protected async Task HandlePdfFileChanged(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var file = e.File;
+                if (file != null)
+                {
+                    if (file.Size > MaxPdfFileSizeInMb * 1024 * 1024)
+                    {
+                        Snackbar.Add("File is too large. Max 10MB allowed.", Severity.Warning);
+                        return;
+                    }
+
+                    using var stream = file.OpenReadStream(MaxPdfFileSizeInMb * 1024 * 1024); // 10MB limit
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    var uploadedImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                    if (!string.IsNullOrWhiteSpace(uploadedImageBase64))
+                    {
+                        var fileUploadData = new FileUploadModel
+                        {
+                            Container = ClassifiedsBlobContainerName,
+                            File = uploadedImageBase64
+                        };
+
+                        var uploadedFileReponse =  await FileUploadAsync(fileUploadData);
+                        if(uploadedFileReponse.IsSuccess)
+                        {
+                            adPostModel.FlyerFileName = uploadedFileReponse.FileName;
+                            adPostModel.FlyerFileUrl = uploadedFileReponse.FileUrl;
+                            Snackbar.Add("PDF file uploaded successfully", Severity.Success);
+                        }
+                        else
+                        {
+                            Snackbar.Add("Failed to upload PDF file", Severity.Error);
+                        }
+                    }
+                    _pdfFileUploadRef?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandlePdfFileChanged");
+            }
+        }
+
+        protected async Task<FileUploadResponse> FileUploadAsync(FileUploadModel fileUploadData)
+        {
+            try
+            {
+                var response = await FileUploadService.UploadFileAsync(fileUploadData);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                if (response != null && response.IsSuccessStatusCode)
+                {
+                    FileUploadResponse? result = JsonSerializer.Deserialize<FileUploadResponse>(jsonString, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    return result ?? new();
+                }
+                else if (response?.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    Snackbar.Add($"Bad Request: {jsonString}", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action", Severity.Error);
+                }
+                else if (response?.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error", Severity.Error);
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "FileUploadAsync");
+                return new();
+            }
         }
     }
 }

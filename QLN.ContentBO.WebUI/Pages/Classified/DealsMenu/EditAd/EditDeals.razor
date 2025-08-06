@@ -63,9 +63,10 @@ else if (adPostModel != null)
                             </MudText>
                             <MudSpacer />
                             <MudFileUpload T="IBrowserFile"
-                                           Accept=".pdf,.png,.jpg,.jpeg"
-                                           MaxFileSize="10485760"
-                                           FilesChanged="OnCrFileSelected">
+                                           Accept=".pdf"
+                                           MaximumFileCount="1"
+                                           OnFilesChanged="HandlePdfFileChanged"
+                                           @ref="_pdfFileUploadRef">
                                 <ActivatorContent>
                                     <MudButton Variant="Variant.Filled"
                                                Color="Color.Primary"
