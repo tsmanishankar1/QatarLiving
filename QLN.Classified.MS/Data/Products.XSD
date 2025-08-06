@@ -1,33 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
-  <xs:element name="Products">
+  <xs:element name="StoreFlyer">
     <xs:complexType>
       <xs:sequence>
-        <xs:element name="Product" maxOccurs="unbounded">
+        <xs:element name="SubscriptionId" type="xs:string" minOccurs="0"/>
+        <xs:element name="CompanyId" type="xs:string" minOccurs="0"/>
+        <xs:element name="FlyerId" type="xs:string" minOccurs="0"/>
+        <xs:element name="Products" minOccurs="0">
           <xs:complexType>
             <xs:sequence>
-              <xs:element name="ProductName" type="xs:string"/>
-              <xs:element name="ProductLogo" type="xs:string"/>
-              <xs:element name="ProductPrice" type="xs:decimal"/>
-              <xs:element name="Currency" type="xs:string"/>
-              <xs:element name="ProductDetails">
+              <xs:element name="Product" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="ProductName" type="xs:string"/>
+                    <xs:element name="ProductLogo" type="xs:string"/>
+                    <xs:element name="ProductPrice" type="xs:decimal"/>
+                    <xs:element name="Currency" type="xs:string"/>
                     <xs:element name="ProductSummary" type="xs:string"/>
                     <xs:element name="ProductDescription" type="xs:string"/>
-                    <xs:element name="Images">
+                    <xs:element name="PageNumber" type="xs:int"/>
+                    <xs:element name="PageCoordinates" type="xs:string" minOccurs="0"/>
+                    <xs:element name="Images" minOccurs="0">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="ProductImage" type="xs:string" maxOccurs="unbounded"/>
+                          <xs:element name="ProductImage" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
                         </xs:sequence>
                       </xs:complexType>
                     </xs:element>
-                    <xs:element name="Features">
+                    <xs:element name="Features" minOccurs="0">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="Feature" type="xs:string" maxOccurs="unbounded"/>
+                          <xs:element name="Feature" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
                         </xs:sequence>
                       </xs:complexType>
                     </xs:element>
@@ -40,5 +44,4 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
-
 </xs:schema>
