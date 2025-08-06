@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class ServicesCategory
+    public class ServicesCategoryDto
     {
         public Guid? Id { get; set; }
         public string Category { get; set; } = default!;
-        public List<L1Category> L1Categories { get; set; } = new();
+        public List<L1CategoryDto> L1Categories { get; set; } = new();
     }
-    public class L1Category
+    public class L1CategoryDto
     {
         public Guid Id { get; set; } 
         public string Name { get; set; } = default!;
-        public List<L2Category> L2Categories { get; set; } = new();
+        public List<L2CategoryDto> L2Categories { get; set; } = new();
     }
-    public class L2Category
+    public class L2CategoryDto
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = default!;

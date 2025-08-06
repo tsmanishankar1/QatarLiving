@@ -1,14 +1,16 @@
 ﻿using Dapr.Client;
+using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.DTO_s.NotificationDto;
-
 
 namespace QLN.Classified.MS.Service.Services
 {
@@ -16,10 +18,12 @@ namespace QLN.Classified.MS.Service.Services
     {
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
+        private readonly QLClassifiedContext _context;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext context)
         {
             _dapr = dapr;
             _auditLogger = auditLogger;
+            _context = context;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -29,11 +33,14 @@ namespace QLN.Classified.MS.Service.Services
             if (dto.L1Categories == null || dto.L1Categories.Count == 0)
                 throw new InvalidDataException("At least one L1 Category is required.");
 
-            dto.Id = Guid.NewGuid(); 
+            // Assign unique ID to main category
+            dto.Id = Guid.NewGuid();
 
             foreach (var l1 in dto.L1Categories)
             {
+                // Assign unique ID to L1
                 l1.Id = Guid.NewGuid();
+                l1.ServicesCategoryId = dto.Id; // FK relationship, assuming this exists
 
                 if (string.IsNullOrWhiteSpace(l1.Name))
                     throw new InvalidDataException("Each L1 Category must have a Name.");
@@ -43,98 +50,207 @@ namespace QLN.Classified.MS.Service.Services
 
                 foreach (var l2 in l1.L2Categories)
                 {
+                    // Assign unique ID to L2
                     l2.Id = Guid.NewGuid();
+                    l2.L1CategoryId = l1.Id; // FK relationship, assuming this exists
 
                     if (string.IsNullOrWhiteSpace(l2.Name))
                         throw new InvalidDataException("Each L2 Category must have a Name.");
                 }
             }
 
-            var key = dto.Id.ToString();
-
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
-
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken : cancellationToken) ?? new();
-
-            if (!keys.Contains(key))
-            {
-                keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken : cancellationToken);
-            }
+            await _context.ServicesCategories.AddAsync(dto, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
 
             return "Category Created Successfully";
         }
+
         public async Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
-            var key = dto.Id?.ToString();
-            if (string.IsNullOrWhiteSpace(key))
+            var key = dto.Id;
+            if (key == Guid.Empty)
                 throw new InvalidDataException("Invalid category ID.");
 
-            var existing = await _dapr.GetStateAsync<ServicesCategory>(
-                ConstantValues.Services.StoreName,
-                key,
-                cancellationToken: cancellationToken
-            );
+            // Get from the database instead of Dapr state store
+            var existing = await _context.ServicesCategories
+                .Include(sc => sc.L1Categories)
+                    .ThenInclude(l1 => l1.L2Categories)
+                .FirstOrDefaultAsync(sc => sc.Id == dto.Id, cancellationToken);
 
             if (existing == null)
                 throw new InvalidDataException("Category not found for update.");
 
-            foreach (var l1 in dto.L1Categories)
-            {
-                if (l1.Id == Guid.Empty)
-                    l1.Id = Guid.NewGuid();
+            // Update main category fields
+            existing.Category = dto.Category;
 
-                foreach (var l2 in l1.L2Categories)
+            // Clear and rebuild L1 and L2 categories
+            existing.L1Categories.Clear();
+
+            foreach (var l1Dto in dto.L1Categories)
+            {
+                var l1 = new L1Category
                 {
-                    if (l2.Id == Guid.Empty)
-                        l2.Id = Guid.NewGuid();
-                }
+                    Id = l1Dto.Id == Guid.Empty ? Guid.NewGuid() : l1Dto.Id,
+                    Name = l1Dto.Name,
+                    ServicesCategoryId = existing.Id,
+                    L2Categories = l1Dto.L2Categories.Select(l2Dto => new L2Category
+                    {
+                        Id = l2Dto.Id == Guid.Empty ? Guid.NewGuid() : l2Dto.Id,
+                        Name = l2Dto.Name
+                    }).ToList()
+                };
+
+                existing.L1Categories.Add(l1);
             }
 
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
+            _context.ServicesCategories.Update(existing);
+            await _context.SaveChangesAsync(cancellationToken);
 
             return "Category updated successfully.";
         }
+
+        //public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        //{
+        //    if (string.IsNullOrWhiteSpace(dto.Category))
+        //        throw new InvalidDataException("MainCategory is required.");
+
+        //    if (dto.L1Categories == null || dto.L1Categories.Count == 0)
+        //        throw new InvalidDataException("At least one L1 Category is required.");
+
+        //    dto.Id = Guid.NewGuid(); 
+
+        //    foreach (var l1 in dto.L1Categories)
+        //    {
+        //        l1.Id = Guid.NewGuid();
+
+        //        if (string.IsNullOrWhiteSpace(l1.Name))
+        //            throw new InvalidDataException("Each L1 Category must have a Name.");
+
+        //        if (l1.L2Categories == null || l1.L2Categories.Count == 0)
+        //            throw new InvalidDataException($"L1 Category '{l1.Name}' must have at least one L2 Category.");
+
+        //        foreach (var l2 in l1.L2Categories)
+        //        {
+        //            l2.Id = Guid.NewGuid();
+
+        //            if (string.IsNullOrWhiteSpace(l2.Name))
+        //                throw new InvalidDataException("Each L2 Category must have a Name.");
+        //        }
+        //    }
+
+        //    var key = dto.Id.ToString();
+
+        //    await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
+
+        //    var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken : cancellationToken) ?? new();
+
+        //    if (!keys.Contains(key))
+        //    {
+        //        keys.Add(key);
+        //        await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken : cancellationToken);
+        //    }
+
+        //    return "Category Created Successfully";
+        //}
+        //public async Task<string> UpdateCategory(ServicesCategoryDto dto, CancellationToken cancellationToken = default)
+        //{
+        //    var key = dto.Id?.ToString();
+        //    if (string.IsNullOrWhiteSpace(key))
+        //        throw new InvalidDataException("Invalid category ID.");
+
+        //    var existing = await _dapr.GetStateAsync<ServicesCategory>(
+        //        ConstantValues.Services.StoreName,
+        //        key,
+        //        cancellationToken: cancellationToken
+        //    );
+
+        //    if (existing == null)
+        //        throw new InvalidDataException("Category not found for update.");
+
+        //    foreach (var l1 in dto.L1Categories)
+        //    {
+        //        if (l1.Id == Guid.Empty)
+        //            l1.Id = Guid.NewGuid();
+
+        //        foreach (var l2 in l1.L2Categories)
+        //        {
+        //            if (l2.Id == Guid.Empty)
+        //                l2.Id = Guid.NewGuid();
+        //        }
+        //    }
+
+        //    await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
+
+        //    return "Category updated successfully.";
+        //}
+        //public async Task<List<ServicesCategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
+        //{
+        //    var keys = await _dapr.GetStateAsync<List<string>>(
+        //        ConstantValues.Services.StoreName,
+        //        ConstantValues.Services.IndexKey,
+        //        cancellationToken: cancellationToken
+        //    ) ?? new();
+
+        //    if (keys == null || keys.Count == 0)
+        //        return new List<ServicesCategoryDto>();
+
+        //    var bulkItems = await _dapr.GetBulkStateAsync(
+        //        ConstantValues.Services.StoreName,
+        //        keys,
+        //        parallelism: null,
+        //        cancellationToken: cancellationToken
+        //    );
+
+        //    var result = bulkItems
+        //        .Where(item => !string.IsNullOrWhiteSpace(item.Value))
+        //        .Select(item =>
+        //        {
+        //            try
+        //            {
+        //                return JsonSerializer.Deserialize<ServicesCategoryDto>(
+        //                    item.Value,
+        //                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+        //                );
+        //            }
+        //            catch
+        //            {
+        //                return null;
+        //            }
+        //        })
+        //        .Where(x => x != null)
+        //        .ToList();
+
+        //    return result!;
+        //}
         public async Task<List<ServicesCategory>> GetAllCategories(CancellationToken cancellationToken = default)
         {
-            var keys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.Services.StoreName,
-                ConstantValues.Services.IndexKey,
-                cancellationToken: cancellationToken
-            ) ?? new();
+            var categories = await _context.ServicesCategories
+                .Include(c => c.L1Categories)
+                    .ThenInclude(l1 => l1.L2Categories)
+                .ToListAsync(cancellationToken);
 
-            if (keys == null || keys.Count == 0)
-                return new List<ServicesCategory>();
-
-            var bulkItems = await _dapr.GetBulkStateAsync(
-                ConstantValues.Services.StoreName,
-                keys,
-                parallelism: null,
-                cancellationToken: cancellationToken
-            );
-
-            var result = bulkItems
-                .Where(item => !string.IsNullOrWhiteSpace(item.Value))
-                .Select(item =>
+            var result = categories.Select(category => new ServicesCategory
+            {
+                Id = category.Id,
+                Category = category.Category,
+                L1Categories = category.L1Categories.Select(l1 => new L1Category
                 {
-                    try
+                    Id = l1.Id,
+                    Name = l1.Name,
+                  
+                    L2Categories = l1.L2Categories.Select(l2 => new L2Category
                     {
-                        return JsonSerializer.Deserialize<ServicesCategory>(
-                            item.Value,
-                            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
-                        );
-                    }
-                    catch
-                    {
-                        return null;
-                    }
-                })
-                .Where(x => x != null)
-                .ToList();
+                        Id = l2.Id,
+                        Name = l2.Name,
+                       
+                    }).ToList()
+                }).ToList()
+            }).ToList();
 
-            return result!;
+            return result;
         }
-        public async Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default)
+
+        public async Task<ServicesCategoryDto?> GetCategoryById(Guid id, CancellationToken cancellationToken = default)
         {
             var key = id.ToString();
 
@@ -147,7 +263,7 @@ namespace QLN.Classified.MS.Service.Services
             {
                 return null;
             }
-            var category = await _dapr.GetStateAsync<ServicesCategory>(
+            var category = await _dapr.GetStateAsync<ServicesCategoryDto>(
                 ConstantValues.Services.StoreName,
                 key,
                 cancellationToken: cancellationToken
@@ -162,7 +278,7 @@ namespace QLN.Classified.MS.Service.Services
                 string? categoryName = null;
                 string? l1CategoryName = null;
                 string? l2CategoryName = null;
-                var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
+                var mainCategory = await _dapr.GetStateAsync<ServicesCategoryDto>(
                     ConstantValues.Services.StoreName,
                     dto.CategoryId.ToString(),
                     cancellationToken: cancellationToken);
