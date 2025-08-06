@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -65,35 +64,6 @@ namespace QLN.Common.Migrations
                     b.ToTable("ProductImage");
                 });
 
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", b =>
-                {
-                    b.Property<Guid>("PageCoordinatesId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Height")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("StartPixHorizontal")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("StartPixVertical")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("StoreProductId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("Width")
-                        .HasColumnType("integer");
-
-                    b.HasKey("PageCoordinatesId");
-
-                    b.HasIndex("StoreProductId")
-                        .IsUnique();
-
-                    b.ToTable("ProductPageCoordinate");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Property<Guid>("StoreFlyersId")
@@ -105,10 +75,6 @@ namespace QLN.Common.Migrations
 
                     b.Property<Guid>("FlyerId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("OrderId")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uuid");
@@ -130,6 +96,9 @@ namespace QLN.Common.Migrations
 
                     b.Property<Guid>("FlyerId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PageCoordinates")
+                        .HasColumnType("text");
 
                     b.Property<int>("PageNumber")
                         .HasColumnType("integer");
@@ -454,17 +423,6 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreProduct");
                 });
 
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", b =>
-                {
-                    b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")
-                        .WithOne("PageCoordinates")
-                        .HasForeignKey("QLN.Common.DTO_s.ClassifiedsBo.ProductPageCoordinates", "StoreProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StoreProduct");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
                 {
                     b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", "StoreFlyer")
@@ -486,9 +444,6 @@ namespace QLN.Common.Migrations
                     b.Navigation("Features");
 
                     b.Navigation("Images");
-
-                    b.Navigation("PageCoordinates")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

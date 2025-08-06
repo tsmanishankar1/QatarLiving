@@ -10,22 +10,22 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     [XmlRoot("StoreFlyer")]
     public class StoreFlyer
     {
-        public string SubscriptionId {  get; set; }
-        public string CompanyId { get; set; }
-        public string FlyerId { get; set; }
+        public string? SubscriptionId {  get; set; }
+        public string? CompanyId { get; set; }
+        public string? FlyerId { get; set; }
         public List<Product> Products { get; set; } = new();
     }
     public class Product
     {
         public string ProductName { get; set; }
         public string ProductLogo { get; set; }
-        public decimal ProductPrice { get; set; }
+        public decimal ProductPrice { get; set; } = 0;
         public string Currency { get; set; }
-        public string ProductSummary { get; set; }
-        public string ProductDescription { get; set; }
+        public string? ProductSummary { get; set; }
+        public string? ProductDescription { get; set; }
         public int PageNumber { get; set; } = 1;
        
-        public PageCoordinates? PageCoordinates { get; set; }
+        public string? PageCoordinates { get; set; }
 
         [XmlArray("Images")]
         [XmlArrayItem("ProductImage")]

@@ -25,15 +25,14 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<ProductImages> ProductImage { get; set; }
         
         public DbSet<Items> Item { get; set; }
-        public DbSet<ProductPageCoordinates> ProductPageCoordinate { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()
-            .HasMany(s=>s.Products)
-            .WithOne(s=>s.StoreFlyer)
-            .HasForeignKey(s=>s.FlyerId)
-            .OnDelete(DeleteBehavior.Cascade);
+        .HasMany(s=>s.Products)
+        .WithOne(s=>s.StoreFlyer)
+        .HasForeignKey(s=>s.FlyerId)
+        .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<StoreProducts>()
         .HasMany(s => s.Features)
@@ -42,15 +41,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
         .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<StoreProducts>()
-          .HasOne(s => s.PageCoordinates)
-          .WithOne(a => a.StoreProduct)
-          .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<StoreProducts>()
-  .HasMany(s => s.Images)
-  .WithOne(a => a.StoreProduct)
-  .HasForeignKey(a => a.StoreProductId)
-  .OnDelete(DeleteBehavior.Cascade);
+        .HasMany(s => s.Images)
+        .WithOne(a => a.StoreProduct)
+        .HasForeignKey(a => a.StoreProductId)
+        .OnDelete(DeleteBehavior.Cascade);
 
             base.OnModelCreating(modelBuilder);
         }

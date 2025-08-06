@@ -5,8 +5,8 @@
     <xs:complexType>
       <xs:sequence>
         <xs:element name="SubscriptionId" type="xs:string" minOccurs="0"/>
-        <xs:element name="CompanyId" type="xs:string"/>
-        <xs:element name="FlyerId" type="xs:string"/>
+        <xs:element name="CompanyId" type="xs:string" minOccurs="0"/>
+        <xs:element name="FlyerId" type="xs:string" minOccurs="0"/>
         <xs:element name="Products" minOccurs="0">
           <xs:complexType>
             <xs:sequence>
@@ -20,16 +20,7 @@
                     <xs:element name="ProductSummary" type="xs:string"/>
                     <xs:element name="ProductDescription" type="xs:string"/>
                     <xs:element name="PageNumber" type="xs:int"/>
-                    <xs:element name="PageCoordinates" minOccurs="0">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="StartPixHorizontal" type="xs:int" minOccurs="0"/>
-                          <xs:element name="StartPixVertical" type="xs:int" minOccurs="0"/>
-                          <xs:element name="Height" type="xs:int" minOccurs="0"/>
-                          <xs:element name="Width" type="xs:int" minOccurs="0"/>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
+                    <xs:element name="PageCoordinates" type="xs:string" minOccurs="0"/>
                     <xs:element name="Images" minOccurs="0">
                       <xs:complexType>
                         <xs:sequence>
@@ -53,5 +44,4 @@
       </xs:sequence>
     </xs:complexType>
   </xs:element>
-
 </xs:schema>

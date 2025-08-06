@@ -1,30 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <StoreFlyer>
-  <SubscriptionId>2145</SubscriptionId>
+  <SubscriptionId>"6b29fc40-ca47-1067-b31d-00dd010662da"</SubscriptionId>
   <CompanyId>3d6f0a98-8c5c-4f3d-9f79-15b1bcd32f64</CompanyId>
   <FlyerId>c1f4c3b6-75d0-4bdf-8db7-4fe6d21b912e</FlyerId>
   <Products>
     <Product>
-      <ProductName>Smart Kettle</ProductName>
-      <ProductLogo>kettle.png</ProductLogo>
-      <ProductPrice>39.99</ProductPrice>
+      <ProductName>Wireless Mouse</ProductName>
+      <ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Computer-mouse-icon.svg/1024px-Computer-mouse-icon.svg.png</ProductLogo>
+      <ProductPrice>29.99</ProductPrice>
       <Currency>USD</Currency>
-      <ProductSummary>Smart electric kettle</ProductSummary>
-      <ProductDescription>Boils water fast with temperature control.</ProductDescription>
+      <ProductSummary>Ergonomic wireless mouse</ProductSummary>
+      <ProductDescription>This wireless mouse is designed for comfort and precision.</ProductDescription>
       <PageNumber>1</PageNumber>
-      <PageCoordinates>
-        <StartPixHorizontal>100</StartPixHorizontal>
-        <StartPixVertical>200</StartPixVertical>
-        <Height>150</Height>
-        <Width>120</Width>
-      </PageCoordinates>
+      <PageCoordinates>150,300</PageCoordinates>
       <Images>
-        <ProductImage>kettle1.jpg</ProductImage>
-        <ProductImage>kettle2.jpg</ProductImage>
+        <ProductImage>https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04</ProductImage>
+        <ProductImage>https://images.unsplash.com/photo-1626370291579-3c07c89e1c59</ProductImage>
       </Images>
       <Features>
-        <Feature>Auto Shut-off</Feature>
-        <Feature>Keep Warm</Feature>
+        <Feature>2.4 GHz Wireless</Feature>
+        <Feature>Ergonomic Design</Feature>
+        <Feature>Battery Included</Feature>
+      </Features>
+    </Product>
+
+    <Product>
+      <ProductName>Gaming Keyboard</ProductName>
+      <ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Keyboard_icon.svg/1024px-Keyboard_icon.svg.png</ProductLogo>
+      <ProductPrice>59.95</ProductPrice>
+      <Currency>USD</Currency>
+      <ProductSummary>RGB mechanical keyboard</ProductSummary>
+      <ProductDescription>Perfect for gaming and typing with RGB lighting and tactile feedback.</ProductDescription>
+      <PageNumber>2</PageNumber>
+      <Images>
+        <ProductImage>https://images.unsplash.com/photo-1587202372775-98963c7b0ec1</ProductImage>
+        <ProductImage>https://images.unsplash.com/photo-1600180758890-6dfd87c5a9e5</ProductImage>
+      </Images>
+      <Features>
+        <Feature>RGB Lighting</Feature>
+        <Feature>Blue Switches</Feature>
       </Features>
     </Product>
   </Products>

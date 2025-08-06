@@ -30,7 +30,6 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public Guid SubscriptionId { get; set; }
         public Guid CompanyId { get; set; }
         public Guid FlyerId { get; set; }
-        public string OrderId { get; set; } = string.Empty;
         public virtual ICollection<StoreProducts> Products { get; set; }
     }
     
@@ -45,10 +44,10 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string ProductSummary { get; set; }
         public string ProductDescription { get; set; }
         public int PageNumber { get; set; }
-
+        public string?  PageCoordinates { get; set; }
         public Guid FlyerId { get; set; }
         public virtual StoreFlyers StoreFlyer { get; set; }
-        public virtual ProductPageCoordinates PageCoordinates { get; set; }
+       
         public virtual ICollection<ProductFeatures> Features { get; set; }
         public virtual ICollection<ProductImages> Images { get; set; }
     }
@@ -62,8 +61,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int? Height { get; set; } = 0;
         public int? Width { get; set; } = 0;
       
-        public Guid StoreProductId { get; set; }
-        public virtual StoreProducts StoreProduct { get; set; }
+        //public Guid StoreProductId { get; set; }
+        //public virtual StoreProducts StoreProduct { get; set; }
     }
     public class ProductFeatures
     {

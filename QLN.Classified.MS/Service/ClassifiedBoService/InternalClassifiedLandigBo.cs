@@ -3440,7 +3440,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string result = string.Empty;
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
+                string xmlPath = Path.Combine(basePath, "Data", "Products.xml");
                 string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
@@ -3489,13 +3489,19 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                     if (xmlproducts != null && xmlproducts.Products != null && xmlproducts.Products.Count > 0)
                     {
+                        _logger.LogInformation("Flyer: "+ xmlproducts.FlyerId);
+                        Console.WriteLine("Console:___________" + xmlproducts.FlyerId);
+                        _logger.LogInformation("Subscription: " + xmlproducts.SubscriptionId);
+                        Console.WriteLine("Console:___________" + xmlproducts.SubscriptionId);
+                        _logger.LogInformation("Company: " + xmlproducts.CompanyId);
+                        Console.WriteLine("Console:___________" + xmlproducts.CompanyId);
                         await DeleteStoreFlyer(Guid.Parse(xmlproducts.FlyerId));
                         StoreFlyers storeFlyer =new StoreFlyers();
                         storeFlyer.SubscriptionId = Guid.Parse(xmlproducts.SubscriptionId);
                         storeFlyer.FlyerId = Guid.Parse(xmlproducts.FlyerId);
                         storeFlyer.CompanyId = Guid.Parse(xmlproducts.CompanyId);
                         storeFlyer.Products = new List<StoreProducts>();
-                        storeFlyer.OrderId = SubscriptionId.ToString();
+                    
                         foreach (var xmlproduct in xmlproducts.Products)
                         {
 
@@ -3510,18 +3516,9 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             storeProducts.Currency = xmlproduct.Currency; storeProducts.ProductSummary = xmlproduct.ProductSummary;
                             storeProducts.ProductDescription = xmlproduct.ProductDescription;
                             storeProducts.PageNumber = xmlproduct.PageNumber;
-                            ProductPageCoordinates coordinates = new ProductPageCoordinates();
-                            if (xmlproduct.PageCoordinates != null)
-                            {
-                                coordinates.PageCoordinatesId = Guid.NewGuid();
-                                coordinates.StartPixVertical= xmlproduct.PageCoordinates.StartPixVertical;
-                                coordinates.StartPixHorizontal = xmlproduct.PageCoordinates.StartPixHorizontal;
-                                coordinates.Height = xmlproduct.PageCoordinates.Height;
-                                coordinates.Width = xmlproduct.PageCoordinates.Width;
-                                coordinates.StoreProductId = StoreProductId;
-                            }
+                            
 
-                            storeProducts.PageCoordinates = coordinates;
+                            storeProducts.PageCoordinates = xmlproduct.PageCoordinates;
                             storeProducts.Features = xmlproduct.Features.Select(f => new ProductFeatures
                             {
                                 ProductFeaturesId = Guid.NewGuid(),
@@ -3540,8 +3537,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                             storeFlyer.Products.Add(storeProducts);
                            
                         }
+                        _logger.LogInformation("ML bind done");
+                        Console.WriteLine("Console:___________ML bind done");
                         _context.StoreFlyer.Add(storeFlyer);
                         await _context.SaveChangesAsync();
+                        _logger.LogInformation("Products added successful.");
+                        Console.WriteLine("Console:_________Products added successful.");
                     }
                     
                     return "created";
