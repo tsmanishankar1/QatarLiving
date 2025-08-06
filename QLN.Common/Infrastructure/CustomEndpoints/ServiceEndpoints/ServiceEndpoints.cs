@@ -10,9 +10,8 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-
-using Dapr.Client;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -88,7 +87,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                ServicesCategory dto,
+               ServicesCategory dto,
                 IServices service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -191,14 +190,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithDescription("Retrieves all service categories from the system. " +
                              "This endpoint returns a list of all available service categories, including their subcategories.")
             .WithSummary("Get all service categories")
-            .Produces<List<ServicesCategory>>(StatusCodes.Status200OK)
+            .Produces<List<ServicesCategoryDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapServiceCategoryGetByIdEndpoint(this RouteGroupBuilder group)
         {
             group.MapGet("/getbycategoryid/{id:guid}", async Task<Results<
-                Ok<ServicesCategory>,
+                Ok<ServicesCategoryDto>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
@@ -244,7 +243,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Get a service category by ID")
             .WithDescription("Retrieves a specific service category by its unique identifier. " +
                              "If the category does not exist, a 404 Not Found response is returned.")
-            .Produces<ServicesCategory>(StatusCodes.Status200OK)
+            .Produces<ServicesCategoryDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
