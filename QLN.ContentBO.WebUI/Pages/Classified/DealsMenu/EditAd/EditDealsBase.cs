@@ -6,6 +6,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using System.Net;
 using System.Text.Json;
+using static MudBlazor.CategoryTypes;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
@@ -136,6 +137,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         {
             adPostModel.FlyerFileName = string.Empty;
             adPostModel.FlyerFileUrl = string.Empty;
+            _pdfFileUploadRef?.ResetValidation();
         }
 
         protected async Task OnCrFileSelected(IBrowserFile file)
