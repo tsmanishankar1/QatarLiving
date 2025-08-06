@@ -133,7 +133,52 @@ else if (adPostModel != null)
             </MudItem>
 
             <MudItem xs="12" md="7">
-                <UploadDealsPhotos AdModel="@adPostModel" />
+                <h3 class="Upload-header">Upload Cover</h3>
+
+                <div class="Upload-container">
+                    <div class="d-flex align-items-center mb-2">
+                        <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-2 info-icon" />
+                        <span class="photo-guidelines">
+                            Upload a high quality cover for the flyer to attract shoppers to your offer. Use portrait orientation (vertical) for optimal photo display.
+                        </span>
+                    </div>
+
+                    <div class="image-grid">
+                        <div class="deals-upload-box">
+                            <label class="upload-label">
+
+                                <MudFileUpload T="IBrowserFile"
+                                               Accept="image/*"
+                                               MaximumFileCount="1"
+                                               OnFilesChanged="HandleImageFileChanged"
+                                               @ref="_coverImageFileUploadRef"
+                                               Class="file-input">
+                                    <ActivatorContent>
+                                        @if (string.IsNullOrEmpty(adPostModel.ImageUrl))
+                                        {
+                                            <div class="upload-content">
+                                                <div class="upload-icon-box">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Add" Class="upload-icon" />
+                                                </div>
+                                                <div class="upload-text">Upload</div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <img src="@adPostModel.ImageUrl" alt="Cover Image" class="preview-image" />
+
+                                            <MudIconButton Icon="@Icons.Material.Rounded.DeleteOutline"
+                                                           Class="delete-icon"
+                                                           OnClick="RemoveImage" />
+                                        }
+
+                                        <div class="cover-photo-label">Flyer Cover</div>
+                                    </ActivatorContent>
+                                </MudFileUpload>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </MudItem>
         </MudGrid>
     </div>
@@ -175,5 +220,75 @@ else
     .white-bg .mud-select-input,
     .white-bg .mud-input-slot {
         background-color: white !important;
+    }
+
+    .deals-upload-box {
+        position: relative;
+        width: 160px;
+        height: 220px;
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #f9f9f9;
+    }
+
+    .upload-label {
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .upload-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    .upload-icon-box {
+        background-color: #e0e0e0;
+        border-radius: 50%;
+        padding: 10px;
+        margin-bottom: 8px;
+    }
+
+    .upload-icon {
+        font-size: 28px;
+    }
+
+    .upload-text {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .preview-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .delete-icon {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+    }
+
+    .cover-photo-label {
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #007BFF;
+        color: white;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 4px;
     }
 </style>

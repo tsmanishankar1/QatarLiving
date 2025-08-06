@@ -38,8 +38,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected bool IsBtnDisabled { get; set; } = false;
 
         protected MudFileUpload<IBrowserFile> _pdfFileUploadRef = default!;
+        protected MudFileUpload<IBrowserFile> _coverImageFileUploadRef = default!;
 
         protected int MaxPdfFileSizeInMb { get; set; } = 10; // 10 MB
+
+        protected int MaxCoverImageSizeInMb { get; set; } = 2; // 2 MB
 
         protected async override Task OnParametersSetAsync()
         {
@@ -183,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 {
                     if (file.Size > MaxPdfFileSizeInMb * 1024 * 1024)
                     {
-                        Snackbar.Add("File is too large. Max 10MB allowed.", Severity.Warning);
+                        Snackbar.Add($"File is too large. Max {MaxPdfFileSizeInMb} is allowed.", Severity.Warning);
                         return;
                     }
 
@@ -200,8 +203,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                             File = uploadedImageBase64
                         };
 
-                        var uploadedFileReponse =  await FileUploadAsync(fileUploadData);
-                        if(uploadedFileReponse.IsSuccess)
+                        var uploadedFileReponse = await FileUploadAsync(fileUploadData);
+                        if (uploadedFileReponse.IsSuccess)
                         {
                             adPostModel.FlyerFileName = uploadedFileReponse.FileName;
                             adPostModel.FlyerFileUrl = uploadedFileReponse.FileUrl;
@@ -255,6 +258,60 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 Logger.LogError(ex, "FileUploadAsync");
                 return new();
             }
+        }
+
+
+        protected async Task HandleImageFileChanged(InputFileChangeEventArgs e)
+        {
+            try
+            {
+                var file = e.File;
+                if (file != null)
+                {
+                    if (file.Size > MaxCoverImageSizeInMb * 1024 * 1024)
+                    {
+                        Snackbar.Add($"Image size is too large. Max {MaxCoverImageSizeInMb} is allowed.", Severity.Warning);
+                        return;
+                    }
+
+                    using var stream = file.OpenReadStream(MaxCoverImageSizeInMb * 1024 * 1024);
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    var base64 = Convert.ToBase64String(memoryStream.ToArray());
+                    var uploadedImageBase64 = $"data:{file.ContentType};base64,{base64}";
+                    if (!string.IsNullOrWhiteSpace(uploadedImageBase64))
+                    {
+                        var fileUploadData = new FileUploadModel
+                        {
+                            Container = ClassifiedsBlobContainerName,
+                            File = uploadedImageBase64
+                        };
+
+                        var uploadedFileReponse = await FileUploadAsync(fileUploadData);
+                        if (uploadedFileReponse.IsSuccess)
+                        {
+                            adPostModel.ImageUrl = uploadedFileReponse.FileUrl;
+                            Snackbar.Add("Cover Image uploaded successfully", Severity.Success);
+                        }
+                        else
+                        {
+                            Snackbar.Add("Failed to upload Cover Image", Severity.Error);
+                        }
+                    }
+                    _coverImageFileUploadRef?.ResetValidation();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "HandleImageFileChanged");
+            }
+        }
+
+        protected Task RemoveImage()
+        {
+            adPostModel.ImageUrl = string.Empty;
+            _coverImageFileUploadRef?.ResetValidation();
+            return Task.CompletedTask;
         }
     }
 }
