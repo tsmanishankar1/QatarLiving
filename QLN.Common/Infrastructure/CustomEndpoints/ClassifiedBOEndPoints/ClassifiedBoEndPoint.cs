@@ -3062,8 +3062,8 @@ CancellationToken ct
             group.MapGet("/get-process-stores-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
-        string CompanyId,
-        int SubscriptionId,
+        string? CompanyId,
+        string? SubscriptionId,
         IClassifiedBoLandingService service,
         HttpContext context,
         CancellationToken cancellationToken
@@ -3108,8 +3108,8 @@ CancellationToken ct
     })
 .WithName("GetProcessStoresXML")
 .WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
@@ -3118,8 +3118,8 @@ CancellationToken ct
             group.MapGet("/get-process-store-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
-        string CompanyId,
-        int SubscriptionId,
+        string? CompanyId,
+        string? SubscriptionId,
         string UserName,
         IClassifiedBoLandingService service,
         HttpContext context,
@@ -3145,11 +3145,11 @@ CancellationToken ct
 .ExcludeFromDescription()
 .WithName("GetProcessStoreXML")
 .WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
+.Produces(StatusCodes.Status403Forbidden) 
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
