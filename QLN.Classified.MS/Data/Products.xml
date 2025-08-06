@@ -1,27 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Products xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="products.xsd">
+<StoreFlyer>
+  <SubscriptionId>"6b29fc40-ca47-1067-b31d-00dd010662da"</SubscriptionId>
+  <CompanyId>3d6f0a98-8c5c-4f3d-9f79-15b1bcd32f64</CompanyId>
+  <FlyerId>c1f4c3b6-75d0-4bdf-8db7-4fe6d21b912e</FlyerId>
+  <Products>
+    <Product>
+      <ProductName>Wireless Mouse</ProductName>
+      <ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Computer-mouse-icon.svg/1024px-Computer-mouse-icon.svg.png</ProductLogo>
+      <ProductPrice>29.99</ProductPrice>
+      <Currency>USD</Currency>
+      <ProductSummary>Ergonomic wireless mouse</ProductSummary>
+      <ProductDescription>This wireless mouse is designed for comfort and precision.</ProductDescription>
+      <PageNumber>1</PageNumber>
+      <PageCoordinates>150,300</PageCoordinates>
+      <Images>
+        <ProductImage>https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04</ProductImage>
+        <ProductImage>https://images.unsplash.com/photo-1626370291579-3c07c89e1c59</ProductImage>
+      </Images>
+      <Features>
+        <Feature>2.4 GHz Wireless</Feature>
+        <Feature>Ergonomic Design</Feature>
+        <Feature>Battery Included</Feature>
+      </Features>
+    </Product>
 
-	<Product>
-		<ProductName>Smartphone X10</ProductName>
-		<ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/IPhone_X_vector.svg/512px-IPhone_X_vector.svg.png</ProductLogo>
-		<ProductPrice>699.99</ProductPrice>
-		<Currency>USD</Currency>
-		<ProductDetails>
-			<ProductName>Smartphone X10</ProductName>
-			<ProductSummary>Flagship smartphone with AI camera</ProductSummary>
-			<ProductDescription>High-resolution OLED screen, 128GB storage, 5G support</ProductDescription>
-			<Images>
-				<ProductImage>https://images.unsplash.com/photo-1511707171634-5f897ff02aa9</ProductImage>
-				<ProductImage>https://images.unsplash.com/photo-1510552776732-03e61cf4b144</ProductImage>
-			</Images>
-			<Features>
-				<Feature>Waterproof</Feature>
-				<Feature>Face Recognition</Feature>
-				<Feature>Fast Charging</Feature>
-			</Features>
-		</ProductDetails>
-	</Product>
-
-
-</Products>
+    <Product>
+      <ProductName>Gaming Keyboard</ProductName>
+      <ProductLogo>https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Keyboard_icon.svg/1024px-Keyboard_icon.svg.png</ProductLogo>
+      <ProductPrice>59.95</ProductPrice>
+      <Currency>USD</Currency>
+      <ProductSummary>RGB mechanical keyboard</ProductSummary>
+      <ProductDescription>Perfect for gaming and typing with RGB lighting and tactile feedback.</ProductDescription>
+      <PageNumber>2</PageNumber>
+      <Images>
+        <ProductImage>https://images.unsplash.com/photo-1587202372775-98963c7b0ec1</ProductImage>
+        <ProductImage>https://images.unsplash.com/photo-1600180758890-6dfd87c5a9e5</ProductImage>
+      </Images>
+      <Features>
+        <Feature>RGB Lighting</Feature>
+        <Feature>Blue Switches</Feature>
+      </Features>
+    </Product>
+  </Products>
+</StoreFlyer>

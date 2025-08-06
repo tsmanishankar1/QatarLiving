@@ -2228,7 +2228,9 @@ CancellationToken ct
             {
                 try
                 {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,Page,PageSize,Search,cancellationToken);
+                    int page = Page ?? 1;
+                    int pageSize = PageSize ?? 12;
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate, page, pageSize, Search,cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -2479,13 +2481,34 @@ CancellationToken ct
          ) =>
             {
                 try
+                {      
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
                 {
-                    
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+         .ExcludeFromDescription()
+         .WithName("EditStoreSubscriptions")
+         .WithTags("ClassifiedBo")
+         .WithSummary("Edit subscriptions on stores.")
+         .WithDescription("Edit the status information of stores subscriptions.")
+         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
-               ClassifiedsPreloved dto,
-               IClassifiedService service,
-               CancellationToken token) =>
+             ClassifiedsPreloved dto,
+             IClassifiedService service,
+             CancellationToken token) =>
             {
                 try
                 {
@@ -2548,36 +2571,14 @@ CancellationToken ct
                     );
                 }
             })
-               .WithName("AdminPostPrelovedAdById")
-               .WithTags("ClassifiedBo")
-               .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
-               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
-               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-         .ExcludeFromDescription()
-         .WithName("EditStoreSubscriptions")
-         .WithTags("ClassifiedBo")
-         .WithSummary("Edit subscriptions on stores.")
-         .WithDescription("Edit the status information of stores subscriptions.")
-         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+             .WithName("AdminPostPrelovedAdById")
+             .WithTags("ClassifiedBo")
+             .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+             .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+             .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 ClassifiedsCollectibles dto,

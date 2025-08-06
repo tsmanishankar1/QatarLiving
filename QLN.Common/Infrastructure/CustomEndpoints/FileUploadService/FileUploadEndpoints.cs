@@ -39,7 +39,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
                     "services-images",
                     "content-images",
                     "banner-assets",
-                    "company-assets"
+                    "company-assets",
+                    "classifieds-stores"
 
                 };
 
@@ -54,7 +55,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
                 }
 
                 var (imgExt, base64Image) = Base64Helper.ParseBase64(request.Base64);
-                string tenDigitGuid1 = Guid.NewGuid().ToString("N").Substring(0, 10);
+                string tenDigitGuid1 = Guid.NewGuid().ToString();
                 var customName = $"{tenDigitGuid1}.{imgExt}";
 
                 try
