@@ -32,17 +32,6 @@ namespace QLN.Common.DTO_s
         MNC = 3,
         Government = 4
     }
-    public enum CompanyStatus
-    {
-        Active = 1,
-        Blocked = 2,
-        Suspended = 3,
-        Unblocked = 4,
-        PendingLicenseApproval = 5,
-        NeedChanges =6,
-        Rejected = 7,
-        Pending = 8,
-    }
     public enum SubVertical
     {
         Items = 1,
