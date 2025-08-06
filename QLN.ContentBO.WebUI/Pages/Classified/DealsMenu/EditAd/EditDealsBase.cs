@@ -108,7 +108,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             try
             {
                 IsBtnDisabled = true;
-                var response = await ClassifiedService.UpdateDealsAsync("classifieds", adPostModel);
+                var response = await ClassifiedService.UpdateDealsAsync(adPostModel);
                 if (response != null && response.IsSuccessStatusCode)
                 {
                     await LoadDealAdData(adPostModel.Id);
@@ -173,7 +173,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                                     .Where(x => !string.IsNullOrWhiteSpace(x))
                                     .ToList() ?? [];
         }
-
 
         protected async Task HandlePdfFileChanged(InputFileChangeEventArgs e)
         {

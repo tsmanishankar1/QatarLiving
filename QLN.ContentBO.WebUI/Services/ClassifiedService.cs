@@ -800,7 +800,7 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> UpdateDealsAsync(string vertical, object payload)
+        public async Task<HttpResponseMessage?> UpdateDealsAsync(object payload)
         {
             try
             {
