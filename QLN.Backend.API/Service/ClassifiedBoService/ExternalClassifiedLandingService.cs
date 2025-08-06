@@ -1780,7 +1780,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
        
-        public async Task<string> GetProcessStoresXML(string Url, string CompanyId, int SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
         {
             try
             {

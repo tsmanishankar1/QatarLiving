@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250806085959_StoreFlyer_AddNull")]
+    partial class StoreFlyer_AddNull
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -401,7 +404,6 @@ namespace QLN.Common.Migrations
                     b.ToTable("Item");
                 });
 
-          
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>
                 {
                     b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")
@@ -435,8 +437,6 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreFlyer");
                 });
 
-           
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Navigation("Products");
@@ -448,8 +448,6 @@ namespace QLN.Common.Migrations
 
                     b.Navigation("Images");
                 });
-
-            
 #pragma warning restore 612, 618
         }
     }
