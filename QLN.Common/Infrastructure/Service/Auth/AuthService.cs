@@ -1068,6 +1068,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         throw new RegistrationValidationException(errors);
                     }
 
+                    bool isCompany = false;
+                    bool hasSubscription = false;
+
                     var roles = new List<string>
                     {
                         "User",
@@ -1075,6 +1078,23 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     if(drupalUser.Roles != null)
                     {
+                        // Check if this user has a subscription
+                        isCompany = drupalUser.Roles.Contains("business_account");
+                        if(isCompany)
+                        {
+                            hasSubscription = drupalUser.Roles.Contains("subscription");
+                            if (hasSubscription)
+                            {
+                                if(drupalUser.Subscription != null && long.TryParse(drupalUser.Subscription.ExpireDate, out var subsExpiry))
+                                {
+                                    var expiryDate = EpochTime.DateTime(subsExpiry);
+                                    if (expiryDate < DateTime.UtcNow)
+                                    {
+                                        hasSubscription = false;
+                                    }
+                                }
+                            }
+                        }
                         roles.AddRange(drupalUser.Roles);
                     }
 
@@ -1085,6 +1105,16 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     }
 
                     await _userManager.AddToRolesAsync(user, roles);
+
+                    if(isCompany)
+                    {
+                        // go off and create a company then save the company GUID to the user
+                    }
+
+                    if(hasSubscription)
+                    {
+                        // go off and create a subscription with the same information in it then save the subscription GUID to the user
+                    }
                 }
 
                 // Generate tokens for existing or newly created user
