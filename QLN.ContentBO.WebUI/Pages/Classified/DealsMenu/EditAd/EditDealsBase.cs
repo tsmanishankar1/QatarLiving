@@ -140,22 +140,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             _pdfFileUploadRef?.ResetValidation();
         }
 
-        protected async Task OnCrFileSelected(IBrowserFile file)
-        {
-            if (file.Size > 10 * 1024 * 1024)
-            {
-                Snackbar.Add("File too large. Max 10MB allowed.", Severity.Warning);
-                return;
-            }
-
-            using var stream = file.OpenReadStream();
-            using var ms = new MemoryStream();
-            await stream.CopyToAsync(ms);
-
-            adPostModel.FlyerFileName = file.Name;
-            adPostModel.FlyerFileUrl = Convert.ToBase64String(ms.ToArray());
-        }
-
         protected Task OnPhoneCountryChanged(CountryModel model)
         {
             SelectedPhoneCountry = model;
