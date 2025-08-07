@@ -10,11 +10,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.QLDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration
-    .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../QLN.Backend.API"))
-    .AddJsonFile("appsettings.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: false);
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts => {
@@ -46,14 +41,15 @@ builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
-var basePath = Path.Combine(Directory.GetCurrentDirectory());
-
+#region DbContext
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
-
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
+
+#endregion
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

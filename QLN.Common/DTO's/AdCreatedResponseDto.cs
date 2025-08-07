@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class AdCreatedResponseDto
     {
-        public Guid AdId { get; set; }
+        public long AdId { get; set; }
         public string Title { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string Message { get; set; }

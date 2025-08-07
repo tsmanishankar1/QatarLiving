@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s.Classified
 {
@@ -16,15 +17,15 @@ namespace QLN.Common.DTO_s.Classified
 
         public string? PriceType { get; set; }
 
-        public string? CategoryId { get; set; }
+        public  long? CategoryId { get; set; }
 
         public string? Category { get; set; }
 
-        public string? L1CategoryId { get; set; }
+        public long? L1CategoryId { get; set; }
 
         public string? L1Category { get; set; }
 
-        public string? L2CategoryId { get; set; }
+        public long? L2CategoryId { get; set; }
 
         public string? L2Category { get; set; }
         public string? Brand { get; set; }
@@ -62,6 +63,7 @@ namespace QLN.Common.DTO_s.Classified
 
         public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
 
+        [JsonPropertyName("attributes")]
         public Dictionary<string, string>? Attributes { get; set; }
     }
 }
