@@ -878,6 +878,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 NodeType = "event",
                 Nid = eventItem.Id.ToString(),
                 DateCreated = eventItem.CreatedAt.ToString("o"),
+                Description = eventItem.EventDescription,
                 ImageUrl = eventItem.CoverImage,
                 UserName = eventItem.CreatedBy,
                 Title = eventItem.EventTitle,

@@ -36,6 +36,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -140,6 +141,8 @@ builder.Services.AddDbContext<QLApplicationContext>(options =>
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -248,6 +251,7 @@ builder.Services.DrupalAuthConfiguration(builder.Configuration);
 builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
+builder.Services.ProductsConfiguration(builder.Configuration);
 
 builder.Services.ServicesBo(builder.Configuration);
 
@@ -344,6 +348,9 @@ ClassifiedBo.MapClassifiedboEndpoints()
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+
+var Product = app.MapGroup("/api/products");
+Product.MapProductEndpoints();
 
 app.MapGet("/testauth", (HttpContext context) =>
 {
