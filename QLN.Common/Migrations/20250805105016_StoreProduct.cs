@@ -1,29 +1,31 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.QLClassified
 {
     /// <inheritdoc />
-    public partial class StoreProducts : Migration
+    public partial class StoreProduct : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+           
+
             migrationBuilder.CreateTable(
                 name: "StoreProduct",
                 columns: table => new
                 {
                     StoreProductId = table.Column<Guid>(type: "uuid", nullable: false),
-                    CompanyId = table.Column<Guid>(type: "uuid", nullable: false),
-                    SubscriptionId = table.Column<int>(type: "integer", nullable: false),
                     ProductName = table.Column<string>(type: "text", nullable: false),
                     ProductLogo = table.Column<string>(type: "text", nullable: false),
                     ProductPrice = table.Column<decimal>(type: "numeric", nullable: false),
                     Currency = table.Column<string>(type: "text", nullable: false),
                     ProductSummary = table.Column<string>(type: "text", nullable: false),
-                    ProductDescription = table.Column<string>(type: "text", nullable: false)
+                    ProductDescription = table.Column<string>(type: "text", nullable: false),
+                    PageNumber = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -36,11 +38,6 @@ namespace QLN.Common.Migrations
                 {
                     ProductFeaturesId = table.Column<Guid>(type: "uuid", nullable: false),
                     Features = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedUser = table.Column<string>(type: "text", nullable: false),
-                    UpdatedUser = table.Column<string>(type: "text", nullable: false),
                     StoreProductId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -60,11 +57,6 @@ namespace QLN.Common.Migrations
                 {
                     ProductImagesId = table.Column<Guid>(type: "uuid", nullable: false),
                     Images = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    CreatedUser = table.Column<string>(type: "text", nullable: false),
-                    UpdatedUser = table.Column<string>(type: "text", nullable: false),
                     StoreProductId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
@@ -72,6 +64,28 @@ namespace QLN.Common.Migrations
                     table.PrimaryKey("PK_ProductImage", x => x.ProductImagesId);
                     table.ForeignKey(
                         name: "FK_ProductImage_StoreProduct_StoreProductId",
+                        column: x => x.StoreProductId,
+                        principalTable: "StoreProduct",
+                        principalColumn: "StoreProductId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductPageCoordinate",
+                columns: table => new
+                {
+                    PageCoordinatesId = table.Column<Guid>(type: "uuid", nullable: false),
+                    StartPixHorizontal = table.Column<int>(type: "integer", nullable: true),
+                    StartPixVertical = table.Column<int>(type: "integer", nullable: true),
+                    Height = table.Column<int>(type: "integer", nullable: true),
+                    Width = table.Column<int>(type: "integer", nullable: true),
+                    StoreProductId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductPageCoordinate", x => x.PageCoordinatesId);
+                    table.ForeignKey(
+                        name: "FK_ProductPageCoordinate_StoreProduct_StoreProductId",
                         column: x => x.StoreProductId,
                         principalTable: "StoreProduct",
                         principalColumn: "StoreProductId",
@@ -87,6 +101,12 @@ namespace QLN.Common.Migrations
                 name: "IX_ProductImage_StoreProductId",
                 table: "ProductImage",
                 column: "StoreProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductPageCoordinate_StoreProductId",
+                table: "ProductPageCoordinate",
+                column: "StoreProductId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -99,7 +119,12 @@ namespace QLN.Common.Migrations
                 name: "ProductImage");
 
             migrationBuilder.DropTable(
+                name: "ProductPageCoordinate");
+
+            migrationBuilder.DropTable(
                 name: "StoreProduct");
+
+           
         }
     }
 }

@@ -2228,7 +2228,9 @@ CancellationToken ct
             {
                 try
                 {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,Page,PageSize,Search,cancellationToken);
+                    int page = Page ?? 1;
+                    int pageSize = PageSize ?? 12;
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate, page, pageSize, Search,cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -2479,13 +2481,34 @@ CancellationToken ct
          ) =>
             {
                 try
+                {      
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
                 {
-                    
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+         .ExcludeFromDescription()
+         .WithName("EditStoreSubscriptions")
+         .WithTags("ClassifiedBo")
+         .WithSummary("Edit subscriptions on stores.")
+         .WithDescription("Edit the status information of stores subscriptions.")
+         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
-               ClassifiedsPreloved dto,
-               IClassifiedService service,
-               CancellationToken token) =>
+             ClassifiedsPreloved dto,
+             IClassifiedService service,
+             CancellationToken token) =>
             {
                 try
                 {
@@ -2548,36 +2571,14 @@ CancellationToken ct
                     );
                 }
             })
-               .WithName("AdminPostPrelovedAdById")
-               .WithTags("ClassifiedBo")
-               .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
-               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
-               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-         .ExcludeFromDescription()
-         .WithName("EditStoreSubscriptions")
-         .WithTags("ClassifiedBo")
-         .WithSummary("Edit subscriptions on stores.")
-         .WithDescription("Edit the status information of stores subscriptions.")
-         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+             .WithName("AdminPostPrelovedAdById")
+             .WithTags("ClassifiedBo")
+             .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+             .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+             .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 ClassifiedsCollectibles dto,
@@ -3061,8 +3062,8 @@ CancellationToken ct
             group.MapGet("/get-process-stores-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
-        string CompanyId,
-        int SubscriptionId,
+        string? CompanyId,
+        string? SubscriptionId,
         IClassifiedBoLandingService service,
         HttpContext context,
         CancellationToken cancellationToken
@@ -3107,8 +3108,8 @@ CancellationToken ct
     })
 .WithName("GetProcessStoresXML")
 .WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
@@ -3117,8 +3118,8 @@ CancellationToken ct
             group.MapGet("/get-process-store-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
-        string CompanyId,
-        int SubscriptionId,
+        string? CompanyId,
+        string? SubscriptionId,
         string UserName,
         IClassifiedBoLandingService service,
         HttpContext context,
@@ -3144,11 +3145,11 @@ CancellationToken ct
 .ExcludeFromDescription()
 .WithName("GetProcessStoreXML")
 .WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
+.Produces(StatusCodes.Status403Forbidden) 
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

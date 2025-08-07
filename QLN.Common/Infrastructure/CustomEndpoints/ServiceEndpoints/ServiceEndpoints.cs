@@ -341,7 +341,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
-                catch(ConflictException ex)
+                catch (ConflictException ex)
                 {
                     return TypedResults.Problem(new ProblemDetails
                     {
@@ -414,7 +414,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
-                catch(ConflictException ex)
+                catch (ConflictException ex)
                 {
                     return TypedResults.Problem(new ProblemDetails
                     {
@@ -506,7 +506,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ServicesIndex,request);
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ServicesIndex, request);
                     var allservice = new AllServices
                     {
                         TotalCount = result.TotalCount,
@@ -753,7 +753,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.GetServicesByStatusWithPagination(dto, cancellationToken);
                     return Results.Ok(result);
                 }
-                catch(InvalidDataException ex)
+                catch (InvalidDataException ex)
                 {
                     return Results.Problem(
                         title: "Invalid request",
@@ -875,7 +875,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     return Results.Ok(resultMessage);
                 }
-                catch(KeyNotFoundException ex)
+                catch (KeyNotFoundException ex)
                 {
                     return Results.Problem(
                         detail: ex.Message,
@@ -937,7 +937,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     return Results.Ok(resultMessage);
                 }
-                catch(KeyNotFoundException ex)
+                catch (KeyNotFoundException ex)
                 {
                     return Results.Problem(
                         detail: ex.Message,
@@ -973,7 +973,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapPublishEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/publish", async Task<IResult> (
-                [FromQuery] Guid id, 
+                [FromQuery] Guid id,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -990,21 +990,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     return Results.Ok(result);
                 }
-                catch(ConflictException ex)
+                catch (ConflictException ex)
                 {
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status409Conflict,
                         title: "Conflict");
                 }
-                catch(KeyNotFoundException ex)
+                catch (KeyNotFoundException ex)
                 {
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
                         title: "Invalid Request");
                 }
-                catch(InvalidDataException ex)
+                catch (InvalidDataException ex)
                 {
                     return Results.Problem(
                         detail: ex.Message,
@@ -1045,44 +1045,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     CancellationToken ct
                 ) =>
             {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (uid == null && userName == null)
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+                if (uid == null && userName == null)
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    if (!req.AdIds.Any())
-                        return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                if (!req.AdIds.Any())
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
 
-                    if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
-                        return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+                if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
                 req.UpdatedBy = uid;
-                    try
+                try
+                {
+                    var result = await service.ModerateBulkService(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
                     {
-                        var result = await service.ModerateBulkService(req, ct);
-                        return TypedResults.Ok(result);
-                    }
-                    catch (Exception ex)
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(ex.Message);
-                    }
-                })
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
                 .WithName("BulkModerateServices")
                 .WithTags("Service")
                 .WithSummary("Bulk moderate service ads")
@@ -1092,6 +1110,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
                Ok<List<ServicesModel>>,
@@ -1118,6 +1137,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.ModerateBulkService(req, ct);
                     return TypedResults.Ok(result);
                 }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(ex.Message);
@@ -1133,6 +1170,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<string>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
