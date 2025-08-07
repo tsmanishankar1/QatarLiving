@@ -20,7 +20,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Inject]
         public ISnackbar Snackbar { get; set; }
         [Parameter]
-        public string Title { get; set; } = "Add Seasonal Pick";
+        public string Title { get; set; } = "Edit Seasonal Pick";
+        [Parameter]
+        public Guid CategoryId { get; set; }
         protected DateRange? dateRange
         {
             get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;

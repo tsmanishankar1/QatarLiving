@@ -10,6 +10,7 @@ using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
 using System.Text.Json;
 using System.Net;
 using DocumentFormat.OpenXml.EMMA;
+using Nextended.Core.Extensions;
 
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
@@ -22,6 +23,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback OnCommentDialogClose { get; set; }
+        [Inject] public IClassifiedService ClassifiedService { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
         protected List<LocationZoneDto> Zones { get; set; } = new();
@@ -78,6 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     latitude = (double)selectedService.Lattitude;
                     Longitude = (double)selectedService.Longitude;
                     _shouldUpdateMap = true;
+                     await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
                 var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
@@ -339,27 +342,27 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 {
                     selectedService.PhotoUpload = await UploadImagesAsync(selectedService.PhotoUpload);
                 }
-                 if (IsBase64String(selectedService?.LicenseCertificate))
+                if (IsBase64String(selectedService?.LicenseCertificate))
                 {
                     string? certificateUrl = await UploadCertificateAsync();
                     selectedService.LicenseCertificate = certificateUrl;
                 }
                 var response = await _serviceService.UpdateService(selectedService);
                 if (response != null && response.IsSuccessStatusCode)
-                    {
-                        await ShowSuccessModal("Service Ad Updated Successfully");
-                        await JS.InvokeVoidAsync("resetLeafletMap");
-                        await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
-                        var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
-                    }
-                    else if (response.StatusCode == HttpStatusCode.Unauthorized)
-                    {
-                        Snackbar.Add("You are unauthorized to perform this action");
-                    }
-                    else if (response.StatusCode == HttpStatusCode.InternalServerError)
-                    {
-                        Snackbar.Add("Internal API Error");
-                    }
+                {
+                    await ShowSuccessModal("Service Ad Updated Successfully");
+                    await JS.InvokeVoidAsync("resetLeafletMap");
+                    await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
+                    var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+                }
+                else if (response.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    Snackbar.Add("You are unauthorized to perform this action");
+                }
+                else if (response.StatusCode == HttpStatusCode.InternalServerError)
+                {
+                    Snackbar.Add("Internal API Error");
+                }
             }
             catch (Exception ex)
             {
@@ -522,5 +525,90 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
 
             return null;
         }
+        protected async Task OnZoneChanged(string zoneId)
+        {
+            var isChanged = selectedService.ZoneId != zoneId;
+            selectedService.ZoneId = zoneId;
+
+            if (isChanged)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+
+        protected async Task OnStreetNumberChanged(string? street)
+        {
+            var changed = selectedService.StreetNumber != street;
+            selectedService.StreetNumber = street;
+
+            if (!string.IsNullOrEmpty(selectedService.ZoneId) && changed)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+
+        protected async Task OnBuildingNumberChanged(string? building)
+        {
+            var changed = selectedService.BuildingNumber != building;
+            selectedService.BuildingNumber = building;
+
+            if (!string.IsNullOrEmpty(selectedService.ZoneId) && changed)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+        protected async Task TrySetCoordinatesFromAddressAsync()
+        {
+            // Ensure all required fields are available
+            if (string.IsNullOrWhiteSpace(selectedService.ZoneId) ||
+                string.IsNullOrWhiteSpace(selectedService.StreetNumber) ||
+                string.IsNullOrWhiteSpace(selectedService.BuildingNumber))
+            {
+                return;
+            }
+
+            try
+            {
+                var zone = int.TryParse(selectedService.ZoneId, out var zoneInt) ? zoneInt : 0;
+                if (zoneInt == 0) return;
+
+                HttpResponseMessage? response = null;
+
+                if (int.TryParse(selectedService.StreetNumber, out int streetNumber) &&
+                    int.TryParse(selectedService.BuildingNumber, out int buildingNumber))
+                {
+                    response = await ClassifiedService.GetAddressByDetailsAsync(
+                        zone: zoneInt,
+                        street: streetNumber,
+                        building: buildingNumber,
+                        location: ""
+                    );
+                }
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var coords = await response.Content.ReadFromJsonAsync<List<string>>();
+
+                    if (coords is { Count: 2 } &&
+                        double.TryParse(coords[0], out var latitude) &&
+                        double.TryParse(coords[1], out var longitude))
+                    {
+                        selectedService.Lattitude = (decimal)latitude;
+                        selectedService.Longitude = (decimal)longitude;
+
+                        await JS.InvokeVoidAsync("updateMapCoordinates", latitude, longitude);
+                    }
+                }
+                else
+                {
+                    Logger?.LogWarning("Failed to fetch coordinates from API.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "Error fetching coordinates from address.");
+            }
+        }
+
     }
 }

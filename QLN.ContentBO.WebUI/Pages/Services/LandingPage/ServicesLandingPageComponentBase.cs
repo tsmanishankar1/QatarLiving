@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Pages.Services.Modal;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
@@ -63,6 +64,57 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                 shouldInitializeSortable = false;
             }
         }
+        protected string GetCurrentTabAddButtonText()
+    {
+        return ItemType switch
+        {
+            ServiceLandingPageItemType.FeaturedCategory => "Featured Category",
+            ServiceLandingPageItemType.SeasonalPick => "Seasonal Pick",
+            ServiceLandingPageItemType.FeaturedStore => "Featured Store",
+            _ => "Item"
+        };
+    }
+
+        protected async Task NavigateToAddItem()
+        {
+            var title = $"Add {GetCurrentTabAddButtonText()}";
+            var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true
+            };
+            IDialogReference dialog;
+            if (ItemType == ServiceLandingPageItemType.FeaturedCategory)
+            {
+                 var parameters = new DialogParameters
+                {
+                    { nameof(ServicesEditFeaturedCategoryModalBase.Title), title },
+                    // { nameof(ServicesEditFeaturedCategoryModalBase.CategoryId), title },
+                };
+                dialog = await DialogService.ShowAsync<ServicesEditFeaturedCategoryModel>("", parameters, options);
+            }
+            else if (ItemType == ServiceLandingPageItemType.SeasonalPick)
+            {
+                  var parameters = new DialogParameters
+                {
+                    { nameof(ServicesEditSeasonPickModalBase.Title), title },
+                    // { nameof(ServicesEditSeasonPickModalBase.CategoryId), title },
+                };
+                dialog = await DialogService.ShowAsync<ServicesEditSeasonalPickModel>("", parameters, options);
+            }
+            else
+            {
+                return;
+            }
+            var result = await dialog.Result;
+            // if (!result.Canceled)
+            // {
+            //     await LoadDataForCurrentTab();
+            //     await LoadAllFeaturedCategory();
+            //     await LoadAllSeasonalPicks();
+            //     StateHasChanged();
+            // }
+        }
+
 
         [JSInvokable]
         public async Task OnTableReordered(List<string> newOrder)

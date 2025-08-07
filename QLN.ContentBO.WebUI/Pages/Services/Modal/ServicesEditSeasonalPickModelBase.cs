@@ -20,7 +20,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Inject]
         public ISnackbar Snackbar { get; set; }
         [Parameter]
-        public string Title { get; set; } = "Add Seasonal Pick";
+        public string Title { get; set; } = "Edit Seasonal Pick";
+        [Parameter]
+        public Guid CategoryId { get; set; }
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();

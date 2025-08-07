@@ -142,7 +142,8 @@
 
         <MudSelect T="string"
            Label="Zone"
-           @bind-Value="selectedService.ZoneId"
+           Value="selectedService.ZoneId"
+           ValueChanged="@OnZoneChanged"
            For="@(() => selectedService.ZoneId)"
            Variant="Variant.Outlined"
            Class="white-bg"
@@ -154,11 +155,17 @@
 </MudSelect>
 
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Street Number"
-                      @bind-Value="Ad.StreetNumber" For="@(() => Ad.StreetNumber)" FullWidth="true" />
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Street Number"
+                    Value="@selectedService.StreetNumber"
+                    ValueChanged="@OnStreetNumberChanged"
+                    Immediate="true"
+                    For="@(() => selectedService.StreetNumber)" FullWidth="true" />
 
-        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="int?" Label="Building Number"
-                      @bind-Value="Ad.BuildingNumber" For="@(() => Ad.BuildingNumber)" FullWidth="true" />
+        <MudTextField Class="white-bg" Variant="Variant.Outlined" T="string" Label="Building Number"
+                    Value="@selectedService.BuildingNumber"
+                    ValueChanged="@OnBuildingNumberChanged"
+                    Immediate="true"
+                    For="@(() => selectedService.BuildingNumber)" FullWidth="true" />
 
         <div id="map" style="height: 300px; width: 100%;"></div>
 
