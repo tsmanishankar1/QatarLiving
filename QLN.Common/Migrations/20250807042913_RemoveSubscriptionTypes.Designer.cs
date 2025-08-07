@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250805125615_Items")]
-    partial class Items
+    [Migration("20250807042913_RemoveSubscriptionTypes")]
+    partial class RemoveSubscriptionTypes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,29 +33,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Features")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("ProductFeaturesId");
 
@@ -70,29 +53,12 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Images")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("ProductImagesId");
 
@@ -101,25 +67,44 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.ToTable("ProductImage");
                 });
 
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
+                {
+                    b.Property<Guid>("StoreFlyersId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FlyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("StoreFlyersId");
+
+                    b.ToTable("StoreFlyer");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
                 {
                     b.Property<Guid>("StoreProductId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid>("FlyerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PageCoordinates")
+                        .HasColumnType("text");
+
+                    b.Property<int>("PageNumber")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ProductDescription")
                         .IsRequired()
@@ -140,20 +125,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("Status")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("SubscriptionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedUser")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("StoreProductId");
+
+                    b.HasIndex("FlyerId");
 
                     b.ToTable("StoreProduct");
                 });
@@ -228,23 +202,6 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.HasKey("OrderId");
 
                     b.ToTable("StoresSubscriptions");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.SubscriptionTypes", b =>
-                {
-                    b.Property<int>("SubscriptionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SubscriptionId"));
-
-                    b.Property<string>("SubscriptionType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("SubscriptionId");
-
-                    b.ToTable("SubscriptionType");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
@@ -450,6 +407,22 @@ namespace QLN.Common.Migrations.ClassifiedDev
                         .IsRequired();
 
                     b.Navigation("StoreProduct");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
+                {
+                    b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", "StoreFlyer")
+                        .WithMany("Products")
+                        .HasForeignKey("FlyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StoreFlyer");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
+                {
+                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>

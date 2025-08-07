@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250806124003_ItemsPrelovedCollectiblesTable_v1")]
+    partial class ItemsPrelovedCollectiblesTable_v1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,12 +33,29 @@ namespace QLN.Common.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Features")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("ProductFeaturesId");
 
@@ -50,12 +70,29 @@ namespace QLN.Common.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Images")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("StoreProductId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("ProductImagesId");
 
@@ -64,44 +101,25 @@ namespace QLN.Common.Migrations
                     b.ToTable("ProductImage");
                 });
 
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
-                {
-                    b.Property<Guid>("StoreFlyersId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CompanyId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("FlyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("SubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("StoreFlyersId");
-
-                    b.ToTable("StoreFlyer");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
                 {
                     b.Property<Guid>("StoreProductId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Currency")
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedUser")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("FlyerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PageCoordinates")
+                    b.Property<string>("Currency")
+                        .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("PageNumber")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ProductDescription")
                         .IsRequired()
@@ -122,9 +140,20 @@ namespace QLN.Common.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("StoreProductId");
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
 
-                    b.HasIndex("FlyerId");
+                    b.Property<int>("SubscriptionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedUser")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("StoreProductId");
 
                     b.ToTable("StoreProduct");
                 });
@@ -199,6 +228,220 @@ namespace QLN.Common.Migrations
                     b.HasKey("OrderId");
 
                     b.ToTable("StoresSubscriptions");
+                });
+
+            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.SubscriptionTypes", b =>
+                {
+                    b.Property<int>("SubscriptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SubscriptionId"));
+
+                    b.Property<string>("SubscriptionType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("SubscriptionId");
+
+                    b.ToTable("SubscriptionType");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Collectibles", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AdType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Attributes")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("AuthenticityCertificateName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AuthenticityCertificateUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Brand")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("BuildingNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long?>("CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Condition")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ContactNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ContactNumberCountryCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FeaturedExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasAuthenticityCertificate")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("HasWarranty")
+                        .HasColumnType("boolean");
+
+                    b.Property<List<ImageInfo>>("Images")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsHandmade")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPromoted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("L1Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long?>("L1CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("L2Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long?>("L2CategoryId")
+                        .HasColumnType("bigint");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<double?>("Price")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("PriceType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("PromotedExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PublishedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StreetNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("SubscriptionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("WhatsAppNumber")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("WhatsappNumberCountryCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("YearOrEra")
+                        .HasColumnType("text");
+
+                    b.Property<string>("zone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Collectible");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
@@ -600,22 +843,6 @@ namespace QLN.Common.Migrations
                         .IsRequired();
 
                     b.Navigation("StoreProduct");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
-                {
-                    b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", "StoreFlyer")
-                        .WithMany("Products")
-                        .HasForeignKey("FlyerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StoreFlyer");
-                });
-
-            modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
-                {
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", b =>
