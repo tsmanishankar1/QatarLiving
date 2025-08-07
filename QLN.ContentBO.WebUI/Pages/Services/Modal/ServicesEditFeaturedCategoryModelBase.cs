@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
@@ -9,7 +9,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 {
-    public class ServicesAddFeaturedCategoryModalBase : QLComponentBase
+    public class ServicesEditFeaturedCategoryModalBase : QLComponentBase
     {
         [CascadingParameter]
         public IMudDialogInstance MudDialog { get; set; }
@@ -20,7 +20,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Inject]
         public ISnackbar Snackbar { get; set; }
         [Parameter]
-        public string Title { get; set; } = "Add Seasonal Pick";
+        public string Title { get; set; } = "Edit Seasonal Pick";
+        [Parameter]
+        public Guid CategoryId { get; set; }
         protected DateRange? dateRange
         {
             get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
@@ -34,29 +36,45 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected List<CategoryTreeNode> _categoryTree = new();
         protected List<CategoryTreeNode> _subcategories = new();
         protected List<L1Category> _selectedL1Categories = new();
+        protected List<CategoryTreeNode> _sections = new();
         protected bool IsLoadingCategories { get; set; } = true;
         protected string? featuredCategoryTitle;
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
         protected string SelectedCategory { get; set; } = string.Empty;
         protected string SelectedSubcategory { get; set; } = string.Empty;
+
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
+
         protected ElementReference fileInput;
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
+
         protected DateTime? StartDate { get; set; } = DateTime.Today;
         protected DateTime? EndDate { get; set; } = DateTime.Today;
+
         protected bool IsSubmitting { get; set; } = false;
-        protected override async Task OnInitializedAsync()
+
+        protected override async Task OnParametersSetAsync()
         {
             try
             {
                 if (CategoryTrees == null || !CategoryTrees.Any())
                     await LoadCategoryTreesAsync();
+
+                if (!string.IsNullOrEmpty(SelectedCategoryId))
+                {
+                    var selectedCategory = CategoryTrees?.FirstOrDefault(c => c.Id.ToString() == SelectedCategoryId);
+                    _selectedL1Categories = selectedCategory?.L1Categories ?? new List<L1Category>();
+                    if (!_selectedL1Categories.Any(sc => sc.Id.ToString() == SelectedSubcategoryId))
+                    {
+                        SelectedSubcategoryId = null;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Logger.LogError(ex, "OnParametersSetAsync");
             }
             finally
             {
@@ -70,11 +88,13 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             SelectedCategory = selected?.Category;
             _selectedL1Categories = selected?.L1Categories ?? new();
         }
+
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
             SelectedSubcategoryId = subcategoryId;
             var sub = _subcategories.FirstOrDefault(c => c.Id == subcategoryId);
             SelectedSubcategory = sub?.Name ?? string.Empty;
+            _sections = sub?.Children ?? new();
         }
         private async Task LoadCategoryTreesAsync()
         {
@@ -111,6 +131,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 && EndDate.HasValue
                 && !string.IsNullOrEmpty(ImagePreviewUrl);
         }
+
         protected void Close() => MudDialog.Cancel();
         protected async Task SaveAsync()
         {
