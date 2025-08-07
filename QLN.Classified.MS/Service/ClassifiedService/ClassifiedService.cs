@@ -1014,8 +1014,16 @@ namespace QLN.Classified.MS.Service
                     _ => throw new ArgumentException($"Unsupported vertical: {vertical}")
                 };
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
+                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new List<string>();
                 var result = new List<CategoryTreeDto>();
+
+
+                if (!index.Any())
+                {
+                    _logger.LogInformation("No category index found for vertical: {Vertical}", vertical);
+                    return new List<CategoryTreeDto>();
+                }
+
 
                 foreach (var key in index)
                 {

@@ -2504,43 +2504,7 @@ CancellationToken ct
               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPut("/edit-store-subscriptions", async Task<Results<
-         Ok<string>,
-         BadRequest<ProblemDetails>,
-         ProblemHttpResult>>
-         (
-         IClassifiedBoLandingService service,
-         HttpContext httpContext,
-         int OrderID,
-         string Status,
-         CancellationToken cancellationToken
-         ) =>
-            {
-                try
-                {      
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-         .ExcludeFromDescription()
-         .WithName("EditStoreSubscriptions")
-         .WithTags("ClassifiedBo")
-         .WithSummary("Edit subscriptions on stores.")
-         .WithDescription("Edit the status information of stores subscriptions.")
-         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+          
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
               Preloveds dto,
