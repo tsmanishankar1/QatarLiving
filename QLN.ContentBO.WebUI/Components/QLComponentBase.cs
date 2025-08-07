@@ -27,6 +27,8 @@ namespace QLN.ContentBO.WebUI.Components
         public string EventDetailBaseURL { get; set; } = string.Empty;
         public string PostDetailBaseURL { get; set; } = string.Empty;
 
+        public string ClassifiedsBlobContainerName => NavigationPath.Value.ClassifiedsBlobContainerName;
+
         protected async Task AuthorizedPage()
         {
             try
