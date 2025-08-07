@@ -268,16 +268,14 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = "/api/service/getbystatus";
+                var url = "/api/service/getallwithpagination";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -285,16 +283,14 @@ namespace QLN.Backend.API.Service.Services
                     {
                         PropertyNameCaseInsensitive = true
                     });
-
                     throw new InvalidDataException(problem?.Detail ?? "Unknown error occurred.");
                 }
-
                 var result = await response.Content.ReadFromJsonAsync<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>>(cancellationToken: cancellationToken);
                 return result!;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error retrieving paged services by status");
+                _logger.LogError(ex, "Unexpected error retrieving paged services");
                 throw;
             }
         }

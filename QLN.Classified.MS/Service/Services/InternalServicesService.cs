@@ -635,53 +635,122 @@ namespace QLN.Classified.MS.Service.Services
 
             return "Service Ad soft-deleted successfully.";
         }
-        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetServicesByStatusWithPagination(
-            ServiceStatusQuery dto,
-            CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var query = _dbContext.Services
-                    .Where(s => s.IsActive && s.Status == dto.Status);
+                    .Where(s => s.IsActive);
 
-                if (!string.IsNullOrWhiteSpace(dto.Title))
+                if (!string.IsNullOrWhiteSpace(dto?.Title))
                 {
                     string searchTerm = dto.Title.Trim().ToLower();
                     query = query.Where(s => s.Title.ToLower().Contains(searchTerm));
                 }
+                if (dto?.Filters != null)
+                {
+                    foreach (var filter in dto.Filters)
+                    {
+                        string key = filter.Key.ToLower();
+                        string value = filter.Value.Trim();
 
-                query = dto.SortBy?.ToLower() switch
+                        if (key == "categoryName")
+                        {
+                            query = query.Where(s => s.CategoryName == value);
+                        }
+                        else if (key == "l1categoryName")
+                        {
+                            query = query.Where(s => s.L1CategoryName == value);
+                        }
+                        else if (key == "l2categoryName")
+                        {
+                            query = query.Where(s => s.L2CategoryName == value);
+                        }
+                        else if (key == "price")
+                        {
+                            var parts = value.Split('-', StringSplitOptions.RemoveEmptyEntries);
+
+                            if (parts.Length == 2)
+                            {
+                                bool minParsed = decimal.TryParse(parts[0], out var minPrice);
+                                bool maxParsed = decimal.TryParse(parts[1], out var maxPrice);
+
+                                if (minParsed && maxParsed)
+                                {
+                                    query = query.Where(s => s.Price >= minPrice && s.Price <= maxPrice);
+                                }
+                                else if (minParsed)
+                                {
+                                    query = query.Where(s => s.Price >= minPrice);
+                                }
+                                else if (maxParsed)
+                                {
+                                    query = query.Where(s => s.Price <= maxPrice);
+                                }
+                            }
+                            else if (parts.Length == 1 && decimal.TryParse(parts[0], out var exactPrice))
+                            {
+                                query = query.Where(s => s.Price == exactPrice);
+                            }
+                        }
+                        else if(key == "adType")
+                        {
+                            if (Enum.TryParse<ServiceAdType>(value, true, out var adType))
+                            {
+                                query = query.Where(s => s.AdType == adType);
+                            }
+                        }
+                        else if (key == "status")
+                        {
+                            if (Enum.TryParse<ServiceStatus>(value, true, out var status))
+                            {
+                                query = query.Where(s => s.Status == status);
+                            }
+                        }
+                        else if (key == "location")
+                        {
+                            query = query.Where(s => s.Location.ToLower().Contains(value.ToLower()));
+                        }
+                        else if (key == "createdby")
+                        {
+                            query = query.Where(s => s.CreatedBy == value);
+                        }
+                    }
+                }
+                query = dto?.SortBy?.ToLower() switch
                 {
                     "asc" => query.OrderBy(s => s.CreatedAt),
                     "desc" => query.OrderByDescending(s => s.CreatedAt),
-                    _ => query.OrderByDescending(s => s.CreatedAt) 
+                    _ => query.OrderByDescending(s => s.CreatedAt)
                 };
+                var pageNumber = dto?.PageNumber ?? 1;
+                var perPage = dto?.PerPage ?? 10;
 
                 var totalCount = await query.CountAsync(cancellationToken);
 
-                var skip = (dto.PageNumber - 1) * dto.PerPage;
+                var skip = (pageNumber - 1) * perPage;
 
                 var pagedItems = await query
-                    .Skip((int)skip)
-                    .Take((int)dto.PerPage)
+                    .Skip(skip)
+                    .Take(perPage)
                     .AsNoTracking()
                     .ToListAsync(cancellationToken);
 
                 return new ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>
                 {
                     TotalCount = totalCount,
-                    PageNumber = dto.PageNumber,
-                    PerPage = dto.PerPage,
+                    PageNumber = pageNumber,
+                    PerPage = perPage,
                     Items = pagedItems
                 };
             }
             catch (InvalidDataException ex)
             {
-                throw new InvalidDataException($"Error fetching services by status: {ex.Message}", ex);
+                throw new InvalidDataException($"Error fetching all services: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                throw new Exception("An error occurred while fetching services by status.", ex);
+                throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
         public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, CancellationToken ct)
