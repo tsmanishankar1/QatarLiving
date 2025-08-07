@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class ServiceAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
@@ -42,7 +42,7 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceAdPaymentSummaryDto
     {
-        public Guid AddId { get; set; }
+        public long AddId { get; set; }
         public string? AddTitle { get; set; }
         public string? UserName { get; set; }
         public string? EmailAddress { get; set; }
@@ -59,7 +59,7 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceP2PAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
        public string ProductType { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -85,7 +85,7 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceSubscriptionAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;

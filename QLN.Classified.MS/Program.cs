@@ -51,6 +51,8 @@ builder.Services.AddDbContext<QLClassifiedContext>(options =>
 
 #endregion
 
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(dataSource));
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

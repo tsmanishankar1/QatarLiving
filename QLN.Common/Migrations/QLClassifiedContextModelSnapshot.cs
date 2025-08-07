@@ -386,7 +386,41 @@ namespace QLN.Common.Migrations
                     b.ToTable("Item");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Preloveds", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<List<string>>("Options")
+                        .HasColumnType("text[]");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -613,6 +647,16 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreFlyer");
                 });
 
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.Category", "ParentCategory")
+                        .WithMany("CategoryFields")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentCategory");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
                     b.Navigation("Products");
@@ -623,6 +667,11 @@ namespace QLN.Common.Migrations
                     b.Navigation("Features");
 
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
+                {
+                    b.Navigation("CategoryFields");
                 });
 #pragma warning restore 612, 618
         }
