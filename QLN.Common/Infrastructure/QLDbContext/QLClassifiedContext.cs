@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Model;
 
@@ -12,8 +11,6 @@ namespace QLN.Common.Infrastructure.QLDbContext
             : base(options)
         {
         }
-
-        
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
         //public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
@@ -25,8 +22,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Preloveds> Preloved { get; set; }
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
+        public DbSet<Services> Services { get; set; }
         public DbSet<Category> Categories { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()

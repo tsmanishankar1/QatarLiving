@@ -5,11 +5,11 @@ namespace QLN.Common.DTO_s
     public class ServiceDto
     {
         [Required]
-        public Guid CategoryId { get; set; }
+        public long CategoryId { get; set; }
         [Required]
-        public Guid L1CategoryId { get; set; }
+        public long L1CategoryId { get; set; }
         [Required]
-        public Guid L2CategoryId { get; set; }
+        public long L2CategoryId { get; set; }
         public string? CategoryName { get; set; }
         public string? L1CategoryName { get; set; }
         public string? L2CategoryName { get; set; }
@@ -43,6 +43,9 @@ namespace QLN.Common.DTO_s
         public List<ImageDto>? PhotoUpload { get; set; }
         public ServiceStatus? Status { get; set; }
         public ServiceAdType AdType { get; set; }
+        public string? Availability { get; set; }
+        public string? Duration { get; set; }
+        public string? Reservation { get; set; }
     }
     public class ServiceRequest : ServiceDto
     {

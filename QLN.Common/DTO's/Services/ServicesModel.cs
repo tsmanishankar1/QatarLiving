@@ -53,6 +53,9 @@ namespace QLN.Common.DTO_s
         public DateTime? FeaturedExpiryDate { get; set; }
         public DateTime? LastRefreshedOn { get; set; }
         public ServiceAdType AdType { get; set; }
+        public string? Availability { get; set; }
+        public string? Duration { get; set; }
+        public string? Reservation { get; set; }
         public DateTime? PublishedDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }
@@ -68,7 +71,7 @@ namespace QLN.Common.DTO_s
     }
     public class DeleteServiceRequest
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string? UpdatedBy { get; set; }
     }
     public enum ServiceStatus
@@ -101,17 +104,17 @@ namespace QLN.Common.DTO_s
     }
     public class PromoteServiceRequest
     {
-        public Guid ServiceId { get; set; }
+        public long ServiceId { get; set; }
         public bool IsPromoted { get; set; } 
     }
     public class FeatureServiceRequest
     {
-        public Guid ServiceId { get; set; }
+        public long ServiceId { get; set; }
         public bool IsFeature { get; set; }
     }
     public class RefreshServiceRequest
     {
-        public Guid ServiceId { get; set; }
+        public long ServiceId { get; set; }
         public bool IsRefreshed { get; set; }
     }
     public class ServicesPagedResponse<T>
@@ -123,6 +126,8 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceStatusQuery
     {
+        public string? Title { get; set; }
+        public string? SortBy { get; set; }
         public ServiceStatus? Status { get; set; }
         public int? PageNumber { get; set; }
         public int? PerPage { get; set; } 
@@ -134,7 +139,7 @@ namespace QLN.Common.DTO_s
     }
     public class BulkModerationRequest
     {
-        public List<Guid> AdIds { get; set; } = new();
+        public List<long> AdIds { get; set; } = new();
         public BulkModerationAction Action { get; set; }
         public string? Reason { get; set; }
         [JsonIgnore]

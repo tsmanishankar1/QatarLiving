@@ -4,10 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 
-
 namespace QLN.Common.Infrastructure.Model
 {
-
     public class Category
     {
         [Key]
@@ -15,19 +13,22 @@ namespace QLN.Common.Infrastructure.Model
 
         public string CategoryName { get; set; } = default!;
 
-        public long? ParentId { get; set; } 
+        public long? ParentId { get; set; }
 
         [ForeignKey("ParentId")]
+
         public Category? ParentCategory { get; set; }
 
-        public List<Category>? CategoryFields { get; set; } = new(); 
+        public List<Category>? CategoryFields { get; set; } = new();
 
-        public string? Type { get; set; } = "text"; 
-        
-        public List<string>? Options { get; set; } 
+        public string? Type { get; set; } = "text";
+
+        public List<string>? Options { get; set; }
 
         public Vertical Vertical { get; set; }
+
         public SubVertical? SubVertical { get; set; }
+
     }
     public class CategoryDto
     {
@@ -37,50 +38,17 @@ namespace QLN.Common.Infrastructure.Model
         public long? ParentId { get; set; }
         public string SubVertical { get; set; } = default!;
         public List<FieldDto>? Fields { get; set; } = new();
-    }
 
+    }
     public class FieldDto
     {
         public long Id { get; set; }
         public string CategoryName { get; set; } = default!;
         public string? Type { get; set; } = "text";
+
         public List<string>? Options { get; set; }
         public List<FieldDto>? Fields { get; set; }
+
     }
-
-
-
-
-    //public class L1Category
-    //{
-    //    [Key]
-    //    public Guid Id { get; set; }
-
-    //    [Required]
-    //    public string Name { get; set; } = default!;
-
-    //    public Guid ServicesCategoryId { get; set; }
-    //    public ServicesCategory ServicesCategory { get; set; } = default!;
-
-
-
-    //    public List<Services>? Services { get; set; } = new();
-    //}
-    //public class L2Category
-    //{
-    //    [Key]
-    //    public Guid Id { get; set; }
-
-    //    [Required]
-    //    public string Name { get; set; } = default!;
-
-    //    public Guid L1CategoryId { get; set; }
-    //    [ForeignKey(nameof(L1CategoryId))]
-    //    public L1Category L1Category { get; set; } = default!;
-
-    //    public List<Services>? Services { get; set; } = new();
-    //}
-
-
 }
 
