@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsDeals
     {
-        public Guid Id { get; set; } = Guid.Empty;
+        public long Id { get; set; }
         public string Subvertical { get; set; } = string.Empty;
         public string? SubscriptionId { get; set; }
         public string UserId { get; set; } = string.Empty;

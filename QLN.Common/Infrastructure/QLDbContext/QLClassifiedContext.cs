@@ -29,8 +29,15 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<ProductImages> ProductImage { get; set; }
         
         public DbSet<Items> Item { get; set; }
+
+        public DbSet<Preloveds> Preloved { get; set; }
+        public DbSet<Collectibles> Collectible { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Items>()
+                .Property(p => p.Attributes)
+                .HasColumnType("jsonb");
+
             modelBuilder.Entity<StoreProducts>()
         .HasMany(s => s.Features)
         .WithOne(a => a.StoreProduct)

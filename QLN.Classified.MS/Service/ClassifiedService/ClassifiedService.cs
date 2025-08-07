@@ -22,6 +22,7 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.Utilities;
 using static Dapr.Client.Autogen.Grpc.v1.Dapr;
@@ -44,17 +45,18 @@ namespace QLN.Classified.MS.Service
         private const string PrelovedCategoryIndexKey = ConstantValues.StateStoreNames.PrelovedCategoryIndexKey;
         private const string CollectiblesCategoryIndexKey = ConstantValues.StateStoreNames.CollectiblesCategoryIndexKey;
         private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
-
+        private readonly QLClassifiedContext _context;
 
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
-        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
+            _context = context;
         }
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
@@ -139,9 +141,8 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
-
             if (dto == null) throw new ArgumentNullException(nameof(dto));
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -151,29 +152,19 @@ namespace QLN.Classified.MS.Service
             if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
 
-            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
-
-            var key = $"ad-{adId}";
-
+            
             try
-            {
-                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
-                if (existing != null)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} already exists.");
-                }
+            {              
                 dto.Status = AdStatus.PendingApproval;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
-                index.Add(key);
+                _context.Item.Add(dto);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
-                await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
                 await IndexItemsToAzureSearch(dto, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Items Ad created successfully"
@@ -200,7 +191,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
             }
         }
-        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken)
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken)
         {
             try
             {
@@ -270,42 +261,29 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("Image URLs must be provided.");
             if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
-                throw new ArgumentException("Certificate URL must be provided.");
-
-            var adId = dto.Id != Guid.Empty ? dto.Id : throw new ArgumentException("Id must be provided");
-
-            var key = $"ad-{adId}";
+                throw new ArgumentException("Certificate URL must be provided.");            
 
             try
-            {
-                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
-                if (existing != null)
-                {
-                    throw new InvalidOperationException($"Ad with key {key} already exists.");
-                }
-
+            {                
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
-                index.Add(key);
+                _context.Preloved.Add(dto);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
-                await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
                 await IndexPrelovedToAzureSearch(dto, cancellationToken);
 
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Preloved created successfully"
@@ -333,36 +311,29 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0) throw new ArgumentException("Image URLs must be provided.");
-            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate) throw new ArgumentException("Certificate URL must be provided.");
-            if (dto.Id == Guid.Empty) throw new ArgumentException("Id must be provided.");
-
-            var adId = dto.Id;
-            var key = $"ad-{adId}";
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl) && dto.HasAuthenticityCertificate)
+                throw new ArgumentException("Certificate URL must be provided.");         
 
             try
             {
-                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
-                if (existing != null)
-                    throw new InvalidOperationException($"Ad with key {key} already exists.");
-
+              
                 dto.Status = AdStatus.Draft;
                 dto.CreatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
-                index.Add(key);
+                _context.Collectible.Add(dto);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
-                await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
                 await IndexCollectiblesToAzureSearch(dto, cancellationToken);
+
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
+                    AdId = dto.Id,
                     Title = dto.Title,
                     CreatedAt = dto.CreatedAt,
                     Message = "Collectibles created successfully"
@@ -397,7 +368,7 @@ namespace QLN.Classified.MS.Service
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.ImageUrl == null) throw new ArgumentException("Image URLs must be provided.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.Id == Guid.Empty) throw new ArgumentException("Id must be provided.");
+            if (dto.Id <= 0) throw new ArgumentException("Id must be provided.");
 
             var adId = dto.Id;
             var key = $"ad-{adId}";
@@ -446,71 +417,35 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var key = $"ad-{adId}";
-
-                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (adObject.ValueKind != JsonValueKind.Object)
+                var entity = await _context.Item.FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+                if (entity == null)
+                {
                     throw new KeyNotFoundException($"Ad with ID {adId} not found.");
-
-                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                if (!string.Equals(subVertical, "Items", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Items subvertical. Found: {subVertical}");
-
-                _logger.LogInformation("Fetched ad object: {Json}", adObject.ToString());
-
-                var blobNames = new List<string>();
-
-                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
-                {
-                    var certUrl = certProp.GetString();
-                    var certBlobName = ExtractBlobName(certUrl);
-                    if (!string.IsNullOrEmpty(certBlobName))
-                        blobNames.Add(certBlobName);
                 }
 
-
-                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Items.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
-                    foreach (var img in imagesProp.EnumerateArray())
-                    {
-                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
-                        {
-                            var imgUrl = urlProp.GetString();
-                            var imgBlobName = ExtractBlobName(imgUrl);
-                            if (!string.IsNullOrEmpty(imgBlobName))
-                                blobNames.Add(imgBlobName);
-                        }
-                    }
-
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Items subvertical. ");
                 }
 
-                _logger.LogInformation("Extracted blob names: {Blobs}", string.Join(", ", blobNames));
+                entity.IsActive = false;
+                entity.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
+                _context.Item.Update(entity);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey, cancellationToken: cancellationToken) ?? new();
-                if (index.Contains(key))
-                {
-                    index.Remove(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index, cancellationToken: cancellationToken);
-                }
+                _logger.LogInformation("Soft-deleted ad with ID: {AdId}", adId);
 
                 return new DeleteAdResponseDto
                 {
-                    Message = "Ad deleted successfully",
-                    DeletedImages = blobNames
+                    Message = "Ad soft-deleted successfully",
+                    DeletedImages = entity.Images?.Select(i => i.Url).ToList() ?? new()
                 };
-            }
-            catch (JsonException jex)
-            {
-                _logger.LogError(jex, "JSON parsing failed for ad ID: {AdId}", adId);
-                throw new InvalidOperationException("Failed to parse ad JSON. Invalid format.", jex);
-            }
+            }           
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while deleting classified items ad with ID: {AdId}", adId);
@@ -736,31 +671,23 @@ namespace QLN.Classified.MS.Service
                 return null;
             }
         }
-        public async Task<ClassifiedsItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
-                var key = $"ad-{adId}";
+                var adItem = await _context.Item.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.Id == adId && i.IsActive == true, cancellationToken);
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
-
-                if (!indexKeys.Contains(key))
+                if (adItem == null)
                 {
-                    _logger.LogWarning("Ad ID {AdId} not found in active index. Possibly inactive or deleted.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
-                }
-
-                var adItem = await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key);
-
-                if (adItem == null || !adItem.IsActive)
-                {
-                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                    _logger.LogWarning("Ad ID {AdId} not found in database or IsActive.", adId);
+                    throw new KeyNotFoundException($"Ad with ID {adId} does not exist.");
                 }
 
                 return adItem;
+
             }
             catch (Exception ex)
             {
@@ -769,29 +696,20 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Preloveds> GetPrelovedAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
 
             try
             {
-                var key = $"ad-{adId}";
+                var adPreloved = await _context.Preloved.AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == adId && p.IsActive == true, cancellationToken);
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
-
-                if (!indexKeys.Contains(key))
+                if (adPreloved == null)
                 {
-                    _logger.LogWarning("Ad ID {AdId} not found in Preloved index. Possibly inactive or deleted.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
-                }
-
-                var adPreloved = await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key);
-
-                if (adPreloved == null || !adPreloved.IsActive)
-                {
-                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                    _logger.LogWarning("Ad ID {AdId} not found in DB or is inactive.", adId);
+                    throw new KeyNotFoundException($"Ad with ID {adId} does not exist.");
                 }
 
                 return adPreloved;
@@ -803,9 +721,9 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedsDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsDeals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
@@ -836,29 +754,19 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Collectibles> GetCollectiblesAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
+                var adCollectibles = await _context.Collectible.AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == adId && c.IsActive == true, cancellationToken);
 
-                var key = $"ad-{adId}";
-
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
-
-                if (!indexKeys.Contains(key))
+                if (adCollectibles == null)
                 {
-                    _logger.LogWarning("Ad ID {AdId} not found in Collectibles index. Possibly inactive or deleted.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
-                }
-
-                var adCollectibles = await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key);
-
-                if (adCollectibles == null || !adCollectibles.IsActive)
-                {
-                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                    _logger.LogWarning("Ad ID {AdId} not found in DB or marked as inactive.", adId);
+                    throw new KeyNotFoundException($"Ad with ID {adId} does not exist.");
                 }
 
                 return adCollectibles;
@@ -1192,41 +1100,36 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to retrieve filters from the category tree.", ex);
             }
         }
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            var key = $"ad-{dto.Id}";
-
             try
             {
                 var existingAd = await GetItemAdById(dto.Id, cancellationToken);
                 if (existingAd == null)
-                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
+                    throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
 
-                if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
+                if (dto.SubVertical != SubVertical.Items)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Items' vertical.");
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
+                existingAd.UpdatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, ItemsIndexKey) ?? new();
-                if (!index.Contains(key))
-                {
-                    index.Add(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, ItemsIndexKey, index);
-                }
+                _context.Item.Update(existingAd);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await IndexItemsToAzureSearch(existingAd, cancellationToken);
+
 
                 return new AdUpdatedResponseDto
                 {
                     AdId = existingAd.Id,
                     Title = existingAd.Title,
-                    UpdatedAt = DateTime.UtcNow,
+                    UpdatedAt = existingAd.UpdatedAt ?? DateTime.UtcNow,
                     Message = "Items Ad updated successfully"
                 };
             }
@@ -1237,33 +1140,27 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            var key = $"ad-{dto.Id}";
-
             try
             {
                 var existingAd = await GetPrelovedAdById(dto.Id, cancellationToken);
                 if (existingAd == null)
-                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
+                    throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
 
-                if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+                if (dto.SubVertical != SubVertical.Items)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
+                existingAd.UpdatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey) ?? new();
-                if (!index.Contains(key))
-                {
-                    index.Add(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index);
-                }
+                _context.Preloved.Update(existingAd);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await IndexPrelovedToAzureSearch(existingAd, cancellationToken);
 
@@ -1282,33 +1179,28 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
 
-            var key = $"ad-{dto.Id}";
-
             try
             {
                 var existingAd = await GetCollectiblesAdById(dto.Id, cancellationToken);
                 if (existingAd == null)
-                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
+                    throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
 
-                if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+                if (dto.SubVertical != SubVertical.Collectibles)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Collectibles' vertical.");
+
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
+                existingAd.UpdatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey) ?? new();
-                if (!index.Contains(key))
-                {
-                    index.Add(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index);
-                }
+                _context.Collectible.Update(existingAd);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await IndexCollectiblesToAzureSearch(existingAd, cancellationToken);
 
@@ -1536,12 +1428,12 @@ namespace QLN.Classified.MS.Service
         }
 
         #region Private Methods
-        private async Task IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+        private async Task IndexItemsToAzureSearch(Items dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsItemsIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
+                SubVertical = SubVertical.Items.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -1555,7 +1447,7 @@ namespace QLN.Classified.MS.Service
                 Model = dto.Model,
                 Color = dto.Color,
                 Condition = dto.Condition,
-                SubscriptionId = dto.SubscriptionId,
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -1614,23 +1506,23 @@ namespace QLN.Classified.MS.Service
                 );
             }
         }
-        private async Task IndexPrelovedToAzureSearch(ClassifiedsPreloved dto, CancellationToken cancellationToken)
+        private async Task IndexPrelovedToAzureSearch(Preloveds dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsPrelovedIndex
             {
                 Id = dto.Id.ToString(),
-                SubscriptionId = dto.SubscriptionId,
-                SubVertical = dto.SubVertical,
+                SubscriptionId = dto.SubscriptionId.ToString(),
+                SubVertical = SubVertical.Preloved.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
+                CategoryId = dto.CategoryId.ToString(),
                 Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
+                L1CategoryId = dto.L1CategoryId.ToString(),
                 L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
+                L2CategoryId = dto.L2CategoryId.ToString(),
                 L2Category = dto.L2Category,
                 Location = dto.Location,
                 CreatedAt = dto.CreatedAt,
@@ -1666,7 +1558,7 @@ namespace QLN.Classified.MS.Service
                     Url = i.Url,
                     Order = i.Order
                 }).ToList(),
-                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+                AttributesJson = dto.Attributes != null ? JsonSerializer.Serialize(dto.Attributes) : null,
 
                 IsFeatured = dto.IsFeatured,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
@@ -1697,23 +1589,23 @@ namespace QLN.Classified.MS.Service
                 );
             }
         }
-        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        private async Task IndexCollectiblesToAzureSearch(Collectibles dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsCollectiblesIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                SubscriptionId = dto.SubscriptionId,
+                SubVertical = SubVertical.Collectibles.ToString(),
+                SubscriptionId = dto.SubscriptionId.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
+                CategoryId = dto.CategoryId.ToString(),
                 Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
+                L1CategoryId = dto.L1CategoryId.ToString(),
                 L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
+                L2CategoryId = dto.L2CategoryId.ToString(),
                 L2Category = dto.L2Category,
                 Location = dto.Location,
                 CreatedAt = dto.CreatedAt,
@@ -1751,7 +1643,7 @@ namespace QLN.Classified.MS.Service
                     Url = i.Url,
                     Order = i.Order
                 }).ToList(),
-                AttributesJson = JsonSerializer.Serialize(dto.Attributes ?? new Dictionary<string, string>()),
+                AttributesJson = dto.Attributes != null ? JsonSerializer.Serialize(dto.Attributes) : null,
 
                 IsFeatured = dto.IsFeatured,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,

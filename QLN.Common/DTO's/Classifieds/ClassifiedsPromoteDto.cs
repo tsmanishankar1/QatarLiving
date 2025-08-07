@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s.Classifieds
 {
     public class ClassifiedsPromoteDto
     {
-        public Guid AdId { get; set; }
+        public long AdId { get; set; }
         public SubVertical SubVertical { get; set; }
     }
 }
