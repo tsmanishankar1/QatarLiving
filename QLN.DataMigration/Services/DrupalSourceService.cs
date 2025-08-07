@@ -2,7 +2,9 @@
 {
     using Microsoft.Extensions.Logging;
     using QLN.Common.Infrastructure.Constants;
+    using QLN.Common.Infrastructure.DTO_s;
     using QLN.DataMigration.Models;
+    using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text.Json;
 
@@ -27,7 +29,9 @@
             string sortOrder,
             string? keywords,
             int? page,
-            int? pageSize)
+            int? pageSize, 
+            CancellationToken cancellationToken
+            )
         {
             var formData = new List<KeyValuePair<string, string>>
             {
@@ -80,13 +84,13 @@
             }
         }
 
-        public async Task<DrupalItemsCategories?> GetCategoriesAsync(string environment)
+        public async Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken)
         {
 
             var formData = new List<KeyValuePair<string, string>>
-        {
-            new KeyValuePair<string, string>("env", environment)
-        };
+            {
+                new KeyValuePair<string, string>("env", environment)
+            };
             var content = new FormUrlEncodedContent(formData);
 
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
@@ -118,6 +122,87 @@
                 _logger.LogError($"Deserialization error: {ex.Message}");
                 return null;
             }
+        }
+
+        public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            CancellationToken cancellationToken,
+            //string? category_id = null,
+            //string? location_id = null,
+            //string? from = null,
+            //string? to = null,
+            //string? order = null,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 20;
+
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
+
+            //if (!string.IsNullOrEmpty(order))
+            //{
+            //    requestUri += $"&order={order}";
+            //}
+
+            //if (!string.IsNullOrEmpty(category_id))
+            //{
+            //    requestUri += $"&category_id={category_id}";
+            //}
+
+            //if (!string.IsNullOrEmpty(location_id))
+            //{
+            //    requestUri += $"&location_id={location_id}";
+            //}
+
+            //if (!string.IsNullOrEmpty(from))
+            //{
+            //    requestUri += $"&from={from}";
+            //}
+
+            //if (!string.IsNullOrEmpty(to))
+            //{
+            //    requestUri += $"&to={to}";
+            //}
+
+
+            return await _httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
+        }
+
+        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(
+            CancellationToken cancellationToken,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 10;
+
+            string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}";
+
+            return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
+        }
+
+        public async Task<CommunitiesResponse?> GetNewsFromDrupalAsync(
+            CancellationToken cancellationToken,
+            //string? order = null,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            string forum_id = "20000040";
+
+            page ??= 1;
+            page_size ??= 10;
+
+            string requestUri = $"{DrupalContentConstants.NewsPath}?page={page}&page_size={page_size}";
+
+            if (!string.IsNullOrEmpty(forum_id))
+            {
+                requestUri += $"&forum_id={forum_id}";
+            }
+
+            return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
     }
 }
