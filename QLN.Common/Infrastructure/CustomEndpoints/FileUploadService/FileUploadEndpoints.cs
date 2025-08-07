@@ -55,7 +55,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.FileUploadService
                 }
 
                 var (imgExt, base64Image) = Base64Helper.ParseBase64(request.Base64);
-                string tenDigitGuid1 = Guid.NewGuid().ToString();
+                string tenDigitGuid1 = string.Empty;
+                if (!string.IsNullOrEmpty(request.FileName))
+                    tenDigitGuid1 = request.FileName;
+                else
+                    tenDigitGuid1 = Guid.NewGuid().ToString();
                 var customName = $"{tenDigitGuid1}.{imgExt}";
 
                 try

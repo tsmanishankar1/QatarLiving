@@ -41,27 +41,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             };
             await OnStatusChanged.InvokeAsync(status); 
         }
-        // private void OpenRejectDialog()
-        // {
-        //     var parameters = new DialogParameters
-        //     {
-        //         { "Title", "Reject Verification" },
-        //         { "Description", "Please enter a reason before rejecting" },
-        //         { "ButtonTitle", "Reject" },
-        //         { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRejection) }
-        //     };
-        //     var options = new DialogOptions
-        //     {
-        //         CloseButton = false,
-        //         MaxWidth = MaxWidth.Small,
-        //         FullWidth = true
-        //     };
-        //     // var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
-        // }
-
-
-
-
         protected async void HandlePageChange(int newPage)
         {
             currentPage = newPage;
