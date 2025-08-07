@@ -99,8 +99,7 @@ string? sortBy = null, CancellationToken cancellationToken = default);
 
        
 
-        Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default);
-        Task<SubscriptionTypes> GetSubscriptionById(int Id,CancellationToken cancellationToken = default);
+        
         Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default);
       
         Task<string> GetProcessStoresXML(string Url,string? CompanyId,string? SubscriptionId, string UserName, CancellationToken cancellationToken = default);

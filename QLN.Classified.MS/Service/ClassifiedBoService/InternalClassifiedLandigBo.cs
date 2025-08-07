@@ -2504,6 +2504,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
+                _logger.LogInformation("stores edit functionality initiated.");
                 var subscription = await _context.StoresSubscriptions
              .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
 
@@ -2515,7 +2516,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 subscription.Status = Status;
                 _context.StoresSubscriptions.Update(subscription);
                 await _context.SaveChangesAsync(cancellationToken);
-
+                _logger.LogInformation("stores edit functionality completed.");
                 return "Subscription status updated successfully.";
             }
             catch (Exception ex)
@@ -3417,32 +3418,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
       
 
-        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
-                return getSubscriptionTypes;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new List<SubscriptionTypes>();
-            }
-        }
-        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
-                return getSubscriptionType ?? new SubscriptionTypes();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new SubscriptionTypes();
-            }
-        }
+    
 
         public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
         {

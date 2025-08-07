@@ -17,7 +17,7 @@ namespace QLN.Common.Infrastructure.QLDbContext
 
         
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
-        public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
+        //public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
         public DbSet<StoreProducts> StoreProduct { get; set; }
         public DbSet<ProductFeatures> ProductFeature { get; set; }

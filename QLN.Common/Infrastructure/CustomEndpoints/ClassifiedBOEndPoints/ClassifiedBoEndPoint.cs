@@ -2213,7 +2213,7 @@ CancellationToken ct
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
          
-            group.MapGet("/getstoresubscriptions", async Task<Results<
+            group.MapGet("/stores-get-subscriptions", async Task<Results<
            Ok<ClassifiedBOPageResponse<StoresSubscriptionDto>>,
            BadRequest<ProblemDetails>,
            ProblemHttpResult>>
@@ -2247,13 +2247,13 @@ CancellationToken ct
            .WithName("GetStoresSubscriptions")
            .AllowAnonymous()
            .WithTags("ClassifiedBo")
-           .WithSummary("Get all subscriptions on stores.")
+           .WithSummary("To list all subscriptions in the stores.")
            .WithDescription("Fetches all subscriptions of users on stores")
            .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPost("/create-stores-subscriptions", async Task<Results<
+            group.MapPost("/stores-create-subscriptions", async Task<Results<
                 Ok<string>,
                 ForbidHttpResult,
                 BadRequest<ProblemDetails>,
@@ -2308,7 +2308,7 @@ CancellationToken ct
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             
-            group.MapPost("/create-store-subscriptions", async Task<Results<
+            group.MapPost("/stores-creates-subscriptions", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
@@ -2347,7 +2347,7 @@ CancellationToken ct
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/edit-stores-subscriptions", async Task<Results<
+            group.MapPut("/stores-edit-subscriptions", async Task<Results<
           Ok<string>,
           ForbidHttpResult,
           BadRequest<ProblemDetails>,
@@ -2468,7 +2468,7 @@ CancellationToken ct
               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/edit-store-subscriptions", async Task<Results<
+            group.MapPut("/stores-edits-subscriptions", async Task<Results<
          Ok<string>,
          BadRequest<ProblemDetails>,
          ProblemHttpResult>>
@@ -2771,76 +2771,9 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/get-subscription-types", async Task<Results<
-           Ok<List<SubscriptionTypes>>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-            HttpContext context,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.GetSubscriptionTypes(cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetSubscriptionTypes")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Get all subscription types on stores.")
-           .WithDescription("Fetches all subscription types of stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            
 
-            group.MapGet("/get-subscription-id", async Task<Results<
-           Ok<SubscriptionTypes>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-            HttpContext context,
-            int Id,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.GetSubscriptionById(Id,cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetSubscriptionTypeById")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Get subscription type on stores.")
-           .WithDescription("Fetches specific subscription type of stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/get-test-xml-validation", async Task<Results<
+            group.MapGet("/stores-test-xml-validation", async Task<Results<
            Ok<string>,
            BadRequest<ProblemDetails>,
            ProblemHttpResult>>
@@ -3059,7 +2992,7 @@ CancellationToken ct
 
 
 
-            group.MapGet("/get-process-stores-xml",
+            group.MapGet("/stores-process-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
         string? CompanyId,
@@ -3115,7 +3048,7 @@ CancellationToken ct
 .Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/get-process-store-xml",
+            group.MapGet("/stores-processing-xml",
     async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
         string Url,
         string? CompanyId,
