@@ -27,8 +27,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
     {
         [Key]
         public Guid StoreFlyersId { get; set; }
-        public Guid SubscriptionId { get; set; }
-        public Guid CompanyId { get; set; }
+        public Guid? SubscriptionId { get; set; } = Guid.Empty;
+        public Guid? CompanyId { get; set; }=Guid.Empty;
         public Guid FlyerId { get; set; }
         public virtual ICollection<StoreProducts> Products { get; set; }
     }

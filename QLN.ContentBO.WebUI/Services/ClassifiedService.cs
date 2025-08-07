@@ -130,6 +130,7 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Console.Write("the payload sent here is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")

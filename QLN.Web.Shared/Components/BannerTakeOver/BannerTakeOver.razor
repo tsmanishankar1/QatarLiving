@@ -78,6 +78,13 @@
 
     private void ScheduleNextSlide()
     {
+        if (BannerItems.Count <= 1)
+        {
+            // Do not schedule rotation if there's only one banner
+            _isPaused = false;
+            return;
+        }
+
         var currentBanner = BannersToRender[CurrentIndex];
         if (!int.TryParse(currentBanner.Duration, out int seconds) || seconds <= 0)
         {
