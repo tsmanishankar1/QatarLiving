@@ -238,23 +238,25 @@
             <h2 class="mb-2 mt-3 event-form-title">Cover Image</h2>
             <MudFileUpload T="IBrowserFile" Accept="image/png,image/jpeg" OnFilesChanged="@(e => HandleFilesChanged(e))" MaximumFileCount="1" MaxFileSize="2097152" @ref="_fileUpload">
                 <ActivatorContent>
-                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="min-height: 200px; border: 1px dashed #ccc; cursor: pointer;">
-                        @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
-                        {
-                            <img src="@CurrentEvent.CoverImage" alt="Cover Image Preview" style="width: 100%; max-height: 200px; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <div class="d-flex flex-column align-center">
-                                <div class="event-icon-circle">
-                                    <img src="/qln-images/upload_icon.svg"
-                                         class="event-file-upload-style"
-                                         alt="Upload" />
-                                </div>
-                                <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
-                            </div>
-                        }
-                    </MudPaper>
+                    <MudPaper Class="pa-6 d-flex flex-column align-center justify-center" Style="border: 1px dashed #ccc; cursor: pointer;">
+                    @if (!string.IsNullOrEmpty(CurrentEvent.CoverImage))
+                    {
+                        <img src="@CurrentEvent.CoverImage"
+                        alt="Cover Image Preview"
+                        style="width: auto; max-width: 100%; height: auto; max-height: 300px; object-fit: contain;" />
+                    }
+                    else
+                    {
+                        <div class="d-flex flex-column align-center">
+                        <div class="event-icon-circle">
+                        <img src="/qln-images/upload_icon.svg"
+                        class="event-file-upload-style"
+                        alt="Upload" />
+                        </div>
+                        <div class="mt-1" style="color: #FF7F38;">Cover Image</div>
+                        </div>
+                    }
+                </MudPaper>
                 </ActivatorContent>
             </MudFileUpload>
             @if (!string.IsNullOrEmpty(_coverImageError))
