@@ -87,22 +87,10 @@ string? sortBy = null, CancellationToken cancellationToken = default);
                  string sortOrder,
                  CancellationToken cancellationToken = default);
         Task<TransactionListResponseDto> GetTransactionsAsync(TransactionFilterRequestDto request, CancellationToken cancellationToken = default);
-       
-
-        Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default);
-        Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType,string? filterDate,int? Page,int? PageSize, string? Search,  CancellationToken cancellationToken = default);
-        Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default);
         Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken cancellation = default);
         Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken cancellation = default);
         Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct);
 
-
-       
-
-        
-        Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default);
-      
-        Task<string> GetProcessStoresXML(string Url,string? CompanyId,string? SubscriptionId, string UserName, CancellationToken cancellationToken = default);
     }
 }
 
