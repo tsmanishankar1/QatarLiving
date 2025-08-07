@@ -122,7 +122,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
@@ -144,13 +144,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
         }
 
-
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
-
         protected void OnEdit(string adId)
         {
-            NavigationManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
+            NavManager.NavigateTo($"/manage/classified/deals/edit/ad/{adId}");
         }
         protected void OnPreview(DealsListingModal item)
         {
@@ -191,7 +187,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             singleItemLoadingId = itemId;
             await PerformBulkAction(action, "", new List<string> { itemId });
         }
-        private void OpenRemoveReasonDialog()
+        private async void OpenRemoveReasonDialog()
         {
             var parameters = new DialogParameters
             {
@@ -208,7 +204,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 FullWidth = true
             };
 
-            DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
         private async Task HandleRejection(string reason)
         {
@@ -247,7 +243,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
             OpenRejectDialog(item.Id);
             return Task.CompletedTask;
         }
-        private void OpenRejectDialog(string itemId)
+        private async void OpenRejectDialog(string itemId)
         {
             rejectionTargetItemId = itemId;
             var parameters = new DialogParameters
@@ -263,7 +259,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
         private string GetSuccessMessage(BulkActionEnum action)
         {

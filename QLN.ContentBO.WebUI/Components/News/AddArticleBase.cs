@@ -27,7 +27,7 @@ namespace QLN.ContentBO.WebUI.Components.News
 
         protected ArticleCategory Category { get; set; } = new();
 
-        public bool IsLoading { get; set; } = false;
+        public bool IsLoading { get; set; } = true;
 
         public bool IsBtnDisabled { get; set; } = false;
 

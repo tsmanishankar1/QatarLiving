@@ -1,17 +1,18 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using QLN.Common.DTO_s;
+﻿using Dapr.Client;
 using Microsoft.AspNetCore.Builder;
-using QLN.Common.Infrastructure.IService.IService;
-using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
-using System.ComponentModel.DataAnnotations;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.IService.ISearchService;
+using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -87,7 +88,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                ServicesCategory dto,
+                CategoryDto dto,
                 IServices service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken

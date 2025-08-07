@@ -75,6 +75,13 @@
 
     private void ScheduleNextSlide()
     {
+        if (BannerItems.Count <= 1)
+        {
+            // Do not schedule rotation if there's only one banner
+            _isPaused = false;
+            return;
+        }
+
         var currentBanner = BannersToRender[CurrentIndex];
         if (!int.TryParse(currentBanner.Duration, out int seconds) || seconds <= 0)
         {
@@ -147,41 +154,40 @@
 }
 
 <style>
-.hero-carousel-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    height: 250px;
-}
+    .hero-carousel-container {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        height: 250px;
+    }
 
-.hero-slides-wrapper {
-    display: flex;
-    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    width: 100%;
-    height: 100%;
-}
+    .hero-slides-wrapper {
+        display: flex;
+        transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        width: 100%;
+        height: 100%;
+    }
 
-.carousel-slide {
-    flex: 0 0 100%;
-    height: 100%;
-}
+    .carousel-slide {
+        flex: 0 0 100%;
+        height: 100%;
+    }
 
     .hero-banner-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    
-}
-
-@@media (max-width: 768px) {
-    .hero-carousel-container {
-        height: 150px;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
+
+    @@media (max-width: 768px) {
+        .hero-carousel-container {
+            height: 150px;
+        }
 
         .hero-banner-image {
-        height: auto;
-        max-height: 220px;
+            height: auto;
+            max-height: 220px;
+        }
     }
-}
 
 </style>

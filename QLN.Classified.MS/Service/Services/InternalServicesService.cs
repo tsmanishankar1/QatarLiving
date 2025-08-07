@@ -20,11 +20,11 @@ namespace QLN.Classified.MS.Service.Services
         public readonly QLClassifiedContext _dbContext;
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext context)
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext)
         {
-            _dbContext = context;
             _dapr = dapr;
             _auditLogger = auditLogger;
+            _dbContext = dbContext;
         }
         public async Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
         {
@@ -124,50 +124,110 @@ namespace QLN.Classified.MS.Service.Services
 
             return list;
         }
-
-        public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(dto.Category))
-                throw new InvalidDataException("MainCategory is required.");
-
-            if (dto.L1Categories == null || dto.L1Categories.Count == 0)
-                throw new InvalidDataException("At least one L1 Category is required.");
-
-            dto.Id = Guid.NewGuid();
-
-            foreach (var l1 in dto.L1Categories)
+            try
             {
-                l1.Id = Guid.NewGuid();
+                if (!Enum.TryParse<Vertical>(dto.Vertical, true, out var verticalEnum))
+                    return "Invalid vertical value";
 
-                if (string.IsNullOrWhiteSpace(l1.Name))
-                    throw new InvalidDataException("Each L1 Category must have a Name.");
-
-                if (l1.L2Categories == null || l1.L2Categories.Count == 0)
-                    throw new InvalidDataException($"L1 Category '{l1.Name}' must have at least one L2 Category.");
-
-                foreach (var l2 in l1.L2Categories)
+                SubVertical? subVerticalEnum = null;
+                if (!string.IsNullOrWhiteSpace(dto.SubVertical))
                 {
-                    l2.Id = Guid.NewGuid();
+                    if (Enum.TryParse<SubVertical>(dto.SubVertical, true, out var parsedSubVertical))
+                        subVerticalEnum = parsedSubVertical;
+                    else
+                        return "Invalid sub-vertical value";
+                }
 
-                    if (string.IsNullOrWhiteSpace(l2.Name))
-                        throw new InvalidDataException("Each L2 Category must have a Name.");
+                Category? mainCategory;
+
+                if (dto.ParentId.HasValue)
+                {
+                    mainCategory = await _dbContext.Categories
+                        .FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value, cancellationToken);
+
+                    if (mainCategory == null)
+                        return $"Parent category with ID {dto.ParentId.Value} not found.";
+                }
+                else
+                {
+                    mainCategory = new Category
+                    {
+                        CategoryName = dto.CategoryName,
+                        Vertical = verticalEnum,
+                        SubVertical = subVerticalEnum,
+                        ParentId = null
+                    };
+
+                    _dbContext.Categories.Add(mainCategory);
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+                
+                if (dto.Fields != null && dto.Fields.Any())
+                {
+                    foreach (var fieldDto in dto.Fields)
+                    {
+                        await SaveFieldRecursive(fieldDto, mainCategory.Id, verticalEnum, subVerticalEnum, cancellationToken);
+                    }
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return "Category created successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+        private async Task SaveFieldRecursive(FieldDto fieldDto, long parentId, Vertical vertical, SubVertical? subVertical, CancellationToken cancellationToken)
+        {
+            var category = new Category
+            {
+                CategoryName = fieldDto.CategoryName,
+                Type = fieldDto.Type,
+                Options = fieldDto.Options,
+                ParentId = parentId,
+                Vertical = vertical,
+                SubVertical = subVertical
+            };
+
+            _dbContext.Categories.Add(category);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            if (fieldDto.Fields != null && fieldDto.Fields.Any())
+            {
+                foreach (var childField in fieldDto.Fields)
+                {
+                    await SaveFieldRecursive(childField, category.Id, vertical, subVertical, cancellationToken);
+                }
+            }
+        }
+
+        private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
+        {
+            var category = new Category
+            {
+                CategoryName = dto.CategoryName,
+                Type = dto.Type,
+                Options = dto.Options,
+                ParentCategory = parent,
+                Vertical = verticalEnum,
+                SubVertical = subVerticalEnum
+            };
+
+            if (dto.Fields != null && dto.Fields.Any())
+            {
+                foreach (var childDto in dto.Fields)
+                {
+                    var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
+                    category.CategoryFields.Add(childCategory);
                 }
             }
 
-            var key = dto.Id.ToString();
-
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
-
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken: cancellationToken) ?? new();
-
-            if (!keys.Contains(key))
-            {
-                keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken: cancellationToken);
-            }
-
-            return "Category Created Successfully";
+            return category;
         }
+        
         public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try

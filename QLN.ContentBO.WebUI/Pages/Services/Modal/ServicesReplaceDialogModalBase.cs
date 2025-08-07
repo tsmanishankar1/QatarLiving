@@ -83,8 +83,6 @@ public class ServicesReplaceDialogModalBase : ComponentBase
                 Snackbar.Add("Unknown item type.", Severity.Error);
                 return;
         }
-
-
         if (response?.IsSuccessStatusCode == true)
         {
             Snackbar.Add(successMessage, Severity.Success);
@@ -93,8 +91,6 @@ public class ServicesReplaceDialogModalBase : ComponentBase
             {
                 await OnAdd.InvokeAsync(selected);
             }
-
-            //MudDialog.Close(DialogResult.Ok(selected));
             MudDialog.Close(DialogResult.Ok(true));
         }
         else
@@ -114,8 +110,6 @@ public class ServicesReplaceDialogModalBase : ComponentBase
             result = events
                 .Where(e => e.CategoryName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
         }
-        Console.WriteLine("result", result);
-
         return Task.FromResult(result);
     }
     protected void ValidateTypedText(string text)

@@ -494,14 +494,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
                     var name = userData.GetProperty("name").GetString();
-                    var request = new ClassifiedsItems
+                    var request = new Items
                     {
                         UserId = uid,
-                        Id = new Guid(),
                         UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
-                        SubVertical = "Items",
+                        SubVertical = SubVertical.Items,
                         AdType = dto.AdType,
                         Title = dto.Title,
                         Description = dto.Description,
@@ -543,7 +542,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
-                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+                        Attributes = dto.Attributes                        
 
                     };
 
@@ -609,7 +608,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPost("items/post-by-id", async Task<IResult> (
-                ClassifiedsItems dto,
+                Items dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -676,14 +675,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
 
             group.MapPost("/items/refresh/{adId:guid}", async Task<IResult> (
-                Guid adId,
+                long adId,
                 [FromQuery] SubVertical subVertical,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
                 try
                 {
-                    if (adId == Guid.Empty)
+                    if (adId <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -756,15 +755,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     // Fetch the 'uid' from the deserialized user data
                     var uid = userData.GetProperty("uid").GetString();
                     var name = userData.GetProperty("name").GetString();
-                    var request = new ClassifiedsPreloved
+                    var request = new Preloveds
                     {
                         UserId = uid,
-                        Id = new Guid(),
                         AuthenticityCertificateUrl=dto.AuthenticityCertificateUrl,
                         HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
-                        SubVertical = "Preloved",
+                        SubVertical = SubVertical.Preloved,
                         AdType = dto.AdType,
                         Title = dto.Title,
                         Description = dto.Description,
@@ -808,7 +806,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
-                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+                        Attributes = dto.Attributes,
 
                     };
 
@@ -874,7 +872,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPost("preloved/post-by-id", async Task<IResult> (
-                ClassifiedsPreloved dto,
+                Preloveds dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -953,7 +951,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPut("items/update", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsItems dto,
+                Items dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1044,7 +1042,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPut("items/update-by-id", async Task<IResult> (
-                ClassifiedsItems dto,
+                Items dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1125,7 +1123,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPut("preloved/update", async Task<IResult> (
                 HttpContext httpContext,
-                ClassifiedsPreloved dto,
+                Preloveds dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1216,7 +1214,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPut("preloved/update-by-id", async Task<IResult> (
-                ClassifiedsPreloved dto,
+                Preloveds dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1297,7 +1295,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
             group.MapPut("collectibles/update", async Task<IResult> (
                HttpContext httpContext,
-               ClassifiedsCollectibles dto,
+               Collectibles dto,
                IClassifiedService service,
                CancellationToken token) =>
             {
@@ -1388,7 +1386,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                .RequireAuthorization();
 
             group.MapPut("collectibles/update-by-id", async Task<IResult> (
-                ClassifiedsCollectibles dto,
+                Collectibles dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1656,17 +1654,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var name = userData.GetProperty("name").GetString();
                     var uid = userData.GetProperty("uid").GetString();
-                    var request = new ClassifiedsCollectibles
+                    var request = new Collectibles
                     {
                         UserId = uid,
-                        Id = new Guid(),
                         UserName = name,
                         L2CategoryId = dto.L2CategoryId,
                         BuildingNumber = dto.BuildingNumber,
                         AuthenticityCertificateName = dto.AuthenticityCertificateName,
                         AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl,
                         HasAuthenticityCertificate = dto.HasAuthenticityCertificate,
-                        SubVertical = "Collectibles",
+                        SubVertical = SubVertical.Collectibles,
                         AdType = dto.AdType,
                         Title = dto.Title,
                         Description = dto.Description,
@@ -1710,7 +1707,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Url = i.Url,
                             Order = i.Order
                         }).ToList(),
-                        Attributes = dto.Attributes ??= new Dictionary<string, string>()
+                        Attributes = dto.Attributes,
 
                     };
 
@@ -1764,7 +1761,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .RequireAuthorization();
 
             group.MapPost("collectibles/post-by-id", async Task<IResult> (
-                ClassifiedsCollectibles dto,
+                Collectibles dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -1840,8 +1837,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     var name = userData.GetProperty("name").GetString();
                     var uid = userData.GetProperty("uid").GetString();
                     var request = new ClassifiedsDeals {
-                        UserId = uid,
-                        Id = new Guid(),
+                        UserId = uid,                        
                         Title = dto.Title,
                         Subvertical = "Deals",
                         Description = dto.Description,
@@ -2008,24 +2004,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-            group.MapDelete("/items/{adId:guid}", async Task<Results<
+            group.MapDelete("/items/{adId}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
                 (
-                Guid adId,
+                long adId,
                 IClassifiedService service,
                 HttpContext context,
                 CancellationToken cancellationToken
                 ) =>
             {
-                if (adId == Guid.Empty)
+                if (adId <= 0)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
-                        Detail = "Ad ID must be a valid non-empty GUID.",
+                        Detail = "Ad ID must be in valid Id.",
                         Status = StatusCodes.Status400BadRequest,
                         Instance = context.Request.Path
                     });
@@ -2088,13 +2084,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithName("DeleteClassifiedItemsAd")
                 .WithTags("Classified")
                 .WithSummary("Delete a classified items ad by ID")
-                .WithDescription("Deletes a classified items ad using the provided Ad ID. Ad must exist in Dapr state store.")
+                .WithDescription("Deletes a classified items ad using the provided Ad ID.")
                 .Produces<DeleteAdResponseDto>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+            
 
-            group.MapDelete("/preloved/{adId:guid}", async Task<Results<
+            group.MapDelete("/preloved/{adId}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -2111,7 +2109,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Validation Error",
-                        Detail = "Ad ID must be a valid non-empty GUID.",
+                        Detail = "Ad ID must be in valid Id.",
                         Status = StatusCodes.Status400BadRequest,
                         Instance = context.Request.Path
                     });
@@ -2355,12 +2353,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapGet("/items/{adId:guid}", async Task<IResult> (
-                Guid adId,
+            group.MapGet("/items/{adId}", async Task<IResult> (
+                long adId,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
-                if (adId == Guid.Empty)
+                if (adId <= 0)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2431,8 +2429,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/preloved/{adId:guid}", async Task<IResult> (
-                Guid adId,
+            group.MapGet("/preloved/{adId}", async Task<IResult> (
+                long adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>
             {
@@ -2498,8 +2496,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/deals/{adId:guid}", async Task<IResult> (
-                Guid adId,
+            group.MapGet("/deals/{adId}", async Task<IResult> (
+                long adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>
             {
@@ -2564,8 +2562,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/collectibles/{adId:guid}", async Task<IResult> (
-                Guid adId,
+            group.MapGet("/collectibles/{adId}", async Task<IResult> (
+                long adId,
                 IClassifiedService service,
                 CancellationToken cancellationToken) =>
             {
@@ -2984,16 +2982,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Operation Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
+                }               
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3029,7 +3018,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<List<CategoryTreeDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/category/{vertical}/{mainCategoryId:guid}/filters", async Task<IResult> (
@@ -3171,26 +3159,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .RequireAuthorization();
 
-            group.MapGet("/user-dashborad/{userId}", async Task<IResult> (
-                [FromQuery] string userId,
-                [FromQuery] string subVertical,
-                [FromQuery] bool? isPublished,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
+           
 
             group.MapPut("/items/promote", async Task<IResult> (
                 HttpContext httpContext,
@@ -3200,7 +3169,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    if (dto.AdId == Guid.Empty)
+                    if (dto.AdId <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -3277,7 +3246,7 @@ CancellationToken token) =>
             {
                 try
                 {
-                    if (dto.AdId == Guid.Empty)
+                    if (dto.AdId <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -3348,7 +3317,7 @@ CancellationToken token) =>
             {
                 try
                 {
-                    if (dto.AdId == Guid.Empty)
+                    if (dto.AdId <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -3427,7 +3396,7 @@ CancellationToken token) =>
             {
                 try
                 {
-                    if (dto.AdId == Guid.Empty)
+                    if (dto.AdId <= 0)
                     {
                         return TypedResults.BadRequest(new ProblemDetails
                         {
@@ -3491,7 +3460,26 @@ CancellationToken token) =>
 
 
 
+            group.MapGet("/user-dashborad/{userId}", async Task<IResult> (
+               [FromQuery] string userId,
+               [FromQuery] string subVertical,
+               [FromQuery] bool? isPublished,
+               [FromQuery] int? page,
+               [FromQuery] int? pageSize,
+               [FromQuery] string? search,
+               IClassifiedService service,
+               CancellationToken token) =>
+            {
 
+                if (userId == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or invalid.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
                 if (string.IsNullOrWhiteSpace(subVertical))
                 {
                     return TypedResults.BadRequest(new ProblemDetails
@@ -3653,6 +3641,7 @@ CancellationToken token) =>
         .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
         .ExcludeFromDescription();
+
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)

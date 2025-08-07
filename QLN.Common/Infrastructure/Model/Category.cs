@@ -1,10 +1,7 @@
 ﻿using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
 
 
 namespace QLN.Common.Infrastructure.Model
@@ -37,7 +34,6 @@ namespace QLN.Common.Infrastructure.Model
     {
         public long Id { get; set; }
         public string CategoryName { get; set; } = default!;
-
         public string Vertical { get; set; } = default!;
         public long? ParentId { get; set; }
         public string SubVertical { get; set; } = default!;
@@ -48,7 +44,6 @@ namespace QLN.Common.Infrastructure.Model
     {
         public long Id { get; set; }
         public string CategoryName { get; set; } = default!;
-
         public string? Type { get; set; } = "text";
 
         public List<string>? Options { get; set; }

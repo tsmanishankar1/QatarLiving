@@ -20,7 +20,7 @@ namespace QLN.Backend.API.Service.Services
             _dapr = dapr;
             _logger = logger;
         }
-        public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
             {
