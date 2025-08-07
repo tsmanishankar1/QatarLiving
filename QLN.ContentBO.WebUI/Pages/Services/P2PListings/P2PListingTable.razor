@@ -76,7 +76,7 @@
     </div>
     @if(Listings == null || !Listings.Any()){
 
-<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
+<EmptyCard Title="No P2P Listings Available" Subtitle="Please check back later or explore other categories." />
 
         
     }
@@ -89,8 +89,8 @@
           RowCheckBoxVisible="true"
           @bind-SelectedItems="SelectedListings"
           Style="border-radius: 8px; border: 1px solid var(--color-background-secondary-grey-medium);
-    font-family: 'Public Sans', sans-serif;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
+            font-family: 'Public Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);"
           Class="mud-table event-custom-table">
 
     <HeaderContent>
@@ -139,9 +139,9 @@
                 <MudMenuItem OnClick="() => OpenPreviewDialog(context)">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
                 </MudMenuItem>
-                @* <MudMenuItem OnClick="() => OnRemove(context)" Class="mud-text-error">
+                <MudMenuItem @onclick="() => OpenRejectDialog(context.Id)" Class="mud-text-error">
                     <MudIcon Icon="@Icons.Material.Filled.Delete" /> Remove
-                </MudMenuItem> *@
+                </MudMenuItem> 
             </MudMenu>
         </MudTd>
     </RowTemplate>

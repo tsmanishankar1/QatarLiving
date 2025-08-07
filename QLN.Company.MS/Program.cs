@@ -15,10 +15,6 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICompanyProfileService, InternalCompanyProfileService>();
 
-builder.Configuration
-    .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../QLN.Backend.API"))
-    .AddJsonFile("appsettings.json", optional: false)
-    .AddJsonFile("appsettings.Development.json", optional: true);
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();

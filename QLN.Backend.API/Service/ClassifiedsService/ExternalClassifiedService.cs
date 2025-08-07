@@ -102,7 +102,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             throw new NotImplementedException();
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
@@ -111,12 +111,12 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
 
-            if (!string.Equals(dto.SubVertical, "Items", StringComparison.OrdinalIgnoreCase))
+            if (dto.SubVertical != SubVertical.Items)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Items' subvertical.");
+           
 
             try
             {
-                dto.Id = Guid.NewGuid();
                 _log.LogTrace($"Calling internal service with {dto.Images.Count} images");
                 var requestUrl = $"/api/classifieds/items/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
@@ -126,13 +126,17 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var body = await res.Content.ReadAsStringAsync(cancellationToken);
                 if (!res.IsSuccessStatusCode)
                     throw new DaprServiceException((int)res.StatusCode, body);
-                return new AdCreatedResponseDto
+                var createdDto = JsonSerializer.Deserialize<AdCreatedResponseDto>(body, new JsonSerializerOptions
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title,
-                    CreatedAt = DateTime.UtcNow,
-                    Message = "Items Ad created successfully"
-                };
+                    PropertyNameCaseInsensitive = true
+                });
+
+                _log.LogTrace($"Calling internal service with {dto} ");
+
+                if (createdDto == null)
+                    throw new InvalidOperationException("Failed to deserialize ad creation response.");
+
+                return createdDto;              
             }
             catch(DaprServiceException)
             {
@@ -145,9 +149,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, Guid adId, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
             {
                 throw new ArgumentException("AdId is required.");
             }
@@ -197,7 +201,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -207,12 +211,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
-            if (!string.Equals(dto.SubVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
+            if(dto.SubVertical != SubVertical.Preloved)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Preloved' subvertical.");
 
             try
             {
-                dto.Id = Guid.NewGuid();
                 _log.LogTrace($"Calling internal service with CertificateUrl: {dto.AuthenticityCertificateUrl} and {dto.Images.Count} images");
                 var requestUrl = $"api/classifieds/preloved/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
@@ -223,15 +226,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (!res.IsSuccessStatusCode)
                     throw new DaprServiceException((int)res.StatusCode, body);
 
-              
-                
-                return new AdCreatedResponseDto
+                var createdDto = JsonSerializer.Deserialize<AdCreatedResponseDto>(body, new JsonSerializerOptions
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title,
-                    CreatedAt = DateTime.UtcNow,
-                    Message = "Preloved Ad created successfully"
-                };
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (createdDto == null)
+                    throw new InvalidOperationException("Failed to deserialize ad creation response.");
+
+                return createdDto;
             }
             catch (DaprServiceException)
             {
@@ -244,7 +247,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
@@ -254,13 +257,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (dto.HasAuthenticityCertificate == true && string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
-            if (!string.Equals(dto.SubVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
+            if (dto.SubVertical != SubVertical.Collectibles)
                 throw new InvalidOperationException("This endpoint only supports posting ads under the 'Collectibles' subvertical.");
 
             try
-            {
-                dto.Id = Guid.NewGuid();
-
+            {             
                 _log.LogTrace($"Calling internal collectibles service with {dto.Images.Count} images and cert: {dto.AuthenticityCertificateUrl}");
                 var requestUrl = $"api/classifieds/collectibles/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
@@ -271,13 +272,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (!res.IsSuccessStatusCode)
                     throw new DaprServiceException((int)res.StatusCode, body);
 
-                return new AdCreatedResponseDto
+                var createdDto = JsonSerializer.Deserialize<AdCreatedResponseDto>(body, new JsonSerializerOptions
                 {
-                    AdId = dto.Id,
-                    Title = dto.Title,
-                    CreatedAt = DateTime.UtcNow,
-                    Message = "Collectibles Ad created successfully"
-                };
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (createdDto == null)
+                    throw new InvalidOperationException("Failed to deserialize ad creation response.");
+
+                return createdDto;
             }
             catch (Exception ex)
             {
@@ -300,7 +303,6 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                dto.Id = Guid.NewGuid();
                 _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerFileUrl} and image: {dto.ImageUrl}");
                 var requestUrl = $"api/classifieds/deals/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
@@ -326,11 +328,11 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (adId == Guid.Empty)
+                if (adId <= 0)
                     throw new ArgumentException("Ad ID is required.");
 
                 List<string> blobNamesToDelete = new();
@@ -467,14 +469,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedsItems> GetItemAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedsItems>(
+                var result = await _dapr.InvokeMethodAsync<Items>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/items/{adId}",
@@ -494,14 +496,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedsPreloved> GetPrelovedAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Preloveds> GetPrelovedAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedsPreloved>(
+                var result = await _dapr.InvokeMethodAsync<Preloveds>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/preloved/{adId}",
@@ -521,9 +523,9 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedsDeals> GetDealsAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedsDeals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
@@ -548,14 +550,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedsCollectibles> GetCollectiblesAdById(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<Collectibles> GetCollectiblesAdById(long adId, CancellationToken cancellationToken = default)
         {
-            if (adId == Guid.Empty)
+            if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedsCollectibles>(
+                var result = await _dapr.InvokeMethodAsync<Collectibles>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/{adId}",
@@ -720,7 +722,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(ClassifiedsItems dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
                 throw new ArgumentException("Id must be specified.", nameof(dto.Id));
@@ -728,7 +730,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             try
             {
 
-                var response = await _dapr.InvokeMethodAsync<ClassifiedsItems, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<Items, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
                     "api/classifieds/items/update-by-id",
@@ -758,7 +760,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(ClassifiedsPreloved dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
             {
@@ -766,7 +768,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedsPreloved, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<Preloveds, AdUpdatedResponseDto>(
                 HttpMethod.Put,
                 SERVICE_APP_ID,
                 $"api/classifieds/preloved/update-by-id",
@@ -798,7 +800,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(ClassifiedsCollectibles dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id == null)
             {
@@ -806,7 +808,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedsCollectibles, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<Collectibles, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
                     $"api/classifieds/collectibles/update-by-id",
@@ -839,7 +841,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
         {
-            if (dto.Id == null)
+            if (dto.Id <= 0)
             {
                 throw new ArgumentException("Id must be specified.");
             }
@@ -879,7 +881,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
         {
-            if (dto.AdId == Guid.Empty)
+            if (dto.AdId <= 0)
             {
                 throw new ArgumentException("AdId is required.");
             }
@@ -958,7 +960,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
         public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken = default)
         {
-            if (dto.AdId == Guid.Empty)
+            if (dto.AdId <= 0)
             {
                 throw new ArgumentException("AdId is required.");
             }

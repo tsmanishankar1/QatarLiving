@@ -42,14 +42,15 @@ builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
-
-
+#region DbContext
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
-
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
+
+#endregion
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

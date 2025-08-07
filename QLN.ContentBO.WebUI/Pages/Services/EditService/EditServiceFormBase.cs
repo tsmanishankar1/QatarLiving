@@ -7,8 +7,10 @@ using MudExRichTextEditor;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components.SuccessModal;
 using QLN.ContentBO.WebUI.Components.FilePreviewDialog;
+using System.Text.Json;
 using System.Net;
 using DocumentFormat.OpenXml.EMMA;
+using Nextended.Core.Extensions;
 
 
 namespace QLN.ContentBO.WebUI.Pages.Services.EditService
@@ -17,9 +19,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
     {
         [Inject] public IServiceBOService _serviceService { get; set; }
         [Inject] public IJSRuntime JSRuntime { get; set; }
+        [Inject] public IFileUploadService FileUploadService { get; set; }
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback OnCommentDialogClose { get; set; }
+        [Inject] public IClassifiedService ClassifiedService { get; set; }
         protected bool _priceOnRequest = false;
         protected bool IsLoadingCategories { get; set; } = true;
         protected List<LocationZoneDto> Zones { get; set; } = new();
@@ -28,6 +32,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         protected Double latitude = 25.32;
         protected Double Longitude = 51.54;
         protected Dictionary<string, List<string>> DynamicFieldErrors { get; set; } = new();
+        private bool IsBase64String(string? base64)
+        {
+            if (string.IsNullOrWhiteSpace(base64))
+                return false;
+
+            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out _);
+        }
+
         [Inject] ISnackbar Snackbar { get; set; }
 
         public AdPost Ad { get; set; } = new();
@@ -67,6 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     latitude = (double)selectedService.Lattitude;
                     Longitude = (double)selectedService.Longitude;
                     _shouldUpdateMap = true;
+                     await JS.InvokeVoidAsync("updateMapCoordinates", latitude, Longitude);
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
                 var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
@@ -241,7 +255,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Logger.LogError(ex, "OnInitializedAsync");
             }
-            
+
         }
         [JSInvokable]
         public Task SetCoordinates(double lat, double lng)
@@ -268,8 +282,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 FullWidth = true
             };
 
-             var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
-              var result = await dialog.Result;
+            var dialog = await DialogService.ShowAsync<SuccessModal>("", parameters, options);
+            var result = await dialog.Result;
         }
 
 
@@ -324,6 +338,15 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
             try
             {
+                if (selectedService?.PhotoUpload != null)
+                {
+                    selectedService.PhotoUpload = await UploadImagesAsync(selectedService.PhotoUpload);
+                }
+                if (IsBase64String(selectedService?.LicenseCertificate))
+                {
+                    string? certificateUrl = await UploadCertificateAsync();
+                    selectedService.LicenseCertificate = certificateUrl;
+                }
                 var response = await _serviceService.UpdateService(selectedService);
                 if (response != null && response.IsSuccessStatusCode)
                 {
@@ -346,6 +369,67 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Logger.LogError(ex, "SubmitForm");
             }
         }
+        private async Task<List<ImageDto>> UploadImagesAsync(List<ImageDto> images)
+        {
+            var uploadedImages = new List<ImageDto>();
+
+            var orderedImages = images
+                .Where(img => !string.IsNullOrWhiteSpace(img.Url))
+                .OrderBy(img => img.Order)
+                .ToList();
+
+            for (int i = 0; i < orderedImages.Count; i++)
+            {
+                var image = orderedImages[i];
+
+                if (IsBlobUrl(image.Url))
+                {
+                    uploadedImages.Add(new ImageDto
+                    {
+                        Url = image.Url,
+                        Order = i
+                    });
+                    continue;
+                }
+
+                var uploadPayload = new FileUploadModel
+                {
+                    Container = "services-images",
+                    File = image.Url
+                };
+
+                var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+
+                if (uploadResponse.IsSuccessStatusCode)
+                {
+                    var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+
+                    if (result?.IsSuccess == true)
+                    {
+                        uploadedImages.Add(new ImageDto
+                        {
+                            Url = result.FileUrl,
+                            Order = i
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Image upload failed: {Message}", result?.Message);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload HTTP error at index {Index}", i);
+                }
+            }
+
+            return uploadedImages;
+        }
+
+        private bool IsBlobUrl(string url)
+        {
+            return url.Contains(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
+        }
         private async Task LoadZonesAsync()
         {
             try
@@ -366,8 +450,165 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Logger.LogError(ex, "LoadZonesAsyn");
             }
         }
+        private async Task<List<object>> UploadImagesAsync(List<AdImage> images)
+        {
+            var uploadedImages = new List<object>();
 
+            var orderedImages = images
+                .Where(img => !string.IsNullOrWhiteSpace(img.Url))
+                .OrderBy(img => img.Order)
+                .ToList();
 
+            for (int i = 0; i < orderedImages.Count; i++)
+            {
+                var image = orderedImages[i];
+
+                var uploadPayload = new FileUploadModel
+                {
+                    Container = "services-images",
+                    File = image.Url
+                };
+
+                var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+
+                if (uploadResponse.IsSuccessStatusCode)
+                {
+                    var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+
+                    if (result?.IsSuccess == true)
+                    {
+                        uploadedImages.Add(new
+                        {
+                            url = result.FileUrl,
+                            order = i
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Image upload failed: " + result?.Message);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload HTTP error at index " + i);
+                }
+            }
+
+            return uploadedImages;
+        }
+        private async Task<string?> UploadCertificateAsync()
+        {
+            if (selectedService.LicenseCertificate == null)
+                return null;
+
+            var fileUploadModel = new FileUploadModel
+            {
+                Container = "services-images",
+                File = selectedService.LicenseCertificate
+            };
+
+            var uploadResponse = await FileUploadService.UploadFileAsync(fileUploadModel);
+
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                Logger.LogWarning("Certificate upload failed: " + result?.Message);
+            }
+            else
+            {
+                Logger.LogWarning("Certificate upload HTTP error");
+            }
+
+            return null;
+        }
+        protected async Task OnZoneChanged(string zoneId)
+        {
+            var isChanged = selectedService.ZoneId != zoneId;
+            selectedService.ZoneId = zoneId;
+
+            if (isChanged)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+
+        protected async Task OnStreetNumberChanged(string? street)
+        {
+            var changed = selectedService.StreetNumber != street;
+            selectedService.StreetNumber = street;
+
+            if (!string.IsNullOrEmpty(selectedService.ZoneId) && changed)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+
+        protected async Task OnBuildingNumberChanged(string? building)
+        {
+            var changed = selectedService.BuildingNumber != building;
+            selectedService.BuildingNumber = building;
+
+            if (!string.IsNullOrEmpty(selectedService.ZoneId) && changed)
+            {
+                await TrySetCoordinatesFromAddressAsync();
+            }
+        }
+        protected async Task TrySetCoordinatesFromAddressAsync()
+        {
+            // Ensure all required fields are available
+            if (string.IsNullOrWhiteSpace(selectedService.ZoneId) ||
+                string.IsNullOrWhiteSpace(selectedService.StreetNumber) ||
+                string.IsNullOrWhiteSpace(selectedService.BuildingNumber))
+            {
+                return;
+            }
+
+            try
+            {
+                var zone = int.TryParse(selectedService.ZoneId, out var zoneInt) ? zoneInt : 0;
+                if (zoneInt == 0) return;
+
+                HttpResponseMessage? response = null;
+
+                if (int.TryParse(selectedService.StreetNumber, out int streetNumber) &&
+                    int.TryParse(selectedService.BuildingNumber, out int buildingNumber))
+                {
+                    response = await ClassifiedService.GetAddressByDetailsAsync(
+                        zone: zoneInt,
+                        street: streetNumber,
+                        building: buildingNumber,
+                        location: ""
+                    );
+                }
+
+                if (response?.IsSuccessStatusCode == true)
+                {
+                    var coords = await response.Content.ReadFromJsonAsync<List<string>>();
+
+                    if (coords is { Count: 2 } &&
+                        double.TryParse(coords[0], out var latitude) &&
+                        double.TryParse(coords[1], out var longitude))
+                    {
+                        selectedService.Lattitude = (decimal)latitude;
+                        selectedService.Longitude = (decimal)longitude;
+
+                        await JS.InvokeVoidAsync("updateMapCoordinates", latitude, longitude);
+                    }
+                }
+                else
+                {
+                    Logger?.LogWarning("Failed to fetch coordinates from API.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogError(ex, "Error fetching coordinates from address.");
+            }
+        }
 
     }
 }

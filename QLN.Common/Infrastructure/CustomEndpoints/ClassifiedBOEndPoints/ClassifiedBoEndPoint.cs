@@ -17,6 +17,7 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -2217,7 +2218,7 @@ CancellationToken ct
 
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
-              ClassifiedsItems dto,
+              Items dto,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -2285,9 +2286,9 @@ CancellationToken ct
       
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
-             ClassifiedsPreloved dto,
-             IClassifiedService service,
-             CancellationToken token) =>
+              Preloveds dto,
+              IClassifiedService service,
+              CancellationToken token) =>
             {
                 try
                 {
@@ -2350,17 +2351,18 @@ CancellationToken ct
                     );
                 }
             })
-             .WithName("AdminPostPrelovedAdById")
-             .WithTags("ClassifiedBo")
-             .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
-             .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
-             .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+              .WithName("AdminPostPrelovedAdById")
+              .WithTags("ClassifiedBo")
+              .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+              .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+              .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+           
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
-                ClassifiedsCollectibles dto,
+                Collectibles dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {

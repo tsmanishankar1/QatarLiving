@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
@@ -9,7 +9,7 @@ using QLN.ContentBO.WebUI.Interfaces;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.Modal
 {
-    public class ServicesAddSeasonPickModalBase : QLComponentBase
+    public class ServicesEditSeasonPickModalBase : QLComponentBase
     {
         [CascadingParameter]
         public IMudDialogInstance MudDialog { get; set; }
@@ -19,9 +19,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Inject] ILogger<ServicesAddSeasonPickModalBase> Logger { get; set; }
         [Inject]
         public ISnackbar Snackbar { get; set; }
-
         [Parameter]
-        public string Title { get; set; } = "Add Seasonal Pick";
+        public string Title { get; set; } = "Edit Seasonal Pick";
+        [Parameter]
+        public Guid CategoryId { get; set; }
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
@@ -45,22 +46,45 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
         protected ElementReference fileInput;
-
         protected DateTime? StartDate { get; set; } = DateTime.Today;
         protected DateTime? EndDate { get; set; } = DateTime.Today;
-
         protected bool IsSubmitting { get; set; } = false;
-
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
             try
             {
                 if (CategoryTrees == null || !CategoryTrees.Any())
                     await LoadCategoryTreesAsync();
+
+                if (!string.IsNullOrEmpty(SelectedCategoryId))
+                {
+                    var selectedCategory = CategoryTrees?.FirstOrDefault(c => c.Id.ToString() == SelectedCategoryId);
+                    _selectedL1Categories = selectedCategory?.L1Categories ?? new List<L1Category>();
+                    var selectedSubcategory = _selectedL1Categories
+                        .FirstOrDefault(sc => sc.Id.ToString() == SelectedSubcategoryId);
+                    if (selectedSubcategory == null)
+                    {
+                        SelectedSubcategoryId = null;
+                        SelectedSectionId = null;
+                        _selectedL2Categories = new List<L2Category>(); 
+                    }
+                    else
+                    {
+                        _selectedL2Categories = selectedSubcategory.L2Categories ?? new List<L2Category>();
+                        if (!_selectedL2Categories.Any(sec => sec.Id.ToString() == SelectedSectionId))
+                        {
+                            SelectedSectionId = null;
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "OnInitializedAsync");
+                Logger.LogError(ex, "OnParametersSetAsync");
+            }
+            finally
+            {
+                IsLoadingCategories = false;
             }
         }
         private async Task LoadCategoryTreesAsync()
@@ -68,7 +92,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             try
             {
                 var response = await _serviceService.GetServicesCategories();
-
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var result = await response.Content.ReadFromJsonAsync<List<ServiceCategory>>();
@@ -90,10 +113,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 StateHasChanged();
             }
         }
-
-
-
-
         protected void OnCategoryChanged(string? categoryId)
         {
             SelectedCategoryId = categoryId.ToString();
@@ -105,13 +124,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
             SelectedCategory = selected?.Category;
         }
-
-
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
            SelectedSubcategoryId = subcategoryId.ToString();
             SelectedSectionId = null;
-
             var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == subcategoryId);
             _selectedL2Categories = selectedL1?.L2Categories ?? new();
         }
@@ -121,10 +137,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }
-        
-
-
-
         protected bool IsFormValid()
         {
             return !string.IsNullOrEmpty(SelectedCategoryId) &&
@@ -135,10 +147,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     && EndDate.HasValue
                     && !string.IsNullOrEmpty(ImagePreviewUrl);;
         }
-
-
         protected void Close() => MudDialog.Cancel();
-
         protected void Save()
         {
             var newItem = new LandingPageItem
@@ -160,7 +169,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 Snackbar.Add("Please complete all required fields.", Severity.Warning);
                 return;
             }
-
             IsSubmitting = true;
             var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
@@ -185,7 +193,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
-                else if (response?.StatusCode == System.Net.HttpStatusCode.Conflict)
+                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
                     Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
