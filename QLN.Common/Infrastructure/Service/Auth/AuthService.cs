@@ -1052,7 +1052,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                                 Snid = drupalUser.Subscription.Snid,
                                 StartDate = drupalUser.Subscription.StartDate,
                                 Status = drupalUser.Subscription.Status,
-                                Uid = long.TryParse(drupalUser.Subscription.Uid, out var subscriptionUid) ? subscriptionUid : 0,
+                                Uid = userId,
+                                //Uid = long.TryParse(drupalUser.Subscription.Uid, out var subscriptionUid) ? subscriptionUid : 0,
                                 SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
                                 Categories = drupalUser.Subscription.Categories
                             } : null

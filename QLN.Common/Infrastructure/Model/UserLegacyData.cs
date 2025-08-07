@@ -34,8 +34,8 @@ namespace QLN.Common.Infrastructure.Model
     public class LegacySubscription
     {
         [Key]
-        public required string ReferenceId { get; set; }
         public required long Uid { get; set; }
+        public required string ReferenceId { get; set; }
         public required string StartDate { get; set; }
         public required string ExpireDate { get; set; }
         public required string ProductType { get; set; }
