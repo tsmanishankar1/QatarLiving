@@ -4,8 +4,6 @@ using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using QLN.Common.Infrastructure.QLDbContext;
-
 using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
@@ -16,8 +14,11 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
+
 using System;
+using System.ComponentModel.Design;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
@@ -2431,12 +2432,22 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw;
                 }
                 var dateThreshold = filterDateParsed.AddDays(-90);
+                string searchLower = Search?.ToLower();
                 var filtered = await _context.StoresSubscriptions
      .AsNoTracking()
      .Where(x =>
          (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
          x.StartDate >= dateThreshold &&
-         x.StartDate <= filterDateParsed)
+         x.StartDate <= filterDateParsed &&
+            (
+                string.IsNullOrEmpty(searchLower) ||
+                x.OrderId.ToString().Contains(searchLower) ||
+                (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
+                (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
+                (x.Mobile != null && x.Mobile.ToLower().Contains(searchLower)) ||
+                (x.Status != null && x.Status.ToLower().Contains(searchLower))
+            )
+         )
      .ToListAsync(cancellationToken);
 
 
@@ -3440,7 +3451,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 string result = string.Empty;
                 string errors = string.Empty;
                 string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string xmlPath = Path.Combine(basePath, "Data", "Products-Incorrect.xml");
+                string xmlPath = Path.Combine(basePath, "Data", "Products.xml");
                 string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
                 errors = manager.ValidateXml(xmlPath);
@@ -3464,116 +3475,136 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
        
-        public async Task<string> GetProcessStoresXML(string Url, string CompanyId, int SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
         {
             try
             { 
-                string result = string.Empty;
-                string errors = string.Empty;
-                string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string xmlPath = Url;
-                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
+                var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                var xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
                 var manager = new ProductXmlManager(xsdPath);
-                errors = manager.ValidateXml(xmlPath);
-                if (string.IsNullOrEmpty(errors))
+
+                var validationErrors = manager.ValidateXml(Url);
+                if (!string.IsNullOrEmpty(validationErrors))
+                    return validationErrors;
+
+                using var httpClient = new HttpClient();
+                var xmlContent = await httpClient.GetStringAsync(Url);
+
+                var serializer = new XmlSerializer(typeof(StoreFlyer));
+                using var reader = new StringReader(xmlContent);
+                if (serializer.Deserialize(reader) is not StoreFlyer xmlProducts ||
+                    xmlProducts.Products == null ||
+                    xmlProducts.Products.Count == 0)
                 {
-                    //result = "Valid XML";
-                    using var httpClient = new HttpClient();
-                    string xml = await httpClient.GetStringAsync(xmlPath);
-                    //string xml = File.ReadAllText(xmlPath);
-                    XmlSerializer serializer = new XmlSerializer(typeof(Products));
-                    using StringReader reader = new StringReader(xml);
-                    Products xmlproducts = (Products)serializer.Deserialize(reader);
-                    if (xmlproducts != null && xmlproducts.ProductList != null && xmlproducts.ProductList.Count > 0)
-                    {
-                        await DeleteProductsByCompanyIdAsync(Guid.Parse(CompanyId), UserName);
-                        foreach (var xmlproduct in xmlproducts.ProductList)
-                        {
+                    return "No products found in the XML.";
+                }
 
-                            StoreProducts storeProducts = new StoreProducts();
-                            Guid StoreProductId = Guid.NewGuid();
-                            storeProducts.StoreProductId = StoreProductId;
-                            DateTime now = DateTime.UtcNow;
-                            storeProducts.CompanyId = Guid.Parse(CompanyId);
-                            storeProducts.SubscriptionId = SubscriptionId;
-                            storeProducts.ProductName = xmlproduct.ProductName;
-                            storeProducts.ProductLogo = xmlproduct.ProductLogo;
-                            storeProducts.ProductPrice = xmlproduct.ProductPrice;
-                            storeProducts.Currency = xmlproduct.Currency; storeProducts.ProductSummary = xmlproduct.ProductDetails.ProductSummary;
-                            storeProducts.ProductDescription = xmlproduct.ProductDetails.ProductDescription;
-                            storeProducts.CreatedDate = now;
-                            storeProducts.UpdatedDate = now;
-                            storeProducts.CreatedUser = UserName;
-                            storeProducts.UpdatedUser = UserName;
-                            storeProducts.Features = xmlproduct.ProductDetails.Features.Select(f => new ProductFeatures
-                            {
-                                ProductFeaturesId = Guid.NewGuid(),
-                                Features = f,
-                                CreatedDate = now,
-                                UpdatedDate = now,
-                                CreatedUser = UserName,
-                                UpdatedUser = UserName,
-                                StoreProductId = StoreProductId
-                            }).ToList();
-                            storeProducts.Images = xmlproduct.ProductDetails.Images.Select(img => new ProductImages
-                            {
-                                ProductImagesId = Guid.NewGuid(),
-                                Images = img,
-                                CreatedDate = now,
-                                UpdatedDate = now,
-                                CreatedUser = UserName,
-                                UpdatedUser = UserName,
-                                StoreProductId = StoreProductId
-                            }).ToList();
+                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
+                _logger.LogInformation("Subscription: {SubscriptionId}", xmlProducts.SubscriptionId);
+                _logger.LogInformation("Company: {CompanyId}", xmlProducts.CompanyId);
 
-                            _context.StoreProduct.Add(storeProducts);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-
-                    return "created";
+                var storeFlyer = new StoreFlyers
+                {
+                    Products = new List<StoreProducts>()
+                };
+                if (!string.IsNullOrEmpty(xmlProducts.FlyerId) && Guid.TryParse(xmlProducts.FlyerId, out var flyerId))
+                {
+                    storeFlyer.FlyerId = flyerId;
                 }
                 else
                 {
-                    return errors;
+                    throw new Exception("No valid flyer ID found in the XML.");
                 }
 
+                if (Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
+                {
+                    storeFlyer.SubscriptionId = parsedSubscriptionId;
+                }
+                else if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
+                {
+                    storeFlyer.SubscriptionId = fallbackSubscriptionId;
+                }
+                else
+                {
+                    throw new Exception("No valid subscription ID found in the XML or parameter.");
+                }
 
+                if (Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
+                {
+                    storeFlyer.CompanyId = parsedCompanyId;
+                }
+                else if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
+                {
+                    storeFlyer.CompanyId = fallbackCompanyId;
+                }
+                else
+                {
+                    throw new Exception("No valid company ID found in the XML or parameter.");
+                }
+
+                foreach (var xmlProduct in xmlProducts.Products)
+                {
+                    var storeProductId = Guid.NewGuid();
+
+                    var storeProduct = new StoreProducts
+                    {
+                        StoreProductId = storeProductId,
+                        ProductName = xmlProduct.ProductName,
+                        ProductLogo = xmlProduct.ProductLogo,
+                        ProductPrice = xmlProduct.ProductPrice,
+                        Currency = xmlProduct.Currency,
+                        ProductSummary = xmlProduct.ProductSummary,
+                        ProductDescription = xmlProduct.ProductDescription,
+                        PageNumber = xmlProduct.PageNumber,
+                        PageCoordinates = xmlProduct.PageCoordinates,
+                        Features = xmlProduct.Features?.Select(f => new ProductFeatures
+                        {
+                            ProductFeaturesId = Guid.NewGuid(),
+                            Features = f,
+                            StoreProductId = storeProductId
+                        }).ToList(),
+                        Images = xmlProduct.Images?.Select(img => new ProductImages
+                        {
+                            ProductImagesId = Guid.NewGuid(),
+                            Images = img,
+                            StoreProductId = storeProductId
+                        }).ToList()
+                    };
+
+                    storeFlyer.Products.Add(storeProduct);
+                }
+
+                _logger.LogInformation("ML bind done");
+
+                await DeleteStoreFlyer(storeFlyer.FlyerId);
+                _context.StoreFlyer.Add(storeFlyer);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Products added successfully.");
+                return "created";
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while getting subscription types.");
+                _logger.LogError(ex, "Error while processing store flyer XML.");
                 return ex.Message;
             }
+
+
         }
-        public async Task DeleteProductsByCompanyIdAsync(Guid companyId, string UserName)
+       
+        
+        public async Task DeleteStoreFlyer(Guid FlyerId)
         {
-            var products = await _context.StoreProduct
-                                .Where(p => p.CompanyId == companyId && p.Status == true)
-                                .Include(p => p.Features)
-                                .Include(p => p.Images)
+            var flyers = await _context.StoreFlyer
+                                .Where(p => p.FlyerId == FlyerId)
+                                .Include(p => p.Products)
                                 .ToListAsync();
-
-            foreach (var product in products)
+            if (flyers.Any())
             {
-                product.Status = false;
-                foreach (var feature in product.Features)
-                {
-                    feature.Status = false; // or "InActive" if you change type
-                    feature.UpdatedDate = DateTime.UtcNow;
-                    feature.UpdatedUser = UserName;
-                }
-                foreach (var image in product.Images)
-                {
-                    image.Status = false;
-                    image.UpdatedDate = DateTime.UtcNow;
-                    image.UpdatedUser = UserName;
-                }
+                _context.StoreFlyer.RemoveRange(flyers);
+                await _context.SaveChangesAsync();
             }
-            await _context.SaveChangesAsync();
+
         }
-
-
-
     }
 }

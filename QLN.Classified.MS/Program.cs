@@ -10,6 +10,10 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.QLDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration
+    .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../QLN.Backend.API"))
+    .AddJsonFile("appsettings.json", optional: true)
+    .AddJsonFile("appsettings.Development.json", optional: false);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

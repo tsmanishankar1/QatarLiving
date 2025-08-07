@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using QLN.Common.DTO_s;
@@ -10,12 +11,14 @@ using QLN.Common.Infrastructure.QLDbContext;
 
 #nullable disable
 
-namespace QLN.Common.Migrations
+namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    partial class QLClassifiedContextModelSnapshot : ModelSnapshot
+    [Migration("20250806080623_Services")]
+    partial class Services
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,13 +73,13 @@ namespace QLN.Common.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("CompanyId")
+                    b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("FlyerId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("SubscriptionId")
+                    b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uuid");
 
                     b.HasKey("StoreFlyersId");
@@ -218,215 +221,16 @@ namespace QLN.Common.Migrations
                     b.ToTable("SubscriptionType");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Collectibles", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<int>("AdType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Attributes")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("AuthenticityCertificateName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("AuthenticityCertificateUrl")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Brand")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("BuildingNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long?>("CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Condition")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ContactEmail")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ContactNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("ContactNumberCountryCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("FeaturedExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("HasAuthenticityCertificate")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("HasWarranty")
-                        .HasColumnType("boolean");
-
-                    b.Property<List<ImageInfo>>("Images")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsFeatured")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsHandmade")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPromoted")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("L1Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long?>("L1CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("L2Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long?>("L2CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Model")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<double?>("Price")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("PriceType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime?>("PromotedExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("PublishedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("StreetNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("SubVertical")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("SubscriptionId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("WhatsAppNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("WhatsappNumberCountryCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("YearOrEra")
-                        .HasColumnType("text");
-
-                    b.Property<string>("zone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Collectible");
-                });
-
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                        .HasColumnType("uuid");
 
                     b.Property<int>("AdType")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Attributes")
+                    b.Property<Dictionary<string, string>>("Attributes")
                         .HasColumnType("jsonb");
 
                     b.Property<string>("Brand")
@@ -441,8 +245,8 @@ namespace QLN.Common.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<long?>("CategoryId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Color")
                         .HasMaxLength(100)
@@ -505,15 +309,15 @@ namespace QLN.Common.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<long?>("L1CategoryId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid?>("L1CategoryId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("L2Category")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<long?>("L2CategoryId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid?>("L2CategoryId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("LastRefreshedOn")
                         .HasColumnType("timestamp with time zone");
@@ -600,72 +404,80 @@ namespace QLN.Common.Migrations
                     b.ToTable("Item");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Preloveds", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ServicesCategoryId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServicesCategoryId");
+
+                    b.ToTable("L1Categories");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("L1CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("L1CategoryId");
+
+                    b.ToTable("L2Categories");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Services", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<int>("AdType")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Attributes")
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("AuthenticityCertificateUrl")
+                    b.Property<string>("BuildingNumber")
                         .HasColumnType("text");
 
-                    b.Property<string>("Brand")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("BuildingNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<string>("CategoryName")
+                        .HasColumnType("text");
 
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long?>("CategoryId")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("Color")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Condition")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ContactEmail")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("ContactNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("ContactNumberCountryCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                    b.Property<string>("Comments")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EmailAddress")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -673,65 +485,65 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("FeaturedExpiryDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool?>("HasAuthenticityCertificate")
-                        .HasColumnType("boolean");
-
-                    b.Property<List<ImageInfo>>("Images")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("Inclusion")
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPriceOnRequest")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsPromoted")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsRefreshed")
-                        .HasColumnType("boolean");
+                    b.Property<Guid>("L1CategoryId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("L1Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<string>("L1CategoryName")
+                        .HasColumnType("text");
 
-                    b.Property<long?>("L1CategoryId")
-                        .HasColumnType("bigint");
+                    b.Property<Guid>("L2CategoryId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("L2Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<long?>("L2CategoryId")
-                        .HasColumnType("bigint");
+                    b.Property<string>("L2CategoryName")
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LastRefreshedOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<double?>("Latitude")
-                        .HasColumnType("double precision");
+                    b.Property<decimal>("Lattitude")
+                        .HasColumnType("decimal(9,6)");
+
+                    b.Property<string>("LicenseCertificate")
+                        .HasColumnType("text");
 
                     b.Property<string>("Location")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .IsRequired()
+                        .HasColumnType("text");
 
-                    b.Property<double?>("Longitude")
-                        .HasColumnType("double precision");
+                    b.Property<int?>("LocationId")
+                        .HasColumnType("integer");
 
-                    b.Property<string>("Model")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                    b.Property<decimal>("Longitude")
+                        .HasColumnType("decimal(9,6)");
 
-                    b.Property<double?>("Price")
-                        .HasColumnType("double precision");
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
 
-                    b.Property<string>("PriceType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<string>("PhoneNumberCountryCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<List<ImageDto>>("PhotoUpload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("PromotedExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -739,62 +551,69 @@ namespace QLN.Common.Migrations
                     b.Property<DateTime?>("PublishedDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("Status")
+                    b.Property<int?>("Status")
                         .HasColumnType("integer");
 
                     b.Property<string>("StreetNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
-                    b.Property<int>("SubVertical")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("SubscriptionId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("SubscriptionId")
+                        .HasColumnType("text");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasColumnType("text");
 
-                    b.Property<string>("WhatsAppNumber")
+                    b.Property<string>("WhatsappNumber")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasMaxLength(15)
+                        .HasColumnType("character varying(15)");
 
                     b.Property<string>("WhatsappNumberCountryCode")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<string>("zone")
+                    b.Property<string>("ZoneId")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Preloved");
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("L1CategoryId");
+
+                    b.HasIndex("L2CategoryId");
+
+                    b.ToTable("Services");
                 });
 
-          
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ServicesCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ServicesCategories");
+                });
+
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>
                 {
                     b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")
@@ -828,7 +647,54 @@ namespace QLN.Common.Migrations
                     b.Navigation("StoreFlyer");
                 });
 
-           
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.ServicesCategory", "ServicesCategory")
+                        .WithMany("L1Categories")
+                        .HasForeignKey("ServicesCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ServicesCategory");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.L1Category", "L1Category")
+                        .WithMany("L2Categories")
+                        .HasForeignKey("L1CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("L1Category");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Services", b =>
+                {
+                    b.HasOne("QLN.Common.Infrastructure.Model.ServicesCategory", "Category")
+                        .WithMany("Services")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("QLN.Common.Infrastructure.Model.L1Category", "L1Category")
+                        .WithMany("Services")
+                        .HasForeignKey("L1CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("QLN.Common.Infrastructure.Model.L2Category", "L2Category")
+                        .WithMany("Services")
+                        .HasForeignKey("L2CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("L1Category");
+
+                    b.Navigation("L2Category");
+                });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
                 {
@@ -842,7 +708,24 @@ namespace QLN.Common.Migrations
                     b.Navigation("Images");
                 });
 
-            
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
+                {
+                    b.Navigation("L2Categories");
+
+                    b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
+                {
+                    b.Navigation("Services");
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ServicesCategory", b =>
+                {
+                    b.Navigation("L1Categories");
+
+                    b.Navigation("Services");
+                });
 #pragma warning restore 612, 618
         }
     }

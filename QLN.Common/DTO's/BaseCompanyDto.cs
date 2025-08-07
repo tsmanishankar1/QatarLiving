@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s.Company;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.Service.TimeSpanConverter;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -55,7 +56,7 @@ namespace QLN.Common.DTO_s
         [Required]
         public string CRDocument { get; set; } = string.Empty;
         public bool? IsVerified { get; set; } = false;
-        public CompanyStatus? Status { get; set; }
+        public VerifiedStatus? Status { get; set; }
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }

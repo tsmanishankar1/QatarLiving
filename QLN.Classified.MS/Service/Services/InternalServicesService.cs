@@ -29,7 +29,7 @@ namespace QLN.Classified.MS.Service.Services
             if (dto.L1Categories == null || dto.L1Categories.Count == 0)
                 throw new InvalidDataException("At least one L1 Category is required.");
 
-            dto.Id = Guid.NewGuid(); 
+            dto.Id = Guid.NewGuid();
 
             foreach (var l1 in dto.L1Categories)
             {
@@ -54,12 +54,12 @@ namespace QLN.Classified.MS.Service.Services
 
             await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
 
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken : cancellationToken) ?? new();
+            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken: cancellationToken) ?? new();
 
             if (!keys.Contains(key))
             {
                 keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken : cancellationToken);
+                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken: cancellationToken);
             }
 
             return "Category Created Successfully";
@@ -91,7 +91,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
             }
 
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
+            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
 
             return "Category updated successfully.";
         }
@@ -322,7 +322,7 @@ namespace QLN.Classified.MS.Service.Services
                 );
                 return "Service Ad Created Successfully";
             }
-            catch(ConflictException ex)
+            catch (ConflictException ex)
             {
                 throw;
             }
@@ -500,7 +500,7 @@ namespace QLN.Classified.MS.Service.Services
 
                 return "Service Ad updated successfully.";
             }
-            catch(ConflictException ex)
+            catch (ConflictException ex)
             {
                 throw;
             }
@@ -515,7 +515,7 @@ namespace QLN.Classified.MS.Service.Services
         }
         private async Task<CommonIndexRequest> IndexServiceToAzureSearch(ServicesModel dto, CancellationToken cancellationToken)
         {
-          
+
             var indexDoc = new ServicesIndex
             {
                 Id = dto.Id.ToString(),
@@ -624,7 +624,7 @@ namespace QLN.Classified.MS.Service.Services
             ) ?? new();
 
             if (!indexKeys.Contains(key))
-                return null; 
+                return null;
 
             var ad = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
@@ -682,7 +682,7 @@ namespace QLN.Classified.MS.Service.Services
                 apiEndpoint: $"/api/service/deletebyid?id={id}",
                 successMessage: "Service Ad Deleted Successfully",
                 updatedBy: userId,
-                payload: null, 
+                payload: null,
                 cancellationToken: cancellationToken
             );
 
@@ -742,7 +742,7 @@ namespace QLN.Classified.MS.Service.Services
                     Items = pagedItems
                 };
             }
-            catch(InvalidDataException ex)
+            catch (InvalidDataException ex)
             {
                 throw new InvalidDataException($"Error fetching services by status: {ex.Message}", ex);
             }

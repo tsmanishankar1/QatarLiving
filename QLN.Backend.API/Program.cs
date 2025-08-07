@@ -136,10 +136,11 @@ builder.Services.Configure<IdentityOptions>(options =>
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -335,7 +336,8 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-
+ var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
