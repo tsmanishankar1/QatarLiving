@@ -10,9 +10,8 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-
-using Dapr.Client;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -132,7 +131,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                ServicesCategory dto,
+                CategoryDto dto,
                 IServices service,
                 CancellationToken cancellationToken
             ) =>
@@ -191,18 +190,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithDescription("Retrieves all service categories from the system. " +
                              "This endpoint returns a list of all available service categories, including their subcategories.")
             .WithSummary("Get all service categories")
-            .Produces<List<ServicesCategory>>(StatusCodes.Status200OK)
+            .Produces<List<CategoryDto>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapServiceCategoryGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbycategoryid/{id:guid}", async Task<Results<
-                Ok<ServicesCategory>,
+            group.MapGet("/getbycategoryid/{id:long}", async Task<Results<
+                Ok<CategoryDto>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                Guid id,
+                long id,
                 IServices service,
                 CancellationToken cancellationToken
             ) =>
@@ -244,7 +243,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Get a service category by ID")
             .WithDescription("Retrieves a specific service category by its unique identifier. " +
                              "If the category does not exist, a 404 Not Found response is returned.")
-            .Produces<ServicesCategory>(StatusCodes.Status200OK)
+            .Produces<CategoryDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -371,7 +370,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-                ServicesModel dto,
+                QLN.Common.Infrastructure.Model.Services dto,
                 HttpContext httpContext,
                 IServices service,
                 CancellationToken cancellationToken) =>
@@ -440,7 +439,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPut("/updatebyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-            ServicesModel dto,
+            Services dto,
             HttpContext httpContext,
             IServices service,
             CancellationToken cancellationToken) =>
@@ -524,14 +523,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Get all service ads")
             .WithDescription("Retrieves all service ads from the system. " +
                              "This endpoint returns a list of all available service ads, including their details.")
-            .Produces<List<ServicesModel>>(StatusCodes.Status200OK)
+            .Produces<List<Services>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapServiceGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyid/{id:guid}", async Task<Results<Ok<ServicesModel>, NotFound<ProblemDetails>, ProblemHttpResult>> (
-                Guid id,
+            group.MapGet("/getbyid/{id:long}", async Task<Results<Ok<Services>, NotFound<ProblemDetails>, ProblemHttpResult>> (
+                long id,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -570,7 +569,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get a service ad by ID")
             .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
-            .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -631,7 +630,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get a service ad by ID")
             .WithDescription("Retrieves a specific service ad by its unique identifier. If not found, returns 404.")
-            .Produces<GetWithSimilarResponse<ServicesModel>>(StatusCodes.Status200OK)
+            .Produces<GetWithSimilarResponse<Services>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -640,7 +639,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdDeleteEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/delete", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
-                Guid id,
+                long id,
                 HttpContext httpContext,
                 IServices service,
                 CancellationToken cancellationToken) =>
@@ -775,7 +774,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Get services by status (with pagination)")
             .WithDescription("Returns paged service ads matching the given status (Published, Unpublished, etc).")
-            .Produces<PagedResponse<ServicesModel>>(StatusCodes.Status200OK)
+            .Produces<PagedResponse<Services>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
@@ -789,12 +788,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    if (request == null || request.ServiceId == Guid.Empty)
+                    if (request == null || request.ServiceId <= 0)
                     {
                         return Results.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId is required.",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
@@ -837,7 +836,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Promote a service ad")
             .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -853,12 +852,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    if (request == null || request.ServiceId == Guid.Empty)
+                    if (request == null || request.ServiceId <= 0)
                     {
                         return Results.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId is required.",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
@@ -902,7 +901,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Feature a service ad")
             .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -918,12 +917,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    if (request == null || request.ServiceId == Guid.Empty)
+                    if (request == null || request.ServiceId <= 0)
                     {
                         return Results.BadRequest(new ProblemDetails
                         {
                             Title = "Invalid Request",
-                            Detail = "Invalid request data. ServiceId is required.",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
@@ -964,7 +963,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Refresh a service ad")
             .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
-            .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -973,7 +972,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapPublishEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/publish", async Task<IResult> (
-                [FromQuery] Guid id,
+                [FromQuery] long id,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -1024,7 +1023,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithTags("Service")
             .WithSummary("Publish a service ad")
             .WithDescription("Publishes a service ad if it's not already published and follows category rules.")
-            .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<Services>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
@@ -1035,7 +1034,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/moderatebulk", async Task<Results<
-                    Ok<List<ServicesModel>>,
+                    Ok<List<Services>>,
                     BadRequest<ProblemDetails>,
                     ProblemHttpResult
                 >> (
@@ -1113,7 +1112,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
-               Ok<List<ServicesModel>>,
+               Ok<List<Services>>,
                BadRequest<ProblemDetails>,
                ProblemHttpResult
            >> (
