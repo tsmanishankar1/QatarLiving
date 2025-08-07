@@ -2511,3 +2511,35 @@ a, .btn-link {
     font-family: 'Public Sans', sans-serif;
     color: #646464;
 }
+
+ .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
+
+    .classified-field .mud-input-label {
+        color: #A1A1A1 !important;
+    }
+    .classified-text-field {
+    width: 330px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px solid #D0D5DD !important;
+    padding: 10px !important;
+}
+ .classified-datepicker-field {
+    height: 60px;
+}
+
+
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; 
+        z-index: 10; 
+        background-color: #FAFAFA; 
+        padding: 10px 0;
+    }
+
+     .preloved-select.mud-input-label {
+        color: #A1A1A1 !important;
+    }

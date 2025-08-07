@@ -91,18 +91,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
             var parameters = new DialogParameters
             {
                 { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "Descrption", "Do you want to export the current Subscription Listing data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };
-
             var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }

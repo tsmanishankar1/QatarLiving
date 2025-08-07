@@ -8,7 +8,7 @@
 <MudPaper Class="pa-4">
     @if(Listings == null || !Listings.Any()){
 
-<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
+<EmptyCard Title="No View Subscriptions Available" Subtitle="Please check back later or explore other categories." />
 
         
     }
@@ -54,7 +54,7 @@
                 <MudMenuItem OnClick="() => OnEdit(context)">
                     <MudIcon Icon="@Icons.Material.Filled.Edit" /> Edit
                 </MudMenuItem>
-                <MudMenuItem OnClick="() => OnPreview(context)">
+                <MudMenuItem OnClick="() => OnPreview(context.AddId)">
                     <MudIcon Icon="@Icons.Material.Filled.Visibility" /> Preview
                 </MudMenuItem>
                 <MudMenuItem Class="mud-text-error" @onclick="() => OpenRejectDialog(context.AddId)">

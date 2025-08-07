@@ -12,36 +12,25 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
     {
         [Parameter]
         public bool IsLoading { get; set; }
-
         [Parameter]
         public List<LandingPageItem> Items { get; set; } = new();
-
         [Parameter]
         public ServiceLandingPageItemType ItemType { get; set; }
          [Inject]
         public IDialogService DialogService { get; set; } = default!;
-
         [Parameter]
         public EventCallback<LandingPageItem> ReplaceItem { get; set; }
          [Inject]
         public IClassifiedService ClassifiedService { get; set; }
-
-
         [Parameter]
         public EventCallback<string> OnDelete { get; set; }
-
-        // Services and injections
         [Inject] public ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JS { get; set; }
         [Inject] protected IEventsService EventsService { get; set; }
         [Inject] protected ILogger<ServicesLandingPageComponentBase> Logger { get; set; }
-
-        // Private fields
         private string UserId => CurrentUserId.ToString();
         private bool shouldInitializeSortable = false;
         private List<Slot> featuredEventSlots = new();
-
-
         protected override async Task OnInitializedAsync()
         {
             await AuthorizedPage();
@@ -56,7 +45,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                 }).ToList();
             }
         }
-
         protected override async Task OnParametersSetAsync()
         {
             await base.OnParametersSetAsync();

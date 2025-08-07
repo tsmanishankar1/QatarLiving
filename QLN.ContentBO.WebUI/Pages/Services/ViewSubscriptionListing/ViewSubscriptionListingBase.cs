@@ -10,6 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
     [Inject] ILogger<ViewSubscriptionListingBase> Logger { get; set; }
     protected PaginatedPaymentSummaryResponse PaginatedData { get; set; } = new();
     public List<ServiceAdPaymentSummaryDto> Listings => PaginatedData.items;
+    [Inject] IServiceBOService serviceBOService { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     protected int currentPage = 1;
@@ -128,7 +129,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
         Logger.LogError(ex, "LoadSubscriptionListingsAsync");
       }
     }
-
+       
 
 
     }

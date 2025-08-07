@@ -302,22 +302,6 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                if (requestModel.Action == BulkModerationAction.Publish)
-                {
-                    if (requestModel.AdIds != null && requestModel.AdIds.Any())
-                    {
-                        var id = requestModel.AdIds.First();
-                        var response = await _httpClient.PostAsync($"api/service/publish?id={id}", null);
-                        return response;
-                    }
-                    else
-                    {
-                        Logger.LogWarning("Publish action requested, but no IDs were provided.");
-                        return new HttpResponseMessage(HttpStatusCode.BadRequest);
-                    }
-                }
-                else
-                {
                     var json = JsonSerializer.Serialize(requestModel, new JsonSerializerOptions { WriteIndented = true });
                     var request = new HttpRequestMessage(HttpMethod.Post, "api/service/moderatebulk")
                     {
@@ -325,7 +309,6 @@ namespace QLN.ContentBO.WebUI.Services
                     };
                     var response = await _httpClient.SendAsync(request);
                     return response;
-                }
             }
             catch (Exception ex)
             {

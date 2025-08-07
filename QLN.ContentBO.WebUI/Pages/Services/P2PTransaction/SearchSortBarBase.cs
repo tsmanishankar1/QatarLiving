@@ -13,7 +13,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
     {
         [Inject] protected IDialogService DialogService { get; set; } = default!;
         [Inject] protected NavigationManager NavManager { get; set; } = default!;
-
         [Parameter] public EventCallback<string> OnSearch { get; set; }
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Parameter] public EventCallback OnClearFilters { get; set; }
@@ -90,7 +89,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
             var parameters = new DialogParameters
             {
                 { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "Descrption", "Do you want to export the current P2P transactions data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };
@@ -140,9 +139,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
             Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
         }
     }
-
-
-
         protected Task HandleSelect(DropdownItem selected)
         {
 

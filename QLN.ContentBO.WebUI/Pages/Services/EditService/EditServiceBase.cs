@@ -16,27 +16,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         [Inject] ISnackbar Snackbar { get; set; }
         [Inject] ILogger<EditServiceBase> Logger { get; set; }
         private BulkModerationAction _selectedAction;
-        protected void GoBack()
-        {
-            switch (Source?.ToLower())
-            {
-                case "subscription":
-                    Navigation.NavigateTo("manage/services/listing/subscriptions");
-                    break;
-                case "p2plistings":
-                    Navigation.NavigateTo("manage/services/listing/p2p/listing");
-                    break;
-                case "p2ptransactions":
-                    Navigation.NavigateTo("manage/services/listing/p2p/transactions");
-                    break;
-                case "subscriptionads":
-                    Navigation.NavigateTo("manage/services/listing/subscription/ads");
-                    break;
-                default:
-                    Navigation.NavigateTo("manage/services/listing/subscriptions");
-                    break;
-            }
-        }
         protected AdPost adPostModel { get; set; } = new();
         [Parameter]
         public Guid? Id { get; set; }
@@ -55,6 +34,27 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             catch (Exception ex)
             {
                 Logger.LogError(ex, "OnParametersSetAsync");
+            }
+        }
+         protected void GoBack()
+        {
+            switch (Source?.ToLower())
+            {
+                case "subscription":
+                    Navigation.NavigateTo("manage/services/listing/subscriptions");
+                    break;
+                case "p2plistings":
+                    Navigation.NavigateTo("manage/services/listing/p2p/listing");
+                    break;
+                case "p2ptransactions":
+                    Navigation.NavigateTo("manage/services/listing/p2p/transactions");
+                    break;
+                case "subscriptionads":
+                    Navigation.NavigateTo("manage/services/listing/subscription/ads");
+                    break;
+                default:
+                    Navigation.NavigateTo("manage/services/listing/subscriptions");
+                    break;
             }
         }
         private async Task<ServicesDto> GetServiceById(Guid Id)

@@ -7,12 +7,12 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
   public partial class P2PListingBase : ComponentBase
   {
     [Inject] public IServiceBOService _serviceBOService { get; set; }
-     [Inject] public IDialogService DialogService { get; set; }
+    [Inject] public IDialogService DialogService { get; set; }
     [Inject] ILogger<P2PListingBase> Logger { get; set; }
     protected PaginatedServiceResponse PaginatedData { get; set; } = new();
     public List<ServiceAdSummaryDto> Listings => PaginatedData.items;
     [Inject] ISnackbar Snackbar { get; set; }
-     [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
+    [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
     protected int currentPage = 1;
     protected int pageSize = 12;
     protected int? currentStatus = 1;
@@ -40,7 +40,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }
-    protected async Task HandleDateFiltersChanged((DateTime? createdFrom,DateTime? createdTo ,DateTime? publishedFrom,DateTime? publishedTo) filters)
+    protected async Task HandleDateFiltersChanged((DateTime? createdFrom, DateTime? createdTo, DateTime? publishedFrom, DateTime? publishedTo) filters)
     {
       FromDate = filters.createdFrom;
       ToDate = filters.createdTo;
@@ -118,6 +118,35 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
         Logger.LogError(ex, "LoadP2PListingsAsync");
       }
       return new PaginatedServiceResponse();
+    }
+    protected async Task ReLoadP2PListingsAsync()
+    {
+      try
+      {
+        var response = await _serviceBOService.GetPaginatedP2PListing(
+            sortBy: SortBy,
+            search: Search,
+            fromDate: FromDate,
+            toDate: ToDate,
+            publishedFrom: PublishedFrom,
+            publishedTo: PublishedTo,
+            status: Status,
+            isPromoted: IsPromoted,
+            isFeatured: IsFeatured,
+            pageNumber: currentPage,
+            pageSize: pageSize
+        );
+        if (response.IsSuccessStatusCode)
+        {
+          var result = await response.Content.ReadFromJsonAsync<PaginatedServiceResponse>();
+          PaginatedData = result ?? new PaginatedServiceResponse();
+          PaginatedData.items = result.items;
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "LoadP2PListingsAsync");
+      }
     }
   }
 }

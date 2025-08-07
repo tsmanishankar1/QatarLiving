@@ -101,7 +101,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PListings
             var parameters = new DialogParameters
             {
                 { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "Descrption", "Do you want to export the current Subscription Listing data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };

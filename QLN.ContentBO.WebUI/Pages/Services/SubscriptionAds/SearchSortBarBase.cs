@@ -87,7 +87,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.SubscriptionAds
             var parameters = new DialogParameters
             {
                 { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "Descrption", "Do you want to export the current Subscription Ads data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };

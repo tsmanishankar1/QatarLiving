@@ -335,7 +335,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 Snackbar.Add("Please agree to the terms and conditions before proceeding.", Severity.Error);
             try
             {
-                 if (IsBase64String(selectedService.LicenseCertificate))
+                if (selectedService?.PhotoUpload != null)
+                {
+                    selectedService.PhotoUpload = await UploadImagesAsync(selectedService.PhotoUpload);
+                }
+                 if (IsBase64String(selectedService?.LicenseCertificate))
                 {
                     string? certificateUrl = await UploadCertificateAsync();
                     selectedService.LicenseCertificate = certificateUrl;
@@ -361,6 +365,67 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             {
                 Logger.LogError(ex, "SubmitForm");
             }
+        }
+        private async Task<List<ImageDto>> UploadImagesAsync(List<ImageDto> images)
+        {
+            var uploadedImages = new List<ImageDto>();
+
+            var orderedImages = images
+                .Where(img => !string.IsNullOrWhiteSpace(img.Url))
+                .OrderBy(img => img.Order)
+                .ToList();
+
+            for (int i = 0; i < orderedImages.Count; i++)
+            {
+                var image = orderedImages[i];
+
+                if (IsBlobUrl(image.Url))
+                {
+                    uploadedImages.Add(new ImageDto
+                    {
+                        Url = image.Url,
+                        Order = i
+                    });
+                    continue;
+                }
+
+                var uploadPayload = new FileUploadModel
+                {
+                    Container = "services-images",
+                    File = image.Url
+                };
+
+                var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+
+                if (uploadResponse.IsSuccessStatusCode)
+                {
+                    var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+
+                    if (result?.IsSuccess == true)
+                    {
+                        uploadedImages.Add(new ImageDto
+                        {
+                            Url = result.FileUrl,
+                            Order = i
+                        });
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Image upload failed: {Message}", result?.Message);
+                    }
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload HTTP error at index {Index}", i);
+                }
+            }
+
+            return uploadedImages;
+        }
+
+        private bool IsBlobUrl(string url)
+        {
+            return url.Contains(".blob.core.windows.net", StringComparison.OrdinalIgnoreCase);
         }
         private async Task LoadZonesAsync()
         {

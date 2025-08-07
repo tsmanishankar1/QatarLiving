@@ -17,60 +17,48 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
         [Parameter] public EventCallback<bool> OnSort { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
         [Inject] protected IJSRuntime JS { get; set; } = default!;
-
         protected bool ascending = true;
         protected string SortIcon => ascending ? Icons.Material.Filled.FilterList : Icons.Material.Filled.FilterListOff;
-
         protected DateTime? dateCreated;
         protected DateTime? datePublished;
-
         protected bool showCreatedPopover = false;
         protected bool showPublishedPopover = false;
-
         protected DateTime? tempCreatedDate;
         protected DateTime? tempPublishedDate;
-
         protected async Task OnSearchChanged(ChangeEventArgs e)
         {
             if (e?.Value != null)
                 await OnSearch.InvokeAsync(e.Value.ToString());
         }
-
         protected async Task ToggleSort()
         {
             ascending = !ascending;
             await OnSort.InvokeAsync(ascending);
         }
-
         protected void ToggleCreatedPopover()
         {
             showPublishedPopover = false;
             tempCreatedDate = dateCreated;
             showCreatedPopover = true;
         }
-
         protected void TogglePublishedPopover()
         {
             showCreatedPopover = false;
             tempPublishedDate = datePublished;
             showPublishedPopover = true;
         }
-
         protected void CancelCreatedPopover() => showCreatedPopover = false;
         protected void CancelPublishedPopover() => showPublishedPopover = false;
-
         protected void ConfirmCreatedPopover()
         {
             dateCreated = tempCreatedDate;
             showCreatedPopover = false;
         }
-
         protected void ConfirmPublishedPopover()
         {
             datePublished = tempPublishedDate;
             showPublishedPopover = false;
         }
-
         protected void ClearFilters()
         {
             dateCreated = null;
@@ -81,18 +69,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
             var parameters = new DialogParameters
             {
                 { "Title", "Export Classified Items" },
-                { "Descrption", "Do you want to export the current classified item view transactions data to Excel?" },
+                { "Descrption", "Do you want to export the current Verified Seller Request data to Excel?" },
                 { "ButtonTitle", "Export" },
                 { "OnConfirmed", EventCallback.Factory.Create(this, ExportToExcel) }
             };
-
             var options = new DialogOptions
             {
                 CloseButton = false,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
@@ -123,6 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.VerifiedSellerRequest
             Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
         }
     }
+    
 
 
 
