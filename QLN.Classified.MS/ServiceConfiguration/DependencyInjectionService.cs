@@ -3,11 +3,12 @@ using QLN.Classified.MS.Service.Services;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
-using QLN.Content.MS.Service.ClassifiedBoService;
+using QLN.Classified.MS.Service.ClassifiedBoService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
 using QLN.Classified.MS.Service.ServicesBoService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 
 
 namespace QLN.Classifieds.MS.ServiceConfiguration
@@ -17,7 +18,7 @@ namespace QLN.Classifieds.MS.ServiceConfiguration
         public static IServiceCollection ClassifiedInternalServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<IClassifiedBoLandingService, InternalClassifiedLandigBo>();
-            
+            services.AddTransient<IClassifiedStoresBOService, InternalClassifiedStoresBOService>();
             services.AddTransient<IClassifiedService, ClassifiedService>();
             services.AddTransient<IServices, InternalServicesService>();
             services.AddTransient<IServicesBoService, InternalServicesBo>();

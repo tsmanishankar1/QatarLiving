@@ -12,7 +12,8 @@ namespace QLN.Common.Infrastructure.Model
     public class ClassifiedBase
     {
         [Key]
-        public Guid Id { get; set; } = Guid.Empty;
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long Id { get; set; }
         public SubVertical SubVertical { get; set; }
         public AdTypeEnum AdType { get; set; }
         [Required, MaxLength(255)]
@@ -23,13 +24,13 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(50)]
         public string? PriceType { get; set; }
 
-        public Guid? CategoryId { get; set; }
+        public long? CategoryId { get; set; }
         [MaxLength(100)]
         public string? Category { get; set; }
-        public Guid? L1CategoryId { get; set; }
+        public long? L1CategoryId { get; set; }
         [MaxLength(100)]
         public string? L1Category { get; set; }
-        public Guid? L2CategoryId { get; set; }
+        public long? L2CategoryId { get; set; }
         [MaxLength(100)]
         public string? L2Category { get; set; }
         [MaxLength(100)]

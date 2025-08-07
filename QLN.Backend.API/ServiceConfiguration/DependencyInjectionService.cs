@@ -21,6 +21,8 @@ using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IContent;
 using QLN.Common.Infrastructure.Service.FileStorage;
 using QLN.Common.Infrastructure.IService.IServiceBoService;
+using QLN.Common.Infrastructure.IService.IClassifiedBoService;
+using QLN.Backend.API.Service.ClassifiedBoService;
 
 namespace QLN.Backend.API.ServiceConfiguration
 {
@@ -164,6 +166,11 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IServicesBoService,ExternalServicesBoService>();
             return services;
         }
-        
+        public static IServiceCollection ClassifiedBoStoresConfiguration(this IServiceCollection services, IConfiguration config)
+        {
+            services.AddTransient<IClassifiedStoresBOService, ExternalClassifiedStoresBOService>();
+            return services;
+        }
+
     }
 }

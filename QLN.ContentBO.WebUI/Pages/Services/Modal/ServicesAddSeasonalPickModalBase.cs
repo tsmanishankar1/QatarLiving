@@ -26,7 +26,16 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
-
+        protected DateRange? dateRange
+        {
+            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            set
+            {
+                StartDate = value?.Start;
+                EndDate = value?.End;
+            }
+        }
+        protected string? featuredCategoryTitle;
         protected string? SelectedCategoryId;
         protected string? SelectedSubcategoryId;
         protected string? SelectedSectionId;
@@ -35,7 +44,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected string SelectedSection { get; set; } = string.Empty;
         protected string ImagePreviewUrl { get; set; }
         protected string ImagePreviewWithoutBase64 { get; set; }
-
         protected ElementReference fileInput;
 
         protected DateTime? StartDate { get; set; } = DateTime.Today;
@@ -109,9 +117,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         }
         protected void OnSectionChanged(string? sectionId)
         {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
-
             var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }
@@ -123,7 +129,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         {
             return !string.IsNullOrEmpty(SelectedCategoryId) &&
                    !string.IsNullOrEmpty(SelectedSubcategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSectionId);
+                   !string.IsNullOrEmpty(SelectedSectionId)
+                    && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
+                    && StartDate.HasValue
+                    && EndDate.HasValue
+                    && !string.IsNullOrEmpty(ImagePreviewUrl);;
         }
 
 
@@ -140,7 +150,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 Title = $"{SelectedCategory} - {SelectedSubcategory}",
                 EndDate = DateTime.Now.AddMonths(3)
             };
-
             MudDialog.Close(DialogResult.Ok(newItem));
         }
 
@@ -153,7 +162,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             }
 
             IsSubmitting = true;
-
+            var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
             var payload = new
             {
                 vertical = "services",
@@ -166,9 +175,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 startDate = StartDate?.ToUniversalTime().ToString("o"),
                 endDate = EndDate?.ToUniversalTime().ToString("o"),
                 slotOrder = 0,
-                imageUrl = ImagePreviewWithoutBase64
+                imageUrl = imageUrl
             };
-
             try
             {
                 var response = await ClassifiedService.CreateSeasonalPicksAsync(payload);
@@ -177,7 +185,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                else if (response?.StatusCode == System.Net.HttpStatusCode.Conflict)
                 {
                     Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
@@ -194,6 +202,35 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             {
                 IsSubmitting = false;
             }
+        }
+        private async Task<string?> UploadImageAsync(string base64Image)
+        {
+            if (string.IsNullOrWhiteSpace(base64Image))
+                return null;
+
+            var uploadPayload = new FileUploadModel
+            {
+                Container = "services-images",
+                File = base64Image
+            };
+            var uploadResponse = await FileUploadService.UploadFileAsync(uploadPayload);
+            if (uploadResponse.IsSuccessStatusCode)
+            {
+                var result = await uploadResponse.Content.ReadFromJsonAsync<FileUploadResponseDto>();
+                if (result?.IsSuccess == true)
+                {
+                    return result.FileUrl;
+                }
+                else
+                {
+                    Logger.LogWarning("Image upload failed: {Message}", result?.Message);
+                }
+            }
+            else
+            {
+                Logger.LogWarning("Image upload HTTP error");
+            }
+            return null;
         }
 
         protected async Task OnLogoFileSelected(IBrowserFile file)
