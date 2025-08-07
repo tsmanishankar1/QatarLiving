@@ -1,9 +1,13 @@
 ﻿using Dapr.Client;
+using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
+using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -16,54 +20,140 @@ namespace QLN.Classified.MS.Service.Services
     {
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
+        private readonly QLClassifiedContext _dbContext;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext)
         {
             _dapr = dapr;
             _auditLogger = auditLogger;
+            _dbContext = dbContext;
         }
-        public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCategoryAsync(CategoryDto dto, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(dto.Category))
-                throw new InvalidDataException("MainCategory is required.");
-
-            if (dto.L1Categories == null || dto.L1Categories.Count == 0)
-                throw new InvalidDataException("At least one L1 Category is required.");
-
-            dto.Id = Guid.NewGuid();
-
-            foreach (var l1 in dto.L1Categories)
+            try
             {
-                l1.Id = Guid.NewGuid();
+                // Parse enums
+                if (!Enum.TryParse<Vertical>(dto.Vertical, true, out var verticalEnum))
+                    return "Invalid vertical value";
 
-                if (string.IsNullOrWhiteSpace(l1.Name))
-                    throw new InvalidDataException("Each L1 Category must have a Name.");
-
-                if (l1.L2Categories == null || l1.L2Categories.Count == 0)
-                    throw new InvalidDataException($"L1 Category '{l1.Name}' must have at least one L2 Category.");
-
-                foreach (var l2 in l1.L2Categories)
+                SubVertical? subVerticalEnum = null;
+                if (!string.IsNullOrWhiteSpace(dto.SubVertical))
                 {
-                    l2.Id = Guid.NewGuid();
+                    if (Enum.TryParse<SubVertical>(dto.SubVertical, true, out var parsedSubVertical))
+                        subVerticalEnum = parsedSubVertical;
+                    else
+                        return "Invalid sub-vertical value";
+                }
 
-                    if (string.IsNullOrWhiteSpace(l2.Name))
-                        throw new InvalidDataException("Each L2 Category must have a Name.");
+                Category? mainCategory;
+
+                if (dto.ParentId.HasValue)
+                {
+                    mainCategory = await _dbContext.Categories
+                        .FirstOrDefaultAsync(c => c.Id == dto.ParentId.Value, cancellationToken);
+
+                    if (mainCategory == null)
+                        return $"Parent category with ID {dto.ParentId.Value} not found.";
+                }
+                else
+                {
+                    
+                    mainCategory = new Category
+                    {
+                        CategoryName = dto.CategoryName,
+                        Vertical = verticalEnum,
+                        SubVertical = subVerticalEnum
+                    };
+
+                    _dbContext.Categories.Add(mainCategory);
+                }
+
+                
+                if (dto.Fields != null && dto.Fields.Any())
+                {
+                    foreach (var fieldDto in dto.Fields)
+                    {
+                        var childCategory = MapField(fieldDto, mainCategory, verticalEnum, subVerticalEnum);
+                        mainCategory.CategoryFields.Add(childCategory);
+                    }
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return "Category created successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error: {ex.Message}";
+            }
+        }
+
+
+     
+        private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
+        {
+            var category = new Category
+            {
+                CategoryName = dto.CategoryName,
+                Type = dto.Type,
+                Options = dto.Options,
+                ParentCategory = parent,
+                Vertical = verticalEnum,
+                SubVertical = subVerticalEnum
+            };
+
+            if (dto.Fields != null && dto.Fields.Any())
+            {
+                foreach (var childDto in dto.Fields)
+                {
+                    var childCategory = MapField(childDto, category, verticalEnum, subVerticalEnum);
+                    category.CategoryFields.Add(childCategory);
                 }
             }
 
-            var key = dto.Id.ToString();
-
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
-
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken: cancellationToken) ?? new();
-
-            if (!keys.Contains(key))
-            {
-                keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken: cancellationToken);
-            }
-
-            return "Category Created Successfully";
+            return category;
         }
+        //public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        //{
+        //    if (string.IsNullOrWhiteSpace(dto.Category))
+        //        throw new InvalidDataException("MainCategory is required.");
+
+        //    if (dto.L1Categories == null || dto.L1Categories.Count == 0)
+        //        throw new InvalidDataException("At least one L1 Category is required.");
+
+        //    dto.Id = Guid.NewGuid();
+
+        //    foreach (var l1 in dto.L1Categories)
+        //    {
+        //        l1.Id = Guid.NewGuid();
+
+        //        if (string.IsNullOrWhiteSpace(l1.Name))
+        //            throw new InvalidDataException("Each L1 Category must have a Name.");
+
+        //        if (l1.L2Categories == null || l1.L2Categories.Count == 0)
+        //            throw new InvalidDataException($"L1 Category '{l1.Name}' must have at least one L2 Category.");
+
+        //        foreach (var l2 in l1.L2Categories)
+        //        {
+        //            l2.Id = Guid.NewGuid();
+
+        //            if (string.IsNullOrWhiteSpace(l2.Name))
+        //                throw new InvalidDataException("Each L2 Category must have a Name.");
+        //        }
+        //    }
+
+        //    var key = dto.Id.ToString();
+
+        //    await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
+
+        //    var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken: cancellationToken) ?? new();
+
+        //    if (!keys.Contains(key))
+        //    {
+        //        keys.Add(key);
+        //        await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken: cancellationToken);
+        //    }
+
+        //    return "Category Created Successfully";
+        //}
         public async Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
             var key = dto.Id?.ToString();

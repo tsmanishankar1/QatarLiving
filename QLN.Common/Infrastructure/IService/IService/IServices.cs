@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,8 @@ namespace QLN.Common.Infrastructure.IService.IService
 {
     public interface IServices
     {
-        Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
+        Task<string> CreateCategoryAsync(CategoryDto dto, CancellationToken cancellationToken);
+       // Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
         Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
         Task<List<ServicesCategory>> GetAllCategories(CancellationToken cancellationToken = default);
         Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default);

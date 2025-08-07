@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Model;
-using System.Reflection.Metadata;
+
 
 namespace QLN.Common.Infrastructure.QLDbContext
 {
@@ -24,6 +22,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<ProductImages> ProductImage { get; set; }
         public DbSet<Items> Item { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
+        public DbSet<Category> Categories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()
@@ -43,8 +43,13 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 .WithOne(a => a.StoreProduct)
                 .HasForeignKey(a => a.StoreProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-           
-           
+            modelBuilder.Entity<Category>()
+
+                 .HasMany(sc => sc.CategoryFields)
+                 .WithOne(sc => sc.ParentCategory)
+                 .HasForeignKey(sc => sc.ParentId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
         }
 

@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     [DbContext(typeof(QLClassifiedContext))]
-    [Migration("20250806080623_Services")]
-    partial class Services
+    [Migration("20250807070211_Category")]
+    partial class Category
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -221,6 +221,40 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.ToTable("SubscriptionType");
                 });
 
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<List<string>>("Options")
+                        .HasColumnType("text[]");
+
+                    b.Property<long?>("ParentId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Vertical")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("Categories");
+                });
+
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Items", b =>
                 {
                     b.Property<Guid>("Id")
@@ -404,216 +438,6 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.ToTable("Item");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("ServicesCategoryId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ServicesCategoryId");
-
-                    b.ToTable("L1Categories");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("L1CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("L1CategoryId");
-
-                    b.ToTable("L2Categories");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Services", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("AdType")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("BuildingNumber")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CategoryName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Comments")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("EmailAddress")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("FeaturedExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsFeatured")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPriceOnRequest")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPromoted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("L1CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("L1CategoryName")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("L2CategoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("L2CategoryName")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("LastRefreshedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal>("Lattitude")
-                        .HasColumnType("decimal(9,6)");
-
-                    b.Property<string>("LicenseCertificate")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("LocationId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Longitude")
-                        .HasColumnType("decimal(9,6)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("character varying(15)");
-
-                    b.Property<string>("PhoneNumberCountryCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<List<ImageDto>>("PhotoUpload")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<decimal?>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("PromotedExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("PublishedDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("StreetNumber")
-                        .HasColumnType("text");
-
-                    b.Property<string>("SubscriptionId")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("text");
-
-                    b.Property<string>("WhatsappNumber")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("character varying(15)");
-
-                    b.Property<string>("WhatsappNumberCountryCode")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("ZoneId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
-
-                    b.HasIndex("L1CategoryId");
-
-                    b.HasIndex("L2CategoryId");
-
-                    b.ToTable("Services");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ServicesCategory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ServicesCategories");
-                });
-
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.ProductFeatures", b =>
                 {
                     b.HasOne("QLN.Common.DTO_s.ClassifiedsBo.StoreProducts", "StoreProduct")
@@ -647,53 +471,14 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Navigation("StoreFlyer");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
                 {
-                    b.HasOne("QLN.Common.Infrastructure.Model.ServicesCategory", "ServicesCategory")
-                        .WithMany("L1Categories")
-                        .HasForeignKey("ServicesCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("QLN.Common.Infrastructure.Model.Category", "ParentCategory")
+                        .WithMany("CategoryFields")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("ServicesCategory");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.L1Category", "L1Category")
-                        .WithMany("L2Categories")
-                        .HasForeignKey("L1CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("L1Category");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Services", b =>
-                {
-                    b.HasOne("QLN.Common.Infrastructure.Model.ServicesCategory", "Category")
-                        .WithMany("Services")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("QLN.Common.Infrastructure.Model.L1Category", "L1Category")
-                        .WithMany("Services")
-                        .HasForeignKey("L1CategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("QLN.Common.Infrastructure.Model.L2Category", "L2Category")
-                        .WithMany("Services")
-                        .HasForeignKey("L2CategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Category");
-
-                    b.Navigation("L1Category");
-
-                    b.Navigation("L2Category");
+                    b.Navigation("ParentCategory");
                 });
 
             modelBuilder.Entity("QLN.Common.DTO_s.ClassifiedsBo.StoreFlyers", b =>
@@ -708,23 +493,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     b.Navigation("Images");
                 });
 
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L1Category", b =>
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.Category", b =>
                 {
-                    b.Navigation("L2Categories");
-
-                    b.Navigation("Services");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.L2Category", b =>
-                {
-                    b.Navigation("Services");
-                });
-
-            modelBuilder.Entity("QLN.Common.Infrastructure.Model.ServicesCategory", b =>
-                {
-                    b.Navigation("L1Categories");
-
-                    b.Navigation("Services");
+                    b.Navigation("CategoryFields");
                 });
 #pragma warning restore 612, 618
         }

@@ -42,11 +42,13 @@ builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
+
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
-
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(dataSource));
 var app = builder.Build();
 
