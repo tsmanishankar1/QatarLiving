@@ -9,8 +9,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBoIndex
 {
     public class TransactionDto
     {
-        public string Id { get; set; } = string.Empty;
-        public string AdId { get; set; } = string.Empty;
+        public string Id { get; set; } 
+        public string AdId { get; set; }
         public string OrderId { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
@@ -23,8 +23,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBoIndex
         public string Mobile { get; set; } = string.Empty;
         public string Whatsapp { get; set; } = string.Empty;
         public string Account { get; set; } = string.Empty;
-        public string CreationDate { get; set; } = string.Empty;
-        public string PublishedDate { get; set; } = string.Empty;
+        public string CreationDate { get; set; } 
+        public string? PublishedDate { get; set; } 
         public string StartDate { get; set; } = string.Empty;
         public string EndDate { get; set; } = string.Empty;
         public decimal Amount { get; set; }
