@@ -477,329 +477,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("itemsAd-dashboard", async Task<IResult> (
-                HttpContext context,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the JWT token.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetUserItemsAdsWithDashboard(uid, token);
-
-                    if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
-                        (result?.ItemsAds.UnpublishedAds?.Any() != true))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{uid}'.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Operation",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested user or ads data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserItemsAdsWithDashboard")
-                .WithTags("Items")
-                .WithSummary("Get all user ads and dashboard")
-                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID (from token).")
-                .RequireAuthorization()
-                .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("itemsAd-dashboard-byId", async Task<IResult> (
-                [FromQuery] string userId,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    if (userId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "User ID must not be empty.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.GetUserItemsAdsWithDashboard(userId, token);
-
-                    if ((result?.ItemsAds.PublishedAds?.Any() != true) &&
-                        (result?.ItemsAds.UnpublishedAds?.Any() != true))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "No Ads Found",
-                            Detail = $"No ads were found for user ID '{userId}'.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested user or ads data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Operation",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserItemsAdsWithDashboardById")
-                .WithTags("Items")
-                .WithSummary("Get all user ads and dashboard (By Id)")
-                .WithDescription("Returns both published/unpublished ads and dashboard metrics for a given user ID (from query).")
-                .Produces<ItemAdsAndDashboardResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-
-
-            group.MapGet("prelovedAd-dashboard", async Task<IResult> (
-                HttpContext httpContext,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    if (uid == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "Authenticated user ID is missing or invalid.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.GetUserPrelovedAdsAndDashboard(uid, token);
-
-                    if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
-                        (result?.PrelovedAds.UnpublishedAds?.Any() != true))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "No Ads Found",
-                            Detail = $"No Preloved ads were found for authenticated user.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Operation",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested Preloved ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("GetUserPrelovedAdsWithDashboard")
-            .WithTags("Preloved")
-            .WithSummary("Get all authenticated user's Preloved ads and dashboard")
-            .WithDescription("Returns Preloved ads and dashboard for the currently authenticated user.")
-            .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-            group.MapGet("prelovedAd-dashboard-byId", async Task<IResult> (
-                string userId,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                try
-                {
-                    if (userId == null)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "User ID must not be empty.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    var result = await service.GetUserPrelovedAdsAndDashboard(userId, token);
-
-                    if ((result?.PrelovedAds.PublishedAds?.Any() != true) &&
-                        (result?.PrelovedAds.UnpublishedAds?.Any() != true))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "No Ads Found",
-                            Detail = $"No Preloved ads were found for user ID '{userId}'.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Operation",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested Preloved ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("GetUserPrelovedAdsWithDashboardById")
-            .WithTags("Preloved")
-            .WithSummary("Get all user Preloved ads and dashboard (by userId)")
-            .WithDescription("Returns Preloved ads and dashboard for a user specified via route parameter.")
-            .Produces<PrelovedAdsAndDashboardResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .ExcludeFromDescription();
-
             // itemsAd post
             group.MapPost("items", async Task<IResult> (
                 HttpContext httpContext,
@@ -1282,14 +959,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             {
                 try
                 {
-                    // Retrieve user claim from the token
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
                         return Results.Unauthorized();
                     }
 
-                    // Deserialize the user data from the claim
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var uid = userData.GetProperty("uid").GetString();
 
@@ -1309,32 +984,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateItemsClassifiedAd")
@@ -1367,32 +1064,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateItemsClassifiedAdById")
@@ -1437,32 +1156,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdatePrelovedClassifiedAd")
@@ -1495,32 +1236,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdatePrelovedClassifiedAdById")
@@ -1565,32 +1328,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                .WithName("UpdateCollectiblesClassifiedAd")
@@ -1623,32 +1408,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateCollectiblesClassifiedAdById")
@@ -1693,32 +1500,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
              .WithName("UpdateDealsClassifiedAd")
@@ -1751,32 +1580,54 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (ArgumentNullException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing Input",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (OperationCanceledException)
+                {
+                    return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return Results.Problem(new ProblemDetails
+                    {
+                        Title = "Operation Failed",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status500InternalServerError
+                    });
+                }
                 catch (Exception ex)
                 {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    return Results.Problem(new ProblemDetails
                     {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested resource or reference was not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
+                        Title = "Unhandled Error",
+                        Detail = "An unexpected error occurred.",
+                        Status = StatusCodes.Status500InternalServerError
+                    });
                 }
             })
                 .WithName("UpdateDealsClassifiedAdById")
@@ -2157,121 +2008,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-
-            group.MapGet("/collectibles", async Task<Results<
-               Ok<CollectiblesResponse>,
-               BadRequest<ProblemDetails>,
-               UnauthorizedHttpResult,
-               ProblemHttpResult>>
-            (
-                IClassifiedService service,
-                HttpContext context,
-                CancellationToken cancellationToken
-            ) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the token.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetCollectibles(context.ToString(), cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (FileNotFoundException fileEx)
-                {
-                    return TypedResults.Problem(
-                        title: "File Not Found",
-                        detail: fileEx.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        instance: context.Request.Path);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path);
-                }
-            })
-            .WithName("GetCollectibles")
-            .WithTags("Collectibles")
-            .WithSummary("Get collectibles for the logged-in user")
-            .WithDescription("Returns collectibles data for the current user based on token.")
-            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .RequireAuthorization();
-
-            group.MapGet("/collectibles-by-id", async Task<Results<
-                  Ok<CollectiblesResponse>,
-                  BadRequest<ProblemDetails>,
-                  ProblemHttpResult>>
-              (
-                  [Required][FromQuery] string userId,
-                  IClassifiedService service,
-                  HttpContext context,
-                  CancellationToken cancellationToken
-              ) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Valid User ID must be provided in the query.",
-                        Status = StatusCodes.Status400BadRequest,
-                        Instance = context.Request.Path
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetCollectibles(userId.ToString(), cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (FileNotFoundException fileEx)
-                {
-                    return TypedResults.Problem(
-                        title: "File Not Found",
-                        detail: fileEx.Message,
-                        statusCode: StatusCodes.Status404NotFound,
-                        instance: context.Request.Path);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path);
-                }
-            })
-            .WithName("GetCollectiblesById")
-            .WithTags("Collectibles")
-            .WithSummary("Get collectibles for a specified user ID")
-            .WithDescription("Returns collectibles data for a given user ID passed as query parameter.")
-            .Produces<CollectiblesResponse>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-            .ExcludeFromDescription()
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             group.MapDelete("/items/{adId:guid}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
@@ -2618,1028 +2354,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("items/user-ads/published", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetUserPublishedItemsAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserPublishedItemsAds")
-                .WithTags("Classified")
-                .WithSummary("Get published classified items ads for current user")
-                .WithDescription("Retrieves only published item ads for the authenticated user with pagination.")
-                .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-
-            group.MapGet("items/user-ads-by-id/{userId}/published", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetUserPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserPublishedItemsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get published classified items ads by user ID")
-                .WithDescription("Retrieves only published item ads for the specified user with pagination (admin or service use).")
-                .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapGet("items/user-ads/unpublished", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedItemsAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserUnPublishedItemsAds")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished classified items ads for current user")
-                .WithDescription("Retrieves only unpublished item ads for the authenticated user with optional pagination.")
-                .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapGet("items/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                IClassifiedService service,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedItemsAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                        });
-                    }
-                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-                .WithName("GetUserUnPublishedItemsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished classified items ads by user ID")
-                .WithDescription("Retrieves only unpublished item ads for the specified user (for admin or service use) with pagination.")
-                .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-
-
-            group.MapGet("preloved/user-ads/published", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedPrelovedAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedPrelovedAds")
-                .WithTags("Classified")
-                .WithSummary("Get published/approved preloved ads for current user")
-                .WithDescription("Retrieves only published or approved Preloved ads for the authenticated user with optional pagination.")
-                .Produces<PaginatedPrelovedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapGet("preloved/user-ads-by-id/{userId}/published", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedPrelovedAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedPrelovedAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get published/approved preloved ads by user ID")
-                .WithDescription("Retrieves published or approved Preloved ads for the specified user ID (admin/service use) with optional pagination.")
-                .Produces<PaginatedPrelovedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapGet("preloved/user-ads/unpublished", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                try
-                {
-                    var result = await service.GetUserUnPublishedPrelovedAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-
-                }
-            })
-                .WithName("GetUserUnPublishedPrelovedAds")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished preloved ads for current user")
-                .WithDescription("Retrieves only unpublished Preloved ads for the authenticated user with optional pagination.")
-                .Produces<PaginatedPrelovedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapGet("preloved/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                try
-                {
-                    var result = await service.GetUserUnPublishedPrelovedAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-
-                }
-            })
-                .WithName("GetUserUnPublishedPrelovedAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished preloved ads by user ID")
-                .WithDescription("Retrieves unpublished Preloved ads for the specified user ID (admin/service use) with optional pagination.")
-                .Produces<PaginatedPrelovedAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-
-            group.MapGet("collectibles/user-ads/published", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedCollectiblesAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedCollectiblesAds")
-                .WithTags("Classified")
-                .WithSummary("Get published collectibles ads for current user")
-                .WithDescription("Retrieves only published or approved Collectibles ads for the authenticated user with pagination.")
-                .Produces<PaginatedCollectiblesAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-
-            group.MapGet("collectibles/user-ads-by-id/{userId}/published", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedCollectiblesAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedCollectiblesAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get published collectibles ads by user ID")
-                .WithDescription("Retrieves only published or approved Collectibles ads for the specified user with pagination (admin/service use).")
-                .Produces<PaginatedCollectiblesAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapGet("collectibles/user-ads/unpublished", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedCollectiblesAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserUnPublishedCollectiblesAds")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished collectibles ads for current user")
-                .WithDescription("Retrieves only unpublished Collectibles ads for the authenticated user with pagination.")
-                .Produces<PaginatedCollectiblesAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapGet("collectibles/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedCollectiblesAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserUnPublishedCollectiblesAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished collectibles ads by user ID")
-                .WithDescription("Retrieves unpublished Collectibles ads for the specified user with pagination (admin/service use).")
-                .Produces<PaginatedCollectiblesAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-
-            group.MapGet("deals/user-ads/published", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedDealsAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedDealsAds")
-                .WithTags("Classified")
-                .WithSummary("Get published deals ads for current user")
-                .WithDescription("Retrieves only published or approved Deals ads for the authenticated user with pagination.")
-                .Produces<PaginatedDealsAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapGet("deals/user-ads-by-id/{userId}/published", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserPublishedDealsAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested published ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserPublishedDealsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get published deals ads by user ID")
-                .WithDescription("Retrieves only published or approved Deals ads for the specified user with pagination (admin or service use).")
-                .Produces<PaginatedDealsAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapGet("deals/user-ads/unpublished", async Task<IResult> (
-                HttpContext context,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedDealsAds(uid, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound,
-                            Instance = context.Request.Path
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.Request.Path
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserUnPublishedDealsAds")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished deals ads for current user")
-                .WithDescription("Retrieves only unpublished Deals ads for the authenticated user with pagination.")
-                .Produces<PaginatedDealsAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-
-            group.MapGet("deals/user-ads-by-id/{userId}/unpublished", async Task<IResult> (
-                string userId,
-                [FromQuery] int? page,
-                [FromQuery] int? pageSize,
-                [FromQuery] AdSortOption? sortOption,
-                [FromQuery] string? search,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-
-                try
-                {
-                    var result = await service.GetUserUnPublishedDealsAds(userId, page, pageSize, sortOption, search, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "Requested unpublished ads or user data not found.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-
-                    if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Bad Request",
-                            Detail = ex.Message,
-                            Status = StatusCodes.Status400BadRequest
-                        });
-
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("GetUserUnPublishedDealsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Get unpublished deals ads by user ID")
-                .WithDescription("Retrieves unpublished Deals ads for the specified user with pagination (admin or service use).")
-                .Produces<PaginatedDealsAdResponseDto>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
 
             group.MapGet("/items/{adId:guid}", async Task<IResult> (
                 Guid adId,
@@ -3671,6 +2385,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -3728,6 +2451,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     }
 
                     return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -3787,6 +2519,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3844,6 +2585,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                     return TypedResults.Ok(result);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.InnerException?.Message ?? ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
                 catch (Exception ex)
                 {
                     if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
@@ -3876,7 +2626,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .WithTags("Classified")
                 .WithSummary("Get a single Collectibles Ad by ID")
                 .WithDescription("Fetches the details of a specific Collectibles ad using the provided adId.")
-                .Produces<ClassifiedCollectibles>(StatusCodes.Status200OK)
+                .Produces<ClassifiedsCollectibles>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
@@ -4282,864 +3032,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-            group.MapPost("items/user-ads/unpublish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishItemsAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishItemsAds")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple published item ads")
-                .WithDescription("Unpublishes selected published item ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("items/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
-                 string userId,
-                 List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is missing or does not match payload.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishItemsAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishItemsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple published item ads by user ID")
-                .WithDescription("Unpublishes selected published item ads for a specific user (admin use only).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("items/user-ads/publish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishItemsAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishItemsAds")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple unpublished item ads")
-                .WithDescription("Publishes selected unpublished item ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("items/user-ads-by-id/{userId}/publish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is missing or does not match payload.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishItemsAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishItemsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple unpublished item ads by user ID")
-                .WithDescription("Publishes selected unpublished item ads for a specific user (admin use only).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/preloved/user-ads/publish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishPrelovedAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishPrelovedAds")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple preloved ads")
-                .WithDescription("Publishes draft/unpublished preloved ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/preloved/user-ads-by-id/{userId}/publish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishPrelovedAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishPrelovedAdsById")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple preloved ads by user ID")
-                .WithDescription("Publishes selected unpublished preloved ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/preloved/user-ads/unpublish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishPrelovedAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishPrelovedAds")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple preloved ads")
-                .WithDescription("Unpublishes active preloved ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/preloved/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishPrelovedAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishPrelovedAdsById")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple preloved ads by user ID")
-                .WithDescription("Unpublishes published preloved ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/deals/user-ads/publish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishDealsAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishDealsAds")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple deals ads")
-                .WithDescription("Publishes draft/unpublished deals ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/deals/user-ads-by-id/{userId}/publish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishDealsAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishDealsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple deals ads by user ID")
-                .WithDescription("Publishes selected unpublished deals ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/deals/user-ads/unpublish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or invalid.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishDealsAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishDealsAds")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple deals ads")
-                .WithDescription("Unpublishes published deals ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/deals/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishDealsAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishDealsAdsById")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple deals ads by user ID")
-                .WithDescription("Unpublishes selected published deals ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/collectibles/user-ads/publish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishCollectiblesAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishCollectiblesAds")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple collectibles ads")
-                .WithDescription("Publishes draft/unpublished collectibles ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/collectibles/user-ads-by-id/{userId}/publish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkPublishCollectiblesAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Publish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkPublishCollectiblesAdsById")
-                .WithTags("Classified")
-                .WithSummary("Publish multiple collectibles ads by user ID")
-                .WithDescription("Publishes selected unpublished collectibles ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-            group.MapPost("/collectibles/user-ads/unpublish", async Task<IResult> (
-                HttpContext context,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                {
-                    return Results.Unauthorized();
-                }
-
-                // Deserialize the 'user' claim into a dynamic object
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                // Fetch the 'uid' from the deserialized user data
-                var uid = userData.GetProperty("uid").GetString();
-
-                if (uid == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Authenticated user ID is missing or does not match request.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishCollectiblesAds(uid, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishCollectiblesAds")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple collectibles ads")
-                .WithDescription("Unpublishes published collectibles ads for the authenticated user.")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .RequireAuthorization();
-
-            group.MapPost("/collectibles/user-ads-by-id/{userId}/unpublish", async Task<IResult> (
-                string userId,
-                List<Guid> adIds,
-                IClassifiedService service,
-                CancellationToken token) =>
-            {
-                if (userId == null)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "User ID is required.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                try
-                {
-                    var result = await service.BulkUnpublishCollectiblesAds(userId, adIds, token);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.Conflict(new ProblemDetails
-                    {
-                        Title = "Unpublish Failed",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status409Conflict
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError);
-                }
-            })
-                .WithName("BulkUnpublishCollectiblesAdsById")
-                .WithTags("Classified")
-                .WithSummary("Unpublish multiple collectibles ads by user ID")
-                .WithDescription("Unpublishes selected published collectibles ads for a specific user (admin use).")
-                .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
-                .ExcludeFromDescription();
-
-
             group.MapGet("/category/{vertical}/{mainCategoryId:guid}/filters", async Task<IResult> (
                 string vertical,
                 Guid mainCategoryId,
@@ -5210,9 +3102,557 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
    .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/user-dashborad", async Task<IResult> (
+                HttpContext context,
+                [FromQuery] string subVertical,
+                [FromQuery] bool? isPublished,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                [FromQuery] string? search,
+                IClassifiedService service,
+                CancellationToken token) =>
+                    {
+                        var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                        if (string.IsNullOrEmpty(userClaim))
+                            return Results.Unauthorized();
+
+                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                        var uid = userData.GetProperty("uid").GetString();
+
+                        if (uid == null)
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = "Authenticated user ID is missing or invalid.",
+                                Status = StatusCodes.Status400BadRequest
+                            });
+                        }
+
+                        if (string.IsNullOrWhiteSpace(subVertical))
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Missing subVertical",
+                                Detail = "subVertical is required.",
+                                Status = StatusCodes.Status400BadRequest
+                            });
+                        }
+
+                        try
+                        {
+                            var result = await service.GetFilteredAds(subVertical.Trim().ToLowerInvariant(), isPublished, page ?? 1, pageSize ?? 10, search, uid, token);
+                            return TypedResults.Ok(result);
+                        }
+                        catch (ArgumentException argEx)
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Invalid request",
+                                Detail = argEx.Message,
+                                Status = StatusCodes.Status400BadRequest
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            return TypedResults.Problem(
+                                title: "Internal Server Error",
+                                detail: ex.Message,
+                                statusCode: StatusCodes.Status500InternalServerError
+                            );
+                        }
+                    })
+            .WithName("GetFilteredClassifiedAdsForUser")
+            .WithTags("Classified")
+            .WithSummary("Get filtered classified ads for the authenticated user")
+            .WithDescription("Supports filters like subVertical, isPublished, search, and pagination for current user.")
+            .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            group.MapGet("/user-dashborad/{userId}", async Task<IResult> (
+                [FromQuery] string userId,
+                [FromQuery] string subVertical,
+                [FromQuery] bool? isPublished,
+                [FromQuery] int? page,
+                [FromQuery] int? pageSize,
+                [FromQuery] string? search,
+                IClassifiedService service,
+                CancellationToken token) =>
+            {
+
+                if (userId == null)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Authenticated user ID is missing or invalid.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+            group.MapPut("/items/promote", async Task<IResult> (
+                HttpContext httpContext,
+                ClassifiedsPromoteDto dto,
+    IClassifiedService service,
+    CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+                    await service.PromoteClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as promoted."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+    .RequireAuthorization()
+    .WithName("PromoteItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+    .WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/items/promoted", async Task<IResult> (
+    ClassifiedsPromoteDto dto,
+    string userId,
+IClassifiedService service,
+CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    await service.PromoteClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as promoted."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+.ExcludeFromDescription()
+.WithName("PromotedItemsAd")
+.WithTags("Classified")
+.WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPut("/items/feature", async Task<IResult> (
+              HttpContext httpContext,
+             ClassifiedsPromoteDto dto,
+ IClassifiedService service,
+ CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+                    await service.FeatureClassifiedAd(dto, userId!, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+ .RequireAuthorization()
+ .WithName("FeatureItemssAd")
+ .WithTags("Classified")
+ .WithSummary("Feature the ad's 'IsFeatured' field, set the 'CreatedDate' to current date")
+ .WithDescription("Updates the ad's 'IsFeatured' field to true, the 'CreatedDate' to the current date")
+ .Produces(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/items/featured", async Task<IResult> (
+   ClassifiedsPromoteDto dto,
+   string userId,
+IClassifiedService service,
+CancellationToken token) =>
+            {
+                try
+                {
+                    if (dto.AdId == Guid.Empty)
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Validation Error",
+                            Detail = "AdId is required.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    await service.FeatureClassifiedAd(dto, userId, token);
+                    return TypedResults.Ok(new
+                    {
+                        AdId = dto.AdId,
+                        Message = "The ad has been successfully marked as featured."
+                    });
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Bad Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+.ExcludeFromDescription()
+.WithName("FeaturedItemssAd")
+.WithTags("Classified")
+.WithSummary("Feature the ad's 'IsFeatured' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsFeatured' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
 
+
+                if (string.IsNullOrWhiteSpace(subVertical))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Missing subVertical",
+                        Detail = "subVertical is required.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.GetFilteredAds(subVertical.Trim().ToLowerInvariant(), isPublished, page ?? 1, pageSize ?? 10, search, userId, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException argEx)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid request",
+                        Detail = argEx.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetFilteredClassifiedAdsByUserId")
+            .WithTags("Classified")
+            .WithSummary("Get filtered classified ads by specific user ID")
+            .WithDescription("Admin or service endpoint to retrieve filtered ads using subVertical, isPublished, and userId.")
+            .Produces<PaginatedAdResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .ExcludeFromDescription()
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("user-dashboard/bulk-action", async Task<IResult> (
+                HttpContext context,
+                [FromQuery] string subVertical,
+                [FromQuery] bool isPublished,
+                [FromBody] List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+                    {
+                        var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                        if (string.IsNullOrEmpty(userClaim))
+                        {
+                            return Results.Unauthorized();
+                        }
+
+                        try
+                        {
+                            var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                            var uid = userData.GetProperty("uid").GetString();
+
+                            if (string.IsNullOrEmpty(uid))
+                            {
+                                return TypedResults.BadRequest(new ProblemDetails
+                                {
+                                    Title = "Validation Error",
+                                    Detail = "Authenticated user ID is missing.",
+                                    Status = StatusCodes.Status400BadRequest
+                                });
+                            }
+
+                            var result = await service.BulkUpdateAdPublishStatusAsync(
+                                subVertical,
+                                uid,
+                                adIds,
+                                isPublished,
+                                token);
+
+                            return TypedResults.Ok(result);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            return TypedResults.Conflict(new ProblemDetails
+                            {
+                                Title = isPublished ? "Publish Failed" : "Unpublish Failed",
+                                Detail = ex.Message,
+                                Status = StatusCodes.Status409Conflict
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            return TypedResults.Problem(
+                                title: "Internal Server Error",
+                                detail: ex.Message,
+                                statusCode: StatusCodes.Status500InternalServerError);
+                        }
+                    })
+            .WithName("BulkPublishDynamic")
+            .WithTags("Classified")
+            .WithSummary("Bulk publish/unpublish ads (dynamic by sub-vertical)")
+            .WithDescription("Publishes or unpublishes ads across sub-verticals for the authenticated user. Parameters in query, adIds in body.")
+            .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+            .RequireAuthorization();
+
+            group.MapPost("user-dashboard/bulk-action-by-id", async Task<IResult> (
+                [FromQuery] string subVertical,
+                [FromQuery] bool isPublished,
+                [FromQuery] string userId,
+                [FromBody] List<Guid> adIds,
+                IClassifiedService service,
+                CancellationToken token) =>
+                    {
+                        if (string.IsNullOrWhiteSpace(userId))
+                        {
+                            return TypedResults.BadRequest(new ProblemDetails
+                            {
+                                Title = "Validation Error",
+                                Detail = "User ID is required.",
+                                Status = StatusCodes.Status400BadRequest
+                            });
+                        }
+
+                        try
+                        {
+                            var result = await service.BulkUpdateAdPublishStatusAsync(
+                                subVertical,
+                                userId,
+                                adIds,
+                                isPublished,
+                                token);
+
+                            return TypedResults.Ok(result);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            return TypedResults.Conflict(new ProblemDetails
+                            {
+                                Title = isPublished ? "Publish Failed" : "Unpublish Failed",
+                                Detail = ex.Message,
+                                Status = StatusCodes.Status409Conflict
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            return TypedResults.Problem(
+                                title: "Internal Server Error",
+                                detail: ex.Message,
+                                statusCode: StatusCodes.Status500InternalServerError);
+                        }
+                    }).WithName("BulkPublishDynamicbyid")
+        .WithTags("Classified")
+        .WithSummary("Admin: Bulk publish/unpublish ads for any user")
+        .WithDescription("Used by admins to bulk update ad publish status for any user across sub-verticals.")
+        .Produces<BulkAdActionResponse>(StatusCodes.Status200OK)
+        .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+        .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+        .ExcludeFromDescription();
             return group;
         }
         public static RouteGroupBuilder MapClassifiedsFeaturedItemEndpoint(this RouteGroupBuilder group)

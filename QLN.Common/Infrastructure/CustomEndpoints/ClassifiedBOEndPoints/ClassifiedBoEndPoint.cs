@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Google.Api;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -1426,7 +1428,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds ads, including their details.")
-            .Produces<List<ClassifiedItems>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsItems>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -1454,7 +1456,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
-            .Produces<List<ClassifiedCollectibles>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsCollectibles>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<
@@ -2212,7 +2214,7 @@ CancellationToken ct
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
          
             group.MapGet("/getstoresubscriptions", async Task<Results<
-           Ok<List<StoresSubscriptionDto>>,
+           Ok<ClassifiedBOPageResponse<StoresSubscriptionDto>>,
            BadRequest<ProblemDetails>,
            ProblemHttpResult>>
            (
@@ -2220,12 +2222,15 @@ CancellationToken ct
            HttpContext context,
            string? subscriptionType,
            string? filterDate,
+           int? Page, int? PageSize, string? Search,
            CancellationToken cancellationToken
            ) =>
             {
                 try
                 {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,cancellationToken);
+                    int page = Page ?? 1;
+                    int pageSize = PageSize ?? 12;
+                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate, page, pageSize, Search,cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -2244,7 +2249,7 @@ CancellationToken ct
            .WithTags("ClassifiedBo")
            .WithSummary("Get all subscriptions on stores.")
            .WithDescription("Fetches all subscriptions of users on stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -2476,13 +2481,34 @@ CancellationToken ct
          ) =>
             {
                 try
+                {      
+                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
                 {
-                    
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+         .ExcludeFromDescription()
+         .WithName("EditStoreSubscriptions")
+         .WithTags("ClassifiedBo")
+         .WithSummary("Edit subscriptions on stores.")
+         .WithDescription("Edit the status information of stores subscriptions.")
+         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
-               ClassifiedsPreloved dto,
-               IClassifiedService service,
-               CancellationToken token) =>
+             ClassifiedsPreloved dto,
+             IClassifiedService service,
+             CancellationToken token) =>
             {
                 try
                 {
@@ -2545,36 +2571,14 @@ CancellationToken ct
                     );
                 }
             })
-               .WithName("AdminPostPrelovedAdById")
-               .WithTags("ClassifiedBo")
-               .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
-               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
-               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-         .ExcludeFromDescription()
-         .WithName("EditStoreSubscriptions")
-         .WithTags("ClassifiedBo")
-         .WithSummary("Edit subscriptions on stores.")
-         .WithDescription("Edit the status information of stores subscriptions.")
-         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+             .WithName("AdminPostPrelovedAdById")
+             .WithTags("ClassifiedBo")
+             .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+             .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+             .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
                 ClassifiedsCollectibles dto,
@@ -2767,7 +2771,390 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            group.MapGet("/get-subscription-types", async Task<Results<
+           Ok<List<SubscriptionTypes>>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetSubscriptionTypes(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetSubscriptionTypes")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get all subscription types on stores.")
+           .WithDescription("Fetches all subscription types of stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-subscription-id", async Task<Results<
+           Ok<SubscriptionTypes>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+            int Id,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetSubscriptionById(Id,cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetSubscriptionTypeById")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get subscription type on stores.")
+           .WithDescription("Fetches specific subscription type of stores")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-test-xml-validation", async Task<Results<
+           Ok<string>,
+           BadRequest<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+           IClassifiedBoLandingService service,
+            HttpContext context,
+           CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var result = await service.GetTestXMLValidation(cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+           .WithName("GetTestXMLValidation")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Test XML Validation.")
+           .WithDescription("Testing validation from XSD")
+           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPost("/bulk-deals-action", async Task<Results<
+               Ok<string>,
+               BadRequest<ProblemDetails>,
+               NotFound<ProblemDetails>,
+               Conflict<ProblemDetails>,
+               ProblemHttpResult
+>> (
+               BulkActionRequest deleteRequest,
+               HttpContext httpContext,
+               IClassifiedBoLandingService service,
+               CancellationToken cancellationToken
+           ) =>
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+
+                if (string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(userName))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId!, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .WithName("BulkDealsAction")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Bulk deals action classifieds")
+           .WithDescription("Performs bulk deals actions (approve, publish, unpublish, promote, feature, remove) on selected classified ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-deals-action-userid", async Task<Results<
+     Ok<string>,
+     BadRequest<ProblemDetails>,
+     Conflict<ProblemDetails>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult
+ >> (
+     BulkActionRequest deleteRequest,
+     string userId,
+     IClassifiedBoLandingService service,
+     CancellationToken cancellationToken
+ ) =>
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = "UserId cannot be null or empty.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+ .ExcludeFromDescription()
+ .WithName("BulkDealsActionByUserId")
+ .WithTags("ClassifiedBo")
+ .WithSummary("Internal bulk deals action")
+ .WithDescription("Performs bulk actions on deals (approve, publish, unpublish, promote, feature, remove) using provided User ID. " +
+                  "Intended for internal services. 'Remove' action requires a reason.")
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapGet("/get-process-stores-xml",
+    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+        string Url,
+        string? CompanyId,
+        string? SubscriptionId,
+        IClassifiedBoLandingService service,
+        HttpContext context,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+            if (string.IsNullOrEmpty(userClaim))
+                return TypedResults.Forbid();
+
+            var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+            var userId = userData.GetProperty("uid").GetString();
+            var UserName = userData.GetProperty("name").GetString();
+
+            if (string.IsNullOrWhiteSpace(userId))
+                return TypedResults.Forbid();
+
+            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName?.ToString(), cancellationToken);
+
+            if (result?.ToString() == "created")
+            {
+                return TypedResults.Ok("Products have been successfully created at the specified store(s).");
+            }
+
+            return TypedResults.BadRequest(new ProblemDetails
+            {
+                Title = "Store Processing Failed",
+                Detail = result?.ToString() ?? "Unknown error occurred.",
+                Status = StatusCodes.Status400BadRequest
+            });
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+            );
+        }
+    })
+.WithName("GetProcessStoresXML")
+.WithTags("ClassifiedBo")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/get-process-store-xml",
+    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
+        string Url,
+        string? CompanyId,
+        string? SubscriptionId,
+        string UserName,
+        IClassifiedBoLandingService service,
+        HttpContext context,
+        CancellationToken cancellationToken
+    ) =>
+    {
+        try
+        {
+            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName, cancellationToken);
+            return TypedResults.Ok(result);
+            
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError,
+                instance: context.Request.Path
+            );
+        }
+    })
+.ExcludeFromDescription()
+.WithName("GetProcessStoreXML")
+.WithTags("ClassifiedBo")
+.WithSummary("Remember, the XML file name should be the GUID number of the uploaded documents (PDF, Excel..etc).")
+.WithDescription("Processing the uploaded xml.Storing the products into data layer.")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.Status403Forbidden) 
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
+
+  
 }

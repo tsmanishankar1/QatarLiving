@@ -26,6 +26,13 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical);
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
+        Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
+        Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request);
+        Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request);
+        Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload);
+
         Task<List<HttpResponseMessage>> SearchClassifiedsViewTransactionAsync(object searchPayload);
         Task<HttpResponseMessage?> PerformBulkActionAsync(string vertical, object payload);
         Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId);
@@ -41,6 +48,13 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> UpdateAdAsync(string vertical, object payload);
         Task<HttpResponseMessage?> UplodAsync(object payload);
         Task<HttpResponseMessage?> RefreshAdAsync(string adId, int subVertical);
+
+        //Deals
+        Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request);
+        Task<HttpResponseMessage?> GetDealsListing(FilterRequest request);
+        Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload);
+        Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, string adId);
+        Task<HttpResponseMessage?> UpdateDealsAsync(string vertical, object payload);
 
     }
 }

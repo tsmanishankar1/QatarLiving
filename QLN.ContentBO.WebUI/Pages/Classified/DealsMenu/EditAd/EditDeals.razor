@@ -1,25 +1,50 @@
-@page "/manage/classified/deals/edit/ad/{AdId:int}"
+@page "/manage/classified/deals/edit/ad/{AdId}"
 @using QLN.ContentBO.WebUI.Models
 @using QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 @inherits EditDealsBase
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 
- <button class="back-button" @onclick="GoBack">
-     <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
-        Back
+<button class="back-button" @onclick="GoBack">
+    <MudIcon Icon="@Icons.Material.Rounded.KeyboardArrowLeft" Class="back-icon" />
+    Back
 </button>
-<EditDealsAction AdModel="@adPostModel"/>
-<div class="create-form-container">
+@if (IsLoading)
+{
     <MudGrid GutterSize="24px">
         <MudItem xs="12" md="5">
-            <CreateDealsFormList Ad="@adPostModel" />
-        </MudItem>
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+              <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
+            <MudSkeleton Height="50px" Width="100%" Animation="Animation.Pulse" />
 
+        </MudItem>
         <MudItem xs="12" md="7">
-            <UploadDealsPhotos AdModel="@adPostModel" />
+            <MudSkeleton Height="500px" Width="100%" Animation="Animation.Pulse" />
         </MudItem>
     </MudGrid>
-</div>
+}
+else if (HasData)
+{
+    <EditDealsAction AdModel="@adPostModel"/>
+    <div class="create-form-container">
+        <MudGrid GutterSize="24px">
+            <MudItem xs="12" md="5">
+                <CreateDealsFormList Ad="@adPostModel" />
+            </MudItem>
 
+            <MudItem xs="12" md="7">
+                <UploadDealsPhotos AdModel="@adPostModel" />
+            </MudItem>
+        </MudGrid>
+    </div>
+}
+else
+{
+     <div class="empty-card-wrapper">
+            <EmptyCard Title="Data Could not be loaded" Subtitle="Please check back later " />
+        </div>
+}
 <style>
     .create-form-container {
         padding: 20px 0;

@@ -1,4 +1,5 @@
-﻿using Dapr;
+﻿using Azure.Storage.Blobs;
+using Dapr;
 using Dapr.Client;
 using Dapr.Client.Autogen.Grpc.v1;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,7 @@ using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using static QLN.Backend.API.Service.V2ClassifiedBoService.ExternalClassifiedLandingService;
 
 namespace QLN.Backend.API.Service.V2ClassifiedBoService
@@ -1457,12 +1459,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
         }
 
-        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}";
-                var response = await _dapr.InvokeMethodAsync<List<StoresSubscriptionDto>>(
+                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}&Page={Page}&PageSize={PageSize}&Search={Search}";
+                var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<StoresSubscriptionDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                    
@@ -1470,7 +1472,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     cancellationToken
                 );
 
-                return response ?? new List<StoresSubscriptionDto>();
+                return response ?? new ClassifiedBOPageResponse<StoresSubscriptionDto>();
             }
             catch (Exception ex)
             {
@@ -1651,5 +1653,155 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 throw new Exception($"Unexpected error: {ex.Message}", ex);
             }
         }
+
+        public async Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
+
+            HttpStatusCode? failedStatusCode = null;
+            string failedErrorMessage = null;
+
+            try
+            {
+                var url = $"api/v2/classifiedbo/bulk-deals-action-userid?userId={userId}";
+
+                var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, url);
+                serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+
+                    failedStatusCode = response.StatusCode;
+                    failedErrorMessage = errorMessage;
+
+                    throw new InvalidDataException(errorMessage);
+                }
+
+                response.EnsureSuccessStatusCode();
+                return "Action Processed successfully";
+            }
+            catch (Exception ex)
+            {
+                if (failedStatusCode == HttpStatusCode.Conflict)
+                {
+                    _logger.LogWarning(ex, "Conflict detected while bulk deals action.");
+                    throw new ConflictException(ex.Message);
+                }
+                else if (failedStatusCode == HttpStatusCode.NotFound)
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+
+                _logger.LogError(ex, "Error during bulk deals action.");
+                throw;
+            }
+        }
+
+
+
+
+
+        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+               
+                var response = await _dapr.InvokeMethodAsync<List<SubscriptionTypes>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-types",
+                    cancellationToken
+                );
+
+                return response ?? new List<SubscriptionTypes>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in listing subscription types.");
+                throw new InvalidOperationException("Error fetching in listing subscription types.", ex);
+            }
+        }
+        public async Task<SubscriptionTypes> GetSubscriptionById(int Id,CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?SubscriptionId={Id}";
+                var response = await _dapr.InvokeMethodAsync<SubscriptionTypes>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-id{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionTypes();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in selecting subscription types.");
+                throw new InvalidOperationException("Error in selecting subscription types.", ex);
+            }
+        }
+
+        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-test-xml-validation",
+                    cancellationToken
+                );
+
+                return response ?? "";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in testing validation xml");
+                throw new InvalidOperationException("Error in testing validation xml", ex);
+            }
+        }
+
+       
+        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var queryParams = $"?Url={Url}&CompanyId={CompanyId}&SubscriptionId={SubscriptionId}&UserName={UserName}";
+                var response = await _dapr.InvokeMethodAsync<string>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-process-store-xml{queryParams}",
+                    cancellationToken
+                );
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error in processing the xml file.");
+                throw;
+            }
+        }
+
     }
 }

@@ -1,7 +1,10 @@
-﻿using Dapr.Client;
+﻿using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
+using Dapr.Client;
+using Google.Apis.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using QLN.Classified.MS.DBContext;
+using Newtonsoft.Json;
+using QLN.Classified.MS.Utilities;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
@@ -9,11 +12,17 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
+using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
+
 using System;
+using System.ComponentModel.Design;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
+using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.ClassifiedBoService
@@ -25,7 +34,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private readonly IClassifiedService _classified;
         private readonly List<TransactionDto> _mockTransactions;
         private readonly List<PrelovedTransactionDto> _mockPrelovedTransactions;
-        private readonly ClassifiedDevContext _context;
+        private readonly QLClassifiedContext _context;
         private const string StoreName = ConstantValues.StateStoreNames.LandingBackOfficeStore;
         private const string ItemsIndexKey = ConstantValues.StateStoreNames.LandingBOIndex;
         private const string ItemsServiceIndexKey = ConstantValues.StateStoreNames.LandingServiceBOIndex;
@@ -33,16 +42,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string ServicesFeaturedStoresIndexKey = ConstantValues.StateStoreNames.FeaturedStoreServicesIndexKey;
         private const string FeaturedCategoryClassifiedIndex = ConstantValues.StateStoreNames.FeaturedCategoryClassifiedIndex;
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
-       // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
+        // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, ClassifiedDevContext context)
+
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
         {
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _mockTransactions = GenerateMockTransactions();
-            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();
+            _mockPrelovedTransactions = GenerateMockPrelovedTransactions();            
             _context = context;
         }
 
@@ -182,7 +192,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
 
         public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
-        {            
+        {
             try
             {
                 if (string.IsNullOrWhiteSpace(vertical))
@@ -192,8 +202,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 string indexKey = vertical.ToLower() switch
                 {
-                    Verticals.Classifieds => ItemsIndexKey,        
-                    Verticals.Services => ItemsServiceIndexKey,    
+                    Verticals.Classifieds => ItemsIndexKey,
+                    Verticals.Services => ItemsServiceIndexKey,
                     _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
                 };
 
@@ -214,7 +224,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 var slottedPicks = seasonalPicks
                     .Where(p => p != null && p.IsActive == true && (p.SlotOrder >= 1 && p.SlotOrder <= 6) &&
                     (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
-                    .OrderBy(p => p.SlotOrder) 
+                    .OrderBy(p => p.SlotOrder)
                     .ToList();
 
                 _logger.LogInformation("Fetched {Count} slotted seasonal picks.", slottedPicks.Count);
@@ -240,8 +250,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 string indexKey = dto.Vertical.ToLower() switch
                 {
-                    Verticals.Classifieds => ItemsIndexKey,         
-                    Verticals.Services => ItemsServiceIndexKey,    
+                    Verticals.Classifieds => ItemsIndexKey,
+                    Verticals.Services => ItemsServiceIndexKey,
                     _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
                 };
 
@@ -295,7 +305,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
         public async Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
-            const int MaxSlot = 6;           
+            const int MaxSlot = 6;
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.");
@@ -410,7 +420,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 return $"Pick '{pick.CategoryName}' has been deleted.";
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing soft delete on pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
                 throw;
@@ -951,7 +961,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     _dapr.GetStateAsync<FeaturedCategory>(StoreName, id, cancellationToken: cancellationToken)).ToList();
 
                 var featuredCategories = await Task.WhenAll(stateTasks);
-                
+
                 var slottedFeaturedCategories = featuredCategories
                     .Where(p => p != null &&
                                 p.IsActive == true &&
@@ -1440,7 +1450,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", request.PageNumber, request.PageSize);
 
-                await Task.Delay(50, cancellationToken); 
+                await Task.Delay(50, cancellationToken);
 
                 var allTransactions = _mockTransactions.AsQueryable();
 
@@ -1612,11 +1622,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         };
 
 
-        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null, 
+        public async Task<PaginatedResult<PrelovedAdPaymentSummaryDto>> GetAllPrelovedAdPaymentSummaries(int? pageNumber = 1, int? pageSize = 12, string? search = null,
             string? sortBy = null, CancellationToken cancellationToken = default)
         {
             try
-            {               
+            {
                 var result = new List<PrelovedAdPaymentSummaryDto>();
 
                 var keys = await _dapr.GetStateAsync<List<string>>(
@@ -1634,19 +1644,19 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         cancellationToken: cancellationToken);
 
                     if (ad == null)
-                    {                     
+                    {
                         continue;
                     }
 
                     var dto = new PrelovedAdPaymentSummaryDto
                     {
-                        AdId = ad.Id,                        
+                        AdId = ad.Id,
                         SubscriptionType = "12 Months Super",
                         UserName = ad.UserName,
                         EmailAddress = ad.ContactEmail,
                         Mobile = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsAppNumber,
-                        Amount = 250, 
+                        Amount = 250,
                         Status = ad.Status.ToString(),
                         StartDate = ad.PublishedDate.HasValue && ad.PublishedDate.Value != DateTime.MinValue
                         ? ad.PublishedDate.Value.ToString("dd-MM-yyyy hh:mmtt")
@@ -1655,7 +1665,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         ? ad.ExpiryDate.Value.ToString("dd-MM-yyyy hh:mmtt")
                         : "N/A",
 
-                        OrderId = ad.Id.ToString().Substring(0, 6) 
+                        OrderId = ad.Id.ToString().Substring(0, 6)
                     };
 
                     if (string.IsNullOrWhiteSpace(search) ||
@@ -1697,7 +1707,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw new InvalidOperationException("Failed to fetch preloved ad payment summaries.", ex);
             }
         }
-        
+
         public async Task<PaginatedResult<PrelovedAdSummaryDto>> GetAllPrelovedBoAds(
             string? sortBy = "CreationDate",
             string? search = null,
@@ -1734,11 +1744,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     {
                         Id = ad.Id,
                         UserId = ad.UserId,
-                        UserName = ad.UserName, 
+                        UserName = ad.UserName,
                         AdTitle = ad.Title,
                         Category = ad.Category,
                         SubCategory = ad.L1Category,
-                        Status = ad.Status.ToString(), 
+                        Status = ad.Status.ToString(),
                         IsFeatured = ad.IsFeatured,
                         IsPromoted = ad.IsPromoted,
                         CreationDate = ad.CreatedAt,
@@ -1850,11 +1860,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         WhatsappNumber = ad.WhatsappNumber,
                         price = "250",
                         status = ad.IsActive.ToString(),
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate.ToString()
-
-,
-                        orderid = ad.Id.ToString().Substring(0, 6) // or fetch from actual payment state
+                        WhatsAppLeads = "12",
+                        PhoneLeads = "14",
+                        StartDate = ad.UpdatedAt.ToString(),                        
+                        EndDate = ad.ExpiryDate.ToString(),
+                        orderid = ad.Id.ToString().Substring(0, 6)
                     };
 
                     if (string.IsNullOrWhiteSpace(search) ||
@@ -1900,7 +1910,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             int? pageNumber = 1,
             int? pageSize = 12,
             string? search = null,
-            string? sortBy = null,string? status = null,
+            string? sortBy = null, string? status = null,
             bool? isPromoted = null,
             bool? isFeatured = null,
             CancellationToken cancellationToken = default)
@@ -1926,31 +1936,47 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     if (!ad.IsActive)
                     {
                         continue;
-                    }                                    
+                    }
 
                     if (isPromoted.HasValue && ad.IsPromoted != isPromoted.Value)
                     {
                         continue;
                     }
-                    
+
                     if (isFeatured.HasValue && ad.IsFeatured != isFeatured.Value)
                     {
                         continue;
                     }
+
+                    if (!string.IsNullOrWhiteSpace(status) && int.TryParse(status, out int statusValue))
+                    {
+                        if (!Enum.IsDefined(typeof(AdStatus), statusValue))
+                            continue;
+
+                        var parsedStatus = (AdStatus)statusValue;
+                        if (ad.Status != parsedStatus)
+                            continue;
+                    }
+
+
                     var dto = new DealsViewSummaryDto
                     {
                         AdId = ad.Id,
+                        Dealtitle = ad.Title,
                         subscriptiontype = "12 Months Super",
+                        DateCreated = ad.CreatedAt,
                         createdby = ad.CreatedBy,
                         ContactNumber = ad.ContactNumber,
                         WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = ad.UpdatedAt?.ToString("dd-MM-yyyy hh:mmtt") ?? "N/A",
-                        EndDate = ad.ExpiryDate.ToString(),
-                        WebClick = "2",
+                        StartDate = ad.UpdatedAt ?? DateTime.UtcNow,
+                        EndDate = ad.ExpiryDate,
+                        WebClick = 2,
                         Weburl = "linkup.com",
-                        Views = "3",
-                        Impression = "5",
-                        Phonelead = "4"
+                        Location = ad.Locations,
+                        Views = 3,
+                        Impression = 5,
+                        Phonelead = 4,
+                        Status = ad.Status.ToString()
                     };
 
 
@@ -2000,7 +2026,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
 
         }
-        
+
         public async Task<string> SoftDeleteDeals(DealsBulkDelete dto, string userId, CancellationToken cancellationToken = default)
         {
             if (dto.AdId == null || dto.AdId.Count == 0)
@@ -2011,8 +2037,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
             _logger.LogInformation("Soft delete requested for {Count} deals. UserId: {UserId}", dto.AdId.Count, userId);
 
-            
-            var indexKey = ConstantValues.StateStoreNames.DealsIndexKey; 
+
+            var indexKey = ConstantValues.StateStoreNames.DealsIndexKey;
             var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.StateStoreNames.UnifiedStore, indexKey) ?? new();
 
             if (index.Count == 0)
@@ -2041,7 +2067,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                     if (!dto.AdId.Contains(deal.Id.ToString()))
                     {
-                        continue; 
+                        continue;
                     }
 
                     if (!deal.IsActive)
@@ -2233,7 +2259,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-        
+
         public async Task<PrelovedTransactionListResponseDto> GetPrelovedTransactionsAsync(
             int pageNumber,
             int pageSize,
@@ -2383,13 +2409,10 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
 
 
-        public async Task<List<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
         {
             try
             {
-
-               
-
                 DateTime filterDateParsed;
                 try
                 {
@@ -2409,15 +2432,45 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw;
                 }
                 var dateThreshold = filterDateParsed.AddDays(-90);
+                string searchLower = Search?.ToLower();
                 var filtered = await _context.StoresSubscriptions
      .AsNoTracking()
      .Where(x =>
          (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
          x.StartDate >= dateThreshold &&
-         x.StartDate <= filterDateParsed)
+         x.StartDate <= filterDateParsed &&
+            (
+                string.IsNullOrEmpty(searchLower) ||
+                x.OrderId.ToString().Contains(searchLower) ||
+                (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
+                (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
+                (x.Mobile != null && x.Mobile.ToLower().Contains(searchLower)) ||
+                (x.Status != null && x.Status.ToLower().Contains(searchLower))
+            )
+         )
      .ToListAsync(cancellationToken);
 
-                return filtered;
+
+                int currentPage = Math.Max(1, Page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
+                int totalCount = filtered.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = filtered
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .ToList();
+
+                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
+                {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
+                    TotalCount = totalCount,
+                    Items = paginated
+                };
 
             }
             catch (Exception ex)
@@ -2476,7 +2529,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             try
             {
                 _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
-                    JsonSerializer.Serialize(request));
+                    System.Text.Json.JsonSerializer.Serialize(request));
 
                 var indexKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.StateStoreNames.UnifiedStore,
@@ -2631,10 +2684,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
@@ -2824,10 +2884,17 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     try
                     {
-                        var orderProp = typeof(ClassifiedsCollectibles).GetProperty(request.OrderBy, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var parts = request.OrderBy.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        var propertyName = parts[0];
+                        var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
+
+                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+
                         if (orderProp != null)
                         {
-                            items = items.OrderBy(i => orderProp.GetValue(i)).ToList();
+                            items = direction == "desc"
+                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
+                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
                         }
                     }
                     catch (Exception ex)
@@ -3101,6 +3168,443 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     cancellationToken: cancellationToken
                 );
             }
+        }
+
+        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        {
+            var indexDoc = new ClassifiedsDealsIndex
+            {
+                Id = dto.Id.ToString(),
+                Subvertical = dto.Subvertical,
+                UserId = dto.UserId,
+                BusinessName = dto.BusinessName,
+                BranchNames = dto.BranchNames,
+                BusinessType = dto.BusinessType,
+                Title = dto.Title,
+                Description = dto.Description,
+                StartDate = dto.StartDate,
+                EndDate = dto.EndDate,
+                FlyerFileUrl = dto.FlyerFileUrl,
+                DataFeedUrl = dto.DataFeedUrl,
+                ContactNumber = dto.ContactNumber,
+                WhatsappNumber = dto.WhatsappNumber,
+                WebsiteUrl = dto.WebsiteUrl,
+                SocialMediaLinks = dto.SocialMediaLinks,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                XMLlink = dto.XMLlink,
+                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                SubscriptionId = dto.SubscriptionId,
+                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                offertitle = dto.offertitle,
+                ExpiryDate = dto.ExpiryDate,
+                ImageUrl = dto.ImageUrl,
+                PromotedExpiryDate = dto.PromotedExpiryDate,
+                IsPromoted = dto.IsPromoted,
+                FeaturedExpiryDate = dto.FeaturedExpiryDate,
+                IsFeatured = dto.IsFeatured,
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                ClassifiedsDealsItem = indexDoc
+            };
+            if (indexRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ClassifiedsDealsIndex,
+                    UpsertRequest = indexRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+
+        public async Task<string> BulkDealsAction(BulkActionRequest request, string userId, CancellationToken ct)
+        {
+            try
+            {
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.StateStoreNames.UnifiedStore,
+                    ConstantValues.StateStoreNames.DealsIndexKey,
+                    cancellationToken: ct
+                ) ?? new();
+
+                var updated = new List<ClassifiedsDeals>();
+
+                foreach (var id in request.AdIds)
+                {
+                    var adKey = GetAdKey(id);
+                    if (!indexKeys.Contains(adKey.ToString()))
+                        continue;
+
+                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                        ConstantValues.StateStoreNames.UnifiedStore,
+                        adKey.ToString(),
+                        cancellationToken: ct
+                    );
+
+                    if (ad is null)
+                        continue;
+
+                    bool shouldUpdate = false;
+
+                    switch (request.Action)
+                    {
+                        case BulkActionEnum.Approve:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot approve ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.NeedChanges:
+                            if (ad.Status == AdStatus.PendingApproval)
+                            {
+                                ad.Status = AdStatus.NeedsModification;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot need changes ad with status '{ad.Status}'. Only 'PendingApproval' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Publish:
+                            if (ad.Status == AdStatus.Unpublished)
+                            {
+                                ad.Status = AdStatus.Published;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot publish ad with status '{ad.Status}'. Only 'Unpublished' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Unpublish:
+                            if (ad.Status == AdStatus.Published)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException($"Cannot unpublish ad with status '{ad.Status}'. Only 'Published' is allowed.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnPromote:
+                            if (ad.IsPromoted)
+                            {
+                                ad.IsPromoted = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unpromote an ad that is not promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.UnFeature:
+                            if (ad.IsFeatured)
+                            {
+                                ad.IsFeatured = false;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot unfeature an ad that is not featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Promote:
+                            if (!ad.IsPromoted)
+                            {
+                                ad.IsPromoted = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Feature:
+                            if (!ad.IsFeatured)
+                            {
+                                ad.IsFeatured = true;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Cannot feature an ad that is already featured.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Remove:
+                            ad.Status = AdStatus.Rejected;
+                            shouldUpdate = true;
+                            break;
+                        case BulkActionEnum.Hold:
+                            if (ad.Status == AdStatus.Published || ad.Status == AdStatus.Unpublished || ad.Status == AdStatus.PendingApproval || ad.Status == AdStatus.NeedsModification || ad.Status != AdStatus.Hold)
+                            {
+                                ad.Status = AdStatus.Hold;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Ad is already on hold.");
+                            }
+                            break;
+
+                        case BulkActionEnum.Onhold:
+                            if (ad.Status != AdStatus.Onhold)
+                            {
+                                ad.Status = AdStatus.Unpublished;
+                                shouldUpdate = true;
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException("Ad is not on hold.");
+                            }
+                            break;
+
+
+                        default:
+                            throw new InvalidOperationException("Invalid action");
+                    }
+
+                    if (shouldUpdate)
+                    {
+                        ad.UpdatedAt = DateTime.UtcNow;
+                        ad.UpdatedBy = userId;
+
+                        await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                        await IndexDealsToAzureSearch(ad, cancellationToken: ct);
+                        updated.Add(ad);
+                    }
+                }
+
+                return "Action completed successfully";
+            }
+            catch (ConflictException ex)
+            {
+                throw new ConflictException(ex.Message);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+
+      
+
+        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
+                return getSubscriptionTypes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return new List<SubscriptionTypes>();
+            }
+        }
+        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
+                return getSubscriptionType ?? new SubscriptionTypes();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return new SubscriptionTypes();
+            }
+        }
+
+        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string result = string.Empty;
+                string errors = string.Empty;
+                string basePath = AppDomain.CurrentDomain.BaseDirectory;
+                string xmlPath = Path.Combine(basePath, "Data", "Products.xml");
+                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
+                var manager = new ProductXmlManager(xsdPath);
+                errors = manager.ValidateXml(xmlPath);
+                if (string.IsNullOrEmpty(errors))
+                {
+                    result = "Valid XML";
+                    return result;
+                }
+                else
+                {
+                    return errors;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while getting subscription types.");
+                return ex.Message;
+            }
+        }
+
+       
+        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
+        {
+            try
+            { 
+                var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                var xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
+                var manager = new ProductXmlManager(xsdPath);
+
+                var validationErrors = manager.ValidateXml(Url);
+                if (!string.IsNullOrEmpty(validationErrors))
+                    return validationErrors;
+
+                using var httpClient = new HttpClient();
+                var xmlContent = await httpClient.GetStringAsync(Url);
+
+                var serializer = new XmlSerializer(typeof(StoreFlyer));
+                using var reader = new StringReader(xmlContent);
+                if (serializer.Deserialize(reader) is not StoreFlyer xmlProducts ||
+                    xmlProducts.Products == null ||
+                    xmlProducts.Products.Count == 0)
+                {
+                    return "No products found in the XML.";
+                }
+
+                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
+                _logger.LogInformation("Subscription: {SubscriptionId}", xmlProducts.SubscriptionId);
+                _logger.LogInformation("Company: {CompanyId}", xmlProducts.CompanyId);
+
+                var storeFlyer = new StoreFlyers
+                {
+                    Products = new List<StoreProducts>()
+                };
+                if (!string.IsNullOrEmpty(xmlProducts.FlyerId) && Guid.TryParse(xmlProducts.FlyerId, out var flyerId))
+                {
+                    storeFlyer.FlyerId = flyerId;
+                }
+                else
+                {
+                    throw new Exception("No valid flyer ID found in the XML.");
+                }
+
+                if (Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
+                {
+                    storeFlyer.SubscriptionId = parsedSubscriptionId;
+                }
+                else if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
+                {
+                    storeFlyer.SubscriptionId = fallbackSubscriptionId;
+                }
+                else
+                {
+                    throw new Exception("No valid subscription ID found in the XML or parameter.");
+                }
+
+                if (Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
+                {
+                    storeFlyer.CompanyId = parsedCompanyId;
+                }
+                else if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
+                {
+                    storeFlyer.CompanyId = fallbackCompanyId;
+                }
+                else
+                {
+                    throw new Exception("No valid company ID found in the XML or parameter.");
+                }
+
+                foreach (var xmlProduct in xmlProducts.Products)
+                {
+                    var storeProductId = Guid.NewGuid();
+
+                    var storeProduct = new StoreProducts
+                    {
+                        StoreProductId = storeProductId,
+                        ProductName = xmlProduct.ProductName,
+                        ProductLogo = xmlProduct.ProductLogo,
+                        ProductPrice = xmlProduct.ProductPrice,
+                        Currency = xmlProduct.Currency,
+                        ProductSummary = xmlProduct.ProductSummary,
+                        ProductDescription = xmlProduct.ProductDescription,
+                        PageNumber = xmlProduct.PageNumber,
+                        PageCoordinates = xmlProduct.PageCoordinates,
+                        Features = xmlProduct.Features?.Select(f => new ProductFeatures
+                        {
+                            ProductFeaturesId = Guid.NewGuid(),
+                            Features = f,
+                            StoreProductId = storeProductId
+                        }).ToList(),
+                        Images = xmlProduct.Images?.Select(img => new ProductImages
+                        {
+                            ProductImagesId = Guid.NewGuid(),
+                            Images = img,
+                            StoreProductId = storeProductId
+                        }).ToList()
+                    };
+
+                    storeFlyer.Products.Add(storeProduct);
+                }
+
+                _logger.LogInformation("ML bind done");
+
+                await DeleteStoreFlyer(storeFlyer.FlyerId);
+                _context.StoreFlyer.Add(storeFlyer);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Products added successfully.");
+                return "created";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while processing store flyer XML.");
+                return ex.Message;
+            }
+
+
+        }
+       
+        
+        public async Task DeleteStoreFlyer(Guid FlyerId)
+        {
+            var flyers = await _context.StoreFlyer
+                                .Where(p => p.FlyerId == FlyerId)
+                                .Include(p => p.Products)
+                                .ToListAsync();
+            if (flyers.Any())
+            {
+                _context.StoreFlyer.RemoveRange(flyers);
+                await _context.SaveChangesAsync();
+            }
+
         }
     }
 }

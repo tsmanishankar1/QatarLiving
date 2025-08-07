@@ -15,7 +15,8 @@
                        placeholder="Search for Preloved"
                        class="search-input"
                        LabelClass="custom-label"
-                       @oninput="OnSearchChanged" />
+                         @bind="SearchText"
+                        @oninput="OnSearchChanged"  />
             </div>
         </div>
 
@@ -101,7 +102,9 @@
 
 </div>
 <div style="margin-top:10px">
-    <SubscriptionTable Listings="Listings" />
+    <SubscriptionTable Listings="Listings" IsLoading="IsLoading" IsEmpty="IsEmpty" TotalCount="TotalCount"
+                       OnPageChanged="HandlePageChanged"
+                       OnPageSizeChanged="HandlePageSizeChanged" />
 </div>
 
 <style>

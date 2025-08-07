@@ -19,6 +19,10 @@ namespace QLN.Common.Infrastructure.Constants
         public const string DocTypeAd = "Ad";
         public const string DocTypeBanner = "Banner";
         public const string SubscriptionPrefix = "qln-subscription-actor";
+
+        //Drupal user AutoComplete
+        public const string AutocompleteUserPath = "/qlnapi/user/autocomplete";
+
         //Index constants
         public static class IndexNames
         {
@@ -145,6 +149,11 @@ namespace QLN.Common.Infrastructure.Constants
             public const string CompanyStoreName = "companystatestore";
             public const string CompanyIndexKey = "company-index";
             public const string CompanyServiceAppId = "qln-company-ms";
+        }
+        public static class Audit
+        {
+            public const string StoreName = "servicestatestore";
+            public const string AuditIndexKey = "audit_index";
         }
     }
 }

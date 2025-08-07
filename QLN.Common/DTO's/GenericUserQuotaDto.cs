@@ -8,6 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class GenericUserQuotaDto
     {
+        public Guid Id { get; set; }
         public string UserId { get; set; }
 
         public Guid? PaymentTransactionId { get; set; }

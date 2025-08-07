@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Products xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="products.xsd">
+
+  <Product>
+    <ProductLogo>smartphone-x10.png</ProductLogo>
+    <ProductPrice>no price</ProductPrice>
+    <Currency>USD</Currency>
+    <ProductDetails>
+      <ProductName>Smartphone X10</ProductName>
+      <ProductSummary>Flagship smartphone with AI camera</ProductSummary>
+      <ProductDescription>High-resolution OLED screen, 128GB storage, 5G support</ProductDescription>
+      <Images>
+        <ProductImage>front.jpg</ProductImage>
+        <ProductImage>back.jpg</ProductImage>
+      </Images>
+      <Features>
+        <Feature>Waterproof</Feature>
+        <Feature>Face Recognition</Feature>
+        <Feature>Fast Charging</Feature>
+      </Features>
+    </ProductDetails>
+  </Product>
+
+</Products>

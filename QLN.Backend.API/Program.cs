@@ -1,5 +1,6 @@
 ﻿using Azure.Core.Serialization;
 using Dapr.Client;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
@@ -18,14 +20,13 @@ using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ServicesEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.User;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.DbContext;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.ServiceConfiguration;
@@ -33,6 +34,8 @@ using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -132,6 +135,12 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -237,8 +246,12 @@ builder.Services.PayToFeatureConfiguration(builder.Configuration);
 builder.Services.AddonConfiguration(builder.Configuration);
 builder.Services.V2BannerConfiguration(builder.Configuration);
 builder.Services.DrupalAuthConfiguration(builder.Configuration);
+builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
+builder.Services.AddScoped<AuditLogger>();
+builder.Services.PaymentsConfiguration(builder.Configuration);
 
 builder.Services.ServicesBo(builder.Configuration);
+
 var app = builder.Build();
 #region DAPR Subscriptions
 
@@ -268,10 +281,14 @@ if (builder.Configuration.GetValue<bool>("EnableSwagger"))
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
+
 var authGroup = app.MapGroup("/auth");
 authGroup.MapAuthEndpoints();
 var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
+var paymentGroup = app.MapGroup("/api/pay");
+paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
+
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -279,8 +296,6 @@ companyProfileGroup.MapCompanyProfile()
     .RequireAuthorization();
 var classifiedGroup = app.MapGroup("/api/classified");
 classifiedGroup.MapClassifiedsEndpoints();
-var servicesGroup = app.MapGroup("/api/services");
-servicesGroup.MapServicesEndpoints();
 var eventGroup = app.MapGroup("/api/v2/event");
 eventGroup.MapEventEndpoints()
     .RequireAuthorization();
@@ -321,7 +336,8 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-
+ var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");

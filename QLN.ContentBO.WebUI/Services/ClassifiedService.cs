@@ -1,3 +1,4 @@
+using Nextended.Core.Extensions;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
@@ -5,7 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
-using static MudBlazor.CategoryTypes;
+using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -344,6 +345,137 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
+
+        public async Task<HttpResponseMessage?> GetPrelovedSubscription(FilterRequest request)
+        {
+            try
+            {
+
+
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved-ads/payment-summary{query}");
+
+
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedSubscription: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> GetPrelovedP2pListing(FilterRequest request)
+        {
+            try
+            {
+                var url = "/api/v2/classifiedbo/getallprelovedads";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                if (!string.IsNullOrEmpty(request.SearchText))
+                {
+                    queryParams.Add($"search={Uri.EscapeDataString(request.SearchText)}");
+                }
+
+                if (request.CreationDate.HasValue)
+                {
+                    queryParams.Add($"creationDate={request.CreationDate.Value:yyyy-MM-dd}");
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    queryParams.Add($"datePublished={request.PublishedDate.Value:yyyy-MM-dd}");
+                }
+                if (request.IsPromoted == true)
+                {
+                    queryParams.Add("isPromoted=true");
+                }
+
+                if (request.IsFeatured == true)
+                {
+                    queryParams.Add("isFeatured=true");
+                }
+
+
+                //if (!string.IsNullOrEmpty(request.SortField))
+                //{
+                //    queryParams.Add($"sortField={request.SortField}");
+                //}
+
+                //if (!string.IsNullOrEmpty(request.SortDirection))
+                //{
+                //    queryParams.Add($"sortDirection={request.SortDirection}");
+                //}
+
+                if (queryParams.Count > 0)
+                {
+                    url += "?" + string.Join("&", queryParams);
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
+        {
+            try
+            {
+                var url = $"/api/companyprofile/getallcompanies?vertical={request.Vertical}&subVertical={request.SubVertical}";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> PerformPrelovedBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-preloved-action")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
         public async Task<HttpResponseMessage?> GetAdByIdAsync(string vertical, string adId)
         {
             try
@@ -386,7 +518,7 @@ namespace QLN.ContentBO.WebUI.Services
         {
             try
             {
-                var endpoint = $"/api/classified/{vertical}/post";
+                var endpoint = $"/api/classified/{vertical}";
 
                 // Create request manually with correct headers
                 using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
@@ -471,6 +603,27 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+        public async Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request)
+        {
+            try
+            {
+
+
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/preloved/transactions{query}");
+
+                return await _httpClient.SendAsync(httpRequest);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pTransaction: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+      
         public async Task<HttpResponseMessage?> UplodAsync(object payload)
         {
             try
@@ -513,5 +666,183 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
+        public async Task<HttpResponseMessage?> PerformBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/bulk-action")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> GetDealsSubscription(FilterRequest request)
+        {
+            try
+            {
+
+                var query = $"?pageNumber={request.PageNumber}&pageSize={request.PageSize}";
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, $"/api/v2/classifiedbo/getdealsSummary{query}");
+
+
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetDealsSubscription: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> GetDealsListing(FilterRequest request)
+        {
+            try
+            {
+                var url = "/api/v2/classifiedbo/DealsViewSummary";
+
+                var queryParams = new List<string>
+        {
+            $"pageNumber={request.PageNumber}",
+            $"pageSize={request.PageSize}"
+        };
+
+                if (request.Status.HasValue)
+                {
+                    queryParams.Add($"status={request.Status.Value}");
+                }
+
+                if (!string.IsNullOrEmpty(request.SearchText))
+                {
+                    queryParams.Add($"search={Uri.EscapeDataString(request.SearchText)}");
+                }
+
+                if (request.CreationDate.HasValue)
+                {
+                    queryParams.Add($"creationDate={request.CreationDate.Value:yyyy-MM-dd}");
+                }
+
+                if (request.PublishedDate.HasValue)
+                {
+                    queryParams.Add($"datePublished={request.PublishedDate.Value:yyyy-MM-dd}");
+                }
+                if (request.IsPromoted == true)
+                {
+                    queryParams.Add("isPromoted=true");
+                }
+
+                if (request.IsFeatured == true)
+                {
+                    queryParams.Add("isFeatured=true");
+                }
+
+
+                //if (!string.IsNullOrEmpty(request.SortField))
+                //{
+                //    queryParams.Add($"sortField={request.SortField}");
+                //}
+
+                //if (!string.IsNullOrEmpty(request.SortDirection))
+                //{
+                //    queryParams.Add($"sortDirection={request.SortDirection}");
+                //}
+
+                if (queryParams.Count > 0)
+                {
+                    url += "?" + string.Join("&", queryParams);
+                }
+
+                var httpRequest = new HttpRequestMessage(HttpMethod.Get, url);
+                return await _httpClient.SendAsync(httpRequest);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetPrelovedP2pListing: {Message}", ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+
+        public async Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload)
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(payload);
+                var request = new HttpRequestMessage(HttpMethod.Post, "/api/v2/classifiedbo/getdealsSummary")
+                {
+                    Content = new StringContent(json, Encoding.UTF8, "application/json")
+                };
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("PerformDealsBulkActionAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, string adId)
+        {
+            try
+            {
+                return await _httpClient.GetAsync($"/api/classified/deals/{adId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("GetDealsByIdAsync Error: " + ex.Message);
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
+        public async Task<HttpResponseMessage?> UpdateDealsAsync(string vertical, object payload)
+        {
+            try
+            {
+                var endpoint = $"/api/classified/{vertical}/update";
+
+                using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
+                {
+                    Content = JsonContent.Create(payload, options: new JsonSerializerOptions
+                    {
+                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        WriteIndented = false
+                    })
+                };
+
+                var response = await _httpClient.SendAsync(request);
+
+                Console.WriteLine($"Update response status: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error body: {errorBody}");
+                }
+
+                return response;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                return new HttpResponseMessage(HttpStatusCode.BadGateway);
+            }
+            catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("HTTP request timed out.");
+                return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+        }
     }
 }

@@ -11,11 +11,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 .MapGetByCompanyProfile()
                 .MapUpdateCompanyProfile()
                 .MapGetAllCompanyProfiles()
-                .MapUpdateVerifiedCompanyProfile()
                 .MapDeleteCompanyProfile()
                 .MapCompanyApproval()
-                .MapGetCompanyProfilesByTokenUser()
-                .MapGetVerificationCompanyStatus();
+                .MapGetCompanyProfilesByTokenUser();
             return group;
         }
     }

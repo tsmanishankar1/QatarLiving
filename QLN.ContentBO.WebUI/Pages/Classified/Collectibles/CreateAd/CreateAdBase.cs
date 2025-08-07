@@ -37,9 +37,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
         protected CollectiblesAdPost adPostModel { get; set; } = new();
         protected EditContext editContext;
         private ValidationMessageStore messageStore;
-
-
         protected string? UserEmail { get; set; }
+        protected string? UserId { get; set; }
 
         protected override async Task OnInitializedAsync()
         {
@@ -57,6 +56,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("email", out var email))
             {
                 UserEmail = email;
+            }
+
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("uid", out var uid))
+            {
+                // If needed: parse uid to int or whatever your logic requires
+                UserId = uid;
             }
 
             if (Zones == null || Zones.Count == 0)
@@ -116,9 +121,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
             var isValid = editContext.Validate();
             if (adPostModel.HasAuthenticityCertificate)
             {
-                if (string.IsNullOrWhiteSpace(adPostModel.Certificate))
+                if (string.IsNullOrWhiteSpace(adPostModel.CertificateFileName))
                 {
-                    messageStore.Add(() => adPostModel.Certificate, "Certificate is required when authenticity is claimed.");
+                    messageStore.Add(() => adPostModel.CertificateFileName, "Certificate is required when authenticity is claimed.");
                     isValid = false;
                 }
             }
@@ -301,6 +306,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Collectibles.CreateAd
                     latitude = adPostModel.Latitude ?? 0,
                     longitude = adPostModel.Longitude ?? 0,
                     hasAuthenticityCertificate = adPostModel.HasAuthenticityCertificate,
+                    authenticityCertificateName = adPostModel.CertificateFileName,
                     authenticityCertificateUrl = adPostModel.Certificate,
                     hasWarranty = adPostModel.HasWarranty,
                     isHandmade = adPostModel.IsHandmade,

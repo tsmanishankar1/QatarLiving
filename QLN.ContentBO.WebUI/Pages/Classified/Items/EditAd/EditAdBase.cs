@@ -44,7 +44,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
         protected string? DefaultSelectedWhatsappCountry { get; set; }
         public void SetDefaultDynamicFieldsFromApi()
         {
-            // Map main field names to their values from the Ad model
             var mainFields = new Dictionary<string, string?>
             {
                 { "Location", adPostModel.Location },
@@ -54,7 +53,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 { "Color", adPostModel.Color }
             };
 
-            // Assign values to DynamicFields if the field exists in AvailableFields and is not empty
             foreach (var field in mainFields)
             {
                 if (!string.IsNullOrWhiteSpace(field.Value) &&
@@ -64,7 +62,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 }
             }
 
-            // Add any attribute values to DynamicFields, if matching field exists
             if (adPostModel.Attributes != null)
             {
                 foreach (var attribute in adPostModel.Attributes)
@@ -83,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
             try
             {
                 IsLoadingId = true;
-                var response = await ClassifiedService.GetAdByIdAsync("items/ads", Id);
+                var response = await ClassifiedService.GetAdByIdAsync("items", Id);
                 if (response is { IsSuccessStatusCode: true })
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -100,25 +97,29 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                         WriteIndented = true,
                         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
                     });
-                    await JS.InvokeVoidAsync("console.log", modelJson);
+                    // await JS.InvokeVoidAsync("console.log", modelJson);
 
                 }
                 else
                 {
                     // Handle 404 or error gracefully
+                    GoBack();
+                    Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                     adPostModel = new ItemEditAdPost();
                 }
             }
             catch (JsonException jsonEx)
             {
                 // Log and fallback if deserialization fails
-                Console.Error.WriteLine($"Deserialization error: {jsonEx.Message}");
+                GoBack();
+                Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                 adPostModel = new ItemEditAdPost();
             }
             catch (Exception ex)
             {
                 // General fallback
-                Console.Error.WriteLine($"Unexpected error: {ex.Message}");
+                GoBack();
+                Snackbar.Add("Please check back later. There was an issue fetching the ad.", Severity.Error);
                 adPostModel = new ItemEditAdPost();
             } finally {
                 IsLoadingId = false;
@@ -307,7 +308,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                 var uploadedImages = await UploadImagesAsync(adPostModel.Images);
                 var payload = new
                 {
-                    adType = 1,
+                    id = adPostModel.Id,
+                    adType = adPostModel.AdType,
+                    subVertical = adPostModel.SubVertical,
                     title = adPostModel.Title,
                     description = adPostModel.Description,
                     price = adPostModel.Price,
@@ -338,9 +341,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
                     images = uploadedImages,
                     attributes = adPostModel.DynamicFields
                         .Where(kv => !IsBasicField(kv.Key))
-                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value)
+                        .ToDictionary(kv => kv.Key, kv => (object)kv.Value),
                 };
-                // await JS.InvokeVoidAsync("console.log", payload);
+                await JS.InvokeVoidAsync("console.log", payload);
       
 
                 var response = await ClassifiedService.UpdateAdAsync("items", payload);

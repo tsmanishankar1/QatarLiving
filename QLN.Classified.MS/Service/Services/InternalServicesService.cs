@@ -1,19 +1,25 @@
 ﻿using Dapr.Client;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.DTO_s.NotificationDto;
+
 
 namespace QLN.Classified.MS.Service.Services
 {
     public class InternalServicesService : IServices
     {
         public readonly DaprClient _dapr;
-        public InternalServicesService(DaprClient dapr)
+        public readonly AuditLogger _auditLogger;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger)
         {
             _dapr = dapr;
+            _auditLogger = auditLogger;
         }
         public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
         {
@@ -23,7 +29,7 @@ namespace QLN.Classified.MS.Service.Services
             if (dto.L1Categories == null || dto.L1Categories.Count == 0)
                 throw new InvalidDataException("At least one L1 Category is required.");
 
-            dto.Id = Guid.NewGuid(); 
+            dto.Id = Guid.NewGuid();
 
             foreach (var l1 in dto.L1Categories)
             {
@@ -48,12 +54,12 @@ namespace QLN.Classified.MS.Service.Services
 
             await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
 
-            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken : cancellationToken) ?? new();
+            var keys = await _dapr.GetStateAsync<List<string>>(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, cancellationToken: cancellationToken) ?? new();
 
             if (!keys.Contains(key))
             {
                 keys.Add(key);
-                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken : cancellationToken);
+                await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, ConstantValues.Services.IndexKey, keys, cancellationToken: cancellationToken);
             }
 
             return "Category Created Successfully";
@@ -85,7 +91,7 @@ namespace QLN.Classified.MS.Service.Services
                 }
             }
 
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken : cancellationToken);
+            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, dto, cancellationToken: cancellationToken);
 
             return "Category updated successfully.";
         }
@@ -161,22 +167,28 @@ namespace QLN.Classified.MS.Service.Services
                     dto.CategoryId.ToString(),
                     cancellationToken: cancellationToken);
 
-                if (mainCategory != null)
+                if (mainCategory == null)
                 {
-                    dto.CategoryName = mainCategory.Category;
-                    var l1Category = mainCategory.L1Categories?.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                    if (l1Category != null)
-                    {
-                        dto.L1CategoryName = l1Category.Name;
-                        l1CategoryName = l1Category.Name;
-                        var l2Category = l1Category.L2Categories?.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                        if (l2Category != null)
-                        {
-                            dto.L2CategoryName = l2Category.Name;
-                            l2CategoryName = l2Category.Name;
-                        }
-                    }
+                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
                 }
+
+                dto.CategoryName = mainCategory.Category;
+
+                var l1Category = mainCategory.L1Categories?.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                if (l1Category == null)
+                {
+                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.Category}'.");
+                }
+                dto.L1CategoryName = l1Category.Name;
+                l1CategoryName = l1Category.Name;
+
+                var l2Category = l1Category.L2Categories?.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                if (l2Category == null)
+                {
+                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.Name}'.");
+                }
+                dto.L2CategoryName = l2Category.Name;
+                l2CategoryName = l2Category.Name;
 
                 var allAdKeys = await _dapr.GetStateAsync<List<string>>(
                    ConstantValues.Services.StoreName,
@@ -198,9 +210,26 @@ namespace QLN.Classified.MS.Service.Services
                         existingAd.IsActive &&
                         existingAd.Status == ServiceStatus.Published)
                     {
-                        throw new InvalidOperationException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                        throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
+                if (string.Equals(dto.L1CategoryName, "Therapeutic Services", StringComparison.OrdinalIgnoreCase))
+                {
+                    dto.Status = ServiceStatus.PendingApproval;
+                }
+                else if (dto.AdType == ServiceAdType.Subscription)
+                {
+                    dto.Status = ServiceStatus.Published;
+                }
+                else if (dto.AdType == ServiceAdType.PayToPublish)
+                {
+                    dto.Status = ServiceStatus.PendingApproval;
+                }
+                else
+                {
+                    throw new ArgumentException("Invalid ServiceAdType.");
+                }
+
                 var entity = new ServicesModel
                 {
                     AdType = dto.AdType,
@@ -226,13 +255,14 @@ namespace QLN.Classified.MS.Service.Services
                     BuildingNumber = dto.BuildingNumber,
                     LicenseCertificate = dto.LicenseCertificate,
                     Comments = dto.Comments,
-                    SubscriptionId = uid,
+                    SubscriptionId = null,
                     ZoneId = dto.ZoneId,
                     Longitude = dto.Longitude,
                     Lattitude = dto.Lattitude,
                     PhotoUpload = dto.PhotoUpload,
                     UserName = userName,
                     Status = dto.Status,
+                    PublishedDate = dto.AdType == ServiceAdType.Subscription ? DateTime.UtcNow : null,
                     IsActive = true,
                     CreatedBy = uid,
                     CreatedAt = DateTime.UtcNow
@@ -280,8 +310,21 @@ namespace QLN.Classified.MS.Service.Services
                         cancellationToken: cancellationToken
                     );
                 }
-
+                await _auditLogger.CreateAuditLog(
+                    id: Guid.NewGuid(),
+                    module: "Service",
+                    httpMethod: "POST",
+                    apiEndpoint: $"/api/service/createbyuserid?uid={uid}&userName={userName}",
+                    successMessage: "Service Ad Created Successfully",
+                    createdBy: uid,
+                    payload: entity,
+                    cancellationToken: cancellationToken
+                );
                 return "Service Ad Created Successfully";
+            }
+            catch (ConflictException ex)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -323,22 +366,11 @@ namespace QLN.Classified.MS.Service.Services
             if (!string.IsNullOrWhiteSpace(dto.EmailAddress) && !IsValidEmail(dto.EmailAddress))
                 throw new ArgumentException("Invalid email format.");
 
-            var therapeuticL2s = new[] { "spa", "wellness centers" };
-
-            bool isTherapeutic =
-                (!string.IsNullOrWhiteSpace(dto.L1CategoryName) && dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrWhiteSpace(dto.L2CategoryName) && therapeuticL2s.Contains(dto.L2CategoryName.Trim().ToLowerInvariant()));
-
-            if (isTherapeutic)
+            if (!string.IsNullOrWhiteSpace(dto.L1CategoryName) &&
+                    dto.L1CategoryName.Trim().Equals("therapeutic services", StringComparison.OrdinalIgnoreCase) &&
+                    string.IsNullOrWhiteSpace(dto.LicenseCertificate))
             {
-                if (string.IsNullOrWhiteSpace(dto.LicenseCertificate))
-                    throw new ArgumentException("License certificate is required for therapeutic services.");
-
-                var validExtensions = new[] { ".pdf", ".png", ".jpg" };
-                var extension = Path.GetExtension(dto.LicenseCertificate)?.ToLowerInvariant();
-
-                if (string.IsNullOrEmpty(extension) || !validExtensions.Contains(extension))
-                    throw new ArgumentException("License certificate must be a PDF, PNG, or JPG file.");
+                throw new ArgumentException("License certificate is required for therapeutic services.");
             }
         }
         public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
@@ -355,7 +387,7 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
                 if (existing == null)
-                    throw new InvalidDataException("Service Ad not found for update.");
+                    throw new ArgumentException("Service Ad not found for update.");
                 var mainCategory = await _dapr.GetStateAsync<ServicesCategory>(
                   ConstantValues.Services.StoreName,
                   dto.CategoryId.ToString(),
@@ -364,77 +396,64 @@ namespace QLN.Classified.MS.Service.Services
                 string? l1CategoryName = null;
                 string? l2CategoryName = null;
 
-                if (mainCategory != null)
+                if (mainCategory == null)
                 {
-                    categoryName = mainCategory.Category;
-                    var l1Category = mainCategory.L1Categories.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
-                    if (l1Category != null)
-                    {
-                        l1CategoryName = l1Category.Name;
+                    throw new ArgumentException($"Invalid CategoryId: {dto.CategoryId}. No matching main category found.");
+                }
 
-                        var l2Category = l1Category.L2Categories.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
-                        if (l2Category != null)
-                        {
-                            l2CategoryName = l2Category.Name;
-                        }
+                dto.CategoryName = mainCategory.Category;
+
+                var l1Category = mainCategory.L1Categories?.FirstOrDefault(l1 => l1.Id == dto.L1CategoryId);
+                if (l1Category == null)
+                {
+                    throw new ArgumentException($"Invalid L1CategoryId: {dto.L1CategoryId}. Not found under main category '{mainCategory.Category}'.");
+                }
+                dto.L1CategoryName = l1Category.Name;
+                l1CategoryName = l1Category.Name;
+
+                var l2Category = l1Category.L2Categories?.FirstOrDefault(l2 => l2.Id == dto.L2CategoryId);
+                if (l2Category == null)
+                {
+                    throw new ArgumentException($"Invalid L2CategoryId: {dto.L2CategoryId}. Not found under L1 category '{l1Category.Name}'.");
+                }
+                dto.L2CategoryName = l2Category.Name;
+                l2CategoryName = l2Category.Name;
+                var allAdKeys = await _dapr.GetStateAsync<List<string>>(
+                  ConstantValues.Services.StoreName,
+                  ConstantValues.Services.ServicesIndexKey,
+                  cancellationToken: cancellationToken
+               ) ?? new();
+                foreach (var adKey in allAdKeys)
+                {
+                    var existingAd = await _dapr.GetStateAsync<ServicesModel>(
+                        ConstantValues.Services.StoreName,
+                        adKey,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingAd != null &&
+                        existingAd.CreatedBy == userId &&
+                        existingAd.L2CategoryId == dto.L2CategoryId &&
+                        existingAd.IsActive &&
+                        existingAd.Status == ServiceStatus.Published)
+                    {
+                        throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                     }
                 }
                 ValidateCommon(dto);
-
-                var entity = new ServicesModel
-                {
-                    Id = existing.Id,
-                    CategoryId = dto.CategoryId,
-                    L1CategoryId = dto.L1CategoryId,
-                    L2CategoryId = dto.L2CategoryId,
-                    CategoryName = categoryName,
-                    L1CategoryName = l1CategoryName,
-                    L2CategoryName = l2CategoryName,
-                    IsPriceOnRequest = dto.IsPriceOnRequest,
-                    Price = dto.Price,
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                    PhoneNumber = dto.PhoneNumber,
-                    WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
-                    WhatsappNumber = dto.WhatsappNumber,
-                    EmailAddress = dto.EmailAddress,
-                    Location = dto.Location,
-                    LocationId = dto.LocationId,
-                    StreetNumber = dto.StreetNumber,
-                    BuildingNumber = dto.BuildingNumber,
-                    LicenseCertificate = dto.LicenseCertificate,
-                    Comments = dto.Comments,
-                    SubscriptionId = dto.SubscriptionId,
-                    ZoneId = dto.ZoneId,
-                    Longitude = dto.Longitude,
-                    Lattitude = dto.Lattitude,
-                    PhotoUpload = dto.PhotoUpload,
-                    AdType = dto.AdType,
-                    IsFeatured = dto.IsFeatured,
-                    IsPromoted = dto.IsPromoted,
-                    IsRefreshed = dto.IsRefreshed,
-                    RefreshExpiryDate = dto.RefreshExpiryDate,
-                    FeaturedExpiryDate = dto.FeaturedExpiryDate,
-                    PromotedExpiryDate = dto.PromotedExpiryDate,
-                    ExpiryDate = dto.ExpiryDate,
-                    UserName = dto.UserName,
-                    PublishedDate = dto.PublishedDate,
-                    Status = dto.Status,
-                    IsActive = dto.IsActive,
-                    CreatedBy = existing.CreatedBy,
-                    CreatedAt = existing.CreatedAt,
-                    UpdatedBy = userId,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
+                dto.L1CategoryName = l1CategoryName;
+                dto.L2CategoryName = l2CategoryName;
+                dto.CategoryName = mainCategory.Category;
+                dto.UpdatedAt = DateTime.UtcNow;
+                dto.UpdatedBy = userId;
+                AdUpdateHelper.ApplySelectiveUpdates(existing, dto);
                 await _dapr.SaveStateAsync(
                     ConstantValues.Services.StoreName,
                     key,
-                    entity,
+                    existing,
                     cancellationToken: cancellationToken
                 );
-                var upsertRequest = await IndexServiceToAzureSearch(entity, cancellationToken);
+                var upsertRequest = await IndexServiceToAzureSearch(existing, cancellationToken);
 
                 if (upsertRequest != null)
                 {
@@ -467,7 +486,23 @@ namespace QLN.Classified.MS.Service.Services
                     Plaintext = $"Hello,\n\nYour ad titled '{dto.Title}' has been updated.\n\nStatus: {dto.Status}\n\nThanks,\nQL Team",
                     Html = $"{dto.Title} has been updated."
                 }, cancellationToken);
+
+                await _auditLogger.UpdateAuditLog(
+                   id: Guid.NewGuid(),
+                   module: "Service",
+                   httpMethod: "PUT",
+                   apiEndpoint: $"/api/service/updatebyid?id={dto.Id}",
+                   successMessage: "Service Ad Updated Successfully",
+                   updatedBy: userId,
+                   payload: dto,
+                   cancellationToken: cancellationToken
+               );
+
                 return "Service Ad updated successfully.";
+            }
+            catch (ConflictException ex)
+            {
+                throw;
             }
             catch (ArgumentException ex)
             {
@@ -480,7 +515,7 @@ namespace QLN.Classified.MS.Service.Services
         }
         private async Task<CommonIndexRequest> IndexServiceToAzureSearch(ServicesModel dto, CancellationToken cancellationToken)
         {
-          
+
             var indexDoc = new ServicesIndex
             {
                 Id = dto.Id.ToString(),
@@ -515,7 +550,7 @@ namespace QLN.Classified.MS.Service.Services
                 Status = dto.Status.ToString(),
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
-                RefreshExpiryDate = dto.RefreshExpiryDate,
+                LastRefreshedOn = dto.LastRefreshedOn,
                 IsRefreshed = dto.IsRefreshed,
                 PublishedDate = dto.PublishedDate,
                 ExpiryDate = dto.ExpiryDate,
@@ -539,7 +574,6 @@ namespace QLN.Classified.MS.Service.Services
             return indexRequest;
 
         }
-
         private static bool IsValidEmail(string email)
         {
             return !string.IsNullOrWhiteSpace(email) &&
@@ -590,7 +624,7 @@ namespace QLN.Classified.MS.Service.Services
             ) ?? new();
 
             if (!indexKeys.Contains(key))
-                return null; 
+                return null;
 
             var ad = await _dapr.GetStateAsync<ServicesModel>(
                 ConstantValues.Services.StoreName,
@@ -641,56 +675,81 @@ namespace QLN.Classified.MS.Service.Services
                     cancellationToken: cancellationToken
                 );
             }
+            await _auditLogger.UpdateAuditLog(
+                id: Guid.NewGuid(),
+                module: "Service",
+                httpMethod: "DELETE",
+                apiEndpoint: $"/api/service/deletebyid?id={id}",
+                successMessage: "Service Ad Deleted Successfully",
+                updatedBy: userId,
+                payload: null,
+                cancellationToken: cancellationToken
+            );
 
             return "Service Ad soft-deleted successfully.";
         }
         public async Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
         {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.Services.StoreName,
-                ConstantValues.Services.ServicesIndexKey,
-                cancellationToken: cancellationToken
-            ) ?? new();
-
-            if (indexKeys.Count == 0)
+            try
             {
+                if (!Enum.IsDefined(typeof(ServiceStatus), dto.Status))
+                {
+                    throw new InvalidDataException($"Invalid status value: {(int)dto.Status}. Please provide a valid ServiceStatus.");
+                }
+                var indexKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.Services.StoreName,
+                    ConstantValues.Services.ServicesIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new();
+
+                if (indexKeys.Count == 0)
+                {
+                    return new ServicesPagedResponse<ServicesModel>
+                    {
+                        TotalCount = 0,
+                        PageNumber = dto.PageNumber,
+                        PerPage = dto.PerPage,
+                        Items = new()
+                    };
+                }
+
+                var ads = await _dapr.GetBulkStateAsync(
+                    ConstantValues.Services.StoreName,
+                    indexKeys,
+                    parallelism: 10,
+                    cancellationToken: cancellationToken
+                );
+
+                var filtered = ads
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Value))
+                    .Select(e => JsonSerializer.Deserialize<ServicesModel>(e.Value!, _jsonOptions))
+                    .Where(e => e != null && e.Status == dto.Status && e.IsActive)
+                    .ToList();
+
+                var totalCount = filtered.Count;
+                var skip = (dto.PageNumber - 1) * dto.PerPage;
+
+                var pagedItems = filtered
+                    .Skip((int)skip)
+                    .Take((int)dto.PerPage)
+                    .ToList();
+
                 return new ServicesPagedResponse<ServicesModel>
                 {
-                    TotalCount = 0,
+                    TotalCount = totalCount,
                     PageNumber = dto.PageNumber,
                     PerPage = dto.PerPage,
-                    Items = new()
+                    Items = pagedItems
                 };
             }
-
-            var ads = await _dapr.GetBulkStateAsync(
-                ConstantValues.Services.StoreName,
-                indexKeys,
-                parallelism: 10,
-                cancellationToken: cancellationToken
-            );
-
-            var filtered = ads
-                .Where(e => !string.IsNullOrWhiteSpace(e.Value))
-                .Select(e => JsonSerializer.Deserialize<ServicesModel>(e.Value!, _jsonOptions))
-                .Where(e => e != null && e.Status == dto.Status && e.IsActive)
-                .ToList();
-
-            var totalCount = filtered.Count;
-            var skip = (dto.PageNumber - 1) * dto.PerPage;
-
-            var pagedItems = filtered
-                .Skip((int)skip)
-                .Take((int)dto.PerPage)
-                .ToList();
-
-            return new ServicesPagedResponse<ServicesModel>
+            catch (InvalidDataException ex)
             {
-                TotalCount = totalCount,
-                PageNumber = dto.PageNumber,
-                PerPage = dto.PerPage,
-                Items = pagedItems
-            };
+                throw new InvalidDataException($"Error fetching services by status: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("An error occurred while fetching services by status.", ex);
+            }
         }
         private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
         {
@@ -705,6 +764,8 @@ namespace QLN.Classified.MS.Service.Services
                 request.ServiceId.ToString(),
                 cancellationToken: ct
             );
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
             serviceAd.IsPromoted = request.IsPromoted;
             serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedAt = DateTime.UtcNow;
@@ -742,7 +803,8 @@ namespace QLN.Classified.MS.Service.Services
                 request.ServiceId.ToString(),
                 cancellationToken: ct
             );
-
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
             serviceAd.IsFeatured = request.IsFeature;
             serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedAt = DateTime.UtcNow;
@@ -780,9 +842,9 @@ namespace QLN.Classified.MS.Service.Services
                 request.ServiceId.ToString(),
                 cancellationToken: ct
             );
-
-            serviceAd.IsRefreshed = request.IsRefreshed;
-            serviceAd.RefreshExpiryDate = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
+            serviceAd.LastRefreshedOn = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dapr.SaveStateAsync(
@@ -818,6 +880,8 @@ namespace QLN.Classified.MS.Service.Services
                 id.ToString(),
                 cancellationToken: ct
             );
+            if (serviceAd == null)
+                throw new KeyNotFoundException("Service Ad not found.");
             var allAdKeys = await _dapr.GetStateAsync<List<string>>(
                ConstantValues.Services.StoreName,
                ConstantValues.Services.ServicesIndexKey,
@@ -838,11 +902,9 @@ namespace QLN.Classified.MS.Service.Services
                     existingAd.IsActive &&
                     existingAd.Status == ServiceStatus.Published)
                 {
-                    throw new InvalidDataException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                    throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
                 }
             }
-            if (serviceAd == null)
-                throw new InvalidDataException("Service Ad not found.");
 
             if (serviceAd.Status == ServiceStatus.Published)
                 throw new InvalidDataException("Service is already published.");
@@ -911,6 +973,7 @@ namespace QLN.Classified.MS.Service.Services
                     case BulkModerationAction.Approve:
                         if (ad.Status == ServiceStatus.PendingApproval)
                         {
+                            await EnsureNoActiveAdConflict(ad, indexKeys, ct);
                             ad.Status = ServiceStatus.Published;
                             ad.PublishedDate = DateTime.UtcNow;
                             shouldUpdate = true;
@@ -920,6 +983,7 @@ namespace QLN.Classified.MS.Service.Services
                     case BulkModerationAction.Publish:
                         if (ad.Status == ServiceStatus.Unpublished)
                         {
+                            await EnsureNoActiveAdConflict(ad, indexKeys, ct);
                             ad.Status = ServiceStatus.Published;
                             ad.PublishedDate = DateTime.UtcNow;
                             shouldUpdate = true;
@@ -940,7 +1004,7 @@ namespace QLN.Classified.MS.Service.Services
                             shouldUpdate = true;
                         }
                         break;
-                        case BulkModerationAction.UnFeature:
+                    case BulkModerationAction.UnFeature:
                         if (ad.Status == ServiceStatus.Feature)
                         {
                             ad.Status = ServiceStatus.UnFeature;
@@ -986,6 +1050,29 @@ namespace QLN.Classified.MS.Service.Services
             }
 
             return updated;
+        }
+        private async Task EnsureNoActiveAdConflict(ServicesModel currentAd, List<string> allKeys, CancellationToken ct)
+        {
+            var otherKeys = allKeys.Where(k => k != currentAd.Id.ToString()).ToList();
+
+            foreach (var key in otherKeys)
+            {
+                var existing = await _dapr.GetStateAsync<ServicesModel>(
+                    ConstantValues.Services.StoreName,
+                    key,
+                    cancellationToken: ct
+                );
+
+                if (existing != null &&
+                    existing.CreatedBy == currentAd.CreatedBy &&
+                    existing.L2CategoryId == currentAd.L2CategoryId &&
+                    existing.IsActive &&
+                    existing.Status == ServiceStatus.Published)
+                {
+                    throw new ConflictException(
+                        $"Ad '{currentAd.Title}' cannot be published. An active ad already exists in the same category by this user.");
+                }
+            }
         }
     }
 }

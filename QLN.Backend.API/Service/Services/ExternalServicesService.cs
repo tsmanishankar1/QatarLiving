@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using System.Net;
@@ -156,9 +157,13 @@ namespace QLN.Backend.API.Service.Services
                     {
                         errorMessage = errorJson;
                     }
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        throw new ConflictException(errorMessage);
+                    }
                     throw new InvalidDataException(errorMessage);
                 }
-                    await response.Content.ReadAsStringAsync(cancellationToken);
+                await response.Content.ReadAsStringAsync(cancellationToken);
 
                 return "Service Ad Created Successfully";
             }
@@ -189,9 +194,12 @@ namespace QLN.Backend.API.Service.Services
                     {
                         errorMessage = errorJson;
                     }
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        throw new ConflictException(errorMessage);
+                    }
                     throw new InvalidDataException(errorMessage);
                 }
-
                 return "Service ad updated successfully.";
             }
             catch (Exception ex)
@@ -286,13 +294,24 @@ namespace QLN.Backend.API.Service.Services
             try
             {
                 var url = "/api/service/getbystatus";
-                return await _dapr.InvokeMethodAsync<object?, ServicesPagedResponse<ServicesModel>>(
-                    HttpMethod.Post,
-                    ConstantValues.Services.ServiceAppId,
-                    url,
-                    dto,
-                    cancellationToken
-                );
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    throw new InvalidDataException(problem?.Detail ?? "Unknown error occurred.");
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ServicesPagedResponse<ServicesModel>>(cancellationToken: cancellationToken);
+                return result!;
             }
             catch (Exception ex)
             {
@@ -431,27 +450,42 @@ namespace QLN.Backend.API.Service.Services
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
 
-                if (response.StatusCode == HttpStatusCode.OK)
-                {
-                    var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                var errorJson = await response.Content.ReadAsStringAsync(ct);
 
-                    if (serviceDto is null)
-                        throw new InvalidDataException("Invalid data returned from service.");
+                switch (response.StatusCode)
+                {
+                    case HttpStatusCode.OK:
+                        var serviceDto = JsonSerializer.Deserialize<ServicesModel>(errorJson, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        if (serviceDto is null)
+                            throw new InvalidDataException("Invalid data returned from service.");
+                        return serviceDto;
 
-                    return serviceDto;
-                }
-                else if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    throw new KeyNotFoundException("Service not found.");
-                }
-                else
-                {
-                    var errorJson = await response.Content.ReadAsStringAsync(ct);
-                    throw new InvalidDataException($"Service error: {errorJson}");
+                    case HttpStatusCode.NotFound:
+                        var notFound = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        throw new KeyNotFoundException(notFound?.Detail ?? "Service not found.");
+
+                    case HttpStatusCode.BadRequest:
+                        var badRequest = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        throw new InvalidDataException(badRequest?.Detail ?? "Bad request.");
+
+                    case HttpStatusCode.Conflict:
+                        var conflict = JsonSerializer.Deserialize<ProblemDetails>(errorJson, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                        throw new ConflictException(conflict?.Detail ?? "Conflict occurred.");
+
+                    default:
+                        throw new InvalidDataException($"Service error: {errorJson}");
                 }
             }
             catch (Exception ex)
@@ -480,6 +514,11 @@ namespace QLN.Backend.API.Service.Services
                     catch
                     {
                         errorMessage = errorJson;
+                    }
+
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        throw new ConflictException(errorMessage);
                     }
                     throw new InvalidDataException(errorMessage);
                 }

@@ -7,7 +7,6 @@ using QLN.Backend.API.Service.DrupalAuthService;
 using QLN.Backend.API.Service.SearchService;
 using QLN.Backend.API.Service.ServiceBoService;
 using QLN.Backend.API.Service.Services;
-using QLN.Backend.API.Service.ServicesService;
 using QLN.Backend.API.Service.V2ClassifiedBoService;
 using QLN.Backend.API.Service.V2ContentService;
 using QLN.Common.Infrastructure.IService;
@@ -37,7 +36,6 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<IClassifiedService, ExternalClassifiedService>();
-            services.AddTransient<IServicesService, ExternalServiceService>();
             services.AddScoped<IFileStorageBlobService, FileStorageBlobService>();
 
             return services;
@@ -91,6 +89,20 @@ namespace QLN.Backend.API.ServiceConfiguration
             if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
             {
                 services.AddHttpClient<IDrupalAuthService, DrupalAuthService>(option =>
+                {
+                    option.BaseAddress = drupalBaseUrl;
+                });
+            }
+
+            return services;
+        }
+        public static IServiceCollection DrupalUserServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            var drupalUrl = configuration.GetSection("BaseUrl")["LegacyDrupalUser"] ?? throw new ArgumentNullException("LegacyDrupalUser");
+
+            if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+            {
+                services.AddHttpClient<IDrupalUserService, ExternalDrupalUserService>(option =>
                 {
                     option.BaseAddress = drupalBaseUrl;
                 });
@@ -152,5 +164,6 @@ namespace QLN.Backend.API.ServiceConfiguration
             services.AddTransient<IServicesBoService,ExternalServicesBoService>();
             return services;
         }
+        
     }
 }

@@ -10,8 +10,9 @@ using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.Constants;
 using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
-using Dapr.Client.Autogen.Grpc.v1;
+
 using Dapr.Client;
+using QLN.Common.Infrastructure.CustomException;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
@@ -281,9 +282,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status403Forbidden
                         });
                     }
-                   
+
                     var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (InvalidDataException ex)
                 {
@@ -306,6 +316,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/createbyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServiceRequest dto,
@@ -330,6 +341,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         Detail = ex.Message
                     });
                 }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -344,12 +364,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPut("/update", async Task<Results<Ok<string>, NotFound, ProblemHttpResult>> (
+            group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServicesModel dto,
                 HttpContext httpContext,
                 IServices service,
@@ -387,7 +408,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
-                    return TypedResults.NotFound();
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
                 }
                 catch (Exception ex)
                 {
@@ -403,6 +437,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces(StatusCodes.Status404NotFound)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPut("/updatebyuserid", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
             ServicesModel dto,
@@ -424,6 +459,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.UpdateServiceAd(dto.UpdatedBy, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
@@ -439,6 +491,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
              .Produces(StatusCodes.Status404NotFound)
              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
              .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
@@ -453,7 +506,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ServicesIndex,request);
+                    var result = await service.GetAllAsync(ConstantValues.IndexNames.ServicesIndex, request);
                     var allservice = new AllServices
                     {
                         TotalCount = result.TotalCount,
@@ -700,6 +753,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.GetServicesByStatusWithPagination(dto, cancellationToken);
                     return Results.Ok(result);
                 }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        title: "Invalid request",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest
+                    );
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -748,6 +809,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             title: "Service Not Found");
                     }
                     return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
                 }
                 catch (Exception ex)
                 {
@@ -800,6 +875,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
                     return Results.Ok(resultMessage);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -814,6 +903,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Feature a service ad")
             .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
             .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -847,6 +937,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
                     return Results.Ok(resultMessage);
                 }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
                 catch (Exception ex)
                 {
                     return Results.Problem(
@@ -861,6 +965,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .WithSummary("Refresh a service ad")
             .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
             .Produces<ServicesModel>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
@@ -868,7 +973,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapPublishEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/publish", async Task<IResult> (
-                [FromQuery] Guid id, 
+                [FromQuery] Guid id,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -884,6 +989,27 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
 
                     return Results.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Conflict");
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
                 }
                 catch (Exception ex)
                 {
@@ -901,6 +1027,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ServicesModel>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -918,44 +1045,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     CancellationToken ct
                 ) =>
             {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User information is missing or invalid in the token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-                    if (uid == null && userName == null)
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+                if (uid == null && userName == null)
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(new ProblemDetails
-                        {
-                            Title = "Unauthorized Access",
-                            Detail = "User ID or username could not be extracted from token.",
-                            Status = StatusCodes.Status403Forbidden
-                        });
-                    }
-                    if (!req.AdIds.Any())
-                        return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+                if (!req.AdIds.Any())
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "No ads selected." });
 
-                    if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
-                        return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
+                if (req.Action == BulkModerationAction.Remove && string.IsNullOrWhiteSpace(req.Reason))
+                    return TypedResults.BadRequest(new ProblemDetails { Title = "Reason required for removal." });
                 req.UpdatedBy = uid;
-                    try
+                try
+                {
+                    var result = await service.ModerateBulkService(req, ct);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
                     {
-                        var result = await service.ModerateBulkService(req, ct);
-                        return TypedResults.Ok(result);
-                    }
-                    catch (Exception ex)
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
                     {
-                        return TypedResults.Problem(ex.Message);
-                    }
-                })
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
                 .WithName("BulkModerateServices")
                 .WithTags("Service")
                 .WithSummary("Bulk moderate service ads")
@@ -965,6 +1110,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
                Ok<List<ServicesModel>>,
@@ -991,6 +1137,24 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     var result = await service.ModerateBulkService(req, ct);
                     return TypedResults.Ok(result);
                 }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Conflict",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(ex.Message);
@@ -1006,7 +1170,62 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
            .Produces<string>(StatusCodes.Status200OK)
            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapServicesFeaturedItemEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapGet("/featured-services", async Task<IResult> (
+                    [FromServices] ISearchService searchSvc,
+                    CancellationToken cancellationToken
+                ) =>
+            {
+                var searchReq = new CommonSearchRequest
+                {
+                    Filters = new Dictionary<string, object>
+                    {
+                        { "IsFeatured", true }
+                    }
+                };
+
+                try
+                {
+                    CommonSearchResponse response = await searchSvc.SearchAsync(
+                        ConstantValues.Verticals.Services,
+                        searchReq
+                    );
+
+                    var list = response.ServicesItems ?? new List<ServicesIndex>();
+
+                    return TypedResults.Ok(list);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Argument",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName($"GetFeatured_{ConstantValues.Verticals.Services}_Items")
+            .WithTags("Service")
+            .WithSummary("Get all featured service items")
+            .WithDescription("Fetches every ServicesIndex document where IsFeatured = true.")
+            .Produces<IEnumerable<ServicesIndex>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
     }
