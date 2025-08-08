@@ -28,16 +28,12 @@ env=dev
 
 #########
 
-###
-GET {{QLN.DataMigration_HostAddress}}/migrate_articles?source_category=20000040&destination_category=101&destination_sub_category=1001
-Accept: application/json
-
 ### Migrate News
 GET https://www.qatarliving.com/qlnapi/articles?page=1&page_size=10&forum_id=20000040
 Content-Type: application/json
 
 ### Migrate Events
-GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=30
+GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=30&category_id=126205
 Content-Type: application/json
 
 ### Migrate community

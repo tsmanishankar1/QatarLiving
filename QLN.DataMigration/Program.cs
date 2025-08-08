@@ -70,9 +70,9 @@ app.MapGet("/migrate_items", async (
     [FromQuery(Name = "category_id")] int categoryId,
     CancellationToken cancellationToken = default
     ) =>
-{
-    return await migrationService.MigrateItems(environment, categoryId, cancellationToken);
-});
+    {
+        return await migrationService.MigrateItems(environment, categoryId, cancellationToken);
+    });
 
 app.MapGet("/migrate_articles", async (
     [FromServices] IMigrationService migrationService,
@@ -82,9 +82,31 @@ app.MapGet("/migrate_articles", async (
     [FromQuery(Name = "import_images")] bool importImages = false,
     CancellationToken cancellationToken = default
     ) =>
-{
-    return await migrationService.MigrateArticles(sourceCategory, destinationCategory, destinationSubCategory, importImages, cancellationToken);
-});
+    {
+        return await migrationService.MigrateArticles(sourceCategory, destinationCategory, destinationSubCategory, importImages, cancellationToken);
+    });
+
+app.MapGet("/migrate_events", async (
+    [FromServices] IMigrationService migrationService,
+    [FromQuery(Name = "source_category")] string sourceCategory,
+    [FromQuery(Name = "destination_category")] int destinationCategory,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    CancellationToken cancellationToken = default
+    ) =>
+    {
+        return await migrationService.MigrateEvents(sourceCategory, destinationCategory, importImages, cancellationToken);
+    });
+
+app.MapGet("/migrate_community", async (
+    [FromServices] IMigrationService migrationService,
+    //[FromQuery(Name = "source_category")] string sourceCategory,
+    //[FromQuery(Name = "destination_category")] int destinationCategory,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    CancellationToken cancellationToken = default
+    ) =>
+    {
+        return await migrationService.MigrateCommunityPosts(importImages, cancellationToken);
+    });
 
 
 app.Run();

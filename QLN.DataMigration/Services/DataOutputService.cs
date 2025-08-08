@@ -5,6 +5,7 @@
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
+    using QLN.Common.Infrastructure.DTO_s;
     using QLN.DataMigration.Helpers;
     using QLN.DataMigration.Models;
     using System.Text;
@@ -59,7 +60,7 @@
                     {
                         CategoryId = categoryId,
                         SubcategoryId = subcategoryId,
-                        SlotId = (int)Slot.UnPublished
+                        SlotId = (int)Common.DTO_s.Slot.UnPublished
                     } };
 
                     var article = new V2NewsArticleDTO
@@ -82,6 +83,131 @@
                     };
 
                     await _daprClient.SaveStateAsync(V2Content.ContentStoreName, article.Id.ToString(), article, cancellationToken: cancellationToken);
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create article {dto.Nid} - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
+
+            }
+        }
+
+        public async Task SaveContentEventsAsync(List<ContentEvent> items, int destinationCategoryId, CancellationToken cancellationToken)
+        {
+            foreach (var dto in items)
+            {
+                try
+                {
+                    var id = ProcessingHelpers.StringToGuid(dto.Nid);
+
+                    var entity = new V2Events
+                    {
+                        Id = id,
+                        Slug = dto.Slug,
+                        CategoryId = destinationCategoryId,
+                        CategoryName = dto.EventCategory,
+                        EventTitle = dto.Title,
+                        EventType = V2EventType.OpenRegistrations,
+                        EventSchedule = new EventSchedule()
+                        {
+                            StartDate = DateOnly.TryParse(dto.EventStart, out var startDate) ? startDate : new DateOnly(),
+                            EndDate = DateOnly.TryParse(dto.EventEnd, out var endDate) ? endDate : new DateOnly(),
+                        },
+                        Venue = dto.EventVenue,
+                        Longitude = dto.EventLat,
+                        Latitude = dto.EventLong,
+                        EventDescription = dto.Description,
+                        CoverImage = dto.ImageUrl,
+                        IsFeatured = false,
+                        PublishedDate = DateTime.UtcNow,
+                        IsActive = true,
+                        CreatedBy = dto.UserName,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _daprClient.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        id.ToString(),
+                        entity,
+                        cancellationToken: cancellationToken
+                    );
+
+                    var keys = await _daprClient.GetStateAsync<List<string>>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        cancellationToken: cancellationToken
+                    ) ?? new List<string>();
+
+                    if (!keys.Contains(id.ToString()))
+                    {
+                        keys.Add(id.ToString());
+                        await _daprClient.SaveStateAsync(
+                            ConstantValues.V2Content.ContentStoreName,
+                            ConstantValues.V2Content.EventIndexKey,
+                            keys,
+                            cancellationToken: cancellationToken
+                        );
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create article {dto.Nid} - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
+
+            }
+        }
+
+        public async Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken)
+        {
+            foreach (var dto in items)
+            {
+                try
+                {
+                    var id = ProcessingHelpers.StringToGuid(dto.Nid);
+
+                    var entity = new V2CommunityPostDto
+                    {
+                        Id = id,
+                        Slug = dto.Slug,
+                        CategoryId = dto.CategoryId,
+                        Category = dto.Category,
+                        Title = dto.Title,
+                        UpdatedBy = dto.UserName,
+                        UpdatedDate = DateTime.UtcNow,
+                        Description = dto.Description,
+                        ImageUrl = dto.ImageUrl,
+                        IsActive = true,
+                        UserName = dto.UserName,
+                        DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
+                    };
+
+                    await _daprClient.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        id.ToString(),
+                        entity,
+                        cancellationToken: cancellationToken
+                    );
+
+                    var keys = await _daprClient.GetStateAsync<List<string>>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        "community-index",
+                        cancellationToken: cancellationToken
+                    ) ?? new List<string>();
+
+                    if (!keys.Contains(id.ToString()))
+                    {
+                        keys.Add(id.ToString());
+                        await _daprClient.SaveStateAsync(
+                            ConstantValues.V2Content.ContentStoreName,
+                            "community-index",
+                            keys,
+                            cancellationToken: cancellationToken
+                        );
+                    }
 
                 }
                 catch (Exception ex)

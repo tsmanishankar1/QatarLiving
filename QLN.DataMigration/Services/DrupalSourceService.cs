@@ -126,46 +126,16 @@
         }
 
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            string category_id,
             CancellationToken cancellationToken,
-            //string? category_id = null,
-            //string? location_id = null,
-            //string? from = null,
-            //string? to = null,
-            //string? order = null,
             int? page = null,
             int? page_size = null
             )
         {
             page ??= 1;
-            page_size ??= 20;
+            page_size ??= 30;
 
-            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}";
-
-            //if (!string.IsNullOrEmpty(order))
-            //{
-            //    requestUri += $"&order={order}";
-            //}
-
-            //if (!string.IsNullOrEmpty(category_id))
-            //{
-            //    requestUri += $"&category_id={category_id}";
-            //}
-
-            //if (!string.IsNullOrEmpty(location_id))
-            //{
-            //    requestUri += $"&location_id={location_id}";
-            //}
-
-            //if (!string.IsNullOrEmpty(from))
-            //{
-            //    requestUri += $"&from={from}";
-            //}
-
-            //if (!string.IsNullOrEmpty(to))
-            //{
-            //    requestUri += $"&to={to}";
-            //}
-
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&category_id={category_id}";
 
             return await _httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
         }
@@ -177,7 +147,7 @@
             )
         {
             page ??= 1;
-            page_size ??= 10;
+            page_size ??= 30;
 
             string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}";
 
@@ -192,7 +162,7 @@
             )
         {
             page ??= 1;
-            page_size ??= 10;
+            page_size ??= 30;
 
             string requestUri = $"{DrupalContentConstants.NewsPath}?page={page}&page_size={page_size}&forum_id={sourceCategory}";
 

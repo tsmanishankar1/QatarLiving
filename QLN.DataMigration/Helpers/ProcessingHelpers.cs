@@ -5,7 +5,7 @@ namespace QLN.DataMigration.Helpers
 {
     public static class ProcessingHelpers
     {
-        public static string GenerateNewsSlug(string title)
+        public static string GenerateSlug(string title)
         {
             if (string.IsNullOrWhiteSpace(title)) return string.Empty;
             var slug = title.ToLowerInvariant().Trim();
