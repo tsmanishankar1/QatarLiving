@@ -254,7 +254,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (dto.Images == null || dto.Images.Count == 0)
                 throw new ArgumentException("At least one ad image is required.");
-            if (dto.HasAuthenticityCertificate == true && string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
+            if (string.IsNullOrWhiteSpace(dto.AuthenticityCertificateUrl))
                 throw new ArgumentException("Certificate image is required.");
 
             if (dto.SubVertical != SubVertical.Collectibles)
@@ -289,21 +289,19 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(dto);
 
             if (dto.UserId == null) throw new ArgumentException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (string.IsNullOrWhiteSpace(dto.ImageUrl)) throw new ArgumentException("Ad image is required.");
+            if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
+            if (dto.Images == null || dto.Images.Count == 0)
+                throw new ArgumentException("Ad image is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("FlyerFile image is required.");
-
-            if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("This endpoint only supports posting ads under the 'Deals' subvertical.");
+            
 
             try
-            {
-                _log.LogTrace($"Calling internal deals service with flyer: {dto.FlyerFileUrl} and image: {dto.ImageUrl}");
+            {               
                 var requestUrl = $"api/classifieds/deals/post-by-id";
                 var payload = JsonSerializer.Serialize(dto);
                 var req = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, SERVICE_APP_ID, requestUrl);
@@ -316,7 +314,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 return new AdCreatedResponseDto
                 {
                     AdId = dto.Id,
-                    Title = dto.Title,
+                    Title = dto.Offertitle,
                     CreatedAt = DateTime.UtcNow,
                     Message = "Deals Ad created successfully"
                 };
@@ -328,32 +326,24 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 if (adId <= 0)
-                    throw new ArgumentException("Ad ID is required.");
+                    throw new ArgumentException("Ad ID must be a valid positive number.");
 
-                List<string> blobNamesToDelete = new();
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
 
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/items/{adId}",
+                    $"api/classifieds/items/delete-by-id/{adId}/{userId}",
                     cancellationToken
                     );
-
-
-                if (response?.DeletedImages?.Count > 0)
-                {
-                    foreach (var blobName in response.DeletedImages)
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-
-                    _log.LogException(new Exception($"Deleted blobs for Ad ID: {adId}"));
-                }
+                
                 await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsItemsIndex, adId.ToString());
                 return response;
             }
@@ -364,31 +354,25 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (adId == Guid.Empty)
+                if (adId <= 0)
                     throw new ArgumentException("Ad ID is required.");
 
-                List<string> blobNamesToDelete = new();
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
 
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/preloved/{adId}",
+                    $"api/classifieds/preloved/delete-by-id/{adId}/{userId}",
                     cancellationToken
                 );
-
-                if (response?.DeletedImages?.Count > 0)
-                {
-                    foreach (var blobName in response.DeletedImages)
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-
-                    _log.LogException(new Exception($"Deleted blobs for Preloved Ad ID: {adId}"));
-                }
+               
                 await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsPrelovedIndex, adId.ToString());
                 return response;
             }
@@ -399,31 +383,23 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (adId == Guid.Empty)
+                if (adId <= 0)
                     throw new ArgumentException("Ad ID is required.");
 
-                List<string> blobNamesToDelete = new();
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
 
                 var response = await _dapr.InvokeMethodAsync<DeleteAdResponseDto>(
                     HttpMethod.Delete,
                     SERVICE_APP_ID,
-                    $"api/classifieds/collectibles/{adId}",
+                    $"api/classifieds/collectibles/delete-by-id/{adId}/{userId}",
                     cancellationToken
                 );
-
-                if (response?.DeletedImages?.Count > 0)
-                {
-                    foreach (var blobName in response.DeletedImages)
-                    {
-                        await _fileStorageBlob.DeleteFile(blobName, "classifieds-images", cancellationToken);
-                    }
-
-                    _log.LogException(new Exception($"Deleted blobs for Collectibles Ad ID: {adId}"));
-                }
+               
                 await _searchService.DeleteAsync(ConstantValues.IndexNames.ClassifiedsCollectiblesIndex, adId.ToString());
                 return response;
             }
@@ -523,14 +499,14 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<ClassifiedsDeals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
+        public async Task<Deals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.");
 
             try
             {
-                var result = await _dapr.InvokeMethodAsync<ClassifiedsDeals>(
+                var result = await _dapr.InvokeMethodAsync<Deals>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
                     $"api/classifieds/deals/{adId}",
@@ -839,7 +815,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             if (dto.Id <= 0)
             {
@@ -848,7 +824,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
 
             try
             {
-                var response = await _dapr.InvokeMethodAsync<ClassifiedsDeals, AdUpdatedResponseDto>(
+                var response = await _dapr.InvokeMethodAsync<Deals, AdUpdatedResponseDto>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
                     $"api/classifieds/deals/update-by-id",
