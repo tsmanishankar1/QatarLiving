@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s
 {
-    public class LocationsDto
+    public class LocationsDtos
     {
         public List<string> Locations { get; set; } = new List<string>();
     }

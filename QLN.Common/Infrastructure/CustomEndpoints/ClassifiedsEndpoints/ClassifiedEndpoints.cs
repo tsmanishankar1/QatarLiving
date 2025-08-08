@@ -1850,6 +1850,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         WebsiteUrl = dto.WebsiteUrl,
                         ContactNumber = dto.PhoneNumber,
                         WhatsappNumber = dto.WhatsAppNumber,
+                        Locations = dto.Locations,
                         ExpiryDate = dto.ExpiryDate,
                         FeaturedExpiryDate = null,
                         IsFeatured = false,
@@ -2571,19 +2572,33 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
 
 
-            group.MapDelete("/deals/{adId:guid}", async Task<Results<
+            group.MapDelete("/deals/{adId:long}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
                 (
-                Guid adId,
+                long adId,
                 IClassifiedService service,
                 HttpContext context,
                 CancellationToken cancellationToken
                 ) =>
             {
-                if (adId == Guid.Empty)
+                var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var uid = userData.GetProperty("uid").GetString();
+
+                if (string.IsNullOrWhiteSpace(uid))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "UserId must not be empty.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                if (adId <= 0)
                 {
                     return TypedResults.BadRequest(new ProblemDetails
                     {
@@ -2596,7 +2611,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
                 try
                 {
-                    var response = await service.DeleteClassifiedDealsAd(adId, cancellationToken);
+                    var response = await service.DeleteClassifiedDealsAd(adId, uid, cancellationToken);
                     return TypedResults.Ok(response);
                 }
                 catch (KeyNotFoundException ex)
@@ -2655,7 +2670,107 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<DeleteAdResponseDto>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .RequireAuthorization();
+
+            group.MapDelete("/deals/delete-by-id/{adId:long}/{userId}", async Task<Results<
+                Ok<DeleteAdResponseDto>,
+                BadRequest<ProblemDetails>,
+                NotFound<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                long adId,
+                string userId,
+                IClassifiedService service,
+                HttpContext context,
+                CancellationToken cancellationToken
+                ) =>
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "UserId must not be empty.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                if (adId <= 0)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "Ad ID must be a valid non-empty GUID.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+
+                try
+                {
+                    var response = await service.DeleteClassifiedDealsAd(adId, userId, cancellationToken);
+                    return TypedResults.Ok(response);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Ad Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (InvalidOperationException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Operation",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.Request.Path
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "Requested classified deals ad not found.",
+                            Status = StatusCodes.Status404NotFound,
+                            Instance = context.Request.Path
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest,
+                            Instance = context.Request.Path
+                        });
+                    }
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path);
+                }
+            })
+                .WithName("DeleteClassifiedDealsAdById")
+                .WithTags("Classified")
+                .WithSummary("Delete a classified deals ad by ID and UserId")
+                .WithDescription("Deletes a classified deals ad using the provided Ad ID. and UserId. Used by admin/service scenarios.")
+                .Produces<DeleteAdResponseDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
+                .ExcludeFromDescription();
 
 
             group.MapGet("/items/{adId}", async Task<IResult> (
