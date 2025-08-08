@@ -47,15 +47,19 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
 
         Task<string> CreateFeaturedCategory(string userId, string userName, FeaturedCategoryDto dto, CancellationToken cancellationToken = default);
 
-        Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default);
+        Task<string> DeleteFeaturedCategory(string id, Vertical vertical, string userId, string userName, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default);
+        Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default);
+        Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default);
 
-        Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default);
+        Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default);
 
-        Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
+        Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(Vertical vertical, CancellationToken cancellationToken = default);
+
+        Task<string> ReorderFeaturedCategorySlots(string userId, string userName, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default);
+
+        Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default);
 
         Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct);
         Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct);

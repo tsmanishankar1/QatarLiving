@@ -1,11 +1,11 @@
-﻿using System;
+﻿using QLN.Common.DTO_s;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using QLN.Common.DTO_s;
 
 namespace QLN.Common.Infrastructure.Model
 {
@@ -29,7 +29,7 @@ namespace QLN.Common.Infrastructure.Model
 
         [MaxLength(100)]
         public string? BusinessType { get; set; }
-        
+
         [MaxLength(300)]
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
@@ -39,10 +39,10 @@ namespace QLN.Common.Infrastructure.Model
         public string FlyerFileUrl { get; set; } = string.Empty;
         [MaxLength(100)]
         public string? DataFeedUrl { get; set; }
-       
+
         [Required]
         [MaxLength(20)]
-        public string ContactNumber { get; set; } = string.Empty;       
+        public string ContactNumber { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(20)]
@@ -85,6 +85,5 @@ namespace QLN.Common.Infrastructure.Model
         public bool IsPromoted { get; set; }
         [Required]
         public AdStatus Status { get; set; }
-
     }
 }

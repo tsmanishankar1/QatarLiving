@@ -9,7 +9,7 @@ using QLN.Common.DTO_s;
 namespace QLN.Common.Migrations.ClassifiedDev
 {
     /// <inheritdoc />
-    public partial class SeasonalPicksDeals : Migration
+    public partial class SeasonalPicksDealsv2 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
