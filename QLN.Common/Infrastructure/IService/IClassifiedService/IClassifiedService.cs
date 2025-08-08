@@ -20,14 +20,14 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default);
-        Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, CancellationToken cancellationToken = default);
-        Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default);
-        Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, string userId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(long adId, string userId, CancellationToken cancellationToken = default);
+        Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(long adId, string userId, CancellationToken cancellationToken = default);
         Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default);
         Task<Items> GetItemAdById(long adId, CancellationToken cancellationToken = default);
         Task<Preloveds> GetPrelovedAdById(long adId, CancellationToken cancellationToken = default);
-        Task<ClassifiedsDeals> GetDealsAdById(long adId, CancellationToken cancellationToken = default);
+        Task<Deals> GetDealsAdById(long adId, CancellationToken cancellationToken = default);
         Task<Collectibles> GetCollectiblesAdById(long adId, CancellationToken cancellationToken = default);
         Task<Guid> CreateCategory(CategoryDtos dto, CancellationToken cancellationToken);
         Task<List<Categories>> GetChildCategories(string vertical, Guid parentId, CancellationToken cancellationToken);
@@ -38,7 +38,7 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdUpdatedResponseDto> UpdateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
-        Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default);
+        Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetFilteredAds(string subVertical,bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken token);
         Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(string subVertical,string userId,List<Guid> adIds,bool isPublished,CancellationToken cancellationToken = default);    
         Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);

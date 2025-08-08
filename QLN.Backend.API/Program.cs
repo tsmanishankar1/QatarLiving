@@ -254,6 +254,7 @@ builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
 builder.Services.ProductsConfiguration(builder.Configuration);
 
+builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
 var app = builder.Build();

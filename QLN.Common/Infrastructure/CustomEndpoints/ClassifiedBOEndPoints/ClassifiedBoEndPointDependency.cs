@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 {
     public static class ClassifiedBoEndPointDependency
@@ -12,6 +12,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
         public static RouteGroupBuilder MapClassifiedboEndpoints(this RouteGroupBuilder group)
         {
             group.MapClassifiedBoEndpoints();
+            group.MapClassifiedBOStoresEndpoints();
             return group;        }
     }
 }

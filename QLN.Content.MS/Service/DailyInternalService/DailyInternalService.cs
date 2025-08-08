@@ -844,6 +844,9 @@ namespace QLN.Content.MS.Service.DailyInternalService
             // Handle Categories collection properly with explicit casting
             var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
             var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+            var can = new CancellationToken();
+            var AllCommentCount = _news.GetCommentsByArticleIdAsync((string)article.Id, null, null, can).Result.TotalComments;
+
 
             return new ContentPost
             {
@@ -861,6 +864,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 UserName = (string)article.authorName,
                 Title = (string)article.Title,
                 Slug = (string)article.Slug,
+                WriterTag = article.WriterTag,
+                CommentsCounts = AllCommentCount,
                 Category = categoryLookup.ContainsKey(catId) ? categoryLookup[catId] : string.Empty
             };
         }
@@ -889,7 +894,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 EventEnd = eventItem.EventSchedule?.EndDate.ToString("o") ?? string.Empty,
                 EventLat = eventItem.Latitude,
                 EventLong = eventItem.Longitude,
-                EventLocation = eventItem.Location
+                EventLocation = eventItem.Location,
+                //Description = eventItem.EventDescription
             };
         }
 
@@ -898,6 +904,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
             // Handle Categories collection properly with explicit casting
             var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
             var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
+            var can = new CancellationToken();
+            var AllCommentCount = _news.GetCommentsByArticleIdAsync((string)article.Id, null, null, can).Result.TotalComments;
 
             return new ContentEvent
             {
@@ -915,7 +923,8 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 DateCreated = ((DateTime)article.CreatedAt).ToString("o"),
                 ImageUrl = (string)article.CoverImageUrl,
                 Slug = (string)article.Slug,
-                NodeType = "post"
+                NodeType = "post",
+                CommentsCounts = AllCommentCount
             };
         }
 

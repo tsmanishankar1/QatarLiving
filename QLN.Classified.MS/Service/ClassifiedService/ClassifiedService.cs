@@ -46,17 +46,19 @@ namespace QLN.Classified.MS.Service
         private const string CollectiblesCategoryIndexKey = ConstantValues.StateStoreNames.CollectiblesCategoryIndexKey;
         private const string DealsCategoryIndexKey = ConstantValues.StateStoreNames.DealsCategoryIndexKey;
         private readonly QLClassifiedContext _context;
+        private readonly QLCompanyContext _companyContext;
 
         private readonly ILogger<ClassifiedService> _logger;
         private readonly string itemJsonPath = Path.Combine("ClassifiedMockData", "itemsAdsMock.json");
         private readonly string prelovedJsonPath = Path.Combine("ClassifiedMockData", "prelovedAdsMock.json");
         private readonly string CollectablesonPath = Path.Combine("ClassifiedMockData", "collectables.json");
-        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context)
+        public ClassifiedService(Dapr.Client.DaprClient dapr, ILogger<ClassifiedService> logger, IWebHostEnvironment env, QLClassifiedContext context, QLCompanyContext companyContext)
         {
             _dapr = dapr ?? throw new ArgumentNullException(nameof(dapr));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _env = env;
             _context = context;
+            _companyContext = companyContext;
         }
 
         public async Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default)
@@ -389,39 +391,53 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-            if (dto.ImageUrl == null) throw new ArgumentException("Image URLs must be provided.");
+            if (string.IsNullOrWhiteSpace(dto.UserId)) throw new ArgumentException("UserId is required.");
+            if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.FlyerFileUrl)) throw new ArgumentException("Flyer URL must be provided.");
-            if (dto.Id <= 0) throw new ArgumentException("Id must be provided.");
+            if (dto.Images == null || !dto.Images.Any()) throw new ArgumentException("At least one image is required.");
 
-            var adId = dto.Id;
-            var key = $"ad-{adId}";
-
+          
             try
             {
-                var existing = await _dapr.GetStateAsync<object>(UnifiedStore, key);
-                if (existing != null)
-                    throw new InvalidOperationException($"Ad with key {key} already exists.");
-                //dto.Status = AdStatus.Draft;
-                dto.CreatedAt = DateTime.UtcNow;
+                var company = await _companyContext.Companies
+                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.IsActive, cancellationToken);
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
-                index.Add(key);
+                if (company == null)
+                    throw new InvalidOperationException($"No company found for user ID: {dto.UserId}");
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, dto);
-                await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
+                dto.BusinessName = company.CompanyName;
+                dto.BusinessType = company.CompanyType.ToString();
+                dto.BranchNames = company.BranchLocations != null && company.BranchLocations.Any()
+                    ? string.Join(", ", company.BranchLocations)
+                    : string.Empty;
+                dto.ContactNumber = company.PhoneNumber;
+                dto.WhatsappNumber = company.WhatsAppNumber;
+                var socialLinks = new List<string>();
+                if (!string.IsNullOrWhiteSpace(company.FacebookUrl))
+                    socialLinks.Add(company.FacebookUrl);
+                if (!string.IsNullOrWhiteSpace(company.InstagramUrl))
+                    socialLinks.Add(company.InstagramUrl);
+
+                dto.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
+                dto.Status = AdStatus.Draft; 
+                dto.CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt;
+
+                _context.Deal.Add(dto);
+                await _context.SaveChangesAsync(cancellationToken);
+
                 await IndexDealsToAzureSearch(dto, cancellationToken);
+
                 return new AdCreatedResponseDto
                 {
-                    AdId = adId,
-                    Title = dto.Title,
+                    AdId = dto.Id,
+                    Title = dto.Offertitle,
                     CreatedAt = dto.CreatedAt,
                     Message = "Deals Ad created successfully"
                 };
+
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
@@ -445,11 +461,20 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedItemsAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
+
             try
             {
-                var entity = await _context.Item.FirstOrDefaultAsync(x => x.Id == adId && x.IsActive == true, cancellationToken);
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    throw new ArgumentException("UserId must not be empty.");
+                }
+
+                var entity = await _context.Item.Where(x => x.Id == adId && x.IsActive == true)
+                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
+                    .FirstOrDefaultAsync(cancellationToken);
+
                 if (entity == null)
                 {
                     throw new KeyNotFoundException($"Ad with ID {adId} not found.");
@@ -460,18 +485,24 @@ namespace QLN.Classified.MS.Service
                     throw new InvalidOperationException($"Ad ID {adId} does not belong to the Items subvertical. ");
                 }
 
-                entity.IsActive = false;
-                entity.UpdatedAt = DateTime.UtcNow;
+                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
 
-                _context.Item.Update(entity);
+                var patchEntity = new Items
+                {
+                    Id = entity.Id,
+                    IsActive = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Item.Attach(patchEntity);
+                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
+                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
+
                 await _context.SaveChangesAsync(cancellationToken);
-
-                _logger.LogInformation("Soft-deleted ad with ID: {AdId}", adId);
 
                 return new DeleteAdResponseDto
                 {
-                    Message = "Ad soft-deleted successfully",
-                    DeletedImages = entity.Images?.Select(i => i.Url).ToList() ?? new()
+                    Message = "Ad soft-deleted successfully",                    
                 };
             }           
             catch (Exception ex)
@@ -480,63 +511,49 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified items ad.", ex);
             }
         }
-        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(Guid adId, CancellationToken cancellationToken = default)
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedPrelovedAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var key = $"ad-{adId}";
-
-                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (adObject.ValueKind != JsonValueKind.Object)
-                    throw new KeyNotFoundException($"Preloved Ad with ID {adId} not found.");
-
-                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                if (!string.Equals(subVertical, "Preloved", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. Found: {subVertical}");
-
-                _logger.LogInformation("Fetched Preloved ad object: {Json}", adObject.ToString());
-
-                var blobNames = new List<string>();
-
-                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    var certUrl = certProp.GetString();
-                    var certBlobName = ExtractBlobName(certUrl);
-                    if (!string.IsNullOrEmpty(certBlobName))
-                        blobNames.Add(certBlobName);
+                    throw new ArgumentException("UserId must not be empty.");
                 }
 
-                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                var entity = await _context.Preloved.Where(x => x.Id == adId && x.IsActive == true)
+                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (entity == null)
                 {
-                    foreach (var img in imagesProp.EnumerateArray())
-                    {
-                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
-                        {
-                            var imgUrl = urlProp.GetString();
-                            var imgBlobName = ExtractBlobName(imgUrl);
-                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
-                        }
-                    }
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
                 }
 
-                _logger.LogInformation("Extracted blob names for Preloved ad: {Blobs}", string.Join(", ", blobNames));
-
-                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, PrelovedIndexKey, cancellationToken: cancellationToken) ?? new();
-                if (index.Contains(key))
+                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Preloved.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
-                    index.Remove(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, PrelovedIndexKey, index, cancellationToken: cancellationToken);
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. ");
                 }
+
+                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
+
+                var patchEntity = new Preloveds
+                {
+                    Id = entity.Id,
+                    IsActive = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Preloved.Attach(patchEntity);
+                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
+                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
+
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return new DeleteAdResponseDto
                 {
-                    Message = "Preloved Ad deleted successfully",
-                    DeletedImages = blobNames
+                    Message = "Ad soft-deleted successfully",
                 };
-
             }
             catch (JsonException jex)
             {
@@ -549,61 +566,49 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified preloved ad.", ex);
             }
         }
-        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(Guid adId, CancellationToken cancellationToken = default)
+
+        public async Task<DeleteAdResponseDto> DeleteClassifiedCollectiblesAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var key = $"ad-{adId}";
-
-                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                if (adObject.ValueKind != JsonValueKind.Object)
-                    throw new KeyNotFoundException($"Collectibles Ad with ID {adId} not found.");
-
-                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                if (!string.Equals(subVertical, "Collectibles", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Collectibles subvertical. Found: {subVertical}");
-
-                _logger.LogInformation("Fetched Collectibles ad object: {Json}", adObject.ToString());
-
-                var blobNames = new List<string>();
-
-                if (adObject.TryGetProperty("certificateUrl", out var certProp) && certProp.ValueKind == JsonValueKind.String)
+                if (string.IsNullOrWhiteSpace(userId))
                 {
-                    var certUrl = certProp.GetString();
-                    var certBlobName = ExtractBlobName(certUrl);
-                    if (!string.IsNullOrEmpty(certBlobName))
-                        blobNames.Add(certBlobName);
+                    throw new ArgumentException("UserId must not be empty.");
                 }
 
-                if (adObject.TryGetProperty("imageUrls", out var imagesProp) && imagesProp.ValueKind == JsonValueKind.Array)
+                var entity = await _context.Collectible.Where(x => x.Id == adId && x.IsActive == true)
+                    .Select(x => new { x.Id, x.UserId, x.SubVertical })
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (entity == null)
                 {
-                    foreach (var img in imagesProp.EnumerateArray())
-                    {
-                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
-                        {
-                            var imgUrl = urlProp.GetString();
-                            var imgBlobName = ExtractBlobName(imgUrl);
-                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
-                        }
-                    }
+                    throw new KeyNotFoundException($"Ad with ID {adId} not found.");
                 }
 
-                _logger.LogInformation("Extracted blob names for Collectibles ad: {Blobs}", string.Join(", ", blobNames));
-
-                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, CollectiblesIndexKey, cancellationToken: cancellationToken) ?? new();
-                if (index.Contains(key))
+                if (!string.Equals(entity.SubVertical.ToString(), SubVertical.Collectibles.ToString(), StringComparison.OrdinalIgnoreCase))
                 {
-                    index.Remove(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, CollectiblesIndexKey, index, cancellationToken: cancellationToken);
+                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Preloved subvertical. ");
                 }
+
+                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
+
+                var patchEntity = new Collectibles
+                {
+                    Id = entity.Id,
+                    IsActive = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Collectible.Attach(patchEntity);
+                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
+                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
+
+                await _context.SaveChangesAsync(cancellationToken);
+
 
                 return new DeleteAdResponseDto
                 {
                     Message = "Collectibles Ad deleted successfully",
-                    DeletedImages = blobNames
                 };
             }
             catch (JsonException jex)
@@ -617,6 +622,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified collectibles ad.", ex);
             }
         }
+
         public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
         {
             try
@@ -685,6 +691,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An unexpected error occurred while deleting the classified deals ad.", ex);
             }
         }
+
         private static string ExtractBlobName(string? url)
         {
             if (string.IsNullOrWhiteSpace(url))
@@ -749,28 +756,19 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<ClassifiedsDeals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
+        public async Task<Deals> GetDealsAdById(long adId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
                 throw new ArgumentException("Ad ID must not be empty.", nameof(adId));
             try
             {
-                var key = $"ad-{adId}";
+                var adDeals = await _context.Deal.AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.Id == adId && d.IsActive == true, cancellationToken);
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
-
-                if (!indexKeys.Contains(key))
+                if (adDeals == null)
                 {
-                    _logger.LogWarning("Ad ID {AdId} not found in Deals index. Possibly inactive or deleted.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
-                }
-
-                var adDeals = await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key);
-
-                if (adDeals == null || !adDeals.IsActive)
-                {
-                    _logger.LogWarning("Ad ID {AdId} is null or marked as inactive in state store.", adId);
-                    throw new KeyNotFoundException($"Ad with key {adId} does not exist.");
+                    _logger.LogWarning("Ad ID {AdId} not found in database or is inactive.", adId);
+                    throw new KeyNotFoundException($"Ad with ID {adId} does not exist.");
                 }
 
                 return adDeals;
@@ -1188,7 +1186,7 @@ namespace QLN.Classified.MS.Service
                 if (existingAd == null)
                     throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
 
-                if (dto.SubVertical != SubVertical.Items)
+                if (dto.SubVertical != SubVertical.Preloved)
                     throw new InvalidOperationException("This service only supports updating ads under the 'Preloved' vertical.");
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
@@ -1255,40 +1253,33 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(ClassifiedsDeals dto, CancellationToken cancellationToken = default)
+        public async Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
-
-            var key = $"ad-{dto.Id}";
-
+            if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
+          
             try
             {
                 var existingAd = await GetDealsAdById(dto.Id, cancellationToken);
-                if (existingAd == null)
-                    throw new KeyNotFoundException($"Ad with key {key} does not exist.");
 
-                if (!string.Equals(dto.Subvertical, "Deals", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException("This service only supports updating ads under the 'Deals' vertical.");
+                if (existingAd == null)
+                    throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
+                
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
-                await _dapr.SaveStateAsync(UnifiedStore, key, existingAd);
+                existingAd.UpdatedAt = DateTime.UtcNow;
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey) ?? new();
-                if (!index.Contains(key))
-                {
-                    index.Add(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index);
-                }
+                _context.Deal.Update(existingAd);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 await IndexDealsToAzureSearch(existingAd, cancellationToken);
 
                 return new AdUpdatedResponseDto
                 {
                     AdId = existingAd.Id,
-                    Title = existingAd.Title,
-                    UpdatedAt = DateTime.UtcNow,
+                    Title = existingAd.Offertitle,
+                    UpdatedAt = existingAd.UpdatedAt ?? DateTime.UtcNow,
                     Message = "Deals Ad updated successfully"
                 };
             }
@@ -1709,17 +1700,16 @@ namespace QLN.Classified.MS.Service
                 );
             }
         }
-        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        private async Task IndexDealsToAzureSearch(Deals dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsDealsIndex
             {
-                Id = dto.Id.ToString(),
-                Subvertical = dto.Subvertical,
+                Id = dto.Id.ToString(),                
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
-                Title = dto.Title,
+                offertitle = dto.Offertitle,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
@@ -1732,15 +1722,12 @@ namespace QLN.Classified.MS.Service
                 IsActive = dto.IsActive,
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
-                XMLlink = dto.XMLlink,
-                ContactNumberCountryCode = dto.ContactNumberCountryCode,
+                XMLlink = dto.XMLlink,                
                 SubscriptionId = dto.SubscriptionId,
-                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
-                offertitle = dto.offertitle,
                 ExpiryDate = dto.ExpiryDate,
-                ImageUrl = dto.ImageUrl,
+                Images = dto.Images,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
