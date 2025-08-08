@@ -21,7 +21,7 @@ namespace QLN.Common.DTO_s
         public string? Offertitle { get; set; }
         public string? Description { get; set; }
         public List<ImageInfo> ImageUrl { get; set; } = new List<ImageInfo>();
-        public LocationDto Locations { get; set; }
+        public LocationsDtos Locations { get; set; }
     }
 
 }
