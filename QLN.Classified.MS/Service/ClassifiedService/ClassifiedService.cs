@@ -1747,9 +1747,7 @@ namespace QLN.Classified.MS.Service
             }
         }
         #endregion
-
                
-
         public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
         {
             try
