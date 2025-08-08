@@ -1624,6 +1624,48 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
 
+        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+               
+                var response = await _dapr.InvokeMethodAsync<List<SubscriptionTypes>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-types",
+                    cancellationToken
+                );
+
+                return response ?? new List<SubscriptionTypes>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in listing subscription types.");
+                throw new InvalidOperationException("Error fetching in listing subscription types.", ex);
+            }
+        }
+        public async Task<SubscriptionTypes> GetSubscriptionById(int Id,CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = $"?SubscriptionId={Id}";
+                var response = await _dapr.InvokeMethodAsync<SubscriptionTypes>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"api/v2/classifiedbo/get-subscription-id{queryParams}",
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionTypes();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in selecting subscription types.");
+                throw new InvalidOperationException("Error in selecting subscription types.", ex);
+            }
+        }
+
+
 
 
 
