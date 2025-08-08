@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using QLN.ContentBO.WebUI.Models;
-using System.Collections.Generic;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
@@ -13,8 +12,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         [Parameter] public bool IsLoading { get; set; }
         [Parameter] public int CurrentPage { get; set; }
         [Parameter] public int PageSize { get; set; }
-        [Parameter]
-        public EventCallback<string> OnTabChange { get; set; }
+        [Parameter] public EventCallback<string> OnTabChange { get; set; }
+        [Parameter] public EventCallback<int> OnPageChange { get; set; }
+        [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+        [Parameter] public EventCallback<ViewStoreList> OnViewClicked { get; set; }
+
         protected string selectedTab = "pendingApproval";
 
         protected List<ToggleTabs.TabOption> tabOptions = new()
@@ -38,9 +40,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                 NavigationManager.NavigateTo($"/manage/classified/stores/edit/compnay/{order.CompanyName}");
             }
         }
-
-        [Parameter] public EventCallback<int> OnPageChange { get; set; }
-        [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
-        [Parameter] public EventCallback<ViewStoreList> OnViewClicked { get; set; }
     }
 }

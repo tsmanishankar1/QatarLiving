@@ -1,83 +1,38 @@
 using Microsoft.AspNetCore.Components;
-using System;
-using System.Collections.Generic;
+using QLN.ContentBO.WebUI.Components;
+using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
-using MudBlazor;
+using System.Text;
+using System.Text.Json;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
 {
-    public partial class ViewStoresBase : ComponentBase
+    public partial class ViewStoresBase : QLComponentBase
     {
-        protected List<ViewStoreList> Listings { get; set; } = new();
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
+        [Inject] public NavigationManager NavigationManager { get; set; } = default!;
+
+        [Inject] public IStoresService StoresService { get; set; } = default!;
+        [Inject] public ILogger<ViewStoresBase> Logger { get; set; } = default!;
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
+        protected int TotalCount { get; set; }
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
-        protected override void OnInitialized()
+        protected List<CompanyProfileItem> StoreItems { get; set; } = [];
+        protected override async Task OnInitializedAsync()
         {
-            Listings = GetSampleData();
+            try
+            {
+                var companyProfileResponse = await LoadStores();
+                StoreItems = companyProfileResponse?.Items ?? new List<CompanyProfileItem>();
+                TotalCount = companyProfileResponse?.TotalCount ?? 0;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+                throw;
+            }
         }
-
-        private List<ViewStoreList> GetSampleData()
-        {
-            DateTime commonDate = DateTime.Parse("2025-04-12");
-
-    return new List<ViewStoreList>
-    {
-        new ViewStoreList
-        {
-            OrderId = 21435,
-            CompanyName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Status = "Active",
-            StartDate = commonDate,
-            EndDate = commonDate
-        },
-        new ViewStoreList
-        {
-            OrderId = 21435,
-            CompanyName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Status = "On Hold",
-            StartDate = commonDate,
-            EndDate = commonDate
-        },
-        new ViewStoreList
-        {
-            OrderId = 21342,
-            CompanyName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Status = "Active",
-            StartDate = commonDate,
-            EndDate = commonDate
-        },
-        new ViewStoreList
-        {
-            OrderId = 23415,
-            CompanyName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Status = "Cancelled",
-            StartDate = commonDate,
-            EndDate = commonDate
-        }
-    };
-        }
-
 
         protected async Task HandleSearch(string searchTerm)
         {
@@ -92,6 +47,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             Console.WriteLine($"Sort triggered: {sortOption}");
             // Add logic to sort your listing data based on SortOption
         }
+
         protected void HandlePageChange(int newPage)
         {
             currentPage = newPage;
@@ -104,12 +60,45 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             currentPage = 1; // reset to first page
             StateHasChanged();
         }
-      
+
         protected void OnViewClicked(ViewStoreList store)
         {
             var name = "Rashid";
             // NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
+
         }
-      
+
+        private async Task<CompanyProfileResponse> LoadStores()
+        {
+            try
+            {
+                var payload = new CompanyRequestPayload
+                {
+                    IsBasicProfile = true,
+                    Status = 1,
+                    Vertical = 3,
+                    SubVertical = 3,
+                    Search = "",
+                    SortBy = "",
+                    PageNumber = 1,
+                    PageSize = 12
+                };
+
+                var apiResponse = await StoresService.GetAllStoresListing(payload);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var companyProfileResponse = await apiResponse.Content.ReadFromJsonAsync<CompanyProfileResponse>();
+
+                    return companyProfileResponse ?? new();
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadStores");
+                return new();
+            }
+        }
     }
 }

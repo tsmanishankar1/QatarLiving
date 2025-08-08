@@ -8,8 +8,7 @@
     <MudItem xs="12" md="12">
         <StoresSearchSortBar OnSearch="HandleSearch" OnSort="HandleSort" />
         <div class="community-table">
-        <ViewStoreTable 
-            Listings="@Listings"
+        <ViewStoreTable Listings="@StoreItems"
             TotalCount="@TotalCount"
             CurrentPage="@currentPage"
             PageSize="@pageSize"
