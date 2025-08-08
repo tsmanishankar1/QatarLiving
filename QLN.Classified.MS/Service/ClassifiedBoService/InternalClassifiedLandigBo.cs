@@ -839,45 +839,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         {
             try
             {
-                var categories = new FeaturedCategory
-                {
-                    Id = Guid.NewGuid(),
-                    Vertical = dto.Vertical,
-                    CategoryName = dto.CategoryName,
-                    CategoryId = dto.CategoryId,
-                    StartDate = dto.StartDate,
-                    EndDate = dto.EndDate,
-                    ImageUrl = dto.ImageUrl,
-                    SlotOrder = 0,
-                    IsActive = true,
-                    UserId = userId,
-                    UserName = userName,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.CategoryName, userId, categories.Id);
-
-                // Determine index key by vertical
-                string indexKey = dto.Vertical?.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: cancellationToken) ?? new List<string>();
-                var existingTasks = index.Select(id => _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
-                var existingItems = await Task.WhenAll(existingTasks);
-
                 var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                bool duplicateExists = existingItems.Any(p =>
-                    p != null &&
-                    p.IsActive == true &&
-                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null || p.EndDate >= today));
+                bool duplicateExists = await _context.FeaturedCategories.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Title == dto.Title &&
+                    p.Vertical == dto.Vertical &&
+                    p.CategoryId == dto.CategoryId &&
+                    p.EndDate >= today,
+                    cancellationToken);
 
                 if (duplicateExists)
                 {
@@ -886,302 +855,341 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
-                await _dapr.SaveStateAsync(StoreName, categories.Id.ToString(), categories, cancellationToken: cancellationToken);
-                _logger.LogInformation("Saved featured category state successfully. ID: {Id}", categories.Id);
-
-                if (!index.Contains(categories.Id.ToString()))
+                var newCategory = new FeaturedCategory
                 {
-                    index.Add(categories.Id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: cancellationToken);
-                    _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, categories.Id);
-                }
+                    Id = Guid.NewGuid(),
+                    Title = dto.Title,
+                    Vertical = dto.Vertical,
+                    CategoryName = dto.CategoryName,
+                    CategoryId = dto.CategoryId,
+                    L1categoryName = dto.L1categoryName,
+                    L1CategoryId = dto.L1CategoryId,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    ImageUrl = dto.ImageUrl,
+                    SlotOrder = 0,
+                    IsActive = true,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-                var result = $"Landing bo '{dto.CategoryName}' created successfully.";
+                await _context.FeaturedCategories.AddAsync(newCategory, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Created featured category. Category: {Category}, User: {UserId}, ID: {Id}",
+                    dto.CategoryName, userId, newCategory.Id);
+
+                var result = $"Landing bo Category '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed landing bo creation: {Message}", result);
 
                 return result;
             }
             catch (ConflictException ex)
             {
-                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                _logger.LogError(ex, "Conflict while creating landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw new ConflictException(ex.Message);
-
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
-                throw;
+                _logger.LogError(ex, "Failed to create landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
+                throw new Exception(ex.Message);
             }
         }
-        public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteFeaturedCategory(string id, Vertical vertical, string userId, string userName, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID must be provided.", nameof(categoryId));
-
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID must be provided.", nameof(userId));
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
             try
             {
-                _logger.LogInformation($"Attempting delete for landing bo. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
+                if (!Guid.TryParse(id, out var guidId))
+                    throw new ArgumentException("Invalid featured category ID format.", nameof(id));
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
+                var featuredCategory = await _context.FeaturedCategories
+                    .FirstOrDefaultAsync(f => f.Id == guidId && f.Vertical == vertical && f.IsActive, cancellationToken);
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-
-                if (!index.Contains(categoryId))
-                {
-                    _logger.LogWarning($"FeaturedCategoryId {categoryId} not found in vertical index: {vertical}", categoryId, vertical);
-                    throw new UnauthorizedAccessException($"FeaturedCategoryId '{categoryId}' does not belong to vertical '{vertical}'.");
-                }
-
-                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, categoryId);
                 if (featuredCategory == null)
                 {
-                    _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", categoryId);
-                    throw new KeyNotFoundException($"FeaturedCategory with ID '{categoryId}' not found.");
+                    _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", id);
+                    throw new KeyNotFoundException($"FeaturedCategory with ID '{id}' not found.");
                 }
 
-                if (featuredCategory.UserId != userId)
+                if (featuredCategory.CreatedBy != userId)
                 {
-                    _logger.LogWarning($"Unauthorized attempt to delete FeaturedCategory. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
+                    _logger.LogWarning("Unauthorized delete attempt. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
                     throw new UnauthorizedAccessException("You are not authorized to delete this FeaturedCategory.");
                 }
 
                 featuredCategory.IsActive = false;
+                featuredCategory.UpdatedBy = userId;
                 featuredCategory.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.SaveStateAsync(StoreName, categoryId, featuredCategory);
+                _context.FeaturedCategories.Update(featuredCategory);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation($"Successfully deleted FeaturedCategory. FeaturedCategoryId: {categoryId}", categoryId);
+                _logger.LogInformation("Successfully soft-deleted FeaturedCategory. FeaturedCategoryId: {FeaturedCategoryId}", id);
 
-                return $"FeaturedCategory '{featuredCategory.CategoryName}' has been deleted.";
+                return "FeaturedCategory has been deleted.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                throw new UnauthorizedAccessException(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error performing soft delete on FeaturedCategory. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
-                throw;
+                _logger.LogError(ex, "Error performing soft delete on FeaturedCategory. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve slotted featured category.", nameof(vertical));
-
-                _logger.LogInformation("Fetching slotted featured category from state store...");
-
-                // Determine index key
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: cancellationToken)
-                            ?? new List<string>();
-
-                _logger.LogInformation("Index key '{IndexKey}' contains {Count} IDs", indexKey, index.Count);
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No featured category found in the index.");
-                    return new List<FeaturedCategory>();
-                }
-
-                // Load all DTOs from index
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedCategory>(StoreName, id, cancellationToken: cancellationToken)).ToList();
-
-                var featuredCategories = await Task.WhenAll(stateTasks);
-
-                var slottedFeaturedCategories = featuredCategories
-                    .Where(p => p != null &&
-                                p.IsActive == true &&
-                                p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
-                                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var slottedFeaturedCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == vertical &&
+                        p.IsActive &&
+                        p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
+                        p.EndDate >= today)
                     .OrderBy(p => p.SlotOrder)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Retrieved {Count} active featured category for vertical: {Vertical}", slottedFeaturedCategories.Count, vertical);
+                _logger.LogInformation("Retrieved {Count} slotted featured categories for vertical: {Vertical}", slottedFeaturedCategories.Count, vertical);
+
                 return slottedFeaturedCategories;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch slotted featured category.");
-                throw new InvalidOperationException("Error fetching slotted featured category.", ex);
+                _logger.LogError(ex, "Failed to fetch slotted featured categories for vertical: {Vertical}", vertical);
+                throw new Exception(ex.Message);
+            }
+        }
+        
+
+        public async Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(id));
+                var featuredCategoryId = await _context.FeaturedCategories.FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive);
+                if (featuredCategoryId == null) throw new KeyNotFoundException("Featured category not found.");
+                return featuredCategoryId;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required to retrieve featured categories.", nameof(vertical));
-
-            _logger.LogInformation("Fetching featured categories from state store...");
-
-            string indexKey = vertical.ToLower() switch
+            try
             {
-                Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                Verticals.Services => FeaturedCategoryServiceIndex,
-                _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-            };
+                if (!Guid.TryParse(dto.Id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(dto.Id));
 
-            var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey)
-                        ?? new List<string>();
+                var featuredCategory = await _context.FeaturedCategories
+                    .FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive, cancellationToken);
 
-            if (!index.Any())
-            {
-                _logger.LogInformation("No featured categories found in the index.");
-                return new List<FeaturedCategory>();
-            }
-
-            var stateTasks = index.Select(id =>
-                _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
-
-            var featuredCategories = await Task.WhenAll(stateTasks);
-
-            var activeFeaturedCategories = featuredCategories
-                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
-                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
-                .OrderByDescending(p => p.UpdatedAt)
-                .ToList();
-
-            _logger.LogInformation("Retrieved {Count} active featured categories for vertical: {Vertical}", activeFeaturedCategories.Count, vertical);
-
-            return activeFeaturedCategories;
-        }
-        public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
-        {
-            const int MaxSlot = 6;
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
-
-            if (string.IsNullOrWhiteSpace(request.Vertical))
-                throw new ArgumentException("Vertical is required.");
-
-            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
-                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
-
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
-            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
-                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
-
-            string indexKey = request.Vertical.ToLower() switch
-            {
-                Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                Verticals.Services => FeaturedCategoryServiceIndex,
-                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
-            };
-
-            var featuredCategoryIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedFeaturedCategories = new Dictionary<string, FeaturedCategory>();
-
-            foreach (var assignment in request.SlotAssignments)
-            {
-                if (string.IsNullOrWhiteSpace(assignment.CategoryId))
-                    continue;
-
-                if (!featuredCategoryIndex.Contains(assignment.CategoryId))
-                    continue;
-
-                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, assignment.CategoryId);
                 if (featuredCategory == null)
-                    throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found.");
+                    throw new KeyNotFoundException("Featured category not found.");
 
-                if (featuredCategory.UserId != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                loadedFeaturedCategories[assignment.CategoryId] = featuredCategory;
-            }
+                bool duplicateExists = await _context.FeaturedCategories.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Id != parsedId &&
+                    p.Vertical == dto.Vertical &&
+                    p.CategoryId == dto.CategoryId &&
+                    p.EndDate >= today,
+                    cancellationToken);
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                var slotKey = $"classified-slot-{assignment.SlotOrder}";
-
-                if (string.IsNullOrWhiteSpace(assignment.CategoryId))
+                if (duplicateExists)
                 {
-                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
-                    continue;
+                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new ConflictException(message);
                 }
 
-                var featuredCategory = loadedFeaturedCategories[assignment.CategoryId];
-                featuredCategory.SlotOrder = assignment.SlotOrder;
+                featuredCategory.Title = dto.Title;
+                featuredCategory.Vertical = dto.Vertical;
+                featuredCategory.CategoryName = dto.CategoryName;
+                featuredCategory.CategoryId = dto.CategoryId;
+                featuredCategory.L1categoryName = dto.L1categoryName;
+                featuredCategory.L1CategoryId = dto.L1CategoryId;
+                featuredCategory.StartDate = dto.StartDate;
+                featuredCategory.EndDate = dto.EndDate;
+                featuredCategory.ImageUrl = dto.ImageUrl;
+                featuredCategory.SlotOrder = dto.SlotOrder;
                 featuredCategory.UpdatedAt = DateTime.UtcNow;
+                featuredCategory.UpdatedBy = userId;
 
-                await _dapr.SaveStateAsync(StoreName, slotKey, featuredCategory);
-                await _dapr.SaveStateAsync(StoreName, featuredCategory.Id.ToString(), featuredCategory);
+                _context.FeaturedCategories.Update(featuredCategory);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var messageSuccess = $"Landing BO category '{dto.CategoryName}' updated successfully.";
+                _logger.LogInformation("Successfully edited featured category. ID: {Id}, User: {UserId}", parsedId, userId);
+
+                return messageSuccess;
             }
-
-            return "Slots updated successfully.";
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex, "Conflict while editing featured category. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new ConflictException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Featured category not found for editing. ID: {Id}", dto.Id);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during featured category edit. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new Exception("An error occurred while editing the featured category.", ex);
+            }
         }
 
-        public async Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(Vertical vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var activeFeaturedCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == vertical &&
+                        p.IsActive &&
+                        p.SlotOrder == 0 &&
+                        p.EndDate >= today)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                _logger.LogInformation("Retrieved {Count} active featured categories for vertical: {Vertical}",
+                    activeFeaturedCategories.Count, vertical);
+
+                return activeFeaturedCategories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch featured categories for vertical: {Vertical}", vertical);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> ReorderFeaturedCategorySlots(string userId, string userName, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                const int MaxSlot = 6;
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
+                if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                    throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
+
+                var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
+                if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                    throw new InvalidDataException("Slot numbers must be unique and between 1 and 6.");
+
+                var featuredCategoryList = await _context.FeaturedCategories
+                    .Where(p => p.Vertical == request.Vertical && p.IsActive)
+                    .ToListAsync(cancellationToken);
+
+                var featuredCategoryMap = featuredCategoryList.ToDictionary(fc => fc.Id, fc => fc);
+
+                foreach (var assignment in request.SlotAssignments)
+                {
+                    if (string.IsNullOrWhiteSpace(assignment.CategoryId))
+                        continue;
+
+                    if (!Guid.TryParse(assignment.CategoryId, out var categoryId))
+                        continue;
+
+                    if (!featuredCategoryMap.TryGetValue(categoryId, out var featuredCategory))
+                        throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found or inactive.");
+
+                    if (featuredCategory.CreatedBy != userId)
+                        throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+
+                    featuredCategory.SlotOrder = assignment.SlotOrder;
+                    featuredCategory.UpdatedBy = userId;
+                    featuredCategory.UpdatedAt = DateTime.UtcNow;
+
+                    _context.FeaturedCategories.Update(featuredCategory);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Slots updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
         {
             if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
             try
             {
-                string indexKey = dto.Vertical.ToLower() switch
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                if (!Guid.TryParse(dto.CategoryId, out var categoryGuid))
+                    throw new ArgumentException("Invalid CategoryId", nameof(dto.CategoryId));
+                var relevantCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == dto.Vertical &&
+                        p.IsActive &&
+                        ((p.SlotOrder >= 1 && p.SlotOrder <= 6) || p.Id == categoryGuid) &&
+                        p.EndDate >= today)
+                    .ToListAsync(cancellationToken);
+
+                var newItem = relevantCategories.FirstOrDefault(p => p.Id == categoryGuid);
+                if (newItem == null)
+                    throw new InvalidOperationException("Selected featured category not found.");
+
+                if (newItem.CreatedBy != userId)
+                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+
+                foreach (var item in relevantCategories)
                 {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                if (!index.Contains(dto.CategoryId.ToString()))
-                    throw new InvalidOperationException("Selected featured category ID not found.");
-
-                FeaturedCategory? newItem = null;
-
-                foreach (var id in index)
-                {
-                    var item = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, id);
-                    if (item == null) continue;
-
-                    // Case 1: Slot is currently occupied by someone else — clear it
-                    if (item.SlotOrder == dto.TargetSlotId && item.Id.ToString() != dto.CategoryId)
+                    if (item.Id != newItem.Id && item.SlotOrder == dto.TargetSlotId)
                     {
                         item.SlotOrder = 0;
+                        item.UpdatedBy = userId;
                         item.UpdatedAt = DateTime.UtcNow;
-                        await _dapr.SaveStateAsync(StoreName, id, item);
-                    }
-
-                    // Case 2: The new pick is already slotted somewhere else — clear it before reassign
-                    if (item.Id.ToString() == dto.CategoryId)
-                    {
-                        newItem = item;
+                        _context.FeaturedCategories.Update(item);
                     }
                 }
 
-                if (newItem == null)
-                    throw new InvalidOperationException("New featured category data not found in state.");
-
-                // Update the selected pick with new slot
                 newItem.SlotOrder = dto.TargetSlotId;
+                newItem.UpdatedBy = userId;
                 newItem.UpdatedAt = DateTime.UtcNow;
+                _context.FeaturedCategories.Update(newItem);
 
-                await _dapr.SaveStateAsync(StoreName, newItem.Id.ToString(), newItem);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.CategoryName}'.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error replacing slot {Slot} with category {CategoryId}", dto.TargetSlotId, dto.CategoryId);
-                throw new InvalidOperationException("Failed to replace slot with selected category.", ex);
+                throw new Exception(ex.Message);
             }
         }
 

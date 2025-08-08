@@ -60,7 +60,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
 
             var uploadedBlobKeys = new List<string>();
             HttpStatusCode? failedStatusCode = null;
-            string failedErrorMessage = null;
+            string? failedErrorMessage = null;
 
             try
             {
@@ -101,7 +101,7 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 if (string.IsNullOrWhiteSpace(rawJson))
                 {
                     _logger.LogWarning("Received empty response from content service.");
-                    return "Empty response from content service";
+                    throw new InvalidOperationException("Empty response from content service");
                 }
 
                 try
@@ -111,12 +111,12 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 catch (JsonException jsonEx)
                 {
                     _logger.LogError(jsonEx, "Failed to deserialize report response. Raw JSON: {RawJson}", rawJson);
-                    return $"Unexpected response format: {rawJson}";
+                    throw new Exception($"Unexpected response format: {rawJson}");
                 }
             }
             catch (ConflictException ex)
             {
-                throw;
+                throw new ConflictException(ex.Message);
             }
             catch (Exception ex)
             {
@@ -136,21 +136,19 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                     _logger.LogWarning(ex, "Conflict detected while creating report.");
                     throw new ConflictException(ex.Message);
                 }
+
                 _logger.LogError(ex, "Unexpected error in Create Featured Category.");
-                throw new ConflictException(ex.Message);
+                throw new Exception(ex.Message);
             }
         }
-        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(Vertical vertical, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
-
             try
             {
                 var trees = await _dapr.InvokeMethodAsync<List<FeaturedCategory>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical/{vertical}",
+                    $"/api/v2/classifiedbo/getfeaturedcategoriesbyvertical?vertical={vertical}",
                     cancellationToken);
 
                 var l1s = trees?.ToList() ?? new List<FeaturedCategory>();
@@ -160,18 +158,18 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             catch (InvocationException ex)
             {
                 _logger.LogError(ex, "Failed to get L1 categories for vertical: {Vertical}", vertical);
-                throw new InvalidOperationException($"Failed to get L1 categories for {vertical}", ex);
+                throw new Exception($"Failed to get L1 categories for {vertical}", ex);
             }
         }
 
-        public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedCategorySlots(string userId, string userName, LandingBoSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var response = await _dapr.InvokeMethodAsync<LandingBoSlotReorderRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/reorderfeaturedcategoryslots?userid={userId}",
+                    $"/api/v2/classifiedbo/reorderfeaturedcategoryslots?userid={userId}&username={userName}",
                     dto,
                     cancellationToken);
 
@@ -189,22 +187,22 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 }
                 catch
                 {
-                    // Use raw message
+                    throw new Exception(ex.Message);
                 }
 
                 _logger.LogError(ex, "Failed to reorder landing BO slots via Dapr.");
-                throw new InvalidDataException(errorMessage, ex);
+                throw new Exception(errorMessage, ex);
             }
         }
 
-        public async Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
         {
             try
             {
                 var response = await _dapr.InvokeMethodAsync<LandingBoSlotReplaceRequest, string>(
                     HttpMethod.Put,
                     SERVICE_APP_ID,
-                    $"/api/v2/classifiedbo/replace-slot?userid={userId}",
+                    $"/api/v2/classifiedbo/replace-slot?userid={userId}&username={userName}",
                     dto,
                     cancellationToken);
 
@@ -222,28 +220,28 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 }
                 catch
                 {
-                    // Use raw message
+                    throw new Exception(ex.Message);
                 }
 
                 _logger.LogError(ex, "Failed to reorder landing BO slots via Dapr.");
-                throw new InvalidDataException(errorMessage, ex);
+                throw new Exception(errorMessage, ex);
             }
         }
 
-        public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteFeaturedCategory(string id, Vertical vertical, string userId, string userName, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("StoreId is required.", nameof(categoryId));
+            if (string.IsNullOrWhiteSpace(id))
+                throw new ArgumentException("Category id is required.", nameof(id));
 
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("UserId is required.", nameof(userId));
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required.", nameof(vertical));
+            if (string.IsNullOrWhiteSpace(userName))
+                throw new ArgumentException("User name is required.", nameof(userName));
 
             try
             {
-                var queryParams = $"?categoryId={categoryId}&userId={userId}&vertical={vertical}";
+                var queryParams = $"?vertical={vertical}&categoryId={id}&userid={userId}&username={userName}";
 
                 var response = await _dapr.InvokeMethodAsync<string>(
                     HttpMethod.Delete,
@@ -266,15 +264,19 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 }
                 catch
                 {
-                    // Use raw message
+                    if (ex.Message.Contains("404") || ex.InnerException.ToString().Contains("404"))
+                    {
+                        throw new KeyNotFoundException(ex.Message);
+                    }
+                    throw new Exception(ex.Message);
                 }
 
                 _logger.LogError(ex, "Failed to delete featured category via Dapr.");
-                throw new InvalidDataException(errorMessage, ex);
+                throw new Exception(errorMessage, ex);
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -298,11 +300,76 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
                 }
                 catch
                 {
-                    // Use raw message
+                    if (ex.Message.Contains("404"))
+                    {
+                        throw new KeyNotFoundException(ex.Message);
+                    }
+                    throw new Exception(ex.Message);
+                }
+                if (ex.Message.Contains("404"))
+                {
+                    throw new KeyNotFoundException(ex.Message);
                 }
 
                 _logger.LogError(ex, "Failed to get slotted featured category via Dapr.");
-                throw new InvalidDataException(errorMessage, ex);
+                throw new Exception(errorMessage, ex);
+            }
+        }
+
+        public async Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<FeaturedCategory>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+                    $"/api/v2/classifiedbo/getfeaturedcategory?id={id}",
+                    cancellationToken);
+                if (response == null)
+                    throw new KeyNotFoundException("FeaturedCategory not found");
+
+                return response;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("404") || ex.InnerException.ToString().Contains("404"))
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var response = await _dapr.InvokeMethodAsync<EditFeaturedCategoryDto, string>(
+                    HttpMethod.Put,
+                    SERVICE_APP_ID,
+                    $"/api/v2/classifiedbo/edit-featured-category?userId={userId}&userName={userName}",
+                    dto,
+                    cancellationToken);
+                if (response == null)
+                    throw new KeyNotFoundException("Featured Category not found");
+
+                return response;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("404") || ex.InnerException.ToString().Contains("404"))
+                {
+                    throw new KeyNotFoundException(ex.Message);
+                }
+                throw new Exception(ex.Message);
             }
         }
 
@@ -1791,12 +1858,6 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
             }
         }
 
-
-
-
-
-
-        
 
     }
 }
