@@ -1587,7 +1587,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     };
                 }
 
-                // ---- FILTERS ----
+                // FILTERS 
                 if (!string.IsNullOrWhiteSpace(request.Status))
                 {
                     joined = joined.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
@@ -1610,7 +1610,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     _logger.LogInformation("Filtered by search text: {SearchText}", request.SearchText);
                 }
 
-                // ---- SORTING ----
+                //  SORTING 
                 joined = request.SortBy?.ToLower() switch
                 {
                     "amount" => request.SortOrder == "desc"
@@ -2583,7 +2583,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation("Retrieved {Count} items from DB", pagedEntities.Count);
 
-                // Map Items → ClassifiedsItems
+                // Map Items  ClassifiedsItems
                 var result = pagedEntities.Select(item => new Items
                 {
                     Id = item.Id,
