@@ -3,6 +3,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Common.Infrastructure.Model
 {
@@ -27,7 +28,7 @@ namespace QLN.Common.Infrastructure.Model
         public int? PaymentId { get; set; }
 
         [Required]
-        public Vertical Vertical { get; set; }
+        public SubscriptionVertical Vertical { get; set; }
 
         public Dictionary<string, string> Quota { get; set; } = new();
 

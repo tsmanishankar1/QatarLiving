@@ -3,6 +3,7 @@ using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Common.Infrastructure.Model
 {
@@ -25,13 +26,13 @@ namespace QLN.Common.Infrastructure.Model
 
         public Guid? CompanyId { get; set; }
 
-        public Guid? SubscriptionId { get; set; }
+        public Guid SubscriptionId { get; set; }
 
         [MaxLength(100)]
         public int? PaymentId { get; set; }
 
         [Required]
-        public Vertical Vertical { get; set; }
+        public SubscriptionVertical Vertical { get; set; }
 
         [Required]
         public DateTime StartDate { get; set; }

@@ -5,6 +5,7 @@ using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Common.Infrastructure.Model
 {
@@ -24,9 +25,9 @@ namespace QLN.Common.Infrastructure.Model
         public ProductType ProductType { get; set; }
 
         [Required]
-        public Vertical Vertical { get; set; }
+        public SubscriptionVertical Vertical { get; set; }
 
-        public Vertical? ParentVertical { get; set; }
+        public SubscriptionVertical? ParentVertical { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]

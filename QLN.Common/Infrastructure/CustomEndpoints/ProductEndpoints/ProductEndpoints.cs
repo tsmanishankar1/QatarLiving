@@ -61,7 +61,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
 
-                    var products = await productService.GetProductsByVerticalAsync((Vertical)vertical, cancellationToken);
+                    var products = await productService.GetProductsByVerticalAsync((SubscriptionVertical)vertical, cancellationToken);
                     return Results.Ok(products);
                 }
                 catch (Exception ex)

@@ -315,6 +315,8 @@ var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
+app.MapGroup("/api/v2/subscriptions")
+    .MapV2SubscriptionEndpoints();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();

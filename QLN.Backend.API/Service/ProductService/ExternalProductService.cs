@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text;
+using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Backend.API.Service.ProductService
 {
@@ -39,7 +40,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(SubscriptionVertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {

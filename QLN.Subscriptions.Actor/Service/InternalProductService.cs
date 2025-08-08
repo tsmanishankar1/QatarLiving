@@ -1,11 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
+using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Subscriptions.Actor.Service
 {
@@ -40,7 +42,7 @@ namespace QLN.Subscriptions.Actor.Service
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(SubscriptionVertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
