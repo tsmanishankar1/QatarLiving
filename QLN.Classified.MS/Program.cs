@@ -48,6 +48,9 @@ dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(dataSource));
+
 
 #endregion
 

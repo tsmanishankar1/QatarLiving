@@ -24,6 +24,10 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
         public DbSet<Services> Services { get; set; }
         public DbSet<Category> Categories { get; set; }
+        public DbSet<Deals> Deal { get; set; }
+        public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
+
+        public DbSet<FeaturedStore> FeaturedStores { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<StoreFlyers>()

@@ -3,6 +3,8 @@ using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.DTO_s.ClassifiedsBoIndex;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,27 +17,33 @@ namespace QLN.Common.Infrastructure.IService.V2IClassifiedBoService
     {
         Task<string> CreateSeasonalPick(string userId, string userName, SeasonalPicksDto dto, CancellationToken cancellationToken = default);
 
-        Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default);
+        Task<List<SeasonalPicks>> GetSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default);
+        Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<string> ReplaceSlotWithSeasonalPick(string userId, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default);
+        Task<string> ReplaceSlotWithSeasonalPick(string userId, string userName, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default);
 
-        Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default);
+        Task<string> ReorderSeasonalPickSlots(string userId, string userName, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default);
 
-        Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string vertical, CancellationToken cancellationToken = default);
+        Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default);
+        Task<SeasonalPicks> GetSeasonalPickById(string id, CancellationToken cancellationToken = default);
+        Task<string> EditSeasonalPick(string userId, string userName, EditSeasonalPickDto dto, CancellationToken cancellationToken = default);
 
         Task<string> CreateFeaturedStore(string userId, string userName, FeaturedStoreDto dto, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default);
+        Task<List<FeaturedStore>> GetFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<List<FeaturedStore>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default);
+        Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default);
 
-        Task<string> ReplaceSlotWithFeaturedStore(string userId, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default);
+        Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default);
 
-        Task<string> ReorderFeaturedStoreSlots(string userId, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default);
+        Task<string> ReorderFeaturedStoreSlots(string userId, string userName, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default);
 
-        Task<string> SoftDeleteFeaturedStore(string storeId, string userId, string vertical, CancellationToken cancellationToken = default);
+        Task<string> SoftDeleteFeaturedStore(string storeId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default);
+
+        Task<FeaturedStore> GetFeaturedStoreById(string id, CancellationToken cancellationToken = default);
+
+        Task<string> EditFeaturedStore(string userId, string userName, EditFeaturedStoreDto dto, CancellationToken cancellationToken = default);
 
         Task<string> CreateFeaturedCategory(string userId, string userName, FeaturedCategoryDto dto, CancellationToken cancellationToken = default);
 

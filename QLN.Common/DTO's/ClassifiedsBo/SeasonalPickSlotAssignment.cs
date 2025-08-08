@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,13 +16,13 @@ namespace QLN.Common.DTO_s
     public class SeasonalPickSlotReorderRequest
     {
         public List<SeasonalPickSlotAssignment> SlotAssignments { get; set; } = new();
-        public string Vertical { get; set; }
+        public Vertical Vertical { get; set; }
     }
 
     public class ReplaceSeasonalPickSlotRequest
     {
         public string PickId { get; set; }
         public int TargetSlotId { get; set; }
-        public string Vertical { get; set; }
+        public Vertical Vertical { get; set; }
     }
 }
