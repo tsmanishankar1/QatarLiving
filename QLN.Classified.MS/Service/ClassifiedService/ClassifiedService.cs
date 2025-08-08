@@ -141,26 +141,50 @@ namespace QLN.Classified.MS.Service
         {
             throw new NotImplementedException();
         }
-        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        public async Task<AdCreatedResponseDto> CreateClassifiedItemsAd(
+    Items dto,
+    CancellationToken cancellationToken = default)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto == null)
+            {
+                _logger.LogWarning("CreateClassifiedItemsAd called with null dto");
+                throw new ArgumentNullException(nameof(dto));
+            }
 
-            if (dto.UserId == null) throw new ArgumentException("UserId is required.");
+            if (dto.UserId == null)
+            {
+                _logger.LogWarning("CreateClassifiedItemsAd validation failed: UserId is null");
+                throw new ArgumentException("UserId is required.");
+            }
 
-            if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
+            if (string.IsNullOrWhiteSpace(dto.Title))
+            {
+                _logger.LogWarning("CreateClassifiedItemsAd validation failed: Title is missing");
+                throw new ArgumentException("Title is required.");
+            }
 
             if (dto.Images == null || dto.Images.Count == 0)
+            {
+                _logger.LogWarning("CreateClassifiedItemsAd validation failed: Images are missing");
                 throw new ArgumentException("Image URLs must be provided.");
+            }
 
-            
             try
-            {              
+            {
+                _logger.LogInformation("Starting CreateClassifiedItemsAd for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+
                 dto.Status = AdStatus.PendingApproval;
 
+                _logger.LogDebug("Adding Items ad to EF context...");
                 _context.Item.Add(dto);
-                await _context.SaveChangesAsync(cancellationToken);
 
+                _logger.LogDebug("Saving changes to database...");
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Database save completed. New AdId={AdId}", dto.Id);
+
+                _logger.LogDebug("Indexing ad to Azure Search...");
                 await IndexItemsToAzureSearch(dto, cancellationToken);
+                _logger.LogInformation("Ad indexed to Azure Search successfully. AdId={AdId}", dto.Id);
 
                 return new AdCreatedResponseDto
                 {
@@ -172,25 +196,29 @@ namespace QLN.Classified.MS.Service
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
-                _logger.LogWarning(ex, "Duplicate ad insert attempt.");
+                _logger.LogWarning(ex, "Duplicate ad insert attempt for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
                 throw new InvalidOperationException("Ad already exists. Conflict occurred during Items ad creation.", ex);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd");
+                _logger.LogWarning(ex, "Validation failed in CreateClassifiedItemsAd for UserId={UserId}", dto.UserId);
                 throw;
             }
             catch (InvalidOperationException ex)
             {
-                _logger.LogError(ex, "Operation error while creating classified Items ad.");
+                _logger.LogError(ex, "Operation error while creating classified Items ad for UserId={UserId}", dto.UserId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Unhandled error occurred during ad creation.");
-                throw new InvalidOperationException("An unexpected error occurred while creating the Items ad. Please try again later.", ex);
+                _logger.LogCritical(ex, "Unhandled error occurred during ad creation for UserId={UserId}, Title='{Title}'", dto.UserId, dto.Title);
+                throw new InvalidOperationException(
+                    "An unexpected error occurred while creating the Items ad. Please try again later.",
+                    ex
+                );
             }
         }
+
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken)
         {
             try

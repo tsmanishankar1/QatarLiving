@@ -49,7 +49,8 @@ namespace QLN.Common.DTO_s
 
     public class BulkActionRequest
     {
-        public List<Guid> AdIds { get; set; } = new();
+       public List<long> AdIds { get; set; } = new();
+      
         public BulkActionEnum Action { get; set; }
         public string? Reason { get; set; }
         public string? Comments { get; set; }

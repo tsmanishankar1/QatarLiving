@@ -46,17 +46,22 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
         // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
-        
+        private readonly QLSubscriptionContext _subscriptioncontext;
+        private readonly QLPaymentsContext _Paymentcontext;
+        private readonly QLApplicationContext _usercontext;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext)
         {
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _mockTransactions = GenerateMockTransactions();
+            
             _mockPrelovedTransactions = GenerateMockPrelovedTransactions();            
             _context = context;
+            _subscriptioncontext = subscriptioncontext;
+            _Paymentcontext = Paymentcontext;
+            _usercontext = usercontext;
         }
 
 
@@ -1147,33 +1152,20 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
         public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.StateStoreNames.UnifiedStore,
-                ConstantValues.StateStoreNames.ItemsIndexKey,
-                cancellationToken: ct
-            ) ?? new();
-            Console.WriteLine(indexKeys);
-            var updated = new List<ClassifiedsItems>();
+            // Fetch all ads in one query instead of looping and hitting DB individually
+            var ads = await _context.Item
+                .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(ct);
 
-            foreach (var id in request.AdIds)
+            if (!ads.Any())
             {
-                var adKey = GetAdKey(id);
-                if (!indexKeys.Contains(adKey.ToString()))
-                {
-                    continue;
-                }
+                throw new InvalidOperationException("No ads found for the given IDs.");
+            }
 
-                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    adKey.ToString(),
-                    cancellationToken: ct
-                );
+            var updatedAds = new List<Items>();
 
-                if (ad is null)
-                {
-                    continue;
-                }
-
+            foreach (var ad in ads)
+            {
                 bool shouldUpdate = false;
 
                 switch (request.Action)
@@ -1258,7 +1250,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                            throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
                         }
                         break;
 
@@ -1270,7 +1262,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
+                            throw new InvalidOperationException("Cannot feature an ad that is already featured.");
                         }
                         break;
 
@@ -1287,43 +1279,41 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
-                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updatedAds.Add(ad);
+                }
+            }
+
+            if (updatedAds.Any())
+            {
+                await _context.SaveChangesAsync(ct);
+
+                // Assuming IndexItemsToAzureSearch works with DB entities
+                foreach (var ad in updatedAds)
+                {
                     await IndexItemsToAzureSearch(ad, cancellationToken: ct);
-                    updated.Add(ad);
                 }
             }
 
             return "Action completed successfully";
         }
+
 
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.StateStoreNames.UnifiedStore,
-                ConstantValues.StateStoreNames.CollectiblesIndexKey,
-                cancellationToken: ct
-            ) ?? new();
-            var updated = new List<ClassifiedsCollectibles>();
+            // Fetch all collectibles in one query
+            var ads = await _context.Collectible
+                .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(ct);
 
-            foreach (var id in request.AdIds)
+            if (!ads.Any())
             {
-                var adKey = GetAdKey(id);
-                if (!indexKeys.Contains(adKey.ToString()))
-                {
-                    continue;
-                }
+                throw new InvalidOperationException("No collectibles found for the given IDs.");
+            }
 
-                var ad = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    adKey.ToString(),
-                    cancellationToken: ct
-                );
+            var updatedAds = new List<Collectibles>();
 
-                if (ad is null)
-                {
-                    continue;
-                }
-
+            foreach (var ad in ads)
+            {
                 bool shouldUpdate = false;
 
                 switch (request.Action)
@@ -1408,7 +1398,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                            throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
                         }
                         break;
 
@@ -1420,7 +1410,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
+                            throw new InvalidOperationException("Cannot feature an ad that is already featured.");
                         }
                         break;
 
@@ -1437,95 +1427,172 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
-                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updatedAds.Add(ad);
+                }
+            }
+
+            if (updatedAds.Any())
+            {
+                await _context.SaveChangesAsync(ct);
+
+                // Index updated collectibles
+                foreach (var ad in updatedAds)
+                {
                     await IndexCollectiblesToAzureSearch(ad, cancellationToken: ct);
-                    updated.Add(ad);                }
+                }
             }
 
             return "Action completed successfully";
         }
-        private string GetAdKey(Guid id) => $"ad-{id}";
+
+        private string GetAdKey(long id) => $"ad-{id}";
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
-    TransactionFilterRequestDto request,
-    CancellationToken cancellationToken = default)
+     TransactionFilterRequestDto request,
+     CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", request.PageNumber, request.PageSize);
+                _logger.LogInformation("Starting GetTransactionsAsync with request: {@Request}", request);
 
-                await Task.Delay(50, cancellationToken);
+                IQueryable<TransactionDto> joined; 
 
-                var allTransactions = _mockTransactions.AsQueryable();
+                if ((int)request.SubVertical == 1)
+                {
+                    // ITEMS / PRELOVED / DEALS logic
+                    var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
-                if (!string.IsNullOrWhiteSpace(request.TransactionType))
-                    allTransactions = allTransactions.Where(t => t.TransactionType.Equals(request.TransactionType, StringComparison.OrdinalIgnoreCase));
+                    var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
 
+                    var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                    var publisheddate = await _context.Item.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} items (for published date)", publisheddate.Count);
+
+                    joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              from i in itemJoin.DefaultIfEmpty()
+                              select new TransactionDto
+                              {
+                                  AdId = p.AdId,
+                                  OrderId = p.PaymentId,
+                                  Username = u?.UserName,
+                                  UserId = s.UserId,
+                                  Status = p.Status.ToString(),
+                                  Email = u?.Email,
+                                  Mobile = u?.PhoneNumber,
+                                  Whatsapp = u?.PhoneNumber,
+                                  Amount = p.Fee,
+                                  CreationDate = s.CreatedAt,
+                                  PublishedDate = i?.PublishedDate,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate
+                              }).AsQueryable();
+                }
+                else if ((int)request.SubVertical == 3)
+                {
+                    // COLLECTIBLES logic — adjust context & joins accordingly
+                    var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                    var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                    var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                    var publisheddate = await _context.Collectible.ToListAsync(cancellationToken);
+
+                    joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              from i in itemJoin.DefaultIfEmpty()
+                              select new TransactionDto
+                              {
+                                  AdId = p.AdId,
+                                  OrderId = p.PaymentId,
+                                  Username = u?.UserName,
+                                 // ProductType = p.ProductType,
+                                  UserId = s.UserId,
+                                  Status = p.Status.ToString(),
+                                  Email = u?.Email,
+                                  Mobile = u?.PhoneNumber,
+                                  Whatsapp = u?.PhoneNumber,
+                                  Amount = p.Fee,
+                                  CreationDate = s.CreatedAt,
+                                  PublishedDate = i?.PublishedDate,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate
+                              }).AsQueryable();
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid SubVertical: {SubVertical}", request.SubVertical);
+                    return new TransactionListResponseDto
+                    {
+                        Records = new List<TransactionDto>(),
+                        TotalRecords = 0,
+                        CurrentPage = request.PageNumber,
+                        PageSize = request.PageSize,
+                        TotalPages = 0
+                    };
+                }
+
+                // ---- FILTERS ----
                 if (!string.IsNullOrWhiteSpace(request.Status))
-                    allTransactions = allTransactions.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.PaymentMethod))
-                    allTransactions = allTransactions.Where(t => t.PaymentMethod.Equals(request.PaymentMethod, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateCreated))
-                    allTransactions = allTransactions.Where(t => t.CreationDate.Equals(request.DateCreated, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DatePublished))
-                    allTransactions = allTransactions.Where(t => t.PublishedDate.Equals(request.DatePublished, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateStart))
-                    allTransactions = allTransactions.Where(t => t.StartDate.Equals(request.DateStart, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateEnd))
-                    allTransactions = allTransactions.Where(t => t.EndDate.Equals(request.DateEnd, StringComparison.OrdinalIgnoreCase));
+                {
+                    joined = joined.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
+                    _logger.LogInformation("Filtered by status: {Status}", request.Status);
+                }
 
                 if (!string.IsNullOrWhiteSpace(request.SearchText))
                 {
                     var search = request.SearchText.ToLower();
-                    allTransactions = allTransactions.Where(t =>
-                        t.AdId.ToLower().Contains(search) ||
-                        t.OrderId.ToLower().Contains(search) ||
+                    joined = joined.Where(t =>
+                        t.UserId.ToLower().Contains(search) ||
                         t.Username.ToLower().Contains(search) ||
-                        t.UserEmail.ToLower().Contains(search) ||
-                        t.TransactionType.ToLower().Contains(search) ||
-                        t.ProductType.ToLower().Contains(search) ||
-                        t.Category.ToLower().Contains(search) ||
+                        t.Email.ToLower().Contains(search) ||
+                        t.Mobile.ToLower().Contains(search) ||
+                        t.Whatsapp.ToLower().Contains(search) ||
                         t.Status.ToLower().Contains(search) ||
-                        t.Mobile.Contains(search) ||
-                        t.PaymentMethod.ToLower().Contains(search) ||
-                        t.Description.ToLower().Contains(search)
+                        t.AdId.ToLower().Contains(search) ||
+                        t.OrderId.ToString().Contains(search)
                     );
+                    _logger.LogInformation("Filtered by search text: {SearchText}", request.SearchText);
                 }
 
-                allTransactions = request.SortBy.ToLower() switch
+                // ---- SORTING ----
+                joined = request.SortBy?.ToLower() switch
                 {
                     "amount" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.Amount)
-                        : allTransactions.OrderBy(t => t.Amount),
+                        ? joined.OrderByDescending(t => t.Amount)
+                        : joined.OrderBy(t => t.Amount),
 
                     "status" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.Status)
-                        : allTransactions.OrderBy(t => t.Status),
+                        ? joined.OrderByDescending(t => t.Status)
+                        : joined.OrderBy(t => t.Status),
 
-                    "transactiontype" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.TransactionType)
-                        : allTransactions.OrderBy(t => t.TransactionType),
+                    "paymentmethod" => request.SortOrder == "desc"
+                        ? joined.OrderByDescending(t => t.PaymentMethod)
+                        : joined.OrderBy(t => t.PaymentMethod),
 
                     _ => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => ParseDate(t.CreationDate))
-                        : allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                        ? joined.OrderByDescending(t => t.CreationDate)
+                        : joined.OrderBy(t => t.CreationDate),
                 };
 
-                var totalRecords = allTransactions.Count();
+                var totalRecords = joined.Count();
                 var totalPages = (int)Math.Ceiling((double)totalRecords / request.PageSize);
 
-                var paginated = allTransactions
+                var paged = joined
                     .Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize)
                     .ToList();
 
                 return new TransactionListResponseDto
                 {
-                    Records = paginated,
+                    Records = paged,
                     TotalRecords = totalRecords,
                     CurrentPage = request.PageNumber,
                     PageSize = request.PageSize,
@@ -1534,10 +1601,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get transactions");
+                _logger.LogError(ex, "Error fetching joined data in GetTransactionsAsync");
                 throw;
             }
         }
+
 
 
 
@@ -1553,60 +1621,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        private List<TransactionDto> GenerateMockTransactions()
-        {
-            var random = new Random();
-            var users = new[] { "john_doe", "jane_smith", "bob_wilson", "alice_brown", "charlie_davis" };
-            var emails = new[] { "john@example.com", "jane@example.com", "bob@example.com", "alice@example.com", "charlie@example.com" };
-            var categories = new[] { "Electronics", "Vehicles", "Real Estate", "Jobs", "Services", "Fashion" };
-            var productTypes = new[] { "Phone", "Car", "Apartment", "Furniture", "Laptop", "Clothing" };
-            var transactionTypes = new[] { "Pay To Publish", "Pay To Promote", "Pay To Feature", "Bulk Refresh" };
-            var statuses = new[] { "Active", "Pending Approval", "Expired", "Unpublished", "Awaits" };
-            var paymentMethods = new[] { "Credit Card", "PayPal", "Bank Transfer", "Digital Wallet" };
-
-            var transactions = new List<TransactionDto>();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var userIndex = random.Next(users.Length);
-                var transactionType = transactionTypes[random.Next(transactionTypes.Length)];
-                var createdDate = DateTime.UtcNow.AddDays(-random.Next(90));
-                var startDate = createdDate.AddDays(random.Next(0, 5));
-                var endDate = startDate.AddDays(random.Next(30, 90));
-
-                // Some transactions may not have published/start/end dates
-                var hasPublishedDate = random.Next(100) > 20; // 80% have published date
-                var hasStartDate = random.Next(100) > 30; // 70% have start date
-                var hasEndDate = random.Next(100) > 40; // 60% have end date
-
-                transactions.Add(new TransactionDto
-                {
-                    Id = $"txn_{i:D6}",
-                    AdId = $"{random.Next(21430, 21440)}",
-                    OrderId = $"{random.Next(21400, 21500)}",
-                    UserId = $"usr_{userIndex + 1}",
-                    Username = users[userIndex],
-                    UserEmail = emails[userIndex],
-                    TransactionType = transactionType,
-                    ProductType = productTypes[random.Next(productTypes.Length)],
-                    Category = categories[random.Next(categories.Length)],
-                    Status = statuses[random.Next(statuses.Length)],
-                    Email = emails[userIndex],
-                    Mobile = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
-                    Whatsapp = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
-                    Account = "User-account@gmail.com",
-                    CreationDate = createdDate.ToString("dd-MM-yyyy"),
-                    PublishedDate = hasPublishedDate ? createdDate.AddHours(random.Next(1, 24)).ToString("dd-MM-yyyy") : "",
-                    StartDate = hasStartDate ? startDate.ToString("dd-MM-yyyy") : "",
-                    EndDate = hasEndDate ? endDate.ToString("dd-MM-yyyy") : "",
-                    Amount = GetAmountByType(transactionType, random),
-                    PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
-                    Description = GetDescriptionByType(transactionType)
-                });
-            }
-
-            return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
-        }
+     
 
         private static decimal GetAmountByType(string type, Random random) => type switch
         {
@@ -2544,10 +2559,12 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 // Text search on Title or UserId
                 if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    var text = request.Text.Trim();
+                    var text = request.Text.Trim().ToLower();
                     query = query.Where(item =>
-                        item.Title.ToLower().Contains(text.ToLower()) ||
-                        item.UserId.ToLower().Contains(text.ToLower()));
+                        item.Title.ToLower().Contains(text) ||
+                        item.UserId.ToLower().Contains(text));
+
+                   
                 }
 
                 if (request.IsFeatured.HasValue)
@@ -2584,7 +2601,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
                 _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
 
-                // Dynamic sorting
+                
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2644,8 +2661,46 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     CreatedAt = item.CreatedAt,
                     PublishedDate = item.PublishedDate,
                     AdType = item.AdType,
-                    IsActive = item.IsActive
-                    // Add other mappings as needed
+                    IsActive = item.IsActive,
+                    FeaturedExpiryDate = item.FeaturedExpiryDate,
+                    PromotedExpiryDate = item.PromotedExpiryDate,
+                    LastRefreshedOn = item.LastRefreshedOn,
+                    IsRefreshed=item.IsRefreshed,
+                    SubVertical = item.SubVertical,
+                    Description = item.Description,
+                    Price= item.Price,
+                    PriceType = item.PriceType,
+                    Category = item.Category,
+                    CategoryId = item.CategoryId,
+                    L1Category = item.L1Category,
+                    L1CategoryId = item.L1CategoryId,
+                    L2CategoryId = item.L2CategoryId,
+                    L2Category = item.L2Category,
+                    Location= item.Location,
+                    Brand=item.Brand,
+                    Model = item.Model,
+                    Condition= item.Condition,
+                    Color = item.Color,
+                    ExpiryDate = item.ExpiryDate,
+                    //status=item.Status
+                    UserName = item.UserName,
+                    //userId
+                    Latitude = item.Latitude,
+                    Longitude = item.Longitude,
+                    ContactNumberCountryCode = item.ContactNumberCountryCode,
+                    ContactNumber = item.ContactNumber,
+                    ContactEmail = item.ContactEmail,
+                    WhatsAppNumber = item.WhatsAppNumber,
+                    WhatsappNumberCountryCode = item.WhatsappNumberCountryCode,
+                    //StreetNumber = street
+                    BuildingNumber = item.BuildingNumber,
+                    zone = item.zone,
+                    Images= item.Images,
+                    Attributes = item.Attributes,
+                    CreatedBy = item.CreatedBy,
+                    UpdatedAt = item.UpdatedAt,
+                    UpdatedBy = item.UpdatedBy,
+                    SubscriptionId = item.SubscriptionId
                 }).ToList();
 
                 _logger.LogInformation("Returning {ResultCount} items out of {TotalCount}", result.Count, totalCount);
@@ -2675,158 +2730,58 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
-                _logger.LogInformation("Starting GetAllCollectibles processing for request: {Request}",
+                _logger.LogInformation("Starting GetAllCollectibles (DB version) with request: {Request}",
                     System.Text.Json.JsonSerializer.Serialize(request));
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.CollectiblesIndexKey,
-                    cancellationToken: ct
-                ) ?? new List<string>();
+                
+                var query = _context.Collectible
+                    .Where(c => c.IsActive)
+                    .AsQueryable();
 
-                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
-
-                if (!indexKeys.Any())
+                // Text search on Title or UserId
+                if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    return new ClassifiedsBoCollectiblesResponseDto
-                    {
-                        TotalCount = 0,
-                        ClassifiedsCollectibles = new List<ClassifiedsCollectibles>()
-                    };
-                }
-
-                var items = new List<ClassifiedsCollectibles>();
-                var failedKeys = new List<string>();
-
-                foreach (var key in indexKeys)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        var dto = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
-                            ConstantValues.StateStoreNames.UnifiedStore,
-                            key,
-                            cancellationToken: ct);
-
-                        if (dto != null)
-                        {
-                            items.Add(dto);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Collectible with key {Key} returned null", key);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
-                        failedKeys.Add(key);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
-                {
-                    items = items.Where(item =>
-                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
-                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
-                    ).ToList();
-
-                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                    var text = request.Text.Trim().ToLower();
+                    query = query.Where(c =>
+                        c.Title.ToLower().Contains(text) ||
+                        c.UserId.ToLower().Contains(text));
                 }
 
                 if (request.IsFeatured.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsFeatured;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
-                        request.IsFeatured, originalCount, items.Count);
+                    query = query.Where(c => c.IsFeatured == request.IsFeatured.Value);
                 }
 
                 if (request.IsPromoted.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsPromoted;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
-                        request.IsPromoted, originalCount, items.Count);
+                    query = query.Where(c => c.IsPromoted == request.IsPromoted.Value);
                 }
 
                 if (request.Status.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as AdStatus?;
-                            return value == request.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying Status filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
-                        request.Status, originalCount, items.Count);
+                    query = query.Where(c => c.Status == request.Status.Value);
                 }
 
                 if (request.CreatedAt.HasValue)
                 {
-                    var createdDate = request.CreatedAt.Value.Date;
-                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
-                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                    var date = request.CreatedAt.Value.Date;
+                    query = query.Where(c => c.CreatedAt.Date == date);
                 }
 
                 if (request.PublishedDate.HasValue)
                 {
-                    var publishedDate = request.PublishedDate.Value.Date;
-                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
-                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                    var date = request.PublishedDate.Value.Date;
+                    query = query.Where(c => c.PublishedDate.HasValue && c.PublishedDate.Value.Date == date);
                 }
 
                 if (request.AdType.HasValue)
                 {
-                    items = items.Where(item => item.AdType == request.AdType).ToList();
-                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
+                    query = query.Where(c => c.AdType == request.AdType.Value);
                 }
 
+                _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
+
+                // Dynamic sorting
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2835,48 +2790,115 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         var propertyName = parts[0];
                         var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
 
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var param = Expression.Parameter(typeof(Collectibles), "x");
+                        var property = Expression.PropertyOrField(param, propertyName);
+                        var lambda = Expression.Lambda(property, param);
 
-                        if (orderProp != null)
-                        {
-                            items = direction == "desc"
-                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
-                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
-                        }
+                        var method = direction == "desc" ? "OrderByDescending" : "OrderBy";
+
+                        var orderByCall = Expression.Call(
+                            typeof(Queryable),
+                            method,
+                            new Type[] { typeof(Collectibles), property.Type },
+                            query.Expression,
+                            Expression.Quote(lambda)
+                        );
+
+                        query = query.Provider.CreateQuery<Collectibles>(orderByCall);
+
+                        _logger.LogInformation("Applied dynamic sorting: {OrderBy}", request.OrderBy);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                        _logger.LogError(ex, "Error applying sorting using OrderBy: {OrderBy}", request.OrderBy);
                     }
                 }
 
+                // Pagination
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
 
-                var totalCount = items.Count;
-                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                _logger.LogInformation("Pagination - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
-                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+                var totalCount = await query.CountAsync(ct);
+
+                var pagedEntities = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
+
+                _logger.LogInformation("Retrieved {Count} collectibles from DB", pagedEntities.Count);
+
+                
+                var result = pagedEntities.Select(c => new ClassifiedsCollectibles
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    UserId = c.UserId,
+                    IsFeatured = c.IsFeatured,
+                    IsPromoted = c.IsPromoted,
+                    Status = c.Status,
+                    CreatedAt = c.CreatedAt,
+                    PublishedDate = c.PublishedDate,
+                    AdType = c.AdType,
+                    IsActive = c.IsActive,
+                    Description = c.Description,
+                    HasAuthenticityCertificate = c.HasAuthenticityCertificate,
+                    AuthenticityCertificateUrl = c.AuthenticityCertificateUrl,
+                    HasWarranty = c.HasWarranty,
+                    IsHandmade = c.IsHandmade,
+                    YearOrEra = c.YearOrEra,
+                    SubVertical = c.SubVertical,
+                    Price = c.Price,
+                    PriceType = c.PriceType,
+                    Category = c.Category,
+                    L1Category = c.L1Category,
+                    Location = c.Location,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Condition = c.Condition,
+                    Color = c.Color,
+                    ExpiryDate = c.ExpiryDate,
+                    //Status =c.Status,
+                    UserName = c.UserName,
+                    FeaturedExpiryDate = c.FeaturedExpiryDate,
+                    PromotedExpiryDate = c.PromotedExpiryDate
+                    
+
+
+
+
+                }).ToList();
+
+                _logger.LogInformation("Returning {ResultCount} collectibles out of {TotalCount}", result.Count, totalCount);
 
                 return new ClassifiedsBoCollectiblesResponseDto
                 {
                     TotalCount = totalCount,
-                    ClassifiedsCollectibles = pagedItems
+                    ClassifiedsCollectibles = result
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetAllCollectibles");
+                _logger.LogError(ex,
+                    "[GetAllCollectibles] Unexpected error occurred. Request: {RequestJson}, Message: {ErrorMessage}, StackTrace: {StackTrace}, InnerException: {InnerException}",
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    ex.Message,
+                    ex.StackTrace,
+                    ex.InnerException?.ToString()
+                );
+
                 throw new Exception($"GetAllCollectibles failed: {ex.Message}", ex);
             }
         }
 
-        private async Task IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+
+        private async Task IndexItemsToAzureSearch(Items dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsItemsIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
+                SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -2890,7 +2912,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 Model = dto.Model,
                 Color = dto.Color,
                 Condition = dto.Condition,
-                SubscriptionId = dto.SubscriptionId,
+                //SubscriptionId = dto.SubscriptionId,
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -2955,7 +2977,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 Id = dto.Id.ToString(),
                 SubscriptionId = dto.SubscriptionId,
-                SubVertical = dto.SubVertical,
+                SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -3031,23 +3053,23 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 );
             }
         }
-        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        private async Task IndexCollectiblesToAzureSearch(Collectibles dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsCollectiblesIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                SubscriptionId = dto.SubscriptionId,
+                SubVertical = dto.SubVertical.ToString(),
+                //SubscriptionId = dto.SubscriptionId,
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
+                //CategoryId = dto.CategoryId,
                 Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
+               // L1CategoryId = dto.L1CategoryId,
                 L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
+               // L2CategoryId = dto.L2CategoryId,
                 L2Category = dto.L2Category,
                 Location = dto.Location,
                 CreatedAt = dto.CreatedAt,
