@@ -157,8 +157,11 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         {
             try
             {
+                const int verticalId = 4;
+
                 var query = _dbContext.Services
-    .Where(ad => ad.Status != ServiceStatus.Rejected && ad.IsActive);
+                    .Where(ad => ad.Status != ServiceStatus.Rejected && ad.IsActive);
+
                 if (!string.IsNullOrWhiteSpace(search))
                 {
                     var lowerSearch = search.ToLowerInvariant();
@@ -168,61 +171,74 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLower().Contains(lowerSearch))
                     );
                 }
+
                 if (!string.IsNullOrWhiteSpace(subscriptionType))
                 {
-                    query = query.Where(ad => "2 Months".Equals(subscriptionType, StringComparison.OrdinalIgnoreCase)); 
+                    query = query.Where(ad => "2 Months".Equals(subscriptionType, StringComparison.OrdinalIgnoreCase));
                 }
 
-               
                 DateTime staticStart = DateTime.ParseExact("25/04/2025", "dd/MM/yyyy", null);
                 DateTime staticEnd = DateTime.ParseExact("25/07/2025", "dd/MM/yyyy", null);
 
                 if (filterStartDate.HasValue && staticEnd < filterStartDate.Value)
-                    return new PaginatedResult<ServiceAdPaymentSummaryDto>(); 
+                    return new PaginatedResult<ServiceAdPaymentSummaryDto>();
 
                 if (filterEndDate.HasValue && staticStart > filterEndDate.Value)
-                    return new PaginatedResult<ServiceAdPaymentSummaryDto>(); 
+                    return new PaginatedResult<ServiceAdPaymentSummaryDto>();
 
-               
                 sortBy = sortBy?.ToLowerInvariant();
                 query = sortBy == "asc"
                     ? query.OrderBy(ad => ad.CreatedAt)
                     : query.OrderByDescending(ad => ad.CreatedAt);
 
-               
                 int totalCount = await query.CountAsync(cancellationToken);
-
                 int currentPage = pageNumber ?? 1;
                 int currentSize = pageSize ?? 12;
 
-               
-                var paginatedItems = await query
+                var pagedServiceIds = await query
                     .Skip((currentPage - 1) * currentSize)
                     .Take(currentSize)
-                    .Select(ad => new ServiceAdPaymentSummaryDto
-                    {
-                        AddId = ad.Id,
-                        AddTitle = ad.Title,
-                        UserName = ad.UserName,
-                        EmailAddress = ad.EmailAddress,
-                        Mobile = ad.PhoneNumber,
-                        WhatsappNumber = ad.WhatsappNumber,
-                        StartDate = "25/04/2025", 
-                        EndDate = "25/07/2025",  
-                        Status = ad.Status,
-                        OrderId = "102",          
-                        Amount = 100,             
-                        SubscriptionPlan = "2 Months", 
-                        CreatedAt = ad.CreatedAt
-                    })
+                    .Select(ad => ad.Id)
                     .ToListAsync(cancellationToken);
+
+                var services = await _dbContext.Services
+                    .Where(s => pagedServiceIds.Contains(s.Id))
+                    .ToListAsync(cancellationToken);
+
+                var stringServiceIds = pagedServiceIds.Select(id => id.ToString()).ToList();
+
+                var payments = await _paymentsContext.Payments
+                    .Where(p => (int)p.Vertical == verticalId && stringServiceIds.Contains(p.AdId))
+                    .ToListAsync(cancellationToken);
+
+                var result = services.Select(serviceAd =>
+                {
+                    var matchingPayment = payments.FirstOrDefault(p => p.AdId == serviceAd.Id.ToString());
+
+                    return new ServiceAdPaymentSummaryDto
+                    {
+                        AddId = serviceAd.Id,
+                        AddTitle = serviceAd.Title,
+                        UserName = serviceAd.UserName,
+                        EmailAddress = serviceAd.EmailAddress,
+                        Mobile = serviceAd.PhoneNumber,
+                        WhatsappNumber = serviceAd.WhatsappNumber,
+                        StartDate = "25/04/2025",     // static value, adjust as needed
+                        EndDate = "25/07/2025",       // static value, adjust as needed
+                        Status = serviceAd.Status,
+                        OrderId = matchingPayment?.PaymentId.ToString() ?? "N/A",
+                        Amount = matchingPayment?.Fee ?? 0,
+                        SubscriptionPlan = "2 Months",
+                        CreatedAt = serviceAd.CreatedAt
+                    };
+                }).ToList();
 
                 return new PaginatedResult<ServiceAdPaymentSummaryDto>
                 {
                     TotalCount = totalCount,
                     PageNumber = currentPage,
                     PageSize = currentSize,
-                    Items = paginatedItems
+                    Items = result
                 };
             }
             catch (Exception ex)
@@ -231,6 +247,7 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 throw;
             }
         }
+
 
 
 
@@ -246,11 +263,11 @@ namespace QLN.Classified.MS.Service.ServicesBoService
         {
             try
             {
+                const int verticalId = 4;
+
                 var query = _dbContext.Services
-     .Where(ad => ad.IsActive)
-     .AsQueryable();
-
-
+                    .Where(ad => ad.IsActive)
+                    .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
@@ -262,45 +279,53 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                     );
                 }
 
-             
                 if (fromDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt >= fromDate.Value);
 
                 if (toDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt <= toDate.Value);
 
-               
                 sortBy = sortBy?.ToLowerInvariant() ?? "desc";
                 query = sortBy == "asc"
                     ? query.OrderBy(x => x.CreatedAt)
                     : query.OrderByDescending(x => x.CreatedAt);
 
-               
                 var totalCount = await query.CountAsync(cancellationToken);
 
-               
-                var pagedItems = await query
+                var pagedAds = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(ad => new ServiceP2PAdSummaryDto
+                    .ToListAsync(cancellationToken);
+
+                var adIdStrings = pagedAds.Select(ad => ad.Id.ToString()).ToList();
+
+                var matchingPayments = await _paymentsContext.Payments
+                    .Where(p => (int)p.Vertical == verticalId && adIdStrings.Contains(p.AdId))
+                    .ToListAsync(cancellationToken);
+
+                var pagedItems = pagedAds.Select(ad =>
+                {
+                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id.ToString());
+
+                    return new ServiceP2PAdSummaryDto
                     {
                         Id = ad.Id,
                         AdTitle = ad.Title,
-                        ProductType = "2 Months", 
+                        ProductType = "2 Months",
                         Email = ad.EmailAddress,
                         Mobile = ad.PhoneNumber,
                         Whatsapp = ad.WhatsappNumber,
-                        Amount = "200", 
+                        Amount = matchingPayment?.Fee ?? 0,
+                        OrderId = matchingPayment?.PaymentId.ToString() ?? string.Empty,
                         UserName = ad.UserName,
                         Status = ad.Status,
                         CreatedAt = ad.CreatedAt,
                         DatePublished = ad.PublishedDate,
-                        StartDate = "25/04/2025", 
-                        EndDate = "25/04/2025",   
-                        Views = "02/10/2025",     
-                        OrderId = "103"           
-                    })
-                    .ToListAsync(cancellationToken);
+                        StartDate = "25/04/2025",
+                        EndDate = "25/04/2025",
+                        Views = "02/10/2025"
+                    };
+                }).ToList();
 
                 return new PaginatedResult<ServiceP2PAdSummaryDto>
                 {
@@ -317,24 +342,26 @@ namespace QLN.Classified.MS.Service.ServicesBoService
             }
         }
 
+
+
         public async Task<PaginatedResult<ServiceSubscriptionAdSummaryDto>> GetAllSubscriptionAdsServiceBo(
-            string? sortBy = "createdAt",
-            string? search = null,
-            DateTime? fromDate = null,
-            DateTime? toDate = null,
-            DateTime? publishedFrom = null,
-            DateTime? publishedTo = null,
-            int pageNumber = 1,
-            int pageSize = 12,
-            CancellationToken cancellationToken = default)
+     string? sortBy = "createdAt",
+     string? search = null,
+     DateTime? fromDate = null,
+     DateTime? toDate = null,
+     DateTime? publishedFrom = null,
+     DateTime? publishedTo = null,
+     int pageNumber = 1,
+     int pageSize = 12,
+     CancellationToken cancellationToken = default)
         {
             try
             {
+                const int verticalId = 4; // 👈 Treat vertical as constant for service
+
                 var query = _dbContext.Services
-    .Where(ad => ad.IsActive)
-    .AsQueryable();
-
-
+                    .Where(ad => ad.IsActive)
+                    .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                 {
@@ -346,33 +373,43 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         (!string.IsNullOrEmpty(ad.UserName) && ad.UserName.ToLower().Contains(lowerSearch))
                     );
                 }
+
                 if (fromDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt >= fromDate.Value);
 
                 if (toDate.HasValue)
                     query = query.Where(ad => ad.CreatedAt <= toDate.Value);
 
-               
                 if (publishedFrom.HasValue)
                     query = query.Where(ad => ad.PublishedDate.HasValue && ad.PublishedDate.Value >= publishedFrom.Value);
 
                 if (publishedTo.HasValue)
                     query = query.Where(ad => ad.PublishedDate.HasValue && ad.PublishedDate.Value <= publishedTo.Value);
 
-             
                 sortBy = sortBy?.ToLowerInvariant();
                 query = sortBy == "asc"
                     ? query.OrderBy(ad => ad.CreatedAt)
                     : query.OrderByDescending(ad => ad.CreatedAt);
 
-              
                 var totalCount = await query.CountAsync(cancellationToken);
 
-               
-                var pagedItems = await query
+                var pagedAds = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(ad => new ServiceSubscriptionAdSummaryDto
+                    .ToListAsync(cancellationToken);
+
+                var adIds = pagedAds.Select(ad => ad.Id.ToString()).ToList();
+
+                // 👇 Use constant vertical ID to filter payments
+                var matchingPayments = await _paymentsContext.Payments
+                    .Where(p => (int)p.Vertical == verticalId && adIds.Contains(p.AdId))
+                    .ToListAsync(cancellationToken);
+
+                var result = pagedAds.Select(ad =>
+                {
+                    var matchingPayment = matchingPayments.FirstOrDefault(p => p.AdId == ad.Id.ToString());
+
+                    return new ServiceSubscriptionAdSummaryDto
                     {
                         Id = ad.Id,
                         UserId = ad.CreatedBy,
@@ -387,17 +424,17 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                         DatePublished = ad.PublishedDate,
                         DateExpiry = ad.ExpiryDate,
                         ImageUpload = ad.PhotoUpload,
-                        OrderId = "103",              
-                        Favorites = "25/04/2025"      
-                    })
-                    .ToListAsync(cancellationToken);
+                        OrderId = matchingPayment?.PaymentId.ToString() ?? string.Empty,
+                        Favorites = "25/04/2025" 
+                    };
+                }).ToList();
 
                 return new PaginatedResult<ServiceSubscriptionAdSummaryDto>
                 {
                     TotalCount = totalCount,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    Items = pagedItems
+                    Items = result
                 };
             }
             catch (Exception ex)
@@ -406,6 +443,8 @@ namespace QLN.Classified.MS.Service.ServicesBoService
                 throw new Exception("Error retrieving service ads", ex);
             }
         }
+
+
 
         public async Task<List<CompanyProfileDto>> GetCompaniesByVerticalAsync(VerticalType verticalId, SubVertical? subVerticalId, CancellationToken cancellationToken = default)
         {

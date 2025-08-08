@@ -65,7 +65,7 @@ namespace QLN.Common.DTO_s
         public string Email { get; set; } = string.Empty;
         public string Mobile { get; set; } = string.Empty;
         public string Whatsapp { get; set; } = string.Empty;
-        public string Amount { get; set; } = string.Empty;
+        public decimal Amount { get; set; } 
         public string StartDate { get; set; } = string.Empty;
         public string EndDate { get; set; } = string.Empty;
         public string Views { get; set; } = string.Empty;
