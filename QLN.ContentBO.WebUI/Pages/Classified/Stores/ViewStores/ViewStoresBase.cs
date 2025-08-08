@@ -19,6 +19,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
         protected List<CompanyProfileItem> StoreItems { get; set; } = [];
+        
         protected override async Task OnInitializedAsync()
         {
             try
@@ -61,7 +62,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             StateHasChanged();
         }
 
-        protected void OnViewClicked(ViewStoreList store)
+        protected void OnViewClicked(CompanyProfileItem store)
         {
             var name = "Rashid";
             // NavigationManager.NavigateTo($"/manage/classified/stores/createform/{name}");
