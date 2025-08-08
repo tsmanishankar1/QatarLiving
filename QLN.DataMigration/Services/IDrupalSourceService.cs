@@ -1,10 +1,12 @@
-﻿using QLN.DataMigration.Models;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
+using QLN.DataMigration.Models;
 
 namespace QLN.DataMigration.Services
 {
     public interface IDrupalSourceService
     {
-        Task<DrupalItemsCategories?> GetCategoriesAsync(string environment);
+        Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken);
         Task<DrupalItems?> GetItemsAsync(
             string environment,
             int categoryId,
@@ -12,6 +14,10 @@ namespace QLN.DataMigration.Services
             string sortOrder,
             string? keywords,
             int? page,
-            int? pageSize);
+            int? pageSize,
+            CancellationToken cancellationToken);
+        Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
+        Task<ArticleResponse?> GetNewsFromDrupalAsync(string sourceCategory, CancellationToken cancellationToken, int? page = null, int? page_size = null);
+        Task<ContentEventsResponse?> GetEventsFromDrupalAsync(string category_id, CancellationToken cancellationToken, int? page = null, int? page_size = null);
     }
 }
