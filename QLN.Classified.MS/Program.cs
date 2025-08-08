@@ -53,6 +53,10 @@ builder.Services.AddDbContext<QLClassifiedContext>(options =>
 
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(dataSource));
+
+
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
