@@ -81,8 +81,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                     SubVertical = 3,
                     Search = "",
                     SortBy = "",
-                    PageNumber = 1,
-                    PageSize = 12
+                    PageNumber = currentPage,
+                    PageSize = pageSize
                 };
 
                 var apiResponse = await StoresService.GetAllStoresListing(payload);
