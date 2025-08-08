@@ -72,7 +72,7 @@ namespace QLN.Common.Infrastructure.Model
         public string? StreetNumber { get; set; }
         [MaxLength(20)]
         public string? BuildingNumber { get; set; }
-        [MaxLength(70)]
+        [MaxLength(150)]
         public string? LicenseCertificate { get; set; }
         [MaxLength(255)]
         public string? Comments { get; set; }
@@ -105,10 +105,10 @@ namespace QLN.Common.Infrastructure.Model
         public DateTime? ExpiryDate { get; set; }
         public bool IsActive { get; set; }
         [Required]
-        [MaxLength(50)]
+        [MaxLength(100)]
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        [MaxLength(50)]
+        [MaxLength(100)]
         public string? UpdatedBy { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

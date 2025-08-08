@@ -14,8 +14,8 @@ using QLN.Common.Infrastructure.QLDbContext;
 namespace QLN.Common.Migrations.QLCompany
 {
     [DbContext(typeof(QLCompanyContext))]
-    [Migration("20250806150545_Companyadded-v2")]
-    partial class Companyaddedv2
+    [Migration("20250807180122_Company")]
+    partial class Company
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -47,8 +47,8 @@ namespace QLN.Common.Migrations.QLCompany
 
                     b.Property<string>("CRDocument")
                         .IsRequired()
-                        .HasMaxLength(70)
-                        .HasColumnType("character varying(70)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<DateTime?>("CRExpiryDate")
                         .HasColumnType("timestamp with time zone");
@@ -63,8 +63,8 @@ namespace QLN.Common.Migrations.QLCompany
 
                     b.Property<string>("CompanyLogo")
                         .IsRequired()
-                        .HasMaxLength(70)
-                        .HasColumnType("character varying(70)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
@@ -83,12 +83,12 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasColumnType("character varying(100)");
 
                     b.Property<string>("CoverImage1")
-                        .HasMaxLength(70)
-                        .HasColumnType("character varying(70)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("CoverImage2")
-                        .HasMaxLength(70)
-                        .HasColumnType("character varying(70)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
@@ -102,8 +102,8 @@ namespace QLN.Common.Migrations.QLCompany
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("EndDay")
                         .HasMaxLength(20)
@@ -113,12 +113,12 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasColumnType("text");
 
                     b.Property<string>("FacebookUrl")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("InstagramUrl")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -163,8 +163,8 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasColumnType("integer");
 
                     b.Property<string>("TherapeuticCertificate")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("UpdatedBy")
                         .HasMaxLength(100)
@@ -189,8 +189,8 @@ namespace QLN.Common.Migrations.QLCompany
                         .HasColumnType("integer");
 
                     b.Property<string>("WebsiteUrl")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
 
                     b.Property<string>("WhatsAppCountryCode")
                         .IsRequired()
