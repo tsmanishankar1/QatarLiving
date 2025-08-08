@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s
@@ -132,6 +133,6 @@ namespace QLN.Common.DTO_s
         public string? SortBy { get; set; }
         public int? PageNumber { get; set; }
         public int? PerPage { get; set; }
-        public Dictionary<string, string>? Filters { get; set; }
+        public Dictionary<string, JsonElement>? Filters { get; set; }
     }
 }

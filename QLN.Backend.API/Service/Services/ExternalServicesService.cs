@@ -91,16 +91,27 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
             try
             {
+                var query = new QueryString(string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(vertical))
+                    query = query.Add("vertical", vertical);
+
+                if (!string.IsNullOrWhiteSpace(subVertical))
+                    query = query.Add("subVertical", subVertical);
+
+                var uri = $"/api/service/getallcategories{query}";
+
                 var response = await _dapr.InvokeMethodAsync<List<CategoryDto>>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
-                    "/api/service/getallcategories",
+                    uri,
                     cancellationToken
                 );
+
                 return response ?? new List<CategoryDto>();
             }
             catch (Exception ex)

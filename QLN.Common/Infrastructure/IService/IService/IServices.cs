@@ -12,7 +12,7 @@ namespace QLN.Common.Infrastructure.IService.IService
     {
         Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken);
         Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default);
-        Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default);
+        Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default);
         Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default);
         Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default);
         Task<string> UpdateServiceAd(string userId, Services dto, CancellationToken cancellationToken = default);

@@ -1,5 +1,4 @@
-﻿using Dapr.Client;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -171,13 +170,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceCategoryGetAllEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getallcategories", async (
+                string? vertical,
+                string? subVertical,
                 IServices service,
                 CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllCategories(cancellationToken);
+                    var result = await service.GetAllCategories(vertical, subVertical, cancellationToken);
                     return Results.Ok(result);
                 }
                 catch (Exception ex)
