@@ -381,11 +381,6 @@ public class ServiceLandingPageBase : QLComponentBase
     protected async Task NavigateToAddItem()
     {
         var title = $"Add {GetCurrentTabAddButtonText()}";
-
-        var parameters = new DialogParameters
-            {
-                { nameof(MessageBoxBase.Title), title },
-            };
         var options = new DialogOptions
         {
             CloseOnEscapeKey = true
@@ -393,10 +388,18 @@ public class ServiceLandingPageBase : QLComponentBase
         IDialogReference dialog;
         if (currentItemType == ServiceLandingPageItemType.FeaturedCategory)
         {
+            var parameters = new DialogParameters
+            {
+                { nameof(ServicesAddFeaturedCategoryModalBase.Title), title },
+            };
             dialog = await DialogService.ShowAsync<ServicesAddFeaturedCategoryModal>("", parameters, options);
         }
         else if (currentItemType == ServiceLandingPageItemType.SeasonalPick)
         {
+            var parameters = new DialogParameters
+            {
+                { nameof(ServicesAddSeasonPickModalBase.Title), title },
+            };
             dialog = await DialogService.ShowAsync<ServicesAddSeasonalPickModal>("", parameters, options);
         }
         else

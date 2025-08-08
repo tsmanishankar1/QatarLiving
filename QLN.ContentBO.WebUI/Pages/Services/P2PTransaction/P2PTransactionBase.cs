@@ -51,7 +51,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.P2PTransaction
     {
       FromDate = filters.created;
       ToDate = filters.published;
-      pageSize = 50;
       PaginatedData = await LoadP2PListingsAsync();
       StateHasChanged();
     }

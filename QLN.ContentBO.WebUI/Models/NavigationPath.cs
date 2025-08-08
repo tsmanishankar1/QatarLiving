@@ -13,5 +13,7 @@
 
         public string BORedirectPrefix { get; set; } = "qlnext/contents_bo/";
         public bool IsLocal { get; set; } = false;
+
+        public string ClassifiedsBlobContainerName { get; set; } = "classifieds-images";
     }
 }

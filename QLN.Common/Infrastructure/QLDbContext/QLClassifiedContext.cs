@@ -1,10 +1,7 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Model;
-using System.Reflection.Metadata;
+
 
 namespace QLN.Common.Infrastructure.QLDbContext
 {
@@ -14,10 +11,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
             : base(options)
         {
         }
-
-        
         public DbSet<StoresSubscriptionDto> StoresSubscriptions { get; set; }
-        public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
+        //public DbSet<SubscriptionTypes> SubscriptionType {  get; set; }
         public DbSet<StoreStatus> StoreStatuses { get; set; }
         public DbSet<StoreProducts> StoreProduct { get; set; }
         public DbSet<ProductFeatures> ProductFeature { get; set; }
@@ -27,6 +22,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
         public DbSet<Preloveds> Preloved { get; set; }
         public DbSet<Collectibles> Collectible { get; set; }
         public DbSet<StoreFlyers> StoreFlyer { get; set; }
+        public DbSet<Services> Services { get; set; }
+        public DbSet<Category> Categories { get; set; }
         public DbSet<Deals> Deal { get; set; }
         public DbSet<SeasonalPicks> SeasonalPicks { get; set; }
 
@@ -54,8 +51,13 @@ namespace QLN.Common.Infrastructure.QLDbContext
                 .WithOne(a => a.StoreProduct)
                 .HasForeignKey(a => a.StoreProductId)
                 .OnDelete(DeleteBehavior.Cascade);
-           
-           
+            modelBuilder.Entity<Category>()
+
+                 .HasMany(sc => sc.CategoryFields)
+                 .WithOne(sc => sc.ParentCategory)
+                 .HasForeignKey(sc => sc.ParentId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
         }
 

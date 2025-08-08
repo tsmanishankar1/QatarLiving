@@ -20,13 +20,14 @@ using QLN.Common.Infrastructure.Subscriptions;
 
 using System;
 using System.ComponentModel.Design;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
-namespace QLN.Content.MS.Service.ClassifiedBoService
+namespace QLN.Classified.MS.Service.ClassifiedBoService
 {
     public class InternalClassifiedLandigBo : IClassifiedBoLandingService
     {
@@ -45,6 +46,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
         // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
+        
 
 
         public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
@@ -1484,8 +1486,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
         private string GetAdKey(Guid id) => $"ad-{id}";
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
-            TransactionFilterRequestDto request,
-            CancellationToken cancellationToken = default)
+    TransactionFilterRequestDto request,
+    CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1576,6 +1578,8 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
+
+
 
         private DateTime ParseDate(string dateString)
         {
@@ -2450,277 +2454,63 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
 
 
-        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                DateTime filterDateParsed;
-                try
-                {
-                    if (string.IsNullOrEmpty(filterDate))
-                    {
-                        filterDateParsed = DateTime.UtcNow;
-                    }
-                    else if (!DateTime.TryParse(filterDate, out filterDateParsed))
-                    {
-                        _logger.LogWarning("Invalid filterDate format provided: {FilterDate}. Using current UTC date instead.", filterDate);
-                        filterDateParsed = DateTime.UtcNow;
-                    }
-                }
-                catch (FormatException formatEx)
-                {
-                    _logger.LogError(formatEx, "Failed to parse filterDate. Value: {FilterDate}", filterDate);
-                    throw;
-                }
-                var dateThreshold = filterDateParsed.AddDays(-90);
-                string searchLower = Search?.ToLower();
-                var filtered = await _context.StoresSubscriptions
-     .AsNoTracking()
-     .Where(x =>
-         (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
-         x.StartDate >= dateThreshold &&
-         x.StartDate <= filterDateParsed &&
-            (
-                string.IsNullOrEmpty(searchLower) ||
-                x.OrderId.ToString().Contains(searchLower) ||
-                (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
-                (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
-                (x.Mobile != null && x.Mobile.ToLower().Contains(searchLower)) ||
-                (x.Status != null && x.Status.ToLower().Contains(searchLower))
-            )
-         )
-     .ToListAsync(cancellationToken);
-
-
-                int currentPage = Math.Max(1, Page ?? 1);
-                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
-                int totalCount = filtered.Count;
-                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
-
-                if (currentPage > totalPages && totalPages > 0)
-                    currentPage = totalPages;
-
-                var paginated = filtered
-                    .Skip((currentPage - 1) * itemsPerPage)
-                    .Take(itemsPerPage)
-                    .ToList();
-
-                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
-                {
-                    Page = currentPage,
-                    PerPage = itemsPerPage,
-                    TotalCount = totalCount,
-                    Items = paginated
-                };
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch stores subscriptions.");
-                throw;
-            }
-        }
-        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("create store subscriptions");
-            try
-            {
-
-                _context.StoresSubscriptions.Add(dto);
-                await _context.SaveChangesAsync();
-
-                return "Store Subscription Created successfully";
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating stores subscriptions.");
-                throw;
-            }
-        }
-        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var subscription = await _context.StoresSubscriptions
-             .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
-
-                if (subscription == null)
-                {
-                    return "Subscription not found.";
-                }
-
-                subscription.Status = Status;
-                _context.StoresSubscriptions.Update(subscription);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return "Subscription status updated successfully.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to edit stores subscriptions.");
-                throw;
-            }
-        }
+   
         public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken ct)
         {
             try
             {
-                _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
+                _logger.LogInformation("Starting GetAllItems (DB version) with request: {Request}",
                     System.Text.Json.JsonSerializer.Serialize(request));
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.ItemsIndexKey,
-                    cancellationToken: ct
-                ) ?? new List<string>();
+                // Filter IsActive = true at the beginning
+                var query = _context.Item
+                    .Where(item => item.IsActive)
+                    .AsQueryable();
 
-                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
-
-                if (!indexKeys.Any())
+                // Text search on Title or UserId
+                if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    return new ClassifiedsBoItemsResponseDto
-                    {
-                        TotalCount = 0,
-                        ClassifiedsItems = new List<ClassifiedsItems>()
-                    };
-                }
-
-                var items = new List<ClassifiedsItems>();
-                var failedKeys = new List<string>();
-
-                foreach (var key in indexKeys)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        var dto = await _dapr.GetStateAsync<ClassifiedsItems>(
-                            ConstantValues.StateStoreNames.UnifiedStore,
-                            key,
-                            cancellationToken: ct);
-
-                        if (dto != null)
-                        {
-                            items.Add(dto);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Item with key {Key} returned null", key);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
-                        failedKeys.Add(key);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
-                {
-                    items = items.Where(item =>
-                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
-                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
-                    ).ToList();
-
-                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                    var text = request.Text.Trim();
+                    query = query.Where(item =>
+                        item.Title.ToLower().Contains(text.ToLower()) ||
+                        item.UserId.ToLower().Contains(text.ToLower()));
                 }
 
                 if (request.IsFeatured.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsFeatured;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
-                        request.IsFeatured, originalCount, items.Count);
+                    query = query.Where(item => item.IsFeatured == request.IsFeatured.Value);
                 }
 
                 if (request.IsPromoted.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsPromoted;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
-                        request.IsPromoted, originalCount, items.Count);
+                    query = query.Where(item => item.IsPromoted == request.IsPromoted.Value);
                 }
 
                 if (request.Status.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as AdStatus?;
-                            return value == request.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying Status filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
-                        request.Status, originalCount, items.Count);
+                    query = query.Where(item => item.Status == request.Status.Value);
                 }
 
                 if (request.CreatedAt.HasValue)
                 {
-                    var createdDate = request.CreatedAt.Value.Date;
-                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
-                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                    var date = request.CreatedAt.Value.Date;
+                    query = query.Where(item => item.CreatedAt.Date == date);
                 }
 
                 if (request.PublishedDate.HasValue)
                 {
-                    var publishedDate = request.PublishedDate.Value.Date;
-                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
-                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                    var date = request.PublishedDate.Value.Date;
+                    query = query.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == date);
                 }
 
                 if (request.AdType.HasValue)
                 {
-                    items = items.Where(item => item.AdType == request.AdType).ToList();
-                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
+                    query = query.Where(item => item.AdType == request.AdType.Value);
                 }
 
+                _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
+
+                // Dynamic sorting
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2729,41 +2519,83 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         var propertyName = parts[0];
                         var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
 
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var param = Expression.Parameter(typeof(Items), "x");
+                        var property = Expression.PropertyOrField(param, propertyName);
+                        var lambda = Expression.Lambda(property, param);
 
-                        if (orderProp != null)
-                        {
-                            items = direction == "desc"
-                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
-                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
-                        }
+                        var method = direction == "desc" ? "OrderByDescending" : "OrderBy";
+
+                        var orderByCall = Expression.Call(
+                            typeof(Queryable),
+                            method,
+                            new Type[] { typeof(Items), property.Type },
+                            query.Expression,
+                            Expression.Quote(lambda)
+                        );
+
+                        query = query.Provider.CreateQuery<Items>(orderByCall);
+
+                        _logger.LogInformation("Applied dynamic sorting: {OrderBy}", request.OrderBy);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                        _logger.LogError(ex, "Error applying sorting using OrderBy: {OrderBy}", request.OrderBy);
                     }
                 }
 
+                // Pagination
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
 
-                var totalCount = items.Count;
-                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                _logger.LogInformation("Pagination - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
-                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+                var totalCount = await query.CountAsync(ct);
+
+                var pagedEntities = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
+
+                _logger.LogInformation("Retrieved {Count} items from DB", pagedEntities.Count);
+
+                // Map Items → ClassifiedsItems
+                var result = pagedEntities.Select(item => new Items
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    UserId = item.UserId,
+                    IsFeatured = item.IsFeatured,
+                    IsPromoted = item.IsPromoted,
+                    Status = item.Status,
+                    CreatedAt = item.CreatedAt,
+                    PublishedDate = item.PublishedDate,
+                    AdType = item.AdType,
+                    IsActive = item.IsActive
+                    // Add other mappings as needed
+                }).ToList();
+
+                _logger.LogInformation("Returning {ResultCount} items out of {TotalCount}", result.Count, totalCount);
 
                 return new ClassifiedsBoItemsResponseDto
                 {
                     TotalCount = totalCount,
-                    ClassifiedsItems = pagedItems
+                    ClassifiedsItems = result
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetAllItems");
+                _logger.LogError(ex,
+                    "[GetAllItems] Unexpected error occurred. Request: {RequestJson}, Message: {ErrorMessage}, StackTrace: {StackTrace}, InnerException: {InnerException}",
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    ex.Message,
+                    ex.StackTrace,
+                    ex.InnerException?.ToString()
+                );
+
                 throw new Exception($"GetAllItems failed: {ex.Message}", ex);
             }
         }
+
 
         public async Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken ct)
         {
@@ -3452,194 +3284,32 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         }
       
 
-        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
-                return getSubscriptionTypes;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new List<SubscriptionTypes>();
-            }
-        }
-        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
-                return getSubscriptionType ?? new SubscriptionTypes();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new SubscriptionTypes();
-            }
-        }
+        //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
+        //        return getSubscriptionTypes;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new List<SubscriptionTypes>();
+        //    }
+        //}
+        //public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
+        //        return getSubscriptionType ?? new SubscriptionTypes();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new SubscriptionTypes();
+        //    }
+        //}
 
-        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                string result = string.Empty;
-                string errors = string.Empty;
-                string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string xmlPath = Path.Combine(basePath, "Data", "Products.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
-                var manager = new ProductXmlManager(xsdPath);
-                errors = manager.ValidateXml(xmlPath);
-                if (string.IsNullOrEmpty(errors))
-                {
-                    result = "Valid XML";
-                    return result;
-                }
-                else
-                {
-                    return errors;
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return ex.Message;
-            }
-        }
-
-       
-        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
-        {
-            try
-            { 
-                var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                var xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
-                var manager = new ProductXmlManager(xsdPath);
-
-                var validationErrors = manager.ValidateXml(Url);
-                if (!string.IsNullOrEmpty(validationErrors))
-                    return validationErrors;
-
-                using var httpClient = new HttpClient();
-                var xmlContent = await httpClient.GetStringAsync(Url);
-
-                var serializer = new XmlSerializer(typeof(StoreFlyer));
-                using var reader = new StringReader(xmlContent);
-                if (serializer.Deserialize(reader) is not StoreFlyer xmlProducts ||
-                    xmlProducts.Products == null ||
-                    xmlProducts.Products.Count == 0)
-                {
-                    return "No products found in the XML.";
-                }
-
-                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
-                _logger.LogInformation("Subscription: {SubscriptionId}", xmlProducts.SubscriptionId);
-                _logger.LogInformation("Company: {CompanyId}", xmlProducts.CompanyId);
-
-                var storeFlyer = new StoreFlyers
-                {
-                    Products = new List<StoreProducts>()
-                };
-                if (!string.IsNullOrEmpty(xmlProducts.FlyerId) && Guid.TryParse(xmlProducts.FlyerId, out var flyerId))
-                {
-                    storeFlyer.FlyerId = flyerId;
-                }
-                else
-                {
-                    throw new Exception("No valid flyer ID found in the XML.");
-                }
-
-                if (Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
-                {
-                    storeFlyer.SubscriptionId = parsedSubscriptionId;
-                }
-                else if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
-                {
-                    storeFlyer.SubscriptionId = fallbackSubscriptionId;
-                }
-                else
-                {
-                    throw new Exception("No valid subscription ID found in the XML or parameter.");
-                }
-
-                if (Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
-                {
-                    storeFlyer.CompanyId = parsedCompanyId;
-                }
-                else if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
-                {
-                    storeFlyer.CompanyId = fallbackCompanyId;
-                }
-                else
-                {
-                    throw new Exception("No valid company ID found in the XML or parameter.");
-                }
-
-                foreach (var xmlProduct in xmlProducts.Products)
-                {
-                    var storeProductId = Guid.NewGuid();
-
-                    var storeProduct = new StoreProducts
-                    {
-                        StoreProductId = storeProductId,
-                        ProductName = xmlProduct.ProductName,
-                        ProductLogo = xmlProduct.ProductLogo,
-                        ProductPrice = xmlProduct.ProductPrice,
-                        Currency = xmlProduct.Currency,
-                        ProductSummary = xmlProduct.ProductSummary,
-                        ProductDescription = xmlProduct.ProductDescription,
-                        PageNumber = xmlProduct.PageNumber,
-                        PageCoordinates = xmlProduct.PageCoordinates,
-                        Features = xmlProduct.Features?.Select(f => new ProductFeatures
-                        {
-                            ProductFeaturesId = Guid.NewGuid(),
-                            Features = f,
-                            StoreProductId = storeProductId
-                        }).ToList(),
-                        Images = xmlProduct.Images?.Select(img => new ProductImages
-                        {
-                            ProductImagesId = Guid.NewGuid(),
-                            Images = img,
-                            StoreProductId = storeProductId
-                        }).ToList()
-                    };
-
-                    storeFlyer.Products.Add(storeProduct);
-                }
-
-                _logger.LogInformation("ML bind done");
-
-                await DeleteStoreFlyer(storeFlyer.FlyerId);
-                _context.StoreFlyer.Add(storeFlyer);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Products added successfully.");
-                return "created";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while processing store flyer XML.");
-                return ex.Message;
-            }
-
-
-        }
-       
-        
-        public async Task DeleteStoreFlyer(Guid FlyerId)
-        {
-            var flyers = await _context.StoreFlyer
-                                .Where(p => p.FlyerId == FlyerId)
-                                .Include(p => p.Products)
-                                .ToListAsync();
-            if (flyers.Any())
-            {
-                _context.StoreFlyer.RemoveRange(flyers);
-                await _context.SaveChangesAsync();
-            }
-
-        }
     }
 }

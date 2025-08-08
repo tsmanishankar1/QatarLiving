@@ -10,6 +10,7 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.QLDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(opts => {
@@ -53,6 +54,12 @@ builder.Services.AddDbContext<QLCompanyContext>(options =>
 
 #endregion
 
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(dataSource));
+
+
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

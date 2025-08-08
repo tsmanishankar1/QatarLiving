@@ -1,15 +1,38 @@
 @inherits EditDealsActionBase
-@using MudBlazor
 
 <div class="ad-preview-container">
     <!-- Left Column -->
     <div class="left-column">
         <div class="user-info">
-            <div class="label">Username</div>
-            <div class="value">@($"{UserName} {Category}")</div>
-            <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
-                <span class="dot"></span> Active
-            </MudChip>
+            <div class="label">Company Name</div>
+            <div class="value">@(AdModel.BusinessName)</div>
+
+            @if (AdModel.ExpiryDate.HasValue && AdModel.ExpiryDate.Value < DateTime.Now)
+            {
+                <MudChip T="string" Color="Color.Warning" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot warning-dot"></span> Expired
+                </MudChip>
+            }
+            else if (AdModel.IsFeatured)
+            {
+                <MudChip T="string" Color="Color.Info" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot info-dot"></span> Featured
+                </MudChip>
+            }
+            else if (AdModel.IsPromoted)
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot primary-dot"></span> Promoted
+                </MudChip>
+            }
+            else if (AdModel.IsActive)
+            {
+                <MudChip T="string" Color="Color.Success" Variant="Variant.Outlined" Class="status-chip">
+                    <span class="dot success-dot"></span> Active
+                </MudChip>
+            }
+
+           
         </div>
 
         <div class="button-row">
@@ -51,8 +74,7 @@
     <!-- Right Column -->
     <div class="right-column">
         <div class="ad-info">
-            <div class="value"><span class="label">Ad ID: <span class="label">@AdId</span></span> </div>
-            <div class="value"><span class="label">Order ID: <span class="label"> @OrderId</span></span></div>
+            <div class="value"><span class="label">Ad ID: <span class="label">@AdModel.Id</span></span> </div>
         </div>
     </div>
 </div>
@@ -106,14 +128,30 @@
         margin-top: 6px;
     }
 
-    .status-chip .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background-color: #53B47B;
-        display: inline-block;
-        margin-right: 6px;
+        .status-chip .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+    .warning-dot {
+        background-color: #ffa000 !important; /* amber/orange */
     }
+
+    .info-dot {
+        background-color: #2196f3 !important; /* blue */
+    }
+
+    .primary-dot {
+        background-color: #1976d2 !important; /* dark blue */
+    }
+
+    .success-dot {
+        background-color: #2e7d32 !important; /* green */
+    }
+
 
     .button-row {
         display: flex;
