@@ -895,6 +895,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 EventLat = eventItem.Latitude,
                 EventLong = eventItem.Longitude,
                 EventLocation = eventItem.Location,
+                //Description = eventItem.EventDescription
             };
         }
 
