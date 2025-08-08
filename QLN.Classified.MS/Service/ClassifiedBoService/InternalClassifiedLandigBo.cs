@@ -3248,32 +3248,32 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
 
-        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
-                return getSubscriptionTypes;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new List<SubscriptionTypes>();
-            }
-        }
-        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
-                return getSubscriptionType ?? new SubscriptionTypes();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new SubscriptionTypes();
-            }
-        }
+        //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
+        //        return getSubscriptionTypes;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new List<SubscriptionTypes>();
+        //    }
+        //}
+        //public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
+        //        return getSubscriptionType ?? new SubscriptionTypes();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new SubscriptionTypes();
+        //    }
+        //}
 
     }
 }
