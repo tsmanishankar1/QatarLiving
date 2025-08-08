@@ -722,10 +722,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapGetServicesByStatusEndpoint(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapGetAllWithPagination(this RouteGroupBuilder group)
         {
-            group.MapPost("/getbystatus", async (
-                [FromBody] ServiceStatusQuery dto,
+            group.MapPost("/getallwithpagination", async (
+                [FromBody] BasePaginationQuery? dto,
                 IServices service,
                 CancellationToken cancellationToken
             ) =>
@@ -742,15 +742,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             statusCode: StatusCodes.Status400BadRequest
                         );
                     }
-                    if (dto.Status == null)
-                    {
-                        return Results.Problem(
-                            title: "Invalid request",
-                            detail: "Status is required.",
-                            statusCode: StatusCodes.Status400BadRequest
-                        );
-                    }
-                    var result = await service.GetServicesByStatusWithPagination(dto, cancellationToken);
+                    var result = await service.GetAllServicesWithPagination(dto, cancellationToken);
                     return Results.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -764,17 +756,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 catch (Exception ex)
                 {
                     return Results.Problem(
-                        title: "Failed to fetch services by status",
+                        title: "Failed to fetch services",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
             .AllowAnonymous()
-            .WithName("GetServicesByStatus")
+            .WithName("GetAllServicesWithPagination")
             .WithTags("Service")
-            .WithSummary("Get services by status (with pagination)")
-            .WithDescription("Returns paged service ads matching the given status (Published, Unpublished, etc).")
+            .WithSummary("Get all services with pagination")
+            .WithDescription("Returns paged service ads.")
             .Produces<PagedResponse<Services>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);

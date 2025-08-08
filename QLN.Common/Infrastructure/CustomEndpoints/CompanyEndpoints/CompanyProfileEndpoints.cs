@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Builder;
 using QLN.Common.DTO_s.Company;
 using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -383,7 +384,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapCompanyApproval(this RouteGroupBuilder group)
         {
-            group.MapPut("/approvecompany", async Task<IResult> (
+            group.MapPut("/action", async Task<IResult> (
             [FromBody] CompanyProfileApproveDto dto,
             [FromServices] ICompanyProfileService service,
             HttpContext httpContext,
@@ -430,7 +431,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
-            .WithSummary("Approve a company profile")
+            .WithSummary("Action for company profile")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -544,7 +545,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get company profiles for logged-in user")
             .WithDescription("Fetches all companies owned by the current token user")
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -591,7 +592,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Get companies by user ID")
             .WithDescription("Used internally by Dapr or system components.")
             .ExcludeFromDescription()
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 

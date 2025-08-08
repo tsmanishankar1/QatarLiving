@@ -41,7 +41,7 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     ZoneId = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     StreetNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     BuildingNumber = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
-                    LicenseCertificate = table.Column<string>(type: "character varying(70)", maxLength: 70, nullable: true),
+                    LicenseCertificate = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: true),
                     Comments = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     Longitude = table.Column<decimal>(type: "numeric(9,6)", nullable: false),
                     Lattitude = table.Column<decimal>(type: "numeric(9,6)", nullable: false),
@@ -61,9 +61,9 @@ namespace QLN.Common.Migrations.ClassifiedDev
                     PublishedDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     ExpiryDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedBy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    CreatedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    UpdatedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
