@@ -1,4 +1,5 @@
-﻿using QLN.Common.Infrastructure.DTO_s;
+﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.DataMigration.Models;
 
 namespace QLN.DataMigration.Services
@@ -17,6 +18,6 @@ namespace QLN.DataMigration.Services
             CancellationToken cancellationToken);
         Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
         Task<ContentEventsResponse?> GetEventsFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
-        Task<CommunitiesResponse?> GetNewsFromDrupalAsync(CancellationToken cancellationToken, int? page = null, int? page_size = null);
+        Task<ArticleResponse?> GetNewsFromDrupalAsync(string sourceCategory, CancellationToken cancellationToken, int? page = null, int? page_size = null);
     }
 }

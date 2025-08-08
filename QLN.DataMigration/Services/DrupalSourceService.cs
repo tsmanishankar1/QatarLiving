@@ -1,6 +1,7 @@
 ﻿namespace QLN.DataMigration.Services
 {
     using Microsoft.Extensions.Logging;
+    using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
     using QLN.DataMigration.Models;
@@ -183,26 +184,20 @@
             return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
         }
 
-        public async Task<CommunitiesResponse?> GetNewsFromDrupalAsync(
+        public async Task<ArticleResponse?> GetNewsFromDrupalAsync(
+            string sourceCategory,
             CancellationToken cancellationToken,
-            //string? order = null,
             int? page = null,
             int? page_size = null
             )
         {
-            string forum_id = "20000040";
-
             page ??= 1;
             page_size ??= 10;
 
-            string requestUri = $"{DrupalContentConstants.NewsPath}?page={page}&page_size={page_size}";
+            string requestUri = $"{DrupalContentConstants.NewsPath}?page={page}&page_size={page_size}&forum_id={sourceCategory}";
 
-            if (!string.IsNullOrEmpty(forum_id))
-            {
-                requestUri += $"&forum_id={forum_id}";
-            }
 
-            return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
+            return await _httpClient.GetFromJsonAsync<ArticleResponse>(requestUri, cancellationToken);
         }
     }
 }
