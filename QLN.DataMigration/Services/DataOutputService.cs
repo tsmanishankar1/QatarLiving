@@ -41,8 +41,10 @@
             _daprClient = daprClient;
         }
 
+        [Obsolete]
         public async Task SaveCategoriesAsync(ItemsCategories itemsCategories, CancellationToken cancellationToken)
         {
+            // needs to be modified to call a Classifieds MS
             foreach (var item in itemsCategories.Models)
             {
                 await _daprClient.SaveStateAsync(ConstantValues.StateStoreNames.CommonStore, item.Id.ToString(), item, cancellationToken: cancellationToken);
@@ -52,8 +54,10 @@
             _logger.LogInformation("Completed saving all state");
         }
 
+        [Obsolete]
         public async Task SaveMigrationItemsAsync(List<MigrationItem> migrationItems, CancellationToken cancellationToken)
         {
+            // needs to be modified to call a Classifieds MS
             foreach (var item in migrationItems)
             {
                 var newGuid = Guid.NewGuid().ToString();
@@ -98,9 +102,7 @@
                         UserId = dto.UserName
                     };
 
-                    // modify this to send to the Content Service directly
                     await _newsService.CreateNewsArticleAsync(article.UserId, article, cancellationToken);
-                    //await _daprClient.SaveStateAsync(V2Content.ContentStoreName, article.Id.ToString(), article, cancellationToken: cancellationToken);
 
                 }
                 catch (Exception ex)
@@ -151,19 +153,19 @@
 
                     var eventSchedule = new EventSchedule();
 
-                    if(hasStartDate)
+                    if (hasStartDate)
                     {
                         eventSchedule.StartDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
                         eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
                         eventSchedule.GeneralTextTime = $"{dto.EventStart}";
                     }
 
-                    if(hasEndDate && startDate != endDate)
+                    if (hasEndDate && startDate != endDate)
                     {
                         eventSchedule.EndDate = new DateOnly(endDate.Year, endDate.Month, endDate.Day);
                         eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
                         eventSchedule.GeneralTextTime = string.IsNullOrWhiteSpace(eventSchedule.GeneralTextTime) ? $"{dto.EventEnd}" : $" - {dto.EventEnd}";
-                    } 
+                    }
                     else
                     {
                         eventSchedule.EndDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
@@ -176,7 +178,7 @@
 
                     var timeSlots = new List<TimeSlot>();
 
-                    if(hasStartTime)
+                    if (hasStartTime)
                     {
                         timeSlots.Add(new TimeSlot
                         {
@@ -192,39 +194,16 @@
                             DayOfWeek = endDate.DayOfWeek,
                             TextTime = endDate.ToShortTimeString(),
                         });
-                    };
+                    }
+                    ;
 
-                    if(timeSlots.Count > 0)
+                    if (timeSlots.Count > 0)
                     {
-                       entity.EventSchedule.TimeSlotType = V2EventTimeType.PerDayTime;
-                       entity.EventSchedule.TimeSlots = timeSlots;
+                        entity.EventSchedule.TimeSlotType = V2EventTimeType.PerDayTime;
+                        entity.EventSchedule.TimeSlots = timeSlots;
                     }
 
-                    // modify this to send to the Content Service directly
                     await _eventService.CreateEvent(dto.UserName, entity, cancellationToken);
-                    //await _daprClient.SaveStateAsync(
-                    //    ConstantValues.V2Content.ContentStoreName,
-                    //    id.ToString(),
-                    //    entity,
-                    //    cancellationToken: cancellationToken
-                    //);
-
-                    //var keys = await _daprClient.GetStateAsync<List<string>>(
-                    //    ConstantValues.V2Content.ContentStoreName,
-                    //    ConstantValues.V2Content.EventIndexKey,
-                    //    cancellationToken: cancellationToken
-                    //) ?? new List<string>();
-
-                    //if (!keys.Contains(id.ToString()))
-                    //{
-                    //    keys.Add(id.ToString());
-                    //    await _daprClient.SaveStateAsync(
-                    //        ConstantValues.V2Content.ContentStoreName,
-                    //        ConstantValues.V2Content.EventIndexKey,
-                    //        keys,
-                    //        cancellationToken: cancellationToken
-                    //    );
-                    //}
 
                 }
                 catch (Exception ex)
@@ -260,32 +239,7 @@
                         DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
                     };
 
-
-                    // modify this to send to the Content Service directly
                     await _communityPostService.CreateCommunityPostAsync(dto.UserName, entity, cancellationToken);
-                    //await _daprClient.SaveStateAsync(
-                    //    ConstantValues.V2Content.ContentStoreName,
-                    //    id.ToString(),
-                    //    entity,
-                    //    cancellationToken: cancellationToken
-                    //);
-
-                    //var keys = await _daprClient.GetStateAsync<List<string>>(
-                    //    ConstantValues.V2Content.ContentStoreName,
-                    //    "community-index",
-                    //    cancellationToken: cancellationToken
-                    //) ?? new List<string>();
-
-                    //if (!keys.Contains(id.ToString()))
-                    //{
-                    //    keys.Add(id.ToString());
-                    //    await _daprClient.SaveStateAsync(
-                    //        ConstantValues.V2Content.ContentStoreName,
-                    //        "community-index",
-                    //        keys,
-                    //        cancellationToken: cancellationToken
-                    //    );
-                    //}
 
                 }
                 catch (Exception ex)
@@ -301,9 +255,10 @@
         {
             foreach (var dto in items)
             {
-                try {
+                try
+                {
 
-                    if(int.TryParse(dto.Id, out var id))
+                    if (int.TryParse(dto.Id, out var id))
                     {
                         var entity = new EventsCategory
                         {
@@ -315,7 +270,8 @@
 
                         _logger.LogInformation($"Created category {dto.Id} - {dto.Name}");
 
-                    } else
+                    }
+                    else
                     {
                         _logger.LogError($"Failed to create category {dto.Id} - {dto.Name}");
                     }
@@ -324,6 +280,89 @@
                 catch (Exception ex)
                 {
                     _logger.LogError($"Failed to create category {dto.Id} - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
+            }
+        }
+
+        public async Task SaveNewsCategoriesAsync(List<NewsCategory> items, CancellationToken cancellationToken)
+        {
+            foreach (var primaryCategory in items)
+            {
+                var subCategories = new List<V2NewsSubCategory>();
+                
+                foreach (var subCategory in primaryCategory.SubCategories)
+                {
+                    subCategories.Add(new V2NewsSubCategory
+                    {
+                        Id = subCategory.Id,
+                        SubCategoryName = subCategory.SubCategoryName
+                    });
+                    _logger.LogInformation($"Created category {subCategory.Id} - {subCategory.SubCategoryName}");
+                }
+
+                try
+                {
+                    var entity = new V2NewsCategory
+                    {
+                        Id = primaryCategory.Id,
+                        CategoryName = primaryCategory.CategoryName,
+                        SubCategories = subCategories
+                    };
+
+                    await _newsService.AddCategoryAsync(entity, cancellationToken);
+
+                    _logger.LogInformation($"Created category {entity.Id} - {entity.CategoryName}");
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create category {primaryCategory.Id} - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
+            }
+        }
+
+        public async Task SaveLocationsAsync(List<Location> items, CancellationToken cancellationToken)
+        {
+            foreach (var location in items)
+            {
+                var areas = new List<Common.DTO_s.LocationDto.AreaDto>();
+
+                if(location.Areas != null && location.Areas.Count > 0)
+                {
+                    foreach (var area in location.Areas)
+                    {
+                        areas.Add(new Common.DTO_s.LocationDto.AreaDto
+                        {
+                            Id = area.Id,
+                            Name = area.Name,
+                            Latitude = area.Latitude.ToString(),
+                            Longitude = area.Longitude.ToString()
+                        });
+                        _logger.LogInformation($"Created category {area.Id} - {area.Name}");
+                    }
+                }
+
+                try
+                {
+                    var entity = new Common.DTO_s.LocationDto.LocationEventDto
+                    {
+                        Id = location.Id,
+                        Name = location.Name,
+                        Latitude = location.Latitude.ToString(),
+                        Longitude = location.Longitude.ToString(),
+                        Areas = areas
+                    };
+
+                    //await _locationService.AddLocationAsync(entity, cancellationToken); // dont have a save method for this as yet
+
+                    _logger.LogInformation($"Created category {entity.Id} - {entity.Name}");
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create category {location.Id} - {ex.Message}");
                     throw new Exception("Unexpected error during article creation", ex);
                 }
             }

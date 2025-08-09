@@ -13,5 +13,7 @@ namespace QLN.DataMigration.Services
         Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken);
 
         Task SaveEventCategoriesAsync(List<Common.Infrastructure.DTO_s.EventCategory> items, CancellationToken cancellationToken);
+        Task SaveNewsCategoriesAsync(List<NewsCategory> items, CancellationToken cancellationToken);
+        Task SaveLocationsAsync(List<Location> items, CancellationToken cancellationToken);
     }
 }
