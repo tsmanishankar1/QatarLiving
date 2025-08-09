@@ -56,7 +56,7 @@ namespace QLN.Common.Infrastructure.Model
         public bool IsActive { get; set; }
 
         [Column(TypeName = "jsonb")]
-        public LocationDto Locations { get; set; }
+        public LocationsDtos Locations { get; set; }
 
         [Required]
         [MaxLength(100)]

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IFileStorage;
 using QLN.Common.Infrastructure.Service.FileStorage;
@@ -19,7 +20,15 @@ builder.Services.AddDaprClient();
 
 builder.Services.AddSingleton<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddSingleton<IDataOutputService, DataOutputService>();
-builder.Services.AddHttpClient<IDrupalSourceService, DrupalSourceService>(); // this doesnt need a base address as it will be set in the service implementation
+
+var drupalUrl = builder.Configuration.GetSection("BaseUrl")["LegacyDrupal"] ?? throw new ArgumentNullException("LegacyDrupal");
+if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
+{
+    builder.Services.AddHttpClient<IDrupalSourceService, DrupalSourceService>(option =>
+    {
+        option.BaseAddress = drupalBaseUrl;
+    });
+}
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -47,20 +56,57 @@ app.UseAuthorization();
 
 app.MapGet("/migrate_categories", async (
     [FromServices] IMigrationService migrationService,
-    [FromQuery] string environment) =>
+    [FromQuery] string environment,
+    CancellationToken cancellationToken = default
+    ) =>
 {
-    return await migrationService.MigrateCategories(environment);
+    return await migrationService.MigrateCategories(environment, cancellationToken);
 })
 .WithName("MigrateCategories");
 
 app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
     [FromQuery] string environment,
-    [FromQuery(Name = "category_id")] int categoryId
+    [FromQuery(Name = "category_id")] int categoryId,
+    CancellationToken cancellationToken = default
     ) =>
-{
-    return await migrationService.MigrateItems(environment, categoryId);
-});
+    {
+        return await migrationService.MigrateItems(environment, categoryId, cancellationToken);
+    });
+
+app.MapGet("/migrate_articles", async (
+    [FromServices] IMigrationService migrationService,
+    [FromQuery(Name = "source_category")] string sourceCategory,
+    [FromQuery(Name = "destination_category")] int destinationCategory,
+    [FromQuery(Name = "destination_sub_category")] int destinationSubCategory,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    CancellationToken cancellationToken = default
+    ) =>
+    {
+        return await migrationService.MigrateArticles(sourceCategory, destinationCategory, destinationSubCategory, importImages, cancellationToken);
+    });
+
+app.MapGet("/migrate_events", async (
+    [FromServices] IMigrationService migrationService,
+    [FromQuery(Name = "source_category")] string sourceCategory,
+    [FromQuery(Name = "destination_category")] int destinationCategory,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    CancellationToken cancellationToken = default
+    ) =>
+    {
+        return await migrationService.MigrateEvents(sourceCategory, destinationCategory, importImages, cancellationToken);
+    });
+
+app.MapGet("/migrate_community", async (
+    [FromServices] IMigrationService migrationService,
+    //[FromQuery(Name = "source_category")] string sourceCategory,
+    //[FromQuery(Name = "destination_category")] int destinationCategory,
+    [FromQuery(Name = "import_images")] bool importImages = false,
+    CancellationToken cancellationToken = default
+    ) =>
+    {
+        return await migrationService.MigrateCommunityPosts(importImages, cancellationToken);
+    });
 
 
 app.Run();
