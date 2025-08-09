@@ -16,15 +16,5 @@ namespace QLN.Common.DTO_s.Enums
             Deals = 4,
             Stores = 5,
         }
-        public enum SubscriptionVertical
-        {
-            Classifieds = 1,
-            Items = 2,
-            Preloved = 3,
-            Collectibles = 4,
-            Deals = 5,
-            Stores = 6,
-            Services = 7
-        }
     }
 }

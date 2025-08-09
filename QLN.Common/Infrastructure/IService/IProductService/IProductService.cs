@@ -15,7 +15,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
     public interface IProductService
     {
         Task<List<ProductResponseDto>> GetAllProductsAsync(CancellationToken cancellationToken = default);
-        Task<List<ProductResponseDto>> GetProductsByVerticalAsync(SubscriptionVertical vertical, CancellationToken cancellationToken = default);
+        Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default);
         Task<List<ProductResponseDto>> GetProductsByTypeAsync(ProductType productType, CancellationToken cancellationToken = default);
         Task<ProductResponseDto?> GetProductByCodeAsync(string productCode, CancellationToken cancellationToken = default);
 

@@ -47,7 +47,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
 
             // Get products by vertical
             group.MapGet("/vertical/{vertical:int}", async (
-                SubscriptionVertical vertical,
+                Vertical vertical,
                 [FromServices] IProductService productService,
                 CancellationToken cancellationToken) =>
             {
@@ -61,7 +61,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
 
-                    var products = await productService.GetProductsByVerticalAsync((SubscriptionVertical)vertical, cancellationToken);
+                    var products = await productService.GetProductsByVerticalAsync((Vertical)vertical, cancellationToken);
                     return Results.Ok(products);
                 }
                 catch (Exception ex)

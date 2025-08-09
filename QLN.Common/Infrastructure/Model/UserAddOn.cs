@@ -19,7 +19,7 @@ namespace QLN.Common.Infrastructure.Model
         public Guid UserAddOnId { get; set; }
 
         [Required]
-        [MaxLength(30)]
+        [MaxLength(50)]
         public string ProductCode { get; set; } = string.Empty;
 
         [MaxLength(20)]
@@ -33,7 +33,8 @@ namespace QLN.Common.Infrastructure.Model
         public int? PaymentId { get; set; }
 
         [Required]
-        public SubscriptionVertical Vertical { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public SubscriptionQuota Quota { get; set; } = new();
         [Required]
         public DateTime StartDate { get; set; }

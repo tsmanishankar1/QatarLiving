@@ -14,27 +14,27 @@ namespace QLN.Common.Infrastructure.Model
     public class Product
     {
         [Key]
-        [MaxLength(30)]
+        [MaxLength(50)]
         public string ProductCode { get; set; } = string.Empty; 
 
         [Required]
-        [MaxLength(20)]
+        [MaxLength(100)]
         public string ProductName { get; set; } = string.Empty;
 
         [Required]
         public ProductType ProductType { get; set; }
 
         [Required]
-        public SubscriptionVertical Vertical { get; set; }
+        public Vertical Vertical { get; set; }
 
-        public SubscriptionVertical? ParentVertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         [Required]
-        [MaxLength(10)]
+        [MaxLength(20)]
         public string Currency { get; set; } = "QAR";
 
         public ProductConstraints? Constraints { get; set; } = new();

@@ -61,7 +61,7 @@ namespace QLN.Backend.API.Service.ProductService
             CancellationToken cancellationToken = default)
         {
             var resultList = new List<V2SubscriptionResponseDto>();
-            var vertical = (SubscriptionVertical)verticalTypeId;
+            var vertical = (Vertical)verticalTypeId;
 
             var dbSubscriptions = await _context.Subscriptions
                 .Where(s => (int)s.Vertical == verticalTypeId &&
@@ -131,6 +131,7 @@ namespace QLN.Backend.API.Service.ProductService
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
+                    SubVertical = product.SubVertical,              // ✅ map optional SubVertical
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
@@ -149,7 +150,8 @@ namespace QLN.Backend.API.Service.ProductService
                     UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
-                    VerticalTypeId = product.Vertical,
+                    Vertical = product.Vertical,                    // ✅
+                    SubVertical = product.SubVertical,              // ✅
                     Price = product.Price,
                     Currency = product.Currency,
                     Quota = dbSubscription.Quota,
@@ -380,6 +382,7 @@ namespace QLN.Backend.API.Service.ProductService
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
+                    SubVertical = product.SubVertical,             // ✅ map optional SubVertical
                     Quota = BuildAddonQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
@@ -399,7 +402,8 @@ namespace QLN.Backend.API.Service.ProductService
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
-                    VerticalTypeId = product.Vertical,
+                    Vertical = product.Vertical,                   // ✅
+                    SubVertical = product.SubVertical,             // ✅
                     Price = product.Price,
                     Currency = product.Currency,
                     Quota = dbAddon.Quota,
@@ -603,8 +607,11 @@ namespace QLN.Backend.API.Service.ProductService
             if (filter.CompanyId.HasValue)
                 query = query.Where(s => s.CompanyId == filter.CompanyId);
 
-            if (filter.VerticalTypeId.HasValue)
-                query = query.Where(s => (int)s.Vertical == (int)filter.VerticalTypeId);
+            // ✅ new filter fields
+            query = query.Where(s => s.Vertical == filter.Vertical);
+
+            if (filter.SubVertical.HasValue)
+                query = query.Where(s => s.SubVertical == filter.SubVertical);
 
             if (filter.StatusId.HasValue)
                 query = query.Where(s => (int)s.Status == (int)MapToDbStatus(filter.StatusId.Value));
@@ -810,7 +817,8 @@ namespace QLN.Backend.API.Service.ProductService
                 UserId = dbSub.UserId,
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
-                VerticalTypeId = dbSub.Vertical,
+                Vertical = dbSub.Vertical,              // ✅
+                SubVertical = dbSub.SubVertical,        // ✅
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbSub.Quota,
@@ -833,7 +841,8 @@ namespace QLN.Backend.API.Service.ProductService
                 CompanyId = dbAddon.CompanyId,
                 SubscriptionId = dbAddon.SubscriptionId,
                 PaymentId = dbAddon.PaymentId,
-                VerticalTypeId = dbAddon.Vertical,
+                Vertical = dbAddon.Vertical,            // ✅
+                SubVertical = dbAddon.SubVertical,      // ✅
                 Price = 0,
                 Currency = "QAR",
                 Quota = dbAddon.Quota,
@@ -856,8 +865,9 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductCode = v2Data.ProductCode,
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
-                VerticalName = v2Data.VerticalTypeId.ToString(),
-                VerticalTypeId = v2Data.VerticalTypeId,
+                VerticalName = v2Data.Vertical.ToString(),
+                Vertical = v2Data.Vertical,                 // ✅
+                SubVertical = v2Data.SubVertical,           // ✅ nullable
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -883,8 +893,9 @@ namespace QLN.Backend.API.Service.ProductService
                 ProductName = v2Data.ProductName,
                 UserId = v2Data.UserId,
                 SubscriptionId = v2Data.SubscriptionId,
-                VerticalName = v2Data.VerticalTypeId.ToString(),
-                VerticalTypeId = v2Data.VerticalTypeId,
+                VerticalName = v2Data.Vertical.ToString(),
+                Vertical = v2Data.Vertical,                 // ✅
+                SubVertical = v2Data.SubVertical,           // ✅
                 Price = v2Data.Price,
                 Currency = v2Data.Currency,
                 Quota = v2Data.Quota,
@@ -990,10 +1001,10 @@ namespace QLN.Backend.API.Service.ProductService
 
         private TimeSpan GetDurationFromProduct(Product product)
         {
-            if (!string.IsNullOrWhiteSpace(product.Constraints?.Duration))
+            // ✅ Duration is TimeSpan? now
+            if (product.Constraints?.Duration.HasValue == true)
             {
-                if (TimeSpan.TryParse(product.Constraints.Duration, out var parsedDuration))
-                    return parsedDuration;
+                return product.Constraints.Duration.Value;
             }
 
             return product.ProductType switch

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -21,7 +22,8 @@ namespace QLN.Common.DTO_s.Subscription
         public string? UserId { get; set; }
         public Guid? CompanyId { get; set; }
         public int? PaymentId { get; set; }
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public SubscriptionQuota Quota { get; set; } = new();
@@ -44,7 +46,8 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid? CompanyId { get; set; }
         public Guid SubscriptionId { get; set; }
         public int? PaymentId { get; set; }
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public SubscriptionQuota Quota { get; set; } = new();
@@ -179,7 +182,8 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public string? UserId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public SubscriptionQuota Quota { get; set; } = new();
@@ -203,7 +207,8 @@ namespace QLN.Common.DTO_s.Subscription
         public string UserId { get; set; } = string.Empty;
         public Guid SubscriptionId { get; set; }
         public string VerticalName { get; set; } = string.Empty;
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public SubscriptionQuota Quota { get; set; } = new();
@@ -283,7 +288,8 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid SubscriptionId { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public DateTime ExpiredAt { get; set; }
         public Guid EventId { get; set; }
         public string Version { get; set; } = "V2";
@@ -299,7 +305,8 @@ namespace QLN.Common.DTO_s.Subscription
         public Guid SubscriptionId { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public string UserId { get; set; } = string.Empty;
-        public SubscriptionVertical VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public DateTime ExpiredAt { get; set; }
         public Guid EventId { get; set; }
         public string Version { get; set; } = "V2";
@@ -317,7 +324,8 @@ namespace QLN.Common.DTO_s.Subscription
     {
         public string? UserId { get; set; }
         public Guid? CompanyId { get; set; }
-        public SubscriptionVertical? VerticalTypeId { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public V2Status? StatusId { get; set; }
         public DateTime? StartDateFrom { get; set; }
         public DateTime? StartDateTo { get; set; }

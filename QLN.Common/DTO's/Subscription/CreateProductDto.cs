@@ -14,8 +14,8 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
-        public SubscriptionVertical Vertical { get; set; }
-        public SubscriptionVertical? ParentVertical { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public ProductConstraints? Constraints { get; set; }
@@ -33,8 +33,8 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
-        public SubscriptionVertical Vertical { get; set; }
-        public SubscriptionVertical? ParentVertical { get; set; }
+        public Vertical Vertical { get; set; }
+        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public ProductConstraints Constraints { get; set; } = new();

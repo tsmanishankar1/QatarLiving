@@ -40,7 +40,7 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(SubscriptionVertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {

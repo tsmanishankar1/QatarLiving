@@ -42,7 +42,7 @@ namespace QLN.Subscriptions.Actor.Service
             }
         }
 
-        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(SubscriptionVertical vertical, CancellationToken cancellationToken = default)
+        public async Task<List<ProductResponseDto>> GetProductsByVerticalAsync(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -113,7 +113,7 @@ namespace QLN.Subscriptions.Actor.Service
                     ProductName = dto.ProductName,
                     ProductType = dto.ProductType,
                     Vertical = dto.Vertical,
-                    ParentVertical = dto.ParentVertical,
+                    SubVertical = dto.SubVertical,
                     Price = dto.Price,
                     Currency = dto.Currency,
                     Constraints = dto.Constraints ?? new ProductConstraints(),
@@ -217,7 +217,7 @@ namespace QLN.Subscriptions.Actor.Service
                 ProductName = product.ProductName,
                 ProductType = product.ProductType,
                 Vertical = product.Vertical,
-                ParentVertical = product.ParentVertical,
+                SubVertical = product.SubVertical,
                 Price = product.Price,
                 Currency = product.Currency,
                 Constraints = product.Constraints,
