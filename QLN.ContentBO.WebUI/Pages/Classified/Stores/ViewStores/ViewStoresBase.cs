@@ -19,7 +19,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
         protected List<CompanyProfileItem> StoreItems { get; set; } = [];
-        
+
         protected override async Task OnInitializedAsync()
         {
             try
@@ -38,8 +38,22 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
         protected async Task HandleSearch(string searchTerm)
         {
             SearchTerm = searchTerm;
-            Console.WriteLine($"Search triggered: {SearchTerm}");
-            // Add logic to filter your listing data based on SearchTerm
+
+            var payload = new CompanyRequestPayload
+            {
+                IsBasicProfile = true,
+                Status = 1,
+                Vertical = 3,
+                SubVertical = 3,
+                Search = SearchTerm,
+                SortBy = "",
+                PageNumber = currentPage,
+                PageSize = pageSize
+            };
+
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Items ?? [];
+            TotalCount = companyProfileResponse?.TotalCount ?? 0;
         }
 
         protected async Task HandleSort(bool sortOption)
@@ -49,17 +63,47 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             // Add logic to sort your listing data based on SortOption
         }
 
-        protected void HandlePageChange(int newPage)
+        protected async Task HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            
+            var payload = new CompanyRequestPayload
+            {
+                IsBasicProfile = true,
+                Status = 1,
+                Vertical = 3,
+                SubVertical = 3,
+                Search = "",
+                SortBy = "",
+                PageNumber = currentPage,
+                PageSize = pageSize
+            };
+
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Items ?? [];
+            TotalCount = companyProfileResponse?.TotalCount ?? 0;
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async Task HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
             currentPage = 1; // reset to first page
-            StateHasChanged();
+            
+            var payload = new CompanyRequestPayload
+            {
+                IsBasicProfile = true,
+                Status = 1,
+                Vertical = 3,
+                SubVertical = 3,
+                Search = "",
+                SortBy = "",
+                PageNumber = currentPage,
+                PageSize = pageSize
+            };
+
+            var companyProfileResponse = await GetAllStoresListingAsync(payload);
+            StoreItems = companyProfileResponse?.Items ?? [];
+            TotalCount = companyProfileResponse?.TotalCount ?? 0;
         }
 
         protected void OnViewClicked(CompanyProfileItem store)
@@ -85,7 +129,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
                     PageSize = pageSize
                 };
 
-                var apiResponse = await StoresService.GetAllStoresListing(payload);
+                return await GetAllStoresListingAsync(payload);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadStores");
+                return new();
+            }
+        }
+
+        private async Task<CompanyProfileResponse> GetAllStoresListingAsync(CompanyRequestPayload companyRequestPayload)
+        {
+            try
+            {
+                var apiResponse = await StoresService.GetAllStoresListing(companyRequestPayload);
                 if (apiResponse.IsSuccessStatusCode)
                 {
                     var companyProfileResponse = await apiResponse.Content.ReadFromJsonAsync<CompanyProfileResponse>();
@@ -97,7 +154,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewStores
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "LoadStores");
+                Logger.LogError(ex, "GetAllStoresListingAsync");
                 return new();
             }
         }

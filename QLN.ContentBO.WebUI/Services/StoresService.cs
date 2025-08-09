@@ -38,9 +38,34 @@ namespace QLN.ContentBO.WebUI.Services
             }
         }
 
-        public Task<HttpResponseMessage> GetAllStoresSubscription(FilterRequest request)
+        public async Task<HttpResponseMessage> GetAllStoresSubscription(StoreSubscriptionQuery query)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var queryParams = new Dictionary<string, string?>
+                {
+                    { "subscriptionType", query.SubscriptionType },
+                    { "filterDate", query.FilterDate },
+                    { "Page", query.Page.ToString() },
+                    { "PageSize", query.PageSize.ToString() },
+                    { "Search", query.Search }
+                };
+                
+                var queryString = string.Join("&", queryParams
+                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
+                    .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
+
+                var requestUrl = $"/api/v2/classifiedbo/stores-get-subscriptions?{queryString}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAllStoresSubscription");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public Task<HttpResponseMessage> GetStoresById(string vertical, string adId)
