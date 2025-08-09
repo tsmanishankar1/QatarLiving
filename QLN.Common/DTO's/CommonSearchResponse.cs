@@ -38,11 +38,11 @@ namespace QLN.Common.DTO_s
         public ClassifiedsDealsIndex? ClassifiedsDealsItem { get; set; }
         [JsonPropertyName("servicesItem")]
         public ServicesIndex? ServicesItem { get; set; }
-        [JsonPropertyName("servicesItem")]
+        [JsonPropertyName("contentNewsItem")]
         public ContentNewsIndex? ContentNewsItem { get; set; }
-        [JsonPropertyName("servicesItem")]
+        [JsonPropertyName("contentEventsItem")]
         public ContentEventsIndex? ContentEventsItem { get; set; }
-        [JsonPropertyName("servicesItem")]
+        [JsonPropertyName("contentCommunityItem")]
         public ContentCommunityIndex? ContentCommunityItem { get; set; }
     }
 }
