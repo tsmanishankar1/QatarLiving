@@ -182,25 +182,26 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/deletecompanyprofile?id={id}";
+                var url = "/api/companyprofile/deletecompanyprofilebyuserid";
                 await _dapr.InvokeMethodAsync(
-                    HttpMethod.Delete,
+                    HttpMethod.Post,
                     ConstantValues.Company.CompanyServiceAppId,
                     url,
+                    request,
                     cancellationToken);
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                _logger.LogWarning(ex, "Company with ID {id} not found.", request.Id);
                 return;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", request.Id);
                 throw;
             }
         }

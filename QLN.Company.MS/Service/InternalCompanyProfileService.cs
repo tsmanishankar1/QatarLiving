@@ -320,24 +320,25 @@ namespace QLN.Company.MS.Service
                 IsBasicProfile = dto.IsBasicProfile
             };
         }
-        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
                 var entity = await _context.Companies
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive, cancellationToken);
+                .FirstOrDefaultAsync(c => c.Id == request.Id && c.IsActive, cancellationToken);
 
                 if (entity == null)
-                    throw new KeyNotFoundException($"Company with ID {id} not found or already deleted.");
+                    throw new KeyNotFoundException($"Company with ID {request.Id} not found or already deleted.");
 
                 entity.IsActive = false;
                 entity.UpdatedUtc = DateTime.UtcNow;
+                entity.UpdatedBy = request.UpdatedBy;
 
                 await _context.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while soft deleting company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error while soft deleting company profile with ID: {Id}", request.Id);
                 throw;
             }
         }
@@ -346,21 +347,28 @@ namespace QLN.Company.MS.Service
             try
             {
                 var company = await _context.Companies
-                .FirstOrDefaultAsync(c => c.Id == dto.CompanyId, cancellationToken);
+                    .FirstOrDefaultAsync(c => c.Id == dto.CompanyId, cancellationToken);
 
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-                if (!company.IsActive)
+
+                if (!company.IsActive && dto.Status != VerifiedStatus.Removed)
                     throw new InvalidOperationException("Cannot approve an inactive company profile.");
 
                 company.Status = dto.Status;
+
+                if (dto.Status == VerifiedStatus.Removed)
+                {
+                    company.IsActive = false;
+                }
+
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
 
                 await _context.SaveChangesAsync(cancellationToken);
                 return "Company Profile Approved Successfully";
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException)
             {
                 throw;
             }
