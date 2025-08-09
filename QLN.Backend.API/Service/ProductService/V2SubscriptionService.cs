@@ -9,7 +9,6 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.DTO_s.Subscription;
 using System;
 using System.Linq;
-using static QLN.Common.DTO_s.Enums.Enum;
 using QLN.Common.DTO_s.Payments;
 
 namespace QLN.Backend.API.Service.ProductService
@@ -127,11 +126,12 @@ namespace QLN.Backend.API.Service.ProductService
                 {
                     SubscriptionId = subscriptionId,
                     ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
                     UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,              // ✅ map optional SubVertical
+                    SubVertical = product.SubVertical,             
                     Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
@@ -150,8 +150,8 @@ namespace QLN.Backend.API.Service.ProductService
                     UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,                    // ✅
-                    SubVertical = product.SubVertical,              // ✅
+                    Vertical = product.Vertical,                    
+                    SubVertical = product.SubVertical,              
                     Price = product.Price,
                     Currency = product.Currency,
                     Quota = dbSubscription.Quota,
@@ -377,12 +377,13 @@ namespace QLN.Backend.API.Service.ProductService
                 {
                     UserAddOnId = addonId,
                     ProductCode = product.ProductCode,
+                    ProductName = product.ProductName,
                     UserId = request.UserId,
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
-                    SubVertical = product.SubVertical,             // ✅ map optional SubVertical
+                    SubVertical = product.SubVertical,             
                     Quota = BuildAddonQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
@@ -402,8 +403,8 @@ namespace QLN.Backend.API.Service.ProductService
                     CompanyId = request.CompanyId,
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
-                    Vertical = product.Vertical,                   // ✅
-                    SubVertical = product.SubVertical,             // ✅
+                    Vertical = product.Vertical,                 
+                    SubVertical = product.SubVertical,           
                     Price = product.Price,
                     Currency = product.Currency,
                     Quota = dbAddon.Quota,

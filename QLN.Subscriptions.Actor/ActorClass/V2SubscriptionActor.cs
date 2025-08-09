@@ -13,7 +13,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Subscriptions.Actor.ActorClass
 {
@@ -22,12 +21,10 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string StateKey = "v2-subscription-data";
         private const string ReminderName = "CheckExpiryReminder";
         private const string PubSubName = "pubsub";
-        private const string ExpiredTopic = "subscription.expired";
 
         private readonly ILogger<V2SubscriptionActor> _logger;
         private readonly IServiceScopeFactory _scopeFactory;
 
-        // Small in-proc cache to reduce state-store hits
         private static readonly ConcurrentDictionary<string, V2SubscriptionDto> _mem = new();
 
         public V2SubscriptionActor(
@@ -45,7 +42,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         protected override async Task OnActivateAsync()
         {
             await base.OnActivateAsync();
-            // Schedule a reminder at next midnight UTC; repeat daily.
             await RegisterReminderAsync(
                 ReminderName,
                 null,
@@ -60,11 +56,9 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             try
             {
-                // Always sync from DB first so manual edits are seen.
                 var data = await SyncFromDatabaseAsync(force: true, CancellationToken.None);
                 if (data == null) return;
 
-                // If expired but not yet marked, flip state, DB, and publish event.
                 if (data.StatusId != V2Status.Expired && data.EndDate <= DateTime.UtcNow)
                 {
                     _logger.LogInformation("Subscription {Id} expired by reminder.", data.Id);
@@ -93,7 +87,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             ArgumentNullException.ThrowIfNull(data);
             data.lastUpdated = DateTime.UtcNow;
 
-            // Cache + state
             var key = this.Id.GetId();
             _mem[key] = data;
 
@@ -107,7 +100,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
         public async Task<V2SubscriptionDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
-            // Always sync from DB first (reflect manual changes).
             var data = await SyncFromDatabaseAsync(force: false, cancellationToken);
             return data;
         }
@@ -139,7 +131,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
             var ok = data.Quota.RecordUsage(action, qty);
             if (!ok) return false;
 
-            // Persist back to actor state (DB update is handled in your service layer when you call it explicitly)
             return await FastSetDataAsync(data, cancellationToken);
         }
 
@@ -163,14 +154,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
         {
             var key = this.Id.GetId();
 
-            // If we have memory cache and not forcing, return it (fast path),
-            // but still make sure DB hasn't changed critically by checking a simple marker if you keep one.
             if (!force && _mem.TryGetValue(key, out var cached))
             {
                 return cached;
             }
 
-            // Load from DB
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
 
@@ -183,15 +171,12 @@ namespace QLN.Subscriptions.Actor.ActorClass
 
             if (dbSub == null)
             {
-                // No DB row => keep current state but log
                 _logger.LogWarning("Subscription {Id} not found in DB during sync.", key);
                 return await TryReadFromStateAsync(ct);
             }
 
-            // Map DB -> V2 DTO
             var mapped = MapDbToV2Dto(dbSub);
 
-            // Compare with actor state; overwrite if different or if forced.
             var state = await TryReadFromStateAsync(ct);
             if (force || state == null || !AreEquivalent(state, mapped))
             {
@@ -224,13 +209,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
             if (a.StatusId != b.StatusId) return false;
             if (a.Vertical != b.Vertical) return false;
             if (a.SubVertical != b.SubVertical) return false;
-            // You can add deeper comparisons if needed (Price, Currency, Quota totals, etc.)
             return true;
         }
 
         private async Task MarkExpiredAndPublishAsync(V2SubscriptionDto data, CancellationToken ct)
         {
-            // 1) Update DB
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<QLSubscriptionContext>();
             var dapr = scope.ServiceProvider.GetRequiredService<DaprClient>();
@@ -243,12 +226,11 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 await db.SaveChangesAsync(ct);
             }
 
-            // 2) Update actor state
             data.StatusId = V2Status.Expired;
             data.lastUpdated = DateTime.UtcNow;
             await FastSetDataAsync(data, ct);
 
-            // 3) Publish event
+            var topic = GetExpiredTopicForVertical(data.Vertical);
             var ev = new V2SubscriptionExpiredEventDto
             {
                 SubscriptionId = data.Id,
@@ -262,10 +244,19 @@ namespace QLN.Subscriptions.Actor.ActorClass
                 Metadata = new System.Collections.Generic.Dictionary<string, object>()
             };
 
-            await dapr.PublishEventAsync(PubSubName, ExpiredTopic, ev, ct);
-            _logger.LogInformation("Published subscription.expired for {Id} (Vertical={Vertical}, SubVertical={SubVertical}).",
-                data.Id, data.Vertical, data.SubVertical?.ToString() ?? "null");
+            await dapr.PublishEventAsync(PubSubName, topic, ev, ct);
+            _logger.LogInformation("Published {Topic} for {Id} (Vertical={Vertical}, SubVertical={SubVertical}).",
+                topic, data.Id, data.Vertical, data.SubVertical?.ToString() ?? "null");
         }
+
+        private static string GetExpiredTopicForVertical(Vertical vertical) => vertical switch
+        {
+            Vertical.Classifieds => "subscription.expired.classifieds",
+            Vertical.Properties => "subscription.expired.properties",
+            Vertical.Services => "subscription.expired.services",
+            Vertical.Rewards => "subscription.expired.rewards",
+            _ => "subscription.expired.unknown"
+        };
 
         #endregion
 
@@ -288,15 +279,15 @@ namespace QLN.Subscriptions.Actor.ActorClass
             {
                 Id = dbSub.SubscriptionId,
                 ProductCode = dbSub.ProductCode,
-                ProductName = "Subscription", // optionally join to Product table
+                ProductName = dbSub.ProductName,
                 UserId = dbSub.UserId,
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
                 Vertical = dbSub.Vertical,
-                SubVertical = dbSub.SubVertical,
-                Price = 0, // optionally join to Product
+                SubVertical = dbSub.SubVertical, 
+                Price = 0, 
                 Currency = "QAR",
-                Quota = dbSub.Quota, // SubscriptionQuota
+                Quota = dbSub.Quota,
                 StartDate = dbSub.StartDate,
                 EndDate = dbSub.EndDate,
                 StatusId = dbSub.Status switch

@@ -7,7 +7,6 @@ using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
-using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Subscriptions.Actor.Service
 {

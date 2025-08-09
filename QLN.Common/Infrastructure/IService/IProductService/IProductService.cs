@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Common.Infrastructure.IService.IProductService
 {

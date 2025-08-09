@@ -7,7 +7,6 @@ using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.Net;
 using System.Text;
-using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Backend.API.Service.ProductService
 {

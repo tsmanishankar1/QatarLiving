@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static QLN.Common.DTO_s.Enums.Enum;
 
 namespace QLN.Common.DTO_s.Subscription
 {
@@ -15,7 +14,7 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
         public Vertical Vertical { get; set; }
-        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public ProductConstraints? Constraints { get; set; }
@@ -34,7 +33,7 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
         public Vertical Vertical { get; set; }
-        public Common.DTO_s.Enums.Enum.SubVertical? SubVertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public ProductConstraints Constraints { get; set; } = new();
