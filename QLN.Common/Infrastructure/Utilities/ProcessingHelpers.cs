@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace QLN.DataMigration.Helpers
+namespace QLN.Common.Infrastructure.Utilities
 {
     public static class ProcessingHelpers
     {

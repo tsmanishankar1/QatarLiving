@@ -125,6 +125,10 @@
             }
         }
 
+        public async Task<CategoriesResponse?> GetCategoriesFromDrupalAsync(CancellationToken cancellationToken)
+        {
+            return await _httpClient.GetFromJsonAsync<CategoriesResponse>(DrupalContentConstants.CategoriesPath, cancellationToken);
+        }
         public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
             string category_id,
             CancellationToken cancellationToken,
