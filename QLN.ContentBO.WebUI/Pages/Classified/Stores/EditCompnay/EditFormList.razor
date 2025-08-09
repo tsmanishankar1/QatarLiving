@@ -1,5 +1,4 @@
 @using QLN.ContentBO.WebUI.Components.PhoneNumberInput;
-
 @using QLN.ContentBO.WebUI.Models;
 @inherits EditFormListBase
 
@@ -192,7 +191,7 @@
                             {
                                 <div class="catification-file-info">
                                     <span class="catification-file-name">
-                                        @ShortFileName(Company.CertificateFileName, 10)
+                                        @ShortFileName(Company, 10)
                                     </span>
                                     <MudIconButton Icon="@Icons.Material.Outlined.Close"
                                                 Size="Size.Small"

@@ -7,7 +7,7 @@ using MudBlazor;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.EditCompnay
 {
-    public class EditCompnayBase : ComponentBase
+    public class EditCompanyBase : ComponentBase
     {
         [Inject] public NavigationManager Navigation { get; set; }
         protected EditCompany Company { get; set; } = new();
