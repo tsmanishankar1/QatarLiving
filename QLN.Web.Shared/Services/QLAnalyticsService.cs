@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using QLN.Web.Shared.Models;
 using QLN.Web.Shared.Services.Interface;
 using System;
@@ -57,27 +58,42 @@ namespace QLN.Web.Shared.Services
                 var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
                 var url = $"/analytics{urlSuffix}?{queryString}";
 
-                // Compose the body
-                var body = new Dictionary<string, object?>();
-                if (props.AdditionalTag != null)
-                    body["additional_tag"] = props.AdditionalTag;
 
-                // Add all other properties except Token and AnalyticType and AdditionalTag
-                var propsType = typeof(QLAnalyticsCallProps);
-                foreach (var prop in propsType.GetProperties())
+                // Initialize the body dictionary
+                var body = new Dictionary<string, object>();
+
+                // Compose the body based on AdditionalTag presence and BannerCode
+                if (props.AdditionalTag != null && props.AdditionalTag.TryGetValue("BannerCode", out var bannerCode) && !string.IsNullOrEmpty(bannerCode))
                 {
-                    if (prop.Name == nameof(QLAnalyticsCallProps.Token) ||
-                        prop.Name == nameof(QLAnalyticsCallProps.AnalyticType) ||
-                        prop.Name == nameof(QLAnalyticsCallProps.VerticalTag))
-                        continue;
+                    body["banner"] = bannerCode;
+                    body["impressions"] = new List<object>(); // Replace with actual impressions if needed
+                    body["url"] = props.Url ?? string.Empty;
+                }
+                else
+                {
+                    // Fallback body composition
+                    var propsType = typeof(QLAnalyticsCallProps);
 
-                    var value = prop.GetValue(props);
-                    if (value != null)
+                    foreach (var prop in propsType.GetProperties())
                     {
-                        // Convert PascalCase to snake_case for JSON keys
-                        var key = string.Concat(prop.Name.Select((x, i) =>
-                            i > 0 && char.IsUpper(x) ? "_" + char.ToLower(x) : char.ToLower(x).ToString()));
-                        body[key] = value;
+                        if (prop.Name == nameof(QLAnalyticsCallProps.Token) ||
+                            prop.Name == nameof(QLAnalyticsCallProps.AnalyticType) ||
+                            prop.Name == nameof(QLAnalyticsCallProps.VerticalTag))
+                            continue;
+
+                        var value = prop.GetValue(props);
+                        if (value != null)
+                        {
+                            // Convert PascalCase to snake_case for JSON keys
+                            var key = string.Concat(prop.Name.Select((x, i) =>
+                                i > 0 && char.IsUpper(x) ? "_" + char.ToLower(x) : char.ToLower(x).ToString()));
+                            body[key] = value;
+                        }
+                    }
+
+                    if (props.AdditionalTag != null)
+                    {
+                        body["additional_tag"] = props.AdditionalTag;
                     }
                 }
 
@@ -201,6 +217,7 @@ namespace QLN.Web.Shared.Services
                 sessionId
             );
         }
+
         public async Task TrackEventFromClientAsync(
             QLAnalyticsCallProps props,
             string browserId,
@@ -233,27 +250,43 @@ namespace QLN.Web.Shared.Services
                 }
 
                 var queryString = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-                var url = $"/analytics{urlSuffix}?{queryString}";
+                var url = $"{_httpClient.BaseAddress}analytics{urlSuffix}?{queryString}";
 
-                // Compose the body
-                var body = new Dictionary<string, object?>();
-                if (props.AdditionalTag != null)
-                    body["additional_tag"] = props.AdditionalTag;
+                // Initialize the body dictionary
+                var body = new Dictionary<string, object>();
 
-                var propsType = typeof(QLAnalyticsCallProps);
-                foreach (var prop in propsType.GetProperties())
+                // Compose the body based on AdditionalTag presence and BannerCode
+                if (props.AdditionalTag != null && props.AdditionalTag.TryGetValue("BannerCode", out var bannerCode) && !string.IsNullOrEmpty(bannerCode))
                 {
-                    if (prop.Name == nameof(QLAnalyticsCallProps.Token) ||
-                        prop.Name == nameof(QLAnalyticsCallProps.AnalyticType) ||
-                        prop.Name == nameof(QLAnalyticsCallProps.VerticalTag))
-                        continue;
+                    body["banner"] = bannerCode;
+                    body["impressions"] = new List<object>(); // Replace with actual impressions if needed
+                    body["url"] = props.Url ?? string.Empty;
+                }
+                else
+                {
+                    // Fallback body composition
+                    var propsType = typeof(QLAnalyticsCallProps);
 
-                    var value = prop.GetValue(props);
-                    if (value != null)
+                    foreach (var prop in propsType.GetProperties())
                     {
-                        var key = string.Concat(prop.Name.Select((x, i) =>
-                            i > 0 && char.IsUpper(x) ? "_" + char.ToLower(x) : char.ToLower(x).ToString()));
-                        body[key] = value;
+                        if (prop.Name == nameof(QLAnalyticsCallProps.Token) ||
+                            prop.Name == nameof(QLAnalyticsCallProps.AnalyticType) ||
+                            prop.Name == nameof(QLAnalyticsCallProps.VerticalTag))
+                            continue;
+
+                        var value = prop.GetValue(props);
+                        if (value != null)
+                        {
+                            // Convert PascalCase to snake_case for JSON keys
+                            var key = string.Concat(prop.Name.Select((x, i) =>
+                                i > 0 && char.IsUpper(x) ? "_" + char.ToLower(x) : char.ToLower(x).ToString()));
+                            body[key] = value;
+                        }
+                    }
+
+                    if (props.AdditionalTag != null)
+                    {
+                        body["additional_tag"] = props.AdditionalTag;
                     }
                 }
 

@@ -9,7 +9,7 @@
                 ActiveValue="@selectedTab"
                 OnChange="@OnTabChanged" />
     @if(Listings == null || !Listings.Any()){
-<EmptyCard Title="No Services Available" Subtitle="Please check back later or explore other categories." />
+<EmptyCard Title="No Verified Seller Requests Available" Subtitle="Please check back later or explore other categories." />
     }
     else{
         <MudTable Items="Listings"

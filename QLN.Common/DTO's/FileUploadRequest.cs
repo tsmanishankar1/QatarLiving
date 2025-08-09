@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -14,6 +15,10 @@ namespace QLN.Common.DTO_s
 
         [JsonPropertyName("file")]
         public string Base64 { get; set; }
+
+        [JsonPropertyName("filename")]
+        [DefaultValue("")]
+        public string? FileName { get; set; } = "";
 
     }
 }

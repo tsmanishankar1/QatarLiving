@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
-using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
+using QLN.Common.Infrastructure.Model;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -15,14 +15,12 @@ namespace QLN.Backend.API.Service.Services
     {
         private readonly DaprClient _dapr;
         private readonly ILogger<ExternalServicesService> _logger;
-        private readonly ISearchService _searchService;
-        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger, ISearchService searchService)
+        public ExternalServicesService(DaprClient dapr, ILogger<ExternalServicesService> logger)
         {
             _dapr = dapr;
             _logger = logger;
-            _searchService = searchService;
         }
-        public async Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public async Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken)
         {
             try
             {
@@ -58,7 +56,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -93,17 +91,28 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<ServicesCategory>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                var response = await _dapr.InvokeMethodAsync<List<ServicesCategory>>(
+                var query = new QueryString(string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(vertical))
+                    query = query.Add("vertical", vertical);
+
+                if (!string.IsNullOrWhiteSpace(subVertical))
+                    query = query.Add("subVertical", subVertical);
+
+                var uri = $"/api/service/getallcategories{query}";
+
+                var response = await _dapr.InvokeMethodAsync<List<CategoryDto>>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
-                    "/api/service/getallcategories",
+                    uri,
                     cancellationToken
                 );
-                return response ?? new List<ServicesCategory>();
+
+                return response ?? new List<CategoryDto>();
             }
             catch (Exception ex)
             {
@@ -111,12 +120,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/service/getbycategoryid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, ServicesCategory>(
+                return await _dapr.InvokeMethodAsync<object?, CategoryDto>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -164,7 +173,7 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 await response.Content.ReadAsStringAsync(cancellationToken);
-               
+
                 return "Service Ad Created Successfully";
             }
             catch (Exception ex)
@@ -173,7 +182,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateServiceAd(string userId, QLN.Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -208,30 +217,12 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var response = await _dapr.InvokeMethodAsync<List<ServicesModel>>(
-                    HttpMethod.Get,
-                    ConstantValues.Services.ServiceAppId,
-                    "/api/service/getall",
-                    cancellationToken
-                );
-                return response ?? new List<ServicesModel>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error retrieving service ads");
-                throw;
-            }
-        }
-        public async Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<QLN.Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"/api/service/getbyid/{id}";
-                return await _dapr.InvokeMethodAsync<object?, ServicesModel>(
+                return await _dapr.InvokeMethodAsync<object?, QLN.Common.Infrastructure.Model.Services>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
                     url,
@@ -251,7 +242,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -280,7 +271,6 @@ namespace QLN.Backend.API.Service.Services
                     }
                     throw new InvalidDataException(errorMessage);
                 }
-                await _searchService.DeleteAsync(ConstantValues.IndexNames.ServicesIndex, id.ToString());
                 return "Service ad deleted successfully.";
             }
             catch (Exception ex)
@@ -289,16 +279,14 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = "/api/service/getbystatus";
+                var url = "/api/service/getallwithpagination";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
-
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -306,24 +294,22 @@ namespace QLN.Backend.API.Service.Services
                     {
                         PropertyNameCaseInsensitive = true
                     });
-
                     throw new InvalidDataException(problem?.Detail ?? "Unknown error occurred.");
                 }
-
-                var result = await response.Content.ReadFromJsonAsync<ServicesPagedResponse<ServicesModel>>(cancellationToken: cancellationToken);
+                var result = await response.Content.ReadFromJsonAsync<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>>(cancellationToken: cancellationToken);
                 return result!;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error retrieving paged services by status");
+                _logger.LogError(ex, "Unexpected error retrieving paged services");
                 throw;
             }
         }
-        public async Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/promote";
+                var url = $"/api/service/promotebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -332,7 +318,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -358,11 +344,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/feature";
+                var url = $"/api/service/featurebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -371,7 +357,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -397,11 +383,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/refresh";
+                var url = $"/api/service/refreshbyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -410,7 +396,7 @@ namespace QLN.Backend.API.Service.Services
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     var json = await response.Content.ReadAsStringAsync(ct);
-                    var serviceDto = JsonSerializer.Deserialize<ServicesModel>(json, new JsonSerializerOptions
+                    var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(json, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
@@ -436,16 +422,17 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesModel> PublishService(Guid id, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = $"/api/service/publish?id={id}";
+                var url = $"/api/service/publishbyuserid?uid={uid}";
 
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
-                    url
+                    url,
+                    request
                 );
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
@@ -455,7 +442,7 @@ namespace QLN.Backend.API.Service.Services
                 switch (response.StatusCode)
                 {
                     case HttpStatusCode.OK:
-                        var serviceDto = JsonSerializer.Deserialize<ServicesModel>(errorJson, new JsonSerializerOptions
+                        var serviceDto = JsonSerializer.Deserialize<QLN.Common.Infrastructure.Model.Services>(errorJson, new JsonSerializerOptions
                         {
                             PropertyNameCaseInsensitive = true
                         });
@@ -494,7 +481,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        public async Task<List<QLN.Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -523,11 +510,11 @@ namespace QLN.Backend.API.Service.Services
                     throw new InvalidDataException(errorMessage);
                 }
                 var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                var moderatedAds = JsonSerializer.Deserialize<List<ServicesModel>>(json, new JsonSerializerOptions
+                var moderatedAds = JsonSerializer.Deserialize<List<QLN.Common.Infrastructure.Model.Services>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
-                return moderatedAds ?? new List<ServicesModel>();
+                return moderatedAds ?? new List<QLN.Common.Infrastructure.Model.Services>();
             }
             catch (Exception ex)
             {

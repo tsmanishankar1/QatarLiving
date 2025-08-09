@@ -4,6 +4,7 @@
     {
         public const string LandingPath = "/qlnapi/landing";
         public const string EventsPath = "/qlnapi/events";
+        public const string NewsPath = "/qlnapi/articles";
         public const string CategoriesPath = "/qlnapi/categories";
         public const string CommunityPath = "/qlnapi/community";
         public const string CommentsSavePath = "/qlnapi/comment/save";

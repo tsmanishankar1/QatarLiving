@@ -2,13 +2,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.DTO_s.Company;
 using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -190,7 +189,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 Conflict<string>,
                 ProblemHttpResult>>
             (
-                CompanyProfileModel dto,
+                QLN.Common.Infrastructure.Model.Company dto,
                 ICompanyProfileService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
@@ -205,7 +204,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     var isSubcriber = userData.GetProperty("roles").EnumerateArray()
                         .Any(r => r.GetString() == "subscription");
 
-                    var existingCompany = await service.GetCompanyById(dto.Id.Value, cancellationToken);
+                    var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
                     {
                         return TypedResults.NotFound(new ProblemDetails
@@ -272,7 +271,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 Conflict<string>,
                 ProblemHttpResult>>
             (
-                CompanyProfileModel dto,
+                QLN.Common.Infrastructure.Model.Company dto,
                 ICompanyProfileService service,
                 CancellationToken cancellationToken = default) =>
             {
@@ -385,7 +384,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapCompanyApproval(this RouteGroupBuilder group)
         {
-            group.MapPut("/approvecompany", async Task<IResult> (
+            group.MapPut("/action", async Task<IResult> (
             [FromBody] CompanyProfileApproveDto dto,
             [FromServices] ICompanyProfileService service,
             HttpContext httpContext,
@@ -432,7 +431,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
-            .WithSummary("Approve a company profile")
+            .WithSummary("Action for company profile")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -546,7 +545,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get company profiles for logged-in user")
             .WithDescription("Fetches all companies owned by the current token user")
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -593,52 +592,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Get companies by user ID")
             .WithDescription("Used internally by Dapr or system components.")
             .ExcludeFromDescription()
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            return group;
-        }
-        public static RouteGroupBuilder MapGetVerificationCompanyStatus(this RouteGroupBuilder group)
-        {
-            group.MapGet("/profileStatusbyverified", async Task<IResult> (
-                [FromQuery] VerticalType vertical,
-                [FromQuery] SubVertical? subVertical,
-                [FromServices] ICompanyProfileService service,
-                CancellationToken cancellationToken = default) =>
-            {
-                try
-                {
-                    var filtered = await service.GetAllVerificationProfiles(vertical, subVertical, cancellationToken);
-
-                    if (filtered == null || filtered.Count == 0)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "No company profiles matched the given vertical and subvertical.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(filtered);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("GetVerifedCompanyStatus")
-            .WithTags("Company")
-            .AllowAnonymous()
-            .WithSummary("Get filtered company profiles")
-            .WithDescription("Returns company profiles matching vertical and optional subvertical.")
-            .Produces<List<VerificationCompanyProfileStatus>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -676,7 +631,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get all verified company profiles with filters")
             .WithDescription("Fetches verified companies using a filter object with search, pagination, and sorting.")
-            .Produces<CompanyPaginatedResponse<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 

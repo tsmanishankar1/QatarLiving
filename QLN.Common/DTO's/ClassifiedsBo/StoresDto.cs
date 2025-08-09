@@ -19,10 +19,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int? PerPage { get; set; }
        
     }
-    public class XMLFileUploadDto
-    {
-        public string FileUrl { get; set; }
-    }
+   
     public class StoresSubscriptionDto
     {
         [Key]

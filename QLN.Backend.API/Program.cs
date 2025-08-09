@@ -137,12 +137,15 @@ builder.Services.Configure<IdentityOptions>(options =>
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -252,7 +255,7 @@ builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
 builder.Services.ProductsConfiguration(builder.Configuration);
-
+builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
 var app = builder.Build();
@@ -291,7 +294,6 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
-
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -341,7 +343,8 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-
+ var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
