@@ -5,6 +5,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -60,7 +61,7 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 ValidateEventSchedule(dto.EventSchedule);
                 var id = Guid.NewGuid();
-                var slug = GenerateSlug(dto.EventTitle);
+                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
                 var entity = new V2Events
                 {
                     Id = id,
@@ -111,6 +112,25 @@ namespace QLN.Content.MS.Service.EventInternalService
                         cancellationToken: cancellationToken
                     );
                 }
+
+                var upsertRequest = await IndexEventToAzureSearch(entity, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
                 return "Event created successfully.";
             }
             catch (ArgumentException ex)
@@ -166,16 +186,16 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
             }
         }
-        private string GenerateSlug(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-            return slug;
-        }
+        //private string GenerateSlug(string title)
+        //{
+        //    if (string.IsNullOrWhiteSpace(title)) return string.Empty;
+        //    var slug = title.ToLowerInvariant().Trim();
+        //    slug = Regex.Replace(slug, @"[\s_]+", "-");
+        //    slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
+        //    slug = Regex.Replace(slug, @"-+", "-");
+        //    slug = slug.Trim('-');
+        //    return slug;
+        //}
         public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
         {
             var keys = await _dapr.GetStateAsync<List<string>>(
@@ -360,7 +380,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     }
                 }
 
-                var slug = GenerateSlug(dto.EventTitle);
+                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
 
                 var updated = new V2Events
                 {
@@ -400,6 +420,24 @@ namespace QLN.Content.MS.Service.EventInternalService
                     dto.Id.ToString(),
                     updated,
                     cancellationToken: cancellationToken);
+
+                var upsertRequest = await IndexEventToAzureSearch(updated, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 _log.LogInformation("Event {EventId} updated successfully by user {UserId}", dto.Id, userId);
 
@@ -527,6 +565,24 @@ namespace QLN.Content.MS.Service.EventInternalService
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
+
+            var upsertRequest = await IndexEventToAzureSearch(existing, cancellationToken);
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
 
             return "Event Soft Deleted Successfully";
         }
@@ -1210,6 +1266,60 @@ namespace QLN.Content.MS.Service.EventInternalService
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
             return "Event unfeatured and removed from slot successfully";
+        }
+
+        private async Task<CommonIndexRequest> IndexEventToAzureSearch(QLN.Common.DTO_s.V2Events dto, CancellationToken cancellationToken)
+        {
+
+            var indexDoc = new ContentEventsIndex
+            {
+                Id = dto.Id.ToString(),
+                EventTitle = dto.EventTitle,
+                EventType = dto.EventType,
+                EventDescription = dto.EventDescription,
+                CategoryId = dto.CategoryId,
+                CategoryName = dto.CategoryName,
+                CoverImage = dto.CoverImage,
+                FeaturedSlot = new SlotIndex { 
+                    Id = dto.FeaturedSlot.Id, 
+                    Name = dto.FeaturedSlot.Name 
+                },
+                IsFeatured = dto.IsFeatured,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                Price = dto.Price,
+                RedirectionLink = dto.RedirectionLink,
+                Status = dto.Status,
+                Slug = dto.Slug,
+                PublishedDate = dto.PublishedDate,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                EventSchedule = new EventScheduleIndex
+                {
+                    StartDate = dto.EventSchedule.StartDate,
+                    EndDate = dto.EventSchedule.EndDate,
+                    GeneralTextTime = dto.EventSchedule.GeneralTextTime,
+                    TimeSlotType = dto.EventSchedule.TimeSlotType,
+                    TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex
+                    {
+                        DayOfWeek = i.DayOfWeek,
+                        TextTime = i.TextTime
+                    }).ToList()
+                }
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentEventsIndex,
+                ContentEventsItem = indexDoc
+            };
+            return indexRequest;
+
         }
     }
 }

@@ -1,13 +1,17 @@
 ﻿using Dapr.Client;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.IService.V2IContent;
-using System.Text.Json;
-using static QLN.Common.DTO_s.CommunityBo;
-using System.Text.RegularExpressions;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.IService.V2IContent;
+using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading;
+using static QLN.Common.DTO_s.CommunityBo;
 
 
- 
+
 namespace QLN.Content.MS.Service.CommunityInternalService
 {
     public class V2InternalCommunityPostService : IV2CommunityPostService
@@ -34,7 +38,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.UpdatedBy = userId;
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;
-            dto.Slug = GenerateSlug(dto.Title);
+            dto.Slug = ProcessingHelpers.GenerateSlug(dto.Title);
             var key = GetKey(dto.Id);
 
             try
@@ -48,6 +52,24 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 {
                     index.Add(key);
                     await _dapr.SaveStateAsync(StoreName, IndexKey, index, cancellationToken: ct);
+                }
+
+                var upsertRequest = await IndexCommunityPostToAzureSearch(dto, cancellationToken: ct);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: ct
+                    );
                 }
 
                 return "Community post created successfully";
@@ -220,16 +242,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException($"Error retrieving post with ID: {id}", ex);
             }
         }
-        private string GenerateSlug(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-            return slug;
-        }
+        //private string GenerateSlug(string title)
+        //{
+        //    if (string.IsNullOrWhiteSpace(title)) return string.Empty;
+        //    var slug = title.ToLowerInvariant().Trim();
+        //    slug = Regex.Replace(slug, @"[\s_]+", "-");
+        //    slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
+        //    slug = Regex.Replace(slug, @"-+", "-");
+        //    slug = slug.Trim('-');
+        //    return slug;
+        //}
         public Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             var categories = new List<ForumCategoryDto>
@@ -289,6 +311,24 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             post.UpdatedDate = DateTime.UtcNow;
 
             await _dapr.SaveStateAsync(StoreName, key, post, cancellationToken: ct);
+
+            var upsertRequest = await IndexCommunityPostToAzureSearch(post, cancellationToken: ct);
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: ct
+                );
+            }
 
             return true;
         }
@@ -864,12 +904,37 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             }
         }
 
+        private async Task<CommonIndexRequest> IndexCommunityPostToAzureSearch(QLN.Common.DTO_s.V2CommunityPostDto dto, CancellationToken cancellationToken)
+        {
 
+            var indexDoc = new ContentCommunityIndex
+            {
+                Id = dto.Id.ToString(),
+                UserName = dto.UserName,
+                Title = dto.Title,
+                Slug = dto.Slug,
+                Description = dto.Description,
+                Category = dto.Category,
+                CategoryId = dto.CategoryId,
+                CommentedUserIds = dto.CommentedUserIds,
+                CommentCount = dto.CommentCount,
+                LikedUserIds = dto.LikedUserIds,
+                LikeCount = dto.LikeCount,
+                ImageUrl = dto.ImageUrl,
+                UserId = dto.UserId,
+                IsActive = dto.IsActive,
+                DateCreated = dto.DateCreated,
+                UpdatedBy = dto.UpdatedBy,
+                UpdatedDate = dto.UpdatedDate
+            };
 
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentCommunityIndex,
+                ContentCommunityItem = indexDoc
+            };
+            return indexRequest;
 
-
-
-
-
+        }
     }
 }
