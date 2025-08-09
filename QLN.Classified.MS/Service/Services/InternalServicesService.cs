@@ -623,36 +623,44 @@ namespace QLN.Classified.MS.Service.Services
         }
         public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
-            var ad = await _dbContext.Services
-                .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
-
-            if (ad == null)
-                throw new InvalidDataException("Active Service Ad not found.");
-            ad.IsActive = false;
-            ad.UpdatedAt = DateTime.UtcNow;
-            ad.UpdatedBy = userId;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            var upsertRequest = await IndexServiceToAzureSearch(ad, cancellationToken);
-            if (upsertRequest != null)
+            try
             {
-                var message = new IndexMessage
+                var ad = await _dbContext.Services
+                    .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+                if (ad == null)
+                    throw new InvalidDataException("Active Service Ad not found.");
+
+                ad.IsActive = false;
+                ad.UpdatedAt = DateTime.UtcNow;
+                ad.UpdatedBy = userId;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(ad, cancellationToken);
+                if (upsertRequest != null)
                 {
-                    Action = "Upsert",
-                    Vertical = ConstantValues.IndexNames.ServicesIndex,
-                    UpsertRequest = upsertRequest
-                };
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
 
-                await _dapr.PublishEventAsync(
-                    pubsubName: ConstantValues.PubSubName,
-                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                    data: message,
-                    cancellationToken: cancellationToken
-                );
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad soft-deleted successfully.";
             }
-
-            return "Service Ad soft-deleted successfully.";
+            catch (Exception ex)
+            {
+                throw; 
+            }
         }
         public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
@@ -796,7 +804,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -806,6 +814,7 @@ namespace QLN.Classified.MS.Service.Services
 
             serviceAd.IsPromoted = request.IsPromoted;
             serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(ct);
@@ -830,7 +839,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -840,6 +849,7 @@ namespace QLN.Classified.MS.Service.Services
 
             serviceAd.IsFeatured = request.IsFeature;
             serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             _dbContext.Services.Update(serviceAd);
@@ -866,7 +876,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -875,6 +885,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
             serviceAd.LastRefreshedOn = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.IsRefreshed = serviceAd.LastRefreshedOn.HasValue && serviceAd.LastRefreshedOn.Value > DateTime.UtcNow;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             _dbContext.Services.Update(serviceAd);
@@ -901,32 +912,50 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(long id, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
-            var serviceAd = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == id && s.IsActive, ct);
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
             if (serviceAd == null)
                 throw new KeyNotFoundException("Service Ad not found.");
 
-            var conflictExists = await _dbContext.Services.AnyAsync(s =>
-                s.Id != id &&
-                s.CreatedBy == serviceAd.CreatedBy &&
-                s.L2CategoryId == serviceAd.L2CategoryId &&
-                s.IsActive &&
-                s.Status == ServiceStatus.Published, ct);
-
-            if (conflictExists)
+            if (request.Status == ServiceStatus.Published)
             {
-                throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                var conflictExists = await _dbContext.Services.AnyAsync(s =>
+                    s.Id != request.ServiceId &&
+                    s.CreatedBy == serviceAd.CreatedBy &&
+                    s.L2CategoryId == serviceAd.L2CategoryId &&
+                    s.IsActive &&
+                    s.Status == ServiceStatus.Published, ct);
+
+                if (conflictExists)
+                {
+                    throw new ConflictException(
+                        "You already have an active ad in this category. Please unpublish or remove it before posting another."
+                    );
+                }
+
+                if (serviceAd.Status == ServiceStatus.Published)
+                    throw new InvalidDataException("Service is already published.");
+
+                serviceAd.Status = ServiceStatus.Published;
+                serviceAd.PublishedDate = DateTime.UtcNow;
+            }
+            else if (request.Status == ServiceStatus.Unpublished)
+            {
+                if (serviceAd.Status == ServiceStatus.Unpublished)
+                    throw new InvalidDataException("Service is already unpublished.");
+
+                serviceAd.Status = ServiceStatus.Unpublished;
+                serviceAd.PublishedDate = null; 
+            }
+            else
+            {
+                throw new InvalidDataException("Invalid status. Only Published (3) or Unpublished (4) are allowed.");
             }
 
-            if (serviceAd.Status == ServiceStatus.Published)
-                throw new InvalidDataException("Service is already published.");
-
-            if (serviceAd.Status != ServiceStatus.Unpublished)
-                throw new InvalidDataException("Only unpublished services can be published.");
-
-            serviceAd.Status = ServiceStatus.Published;
-            serviceAd.PublishedDate = DateTime.UtcNow;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(ct);

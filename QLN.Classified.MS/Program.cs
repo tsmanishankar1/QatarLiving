@@ -50,16 +50,13 @@ builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(dataSource));
-
-
-#endregion
-
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(dataSource));
-
-
 builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(dataSource));
+#endregion
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
