@@ -145,6 +145,8 @@ builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLSubscriptionContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -253,7 +255,6 @@ builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
 builder.Services.ProductsConfiguration(builder.Configuration);
-
 builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
@@ -293,7 +294,6 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
-
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");

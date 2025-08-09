@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 {
     public class PrelovedAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
