@@ -318,7 +318,8 @@ analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
 app.MapGroup("/api/v2/subscriptions")
-    .MapV2SubscriptionEndpoints();
+    .MapV2SubscriptionEndpoints()
+    .RequireAuthorization();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
@@ -355,7 +356,8 @@ var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
 
 var Product = app.MapGroup("/api/products");
-Product.MapProductEndpoints();
+Product.MapProductEndpoints()
+    .RequireAuthorization();
 
 app.MapGet("/testauth", (HttpContext context) =>
 {

@@ -1301,8 +1301,8 @@ namespace QLN.Content.MS.Service.EventInternalService
                 UpdatedBy = dto.UpdatedBy,
                 EventSchedule = new EventScheduleIndex
                 {
-                    StartDate = dto.EventSchedule.StartDate,
-                    EndDate = dto.EventSchedule.EndDate,
+                    StartDate = dto.EventSchedule.StartDate.FromDateOnly(),
+                    EndDate = dto.EventSchedule.EndDate.FromDateOnly(),
                     GeneralTextTime = dto.EventSchedule.GeneralTextTime,
                     TimeSlotType = dto.EventSchedule.TimeSlotType,
                     TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex

@@ -37,6 +37,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetAllProducts")
             .WithTags("Products")
             .WithSummary("Get all active products")
@@ -71,6 +72,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetProductsByVertical")
             .WithTags("Products")
             .WithSummary("Get products by vertical")
@@ -106,6 +108,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetProductsByType")
             .WithTags("Products")
             .WithSummary("Get products by type")
@@ -142,6 +145,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints
                         statusCode: StatusCodes.Status500InternalServerError);
                 }
             })
+            .AllowAnonymous()
             .WithName("GetProductByCode")
             .WithTags("Products")
             .WithSummary("Get product by code")
