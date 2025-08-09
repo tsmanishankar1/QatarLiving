@@ -25,7 +25,7 @@ namespace QLN.Common.Migrations.QLSubscription
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Constraints = table.Column<string>(type: "jsonb", nullable: false)
+                    Constraints = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -62,14 +62,15 @@ namespace QLN.Common.Migrations.QLSubscription
                     ProductCode = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
                     UserId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
                     PaymentId = table.Column<int>(type: "integer", maxLength: 100, nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Quota = table.Column<string>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {

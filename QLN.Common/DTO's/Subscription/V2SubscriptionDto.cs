@@ -24,7 +24,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionVertical VerticalTypeId { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
-        public Dictionary<string, string> Quota { get; set; } = new();
+        public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public V2Status StatusId { get; set; }
@@ -47,7 +47,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionVertical VerticalTypeId { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
-        public Dictionary<string, string> Quota { get; set; } = new();
+        public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public V2Status StatusId { get; set; }
@@ -182,7 +182,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionVertical VerticalTypeId { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
-        public Dictionary<string, string> Quota { get; set; } = new();
+        public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public V2Status StatusId { get; set; }
@@ -206,7 +206,7 @@ namespace QLN.Common.DTO_s.Subscription
         public SubscriptionVertical VerticalTypeId { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
-        public Dictionary<string, string> Quota { get; set; } = new();
+        public SubscriptionQuota Quota { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public V2Status StatusId { get; set; }

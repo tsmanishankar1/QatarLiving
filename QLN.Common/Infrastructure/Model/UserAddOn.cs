@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -33,7 +34,7 @@ namespace QLN.Common.Infrastructure.Model
 
         [Required]
         public SubscriptionVertical Vertical { get; set; }
-
+        public SubscriptionQuota Quota { get; set; } = new();
         [Required]
         public DateTime StartDate { get; set; }
 

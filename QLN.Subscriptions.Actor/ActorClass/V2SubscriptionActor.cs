@@ -1,6 +1,9 @@
 ﻿using Dapr.Actors.Runtime;
+using Microsoft.EntityFrameworkCore.ChangeTracking.Internal;
+using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.Model;
 using System.Collections.Concurrent;
 
 namespace QLN.Subscriptions.Actor.ActorClass
@@ -10,7 +13,6 @@ namespace QLN.Subscriptions.Actor.ActorClass
         private const string V2StateKey = "v2-subscription-data";
         private readonly ILogger<V2SubscriptionActor> _logger;
 
-        // Memory cache pattern for performance
         private static readonly ConcurrentDictionary<string, V2SubscriptionDto> _v2MemoryCache = new();
         private static volatile bool _v2StateStoreUnstable = false;
         private static DateTime _v2LastStateStoreFailure = DateTime.MinValue;
@@ -25,298 +27,134 @@ namespace QLN.Subscriptions.Actor.ActorClass
         public async Task<bool> FastSetDataAsync(V2SubscriptionDto data, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(data);
-            var start = DateTime.UtcNow;
             var actorKey = Id.ToString();
 
-            try
-            {
-                _logger.LogInformation("[V2SubscriptionActor {ActorId}] FastSetDataAsync started for subscription {ProductCode}",
-                    actorKey, data.ProductCode);
+            data.lastUpdated = DateTime.UtcNow;
+            _v2MemoryCache[actorKey] = data;
 
-                data.lastUpdated = DateTime.UtcNow;
-                _v2MemoryCache[actorKey] = data;
-
-                // Check circuit breaker
-                if (_v2StateStoreUnstable && DateTime.UtcNow - _v2LastStateStoreFailure < _v2CircuitBreakDuration)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {ActorId}] State store circuit breaker active - using memory cache only", actorKey);
-                    return true;
-                }
-
-                // Try to save to state store with throttling
-                if (await _v2StateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
-                {
-                    try
-                    {
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
-
-                        await StateManager.SetStateAsync(V2StateKey, data, linkedCts.Token);
-                        await StateManager.SaveStateAsync(linkedCts.Token);
-
-                        _v2StateStoreUnstable = false;
-                        _logger.LogInformation("[V2SubscriptionActor {ActorId}] Data saved to state store successfully", actorKey);
-                    }
-                    catch (Exception ex) when (ex is OperationCanceledException || ex is TaskCanceledException)
-                    {
-                        _v2StateStoreUnstable = true;
-                        _v2LastStateStoreFailure = DateTime.UtcNow;
-                        _logger.LogWarning(ex, "[V2SubscriptionActor {ActorId}] State store operation failed, using memory cache", actorKey);
-                    }
-                    finally
-                    {
-                        _v2StateStoreThrottle.Release();
-                    }
-                }
-
-                var duration = DateTime.UtcNow - start;
-                _logger.LogInformation("[V2SubscriptionActor {ActorId}] FastSetDataAsync completed in {Duration}ms",
-                    actorKey, duration.TotalMilliseconds);
-
+            if (_v2StateStoreUnstable && DateTime.UtcNow - _v2LastStateStoreFailure < _v2CircuitBreakDuration)
                 return true;
-            }
-            catch (Exception ex)
+
+            if (await _v2StateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
             {
-                var duration = DateTime.UtcNow - start;
-                _logger.LogError(ex, "[V2SubscriptionActor {ActorId}] Critical error in FastSetDataAsync after {Duration}ms",
-                    actorKey, duration.TotalMilliseconds);
-                throw;
+                try
+                {
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
+
+                    await StateManager.SetStateAsync(V2StateKey, data, linkedCts.Token);
+                    await StateManager.SaveStateAsync(linkedCts.Token);
+
+                    _v2StateStoreUnstable = false;
+                }
+                catch (Exception)
+                {
+                    _v2StateStoreUnstable = true;
+                    _v2LastStateStoreFailure = DateTime.UtcNow;
+                }
+                finally
+                {
+                    _v2StateStoreThrottle.Release();
+                }
             }
+
+            return true;
         }
 
-        public async Task<bool> SetDataAsync(V2SubscriptionDto data, CancellationToken cancellationToken = default)
-        {
-            return await FastSetDataAsync(data, cancellationToken);
-        }
+        public Task<bool> SetDataAsync(V2SubscriptionDto data, CancellationToken cancellationToken = default)
+            => FastSetDataAsync(data, cancellationToken);
 
         public async Task<V2SubscriptionDto?> GetDataAsync(CancellationToken cancellationToken = default)
         {
             var actorKey = Id.ToString();
 
-            try
+            if (_v2MemoryCache.TryGetValue(actorKey, out var cachedData))
+                return cachedData;
+
+            if (_v2StateStoreUnstable && DateTime.UtcNow - _v2LastStateStoreFailure < _v2CircuitBreakDuration)
+                return null;
+
+            if (await _v2StateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
             {
-                _logger.LogInformation("[V2SubscriptionActor {ActorId}] GetDataAsync started", actorKey);
-
-                // Check memory cache first
-                if (_v2MemoryCache.TryGetValue(actorKey, out var cachedData))
+                try
                 {
-                    _logger.LogInformation("[V2SubscriptionActor {ActorId}] Returning data from memory cache", actorKey);
-                    return cachedData;
+                    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
+
+                    var conditionalValue = await StateManager.TryGetStateAsync<V2SubscriptionDto>(V2StateKey, linkedCts.Token);
+                    if (!conditionalValue.HasValue) return null;
+
+                    var data = conditionalValue.Value;
+                    if (data != null) _v2MemoryCache[actorKey] = data;
+
+                    _v2StateStoreUnstable = false;
+                    return data;
                 }
-
-                // Check circuit breaker
-                if (_v2StateStoreUnstable && DateTime.UtcNow - _v2LastStateStoreFailure < _v2CircuitBreakDuration)
+                catch (Exception)
                 {
-                    _logger.LogWarning("[V2SubscriptionActor {ActorId}] State store circuit breaker active and no data in memory cache", actorKey);
+                    _v2StateStoreUnstable = true;
+                    _v2LastStateStoreFailure = DateTime.UtcNow;
                     return null;
                 }
-
-                // Try to get from state store
-                if (await _v2StateStoreThrottle.WaitAsync(TimeSpan.FromMilliseconds(500), cancellationToken))
+                finally
                 {
-                    try
-                    {
-                        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(timeoutCts.Token, cancellationToken);
-
-                        var conditionalValue = await StateManager.TryGetStateAsync<V2SubscriptionDto>(V2StateKey, linkedCts.Token);
-
-                        if (!conditionalValue.HasValue)
-                        {
-                            _logger.LogInformation("[V2SubscriptionActor {ActorId}] No data found in state store", actorKey);
-                            return null;
-                        }
-
-                        var data = conditionalValue.Value;
-                        if (data != null)
-                        {
-                            _v2MemoryCache[actorKey] = data;
-                            _logger.LogInformation("[V2SubscriptionActor {ActorId}] Data loaded from state store and cached", actorKey);
-                        }
-
-                        _v2StateStoreUnstable = false;
-                        return data;
-                    }
-                    catch (Exception ex) when (ex is OperationCanceledException || ex is TaskCanceledException)
-                    {
-                        _v2StateStoreUnstable = true;
-                        _v2LastStateStoreFailure = DateTime.UtcNow;
-                        _logger.LogWarning(ex, "[V2SubscriptionActor {ActorId}] State store operation failed", actorKey);
-                        return null;
-                    }
-                    finally
-                    {
-                        _v2StateStoreThrottle.Release();
-                    }
-                }
-                else
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {ActorId}] State store semaphore timeout", actorKey);
-                    return null;
+                    _v2StateStoreThrottle.Release();
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[V2SubscriptionActor {ActorId}] Critical error in GetDataAsync", actorKey);
-                throw;
-            }
+
+            return null;
         }
 
         public async Task<bool> ValidateUsageAsync(string quotaType, decimal requestedAmount, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var data = await GetDataAsync(cancellationToken);
-                if (data == null)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {Id}] Subscription not found for usage validation", Id);
-                    return false;
-                }
+            var data = await GetDataAsync(cancellationToken);
+            if (data == null) return false;
 
-                // Check if subscription is active and not expired
-                if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {Id}] Subscription is not active or expired. Status: {Status}, EndDate: {EndDate}",
-                        Id, data.StatusId, data.EndDate);
-                    return false;
-                }
-
-                // Get current quota for the specified type
-                var currentQuota = GetCurrentQuota(data, quotaType);
-                var hasEnoughQuota = currentQuota >= requestedAmount;
-
-                _logger.LogInformation("[V2SubscriptionActor {Id}] Usage validation: {QuotaType}={CurrentQuota}, Requested={RequestedAmount}, Valid={IsValid}",
-                    Id, quotaType, currentQuota, requestedAmount, hasEnoughQuota);
-
-                return hasEnoughQuota;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[V2SubscriptionActor {Id}] Error validating usage", Id);
+            if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
-            }
+
+            var qty = (int)Math.Ceiling(requestedAmount);
+            var action = MapQuotaTypeToAction(quotaType);
+            var result = data.Quota.ValidateAction(action, qty);
+            return result.IsValid;
         }
 
         public async Task<bool> RecordUsageAsync(string quotaType, decimal amount, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var data = await GetDataAsync(cancellationToken);
-                if (data == null)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {Id}] Subscription not found for usage recording", Id);
-                    return false;
-                }
+            var data = await GetDataAsync(cancellationToken);
+            if (data == null) return false;
 
-                // Check if subscription is active
-                if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {Id}] Cannot record usage for inactive/expired subscription", Id);
-                    return false;
-                }
-
-                // Decrement quota
-                var success = DecrementQuota(data, quotaType, amount);
-                if (!success)
-                {
-                    _logger.LogWarning("[V2SubscriptionActor {Id}] Failed to decrement quota {QuotaType} by {Amount}", Id, quotaType, amount);
-                    return false;
-                }
-
-                // Save updated data
-                var result = await FastSetDataAsync(data, cancellationToken);
-
-                _logger.LogInformation("[V2SubscriptionActor {Id}] Usage recorded: {Amount} {QuotaType}. Remaining: {Remaining}",
-                    Id, amount, quotaType, GetCurrentQuota(data, quotaType));
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[V2SubscriptionActor {Id}] Error recording usage", Id);
+            if (data.StatusId != V2Status.Active || data.EndDate <= DateTime.UtcNow)
                 return false;
-            }
+
+            var qty = (int)Math.Ceiling(amount);
+            var action = MapQuotaTypeToAction(quotaType);
+
+            var success = data.Quota.RecordUsage(action, qty);
+            if (!success) return false;
+
+            data.lastUpdated = DateTime.UtcNow;
+            return await FastSetDataAsync(data, cancellationToken);
         }
 
         public async Task<bool> IsActiveAsync(CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var data = await GetDataAsync(cancellationToken);
-                var isActive = data != null &&
-                              data.StatusId == V2Status.Active &&
-                              data.EndDate > DateTime.UtcNow;
-
-                _logger.LogInformation("[V2SubscriptionActor {Id}] IsActive check: {IsActive}", Id, isActive);
-                return isActive;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[V2SubscriptionActor {Id}] Error checking if subscription is active", Id);
-                return false;
-            }
+            var data = await GetDataAsync(cancellationToken);
+            return data != null && data.StatusId == V2Status.Active && data.EndDate > DateTime.UtcNow;
         }
 
-        #region Helper Methods
-
-        private decimal GetCurrentQuota(V2SubscriptionDto data, string quotaType)
-        {
-            if (data.Quota.TryGetValue(quotaType, out var quotaValue))
+        private static string MapQuotaTypeToAction(string quotaType) =>
+            (quotaType ?? string.Empty).ToLower() switch
             {
-                if (decimal.TryParse(quotaValue, out var result))
-                {
-                    return result;
-                }
-            }
+                V2QuotaTypes.AdsBudget => ActionTypes.Publish,
+                V2QuotaTypes.PromoteBudget => ActionTypes.Promote,
+                V2QuotaTypes.FeatureBudget => ActionTypes.Feature,
+                V2QuotaTypes.RefreshBudget => ActionTypes.Refresh,
+                V2QuotaTypes.SocialMediaPosts => ActionTypes.SocialMediaPost,
+                _ => quotaType?.ToLower() ?? string.Empty
+            };
 
-            _logger.LogWarning("[V2SubscriptionActor {Id}] Quota type '{QuotaType}' not found or invalid", Id, quotaType);
-            return 0;
-        }
-
-        private bool DecrementQuota(V2SubscriptionDto data, string quotaType, decimal amount)
-        {
-            if (!data.Quota.TryGetValue(quotaType, out var quotaValue))
-            {
-                _logger.LogWarning("[V2SubscriptionActor {Id}] Quota type '{QuotaType}' not found", Id, quotaType);
-                return false;
-            }
-
-            if (!decimal.TryParse(quotaValue, out var currentQuota))
-            {
-                _logger.LogWarning("[V2SubscriptionActor {Id}] Invalid quota value for '{QuotaType}': {Value}", Id, quotaType, quotaValue);
-                return false;
-            }
-
-            if (currentQuota < amount)
-            {
-                _logger.LogWarning("[V2SubscriptionActor {Id}] Insufficient quota. Current: {Current}, Requested: {Requested}",
-                    Id, currentQuota, amount);
-                return false;
-            }
-
-            var newQuota = Math.Max(0, currentQuota - amount);
-            data.Quota[quotaType] = newQuota.ToString();
-            data.lastUpdated = DateTime.UtcNow;
-
-            return true;
-        }
-
-        #endregion
-
-        #region Actor Lifecycle
-
-        protected override Task OnActivateAsync()
-        {
-            _logger.LogInformation("[V2SubscriptionActor {Id}] Actor activated", Id);
-            return base.OnActivateAsync();
-        }
-
-        protected override Task OnDeactivateAsync()
-        {
-            _logger.LogInformation("[V2SubscriptionActor {Id}] Actor deactivated", Id);
-            return base.OnDeactivateAsync();
-        }
-
-        #endregion
+        protected override Task OnActivateAsync() => base.OnActivateAsync();
+        protected override Task OnDeactivateAsync() => base.OnDeactivateAsync();
     }
 }

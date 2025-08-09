@@ -1,20 +1,16 @@
 ﻿using Dapr.Actors.Client;
 using Dapr.Actors;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
-using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
-using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.DTO_s.Subscription;
 using System;
-using System.Collections.Concurrent;
-using QLN.Common.DTO_s.Payments;
-using static QLN.Common.DTO_s.Enums.Enum;
 using System.Linq;
+using static QLN.Common.DTO_s.Enums.Enum;
+using QLN.Common.DTO_s.Payments;
 
 namespace QLN.Backend.API.Service.ProductService
 {
@@ -65,22 +61,18 @@ namespace QLN.Backend.API.Service.ProductService
             CancellationToken cancellationToken = default)
         {
             var resultList = new List<V2SubscriptionResponseDto>();
-
-            // Convert to your actual enum
             var vertical = (SubscriptionVertical)verticalTypeId;
 
-            // Get active subscriptions from database by vertical
             var dbSubscriptions = await _context.Subscriptions
                 .Where(s => (int)s.Vertical == verticalTypeId &&
-                           s.Status == SubscriptionStatus.Active &&
-                           s.EndDate > DateTime.UtcNow)
+                            s.Status == SubscriptionStatus.Active &&
+                            s.EndDate > DateTime.UtcNow)
                 .ToListAsync(cancellationToken);
 
             foreach (var dbSub in dbSubscriptions)
             {
                 try
                 {
-                    // Try to get from actor first for performance
                     var actor = GetV2SubscriptionActorProxy(dbSub.SubscriptionId);
                     var actorData = await actor.GetDataAsync(cancellationToken);
 
@@ -90,7 +82,6 @@ namespace QLN.Backend.API.Service.ProductService
                     }
                     else
                     {
-                        // Fallback to database data and sync to actor
                         var v2Data = MapDbToV2Dto(dbSub);
                         await actor.FastSetDataAsync(v2Data, cancellationToken);
                         resultList.Add(MapToResponseDto(v2Data));
@@ -99,7 +90,6 @@ namespace QLN.Backend.API.Service.ProductService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error getting subscription data for ID: {Id}", dbSub.SubscriptionId);
-                    // Fallback to database data
                     var v2Data = MapDbToV2Dto(dbSub);
                     resultList.Add(MapToResponseDto(v2Data));
                 }
@@ -122,24 +112,17 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Get the product details
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
 
                 if (product == null)
-                {
                     throw new InvalidOperationException($"Product with code {request.ProductCode} not found or inactive");
-                }
 
-                // Validate product type is subscription
                 if (product.ProductType != ProductType.SUBSCRIPTION)
-                {
                     throw new InvalidOperationException($"Product {request.ProductCode} is not a subscription product");
-                }
 
                 var subscriptionId = Guid.NewGuid();
 
-                // Create database subscription entity
                 var dbSubscription = new Subscription
                 {
                     SubscriptionId = subscriptionId,
@@ -148,7 +131,7 @@ namespace QLN.Backend.API.Service.ProductService
                     CompanyId = request.CompanyId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
-                    Quota = ExtractQuotaFromProduct(product),
+                    Quota = BuildSubscriptionQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
                     Status = SubscriptionStatus.Active,
@@ -158,7 +141,6 @@ namespace QLN.Backend.API.Service.ProductService
                 _context.Subscriptions.Add(dbSubscription);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Create V2 DTO for actor
                 var v2Dto = new V2SubscriptionDto
                 {
                     Id = subscriptionId,
@@ -178,18 +160,12 @@ namespace QLN.Backend.API.Service.ProductService
                     Version = "V2"
                 };
 
-                // Save to actor
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorResult = await actor.FastSetDataAsync(v2Dto, cancellationToken);
-
-                if (!actorResult)
-                {
-                    throw new Exception("Failed to save subscription to actor");
-                }
+                if (!actorResult) throw new Exception("Failed to save subscription to actor");
 
                 await transaction.CommitAsync(cancellationToken);
                 _logger.LogInformation("V2 Subscription purchased successfully: {Id} for user: {UserId}", subscriptionId, request.UserId);
-
                 return subscriptionId;
             }
             catch (Exception ex)
@@ -204,7 +180,6 @@ namespace QLN.Backend.API.Service.ProductService
         {
             _logger.LogInformation("Getting V2 subscriptions for user: {UserId}", userId);
 
-            // Get user subscriptions from database
             var dbSubscriptions = await _context.Subscriptions
                 .Where(s => s.UserId == userId && s.Status != SubscriptionStatus.Expired)
                 .ToListAsync(cancellationToken);
@@ -215,7 +190,6 @@ namespace QLN.Backend.API.Service.ProductService
             {
                 try
                 {
-                    // Try actor first for latest data
                     var actor = GetV2SubscriptionActorProxy(dbSub.SubscriptionId);
                     var actorData = await actor.GetDataAsync(cancellationToken);
 
@@ -225,7 +199,6 @@ namespace QLN.Backend.API.Service.ProductService
                     }
                     else
                     {
-                        // Fallback to DB and sync to actor
                         var v2Data = MapDbToV2Dto(dbSub);
                         await actor.FastSetDataAsync(v2Data, cancellationToken);
                         subscriptions.Add(MapToResponseDto(v2Data));
@@ -293,20 +266,15 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Update database status
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                if (dbSubscription == null)
-                {
-                    return false;
-                }
+                if (dbSubscription == null) return false;
 
                 dbSubscription.Status = SubscriptionStatus.Cancelled;
                 dbSubscription.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Update actor
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var existingData = await actor.GetDataAsync(cancellationToken);
 
@@ -333,7 +301,6 @@ namespace QLN.Backend.API.Service.ProductService
         {
             try
             {
-                // Try actor first for real-time quota data
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 return await actor.ValidateUsageAsync(quotaType, requestedAmount, cancellationToken);
             }
@@ -349,26 +316,22 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Update actor first (for performance)
                 var actor = GetV2SubscriptionActorProxy(subscriptionId);
                 var actorResult = await actor.RecordUsageAsync(quotaType, amount, cancellationToken);
-
                 if (!actorResult)
                 {
                     _logger.LogWarning("Actor failed to record usage for subscription {SubscriptionId}", subscriptionId);
                     return false;
                 }
 
-                // Update database
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                if (dbSubscription != null && dbSubscription.Quota.TryGetValue(quotaType, out var quotaValue))
+                if (dbSubscription != null)
                 {
-                    if (decimal.TryParse(quotaValue, out var currentQuota))
+                    var ok = dbSubscription.Quota.RecordUsage(MapQuotaTypeToAction(quotaType), (int)Math.Ceiling(amount));
+                    if (ok)
                     {
-                        var newQuota = Math.Max(0, currentQuota - amount);
-                        dbSubscription.Quota[quotaType] = newQuota.ToString();
                         dbSubscription.UpdatedAt = DateTime.UtcNow;
                         await _context.SaveChangesAsync(cancellationToken);
                     }
@@ -396,25 +359,18 @@ namespace QLN.Backend.API.Service.ProductService
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
             try
             {
-                // Get the addon product details
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.ProductCode == request.ProductCode && p.IsActive, cancellationToken);
 
                 if (product == null)
-                {
                     throw new InvalidOperationException($"Addon product with code {request.ProductCode} not found or inactive");
-                }
 
-                // Validate product type is addon
                 var addonTypes = new[] { ProductType.ADDON_COMBO, ProductType.ADDON_FEATURE, ProductType.ADDON_REFRESH };
                 if (!addonTypes.Contains(product.ProductType))
-                {
                     throw new InvalidOperationException($"Product {request.ProductCode} is not an addon product");
-                }
 
                 var addonId = Guid.NewGuid();
 
-                // Create database entity
                 var dbAddon = new UserAddOn
                 {
                     UserAddOnId = addonId,
@@ -424,6 +380,7 @@ namespace QLN.Backend.API.Service.ProductService
                     SubscriptionId = request.SubscriptionId,
                     PaymentId = request.PaymentId,
                     Vertical = product.Vertical,
+                    Quota = BuildAddonQuotaFromProduct(product),
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.Add(GetDurationFromProduct(product)),
                     Status = SubscriptionStatus.Active,
@@ -433,7 +390,6 @@ namespace QLN.Backend.API.Service.ProductService
                 _context.UserAddOns.Add(dbAddon);
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Create V2 DTO for actor
                 var v2AddonDto = new V2UserAddonDto
                 {
                     Id = addonId,
@@ -446,7 +402,7 @@ namespace QLN.Backend.API.Service.ProductService
                     VerticalTypeId = product.Vertical,
                     Price = product.Price,
                     Currency = product.Currency,
-                    Quota = ExtractQuotaFromProduct(product),
+                    Quota = dbAddon.Quota,
                     StartDate = dbAddon.StartDate,
                     EndDate = dbAddon.EndDate,
                     StatusId = V2Status.Active,
@@ -456,15 +412,10 @@ namespace QLN.Backend.API.Service.ProductService
 
                 var actor = GetV2AddonActorProxy(addonId);
                 var actorResult = await actor.FastSetDataAsync(v2AddonDto, cancellationToken);
-
-                if (!actorResult)
-                {
-                    throw new Exception("Failed to save addon to actor");
-                }
+                if (!actorResult) throw new Exception("Failed to save addon to actor");
 
                 await transaction.CommitAsync(cancellationToken);
                 _logger.LogInformation("V2 Addon purchased successfully: {Id} for user: {UserId}", addonId, request.UserId);
-
                 return addonId;
             }
             catch (Exception ex)
@@ -561,10 +512,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                if (dbSubscription == null)
-                {
-                    return false;
-                }
+                if (dbSubscription == null) return false;
 
                 dbSubscription.Status = SubscriptionStatus.Expired;
                 dbSubscription.UpdatedAt = DateTime.UtcNow;
@@ -611,10 +559,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var dbAddon = await _context.UserAddOns
                     .FirstOrDefaultAsync(a => a.UserAddOnId == addonId, cancellationToken);
 
-                if (dbAddon == null)
-                {
-                    return false;
-                }
+                if (dbAddon == null) return false;
 
                 dbAddon.Status = SubscriptionStatus.Expired;
                 dbAddon.UpdatedAt = DateTime.UtcNow;
@@ -652,7 +597,6 @@ namespace QLN.Backend.API.Service.ProductService
         {
             var query = _context.Subscriptions.AsQueryable();
 
-            // Apply filters
             if (!string.IsNullOrEmpty(filter.UserId))
                 query = query.Where(s => s.UserId == filter.UserId);
 
@@ -719,9 +663,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var actorData = await actor.GetDataAsync(cancellationToken);
 
                 if (actorData != null)
-                {
                     return MapToResponseDto(actorData);
-                }
 
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
@@ -750,9 +692,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var actorData = await actor.GetDataAsync(cancellationToken);
 
                 if (actorData != null)
-                {
                     return MapAddonToResponseDto(actorData);
-                }
 
                 var dbAddon = await _context.UserAddOns
                     .FirstOrDefaultAsync(a => a.UserAddOnId == addonId, cancellationToken);
@@ -781,8 +721,7 @@ namespace QLN.Backend.API.Service.ProductService
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                if (dbSubscription == null)
-                    return false;
+                if (dbSubscription == null) return false;
 
                 dbSubscription.EndDate = dbSubscription.EndDate.Add(additionalDuration);
                 dbSubscription.UpdatedAt = DateTime.UtcNow;
@@ -818,35 +757,36 @@ namespace QLN.Backend.API.Service.ProductService
                 var dbSubscription = await _context.Subscriptions
                     .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId, cancellationToken);
 
-                if (dbSubscription == null)
-                    return false;
+                if (dbSubscription == null) return false;
 
-                if (dbSubscription.Quota.TryGetValue(quotaType, out var quotaValue))
+                var qty = (int)Math.Ceiling(amount);
+                switch ((quotaType ?? string.Empty).ToLower())
                 {
-                    if (decimal.TryParse(quotaValue, out var currentQuota))
-                    {
-                        var newQuota = currentQuota + amount;
-                        dbSubscription.Quota[quotaType] = newQuota.ToString();
-                        dbSubscription.UpdatedAt = DateTime.UtcNow;
-                        await _context.SaveChangesAsync(cancellationToken);
-
-                        var actor = GetV2SubscriptionActorProxy(subscriptionId);
-                        var actorData = await actor.GetDataAsync(cancellationToken);
-
-                        if (actorData != null)
-                        {
-                            actorData.Quota[quotaType] = newQuota.ToString();
-                            actorData.lastUpdated = DateTime.UtcNow;
-                            await actor.FastSetDataAsync(actorData, cancellationToken);
-                        }
-
-                        await transaction.CommitAsync(cancellationToken);
-                        _logger.LogInformation("Subscription {Id} quota {QuotaType} refilled by {Amount}", subscriptionId, quotaType, amount);
-                        return true;
-                    }
+                    case V2QuotaTypes.AdsBudget: dbSubscription.Quota.TotalAdsAllowed += qty; break;
+                    case V2QuotaTypes.PromoteBudget: dbSubscription.Quota.TotalPromotionsAllowed += qty; break;
+                    case V2QuotaTypes.FeatureBudget: dbSubscription.Quota.TotalFeaturesAllowed += qty; break;
+                    case V2QuotaTypes.RefreshBudget: dbSubscription.Quota.DailyRefreshesAllowed += qty; break;
+                    case V2QuotaTypes.SocialMediaPosts: dbSubscription.Quota.SocialMediaPostsAllowed += qty; break;
+                    default:
+                        _logger.LogWarning("Unknown quotaType '{QuotaType}' in refill; no-op", quotaType);
+                        break;
                 }
 
-                return false;
+                dbSubscription.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var actor = GetV2SubscriptionActorProxy(subscriptionId);
+                var actorData = await actor.GetDataAsync(cancellationToken);
+                if (actorData != null)
+                {
+                    actorData.Quota = dbSubscription.Quota;
+                    actorData.lastUpdated = DateTime.UtcNow;
+                    await actor.FastSetDataAsync(actorData, cancellationToken);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                _logger.LogInformation("Subscription {Id} quota {QuotaType} refilled by {Amount}", subscriptionId, quotaType, amount);
+                return true;
             }
             catch (Exception ex)
             {
@@ -866,12 +806,12 @@ namespace QLN.Backend.API.Service.ProductService
             {
                 Id = dbSub.SubscriptionId,
                 ProductCode = dbSub.ProductCode,
-                ProductName = "Subscription", // You might want to join with Product table
+                ProductName = "Subscription",
                 UserId = dbSub.UserId,
                 CompanyId = dbSub.CompanyId,
                 PaymentId = dbSub.PaymentId,
                 VerticalTypeId = dbSub.Vertical,
-                Price = 0, // Get from Product table if needed
+                Price = 0,
                 Currency = "QAR",
                 Quota = dbSub.Quota,
                 StartDate = dbSub.StartDate,
@@ -888,15 +828,15 @@ namespace QLN.Backend.API.Service.ProductService
             {
                 Id = dbAddon.UserAddOnId,
                 ProductCode = dbAddon.ProductCode,
-                ProductName = "Addon", // You might want to join with Product table
+                ProductName = "Addon",
                 UserId = dbAddon.UserId ?? string.Empty,
                 CompanyId = dbAddon.CompanyId,
                 SubscriptionId = dbAddon.SubscriptionId,
                 PaymentId = dbAddon.PaymentId,
                 VerticalTypeId = dbAddon.Vertical,
-                Price = 0, // Get from Product table if needed
+                Price = 0,
                 Currency = "QAR",
-                Quota = new Dictionary<string, string>(), // Extract from Product if needed
+                Quota = dbAddon.Quota,
                 StartDate = dbAddon.StartDate,
                 EndDate = dbAddon.EndDate,
                 StatusId = MapFromDbStatus(dbAddon.Status),
@@ -958,46 +898,107 @@ namespace QLN.Backend.API.Service.ProductService
             };
         }
 
-        private Dictionary<string, string> ExtractQuotaFromProduct(Product product)
+        private SubscriptionQuota BuildSubscriptionQuotaFromProduct(Product product)
         {
-            var quota = new Dictionary<string, string>();
+            var c = product.Constraints ?? new ProductConstraints();
 
-            if (product.Constraints != null)
+            var q = new SubscriptionQuota
             {
-                // Extract quota from product constraints JSON
-                if (product.Constraints.AdsBudget.HasValue)
-                    quota[V2QuotaTypes.AdsBudget] = product.Constraints.AdsBudget.Value.ToString();
+                Vertical = product.Vertical.ToString(),
+                Scope = c.Scope ?? "All",
 
-                if (product.Constraints.PromotedBudget.HasValue)
-                    quota[V2QuotaTypes.PromoteBudget] = product.Constraints.PromotedBudget.Value.ToString();
+                TotalAdsAllowed = c.AdsBudget ?? 0,
+                TotalPromotionsAllowed = c.PromotedBudget ?? 0,
+                TotalFeaturesAllowed = c.FeaturedBudget ?? 0,
+                DailyRefreshesAllowed = c.RefreshBudgetPerDay ?? 0,
+                RefreshesPerAdAllowed = c.RefreshBudgetPerAd ?? 1,
+                SocialMediaPostsAllowed = 0,
 
-                if (product.Constraints.RefreshBudgetPerDay.HasValue)
-                    quota[V2QuotaTypes.RefreshBudget] = product.Constraints.RefreshBudgetPerDay.Value.ToString();
+                CanPublishAds = !(c.PayToPublish ?? false) || (c.AdsBudget ?? 0) > 0,
+                CanPromoteAds = (c.PayToPromote ?? false) || (c.PromotedBudget ?? 0) > 0,
+                CanFeatureAds = (c.PayToFeature ?? false) || (c.FeaturedBudget ?? 0) > 0,
+                CanRefreshAds = (c.RefreshBudgetPerDay ?? 0) > 0,
+                CanPostSocialMedia = false,
 
-                if (product.Constraints.FeaturedBudget.HasValue)
-                    quota[V2QuotaTypes.FeatureBudget] = product.Constraints.FeaturedBudget.Value.ToString();
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72
+            };
 
-                if (product.Constraints.RefreshBudgetPerDay.HasValue)
-                    quota[V2QuotaTypes.MaxListings] = product.Constraints.RefreshBudgetPerAd.Value.ToString();
+            return q;
+        }
+
+        private SubscriptionQuota BuildAddonQuotaFromProduct(Product product)
+        {
+            var c = product.Constraints ?? new ProductConstraints();
+
+            var q = new SubscriptionQuota
+            {
+                Vertical = product.Vertical.ToString(),
+                Scope = c.Scope ?? "All",
+                CanPublishAds = false,
+                CanPromoteAds = false,
+                CanFeatureAds = false,
+                CanRefreshAds = false,
+                CanPostSocialMedia = false,
+                RefreshInterval = "Every 72 Hours",
+                RefreshIntervalHours = 72
+            };
+
+            if (c.PayToPublish == true) { q.CanPublishAds = true; q.TotalAdsAllowed += 1; }
+            if (c.PayToPromote == true) { q.CanPromoteAds = true; q.TotalPromotionsAllowed += 1; }
+            if (c.PayToFeature == true) { q.CanFeatureAds = true; q.TotalFeaturesAllowed += 1; }
+
+            if ((c.RefreshBudgetPerDay ?? 0) > 0)
+            {
+                q.CanRefreshAds = true;
             }
 
-            return quota;
+            if (c.PromotedBudget.HasValue)
+            {
+                q.CanPromoteAds = true;
+                q.TotalPromotionsAllowed += c.PromotedBudget.Value;
+            }
+            if (c.FeaturedBudget.HasValue)
+            {
+                q.CanFeatureAds = true;
+                q.TotalFeaturesAllowed += c.FeaturedBudget.Value;
+            }
+            if (c.AdsBudget.HasValue)
+            {
+                q.CanPublishAds = true;
+                q.TotalAdsAllowed += c.AdsBudget.Value;
+            }
+            if (c.RefreshBudgetPerAd.HasValue)
+            {
+                q.CanRefreshAds = true;
+                q.RefreshesPerAdAllowed = Math.Max(q.RefreshesPerAdAllowed, c.RefreshBudgetPerAd.Value);
+            }
+
+            return q;
         }
+
+        private static string MapQuotaTypeToAction(string quotaType) =>
+            (quotaType ?? string.Empty).ToLower() switch
+            {
+                V2QuotaTypes.AdsBudget => ActionTypes.Publish,
+                V2QuotaTypes.PromoteBudget => ActionTypes.Promote,
+                V2QuotaTypes.FeatureBudget => ActionTypes.Feature,
+                V2QuotaTypes.RefreshBudget => ActionTypes.Refresh,
+                V2QuotaTypes.SocialMediaPosts => ActionTypes.SocialMediaPost,
+                _ => quotaType?.ToLower() ?? string.Empty
+            };
 
         private TimeSpan GetDurationFromProduct(Product product)
         {
             if (!string.IsNullOrWhiteSpace(product.Constraints?.Duration))
             {
                 if (TimeSpan.TryParse(product.Constraints.Duration, out var parsedDuration))
-                {
                     return parsedDuration;
-                }
             }
 
-            // Default duration based on product type
             return product.ProductType switch
             {
-                ProductType.SUBSCRIPTION => TimeSpan.FromDays(30), // 1 month default
+                ProductType.SUBSCRIPTION => TimeSpan.FromDays(30),
                 ProductType.ADDON_COMBO => TimeSpan.FromDays(30),
                 ProductType.ADDON_FEATURE => TimeSpan.FromDays(7),
                 ProductType.ADDON_REFRESH => TimeSpan.FromDays(30),
@@ -1005,9 +1006,8 @@ namespace QLN.Backend.API.Service.ProductService
             };
         }
 
-        private SubscriptionStatus MapToDbStatus(V2Status v2Status)
-        {
-            return v2Status switch
+        private SubscriptionStatus MapToDbStatus(V2Status v2Status) =>
+            v2Status switch
             {
                 V2Status.Active => SubscriptionStatus.Active,
                 V2Status.Expired => SubscriptionStatus.Expired,
@@ -1016,11 +1016,9 @@ namespace QLN.Backend.API.Service.ProductService
                 V2Status.PaymentPending => SubscriptionStatus.PaymentPending,
                 _ => SubscriptionStatus.PaymentPending
             };
-        }
 
-        private V2Status MapFromDbStatus(SubscriptionStatus dbStatus)
-        {
-            return dbStatus switch
+        private V2Status MapFromDbStatus(SubscriptionStatus dbStatus) =>
+            dbStatus switch
             {
                 SubscriptionStatus.Active => V2Status.Active,
                 SubscriptionStatus.Expired => V2Status.Expired,
@@ -1029,7 +1027,6 @@ namespace QLN.Backend.API.Service.ProductService
                 SubscriptionStatus.PaymentPending => V2Status.PaymentPending,
                 _ => V2Status.PaymentPending
             };
-        }
 
         #endregion
     }
