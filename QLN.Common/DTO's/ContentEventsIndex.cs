@@ -19,7 +19,7 @@ namespace QLN.Common.DTO_s
         public string? CategoryName { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public V2EventType EventType { get; set; }
+        public string EventType { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public int? Price { get; set; }
@@ -59,7 +59,7 @@ namespace QLN.Common.DTO_s
         public DateTime? PublishedDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public EventStatus Status { get; set; }
+        public string Status { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public string Slug { get; set; }
@@ -98,7 +98,7 @@ namespace QLN.Common.DTO_s
         public DateTimeOffset EndDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public V2EventTimeType TimeSlotType { get; set; }
+        public string TimeSlotType { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? GeneralTextTime { get; set; }
@@ -109,7 +109,7 @@ namespace QLN.Common.DTO_s
     public class TimeSlotIndex
     {
         [SimpleField(IsFilterable = true)]
-        public DayOfWeek? DayOfWeek { get; set; }
+        public string? DayOfWeek { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? TextTime { get; set; }

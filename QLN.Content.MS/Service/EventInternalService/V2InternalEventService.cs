@@ -1275,7 +1275,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 Id = dto.Id.ToString(),
                 EventTitle = dto.EventTitle,
-                EventType = dto.EventType,
+                EventType = dto.EventType.ToString(),
                 EventDescription = dto.EventDescription,
                 CategoryId = dto.CategoryId,
                 CategoryName = dto.CategoryName,
@@ -1291,7 +1291,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 LocationId = dto.LocationId,
                 Price = dto.Price,
                 RedirectionLink = dto.RedirectionLink,
-                Status = dto.Status,
+                Status = dto.Status.ToString(),
                 Slug = dto.Slug,
                 PublishedDate = dto.PublishedDate,
                 IsActive = dto.IsActive,
@@ -1304,10 +1304,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                     StartDate = dto.EventSchedule.StartDate.FromDateOnly(),
                     EndDate = dto.EventSchedule.EndDate.FromDateOnly(),
                     GeneralTextTime = dto.EventSchedule.GeneralTextTime,
-                    TimeSlotType = dto.EventSchedule.TimeSlotType,
+                    TimeSlotType = dto.EventSchedule.TimeSlotType.ToString(),
                     TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex
                     {
-                        DayOfWeek = i.DayOfWeek,
+                        DayOfWeek = i.DayOfWeek.ToString(),
                         TextTime = i.TextTime
                     }).ToList()
                 }
