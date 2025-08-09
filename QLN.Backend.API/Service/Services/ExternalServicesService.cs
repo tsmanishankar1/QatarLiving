@@ -305,11 +305,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/promote";
+                var url = $"/api/service/promotebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -344,11 +344,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/feature";
+                var url = $"/api/service/featurebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -383,11 +383,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/refresh";
+                var url = $"/api/service/refreshbyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -422,16 +422,17 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(long id, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = $"/api/service/publish?id={id}";
+                var url = $"/api/service/publishbyuserid?uid={uid}";
 
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
-                    url
+                    url,
+                    request
                 );
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);

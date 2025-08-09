@@ -95,17 +95,30 @@ namespace QLN.Common.DTO_s
     public class PromoteServiceRequest
     {
         public long ServiceId { get; set; }
-        public bool IsPromoted { get; set; } 
+        public bool IsPromoted { get; set; }
+        [JsonIgnore]
+        public string? UpdatedBy { get; set; } = null!;
     }
     public class FeatureServiceRequest
     {
         public long ServiceId { get; set; }
         public bool IsFeature { get; set; }
+        [JsonIgnore]
+        public string? UpdatedBy { get; set; } = null!;
     }
     public class RefreshServiceRequest
     {
         public long ServiceId { get; set; }
         public bool IsRefreshed { get; set; }
+        [JsonIgnore]
+        public string? UpdatedBy { get; set; } = null!;
+    }
+    public class PublishServiceRequest
+    {
+        public long ServiceId { get; set; }
+        public ServiceStatus? Status { get; set; }
+        [JsonIgnore]
+        public string? UpdatedBy { get; set; } = null!;
     }
     public class ServicesPagedResponse<T>
     {
