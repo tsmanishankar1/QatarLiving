@@ -221,75 +221,105 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken)
+        public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
+     SubVertical subVertical,
+     long adId,
+     string userId,
+     CancellationToken cancellationToken)
         {
+            _logger.LogInformation(
+                "RefreshClassifiedItemsAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
+                subVertical, adId, userId);
+
             try
             {
-                object adItem = null;
-
-                switch (subVertical)
+                string? adTitle;
+                object? adItem = subVertical switch
                 {
-                    case SubVertical.Items:
-                        adItem = await GetItemAdById(adId, cancellationToken);
-                        break;
-                    case SubVertical.Preloved:
-                        adItem = await GetPrelovedAdById(adId, cancellationToken);
-                        break;
-                    case SubVertical.Collectibles:
-                        adItem = await GetCollectiblesAdById(adId, cancellationToken);
-                        break;
-                    case SubVertical.Deals:
-                        adItem = await GetDealsAdById(adId, cancellationToken);
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Invalid SubVertical: {subVertical}");
-                }
+                    SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == adId && i.IsActive, cancellationToken),
+                    SubVertical.Preloved => await _context.Preloved.FirstOrDefaultAsync(p => p.Id == adId && p.IsActive, cancellationToken),
+                    SubVertical.Collectibles => await _context.Collectible.FirstOrDefaultAsync(c => c.Id == adId && c.IsActive, cancellationToken),
+                    SubVertical.Deals => await _context.Deal.FirstOrDefaultAsync(d => d.Id == adId && d.IsActive, cancellationToken),
+                    _ => throw new InvalidOperationException($"Invalid SubVertical: {subVertical}")
+                };
 
                 if (adItem == null)
                 {
-                    _logger.LogError($"Ad with id {adId} not found in the {subVertical} vertical.");
-                    throw new InvalidOperationException($"Ad with id {adId} not found.");
+                    _logger.LogError("Ad with id {AdId} not found in {SubVertical}.", adId, subVertical);
+                    throw new KeyNotFoundException($"Ad with id {adId} not found.");
                 }
 
-                if (adItem is ClassifiedsItems itemAd)
+                _logger.LogDebug("Updating refresh fields for ad type: {Type}", adItem.GetType().Name);
+
+                switch (adItem)
                 {
-                    itemAd.CreatedAt = DateTime.UtcNow;
-                    itemAd.LastRefreshedOn = DateTime.UtcNow.AddHours(72);
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                    case Items itemAd:
+                        itemAd.CreatedAt = DateTime.UtcNow;
+                        itemAd.LastRefreshedOn = DateTime.UtcNow.AddHours(72);
+                        itemAd.UpdatedAt = DateTime.UtcNow;
+                        itemAd.UpdatedBy = userId;
+                        itemAd.IsRefreshed = true;
+                        adTitle = itemAd.Title;
+                        break;
+
+                    case Preloveds prelovedAd:
+                        prelovedAd.CreatedAt = DateTime.UtcNow;
+                        prelovedAd.LastRefreshedOn = DateTime.UtcNow.AddHours(72);
+                        prelovedAd.UpdatedAt = DateTime.UtcNow;
+                        prelovedAd.UpdatedBy = userId;
+                        prelovedAd.IsRefreshed = true;
+                        adTitle = prelovedAd.Title;
+                        break;
+
+                    case Collectibles collectiblesAd:
+                        collectiblesAd.CreatedAt = DateTime.UtcNow;
+                        //collectiblesAd.LastRefreshedOn = DateTime.UtcNow.AddHours(72);
+                        collectiblesAd.UpdatedAt = DateTime.UtcNow;
+                        collectiblesAd.UpdatedBy = userId;
+                        adTitle = collectiblesAd.Title;
+                        break;
+
+                    case Deals dealsAd:
+                        dealsAd.CreatedAt = DateTime.UtcNow;
+                       // dealsAd.las = DateTime.UtcNow.AddHours(72);
+                        dealsAd.UpdatedAt = DateTime.UtcNow;
+                        dealsAd.UpdatedBy = userId;
+                        adTitle = dealsAd.Offertitle;
+                        break;
+
+                    default:
+                        _logger.LogError("Unsupported ad type: {Type}", adItem.GetType().Name);
+                        throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
                 }
-                else if (adItem is ClassifiedsPreloved prelovedAd)
-                {
-                    prelovedAd.CreatedAt = DateTime.UtcNow;
-                    prelovedAd.LastRefreshedOn = DateTime.UtcNow.AddHours(72);
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
-                }
+
+                _logger.LogDebug("Saving changes to database for AdId: {AdId}", adId);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Ad {AdId} successfully refreshed.", adId);
 
                 return new AdCreatedResponseDto
                 {
+                   // Title = adTitle,
+                    CreatedAt = DateTime.UtcNow,
                     AdId = adId,
                     Message = "Ad successfully refreshed."
                 };
             }
-            catch (ArgumentException ex)
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is KeyNotFoundException ||
+                ex is InvalidOperationException)
             {
-                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
-                throw;
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogError(ex, "Ad not found or operation error while refreshing ad.");
+                _logger.LogError(ex, "Known error occurred while refreshing ad with AdId: {AdId}", adId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
+                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad with AdId: {AdId}", adId);
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
 
         public async Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default)
         {
@@ -1371,80 +1401,95 @@ namespace QLN.Classified.MS.Service
             };
         }
 
-        public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(string subVertical,string userId,List<Guid> adIds,bool isPublished,CancellationToken cancellationToken = default)
+        public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
+    int subVertical,
+    string userId,
+    List<long> adIds,
+    bool isPublished,
+    CancellationToken cancellationToken = default)
         {
             try
             {
-                var indexKey = subVertical.ToLowerInvariant() switch
+                var targetStatus = isPublished ? AdStatus.Published : AdStatus.Unpublished;
+
+                IQueryable<ClassifiedBase> query = subVertical switch
                 {
-                    "items" => ItemsIndexKey,
-                    "preloved" => PrelovedIndexKey,
-                    "collectibles" => CollectiblesIndexKey,
-                    "deals" => DealsIndexKey,
+                    (int)SubVertical.Items => _context.Item.Cast<ClassifiedBase>(),
+                    (int)SubVertical.Deals => _context.Deal.Cast<ClassifiedBase>(),
+                    (int)SubVertical.Preloved => _context.Preloved.Cast<ClassifiedBase>(),
+                    (int)SubVertical.Collectibles => _context.Collectible.Cast<ClassifiedBase>(),
                     _ => throw new ArgumentException("Invalid sub-vertical.")
                 };
 
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
-                var failedAds = new List<Guid>();
-                var targetStatus = isPublished ? AdStatus.Published : AdStatus.Unpublished;
+                // Get ads from DB that match the provided IDs
+                var ads = await query
+                    .Where(a => adIds.Contains(a.Id))
+                    .ToListAsync(cancellationToken);
 
-                foreach (var adId in adIds)
+                var failedAds = new List<long>();
+
+                // Validate ads before updating
+                foreach (var ad in ads)
                 {
-                    var key = $"ad-{adId}";
-                    if (!index.Contains(key))
+                    if (ad.UserId != userId)
                     {
-                        failedAds.Add(adId);
-                        continue;
+                        _logger.LogWarning("Ad {AdId} failed validation: UserId mismatch. Expected {Expected}, found {Actual}.",
+                            ad.Id, userId, ad.UserId);
+                        failedAds.Add(ad.Id);
                     }
-
-                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                    if (state.ValueKind != JsonValueKind.Object)
+                    else if (ad.Status == targetStatus)
                     {
-                        failedAds.Add(adId);
-                        continue;
+                        _logger.LogWarning("Ad {AdId} failed validation: Already has target status {Status}.",
+                            ad.Id, ad.Status);
+                        failedAds.Add(ad.Id);
                     }
-
-                    var storedUserId = state.TryGetProperty("userId", out var uid) ? uid.GetString() : string.Empty;
-                    var currentStatus = state.TryGetProperty("status", out var st) && st.TryGetInt32(out var val)
-                        ? (AdStatus)val
-                        : AdStatus.Draft;
-
-                    var isActive = state.TryGetProperty("isActive", out var activeProp) && activeProp.GetBoolean();
-
-                    if (storedUserId != userId || currentStatus == targetStatus || !isActive)
+                    else if (!ad.IsActive)
                     {
-                        failedAds.Add(adId);
+                        _logger.LogWarning("Ad {AdId} failed validation: Ad is not active.",
+                            ad.Id);
+                        failedAds.Add(ad.Id);
                     }
                 }
 
+                // Check for ads not found in DB
+                var notFound = adIds.Except(ads.Select(a => a.Id)).ToList();
+                foreach (var id in notFound)
+                {
+                    _logger.LogWarning("Ad {AdId} failed validation: Not found in database.", id);
+                }
+                failedAds.AddRange(notFound);
+
                 if (failedAds.Any())
                 {
+                    _logger.LogInformation("Bulk update failed for {FailedCount} out of {TotalCount} ads.",
+                        failedAds.Distinct().Count(), adIds.Count);
+
                     return new BulkAdActionResponse
                     {
                         SuccessCount = 0,
-                        FailedAdIds = failedAds,
+                        FailedAdIds = failedAds.Distinct().ToList(),
                         Message = "Some ads failed validation."
                     };
                 }
 
-                int successCount = 0;
-                foreach (var adId in adIds)
+                // Update ads
+                foreach (var ad in ads)
                 {
-                    var key = $"ad-{adId}";
-                    var state = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
-                    var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(state.ToString()!)!;
-                    dict["status"] = (int)targetStatus;
-                    dict["createdAt"] = DateTime.UtcNow;
-
-                    await _dapr.SaveStateAsync(UnifiedStore, key, dict, cancellationToken: cancellationToken);
-                    successCount++;
+                    ad.Status = targetStatus;
+                    ad.CreatedAt = DateTime.UtcNow;
+                    _logger.LogInformation("Ad {AdId} status updated to {Status}.", ad.Id, targetStatus);
                 }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("{Count} ad(s) successfully {Action}.",
+                    ads.Count, isPublished ? "published" : "unpublished");
 
                 return new BulkAdActionResponse
                 {
-                    SuccessCount = successCount,
+                    SuccessCount = ads.Count,
                     FailedAdIds = new(),
-                    Message = $"{successCount} ad(s) {(isPublished ? "published" : "unpublished")} successfully."
+                    Message = $"{ads.Count} ad(s) {(isPublished ? "published" : "unpublished")} successfully."
                 };
             }
             catch (Exception ex)
@@ -1453,6 +1498,8 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("An error occurred during bulk update.", ex);
             }
         }
+
+
 
         #region Private Methods
         private async Task IndexItemsToAzureSearch(Items dto, CancellationToken cancellationToken)
@@ -1859,101 +1906,116 @@ namespace QLN.Classified.MS.Service
         }
         public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}", dto.SubVertical, dto.AdId, userId);
+
             try
             {
-                object adItem = null;
-                Console.WriteLine(userId);
-                switch (dto.SubVertical)
+                object? adItem = null;
+
+                _logger.LogDebug("Fetching ad from database for SubVertical: {SubVertical}", dto.SubVertical);
+
+                adItem = dto.SubVertical switch
                 {
-                    case SubVertical.Items:
-                        adItem = await GetItemAdById(dto.AdId, cancellationToken);
-                        break;
-                    case SubVertical.Preloved:
-                        adItem = await GetPrelovedAdById(dto.AdId, cancellationToken);
-                        break;
-                    case SubVertical.Collectibles:
-                        adItem = await GetCollectiblesAdById(dto.AdId, cancellationToken);
-                        break;
-                    case SubVertical.Deals:
-                        adItem = await GetDealsAdById(dto.AdId, cancellationToken);
-                        break;
-                    default:
-                        throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
-                }
+                    SubVertical.Items => await _context.Item
+                        .FirstOrDefaultAsync(i => i.Id == dto.AdId && i.IsActive, cancellationToken),
+                    SubVertical.Preloved => await _context.Preloved
+                        .FirstOrDefaultAsync(p => p.Id == dto.AdId && p.IsActive, cancellationToken),
+                    SubVertical.Collectibles => await _context.Collectible
+                        .FirstOrDefaultAsync(c => c.Id == dto.AdId && c.IsActive, cancellationToken),
+                    SubVertical.Deals => await _context.Deal
+                        .FirstOrDefaultAsync(d => d.Id == dto.AdId && d.IsActive, cancellationToken),
+                    _ => throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}")
+                };
+
+                _logger.LogDebug("Database fetch complete. Found ad: {Found}", adItem != null);
+
                 if (adItem == null)
                 {
-                    _logger.LogError($"Ad with id {dto.AdId} not found in the {dto.SubVertical} vertical.");
+                    _logger.LogError("Ad with id {AdId} not found in {SubVertical}.", dto.AdId, dto.SubVertical);
                     throw new KeyNotFoundException($"Ad with id {dto.AdId} not found.");
                 }
-                if (adItem is ClassifiedsItems itemAd)
+
+                _logger.LogDebug("Updating promotion status for ad type: {Type}", adItem.GetType().Name);
+
+                switch (adItem)
                 {
-                    if (itemAd.IsPromoted == true)
-                    {
-                        throw new ConflictException("This ad is already promoted.");
-                    }
-                    itemAd.IsPromoted = true;
-                    itemAd.UpdatedAt = DateTime.UtcNow;
-                    itemAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
+                    case Items itemAd:
+                        if (itemAd.IsPromoted)
+                        {
+                            _logger.LogWarning("Ad {AdId} in Items is already promoted.", itemAd.Id);
+                            throw new ConflictException("This ad is already promoted.");
+                        }
+                        itemAd.IsPromoted = true;
+                        itemAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        itemAd.UpdatedAt = DateTime.UtcNow;
+                        itemAd.UpdatedBy = userId;
+                        break;
+
+                    case Preloveds prelovedAd:
+                        if (prelovedAd.IsPromoted)
+                        {
+                            _logger.LogWarning("Ad {AdId} in Preloved is already promoted.", prelovedAd.Id);
+                            throw new ConflictException("This ad is already promoted.");
+                        }
+                        prelovedAd.IsPromoted = true;
+                        prelovedAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        prelovedAd.UpdatedAt = DateTime.UtcNow;
+                        prelovedAd.UpdatedBy = userId;
+                        break;
+
+                    case Collectibles collectiblesAd:
+                        if (collectiblesAd.IsPromoted)
+                        {
+                            _logger.LogWarning("Ad {AdId} in Collectibles is already promoted.", collectiblesAd.Id);
+                            throw new ConflictException("This ad is already promoted.");
+                        }
+                        collectiblesAd.IsPromoted = true;
+                        collectiblesAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        collectiblesAd.UpdatedAt = DateTime.UtcNow;
+                        collectiblesAd.UpdatedBy = userId;
+                        break;
+
+                    case Deals dealsAd:
+                        if (dealsAd.IsPromoted)
+                        {
+                            _logger.LogWarning("Ad {AdId} in Deals is already promoted.", dealsAd.Id);
+                            throw new ConflictException("This ad is already promoted.");
+                        }
+                        dealsAd.IsPromoted = true;
+                        dealsAd.PromotedExpiryDate = DateTime.UtcNow.AddDays(30);
+                        dealsAd.UpdatedAt = DateTime.UtcNow;
+                        dealsAd.UpdatedBy = userId;
+                        break;
+
+                    default:
+                        _logger.LogError("Unsupported ad type: {Type}", adItem.GetType().Name);
+                        throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
                 }
-                else if (adItem is ClassifiedsPreloved prelovedAd)
-                {
-                    if (prelovedAd.IsPromoted == true)
-                    {
-                        throw new ConflictException("This ad is already promoted.");
-                    }
-                    prelovedAd.IsPromoted = true;
-                    prelovedAd.UpdatedAt = DateTime.UtcNow;
-                    prelovedAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
-                }
-                else if (adItem is ClassifiedsCollectibles collectiblesAd)
-                {
-                    if (collectiblesAd.IsPromoted == true)
-                    {
-                        throw new ConflictException("This ad is already promoted.");
-                    }
-                    collectiblesAd.IsPromoted = true;
-                    collectiblesAd.UpdatedAt = DateTime.UtcNow;
-                    collectiblesAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
-                }
-                else if (adItem is ClassifiedsDeals dealsAd)
-                {
-                    if (dealsAd.IsPromoted == true)
-                    {
-                        throw new ConflictException("This ad is already promoted.");
-                    }
-                    dealsAd.IsPromoted = true;
-                    dealsAd.UpdatedAt = DateTime.UtcNow;
-                    dealsAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
-                }
+
+                _logger.LogDebug("Saving changes to database for AdId: {AdId}", dto.AdId);
+                await _context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Ad {AdId} successfully marked as promoted.", dto.AdId);
+
                 return "The ad has been successfully marked as promoted.";
             }
-            catch (ArgumentException ex)
+            catch (Exception ex) when (
+                ex is ArgumentException ||
+                ex is KeyNotFoundException ||
+                ex is InvalidOperationException ||
+                ex is ConflictException)
             {
-                _logger.LogWarning(ex, "Validation error occurred while refreshing ad.");
-                throw new ArgumentException(ex.Message);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                throw new KeyNotFoundException(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new InvalidOperationException(ex.Message);
+                _logger.LogError(ex, "Known error occurred while promoting ad with AdId: {AdId}", dto.AdId);
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Unhandled error occurred while refreshing ad.");
-                throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
+                _logger.LogCritical(ex, "Unhandled error occurred while promoting ad with AdId: {AdId}", dto.AdId);
+                throw new InvalidOperationException("Failed to promote the ad due to an unexpected error.", ex);
             }
         }
+
+
+
 
 
     }

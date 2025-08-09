@@ -17,7 +17,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<bool> SaveSearchById(SaveSearchRequestByIdDto dto, CancellationToken cancellationToken = default);
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
-        Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, CancellationToken cancellationToken = default);
+        Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
+     SubVertical subVertical,
+     long adId,
+     string userId,
+     CancellationToken cancellationToken);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
@@ -40,7 +44,13 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdUpdatedResponseDto> UpdateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<AdUpdatedResponseDto> UpdateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
         Task<PaginatedAdResponseDto> GetFilteredAds(string subVertical,bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken token);
-        Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(string subVertical,string userId,List<Guid> adIds,bool isPublished,CancellationToken cancellationToken = default);    
+        //Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(string subVertical,string userId,List<Guid> adIds,bool isPublished,CancellationToken cancellationToken = default);
+        Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
+     int subVertical,
+     string userId,
+     List<long> adIds,
+     bool isPublished,
+     CancellationToken cancellationToken = default);
         Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
         Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken);
     }

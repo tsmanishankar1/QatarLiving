@@ -9,7 +9,7 @@ namespace QLN.Common.DTO_s
     public class BulkAdActionResponse
     {
         public int SuccessCount { get; set; }
-        public List<Guid> FailedAdIds { get; set; } = new();
+        public List<long> FailedAdIds { get; set; } = new();
         public string Message { get; set; } = string.Empty;        
     }    
 }

@@ -674,11 +674,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-            group.MapPost("/items/refresh/{adId:guid}", async Task<IResult> (
-                long adId,
-                [FromQuery] SubVertical subVertical,
-                IClassifiedService service,
-                CancellationToken token) =>
+            group.MapPut("/items/refresh", async Task<IResult> (
+        HttpContext httpContext,
+        [FromQuery] SubVertical subVertical,
+        [FromQuery] long adId,
+        IClassifiedService service,
+        CancellationToken token) =>
             {
                 try
                 {
@@ -692,49 +693,94 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    await service.RefreshClassifiedItemsAd(subVertical, adId, token);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
 
-                    return TypedResults.Ok(new
-                    {
-                        AdId = adId,
-                        Message = "Ad successfully refreshed."
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
+
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(
-                        title: "Internal Server Error",
+                        title: "Error Refreshing Ad",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-                .WithName("RefreshItemsAd")
-                .WithTags("Classified")
-                .WithSummary("Refresh the ad's 'IsRefreshed' field, set the 'CreatedDate' to current, and 'RefreshExpiryDate' to 72 hours or 24 hours from now.")
-                .WithDescription("Updates the ad's 'IsRefreshed' field to true, the 'CreatedDate' to the current date, and 'RefreshExpiryDate' to 72 hours from now.")
-                .Produces(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+    .RequireAuthorization()
+    .WithName("RefreshItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Refresh the ad (authorized)")
+    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPut("/items/refreshed/{userId}/{adId}",
+    async Task<IResult> (
+        string userId,
+        long adId,
+        [FromQuery] SubVertical subVertical,
+        IClassifiedService service,
+        CancellationToken token) =>
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = "UserId is required.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            if (adId <= 0)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = "AdId is required.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
+
+            return TypedResults.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Error Refreshing Ad",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+    })
+    .ExcludeFromDescription()
+    .WithName("RefreshedItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Refresh the ad (direct call)")
+    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
             group.MapPost("preloved", async Task<IResult> (
                 HttpContext httpContext,
@@ -3464,13 +3510,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
             .RequireAuthorization();
 
-           
 
+
+           
             group.MapPut("/items/promote", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsPromoteDto dto,
-    IClassifiedService service,
-    CancellationToken token) =>
+                IClassifiedService service,
+                CancellationToken token) =>
             {
                 try
                 {
@@ -3483,84 +3530,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
                         return Results.Unauthorized();
                     }
+
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     string userId = userData.GetProperty("uid").GetString();
-                    await service.PromoteClassifiedAd(dto, userId, token);
-                    return TypedResults.Ok(new
-                    {
-                        AdId = dto.AdId,
-                        Message = "The ad has been successfully marked as promoted."
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-    .RequireAuthorization()
-    .WithName("PromoteItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
-    .WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/items/promoted", async Task<IResult> (
-    ClassifiedsPromoteDto dto,
-    string userId,
-IClassifiedService service,
-CancellationToken token) =>
-            {
-                try
-                {
-                    if (dto.AdId <= 0)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "AdId is required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
                     await service.PromoteClassifiedAd(dto, userId, token);
+
                     return TypedResults.Ok(new
                     {
                         AdId = dto.AdId,
@@ -3603,7 +3584,72 @@ CancellationToken token) =>
                     );
                 }
             })
-.ExcludeFromDescription()
+            .RequireAuthorization()
+.WithName("PromoteItemsAd")
+.WithTags("Classified")
+.WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapPut("/items/promoted/{userId}/{adId}",
+      async Task<IResult> (
+          string userId,
+          long adId,
+          [FromQuery] int subVertical,
+          IClassifiedService service,
+          CancellationToken token) =>
+      {
+          try
+          {
+              if (adId <= 0)
+              {
+                  return TypedResults.BadRequest(new ProblemDetails
+                  {
+                      Title = "Validation Error",
+                      Detail = "AdId is required.",
+                      Status = StatusCodes.Status400BadRequest
+                  });
+              }
+
+              if (string.IsNullOrWhiteSpace(userId))
+              {
+                  return TypedResults.BadRequest(new ProblemDetails
+                  {
+                      Title = "Validation Error",
+                      Detail = "UserId is required.",
+                      Status = StatusCodes.Status400BadRequest
+                  });
+              }
+
+              var dto = new ClassifiedsPromoteDto
+              {
+                  AdId = adId,
+                  SubVertical = (QLN.Common.DTO_s.SubVertical)subVertical
+              };
+
+              await service.PromoteClassifiedAd(dto, userId, token);
+
+              return TypedResults.Ok(new
+              {
+                  AdId = adId,
+                  Message = "The ad has been successfully marked as promoted."
+              });
+          }
+          catch (Exception ex)
+          {
+              return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+          }
+      })
+                .ExcludeFromDescription()
 .WithName("PromotedItemsAd")
 .WithTags("Classified")
 .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
@@ -3612,6 +3658,8 @@ CancellationToken token) =>
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
 
             group.MapPut("/items/feature", async Task<IResult> (
@@ -3829,9 +3877,9 @@ CancellationToken token) =>
 
             group.MapPost("user-dashboard/bulk-action", async Task<IResult> (
                 HttpContext context,
-                [FromQuery] string subVertical,
+                [FromQuery] int subVertical,
                 [FromQuery] bool isPublished,
-                [FromBody] List<Guid> adIds,
+                [FromBody] List<long> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
@@ -3893,10 +3941,10 @@ CancellationToken token) =>
             .RequireAuthorization();
 
             group.MapPost("user-dashboard/bulk-action-by-id", async Task<IResult> (
-                [FromQuery] string subVertical,
+                [FromQuery] int subVertical,
                 [FromQuery] bool isPublished,
                 [FromQuery] string userId,
-                [FromBody] List<Guid> adIds,
+                [FromBody] List<long> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
