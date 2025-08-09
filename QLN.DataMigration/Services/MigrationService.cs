@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
-using QLN.DataMigration.Helpers;
+using QLN.Common.Infrastructure.Utilities;
 using QLN.DataMigration.Models;
 using System;
 using System.Diagnostics;

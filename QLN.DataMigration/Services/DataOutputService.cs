@@ -6,7 +6,7 @@
     using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
-    using QLN.DataMigration.Helpers;
+    using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -82,6 +82,7 @@
                         UserId = dto.UserName
                     };
 
+                    // modify this to send to the Content Service directly
                     await _daprClient.SaveStateAsync(V2Content.ContentStoreName, article.Id.ToString(), article, cancellationToken: cancellationToken);
 
                 }
@@ -127,6 +128,8 @@
                         CreatedAt = DateTime.UtcNow
                     };
 
+
+                    // modify this to send to the Content Service directly
                     await _daprClient.SaveStateAsync(
                         ConstantValues.V2Content.ContentStoreName,
                         id.ToString(),
@@ -185,6 +188,8 @@
                         DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
                     };
 
+
+                    // modify this to send to the Content Service directly
                     await _daprClient.SaveStateAsync(
                         ConstantValues.V2Content.ContentStoreName,
                         id.ToString(),
@@ -218,5 +223,7 @@
 
             }
         }
+
+
     }
 }
