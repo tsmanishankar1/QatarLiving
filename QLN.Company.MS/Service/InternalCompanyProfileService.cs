@@ -455,5 +455,36 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+        public async Task<List<CompanySubscriptionDto>> GetCompanySubscriptions(
+            CompanySubscriptionFilter filter,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var query = from c in _context.Companies
+                            //join s in _context.Subscriptions on c.CompanyId equals s.CompanyId
+                            //where (string.IsNullOrEmpty(filter.ProductName) || s.ProductName == filter.ProductName)
+                               //&& (!filter.StartDate.HasValue || s.StartDate >= filter.StartDate.Value)
+                               //&& (!filter.EndDate.HasValue || s.EndDate <= filter.EndDate.Value)
+                            select new CompanySubscriptionDto
+                            {
+                                CompanyName = c.CompanyName,
+                                //Email = c.Email,
+                                //Mobile = c.Mobile,
+                                //WhatsApp = c.WhatsApp,
+                                ////WebUrl = c.WebUrl,
+                                //SubscriptionStatus = s.Status,
+                                //SubscriptionStartDate = s.StartDate,
+                                //SubscriptionEndDate = s.EndDate
+                            };
+
+                return await query.ToListAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching company subscriptions");
+                throw;
+            }
+        }
     }
 }

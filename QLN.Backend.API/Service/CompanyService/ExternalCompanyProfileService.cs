@@ -292,5 +292,34 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
+        public async Task<List<CompanySubscriptionDto>> GetCompanySubscriptions(
+            CompanySubscriptionFilter filter,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/companyprofile/companysubscriptions";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Company.CompanyServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(filter), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    throw new InvalidDataException(errorJson);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<List<CompanySubscriptionDto>>(rawJson) ?? new List<CompanySubscriptionDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching company subscriptions from external service");
+                throw;
+            }
+        }
     }
 }

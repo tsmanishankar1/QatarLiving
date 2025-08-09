@@ -9,7 +9,6 @@ using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.Auditlog;
-using System.Threading;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
@@ -773,5 +772,49 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
+        public static RouteGroupBuilder MapCompanySubscriptionExternal(this RouteGroupBuilder group)
+        {
+            group.MapPost("/companysubscriptions", async Task<Results<
+                Ok<List<CompanySubscriptionDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                CompanySubscriptionFilter filter,
+                ICompanyProfileService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var result = await service.GetCompanySubscriptions(filter, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanySubscriptions")
+            .WithTags("Company Subscriptions")
+            .WithSummary("Fetch companies with subscriptions")
+            .WithDescription("Returns companies joined with their subscriptions based on product and date filters")
+            .Produces<List<CompanySubscriptionDto>>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+
     }
 }
