@@ -6,6 +6,8 @@
     using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
     using QLN.Common.Infrastructure.DTO_s;
+    using QLN.Common.Infrastructure.IService.IContentService;
+    using QLN.Common.Infrastructure.IService.V2IContent;
     using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
@@ -16,13 +18,25 @@
 
     public class DataOutputService : IDataOutputService
     {
-        private readonly DaprClient _daprClient;
         private readonly ILogger<DataOutputService> _logger;
+        private readonly IV2EventService _eventService;
+        private readonly IV2NewsService _newsService;
+        private readonly IV2CommunityPostService _communityPostService;
+        private readonly DaprClient _daprClient;
 
-        public DataOutputService(DaprClient daprClient, ILogger<DataOutputService> logger)
+        public DataOutputService(
+            ILogger<DataOutputService> logger,
+            IV2EventService eventService,
+            IV2NewsService newsService,
+            IV2CommunityPostService communityPostService,
+            DaprClient daprClient
+            )
         {
-            _daprClient = daprClient;
             _logger = logger;
+            _eventService = eventService;
+            _newsService = newsService;
+            _communityPostService = communityPostService;
+            _daprClient = daprClient;
         }
 
         public async Task SaveCategoriesAsync(ItemsCategories itemsCategories, CancellationToken cancellationToken)
@@ -83,7 +97,8 @@
                     };
 
                     // modify this to send to the Content Service directly
-                    await _daprClient.SaveStateAsync(V2Content.ContentStoreName, article.Id.ToString(), article, cancellationToken: cancellationToken);
+                    await _newsService.CreateNewsArticleAsync(article.UserId, article, cancellationToken);
+                    //await _daprClient.SaveStateAsync(V2Content.ContentStoreName, article.Id.ToString(), article, cancellationToken: cancellationToken);
 
                 }
                 catch (Exception ex)
@@ -103,6 +118,12 @@
                 {
                     var id = ProcessingHelpers.StringToGuid(dto.Nid);
 
+                    var hasStartDate = DateTime.TryParse(dto.EventStart, out var startDate);
+                    var hasEndDate = DateTime.TryParse(dto.EventEnd, out var endDate);
+
+                    var hasStartTime = startDate.Hour != 0; // check if start time is set to midnight
+                    var hasEndTime = endDate.Hour != 0; // check if end time is set to midnight (not a perfect solution but unlikely event would end here ?)
+
                     var entity = new V2Events
                     {
                         Id = id,
@@ -110,49 +131,98 @@
                         CategoryId = destinationCategoryId,
                         CategoryName = dto.EventCategory,
                         EventTitle = dto.Title,
-                        EventType = V2EventType.OpenRegistrations,
-                        EventSchedule = new EventSchedule()
-                        {
-                            StartDate = DateOnly.TryParse(dto.EventStart, out var startDate) ? startDate : new DateOnly(),
-                            EndDate = DateOnly.TryParse(dto.EventEnd, out var endDate) ? endDate : new DateOnly(),
-                        },
+                        EventType = V2EventType.FreeAcess,
                         Venue = dto.EventVenue,
                         Longitude = dto.EventLat,
                         Latitude = dto.EventLong,
                         EventDescription = dto.Description,
                         CoverImage = dto.ImageUrl,
                         IsFeatured = false,
-                        PublishedDate = DateTime.UtcNow,
+                        PublishedDate = dto.CreatedAt,
                         IsActive = true,
                         CreatedBy = dto.UserName,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = dto.UserName,
+                        Status = Common.DTO_s.EventStatus.Published
                     };
 
+                    var eventSchedule = new EventSchedule();
+
+                    if(hasStartDate)
+                    {
+                        eventSchedule.StartDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
+                        eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
+                        eventSchedule.GeneralTextTime = $"{dto.EventStart}";
+                    }
+
+                    if(hasEndDate && startDate != endDate)
+                    {
+                        eventSchedule.EndDate = new DateOnly(endDate.Year, endDate.Month, endDate.Day);
+                        eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
+                        eventSchedule.GeneralTextTime = string.IsNullOrWhiteSpace(eventSchedule.GeneralTextTime) ? $"{dto.EventEnd}" : $" - {dto.EventEnd}";
+                    } 
+                    else
+                    {
+                        eventSchedule.EndDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
+                    }
+
+                    if (eventSchedule.TimeSlotType == V2EventTimeType.GeneralTime)
+                    {
+                        entity.EventSchedule = eventSchedule;
+                    }
+
+                    var timeSlots = new List<TimeSlot>();
+
+                    if(hasStartTime)
+                    {
+                        timeSlots.Add(new TimeSlot
+                        {
+                            DayOfWeek = startDate.DayOfWeek,
+                            TextTime = startDate.ToShortTimeString(),
+                        });
+                    }
+
+                    if (hasEndTime && startDate != endDate)
+                    {
+                        timeSlots.Add(new TimeSlot
+                        {
+                            DayOfWeek = endDate.DayOfWeek,
+                            TextTime = endDate.ToShortTimeString(),
+                        });
+                    };
+
+                    if(timeSlots.Count > 0)
+                    {
+                       entity.EventSchedule.TimeSlotType = V2EventTimeType.PerDayTime;
+                       entity.EventSchedule.TimeSlots = timeSlots;
+                    }
 
                     // modify this to send to the Content Service directly
-                    await _daprClient.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        id.ToString(),
-                        entity,
-                        cancellationToken: cancellationToken
-                    );
+                    await _eventService.CreateEvent(dto.UserName, entity, cancellationToken);
+                    //await _daprClient.SaveStateAsync(
+                    //    ConstantValues.V2Content.ContentStoreName,
+                    //    id.ToString(),
+                    //    entity,
+                    //    cancellationToken: cancellationToken
+                    //);
 
-                    var keys = await _daprClient.GetStateAsync<List<string>>(
-                        ConstantValues.V2Content.ContentStoreName,
-                        ConstantValues.V2Content.EventIndexKey,
-                        cancellationToken: cancellationToken
-                    ) ?? new List<string>();
+                    //var keys = await _daprClient.GetStateAsync<List<string>>(
+                    //    ConstantValues.V2Content.ContentStoreName,
+                    //    ConstantValues.V2Content.EventIndexKey,
+                    //    cancellationToken: cancellationToken
+                    //) ?? new List<string>();
 
-                    if (!keys.Contains(id.ToString()))
-                    {
-                        keys.Add(id.ToString());
-                        await _daprClient.SaveStateAsync(
-                            ConstantValues.V2Content.ContentStoreName,
-                            ConstantValues.V2Content.EventIndexKey,
-                            keys,
-                            cancellationToken: cancellationToken
-                        );
-                    }
+                    //if (!keys.Contains(id.ToString()))
+                    //{
+                    //    keys.Add(id.ToString());
+                    //    await _daprClient.SaveStateAsync(
+                    //        ConstantValues.V2Content.ContentStoreName,
+                    //        ConstantValues.V2Content.EventIndexKey,
+                    //        keys,
+                    //        cancellationToken: cancellationToken
+                    //    );
+                    //}
 
                 }
                 catch (Exception ex)
@@ -190,29 +260,30 @@
 
 
                     // modify this to send to the Content Service directly
-                    await _daprClient.SaveStateAsync(
-                        ConstantValues.V2Content.ContentStoreName,
-                        id.ToString(),
-                        entity,
-                        cancellationToken: cancellationToken
-                    );
+                    await _communityPostService.CreateCommunityPostAsync(dto.UserName, entity, cancellationToken);
+                    //await _daprClient.SaveStateAsync(
+                    //    ConstantValues.V2Content.ContentStoreName,
+                    //    id.ToString(),
+                    //    entity,
+                    //    cancellationToken: cancellationToken
+                    //);
 
-                    var keys = await _daprClient.GetStateAsync<List<string>>(
-                        ConstantValues.V2Content.ContentStoreName,
-                        "community-index",
-                        cancellationToken: cancellationToken
-                    ) ?? new List<string>();
+                    //var keys = await _daprClient.GetStateAsync<List<string>>(
+                    //    ConstantValues.V2Content.ContentStoreName,
+                    //    "community-index",
+                    //    cancellationToken: cancellationToken
+                    //) ?? new List<string>();
 
-                    if (!keys.Contains(id.ToString()))
-                    {
-                        keys.Add(id.ToString());
-                        await _daprClient.SaveStateAsync(
-                            ConstantValues.V2Content.ContentStoreName,
-                            "community-index",
-                            keys,
-                            cancellationToken: cancellationToken
-                        );
-                    }
+                    //if (!keys.Contains(id.ToString()))
+                    //{
+                    //    keys.Add(id.ToString());
+                    //    await _daprClient.SaveStateAsync(
+                    //        ConstantValues.V2Content.ContentStoreName,
+                    //        "community-index",
+                    //        keys,
+                    //        cancellationToken: cancellationToken
+                    //    );
+                    //}
 
                 }
                 catch (Exception ex)

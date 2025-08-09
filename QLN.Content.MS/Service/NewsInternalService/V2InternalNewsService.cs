@@ -153,7 +153,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
 
                 var slugBase = GenerateNewsSlug(dto.Title);
-                var articleId = Guid.NewGuid();
+                var articleId = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                                // and only generate a new one if this is GUID.Empty.
 
                 var articleCategories = dto.Categories.Select(cat => new V2ArticleCategory
                 {
