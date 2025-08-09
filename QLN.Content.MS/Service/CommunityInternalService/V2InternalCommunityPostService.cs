@@ -34,7 +34,8 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Description)) throw new ArgumentException("Description is required.");
 
-            dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id;
+            dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                     // and only generate a new one if this is GUID.Empty.
             dto.UpdatedBy = userId;
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;

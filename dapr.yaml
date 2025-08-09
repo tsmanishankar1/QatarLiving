@@ -52,11 +52,12 @@ apps:
   #   command:
   #     - dotnet
   #     - run
-  # - appID: qln-content-ms
-  #   appDirPath: QLN.Content.MS
-  #   appPort: 5112
-  #   daprHTTPPort: 3505
-  #   daprGRPCPort: 50006
+  - appID: qln-content-ms
+    appDirPath: QLN.Content.MS
+    appPort: 5112
+    command:
+      - dotnet
+      - run
   - appID: qln-datamigration
     appDirPath: QLN.DataMigration
     appPort: 5084

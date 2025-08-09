@@ -60,7 +60,9 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 ValidateEventSchedule(dto.EventSchedule);
-                var id = Guid.NewGuid();
+                var id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                         // and only generate a new one if this is GUID.Empty.
+
                 var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
                 var entity = new V2Events
                 {

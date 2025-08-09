@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -504,6 +505,63 @@ namespace QLN.DataMigration.Services
             drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
 
             _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+        }
+
+        public async Task<IResult> MigrateEventCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || !categories.EventCategories.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            // then we write the data away to a permanent store (in this case DAPR state)
+
+            await _dataOutputService.SaveEventCategoriesAsync(categories.EventCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.EventCategories.Count} Categories - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || !categories.ForumCategories.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            // then we write the data away to a permanent store (in this case DAPR state)
+
+            //await _dataOutputService.SaveCategoriesAsync(itemsCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                //Message = $"Migrated {itemsCategories.Models.Count} Categories for {environment} - Completed @ {DateTime.UtcNow}.",
+                NewsCategories = categories.ForumCategories
+            });
         }
     }
 }
