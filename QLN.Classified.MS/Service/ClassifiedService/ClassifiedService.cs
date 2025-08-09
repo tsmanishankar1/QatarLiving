@@ -443,8 +443,10 @@ namespace QLN.Classified.MS.Service
                 dto.BranchNames = company.BranchLocations != null && company.BranchLocations.Any()
                     ? string.Join(", ", company.BranchLocations)
                     : string.Empty;
-                dto.ContactNumber = company.PhoneNumber;
-                dto.WhatsappNumber = company.WhatsAppNumber;
+                if (string.IsNullOrWhiteSpace(dto.ContactNumber))
+                    dto.ContactNumber = company.PhoneNumber;
+                if (string.IsNullOrWhiteSpace(dto.WhatsappNumber))
+                    dto.WhatsappNumber = company.WhatsAppNumber;
                 var socialLinks = new List<string>();
                 if (!string.IsNullOrWhiteSpace(company.FacebookUrl))
                     socialLinks.Add(company.FacebookUrl);
@@ -653,61 +655,42 @@ namespace QLN.Classified.MS.Service
             }
         }
 
-        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(Guid adId, CancellationToken cancellationToken = default)
+        public async Task<DeleteAdResponseDto> DeleteClassifiedDealsAd(long adId, string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var key = $"ad-{adId}";
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    throw new ArgumentException("UserId must not be empty.");
+                }
 
-                var adObject = await _dapr.GetStateAsync<JsonElement>(UnifiedStore, key, cancellationToken: cancellationToken);
+                var entity = await _context.Deal.Where(x => x.Id == adId && x.IsActive == true)
+                    .Select(x => new { x.Id, x.UserId})
+                    .FirstOrDefaultAsync(cancellationToken);
 
-                var subVertical = adObject.TryGetProperty("subVertical", out var sv) ? sv.GetString() : null;
-                if (!string.Equals(subVertical, "Deals", StringComparison.OrdinalIgnoreCase))
-                    throw new InvalidOperationException($"Ad ID {adId} does not belong to the Deals subvertical. Found: {subVertical}");
-
-                if (adObject.ValueKind != JsonValueKind.Object)
+                if (entity == null)
+                {
                     throw new KeyNotFoundException($"Ad with ID {adId} not found.");
+                }              
 
-                _logger.LogInformation("Fetched deals ad object: {Json}", adObject.ToString());
+                if (!string.Equals(entity.UserId, userId, StringComparison.OrdinalIgnoreCase))
+                    throw new UnauthorizedAccessException("You are not authorized to delete this ad. It doesn't belong to you.");
 
-                var blobNames = new List<string>();
-
-                if (adObject.TryGetProperty("flyerFile", out var flyerProp) && flyerProp.ValueKind == JsonValueKind.String)
+                var patchEntity = new Deals
                 {
-                    var flyerUrl = flyerProp.GetString();
-                    var flyerBlobName = ExtractBlobName(flyerUrl);
-                    if (!string.IsNullOrEmpty(flyerBlobName))
-                        blobNames.Add(flyerBlobName);
-                }
+                    Id = entity.Id,
+                    IsActive = false,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Deal.Attach(patchEntity);
+                _context.Entry(patchEntity).Property(x => x.IsActive).IsModified = true;
+                _context.Entry(patchEntity).Property(x => x.UpdatedAt).IsModified = true;
 
-                if (adObject.TryGetProperty("ImageUrl", out var imageUrlsProp) && imageUrlsProp.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var img in imageUrlsProp.EnumerateArray())
-                    {
-                        if (img.TryGetProperty("url", out var urlProp) && urlProp.ValueKind == JsonValueKind.String)
-                        {
-                            var imgUrl = urlProp.GetString();
-                            var imgBlobName = ExtractBlobName(imgUrl);
-                            if (!string.IsNullOrEmpty(imgBlobName)) blobNames.Add(imgBlobName);
-                        }
-                    }
-                }
-                _logger.LogInformation("Extracted blob names for deals ad: {Blobs}", string.Join(", ", blobNames));
-
-                await _dapr.DeleteStateAsync(UnifiedStore, key, cancellationToken: cancellationToken);
-
-                var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, DealsIndexKey, cancellationToken: cancellationToken) ?? new();
-
-                if (index.Contains(key))
-                {
-                    index.Remove(key);
-                    await _dapr.SaveStateAsync(UnifiedStore, DealsIndexKey, index, cancellationToken: cancellationToken);
-                }
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return new DeleteAdResponseDto
                 {
                     Message = "Deals Ad deleted successfully",
-                    DeletedImages = blobNames
                 };
             }
             catch (JsonException jex)
@@ -1288,15 +1271,48 @@ namespace QLN.Classified.MS.Service
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (dto.UpdatedBy == null) throw new ArgumentException("UserId is required.");
             if (string.IsNullOrWhiteSpace(dto.Offertitle)) throw new ArgumentException("Title is required.");
-          
+
             try
             {
                 var existingAd = await GetDealsAdById(dto.Id, cancellationToken);
-
                 if (existingAd == null)
                     throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
-                
+
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+
+                var company = await _companyContext.Companies
+                    .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.IsActive == true, cancellationToken);
+
+                if (company != null)
+                {
+                    if (string.IsNullOrWhiteSpace(existingAd.BusinessName))
+                        existingAd.BusinessName = company.CompanyName;
+
+                    if (string.IsNullOrWhiteSpace(existingAd.BusinessType))
+                        existingAd.BusinessType = company.CompanyType.ToString();
+
+                    if (string.IsNullOrWhiteSpace(existingAd.BranchNames))
+                        existingAd.BranchNames = company.BranchLocations != null && company.BranchLocations.Any()
+                            ? string.Join(", ", company.BranchLocations)
+                            : string.Empty;
+
+                    if (string.IsNullOrWhiteSpace(existingAd.ContactNumber))
+                        existingAd.ContactNumber = company.PhoneNumber;
+
+                    if (string.IsNullOrWhiteSpace(existingAd.WhatsappNumber))
+                        existingAd.WhatsappNumber = company.WhatsAppNumber;
+
+                    if (string.IsNullOrWhiteSpace(existingAd.SocialMediaLinks))
+                    {
+                        var socialLinks = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(company.FacebookUrl))
+                            socialLinks.Add(company.FacebookUrl);
+                        if (!string.IsNullOrWhiteSpace(company.InstagramUrl))
+                            socialLinks.Add(company.InstagramUrl);
+
+                        existingAd.SocialMediaLinks = socialLinks.Any() ? string.Join(", ", socialLinks) : null;
+                    }
+                }
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
@@ -1319,6 +1335,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to update Deals ad.", ex);
             }
         }
+
 
         public async Task<PaginatedAdResponseDto> GetFilteredAds(string subVertical,bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken cancellationToken)
         {
@@ -1804,9 +1821,7 @@ namespace QLN.Classified.MS.Service
             }
         }
         #endregion
-
                
-
         public async Task<string> FeatureClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
         {
             try

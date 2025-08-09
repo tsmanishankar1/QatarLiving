@@ -67,11 +67,15 @@ namespace QLN.SearchService.CustomEndpoints
                                 return Results.BadRequest("UpsertRequest cannot be null for Upsert action");
                             }
 
-                            var id =msg.UpsertRequest.ServicesItem?.Id ??
+                            var id = msg.UpsertRequest.ServicesItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsDealsItem?.Id ??
                                     msg.UpsertRequest.ClassifiedsPrelovedItem?.Id ??
-                                    msg.UpsertRequest.ClassifiedsCollectiblesItem?.Id;
+                                    msg.UpsertRequest.ClassifiedsCollectiblesItem?.Id ??
+                                    msg.UpsertRequest.ContentNewsItem?.Id ??
+                                    msg.UpsertRequest.ContentEventsItem?.Id ??
+                                    msg.UpsertRequest.ContentCommunityItem?.Id;
+
 
                             await svc.UploadAsync(msg.UpsertRequest);
                             logger.LogInformation("Indexed item {ItemId} in {IndexName}", id, msg.UpsertRequest.IndexName);

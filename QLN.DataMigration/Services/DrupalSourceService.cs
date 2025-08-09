@@ -1,8 +1,11 @@
 ﻿namespace QLN.DataMigration.Services
 {
     using Microsoft.Extensions.Logging;
+    using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
+    using QLN.Common.Infrastructure.DTO_s;
     using QLN.DataMigration.Models;
+    using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text.Json;
 
@@ -27,7 +30,9 @@
             string sortOrder,
             string? keywords,
             int? page,
-            int? pageSize)
+            int? pageSize, 
+            CancellationToken cancellationToken
+            )
         {
             var formData = new List<KeyValuePair<string, string>>
             {
@@ -80,13 +85,13 @@
             }
         }
 
-        public async Task<DrupalItemsCategories?> GetCategoriesAsync(string environment)
+        public async Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken)
         {
 
             var formData = new List<KeyValuePair<string, string>>
-        {
-            new KeyValuePair<string, string>("env", environment)
-        };
+            {
+                new KeyValuePair<string, string>("env", environment)
+            };
             var content = new FormUrlEncodedContent(formData);
 
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
@@ -118,6 +123,51 @@
                 _logger.LogError($"Deserialization error: {ex.Message}");
                 return null;
             }
+        }
+
+        public async Task<ContentEventsResponse?> GetEventsFromDrupalAsync(
+            string category_id,
+            CancellationToken cancellationToken,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+
+            string requestUri = $"{DrupalContentConstants.EventsPath}?page={page}&page_size={page_size}&category_id={category_id}";
+
+            return await _httpClient.GetFromJsonAsync<ContentEventsResponse>(requestUri, cancellationToken);
+        }
+
+        public async Task<CommunitiesResponse?> GetCommunitiesFromDrupalAsync(
+            CancellationToken cancellationToken,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+
+            string requestUri = $"{DrupalContentConstants.CommunityPath}?page={page}&page_size={page_size}";
+
+            return await _httpClient.GetFromJsonAsync<CommunitiesResponse>(requestUri, cancellationToken);
+        }
+
+        public async Task<ArticleResponse?> GetNewsFromDrupalAsync(
+            string sourceCategory,
+            CancellationToken cancellationToken,
+            int? page = null,
+            int? page_size = null
+            )
+        {
+            page ??= 1;
+            page_size ??= 30;
+
+            string requestUri = $"{DrupalContentConstants.NewsPath}?page={page}&page_size={page_size}&forum_id={sourceCategory}";
+
+
+            return await _httpClient.GetFromJsonAsync<ArticleResponse>(requestUri, cancellationToken);
         }
     }
 }
