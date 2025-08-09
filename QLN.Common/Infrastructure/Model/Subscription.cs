@@ -17,8 +17,12 @@ namespace QLN.Common.Infrastructure.Model
         public Guid SubscriptionId { get; set; }
 
         [Required]
-        [MaxLength(30)]
+        [MaxLength(50)]
         public string ProductCode { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string ProductName { get; set; } = string.Empty;
 
         [MaxLength(30)]
         public string? UserId { get; set; }
@@ -30,7 +34,9 @@ namespace QLN.Common.Infrastructure.Model
         [Required]
         public Vertical Vertical { get; set; }
 
-        public ProductConstraints? Quota { get; set; } = new();
+        public SubVertical? SubVertical { get; set; }
+
+        public SubscriptionQuota Quota { get; set; } = new();
 
         [Required]
         public DateTime StartDate { get; set; }

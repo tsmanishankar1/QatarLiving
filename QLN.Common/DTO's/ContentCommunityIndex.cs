@@ -1,5 +1,6 @@
 ﻿using Azure.Search.Documents.Indexes;
-using System.Text.Json.Serialization;
+using System;
+using System.Collections.Generic;
 
 namespace QLN.Common.DTO_s
 {
@@ -14,7 +15,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsFacetable = true)]
         public string? UserId { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true)]
+        [SearchableField(IsFilterable = true)]
         public string? Title { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
@@ -26,7 +27,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
         public string? CategoryId { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SearchableField]
         public string? Description { get; set; }
 
         [SimpleField(IsFilterable = true)]
@@ -35,7 +36,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true, IsFacetable = true)]
         public bool IsActive { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
+        [SimpleField(IsFilterable = true, IsSortable = true)]
         public string? UpdatedBy { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
@@ -56,9 +57,5 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public IList<string>? CommentedUserIds { get; set; }
 
-        public virtual IList<ContentCommunityIndex>? MoreArticles { get; set; }  // Kishore: Should likely be dynamically generated from an Index search now
-                                                                                 // so wouldnt be in the index, but in the results as something we can update
-                                                                                 // with this value - making this virtual asusming this maybe works like a
-                                                                                 // DBContext
     }
 }

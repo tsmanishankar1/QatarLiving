@@ -1,21 +1,21 @@
 ﻿using Azure.Search.Documents.Indexes;
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 
 namespace QLN.Common.DTO_s
 {
     public class ContentNewsIndex
     {
-        // Primary key
         [SimpleField(IsKey = true, IsFilterable = true)]
         public string Id { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string UserId { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true, IsSortable = true)]
+        [SearchableField(IsFilterable = true)]
         public string Title { get; set; }
 
-        [SearchableField(IsFilterable = true, IsFacetable = true)]
+        [SearchableField(IsFilterable = true)]
         public string Content { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
@@ -41,10 +41,10 @@ namespace QLN.Common.DTO_s
         public DateTime CreatedAt { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public string UpdatedBy { get; set; }
+        public string? UpdatedBy { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string authorName { get; set; }
