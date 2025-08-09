@@ -525,14 +525,13 @@ namespace QLN.DataMigration.Services
 
             // then we write the data away to a permanent store (in this case DAPR state)
 
-            //await _dataOutputService.SaveCategoriesAsync(itemsCategories, cancellationToken);
+            await _dataOutputService.SaveEventCategoriesAsync(categories.EventCategories, cancellationToken);
 
             // return that this was successful
 
             return Results.Ok(new
             {
-                //Message = $"Migrated {itemsCategories.Models.Count} Categories for {environment} - Completed @ {DateTime.UtcNow}.",
-                EventCategories = categories.EventCategories
+                Message = $"Migrated {categories.EventCategories.Count} Categories - Completed @ {DateTime.UtcNow}.",
             });
         }
 

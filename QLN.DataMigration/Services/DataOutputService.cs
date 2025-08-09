@@ -2,6 +2,7 @@
 {
     using Dapr.Client;
     using Dapr.Client.Autogen.Grpc.v1;
+    using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Logging;
     using QLN.Common.DTO_s;
     using QLN.Common.Infrastructure.Constants;
@@ -11,6 +12,7 @@
     using QLN.Common.Infrastructure.Utilities;
     using QLN.DataMigration.Models;
     using System.Text;
+    using System.Text.Json;
     using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
@@ -295,6 +297,36 @@
             }
         }
 
+        public async Task SaveEventCategoriesAsync(List<Common.Infrastructure.DTO_s.EventCategory> items, CancellationToken cancellationToken)
+        {
+            foreach (var dto in items)
+            {
+                try {
 
+                    if(int.TryParse(dto.Id, out var id))
+                    {
+                        var entity = new EventsCategory
+                        {
+                            Id = id,
+                            CategoryName = dto.Name
+                        };
+
+                        await _eventService.CreateCategory(entity, cancellationToken);
+
+                        _logger.LogInformation($"Created category {dto.Id} - {dto.Name}");
+
+                    } else
+                    {
+                        _logger.LogError($"Failed to create category {dto.Id} - {dto.Name}");
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create category {dto.Id} - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
+            }
+        }
     }
 }
