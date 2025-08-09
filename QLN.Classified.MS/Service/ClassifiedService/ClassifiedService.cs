@@ -744,6 +744,102 @@ namespace QLN.Classified.MS.Service
             }
         }
 
+        public async Task<List<Items>> GetAllItemsAdByUser(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+            try
+            {
+                var ads = await _context.Item.AsNoTracking()
+                    .Where(i => i.UserId == userId && i.IsActive)                                                                                 
+                    .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt)      
+                    .ToListAsync(cancellationToken);
+
+                if (ads.Count == 0)
+                    _logger.LogInformation("No active Items ads found for user {UserId}.", userId);
+
+                return ads;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Items ads for user: {UserId}", userId);
+                throw new InvalidOperationException("Failed to fetch Items ads by user.", ex);
+            }
+        }
+
+        public async Task<List<Preloveds>> GetAllPrelovedAdByUser(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+            try
+            {
+                var ads = await _context.Preloved.AsNoTracking()
+                    .Where(i => i.UserId == userId && i.IsActive)
+                    .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                if (ads.Count == 0)
+                    _logger.LogInformation("No active Preloved ads found for user {UserId}.", userId);
+
+                return ads;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Preloved ads for user: {UserId}", userId);
+                throw new InvalidOperationException("Failed to fetch Preloved ads by user.", ex);
+            }
+        }
+
+        public async Task<List<Collectibles>> GetAllCollectiblesAdByUser(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+            try
+            {
+                var ads = await _context.Collectible.AsNoTracking()
+                    .Where(i => i.UserId == userId && i.IsActive)
+                    .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                if (ads.Count == 0)
+                    _logger.LogInformation("No active Collectibles ads found for user {UserId}.", userId);
+
+                return ads;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Collectibles ads for user: {UserId}", userId);
+                throw new InvalidOperationException("Failed to fetch Collectibles ads by user.", ex);
+            }
+        }
+
+        public async Task<List<Deals>> GetAllDealsAdByUser(string userId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                throw new ArgumentException("User ID must not be empty.", nameof(userId));
+
+            try
+            {
+                var ads = await _context.Deal.AsNoTracking()
+                    .Where(i => i.UserId == userId && i.IsActive)
+                    .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                if (ads.Count == 0)
+                    _logger.LogInformation("No active Deals ads found for user {UserId}.", userId);
+
+                return ads;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching Deals ads for user: {UserId}", userId);
+                throw new InvalidOperationException("Failed to fetch Deals ads by user.", ex);
+            }
+        }
+
         public async Task<Preloveds> GetPrelovedAdById(long adId, CancellationToken cancellationToken = default)
         {
             if (adId <= 0)
@@ -1337,85 +1433,110 @@ namespace QLN.Classified.MS.Service
         }
 
 
-        public async Task<PaginatedAdResponseDto> GetFilteredAds(string subVertical,bool? isPublished,int page,int pageSize,string? search,string userId,CancellationToken cancellationToken)
+        public async Task<PaginatedAdResponseDto> GetFilteredAds(SubVertical subVertical, bool? isPublished, int page, int pageSize, string? search, string userId, CancellationToken cancellationToken)
         {
-            _logger.LogInformation("GetFilteredAds started | SubVertical: {SubVertical}, IsPublished: {IsPublished}, Page: {Page}, PageSize: {PageSize}, UserId: {UserId}, Search: {Search}",
-                subVertical, isPublished, page, pageSize, userId, search);
-
-            var normalizedSubVertical = subVertical.ToLowerInvariant();
-
-            var indexKey = normalizedSubVertical switch
+            try
             {
-                "items" => ConstantValues.StateStoreNames.ItemsIndexKey,
-                "preloved" => ConstantValues.StateStoreNames.PrelovedIndexKey,
-                "deals" => ConstantValues.StateStoreNames.DealsIndexKey,
-                "collectibles" => ConstantValues.StateStoreNames.CollectiblesIndexKey,
-                _ => throw new ArgumentException("Invalid subVertical", nameof(subVertical))
-            };
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("User ID must not be empty.", nameof(userId));
+                if (page <= 0) page = 1;
+                if (pageSize <= 0) pageSize = 10;
 
-            _logger.LogDebug("Using index key: {IndexKey}", indexKey);
+                _logger.LogInformation(
+                    "GetFilteredAds (DB) | SubVertical: {SubVertical}, IsPublished: {IsPublished}, Page: {Page}, PageSize: {PageSize}, UserId: {UserId}, Search: {Search}",
+                    subVertical, isPublished, page, pageSize, userId, search);
 
-            var index = await _dapr.GetStateAsync<List<string>>(UnifiedStore, indexKey) ?? new();
-            _logger.LogInformation("Fetched {Count} keys from state store", index.Count);
 
-            List<object> results = new();
+                string? searchLower = string.IsNullOrWhiteSpace(search) ? null : search.ToLowerInvariant();
+                
+                IQueryable<Items> ItemsFilter(IQueryable<Items> q)
+                    => q.Where(i => i.UserId == userId && i.IsActive)
+                        .Where(i => searchLower == null || (i.Title ?? "").ToLower().Contains(searchLower))
+                        .Where(i => !isPublished.HasValue
+                            || (isPublished.Value
+                                ? (i.Status == AdStatus.Published || i.Status == AdStatus.Approved)
+                                : (i.Status != AdStatus.Published && i.Status != AdStatus.Approved)))
+                        .OrderByDescending(i => i.UpdatedAt ?? i.CreatedAt);
 
-            foreach (var key in index)
-            {
-                try
+                IQueryable<Preloveds> PrelovedFilter(IQueryable<Preloveds> q)
+                    => q.Where(p => p.UserId == userId && p.IsActive)
+                        .Where(p => searchLower == null || (p.Title ?? "").ToLower().Contains(searchLower))
+                        .Where(p => !isPublished.HasValue
+                            || (isPublished.Value
+                                ? (p.Status == AdStatus.Published || p.Status == AdStatus.Approved)
+                                : (p.Status != AdStatus.Published && p.Status != AdStatus.Approved)))
+                        .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt);
+
+                IQueryable<Collectibles> CollectiblesFilter(IQueryable<Collectibles> q)
+                    => q.Where(c => c.UserId == userId && c.IsActive)
+                        .Where(c => searchLower == null || (c.Title ?? "").ToLower().Contains(searchLower))
+                        .Where(c => !isPublished.HasValue
+                            || (isPublished.Value
+                                ? (c.Status == AdStatus.Published || c.Status == AdStatus.Approved)
+                                : (c.Status != AdStatus.Published && c.Status != AdStatus.Approved)))
+                        .OrderByDescending(c => c.UpdatedAt ?? c.CreatedAt);
+
+                IQueryable<Deals> DealsFilter(IQueryable<Deals> q)
+                    => q.Where(d => d.UserId == userId && d.IsActive)
+                        .Where(d => searchLower == null || (d.Offertitle ?? "").ToLower().Contains(searchLower))
+                        .Where(d => !isPublished.HasValue
+                            || (isPublished.Value
+                                ? (d.Status == AdStatus.Published || d.Status == AdStatus.Approved)
+                                : (d.Status != AdStatus.Published && d.Status != AdStatus.Approved)))
+                        .OrderByDescending(d => d.UpdatedAt ?? d.CreatedAt);
+
+                List<object> pageItems;
+                int total;
+
+                switch (subVertical)
                 {
-                    object? ad = normalizedSubVertical switch
-                    {
-                        "items" => await _dapr.GetStateAsync<ClassifiedsItems>(UnifiedStore, key),
-                        "preloved" => await _dapr.GetStateAsync<ClassifiedsPreloved>(UnifiedStore, key),
-                        "deals" => await _dapr.GetStateAsync<ClassifiedsDeals>(UnifiedStore, key),
-                        "collectibles" => await _dapr.GetStateAsync<ClassifiedsCollectibles>(UnifiedStore, key),
-                        _ => null
-                    };
-
-                    if (ad == null)
-                    {
-                        _logger.LogWarning("Ad not found or null for key: {Key}", key);
-                        continue;
-                    }
-
-                    dynamic adDynamic = ad;
-
-                    if (!string.Equals(adDynamic.UserId, userId, StringComparison.OrdinalIgnoreCase)) continue;
-
-                    if (!string.Equals(adDynamic.SubVertical, subVertical, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (adDynamic.IsActive != true) continue;
-
-                    if (isPublished == true &&
-                        adDynamic.Status != AdStatus.Published &&
-                        adDynamic.Status != AdStatus.Approved)
-                        continue;
-
-                    if (isPublished == false &&
-                        (adDynamic.Status == AdStatus.Published || adDynamic.Status == AdStatus.Approved))
-                        continue;
-
-                    if (!string.IsNullOrWhiteSpace(search) &&
-                        !((string)adDynamic.Title).Contains(search, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    results.Add(ad);
+                    case SubVertical.Items:
+                        {
+                            var baseQ = ItemsFilter(_context.Item.AsNoTracking());
+                            total = await baseQ.CountAsync(cancellationToken);
+                            var list = await baseQ.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                            pageItems = list.Cast<object>().ToList();
+                            break;
+                        }
+                    case SubVertical.Preloved:
+                        {
+                            var baseQ = PrelovedFilter(_context.Preloved.AsNoTracking());
+                            total = await baseQ.CountAsync(cancellationToken);
+                            var list = await baseQ.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                            pageItems = list.Cast<object>().ToList();
+                            break;
+                        }
+                    case SubVertical.Collectibles:
+                        {
+                            var baseQ = CollectiblesFilter(_context.Collectible.AsNoTracking());
+                            total = await baseQ.CountAsync(cancellationToken);
+                            var list = await baseQ.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                            pageItems = list.Cast<object>().ToList();
+                            break;
+                        }
+                    case SubVertical.Deals:
+                        {
+                            var baseQ = DealsFilter(_context.Deal.AsNoTracking());
+                            total = await baseQ.CountAsync(cancellationToken);
+                            var list = await baseQ.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                            pageItems = list.Cast<object>().ToList();
+                            break;
+                        }
+                    default:
+                        throw new ArgumentException($"Unsupported subVertical: {subVertical}", nameof(subVertical));
                 }
-                catch (Exception ex)
+
+                return new PaginatedAdResponseDto
                 {
-                    _logger.LogError(ex, "Failed to process ad key: {Key}", key);
-                }
+                    Total = total,
+                    Items = pageItems
+                };
             }
-
-            _logger.LogInformation("Filtered down to {Count} ads after processing", results.Count);
-
-            var paginated = results.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            return new PaginatedAdResponseDto
+            catch (Exception ex)
             {
-                Total = results.Count,
-                Items = paginated
-            };
+                _logger.LogError(ex, "Error in GetFilteredAds | SubVertical: {SubVertical}, UserId: {UserId}", subVertical, userId);
+                throw new InvalidOperationException("Failed to fetch filtered ads.", ex);
+            }
         }
 
         public async Task<BulkAdActionResponse> BulkUpdateAdPublishStatusAsync(
@@ -1826,79 +1947,89 @@ namespace QLN.Classified.MS.Service
         {
             try
             {
-                object adItem = null;
-                Console.WriteLine(userId);
+                if (dto is null) throw new ArgumentNullException(nameof(dto));
+                if (dto.AdId <= 0) throw new ArgumentException("AdId must be a positive number.", nameof(dto.AdId));
+                if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentException("UserId must not be empty.", nameof(userId));
+
+                _logger.LogInformation("FeatureClassifiedAd | SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
+                    dto.SubVertical, dto.AdId, userId);
+
                 switch (dto.SubVertical)
                 {
                     case SubVertical.Items:
-                        adItem = await GetItemAdById(dto.AdId, cancellationToken);
-                        break;
+                        {
+                            var ad = await _context.Item
+                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
+                            if (ad == null)
+                                throw new KeyNotFoundException($"Items ad {dto.AdId} not found or inactive.");
+
+                            if (ad.IsFeatured == true)
+                                throw new ConflictException("This ad is already featured.");
+
+                            ad.IsFeatured = true;
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                            await _context.SaveChangesAsync(cancellationToken);
+                            break;
+                        }
+
                     case SubVertical.Preloved:
-                        adItem = await GetPrelovedAdById(dto.AdId, cancellationToken);
-                        break;
+                        {                            
+                            var ad = await _context.Preloved
+                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
+                            if (ad == null)
+                                throw new KeyNotFoundException($"Preloved ad {dto.AdId} not found or inactive.");
+                           
+                            if (ad.IsFeatured == true)
+                                throw new ConflictException("This ad is already featured.");
+
+                            ad.IsFeatured = true;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync(cancellationToken);
+                            break;
+                        }
+
                     case SubVertical.Collectibles:
-                        adItem = await GetCollectiblesAdById(dto.AdId, cancellationToken);
-                        break;
+                        {
+                            var ad = await _context.Collectible
+                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
+                            if (ad == null)
+                                throw new KeyNotFoundException($"Collectibles ad {dto.AdId} not found or inactive.");
+                         
+                            if (ad.IsFeatured == true)
+                                throw new ConflictException("This ad is already featured.");
+
+                            ad.IsFeatured = true;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync(cancellationToken);
+                            break;
+                        }
+
                     case SubVertical.Deals:
-                        adItem = await GetDealsAdById(dto.AdId, cancellationToken);
-                        break;
+                        {
+                            var ad = await _context.Deal
+                                .FirstOrDefaultAsync(x => x.Id == dto.AdId && x.IsActive, cancellationToken);
+                            if (ad == null)
+                                throw new KeyNotFoundException($"Deals ad {dto.AdId} not found or inactive.");
+                           
+                            if (ad.IsFeatured == true)
+                                throw new ConflictException("This ad is already featured.");
+
+                            ad.IsFeatured = true;
+                            ad.FeaturedExpiryDate = DateTime.UtcNow.AddDays(30);
+                            ad.UpdatedAt = DateTime.UtcNow;
+                            await _context.SaveChangesAsync(cancellationToken);
+                            break;
+                        }
+
                     default:
                         throw new InvalidOperationException($"Invalid SubVertical: {dto.SubVertical}");
                 }
-                if (adItem == null)
-                {
-                    _logger.LogError($"Ad with id {dto.AdId} not found in the {dto.SubVertical} vertical.");
-                    throw new KeyNotFoundException($"Ad with id {dto.AdId} not found.");
-                }
-                if (adItem is ClassifiedsItems itemAd)
-                {
-                    if (itemAd.IsFeatured == true)
-                    {
-                        throw new ConflictException("This ad is already featured.");
-                    }
-                    itemAd.IsFeatured = true;
-                    itemAd.UpdatedAt = DateTime.UtcNow;
-                    itemAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{itemAd.Id}", itemAd);
-                }
-                else if (adItem is ClassifiedsPreloved prelovedAd)
-                {
-                    if (prelovedAd.IsFeatured == true)
-                    {
-                        throw new ConflictException("This ad is already featured.");
-                    }
-                    prelovedAd.IsFeatured = true;
-                    prelovedAd.UpdatedAt = DateTime.UtcNow;
-                    prelovedAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{prelovedAd.Id}", prelovedAd);
-                }
-                else if (adItem is ClassifiedsCollectibles collectiblesAd)
-                {
-                    if (collectiblesAd.IsFeatured == true)
-                    {
-                        throw new ConflictException("This ad is already featured.");
-                    }
-                    collectiblesAd.IsFeatured = true;
-                    collectiblesAd.UpdatedAt = DateTime.UtcNow;
-                    collectiblesAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{collectiblesAd.Id}", collectiblesAd);
-                }
-                else if (adItem is ClassifiedsDeals dealsAd)
-                {
-                    if (dealsAd.IsFeatured == true)
-                    {
-                        throw new ConflictException("This ad is already featured.");
-                    }
-                    dealsAd.IsFeatured = true;
-                    dealsAd.UpdatedAt = DateTime.UtcNow;
-                    dealsAd.UserId = userId;
-                    await _dapr.SaveStateAsync(UnifiedStore, $"ad-{dealsAd.Id}", dealsAd);
-                }
-                else
-                {
-                    throw new InvalidOperationException($"Unsupported ad type: {adItem.GetType().Name}");
-                }
+
                 return "The ad has been successfully marked as featured.";
+
             }
             catch (ArgumentException ex)
             {
@@ -1919,6 +2050,7 @@ namespace QLN.Classified.MS.Service
                 throw new InvalidOperationException("Failed to refresh the ad due to an unexpected error.", ex);
             }
         }
+
         public async Task<string> PromoteClassifiedAd(ClassifiedsPromoteDto dto, string userId, CancellationToken cancellationToken)
         {
             _logger.LogInformation("PromoteClassifiedAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}", dto.SubVertical, dto.AdId, userId);
