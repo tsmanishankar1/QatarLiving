@@ -437,5 +437,10 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
+
+        public Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

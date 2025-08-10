@@ -23,6 +23,43 @@ namespace QLN.DataMigration.Services
             _logger = logger;
         }
 
+        public async Task<string> BulkMigrateEvents(List<V2Events> events, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/events/bulkMigrate";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(
+                    JsonSerializer.Serialize(events),
+                    Encoding.UTF8,
+                    "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                response.EnsureSuccessStatusCode();
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<string>(rawJson) ?? "Unknown response";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating event category");
+                throw;
+            }
+        }
+
         public async Task<string> CreateCategory(EventsCategory dto, CancellationToken cancellationToken = default)
         {
             try

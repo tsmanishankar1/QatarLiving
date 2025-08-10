@@ -153,18 +153,21 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     var duplicates = string.Join(", ", duplicateCheck.Select(h => $"CategoryId:{h.CategoryId}, SubCategoryId:{h.SubcategoryId}"));
                     throw new InvalidDataException($"Duplicate category and subcategory combinations are not allowed in the same request. Duplicates: {duplicates}");
                 }
-                var existingArticles = await _dapr.GetStateAsync<List<string>>(storeName, V2Content.NewsIndexKey, cancellationToken : cancellationToken)
-                                        ?? new List<string>();
 
-                foreach (var existingId in existingArticles)
-                {
-                    var existingArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, existingId, cancellationToken : cancellationToken);
-                    if (existingArticle != null &&
-                        string.Equals(existingArticle.Title.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
-                    {
-                        throw new InvalidDataException($"A news article with the title '{dto.Title}' already exists.");
-                    }
-                }
+                // This will be very slow
+
+                //var existingArticles = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, V2Content.NewsIndexKey, cancellationToken : cancellationToken)
+                //                        ?? new List<string>();
+
+                //foreach (var existingId in existingArticles)
+                //{
+                //    var existingArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, existingId, cancellationToken : cancellationToken);
+                //    if (existingArticle != null &&
+                //        string.Equals(existingArticle.Title.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+                //    {
+                //        throw new InvalidDataException($"A news article with the title '{dto.Title}' already exists.");
+                //    }
+                //}
 
                 var slugBase = GenerateNewsSlug(dto.Title);
                 var articleId = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
@@ -214,13 +217,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
 
                 var indexKey = V2Content.NewsIndexKey;
-                var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
+                var currentIndex = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, indexKey, cancellationToken: cancellationToken)
                                     ?? new List<string>();
 
                 if (!currentIndex.Contains(articleIdStr))
                 {
                     currentIndex.Add(articleIdStr);
-                    await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, currentIndex, cancellationToken: cancellationToken);
                 }
 
                 var upsertRequest = await IndexNewsToAzureSearch(article, cancellationToken);
@@ -267,13 +270,13 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                     await _dapr.SaveStateAsync(storeName, articleIdStr, article, cancellationToken: cancellationToken);
 
-                    var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
+                    var currentIndex = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, indexKey, cancellationToken: cancellationToken)
                                         ?? new List<string>();
 
                     if (!currentIndex.Contains(articleIdStr))
                     {
                         currentIndex.Add(articleIdStr);
-                        await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                        await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, currentIndex, cancellationToken: cancellationToken);
                     }
 
                     var upsertRequest = await IndexNewsToAzureSearch(article, cancellationToken);
@@ -323,7 +326,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     string existingArticleId = null;
                     try
                     {
-                        existingArticleId = await _dapr.GetStateAsync<string>(storeName, currentSlotKey, cancellationToken: cancellationToken);
+                        existingArticleId = await _dapr.GetStateAsync<string>(V2Content.ContentStoreName, currentSlotKey, cancellationToken: cancellationToken);
                     }
                     catch (Exception daprEx)
                     {
@@ -362,8 +365,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                         articleCat.SlotId = currentSlot + 1;
 
                         await _dapr.SaveStateAsync(storeName, articleToMove.Id.ToString(), articleToMove, cancellationToken: cancellationToken);
-                        await _dapr.SaveStateAsync(storeName, nextSlotKey, articleToMove.Id.ToString(), cancellationToken: cancellationToken);
-                        await _dapr.DeleteStateAsync(storeName, currentSlotKey, cancellationToken: cancellationToken);
+                        await _dapr.SaveStateAsync(V2Content.ContentStoreName, nextSlotKey, articleToMove.Id.ToString(), cancellationToken: cancellationToken);
+                        await _dapr.DeleteStateAsync(V2Content.ContentStoreName, currentSlotKey, cancellationToken: cancellationToken);
 
                         _logger.LogInformation($"Shifted article {existingArticleId} from slot {currentSlot} to {currentSlot + 1}");
                     }
@@ -390,7 +393,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 await _dapr.SaveStateAsync(storeName, newArticle.Id.ToString(), newArticle, cancellationToken: cancellationToken);
 
                 var desiredSlotKey = GetSlotKey(categoryId, subCategoryId, desiredSlot);
-                await _dapr.SaveStateAsync(storeName, desiredSlotKey, newArticle.Id.ToString(), cancellationToken: cancellationToken);
+                await _dapr.SaveStateAsync(V2Content.ContentStoreName, desiredSlotKey, newArticle.Id.ToString(), cancellationToken: cancellationToken);
 
                 _logger.LogInformation($"New article {newArticle.Id} placed into slot {desiredSlot}");
 
@@ -421,6 +424,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
                 if (!keys.Any())
                     return new PagedResponse<V2NewsArticleDTO> { Page = 1, PerPage = 10, TotalCount = 0, Items = [] };
+
+                // this will fetch in excess of 12000 articles
 
                 var items = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
                 var allArticles = items
