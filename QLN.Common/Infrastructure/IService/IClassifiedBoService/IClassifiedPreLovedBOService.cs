@@ -9,9 +9,11 @@ namespace QLN.Common.Infrastructure.IService.IClassifiedBoService
 {
     public interface IClassifiedPreLovedBOService
     {
-        Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default);
+        Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, string? SortBy,string? SortOrder="desc", CancellationToken cancellationToken = default);
 
-        Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default);
+        Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder = "desc", CancellationToken cancellationToken = default);
+
+        Task<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>> ViewPreLovedP2PTransactions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder = "desc", CancellationToken cancellationToken = default);
 
         Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, CancellationToken cancellationToken = default);
 

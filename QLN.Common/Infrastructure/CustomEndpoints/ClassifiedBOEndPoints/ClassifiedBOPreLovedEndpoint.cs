@@ -31,7 +31,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           HttpContext context,
           string? subscriptionType,
           string? filterDate,
-          int? Page, int? PageSize, string? Search,
+          int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder,
           CancellationToken cancellationToken
           ) =>
             {
@@ -39,7 +39,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 {
                     int page = Page ?? 1;
                     int pageSize = PageSize ?? 12;
-                    var result = await service.ViewPreLovedSubscriptions(subscriptionType, filterDate, page, pageSize, Search, cancellationToken);
+                    var result = await service.ViewPreLovedSubscriptions(subscriptionType, filterDate, page, pageSize, Search,SortBy,SortOrder, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -58,7 +58,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 .WithTags("ClassifiedBo")
                 .WithSummary("To list all subscriptions in the preloved.")
                 .WithDescription("Fetches all subscriptions of users on preloved")
-                .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+                .Produces<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -71,7 +71,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
           HttpContext context,
           string? createdDate,
           string? publishedDate,
-          int? Page, int? PageSize, string? Search,
+          int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder,
           CancellationToken cancellationToken
           ) =>
             {
@@ -79,7 +79,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 {
                     int page = Page ?? 1;
                     int pageSize = PageSize ?? 12;
-                    var result = await service.ViewPreLovedP2PSubscriptions(createdDate, publishedDate, page, pageSize, Search, cancellationToken);
+                    var result = await service.ViewPreLovedP2PSubscriptions(createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -98,9 +98,50 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 .WithTags("ClassifiedBo")
                 .WithSummary("To list p2p subscriptions in the preloved.")
                 .WithDescription("Fetches p2p subscriptions of users on preloved")
-                .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
+                .Produces<ClassifiedBOPageResponse<PreLovedViewP2PDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/preloved-p2p-transactions", async Task<Results<
+          Ok<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>>,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedPreLovedBOService service,
+          HttpContext context,
+          string? createdDate,
+          string? publishedDate,
+          int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    int page = Page ?? 1;
+                    int pageSize = PageSize ?? 12;
+                    var result = await service.ViewPreLovedP2PTransactions(createdDate, publishedDate, page, pageSize, Search, SortBy, SortOrder, cancellationToken);
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: context.Request.Path
+                    );
+                }
+            })
+                .WithName("ViewPreLovedP2PTransactions")
+                .AllowAnonymous()
+                .WithTags("ClassifiedBo")
+                .WithSummary("To list p2p transactions in the preloved.")
+                .WithDescription("Fetches p2p transactions of users on preloved")
+                .Produces<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapPut("/preloved-bulk-edit-subscriptions", async Task<Results<
           Ok<string>,

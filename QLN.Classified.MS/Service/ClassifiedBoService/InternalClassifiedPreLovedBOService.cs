@@ -7,8 +7,9 @@ using QLN.Common.DTO_s.ClassifiedsBo;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using QLN.Common.Infrastructure.QLDbContext;
-using System.ComponentModel.DataAnnotations;
 using QLN.Common.Infrastructure.Subscriptions;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
@@ -35,7 +36,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         }
 
         #region PreLoved back office end points
-        public async Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -119,6 +120,19 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 )
                 .ToList();
 
+                filtered = SortBy?.ToLower() switch
+                {
+                    "startdate" => SortOrder?.ToLower() == "desc"
+                    ? filtered.OrderByDescending(t => t.StartDate).ToList()
+                    : filtered.OrderBy(t => t.StartDate).ToList(),
+
+                    "status" => SortOrder?.ToLower() == "desc"
+                        ? filtered.OrderByDescending(t => t.Status).ToList()
+                        : filtered.OrderBy(t => t.Status).ToList(),
+
+                    _ => filtered.OrderBy(t => t.StartDate).ToList()
+                };
+
 
                 _logger.LogInformation("Preloved DB data retrieved");
 
@@ -151,7 +165,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -250,6 +264,21 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 )
                 .ToList();
 
+                filtered = SortBy?.ToLower() switch
+                {
+                    "createddate" => SortOrder?.ToLower() == "desc"
+                    ? filtered.OrderByDescending(t => t.CreatedDate).ToList()
+                    : filtered.OrderBy(t => t.CreatedDate).ToList(),
+
+                    "status" => SortOrder?.ToLower() == "desc"
+                        ? filtered.OrderByDescending(t => t.Status).ToList()
+                        : filtered.OrderBy(t => t.Status).ToList(),
+                    "publisheddate" => SortOrder?.ToLower() == "desc"
+                       ? filtered.OrderByDescending(t => t.PublishedDate).ToList()
+                       : filtered.OrderBy(t => t.PublishedDate).ToList(),
+
+                    _ => filtered.OrderBy(t => t.CreatedDate).ToList()
+                };
 
                 _logger.LogInformation("Preloved P2P DB data retrieved");
 
@@ -278,6 +307,110 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch stores subscriptions.");
+                throw;
+            }
+        }
+
+
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>> ViewPreLovedP2PTransactions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Preloved P2P transactions services reached");
+
+                DateTime? createdDateParsed = DateTime.TryParse(createdDate, out var tempCreatedDate) ? tempCreatedDate : (DateTime?)null;
+                DateTime? publishedDateParsed = DateTime.TryParse(publishedDate, out var tempPublishedDate) ? tempPublishedDate : (DateTime?)null;
+
+
+                string searchLower = Search?.ToLower();
+
+                var prelovedList = await _context.Preloved.ToListAsync(cancellationToken);
+                var subscriptionList = await _subscriptionContext.Subscriptions.ToListAsync(cancellationToken);
+                var companyList = await _companyContext.Companies.ToListAsync(cancellationToken);
+                var paymentList = await _paymentContext.Payments.ToListAsync(cancellationToken);
+
+
+
+                var filtered = (
+    from preloved in prelovedList
+    join subscription in subscriptionList on preloved.SubscriptionId equals subscription.SubscriptionId
+    join company in companyList on subscription.CompanyId equals company.Id
+    join payment in paymentList on subscription.PaymentId equals payment.PaymentId
+    select new PreLovedViewP2PTransactionDto
+    {
+        AdId = preloved.Id,
+        OrderId = payment.PaymentId,
+        SubscriptionType = subscription.ProductName,
+        UserName = company.CompanyName,
+        Email = company.Email,
+        Mobile = company.PhoneNumber,
+        Whatsapp = company.WhatsAppNumber,
+        Amount = payment.Fee,
+        StartDate = subscription.StartDate,
+        EndDate = subscription.EndDate,
+        CreateDate = preloved.CreatedAt,
+        PublishedDate = preloved.PublishedDate ?? DateTime.MinValue,
+        Status = Enum.GetName(typeof(Status), subscription.Status) ?? "Unknown"
+    })
+    .Where(x =>
+        x.SubscriptionType =="Preloved 1 Month- P2 Publish" &&
+        (!createdDateParsed.HasValue || x.CreateDate >= createdDateParsed.Value) &&
+        (!publishedDateParsed.HasValue || x.PublishedDate >= publishedDateParsed.Value) &&
+        (
+            string.IsNullOrEmpty(searchLower) ||
+            x.OrderId.ToString().Contains(searchLower) ||
+            x.AdId.ToString().Contains(searchLower) ||
+            (!string.IsNullOrEmpty(x.UserName) && x.UserName.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Email) && x.Email.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Mobile) && x.Mobile.ToLower().Contains(searchLower)) ||
+            (!string.IsNullOrEmpty(x.Status) && x.Status.ToLower().Contains(searchLower))
+        )
+    )
+    .ToList();
+
+                filtered = SortBy?.ToLower() switch
+                {
+                    "createdate" => SortOrder?.ToLower() == "desc"
+                    ? filtered.OrderByDescending(t => t.CreateDate).ToList()
+                    : filtered.OrderBy(t => t.CreateDate).ToList(),
+
+                    "status" => SortOrder?.ToLower() == "desc"
+                        ? filtered.OrderByDescending(t => t.Status).ToList()
+                        : filtered.OrderBy(t => t.Status).ToList(),
+                    "publisheddate" => SortOrder?.ToLower() == "desc"
+                       ? filtered.OrderByDescending(t => t.PublishedDate).ToList()
+                       : filtered.OrderBy(t => t.PublishedDate).ToList(),
+
+                    _ => filtered.OrderBy(t => t.CreateDate).ToList()
+                };
+
+                _logger.LogInformation("Preloved P2P DB data retrieved");
+
+                int currentPage = Math.Max(1, Page ?? 1);
+                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
+                int totalCount = filtered.Count;
+                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                if (currentPage > totalPages && totalPages > 0)
+                    currentPage = totalPages;
+
+                var paginated = filtered
+                    .Skip((currentPage - 1) * itemsPerPage)
+                    .Take(itemsPerPage)
+                    .ToList();
+                _logger.LogInformation("Preloved P2P transactions process completed");
+                return new ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>
+                {
+                    Page = currentPage,
+                    PerPage = itemsPerPage,
+                    TotalCount = totalCount,
+                    Items = paginated
+                };
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch P2P transactions.");
                 throw;
             }
         }

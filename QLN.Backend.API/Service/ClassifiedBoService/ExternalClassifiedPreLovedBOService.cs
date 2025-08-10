@@ -37,12 +37,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
         }
 
 
-        public async Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>> ViewPreLovedSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Preloved external services initiated.");
-                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}&Page={Page}&PageSize={PageSize}&Search={Search}";
+                var queryParams = $"?subscriptionType={subscriptionType}&filterDate={filterDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
                 var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<PrelovedViewSubscriptionsDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
@@ -60,12 +60,12 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             }
         }
 
-        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PDto>> ViewPreLovedP2PSubscriptions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
         {
             try
             {
                 _logger.LogInformation("Preloved p2p external services initiated.");
-                var queryParams = $"?createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}";
+                var queryParams = $"?createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
                 var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<PreLovedViewP2PDto>>(
                     HttpMethod.Get,
                     SERVICE_APP_ID,
@@ -80,6 +80,29 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
             {
                 _logger.LogError(ex, "Unexpected error in preloved p2p subscriptions.");
                 throw new InvalidOperationException("Error fetching preloved p2p subscriptions.", ex);
+            }
+        }
+
+        public async Task<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>> ViewPreLovedP2PTransactions(string? createdDate, string? publishedDate, int? Page, int? PageSize, string? Search, string? SortBy, string? SortOrder, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("Preloved p2p external services initiated.");
+                var queryParams = $"?createdDate={createdDate}&publishedDate={publishedDate}&Page={Page}&PageSize={PageSize}&Search={Search}&SortBy={SortBy}&SortOrder={SortOrder}";
+                var response = await _dapr.InvokeMethodAsync<ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>>(
+                    HttpMethod.Get,
+                    SERVICE_APP_ID,
+
+                    $"api/v2/classifiedbo/preloved-p2p-transactions{queryParams}",
+                    cancellationToken
+                );
+                _logger.LogInformation("Preloved p2p external services got response.");
+                return response ?? new ClassifiedBOPageResponse<PreLovedViewP2PTransactionDto>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in preloved p2p transactions.");
+                throw new InvalidOperationException("Error fetching preloved p2p transactions.", ex);
             }
         }
 
