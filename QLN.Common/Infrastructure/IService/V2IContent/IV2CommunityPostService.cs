@@ -24,6 +24,6 @@ namespace QLN.Common.Infrastructure.IService.V2IContent
         Task<V2CommunityPostDto?> GetCommunityPostBySlugAsync(string slug, CancellationToken cancellationToken = default);
         Task<CommunityCommentApiResponse> SoftDeleteCommunityCommentAsync(Guid postId, Guid commentId, string userId, CancellationToken ct = default);
         Task<CommunityCommentApiResponse> EditCommunityCommentAsync(Guid postId, Guid commentId, string userId, string updatedText, CancellationToken ct = default);
-
+        Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default);
     }
 }

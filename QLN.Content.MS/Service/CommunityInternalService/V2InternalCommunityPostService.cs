@@ -34,16 +34,19 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Description)) throw new ArgumentException("Description is required.");
 
-            var existingKeys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
-            foreach (var existingKey in existingKeys)
-            {
-                var existingPost = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, existingKey, cancellationToken: ct);
-                if (existingPost != null &&
-                    string.Equals(existingPost.Title?.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new ArgumentException($"A community post with the title '{dto.Title}' already exists.");
-                }
-            }
+            // This will be very very slow
+
+            //var existingKeys = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2Content.ContentStoreName, IndexKey, cancellationToken: ct) ?? new();
+            //foreach (var existingKey in existingKeys)
+            //{
+            //    var existingPost = await _dapr.GetStateAsync<V2CommunityPostDto>(ConstantValues.V2Content.ContentStoreName, existingKey, cancellationToken: ct);
+            //    if (existingPost != null &&
+            //        string.Equals(existingPost.Title?.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+            //    {
+            //        throw new ArgumentException($"A community post with the title '{dto.Title}' already exists.");
+            //    }
+            //}
+
             dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
                                                                      // and only generate a new one if this is GUID.Empty.
             dto.UpdatedBy = userId;
@@ -106,6 +109,55 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 _logger.LogCritical(ex, "Unhandled error occurred during community post creation.");
                 throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
             }
+        }
+
+        public async Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default)
+        {
+            foreach (var dto in posts)
+            {
+                try
+                {
+                    var key = dto.Id.ToString();
+
+                    await _dapr.SaveStateAsync(ConstantValues.V2Content.ContentStoreName, key, dto, cancellationToken: ct);
+
+                    var index = await _dapr.GetStateAsync<List<string>>(ConstantValues.V2Content.ContentStoreName, IndexKey, cancellationToken: ct) ?? new();
+
+                    if (!index.Contains(key))
+                    {
+                        index.Add(key);
+                        await _dapr.SaveStateAsync(ConstantValues.V2Content.ContentStoreName, IndexKey, index, cancellationToken: ct);
+                    }
+
+                    var upsertRequest = await IndexCommunityPostToAzureSearch(dto, cancellationToken: ct);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ContentCommunityIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                            data: message,
+                            cancellationToken: ct
+                        );
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Unhandled error occurred during community post creation.");
+                    throw new InvalidOperationException("An unexpected error occurred while creating the community post. Please try again later.", ex);
+                }
+            }
+
+            
+
+            return "Community posts created successfully";
         }
         public async Task<PaginatedCommunityPostResponseDto> GetAllCommunityPostsAsync(string? categoryId = null,string? search = null, int? page = null, int? pageSize = null,string? sortDirection = null,CancellationToken ct = default)
         {

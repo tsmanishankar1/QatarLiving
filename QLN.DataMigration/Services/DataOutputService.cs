@@ -115,138 +115,148 @@
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
         {
+            var events = new List<V2Events>();
+
             foreach (var dto in items)
             {
-                try
+                var id = ProcessingHelpers.StringToGuid(dto.Nid);
+
+                var hasStartDate = DateTime.TryParse(dto.EventStart, out var startDate);
+                var hasEndDate = DateTime.TryParse(dto.EventEnd, out var endDate);
+
+                var hasStartTime = startDate.Hour != 0; // check if start time is set to midnight
+                var hasEndTime = endDate.Hour != 0; // check if end time is set to midnight (not a perfect solution but unlikely event would end here ?)
+
+                var entity = new V2Events
                 {
-                    var id = ProcessingHelpers.StringToGuid(dto.Nid);
+                    Id = id,
+                    Slug = dto.Slug,
+                    CategoryId = int.TryParse(dto.CategroryId, out var categoryId) ? categoryId : 0,
+                    CategoryName = dto.EventCategory,
+                    EventTitle = dto.Title,
+                    EventType = V2EventType.FreeAcess,
+                    Venue = dto.EventVenue,
+                    Longitude = dto.EventLat,
+                    Latitude = dto.EventLong,
+                    EventDescription = dto.Description,
+                    CoverImage = dto.ImageUrl,
+                    IsFeatured = false,
+                    PublishedDate = dto.CreatedAt,
+                    IsActive = true,
+                    CreatedBy = dto.UserName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    UpdatedBy = dto.UserName,
+                    Status = Common.DTO_s.EventStatus.Published
+                };
 
-                    var hasStartDate = DateTime.TryParse(dto.EventStart, out var startDate);
-                    var hasEndDate = DateTime.TryParse(dto.EventEnd, out var endDate);
+                var eventSchedule = new EventSchedule();
 
-                    var hasStartTime = startDate.Hour != 0; // check if start time is set to midnight
-                    var hasEndTime = endDate.Hour != 0; // check if end time is set to midnight (not a perfect solution but unlikely event would end here ?)
+                if (hasStartDate)
+                {
+                    eventSchedule.StartDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
+                    eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
+                    eventSchedule.GeneralTextTime = $"{dto.EventStart}";
+                }
 
-                    var entity = new V2Events
+                if (hasEndDate && startDate != endDate)
+                {
+                    eventSchedule.EndDate = new DateOnly(endDate.Year, endDate.Month, endDate.Day);
+                    eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
+                    eventSchedule.GeneralTextTime = string.IsNullOrWhiteSpace(eventSchedule.GeneralTextTime) ? $"{dto.EventEnd}" : $" - {dto.EventEnd}";
+                }
+                else
+                {
+                    eventSchedule.EndDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
+                }
+
+                if (eventSchedule.TimeSlotType == V2EventTimeType.GeneralTime)
+                {
+                    entity.EventSchedule = eventSchedule;
+                }
+
+                var timeSlots = new List<TimeSlot>();
+
+                if (hasStartTime)
+                {
+                    timeSlots.Add(new TimeSlot
                     {
-                        Id = id,
-                        Slug = dto.Slug,
-                        CategoryId = int.TryParse(dto.CategroryId, out var categoryId) ? categoryId : 0,
-                        CategoryName = dto.EventCategory,
-                        EventTitle = dto.Title,
-                        EventType = V2EventType.FreeAcess,
-                        Venue = dto.EventVenue,
-                        Longitude = dto.EventLat,
-                        Latitude = dto.EventLong,
-                        EventDescription = dto.Description,
-                        CoverImage = dto.ImageUrl,
-                        IsFeatured = false,
-                        PublishedDate = dto.CreatedAt,
-                        IsActive = true,
-                        CreatedBy = dto.UserName,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = dto.UserName,
-                        Status = Common.DTO_s.EventStatus.Published
-                    };
+                        DayOfWeek = startDate.DayOfWeek,
+                        TextTime = startDate.ToShortTimeString(),
+                    });
+                }
 
-                    var eventSchedule = new EventSchedule();
-
-                    if (hasStartDate)
+                if (hasEndTime && startDate != endDate)
+                {
+                    timeSlots.Add(new TimeSlot
                     {
-                        eventSchedule.StartDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
-                        eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
-                        eventSchedule.GeneralTextTime = $"{dto.EventStart}";
-                    }
-
-                    if (hasEndDate && startDate != endDate)
-                    {
-                        eventSchedule.EndDate = new DateOnly(endDate.Year, endDate.Month, endDate.Day);
-                        eventSchedule.TimeSlotType = V2EventTimeType.GeneralTime;
-                        eventSchedule.GeneralTextTime = string.IsNullOrWhiteSpace(eventSchedule.GeneralTextTime) ? $"{dto.EventEnd}" : $" - {dto.EventEnd}";
-                    }
-                    else
-                    {
-                        eventSchedule.EndDate = new DateOnly(startDate.Year, startDate.Month, startDate.Day);
-                    }
-
-                    if (eventSchedule.TimeSlotType == V2EventTimeType.GeneralTime)
-                    {
-                        entity.EventSchedule = eventSchedule;
-                    }
-
-                    var timeSlots = new List<TimeSlot>();
-
-                    if (hasStartTime)
-                    {
-                        timeSlots.Add(new TimeSlot
-                        {
-                            DayOfWeek = startDate.DayOfWeek,
-                            TextTime = startDate.ToShortTimeString(),
-                        });
-                    }
-
-                    if (hasEndTime && startDate != endDate)
-                    {
-                        timeSlots.Add(new TimeSlot
-                        {
-                            DayOfWeek = endDate.DayOfWeek,
-                            TextTime = endDate.ToShortTimeString(),
-                        });
-                    }
+                        DayOfWeek = endDate.DayOfWeek,
+                        TextTime = endDate.ToShortTimeString(),
+                    });
+                }
                     ;
 
-                    if (timeSlots.Count > 0)
-                    {
-                        entity.EventSchedule.TimeSlotType = V2EventTimeType.PerDayTime;
-                        entity.EventSchedule.TimeSlots = timeSlots;
-                    }
-
-                    await _eventService.CreateEvent(dto.UserName, entity, cancellationToken);
-
-                }
-                catch (Exception ex)
+                if (timeSlots.Count > 0)
                 {
-                    _logger.LogError($"Failed to create article {dto.Nid} - {ex.Message}");
-                    throw new Exception("Unexpected error during article creation", ex);
+                    entity.EventSchedule.TimeSlotType = V2EventTimeType.PerDayTime;
+                    entity.EventSchedule.TimeSlots = timeSlots;
                 }
 
+                events.Add(entity);
+
+                
+
+            }
+
+            try
+            {
+
+                await _eventService.BulkMigrateEvents(events, cancellationToken);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to create events - {ex.Message}");
+                throw new Exception("Unexpected error during events creation", ex);
             }
         }
 
         public async Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken)
         {
+            var posts = new List<V2CommunityPostDto>();
+
             foreach (var dto in items)
             {
-                try
+                var id = ProcessingHelpers.StringToGuid(dto.Nid);
+
+                var entity = new V2CommunityPostDto
                 {
-                    var id = ProcessingHelpers.StringToGuid(dto.Nid);
+                    Id = id,
+                    Slug = dto.Slug,
+                    CategoryId = dto.CategoryId,
+                    Category = dto.Category,
+                    Title = dto.Title,
+                    UpdatedBy = dto.UserName,
+                    UpdatedDate = DateTime.UtcNow,
+                    Description = dto.Description,
+                    ImageUrl = dto.ImageUrl,
+                    IsActive = true,
+                    UserName = dto.UserName,
+                    DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
+                };
+                posts.Add(entity);
+            }
 
-                    var entity = new V2CommunityPostDto
-                    {
-                        Id = id,
-                        Slug = dto.Slug,
-                        CategoryId = dto.CategoryId,
-                        Category = dto.Category,
-                        Title = dto.Title,
-                        UpdatedBy = dto.UserName,
-                        UpdatedDate = DateTime.UtcNow,
-                        Description = dto.Description,
-                        ImageUrl = dto.ImageUrl,
-                        IsActive = true,
-                        UserName = dto.UserName,
-                        DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
-                    };
+            try
+            {
 
-                    await _communityPostService.CreateCommunityPostAsync(dto.UserName, entity, cancellationToken);
+                await _communityPostService.BulkMigrateCommunityPostsAsync(posts, cancellationToken);
 
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Failed to create article {dto.Nid} - {ex.Message}");
-                    throw new Exception("Unexpected error during article creation", ex);
-                }
-
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to create community posts - {ex.Message}");
+                throw new Exception("Unexpected error during article creation", ex);
             }
         }
 

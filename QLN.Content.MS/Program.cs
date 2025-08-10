@@ -112,10 +112,69 @@ app.MapPost("/api/v2/news/bulkMigrate", async Task<Results<
         return TypedResults.Problem("Internal Server Error", ex.Message);
     }
 }).ExcludeFromDescription()
-.WithName("BulkMigrate")
+.WithName("BulkMigrateNews")
 .WithTags("News")
 .WithSummary("Bulk Migrate News Articles")
 .WithDescription("Bulk Migrate News Articles")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+            List<V2Events> events,
+            IV2EventService service,
+            HttpContext httpContext,
+            CancellationToken cancellationToken
+            ) =>
+ {
+     try
+     {
+         var result = await service.BulkMigrateEvents(events, cancellationToken);
+         return TypedResults.Ok(result);
+     }
+     catch (Exception ex)
+     {
+         return TypedResults.Problem("Internal Server Error", ex.Message);
+     }
+ }).ExcludeFromDescription()
+.WithName("BulkMigrateEvents")
+.WithTags("Event")
+.WithSummary("Bulk Migrate Events")
+.WithDescription("Bulk Migrate Events")
+.Produces<string>(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+app.MapPost("/api/v2/community/bulkMigrate", async Task<Results<
+                Ok<string>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                List<V2CommunityPostDto> posts,
+                IV2CommunityPostService service,
+                CancellationToken ct
+            ) =>
+ {
+     try
+     {
+
+         var result = await service.BulkMigrateCommunityPostsAsync(posts, ct);
+         return TypedResults.Ok(result);
+     }
+     catch (Exception ex)
+     {
+         return TypedResults.Problem("Internal Server Error", ex.Message);
+     }
+ }).ExcludeFromDescription()
+.WithName("BulkMigrateCommunityPosts")
+.WithTags("V2Community")
+.WithSummary("Bulk Migrate Community Posts")
+.WithDescription("Bulk Migrate Community Posts")
 .Produces<string>(StatusCodes.Status200OK)
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
