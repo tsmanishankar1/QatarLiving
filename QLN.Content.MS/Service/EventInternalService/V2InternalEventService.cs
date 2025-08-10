@@ -8,7 +8,6 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.EventInternalService
@@ -305,6 +304,9 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                 foreach (var key in allEventKeys)
                 {
+                    if (key.Equals(dto.Id.ToString(), StringComparison.OrdinalIgnoreCase))
+                        continue;
+
                     var existingEvent = await _dapr.GetStateAsync<V2Events>(
                         ConstantValues.V2Content.ContentStoreName,
                         key,
@@ -837,28 +839,42 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (!allEvents.Any())
                     return EmptyResponse(request.Page, request.PerPage);
 
-                request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
-                if (request.FeaturedFirst == true)
+                if (!string.IsNullOrWhiteSpace(request.PriceSortOrder))
                 {
-                    allEvents = request.SortOrder switch
+                    request.PriceSortOrder = request.PriceSortOrder.ToLowerInvariant();
+
+                    allEvents = request.PriceSortOrder switch
                     {
-                        "desc" => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenByDescending(e => e.CreatedAt)
-                            .ToList(),
-                        _ => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenBy(e => e.CreatedAt)
-                            .ToList(),
+                        "desc" => allEvents.OrderByDescending(e => e.Price ?? 0).ToList(),
+                        _ => allEvents.OrderBy(e => e.Price ?? 0).ToList(),
                     };
                 }
                 else
                 {
-                    allEvents = request.SortOrder switch
+                    request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
+
+                    if (request.FeaturedFirst == true)
                     {
-                        "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
-                        _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
-                    };
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenByDescending(e => e.CreatedAt)
+                                .ToList(),
+                            _ => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenBy(e => e.CreatedAt)
+                                .ToList(),
+                        };
+                    }
+                    else
+                    {
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
+                            _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
+                        };
+                    }
                 }
                 int currentPage = Math.Max(1, request.Page ?? 1);
                 int itemsPerPage = Math.Max(1, Math.Min(100, request.PerPage ?? 12));
