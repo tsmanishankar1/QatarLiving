@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
@@ -20,6 +21,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAuthorization();
 
 builder.Services.AddDaprClient();
+
+builder.Services.AddHttpClient("DaprClient")
+    .ConfigureHttpClient(client =>
+    {
+        client.Timeout = TimeSpan.FromMinutes(20);
+    });
 
 builder.Services.AddSingleton<IFileStorageBlobService, FileStorageBlobService>();
 builder.Services.AddSingleton<IDataOutputService, DataOutputService>();
@@ -49,6 +56,11 @@ builder.Services.AddSwaggerGen(options =>
         Version = "v1.1.1",
         Description = "API documentation for Qatar Migration."
     });
+});
+
+builder.Services.AddRequestTimeouts(options =>
+{
+    options.DefaultPolicy = new RequestTimeoutPolicy { Timeout = TimeSpan.FromMinutes(20) }; // Default timeout
 });
 
 
@@ -125,7 +137,8 @@ app.MapGet("/migrate_articles", async (
     {
         return await migrationService.MigrateArticles( importImages, cancellationToken);
     })
-    .WithSummary("Migrate News Articles - Run 2nd");
+    .WithSummary("Migrate News Articles - Run 2nd")
+    .WithRequestTimeout(TimeSpan.FromMinutes(20));
 
 app.MapGet("/migrate_events", async (
     [FromServices] IMigrationService migrationService,
@@ -138,7 +151,8 @@ app.MapGet("/migrate_events", async (
     {
         return await migrationService.MigrateEvents(importImages, cancellationToken);
     })
-    .WithSummary("Migrate Events - Run 2nd");
+    .WithSummary("Migrate Events - Run 2nd")
+    .WithRequestTimeout(TimeSpan.FromMinutes(20));
 
 app.MapGet("/migrate_community", async (
     [FromServices] IMigrationService migrationService,
@@ -150,7 +164,8 @@ app.MapGet("/migrate_community", async (
     {
         return await migrationService.MigrateCommunityPosts(importImages, cancellationToken);
     })
-    .WithSummary("Migrate Community Posts - Run 2nd");
+    .WithSummary("Migrate Community Posts - Run 2nd")
+    .WithRequestTimeout(TimeSpan.FromMinutes(20));
 
 
 app.MapGet("/migrate_locations", async (
