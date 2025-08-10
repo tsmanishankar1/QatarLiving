@@ -11,6 +11,7 @@ using QLN.Content.MS.Service.CommunityInternalService;
 using QLN.Content.MS.Service.ReportInternalService;
 using QLN.Content.MS.Service.DailyInternalService;
 using QLN.Content.MS.Service.BannerInternalService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
