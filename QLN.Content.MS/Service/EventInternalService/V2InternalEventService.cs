@@ -60,7 +60,9 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 ValidateEventSchedule(dto.EventSchedule);
-                var id = Guid.NewGuid();
+                var id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                         // and only generate a new one if this is GUID.Empty.
+
                 var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
                 var entity = new V2Events
                 {
@@ -1275,7 +1277,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 Id = dto.Id.ToString(),
                 EventTitle = dto.EventTitle,
-                EventType = dto.EventType,
+                EventType = dto.EventType.ToString(),
                 EventDescription = dto.EventDescription,
                 CategoryId = dto.CategoryId,
                 CategoryName = dto.CategoryName,
@@ -1291,7 +1293,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 LocationId = dto.LocationId,
                 Price = dto.Price,
                 RedirectionLink = dto.RedirectionLink,
-                Status = dto.Status,
+                Status = dto.Status.ToString(),
                 Slug = dto.Slug,
                 PublishedDate = dto.PublishedDate,
                 IsActive = dto.IsActive,
@@ -1301,13 +1303,13 @@ namespace QLN.Content.MS.Service.EventInternalService
                 UpdatedBy = dto.UpdatedBy,
                 EventSchedule = new EventScheduleIndex
                 {
-                    StartDate = dto.EventSchedule.StartDate,
-                    EndDate = dto.EventSchedule.EndDate,
+                    StartDate = dto.EventSchedule.StartDate.FromDateOnly(),
+                    EndDate = dto.EventSchedule.EndDate.FromDateOnly(),
                     GeneralTextTime = dto.EventSchedule.GeneralTextTime,
-                    TimeSlotType = dto.EventSchedule.TimeSlotType,
+                    TimeSlotType = dto.EventSchedule.TimeSlotType.ToString(),
                     TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex
                     {
-                        DayOfWeek = i.DayOfWeek,
+                        DayOfWeek = i.DayOfWeek.ToString(),
                         TextTime = i.TextTime
                     }).ToList()
                 }

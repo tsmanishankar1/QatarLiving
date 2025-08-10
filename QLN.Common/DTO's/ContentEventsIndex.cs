@@ -1,5 +1,6 @@
 ﻿using Azure.Search.Documents.Indexes;
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 
 namespace QLN.Common.DTO_s
 {
@@ -8,7 +9,7 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsKey = true, IsFilterable = true)]
         public string Id { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
+        [SearchableField(IsFilterable = true)]
         public string EventTitle { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
@@ -18,7 +19,7 @@ namespace QLN.Common.DTO_s
         public string? CategoryName { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public V2EventType EventType { get; set; }
+        public string EventType { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public int? Price { get; set; }
@@ -40,9 +41,10 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true)]
         public string? RedirectionLink { get; set; }
+
         public EventScheduleIndex EventSchedule { get; set; }
 
-        [SimpleField(IsFilterable = true)]
+        [SearchableField]
         public string EventDescription { get; set; }
 
         [SimpleField(IsFilterable = true)]
@@ -50,13 +52,14 @@ namespace QLN.Common.DTO_s
 
         [SimpleField(IsFilterable = true)]
         public bool IsFeatured { get; set; }
+
         public SlotIndex? FeaturedSlot { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? PublishedDate { get; set; }
 
-        [SimpleField(IsFilterable = true, IsSortable = true, IsFacetable = true)]
-        public EventStatus Status { get; set; }
+        [SimpleField(IsFilterable = true, IsSortable = true)]
+        public string Status { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public string Slug { get; set; }
@@ -89,23 +92,24 @@ namespace QLN.Common.DTO_s
     public class EventScheduleIndex
     {
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateOnly StartDate { get; set; }
+        public DateTimeOffset StartDate { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateOnly EndDate { get; set; }
+        public DateTimeOffset EndDate { get; set; }
 
         [SimpleField(IsFilterable = true)]
-        public V2EventTimeType TimeSlotType { get; set; }
+        public string TimeSlotType { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? GeneralTextTime { get; set; }
+
         public IList<TimeSlotIndex>? TimeSlots { get; set; } = [];
     }
 
     public class TimeSlotIndex
     {
         [SimpleField(IsFilterable = true)]
-        public DayOfWeek? DayOfWeek { get; set; }
+        public string? DayOfWeek { get; set; }
 
         [SimpleField(IsFilterable = true)]
         public string? TextTime { get; set; }

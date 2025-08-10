@@ -39,3 +39,7 @@ Content-Type: application/json
 ### Migrate community
 GET https://www.qatarliving.com/qlnapi/community?page=1&page_size=30
 Content-Type: application/json
+
+### Migrate categrories
+GET https://test.qatarliving.com/qlnapi/categories
+Content-Type: application/json

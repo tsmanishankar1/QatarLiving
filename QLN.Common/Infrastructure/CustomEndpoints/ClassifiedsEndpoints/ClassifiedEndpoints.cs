@@ -1,27 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
-using System.Security.Claims;
-using QLN.Common.Infrastructure.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
+using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.Utilities;
-using QLN.Common.Infrastructure.CustomException;
-using System.ComponentModel.DataAnnotations;
 using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.Constants;
-using Microsoft.AspNetCore.Authorization;
-using Azure;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Utilities;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
-using System.Net.Http;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -29,6 +30,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     {
         public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
+
+
             group.MapPost("/classifieds/search", async (
                 [FromBody] ClassifiedsSearchRequest req,
                 [FromServices] ISearchService svc,
@@ -58,6 +61,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     "items" => ConstantValues.IndexNames.ClassifiedsItemsIndex,
                     "preloved" => ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
                     "collectibles" => ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    "stores" => ConstantValues.IndexNames.ClassifiedStoresIndex,
                     _ => null
                 };
                 var request = new CommonSearchRequest
@@ -674,11 +678,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .ExcludeFromDescription();
 
-            group.MapPost("/items/refresh/{adId:guid}", async Task<IResult> (
-                long adId,
-                [FromQuery] SubVertical subVertical,
-                IClassifiedService service,
-                CancellationToken token) =>
+            group.MapPut("/items/refresh", async Task<IResult> (
+        HttpContext httpContext,
+        [FromQuery] SubVertical subVertical,
+        [FromQuery] long adId,
+        IClassifiedService service,
+        CancellationToken token) =>
             {
                 try
                 {
@@ -692,49 +697,94 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                         });
                     }
 
-                    await service.RefreshClassifiedItemsAd(subVertical, adId, token);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return Results.Unauthorized();
+                    }
 
-                    return TypedResults.Ok(new
-                    {
-                        AdId = adId,
-                        Message = "Ad successfully refreshed."
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    string userId = userData.GetProperty("uid").GetString();
+
+                    var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
+
+                    return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem(
-                        title: "Internal Server Error",
+                        title: "Error Refreshing Ad",
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError
                     );
                 }
             })
-                .WithName("RefreshItemsAd")
-                .WithTags("Classified")
-                .WithSummary("Refresh the ad's 'IsRefreshed' field, set the 'CreatedDate' to current, and 'RefreshExpiryDate' to 72 hours or 24 hours from now.")
-                .WithDescription("Updates the ad's 'IsRefreshed' field to true, the 'CreatedDate' to the current date, and 'RefreshExpiryDate' to 72 hours from now.")
-                .Produces(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+    .RequireAuthorization()
+    .WithName("RefreshItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Refresh the ad (authorized)")
+    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, requires login.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPut("/refreshed/{userId}/{adId}",
+    async Task<IResult> (
+        string userId,
+        long adId,
+        [FromQuery] SubVertical subVertical,
+        IClassifiedService service,
+        CancellationToken token) =>
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = "UserId is required.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            if (adId <= 0)
+            {
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Validation Error",
+                    Detail = "AdId is required.",
+                    Status = StatusCodes.Status400BadRequest
+                });
+            }
+
+            var result = await service.RefreshClassifiedItemsAd(subVertical, adId, userId, token);
+
+            return TypedResults.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return TypedResults.Problem(
+                title: "Error Refreshing Ad",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+        }
+    })
+    .ExcludeFromDescription()
+    .WithName("RefreshedItemsAd")
+    .WithTags("Classified")
+    .WithSummary("Refresh the ad (direct call)")
+    .WithDescription("Refresh an ad by resetting CreatedDate and RefreshExpiryDate, using explicit userId.")
+    .Produces(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
 
             group.MapPost("preloved", async Task<IResult> (
                 HttpContext httpContext,
@@ -4194,11 +4244,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
 
-            group.MapPut("/promote", async Task<IResult> (
+            group.MapPut("/items/promote", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsPromoteDto dto,
-    IClassifiedService service,
-    CancellationToken token) =>
+                IClassifiedService service,
+                CancellationToken token) =>
             {
                 try
                 {
@@ -4211,84 +4261,18 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
+
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
                     if (string.IsNullOrEmpty(userClaim))
                     {
                         return Results.Unauthorized();
                     }
+
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     string userId = userData.GetProperty("uid").GetString();
-                    await service.PromoteClassifiedAd(dto, userId, token);
-                    return TypedResults.Ok(new
-                    {
-                        AdId = dto.AdId,
-                        Message = "The ad has been successfully marked as promoted."
-                    });
-                }
-                catch (ArgumentException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (InvalidOperationException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Bad Request",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (KeyNotFoundException ex)
-                {
-                    return TypedResults.NotFound(new ProblemDetails
-                    {
-                        Title = "Not Found",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status404NotFound
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-    .RequireAuthorization()
-    .WithName("PromoteItemsAd")
-    .WithTags("Classified")
-    .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
-    .WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
-    .Produces(StatusCodes.Status200OK)
-    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/items/promoted", async Task<IResult> (
-    ClassifiedsPromoteDto dto,
-    string userId,
-IClassifiedService service,
-CancellationToken token) =>
-            {
-                try
-                {
-                    if (dto.AdId <= 0)
-                    {
-                        return TypedResults.BadRequest(new ProblemDetails
-                        {
-                            Title = "Validation Error",
-                            Detail = "AdId is required.",
-                            Status = StatusCodes.Status400BadRequest
-                        });
-                    }
                     await service.PromoteClassifiedAd(dto, userId, token);
+
                     return TypedResults.Ok(new
                     {
                         AdId = dto.AdId,
@@ -4331,7 +4315,72 @@ CancellationToken token) =>
                     );
                 }
             })
-.ExcludeFromDescription()
+            .RequireAuthorization()
+.WithName("PromoteItemsAd")
+.WithTags("Classified")
+.WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
+.WithDescription("Updates the ad's 'IsPromoted' field to true, the 'CreatedDate' to the current date")
+.Produces(StatusCodes.Status200OK)
+.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+.Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+
+            group.MapPut("/promoted/{userId}/{adId}",
+      async Task<IResult> (
+          string userId,
+          long adId,
+          [FromQuery] int subVertical,
+          IClassifiedService service,
+          CancellationToken token) =>
+      {
+          try
+          {
+              if (adId <= 0)
+              {
+                  return TypedResults.BadRequest(new ProblemDetails
+                  {
+                      Title = "Validation Error",
+                      Detail = "AdId is required.",
+                      Status = StatusCodes.Status400BadRequest
+                  });
+              }
+
+              if (string.IsNullOrWhiteSpace(userId))
+              {
+                  return TypedResults.BadRequest(new ProblemDetails
+                  {
+                      Title = "Validation Error",
+                      Detail = "UserId is required.",
+                      Status = StatusCodes.Status400BadRequest
+                  });
+              }
+
+              var dto = new ClassifiedsPromoteDto
+              {
+                  AdId = adId,
+                  SubVertical = (QLN.Common.DTO_s.SubVertical)subVertical
+              };
+
+              await service.PromoteClassifiedAd(dto, userId, token);
+
+              return TypedResults.Ok(new
+              {
+                  AdId = adId,
+                  Message = "The ad has been successfully marked as promoted."
+              });
+          }
+          catch (Exception ex)
+          {
+              return TypedResults.Problem(
+                title: "Internal Server Error",
+                detail: ex.Message,
+                statusCode: StatusCodes.Status500InternalServerError
+            );
+          }
+      })
+                .ExcludeFromDescription()
 .WithName("PromotedItemsAd")
 .WithTags("Classified")
 .WithSummary("Promote the ad's 'IsPromoted' field, set the 'CreatedDate' to current date")
@@ -4342,7 +4391,7 @@ CancellationToken token) =>
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPut("/feature", async Task<IResult> (
+            group.MapPut("/items/feature", async Task<IResult> (
               HttpContext httpContext,
              ClassifiedsPromoteDto dto,
              IClassifiedService service,
@@ -4421,7 +4470,7 @@ CancellationToken token) =>
                 .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/items/featured", async Task<IResult> (
+            group.MapPut("/featured", async Task<IResult> (
                 ClassifiedsPromoteDto dto,
                 string userId,
                 IClassifiedService service,
@@ -4497,9 +4546,9 @@ CancellationToken token) =>
 
             group.MapPost("user-dashboard/bulk-action", async Task<IResult> (
                 HttpContext context,
-                [FromQuery] string subVertical,
+                [FromQuery] int subVertical,
                 [FromQuery] bool isPublished,
-                [FromBody] List<Guid> adIds,
+                [FromBody] List<long> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
@@ -4561,10 +4610,10 @@ CancellationToken token) =>
             .RequireAuthorization();
 
             group.MapPost("user-dashboard/bulk-action-by-id", async Task<IResult> (
-                [FromQuery] string subVertical,
+                [FromQuery] int subVertical,
                 [FromQuery] bool isPublished,
                 [FromQuery] string userId,
-                [FromBody] List<Guid> adIds,
+                [FromBody] List<long> adIds,
                 IClassifiedService service,
                 CancellationToken token) =>
                     {
@@ -4668,8 +4717,144 @@ CancellationToken token) =>
             .WithDescription("Fetches every ClassifiedsIndex document where IsFeatured = true.")
             .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);        
+            return group;
+        }
 
+        public static RouteGroupBuilder MapClassifiedFOStoresEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPost("/stores-search", async (
+                [FromBody] ClassifiedsSearchRequest req,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                    OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.GetAllAsync(indexName, request);
+                    if (results == null)
+                        return Results.NoContent();
+                    if (results.ClassifiedStores != null)
+                    {
+                        var response = new ClassifiedStoreResponse
+                        {
+                             Stores = results.ClassifiedStores
+        .GroupBy(store => new {
+            store.CompanyId,
+            store.SubscriptionId,
+            store.CompanyName,
+            store.ContactNumber,
+            store.Email,
+            store.ImageUrl,
+            store.BannerUrl,
+            store.WebsiteUrl,
+            store.Locations
+        })
+        .Select(group => new StoresGroup
+        {
+            CompanyId = Guid.Parse(group.Key.CompanyId),
+            SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
+            CompanyName = group.Key.CompanyName,
+            ContactNumber = group.Key.ContactNumber,
+            Email = group.Key.Email,
+            ImageUrl = group.Key.ImageUrl,
+            BannerUrl = group.Key.BannerUrl,
+            WebsiteUrl = group.Key.WebsiteUrl,
+            Locations = group.Key.Locations,
+            ProductCount = group.Count(),
+            Products = group.Select(g => new ProductInfo
+            {
+                ProductId = Guid.Parse(g.ProductId),
+                ProductName = g.ProductName,
+                ProductLogo = g.ProductLogo,
+                ProductPrice = g.ProductPrice,
+                Currency = g.Currency,
+                ProductSummary = g.ProductSummary,
+                ProductDescription = g.ProductDescription,
+                Features = g.Features,
+                Images = g.Images
+            }).ToList()
+        })
+        .ToList()
+                        };
+
+                        return Results.Ok(response);
+                    }
+                    else
+                    {
+                        return Results.NotFound();
+                    }
+                   
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds/search"
+                    );
+                }
+            })
+            .WithName("SearchClassifiedsStores")
+            .WithTags("Classified")
+            .WithSummary("Classified stores search and products")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
             return group;
         }
 

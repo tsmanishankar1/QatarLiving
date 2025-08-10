@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.Subscriptions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -17,22 +18,27 @@ namespace QLN.Common.Infrastructure.Model
         public Guid UserAddOnId { get; set; }
 
         [Required]
-        [MaxLength(30)]
+        [MaxLength(50)]
         public string ProductCode { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(100)]
+        public string ProductName { get; set; } = string.Empty;
 
         [MaxLength(20)]
         public string? UserId { get; set; }
 
         public Guid? CompanyId { get; set; }
 
-        public Guid? SubscriptionId { get; set; }
+        public Guid SubscriptionId { get; set; }
 
         [MaxLength(100)]
         public int? PaymentId { get; set; }
 
         [Required]
         public Vertical Vertical { get; set; }
-
+        public SubVertical? SubVertical { get; set; }
+        public SubscriptionQuota Quota { get; set; } = new();
         [Required]
         public DateTime StartDate { get; set; }
 

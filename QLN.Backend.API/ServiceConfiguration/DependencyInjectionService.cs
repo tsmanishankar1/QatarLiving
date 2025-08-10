@@ -171,12 +171,14 @@ namespace QLN.Backend.API.ServiceConfiguration
         public static IServiceCollection ClassifiedBoStoresConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<IClassifiedStoresBOService, ExternalClassifiedStoresBOService>();
+            services.AddTransient<IClassifiedPreLovedBOService, ExternalClassifiedPreLovedBOService>();
             return services;
         }
 
         public static IServiceCollection ProductsConfiguration(this IServiceCollection services, IConfiguration config)
         {
             services.AddTransient<IProductService, ExternalProductService>();
+            services.AddTransient<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
 

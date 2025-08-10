@@ -15,17 +15,17 @@ namespace QLN.Common.Migrations.QLSubscription
                 name: "Products",
                 columns: table => new
                 {
-                    ProductCode = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    ProductName = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ProductCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ProductType = table.Column<int>(type: "integer", nullable: false),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
-                    ParentVertical = table.Column<int>(type: "integer", nullable: true),
+                    SubVertical = table.Column<int>(type: "integer", nullable: true),
                     Price = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    Currency = table.Column<string>(type: "character varying(10)", maxLength: 10, nullable: false),
+                    Currency = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Constraints = table.Column<string>(type: "jsonb", nullable: false)
+                    Constraints = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -37,11 +37,13 @@ namespace QLN.Common.Migrations.QLSubscription
                 columns: table => new
                 {
                     SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductCode = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    ProductCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     UserId = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: true),
                     CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
                     PaymentId = table.Column<int>(type: "integer", nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
+                    SubVertical = table.Column<int>(type: "integer", nullable: true),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
@@ -59,17 +61,20 @@ namespace QLN.Common.Migrations.QLSubscription
                 columns: table => new
                 {
                     UserAddOnId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProductCode = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    ProductCode = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ProductName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     UserId = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     CompanyId = table.Column<Guid>(type: "uuid", nullable: true),
-                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: true),
+                    SubscriptionId = table.Column<Guid>(type: "uuid", nullable: false),
                     PaymentId = table.Column<int>(type: "integer", maxLength: 100, nullable: true),
                     Vertical = table.Column<int>(type: "integer", nullable: false),
+                    SubVertical = table.Column<int>(type: "integer", nullable: true),
                     StartDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     EndDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Quota = table.Column<string>(type: "jsonb", nullable: false)
                 },
                 constraints: table =>
                 {

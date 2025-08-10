@@ -9,5 +9,9 @@ namespace QLN.DataMigration.Services
         Task<IResult> MigrateCommunityPosts(bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateEvents(string sourceCategory, int destinationCategory, bool importImages, CancellationToken cancellationToken);
         Task<IResult> MigrateItems(string environment, int categoryId, CancellationToken cancellationToken);
+
+        Task<IResult> MigrateEventCategories(CancellationToken cancellationToken);
+        Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken);
+        Task<IResult> MigrateLocations(CancellationToken cancellationToken);
     }
 }

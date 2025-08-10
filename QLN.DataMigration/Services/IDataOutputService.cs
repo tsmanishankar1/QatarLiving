@@ -11,5 +11,9 @@ namespace QLN.DataMigration.Services
         Task SaveContentNewsAsync(List<ArticleItem> items, int categoryId, int subcategoryId, CancellationToken cancellationToken);
         Task SaveContentEventsAsync(List<ContentEvent> items, int destinationCategoryId, CancellationToken cancellationToken);
         Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken);
+
+        Task SaveEventCategoriesAsync(List<Common.Infrastructure.DTO_s.EventCategory> items, CancellationToken cancellationToken);
+        Task SaveNewsCategoriesAsync(List<NewsCategory> items, CancellationToken cancellationToken);
+        Task SaveLocationsAsync(List<Location> items, CancellationToken cancellationToken);
     }
 }

@@ -14,7 +14,7 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
         public Vertical Vertical { get; set; }
-        public Vertical? ParentVertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "QAR";
         public ProductConstraints? Constraints { get; set; }
@@ -33,7 +33,7 @@ namespace QLN.Common.DTO_s.Subscription
         public string ProductName { get; set; } = string.Empty;
         public ProductType ProductType { get; set; }
         public Vertical Vertical { get; set; }
-        public Vertical? ParentVertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = string.Empty;
         public ProductConstraints Constraints { get; set; } = new();

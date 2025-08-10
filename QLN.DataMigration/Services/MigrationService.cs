@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -504,6 +505,73 @@ namespace QLN.DataMigration.Services
             drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
 
             _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+        }
+
+        public async Task<IResult> MigrateEventCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.EventCategories == null || !categories.EventCategories.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveEventCategoriesAsync(categories.EventCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.EventCategories.Count} Categories - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+            List<NewsCategory> categories = Constants.NewsCategories();
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveNewsCategoriesAsync(categories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Count} Primary Categories & {categories.SelectMany(x => x.SubCategories).ToList().Count} Subcategories - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLocations(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.Locations == null || !categories.Locations.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLocationsAsync(categories.Locations, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Locations.Count} Locations & {categories.Locations.SelectMany(x => x.Areas ?? new List<Area>()).ToList().Count} Areas - Completed @ {DateTime.UtcNow}."
+            });
         }
     }
 }

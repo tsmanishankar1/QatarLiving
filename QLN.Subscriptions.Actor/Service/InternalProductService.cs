@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s.Payments;
 using QLN.Common.DTO_s.Subscription;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.Model;
@@ -111,7 +112,7 @@ namespace QLN.Subscriptions.Actor.Service
                     ProductName = dto.ProductName,
                     ProductType = dto.ProductType,
                     Vertical = dto.Vertical,
-                    ParentVertical = dto.ParentVertical,
+                    SubVertical = dto.SubVertical,
                     Price = dto.Price,
                     Currency = dto.Currency,
                     Constraints = dto.Constraints ?? new ProductConstraints(),
@@ -215,7 +216,7 @@ namespace QLN.Subscriptions.Actor.Service
                 ProductName = product.ProductName,
                 ProductType = product.ProductType,
                 Vertical = product.Vertical,
-                ParentVertical = product.ParentVertical,
+                SubVertical = product.SubVertical,
                 Price = product.Price,
                 Currency = product.Currency,
                 Constraints = product.Constraints,

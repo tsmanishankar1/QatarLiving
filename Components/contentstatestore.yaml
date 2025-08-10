@@ -14,4 +14,4 @@ spec:
     - name: enableQuery
       value: "true"
     - name: keyPrefix
-      value: "name"
+      value: "appid"
