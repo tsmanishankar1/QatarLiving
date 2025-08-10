@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using static QLN.Common.DTO_s.CommunityBo;
+using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -511,15 +512,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      HttpContext httpContext,
      CancellationToken ct) =>
             {
-                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                if (string.IsNullOrEmpty(userClaim))
-                    return TypedResults.Forbid();
+                string? userId = null;
+                if (httpContext.User?.Identity?.IsAuthenticated == true)
+                {
+                    userId = httpContext.User.FindFirst("uid")?.Value
+                             ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                var userId = userData.GetProperty("uid").GetString();
-
-                if (string.IsNullOrWhiteSpace(userId))
-                    return TypedResults.Forbid();
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        var userClaim = httpContext.User.FindFirst("user")?.Value;
+                        if (!string.IsNullOrWhiteSpace(userClaim))
+                        {
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(userClaim);
+                                if (doc.RootElement.TryGetProperty("uid", out var uidProp) &&
+                                    uidProp.ValueKind == JsonValueKind.String)
+                                {
+                                    var uid = uidProp.GetString();
+                                    if (!string.IsNullOrWhiteSpace(uid))
+                                        userId = uid;
+                                }
+                            }
+                            catch (JsonException)
+                            {
+                                return TypedResults.Problem("Jao");
+                            }
+                        }
+                    }
+                }
 
                 var comments = await service.GetAllCommentsByPostIdAsync(postId, userId, page, perPage, ct);
                 return Results.Ok(comments);
