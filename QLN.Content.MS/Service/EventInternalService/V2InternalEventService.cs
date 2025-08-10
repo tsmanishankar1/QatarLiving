@@ -84,7 +84,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 var id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
                                                                          // and only generate a new one if this is GUID.Empty.
 
-                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
+                var slug = ProcessingHelpers.GenerateSlug(dto.Slug);
                 var entity = new V2Events
                 {
                     Id = id,
@@ -164,6 +164,118 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 throw new Exception("Error creating event", ex);
             }
+        }
+
+        public async Task<string> BulkMigrateEvents(List<V2Events> events, CancellationToken cancellationToken = default)
+        {
+            var categoryKeys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventCategoryIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+            foreach (var dto in events)
+            {
+                try
+                {
+                    string categoryName = string.Empty;
+                    Guid id = dto.Id;
+
+                    if (categoryKeys.Contains(dto.CategoryId.ToString()))
+                    {
+                        var selectedCategory = await _dapr.GetStateAsync<EventsCategory>(
+                            ConstantValues.V2Content.ContentStoreName,
+                            dto.CategoryId.ToString(),
+                            cancellationToken: cancellationToken
+                        );
+
+                        if (selectedCategory != null)
+                            categoryName = selectedCategory.CategoryName;
+                    }
+
+                    ValidateEventSchedule(dto.EventSchedule);
+
+                    //var entity = new V2Events
+                    //{
+                    //    Id = id,
+                    //    Slug = dto.Slug,
+                    //    CategoryId = dto.CategoryId,
+                    //    CategoryName = categoryName,
+                    //    EventTitle = dto.EventTitle,
+                    //    EventType = dto.EventType,
+                    //    Price = dto.Price,
+                    //    EventSchedule = dto.EventSchedule,
+                    //    LocationId = dto.LocationId,
+                    //    Location = dto.Location,
+                    //    Venue = dto.Venue,
+                    //    Longitude = dto.Longitude,
+                    //    Latitude = dto.Latitude,
+                    //    RedirectionLink = dto.RedirectionLink,
+                    //    EventDescription = dto.EventDescription,
+                    //    CoverImage = dto.CoverImage,
+                    //    IsFeatured = false,
+                    //    FeaturedSlot = dto.FeaturedSlot,
+                    //    Status = dto.Status,
+                    //    PublishedDate = DateTime.UtcNow,
+                    //    IsActive = true,
+                    //    CreatedBy = dto.CreatedBy,
+                    //    CreatedAt = DateTime.UtcNow
+                    //};
+
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        dto.Id.ToString(),
+                        dto,
+                        cancellationToken: cancellationToken
+                    );
+
+                    var keys = await _dapr.GetStateAsync<List<string>>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        cancellationToken: cancellationToken
+                    ) ?? new List<string>();
+
+                    if (!keys.Contains(id.ToString()))
+                    {
+                        keys.Add(id.ToString());
+                        await _dapr.SaveStateAsync(
+                            ConstantValues.V2Content.ContentStoreName,
+                            ConstantValues.V2Content.EventIndexKey,
+                            keys,
+                            cancellationToken: cancellationToken
+                        );
+                    }
+
+                    var upsertRequest = await IndexEventToAzureSearch(dto, cancellationToken);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                            data: message,
+                            cancellationToken: cancellationToken
+                        );
+                    }
+
+                    
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception("Error creating event", ex);
+                }
+                
+
+            }
+
+            return "Events created successfully.";
+
         }
         private async Task<string> HandleEventSlotShift(int desiredSlot, V2Events newEvent, CancellationToken cancellationToken)
         {
@@ -302,6 +414,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                    cancellationToken: cancellationToken
                 ) ?? new List<string>();
 
+                // this version isnt as slow as the other one, but in principle you are allowed to have the same title for an event ?
                 foreach (var key in allEventKeys)
                 {
                     if (key.Equals(dto.Id.ToString(), StringComparison.OrdinalIgnoreCase))

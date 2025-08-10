@@ -215,28 +215,42 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (!allEvents.Any())
                     return EmptyResponse(request.Page, request.PerPage);
 
-                request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
-                if (request.FeaturedFirst == true)
+                if (!string.IsNullOrWhiteSpace(request.PriceSortOrder))
                 {
-                    allEvents = request.SortOrder switch
+                    request.PriceSortOrder = request.PriceSortOrder.ToLowerInvariant();
+
+                    allEvents = request.PriceSortOrder switch
                     {
-                        "desc" => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenByDescending(e => e.CreatedAt)
-                            .ToList(),
-                        _ => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenBy(e => e.CreatedAt)
-                            .ToList(),
+                        "desc" => allEvents.OrderByDescending(e => e.Price ?? 0).ToList(),
+                        _ => allEvents.OrderBy(e => e.Price ?? 0).ToList(),
                     };
                 }
                 else
                 {
-                    allEvents = request.SortOrder switch
+                    request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
+
+                    if (request.FeaturedFirst == true)
                     {
-                        "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
-                        _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
-                    };
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenByDescending(e => e.CreatedAt)
+                                .ToList(),
+                            _ => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenBy(e => e.CreatedAt)
+                                .ToList(),
+                        };
+                    }
+                    else
+                    {
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
+                            _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
+                        };
+                    }
                 }
                 int currentPage = Math.Max(1, request.Page ?? 1);
                 int itemsPerPage = Math.Max(1, Math.Min(100, request.PerPage ?? 12));

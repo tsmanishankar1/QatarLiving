@@ -205,7 +205,7 @@ namespace QLN.DataMigration.Services
 
         public async Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken)
         {
-            int pageSize = 30;
+            int pageSize = 200;
             int page = 1;
             string sourceCategory= "20000040"; // News
             int destinationCategory = 101; // News
@@ -268,7 +268,7 @@ namespace QLN.DataMigration.Services
 
         public async Task<IResult> MigrateEvents(bool importImages, CancellationToken cancellationToken)
         {
-            int pageSize = 30;
+            int pageSize = 200;
             int page = 1;
 
             _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
@@ -334,7 +334,7 @@ namespace QLN.DataMigration.Services
             CancellationToken cancellationToken
             )
         {
-            int pageSize = 30;
+            int pageSize = 200;
             int page = 1;
 
             _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
@@ -427,7 +427,8 @@ namespace QLN.DataMigration.Services
                 _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
             }
 
-            drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+            //drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+            drupalItem.Slug = drupalItem.Slug.Split('/').LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
 
             _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
         }
