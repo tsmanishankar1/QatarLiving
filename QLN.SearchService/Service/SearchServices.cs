@@ -84,10 +84,28 @@ namespace QLN.SearchService.Service
                         (response, items) => response.ServicesItems = items),
 
                     ConstantValues.IndexNames.ClassifiedStoresIndex => await HandleSearchWithJsonFilters<ClassifiedStoresIndex>(
-                   indexName, req,
-                   new List<string> { "IsActive eq true", "Status eq 'Active'" },
-                   regularFilters, jsonFilters,
-                   (response, items) => response.ClassifiedStores = items),
+                       indexName, req,
+                       new List<string> { "IsActive eq true", "Status eq 'Active'" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ClassifiedStores = items),
+
+                    ConstantValues.IndexNames.ContentNewsIndex => await HandleSearchWithJsonFilters<ContentNewsIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentNewsItems = items),
+
+                    ConstantValues.IndexNames.ContentEventsIndex => await HandleSearchWithJsonFilters<ContentEventsIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentEventsItems = items),
+
+                    ConstantValues.IndexNames.ContentCommunityIndex => await HandleSearchWithJsonFilters<ContentCommunityIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentCommunityItems = items),
 
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
@@ -218,11 +236,29 @@ namespace QLN.SearchService.Service
                         true),
 
                     ConstantValues.IndexNames.ClassifiedStoresIndex => await HandleSearchWithJsonFilters<ClassifiedStoresIndex>(
-                   indexName, modifiedRequest,
-                   new List<string> { "IsActive eq true" },
-                   regularFilters, jsonFilters,
-                   (response, items) => response.ClassifiedStores = items,
-                   true),
+                       indexName, modifiedRequest,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ClassifiedStores = items,
+                       true),
+
+                    ConstantValues.IndexNames.ContentNewsIndex => await HandleSearchWithJsonFilters<ContentNewsIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentNewsItems = items),
+
+                    ConstantValues.IndexNames.ContentEventsIndex => await HandleSearchWithJsonFilters<ContentEventsIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentEventsItems = items),
+
+                    ConstantValues.IndexNames.ContentCommunityIndex => await HandleSearchWithJsonFilters<ContentCommunityIndex>(
+                       indexName, req,
+                       new List<string> { "IsActive eq true" },
+                       regularFilters, jsonFilters,
+                       (response, items) => response.ContentCommunityItems = items),
 
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
@@ -639,6 +675,9 @@ namespace QLN.SearchService.Service
                 ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => typeof(ClassifiedsCollectiblesIndex),
                 ConstantValues.IndexNames.ClassifiedsDealsIndex => typeof(ClassifiedsDealsIndex),
                 ConstantValues.IndexNames.ServicesIndex => typeof(ServicesIndex),
+                ConstantValues.IndexNames.ContentNewsIndex => typeof(ContentNewsIndex),
+                ConstantValues.IndexNames.ContentEventsIndex => typeof(ContentEventsIndex),
+                ConstantValues.IndexNames.ContentCommunityIndex => typeof(ContentCommunityIndex),
                 _ => null
             };
         }
@@ -646,7 +685,9 @@ namespace QLN.SearchService.Service
         private async Task<HashSet<string>> GetKnownJsonKeysFromSampleData(string indexName)
         {
             var knownKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
+            var hasAttrs = GetModelTypeForVertical(indexName)
+            ?.GetProperty("AttributesJson", BindingFlags.Public | BindingFlags.Instance) != null;
+            if (!hasAttrs) return knownKeys;
             try
             {
                 var opts = new SearchOptions
@@ -756,9 +797,8 @@ namespace QLN.SearchService.Service
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error building order by clause, using default ordering");
-
                 opts.OrderBy.Clear();
-                opts.OrderBy.Add("CreatedAt desc");
+                foreach (var f in GetDefaultOrderFields<T>()) opts.OrderBy.Add(f);
             }
         }
 
@@ -779,6 +819,9 @@ namespace QLN.SearchService.Service
                     },
 
                 "ClassifiedsDealsIndex" => new List<string> { "CreatedAt desc" },
+                "ContentNewsIndex" => new List<string> { "PublishedDate desc", "DateCreated desc" },
+                "ContentEventsIndex" => new List<string> { "PublishedDate desc", "CreatedAt desc" },
+                "ContentCommunityIndex" => new List<string> { "DateCreated desc" },
 
                 _ => new List<string> { "CreatedAt desc" }
             };
@@ -905,8 +948,23 @@ namespace QLN.SearchService.Service
 
                     case ConstantValues.IndexNames.ClassifiedStoresIndex:
                         var stores = request.ClassifiedStores
-                               ?? throw new ArgumentException("StoresItem is required for services.", nameof(request.ClassifiedStores));
+                               ?? throw new ArgumentException("StoresItem is required for stores.", nameof(request.ClassifiedStores));
                         return await _repo.UploadAsync<ClassifiedStoresIndex>(index, stores);
+
+                    case ConstantValues.IndexNames.ContentNewsIndex:
+                        var news = request.ContentNewsItem
+                               ?? throw new ArgumentException("NewsItem is required for content.", nameof(request.ContentNewsItem));
+                        return await _repo.UploadAsync<ContentNewsIndex>(index, news);
+
+                    case ConstantValues.IndexNames.ContentEventsIndex:
+                        var events = request.ContentEventsItem
+                               ?? throw new ArgumentException("EventsItem is required for content.", nameof(request.ContentEventsItem));
+                        return await _repo.UploadAsync<ContentEventsIndex>(index, events);
+
+                    case ConstantValues.IndexNames.ContentCommunityIndex:
+                        var community = request.ContentCommunityItem
+                               ?? throw new ArgumentException("CommunityItem is required for content.", nameof(request.ContentCommunityItem));
+                        return await _repo.UploadAsync<ContentCommunityIndex>(index, community);
 
                     default:
                         throw new ArgumentException($"Unsupported Index: '{index}'", nameof(request.IndexName));

@@ -34,6 +34,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Description)) throw new ArgumentException("Description is required.");
 
+            var existingKeys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
+            foreach (var existingKey in existingKeys)
+            {
+                var existingPost = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, existingKey, cancellationToken: ct);
+                if (existingPost != null &&
+                    string.Equals(existingPost.Title?.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ArgumentException($"A community post with the title '{dto.Title}' already exists.");
+                }
+            }
             dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
                                                                      // and only generate a new one if this is GUID.Empty.
             dto.UpdatedBy = userId;
@@ -243,16 +253,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException($"Error retrieving post with ID: {id}", ex);
             }
         }
-        //private string GenerateSlug(string title)
-        //{
-        //    if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-        //    var slug = title.ToLowerInvariant().Trim();
-        //    slug = Regex.Replace(slug, @"[\s_]+", "-");
-        //    slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-        //    slug = Regex.Replace(slug, @"-+", "-");
-        //    slug = slug.Trim('-');
-        //    return slug;
-        //}
         public Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             var categories = new List<ForumCategoryDto>
@@ -396,7 +396,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync( Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync( Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             var indexKey = $"comment-index-{postId}";
 
@@ -431,7 +431,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
 
                         if (comment != null && comment.IsActive && comment.CommentId != Guid.Empty)
                         {
-                            // Get liked user IDs
                             var likeIndexKey = $"comment-like-index-{comment.CommentId}";
                             var likedUsers = await _dapr.GetStateAsync<List<string>>(StoreName, likeIndexKey, cancellationToken: ct) ?? new();
                             comment.CommentsLikeCount = likedUsers.Count;
@@ -446,19 +445,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     }
                 }
 
-                // Pagination after filtering
                 int currentPage = page ?? 1;
                 int itemsPerPage = perPage ?? 10;
                 int skip = (currentPage - 1) * itemsPerPage;
 
-                // Group comments by parent
                 var grouped = allComments
                     .GroupBy(c => c.ParentCommentId ?? Guid.Empty)
                     .ToDictionary(g => g.Key, g => g.ToList());
 
                 var result = new List<CommunityCommentItem>();
 
-                // Recursive builder
                 List<CommunityCommentItem> BuildReplies(Guid parentId)
                 {
                     if (!grouped.ContainsKey(parentId))
@@ -475,12 +471,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             LikeCount = reply.CommentsLikeCount,
                             LikedUserIds = reply.LikedUserIds ?? new(),
                             CommentedUserId = reply.UserId,
+                            IsLiked = !string.IsNullOrEmpty(userId) && (reply.LikedUserIds?.Contains(userId) ?? false),
                             Replies = BuildReplies(reply.CommentId)
                         })
                         .ToList();
                 }
 
-                // Build paginated root-level comments
                 if (grouped.ContainsKey(Guid.Empty))
                 {
                     var rootParents = grouped[Guid.Empty]
@@ -500,6 +496,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                             LikeCount = parent.CommentsLikeCount,
                             LikedUserIds = parent.LikedUserIds ?? new(),
                             CommentedUserId = parent.UserId,
+                            IsLiked = !string.IsNullOrEmpty(userId) && (parent.LikedUserIds?.Contains(userId) ?? false),
                             Replies = BuildReplies(parent.CommentId)
                         };
 
@@ -518,8 +515,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                     TotalComments = grouped.ContainsKey(Guid.Empty) ? grouped[Guid.Empty].Count : 0,
                     PerPage = itemsPerPage,
                     CurrentPage = currentPage,
-                    Comments = result,
-                    //CommentedUserIds = uniqueCommentedUserIds
+                    Comments = result
                 };
             }
             catch (Exception ex)
@@ -528,7 +524,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
+         public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
             var key = $"comment-like-{likeCommentsDto.CommentId}-{userId}";
             var indexKey = $"comment-like-index-{likeCommentsDto.CommentId}";

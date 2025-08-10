@@ -52,7 +52,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         }
         public static IServiceCollection SearchServicesConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddTransient<ISearchService, ExternalSearchService>();
+            services.AddScoped<ISearchService, ExternalSearchService>();
 
             return services;
         }
