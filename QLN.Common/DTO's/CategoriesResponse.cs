@@ -16,7 +16,13 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("name")]
         public string Name { get; set; }
     }
-    public class Area : BaseCategory;
+    public class Area : BaseCategory
+    {
+        [JsonPropertyName("latitude")]
+        public double Latitude { get; set; }
+        [JsonPropertyName("longitude")]
+        public double Longitude { get; set; }
+    }
 
     public class EventCategory : BaseCategory;
 
@@ -24,9 +30,13 @@ namespace QLN.Common.Infrastructure.DTO_s
 
     public class Location : BaseCategory
     {
+        [JsonPropertyName("latitude")]
+        public double Latitude { get; set; }
+        [JsonPropertyName("longitude")]
+        public double Longitude { get; set; }
 
         [JsonPropertyName("areas")]
-        public List<Area> Areas { get; set; }
+        public List<Area>? Areas { get; set; }
     }
 
     public class CategoriesResponse

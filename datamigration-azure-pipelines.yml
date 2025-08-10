@@ -1,0 +1,88 @@
+trigger:
+  branches:
+    include:
+    - qln-dev
+  paths:
+    include:
+    - datamigration-azure-pipelines.yml
+    - QLN.DataMigration/*
+    - QLN.Common/*
+
+variables:
+ - name: acrRegistry
+   value: qlnv2-ezftf8ehejdadpfn
+ - name: appName
+   value: QLN.DataMigration
+ - name: appShortName
+   value: datamigration
+
+
+jobs:
+- job: BuildPublishDev
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - task: AzureContainerApps@1
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)'
+      appSourcePath: '$(Build.SourcesDirectory)'
+      azureSubscription: 'dev-qlnext'
+      acrName: '$(acrRegistry)'
+      acrUsername: 'qlnv2'
+      acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+      dockerfilePath: '$(appName)/Dockerfile'
+      imageToBuild: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+      containerAppName: 'capp-$(appShortName)'
+      resourceGroup: 'rg-containerapps-dev'
+      runtimeStack: 'dotnetcore:9.0'
+- job: GetApprovalForQA
+  timeoutInMinutes: 1440
+  dependsOn: BuildPublishDev
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    inputs:
+      notifyUsers: 'Back End - QA Release Approval'
+      approvers: 'Back End - QA Release Approval'
+      instructions: 'Please approve to QA'
+- job: DeployToQA
+  dependsOn: GetApprovalForQA
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - task: AzureContainerApps@1
+    inputs:
+      azureSubscription: 'dev-qlnext'
+      acrName: '$(acrRegistry)'
+      acrUsername: 'qlnv2'
+      acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+      imageToDeploy: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+      containerAppName: 'capp-$(appShortName)-qa'
+      resourceGroup: 'rg-containerapps-qa'
+      runtimeStack: 'dotnetcore:9.0'
+
+- job: GetApprovalForProd
+  timeoutInMinutes: 1440
+  dependsOn: DeployToQA
+  pool: server
+  steps:
+  - task: ManualValidation@1
+    inputs:
+      notifyUsers: 'Back End - Prod Release Approval'
+      approvers: 'Back End - Prod Release Approval'
+      instructions: 'Please approve to Prod'
+- job: DeployToProd
+  dependsOn: GetApprovalForProd
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - task: AzureContainerApps@1
+    inputs:
+      azureSubscription: 'prod-qlnext'
+      acrName: '$(acrRegistry)'
+      acrUsername: 'qlnv2'
+      acrPassword: 'jxmPri2GCql4OHO5Fl+3C0Bii3fmUbsrEZ1EHDbx/y+ACRDo/bQ0'
+      imageToDeploy: 'qlnv2-ezftf8ehejdadpfn.azurecr.io/qlnv2/$(appShortName):$(Build.BuildId).$(Build.BuildNumber)'
+      containerAppName: 'capp-$(appShortName)-prod'
+      resourceGroup: 'rg-containerapps-prod'
+      runtimeStack: 'dotnetcore:9.0'
