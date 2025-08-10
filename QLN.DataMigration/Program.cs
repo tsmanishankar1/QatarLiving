@@ -67,7 +67,7 @@ app.MapGet("/migrate_categories", async (
 {
     return await migrationService.MigrateCategories(environment, cancellationToken);
 })
-.WithName("Migrate Categories - Not to be used");
+.WithSummary("Migrate Categories - Not to be used");
 
 app.MapGet("/migrate_items", async (
     [FromServices] IMigrationService migrationService,
@@ -78,7 +78,7 @@ app.MapGet("/migrate_items", async (
     {
         return await migrationService.MigrateItems(environment, categoryId, cancellationToken);
     })
-    .WithName("Migrate Items - not ready yet");
+    .WithSummary("Migrate Items - not ready yet");
 
 
 app.MapGet("/migrate_event_categories", async (
@@ -88,7 +88,7 @@ app.MapGet("/migrate_event_categories", async (
 {
     return await migrationService.MigrateEventCategories(cancellationToken);
 })
-    .WithName("Migrate Event Categories - Run 1st");
+    .WithSummary("Migrate Event Categories - Run 1st");
 
 app.MapGet("/migrate_news_categories", async (
     [FromServices] IMigrationService migrationService,
@@ -97,7 +97,7 @@ app.MapGet("/migrate_news_categories", async (
 {
     return await migrationService.MigrateNewsCategories(cancellationToken);
 })
-    .WithName("Migrate News Categories - Run 1st");
+    .WithSummary("Migrate News Categories - Run 1st");
 
 app.MapGet("/migrate_articles", async (
     [FromServices] IMigrationService migrationService,
@@ -110,7 +110,7 @@ app.MapGet("/migrate_articles", async (
     {
         return await migrationService.MigrateArticles( importImages, cancellationToken);
     })
-    .WithName("Migrate News Articles - Run 2nd");
+    .WithSummary("Migrate News Articles - Run 2nd");
 
 app.MapGet("/migrate_events", async (
     [FromServices] IMigrationService migrationService,
@@ -123,7 +123,7 @@ app.MapGet("/migrate_events", async (
     {
         return await migrationService.MigrateEvents(importImages, cancellationToken);
     })
-    .WithName("Migrate Events - Run 2nd");
+    .WithSummary("Migrate Events - Run 2nd");
 
 app.MapGet("/migrate_community", async (
     [FromServices] IMigrationService migrationService,
@@ -135,7 +135,7 @@ app.MapGet("/migrate_community", async (
     {
         return await migrationService.MigrateCommunityPosts(importImages, cancellationToken);
     })
-    .WithName("Migrate Community Posts - Run 2nd");
+    .WithSummary("Migrate Community Posts - Run 2nd");
 
 
 app.MapGet("/migrate_locations", async (
@@ -145,6 +145,6 @@ app.MapGet("/migrate_locations", async (
 {
     return await migrationService.MigrateLocations(cancellationToken);
 })
-    .WithName("Migrate Locations - Not yet required");
+    .WithSummary("Migrate Locations - Not yet required");
 
 app.Run();
