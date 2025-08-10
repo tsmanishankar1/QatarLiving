@@ -33,6 +33,28 @@ namespace QLN.DataMigration.Services
             response.EnsureSuccessStatusCode();
         }
 
+        public async Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/news/bulkMigrate";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(articles), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<string>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                       ?? throw new Exception("Empty or invalid response from content service.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news article via external service");
+                throw;
+            }
+        }
+
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try

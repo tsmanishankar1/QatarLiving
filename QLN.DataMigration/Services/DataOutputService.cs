@@ -71,47 +71,46 @@
 
         public async Task SaveContentNewsAsync(List<ArticleItem> items, int categoryId, int subcategoryId, CancellationToken cancellationToken)
         {
+            var articles = new List<V2NewsArticleDTO>();
+
             foreach (var dto in items)
             {
-                try
-                {
-
-                    var articleCategories = new List<V2ArticleCategory>() { new V2ArticleCategory
+                var articleCategories = new List<V2ArticleCategory>() { new V2ArticleCategory
                     {
                         CategoryId = categoryId,
                         SubcategoryId = subcategoryId,
                         SlotId = (int)Common.DTO_s.Slot.UnPublished
                     } };
 
-                    var article = new V2NewsArticleDTO
-                    {
-                        Id = ProcessingHelpers.StringToGuid(dto.Nid),
-                        Title = dto.Title,
-                        Content = dto.Description,
-                        WriterTag = dto.UserName,
-                        Slug = dto.Slug,
-                        IsActive = dto.Status == "1",
-                        Categories = articleCategories,
-                        PublishedDate = DateTime.TryParse(dto.DateCreated, out var publishedDate) ? publishedDate : DateTime.UtcNow,
-                        CreatedBy = dto.UserName,
-                        UpdatedBy = dto.UserName,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow,
-                        authorName = dto.UserName,
-                        CoverImageUrl = dto.ImageUrl,
-                        UserId = dto.UserName
-                    };
-
-                    await _newsService.CreateNewsArticleAsync(article.UserId, article, cancellationToken);
-
+                var article = new V2NewsArticleDTO
+                {
+                    Id = ProcessingHelpers.StringToGuid(dto.Nid),
+                    Title = dto.Title,
+                    Content = dto.Description,
+                    WriterTag = dto.UserName,
+                    Slug = dto.Slug,
+                    IsActive = dto.Status == "1",
+                    Categories = articleCategories,
+                    PublishedDate = DateTime.TryParse(dto.DateCreated, out var publishedDate) ? publishedDate : DateTime.UtcNow,
+                    CreatedBy = dto.UserName,
+                    UpdatedBy = dto.UserName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    authorName = dto.UserName,
+                    CoverImageUrl = dto.ImageUrl,
+                    UserId = dto.UserName
+                };
+                articles.Add(article);
+            }
+                try
+                {
+                    await _newsService.BulkMigrateNewsArticleAsync(articles, cancellationToken);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError($"Failed to create article {dto.Nid} - {ex.Message}");
+                    _logger.LogError($"Failed to create articles - {ex.Message}");
                     throw new Exception("Unexpected error during article creation", ex);
                 }
-
-            }
         }
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
