@@ -273,7 +273,7 @@ namespace QLN.Backend.API.Service.V2ContentService
             try
             {
                 var query = $"?userId={userId}&page={page ?? 1}&perPage={perPage ?? 10}";
-                var url = $"/api/v2/community/getCommentsByPostId/{postId}{query}";
+                var url = $"/api/v2/community/getCommentsByPost/{postId}{query}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
