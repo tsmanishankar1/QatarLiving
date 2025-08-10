@@ -496,5 +496,91 @@ namespace QLN.Backend.API.Service.SearchService
                 return daprEx.Message;
             }
         }
+        public async Task<AzureSearchResults<T>> SearchRawAsync<T>(
+            string indexName,
+            RawSearchRequest request,
+            CancellationToken ct = default
+        ) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+            ArgumentNullException.ThrowIfNull(request);
+
+            try
+            {
+                var methodName = $"/api/indexes/raw?index={indexName}";
+                var resp = await _dapr.InvokeMethodAsync<RawSearchRequest, AzureSearchResults<T>>(
+                    HttpMethod.Post,
+                    appId: SERVICE_APP_ID,
+                    methodName: methodName,
+                    data: request,
+                    cancellationToken: ct
+                );
+
+                return resp ?? new AzureSearchResults<T> { Items = new List<T>(), TotalCount = 0 };
+            }
+            catch (ArgumentNullException ex)
+            {
+                _logger.LogWarning(ex, "RawSearchAsync called with null argument.");
+                throw;
+            }
+            catch (DaprException ex)
+            {
+                _logger.LogError(ex, "Dapr invocation failed in RawSearchAsync: indexName={IndexName}", indexName);
+
+                if (ex.InnerException is HttpRequestException httpEx)
+                {
+                    var statusCode = httpEx.StatusCode;
+                    var message = ExtractErrorMessage(ex);
+
+                    switch (statusCode)
+                    {
+                        case HttpStatusCode.BadRequest:
+                            if (message.Contains("Invalid filter") ||
+                                message.Contains("Invalid date") ||
+                                message.Contains("Empty collection") ||
+                                message.Contains("Unsupported filter") ||
+                                message.Contains("Error building filter") ||
+                                message.Contains("Error processing filters"))
+                            {
+                                throw new ArgumentException($"Invalid filter: {message}", nameof(request));
+                            }
+                            else if (message.Contains("Top") || message.Contains("Skip") || message.Contains("OrderBy"))
+                            {
+                                throw new ArgumentException($"Invalid parameter: {message}", nameof(request));
+                            }
+                            else if (message.Contains("Unsupported Index") || message.Contains("Unknown index"))
+                            {
+                                throw new NotSupportedException($"Unsupported index: {message}");
+                            }
+                            else
+                            {
+                                throw new ArgumentException($"Bad request: {message}", nameof(request));
+                            }
+
+                        case HttpStatusCode.NotFound:
+                            throw new KeyNotFoundException($"Resource not found: {message}");
+
+                        case HttpStatusCode.InternalServerError:
+                            throw new InvalidOperationException($"Search service error: {message}");
+
+                        case HttpStatusCode.BadGateway:
+                        case HttpStatusCode.ServiceUnavailable:
+                        case HttpStatusCode.GatewayTimeout:
+                            throw new RequestFailedException((int)statusCode, $"Search service unavailable: {message}");
+
+                        default:
+                            throw new InvalidOperationException($"Search service returned {statusCode}: {message}");
+                    }
+                }
+
+                throw new InvalidOperationException($"Dapr communication failed: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in RawSearchAsync: indexName={IndexName}", indexName);
+                throw new InvalidOperationException($"Unexpected error in RawSearchAsync: {ex.Message}", ex);
+            }
+        }
     }
 }
