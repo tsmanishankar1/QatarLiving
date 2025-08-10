@@ -39,6 +39,28 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+
+                var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.V2Content.ContentStoreName,
+                ConstantValues.V2Content.EventIndexKey,
+                cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in allEventKeys)
+                {
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }
                 string categoryName = string.Empty;
 
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
@@ -188,16 +210,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
             }
         }
-        //private string GenerateSlug(string title)
-        //{
-        //    if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-        //    var slug = title.ToLowerInvariant().Trim();
-        //    slug = Regex.Replace(slug, @"[\s_]+", "-");
-        //    slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-        //    slug = Regex.Replace(slug, @"-+", "-");
-        //    slug = slug.Trim('-');
-        //    return slug;
-        //}
         public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
         {
             var keys = await _dapr.GetStateAsync<List<string>>(
@@ -285,7 +297,27 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+                var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                   ConstantValues.V2Content.ContentStoreName,
+                   ConstantValues.V2Content.EventIndexKey,
+                   cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
+                foreach (var key in allEventKeys)
+                {
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }
                 string categoryName = string.Empty;
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
@@ -387,7 +419,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 var updated = new V2Events
                 {
                     Id = dto.Id,
-                    Slug = dto.Slug,
+                    Slug = slug,
                     CategoryId = dto.CategoryId,
                     CategoryName = categoryName,
                     EventTitle = dto.EventTitle,
