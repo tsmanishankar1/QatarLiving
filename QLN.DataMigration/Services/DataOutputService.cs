@@ -244,7 +244,8 @@
                     ImageUrl = dto.ImageUrl,
                     IsActive = true,
                     UserName = dto.UserName,
-                    DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow
+                    DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow,
+                    LikedUserIds = new List<string>() // creating an empty list so this will be processed into the index
                 };
                 posts.Add(entity);
             }
