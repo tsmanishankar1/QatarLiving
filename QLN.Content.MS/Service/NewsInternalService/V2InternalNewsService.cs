@@ -254,6 +254,56 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+        public async Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string storeName = V2Content.ContentStoreName;
+                string indexKey = V2Content.NewsIndexKey;
+
+                foreach (var article in articles)
+                {
+                    var articleIdStr = article.Id.ToString();
+
+                    await _dapr.SaveStateAsync(storeName, articleIdStr, article, cancellationToken: cancellationToken);
+
+                    var currentIndex = await _dapr.GetStateAsync<List<string>>(storeName, indexKey, cancellationToken: cancellationToken)
+                                        ?? new List<string>();
+
+                    if (!currentIndex.Contains(articleIdStr))
+                    {
+                        currentIndex.Add(articleIdStr);
+                        await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                    }
+
+                    var upsertRequest = await IndexNewsToAzureSearch(article, cancellationToken);
+                    if (upsertRequest != null)
+                    {
+                        var message = new IndexMessage
+                        {
+                            Action = "Upsert",
+                            Vertical = ConstantValues.IndexNames.ContentNewsIndex,
+                            UpsertRequest = upsertRequest
+                        };
+
+                        await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                            data: message,
+                            cancellationToken: cancellationToken
+                        );
+                    }
+                }
+
+                return "News articles created successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create article");
+                throw new Exception("Unexpected error during article creation", ex);
+            }
+        }
+
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
             const int MaxSlotToShift = 50;

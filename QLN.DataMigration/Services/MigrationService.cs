@@ -427,7 +427,8 @@ namespace QLN.DataMigration.Services
                 _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
             }
 
-            drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+            //drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+            drupalItem.Slug = drupalItem.Slug.Split('/').LastOrDefault() ?? ProcessingHelpers.GenerateSlug(drupalItem.Title);
 
             _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
         }

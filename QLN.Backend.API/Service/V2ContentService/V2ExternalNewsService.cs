@@ -743,5 +743,10 @@ namespace QLN.Backend.API.Service.V2ContentService
                 };
             }
         }
+
+        public Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
