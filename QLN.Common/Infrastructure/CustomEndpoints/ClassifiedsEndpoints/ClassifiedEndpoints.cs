@@ -1491,7 +1491,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-
+                    dto.CreatedBy = userData.GetProperty("name").GetString();
                     dto.UpdatedBy = uid;
 
                     var result = await service.UpdateClassifiedDealsAd(dto, token);
@@ -4194,7 +4194,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 
 
 
-            group.MapPut("/items/promote", async Task<IResult> (
+            group.MapPut("/promote", async Task<IResult> (
                 HttpContext httpContext,
                 ClassifiedsPromoteDto dto,
     IClassifiedService service,
@@ -4342,7 +4342,7 @@ CancellationToken token) =>
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
-            group.MapPut("/items/feature", async Task<IResult> (
+            group.MapPut("/feature", async Task<IResult> (
               HttpContext httpContext,
              ClassifiedsPromoteDto dto,
              IClassifiedService service,

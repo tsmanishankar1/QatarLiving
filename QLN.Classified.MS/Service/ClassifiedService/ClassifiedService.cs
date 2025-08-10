@@ -1230,6 +1230,32 @@ namespace QLN.Classified.MS.Service
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
+                existingAd.FeaturedExpiryDate = existingAd.FeaturedExpiryDate;
+                existingAd.IsFeatured = existingAd.IsFeatured;
+                existingAd.PromotedExpiryDate = existingAd.PromotedExpiryDate;
+                existingAd.IsPromoted = existingAd.IsPromoted;
+                existingAd.LastRefreshedOn = existingAd.LastRefreshedOn;
+                existingAd.IsRefreshed = existingAd.IsRefreshed;
+                existingAd.Title = existingAd.Title;
+                existingAd.Description = existingAd.Description;
+                existingAd.Price = existingAd.Price;
+                existingAd.PriceType = existingAd.PriceType;
+                existingAd.Location = existingAd.Location;
+                existingAd.Status = existingAd.Status;
+                existingAd.Location = dto.Location;
+                existingAd.Latitude = dto.Latitude;
+                existingAd.Longitude = dto.Longitude;
+                existingAd.ContactNumber = dto.ContactNumber;
+                existingAd.WhatsAppNumber = dto.WhatsAppNumber;
+                existingAd.ContactEmail = dto.ContactEmail;
+                existingAd.StreetNumber = dto.StreetNumber;
+                existingAd.BuildingNumber = dto.BuildingNumber;
+                existingAd.zone = dto.zone;
+                existingAd.Images = dto.Images;
+                existingAd.Attributes = dto.Attributes;
+                existingAd.IsActive = true;
+                existingAd.CreatedAt = existingAd.CreatedAt;
+                existingAd.CreatedBy = existingAd.CreatedBy;
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
                 _context.Item.Update(existingAd);
@@ -1270,6 +1296,31 @@ namespace QLN.Classified.MS.Service
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
+                existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
+                existingAd.AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl;
+                existingAd.Inclusion = dto.Inclusion;
+                existingAd.IsFeatured = existingAd.IsFeatured;
+                existingAd.FeaturedExpiryDate = existingAd.FeaturedExpiryDate;
+                existingAd.IsPromoted = existingAd.IsPromoted;
+                existingAd.PromotedExpiryDate = existingAd.PromotedExpiryDate;
+                existingAd.LastRefreshedOn = existingAd.LastRefreshedOn;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.IsRefreshed = existingAd.IsRefreshed;
+                existingAd.Title = dto.Title;
+                existingAd.Description = dto.Description;
+                existingAd.Price = dto.Price;
+                existingAd.PriceType = dto.PriceType;
+                existingAd.Location = dto.Location;
+                existingAd.Latitude = dto.Latitude;
+                existingAd.Longitude = dto.Longitude;
+                existingAd.ContactNumber = dto.ContactNumber;
+                existingAd.WhatsAppNumber = dto.WhatsAppNumber;
+                existingAd.ContactEmail = dto.ContactEmail;
+                existingAd.StreetNumber = dto.StreetNumber;
+                existingAd.BuildingNumber = dto.BuildingNumber;
+                existingAd.zone = dto.zone;
+                existingAd.Images = dto.Images;
+                existingAd.Attributes = dto.Attributes;
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
                 _context.Preloved.Update(existingAd);
@@ -1310,6 +1361,40 @@ namespace QLN.Classified.MS.Service
 
                 AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
+                existingAd.AuthenticityCertificateName = dto.AuthenticityCertificateName;
+                existingAd.AuthenticityCertificateUrl = dto.AuthenticityCertificateUrl;
+                existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
+                existingAd.HasAuthenticityCertificate = dto.HasAuthenticityCertificate;
+                existingAd.IsActive = true;
+                existingAd.IsFeatured = existingAd.IsFeatured;
+                existingAd.FeaturedExpiryDate = existingAd.FeaturedExpiryDate;
+                existingAd.IsPromoted = existingAd.IsPromoted;
+                existingAd.PromotedExpiryDate = existingAd.PromotedExpiryDate;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.HasWarranty = dto.HasWarranty;
+                existingAd.IsPromoted = existingAd.IsPromoted;
+                existingAd.IsHandmade = dto.IsHandmade;
+                existingAd.YearOrEra = dto.YearOrEra;
+                existingAd.Title = dto.Title;
+                existingAd.Description = dto.Description;
+                existingAd.Price = dto.Price;
+                existingAd.PriceType = dto.PriceType;
+                existingAd.Status = existingAd.Status;
+                existingAd.Location = dto.Location;
+                existingAd.Latitude = dto.Latitude;
+                existingAd.Longitude = dto.Longitude;
+                existingAd.ContactNumber = dto.ContactNumber;
+                existingAd.WhatsAppNumber = dto.WhatsAppNumber;
+                existingAd.ContactEmail = dto.ContactEmail;
+                existingAd.StreetNumber = dto.StreetNumber;
+                existingAd.BuildingNumber = dto.BuildingNumber;
+                existingAd.zone = dto.zone;
+                existingAd.Images = dto.Images;
+                existingAd.Attributes = dto.Attributes;
+                existingAd.IsActive = true;
+                existingAd.CreatedAt = existingAd.CreatedAt;
+                existingAd.CreatedBy = existingAd.CreatedBy;
+
                 existingAd.UpdatedAt = DateTime.UtcNow;
 
                 _context.Collectible.Update(existingAd);
@@ -1344,7 +1429,7 @@ namespace QLN.Classified.MS.Service
                 if (existingAd == null)
                     throw new KeyNotFoundException($"Ad with ID {dto.Id} does not exist.");
 
-                AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
+                //AdUpdateHelper.ApplySelectiveUpdates(existingAd, dto);
 
                 var company = await _companyContext.Companies
                     .FirstOrDefaultAsync(c => c.UserId == dto.UserId && c.IsActive == true, cancellationToken);
@@ -1381,6 +1466,31 @@ namespace QLN.Classified.MS.Service
                 }
 
                 existingAd.UpdatedAt = DateTime.UtcNow;
+                existingAd.IsFeatured = false;
+                existingAd.FeaturedExpiryDate = null;
+                existingAd.IsPromoted = false;
+                existingAd.PromotedExpiryDate = null;
+                existingAd.Status = AdStatus.Draft;
+                existingAd.SubscriptionId = existingAd.SubscriptionId;
+                existingAd.Offertitle = dto.Offertitle;
+                existingAd.Description = dto.Description;
+                existingAd.StartDate = dto.StartDate;
+                existingAd.EndDate = dto.EndDate;
+                existingAd.ExpiryDate = dto.ExpiryDate;
+                existingAd.FlyerFileUrl = dto.FlyerFileUrl;
+                existingAd.DataFeedUrl = dto.DataFeedUrl;
+                existingAd.ContactNumber = dto.ContactNumber;
+                existingAd.WhatsappNumber = dto.WhatsappNumber;
+                existingAd.WebsiteUrl = dto.WebsiteUrl;
+                existingAd.Locations = dto.Locations;
+                existingAd.XMLlink = dto.XMLlink;
+                existingAd.Images = dto.Images;
+                existingAd.CreatedAt = existingAd.CreatedAt;
+                existingAd.CreatedBy = existingAd.CreatedBy;
+                existingAd.UpdatedBy = dto.UpdatedBy;
+                existingAd.IsActive = true;
+                existingAd.UpdatedAt = existingAd.UpdatedAt;
+
 
                 _context.Deal.Update(existingAd);
                 await _context.SaveChangesAsync(cancellationToken);

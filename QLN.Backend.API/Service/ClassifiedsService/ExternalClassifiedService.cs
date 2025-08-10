@@ -312,13 +312,13 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 if (!res.IsSuccessStatusCode)
                     throw new DaprServiceException((int)res.StatusCode, body);
 
-                return new AdCreatedResponseDto
+                var createdResponse = JsonSerializer.Deserialize<AdCreatedResponseDto>(body, new JsonSerializerOptions
                 {
-                    AdId = dto.Id,
-                    Title = dto.Offertitle,
-                    CreatedAt = DateTime.UtcNow,
-                    Message = "Deals Ad created successfully"
-                };
+                    PropertyNameCaseInsensitive = true
+                });
+
+                return createdResponse ?? throw new InvalidOperationException("Invalid response from internal service.");
+
             }
             catch (Exception ex)
             {
@@ -942,7 +942,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
             string failedErrorMessage = null;
             try
             {
-                var url = $"/api/classifieds/items/promoted/{dto.AdId}?subVertical={dto.SubVertical}";
+                var url = $"/api/classifieds/promoted/{dto.AdId}?subVertical={dto.SubVertical}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, cancellationToken);
@@ -1031,7 +1031,7 @@ namespace QLN.Backend.API.Service.ClassifiedService
                 var queryString = "?" + string.Join("&", queryParams.Select(kv =>
                 $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value)}"));
 
-                var url = $"/api/classifieds/items/featured/{queryString}";
+                var url = $"/api/classifieds/featured/{queryString}";
 
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
