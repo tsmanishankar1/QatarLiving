@@ -22,7 +22,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
         private readonly QLClassifiedContext _context;
         private readonly QLCompanyContext _companyContext;
         private readonly QLPaymentsContext _paymentContext;
-        public InternalClassifiedPreLovedBOService(DaprClient dapr, ILogger<IClassifiedPreLovedBOService> logger, QLClassifiedContext context, QLCompanyContext companyContext, QLPaymentsContext paymentContext)
+        private readonly QLSubscriptionContext _subscriptionContext;
+        public InternalClassifiedPreLovedBOService(DaprClient dapr, ILogger<IClassifiedPreLovedBOService> logger, QLClassifiedContext context, QLCompanyContext companyContext, QLPaymentsContext paymentContext, QLSubscriptionContext subscriptionContext)
         {
 
             _dapr = dapr;
@@ -30,6 +31,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             _context = context;
             _companyContext = companyContext;
             _paymentContext = paymentContext;
+            _subscriptionContext=subscriptionContext;
         }
 
         #region PreLoved back office end points
@@ -59,40 +61,10 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var dateThreshold = filterDateParsed.AddDays(-90);
                 string searchLower = Search?.ToLower();
 
-                var subscriptionObj = new SubscriptionMockDto
-                {                   
-                    SubscriptionId = Guid.Parse("b7d9a2c4-cc3f-4f0e-a8e7-9c3d7c7d1f22"),
-                    ProductCode = SubscriptionDictionary.GetDescription("QLC-SUB-6MO-006"),
-                    UserId = "8353026",
-                    CompanyId = Guid.Parse("a8d9a6e9-97f6-4bd0-b31b-fc7b802ea47d"),
-                    PaymentId = 2,
-                    Vertical = "4",
-                    StartDate = DateTime.Parse("2025-08-08T14:16:03.246962Z"),
-                    EndDate = DateTime.Parse("2025-09-07T14:16:03.344516Z"),
-                    Status = Enum.GetName(typeof(Status), 1).ToString(),
-                    CreatedAt = DateTime.Parse("2025-08-08T14:16:07.914818Z"),
-                    UpdatedAt = null,
-                    MetaData = "{}"
-                };
-                var subscriptionP2PObj = new SubscriptionMockDto
-                {                    
-                    SubscriptionId = Guid.Parse("145250e1-c660-48df-85b7-9e6c8923267f"),
-                    ProductCode = SubscriptionDictionary.GetDescription("QLC-P2P-PUB-006"),
-                    UserId = "8353026",
-                    CompanyId = Guid.Parse("a8d9a6e9-97f6-4bd0-b31b-fc7b802ea47d"),
-                    PaymentId = 2,
-                    Vertical = "4",
-                    StartDate = DateTime.Parse("2025-08-08T14:16:03.246962Z"),
-                    EndDate = DateTime.Parse("2025-09-07T14:16:03.344516Z"),
-                    Status = Enum.GetName(typeof(Status), 1).ToString(),
-                    CreatedAt = DateTime.Parse("2025-08-08T14:16:07.914818Z"),
-                    UpdatedAt = null,
-                    MetaData = "{}"
-                };
-
-                List<SubscriptionMockDto> subscriptionList = new List<SubscriptionMockDto>();
-                subscriptionList.Add(subscriptionObj);
-                subscriptionList.Add(subscriptionP2PObj);
+              
+                var subscriptionList = await _subscriptionContext.Subscriptions
+    .AsNoTracking()
+    .ToListAsync(cancellationToken);
 
                 var subscriptionIds = subscriptionList.Select(s => s.SubscriptionId).ToList();
                
@@ -120,14 +92,14 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                 {
                                     AdId = preloved.Id,
                                     OrderId = payment.PaymentId,
-                                    SubscriptionType = subscription.ProductCode,
+                                    SubscriptionType = SubscriptionDictionary.GetDescription(subscription.ProductCode),
                                     UserName = company.CompanyName,
                                     Email = company.Email,
                                     Mobile = company.PhoneNumber,
                                     Whatsapp = company.WhatsAppNumber,
                                     WebUrl = company.WebsiteUrl,
                                     Amount = payment.Fee,
-                                    Status = subscription.Status,
+                                    Status = Enum.GetName(typeof(Status), subscription.Status).ToString(),
                                     StartDate = subscription.StartDate,
                                     EndDate = subscription.EndDate
                                 })
@@ -137,6 +109,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     x.StartDate <= filterDateParsed &&
                     (
                         string.IsNullOrEmpty(searchLower) ||
+                        x.AdId.ToString().Contains(searchLower) ||
                         x.OrderId.ToString().Contains(searchLower) ||
                         (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
                         (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
@@ -183,82 +156,16 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             try
             {
                 _logger.LogInformation("Preloved P2P internal services reached");
-                //DateTime createdDateParsed, publishedDateParsed;
-                //try
-                //{
-                //    if (string.IsNullOrEmpty(createdDate))
-                //    {
-                //        createdDateParsed = DateTime.UtcNow;
-                //    }
-                //    else if (!DateTime.TryParse(createdDate, out createdDateParsed))
-                //    {
-                //        _logger.LogWarning("Invalid filterDate format provided: {FilterDate}. Using current UTC date instead.", createdDate);
-                //        createdDateParsed = DateTime.UtcNow;
-                //    }
-                //}
-                //catch (FormatException formatEx)
-                //{
-                //    _logger.LogError(formatEx, "Failed to parse filterDate. Value: {FilterDate}", createdDate);
-                //    throw;
-                //}
-                //try
-                //{
-                //    if (string.IsNullOrEmpty(publishedDate))
-                //    {
-                //        publishedDateParsed = DateTime.UtcNow;
-                //    }
-                //    else if (!DateTime.TryParse(publishedDate, out publishedDateParsed))
-                //    {
-                //        _logger.LogWarning("Invalid filterDate format provided: {FilterDate}. Using current UTC date instead.", publishedDate);
-                //        publishedDateParsed = DateTime.UtcNow;
-                //    }
-                //}
-                //catch (FormatException formatEx)
-                //{
-                //    _logger.LogError(formatEx, "Failed to parse filterDate. Value: {FilterDate}", publishedDate);
-                //    throw;
-                //}
-
+                
                 DateTime? createdDateParsed = DateTime.TryParse(createdDate, out var tempCreatedDate) ? tempCreatedDate : (DateTime?)null;
                 DateTime? publishedDateParsed = DateTime.TryParse(publishedDate, out var tempPublishedDate) ? tempPublishedDate : (DateTime?)null;
 
 
                 string searchLower = Search?.ToLower();
 
-                var subscriptionObj = new SubscriptionMockDto
-                {
-                    SubscriptionId = Guid.Parse("b7d9a2c4-cc3f-4f0e-a8e7-9c3d7c7d1f22"),
-                    ProductCode = SubscriptionDictionary.GetDescription("QLC-SUB-6MO-006"),
-                    UserId = "8353026",
-                    CompanyId = Guid.Parse("a8d9a6e9-97f6-4bd0-b31b-fc7b802ea47d"),
-                    PaymentId = 2,
-                    Vertical = "4",
-                    StartDate = DateTime.Parse("2025-08-08T14:16:03.246962Z"),
-                    EndDate = DateTime.Parse("2025-09-07T14:16:03.344516Z"),
-                    Status = Enum.GetName(typeof(Status), 1).ToString(),
-                    CreatedAt = DateTime.Parse("2025-08-08T14:16:07.914818Z"),
-                    UpdatedAt = null,
-                    MetaData = "{}"
-                };
-                var subscriptionP2PObj = new SubscriptionMockDto
-                {
-                    SubscriptionId = Guid.Parse("145250e1-c660-48df-85b7-9e6c8923267f"),
-                    ProductCode = SubscriptionDictionary.GetDescription("QLC-P2P-PUB-006"),
-                    UserId = "8353026",
-                    CompanyId = Guid.Parse("a8d9a6e9-97f6-4bd0-b31b-fc7b802ea47d"),
-                    PaymentId = 2,
-                    Vertical = "4",
-                    StartDate = DateTime.Parse("2025-08-08T14:16:03.246962Z"),
-                    EndDate = DateTime.Parse("2025-09-07T14:16:03.344516Z"),
-                    Status = Enum.GetName(typeof(Status), 1).ToString(),
-                    CreatedAt = DateTime.Parse("2025-08-08T14:16:07.914818Z"),
-                    UpdatedAt = null,
-                    MetaData = "{}"
-                };
-
-                List<SubscriptionMockDto> subscriptionList = new List<SubscriptionMockDto>();
-                subscriptionList.Add(subscriptionObj);
-                subscriptionList.Add(subscriptionP2PObj);
+                var subscriptionList = await _subscriptionContext.Subscriptions
+   .AsNoTracking()
+   .ToListAsync(cancellationToken); ;
 
                 var subscriptionIds = subscriptionList.Select(s => s.SubscriptionId).ToList();
 
@@ -278,7 +185,8 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                p.Category,
                p.L1Category,
                p.Brand,
-               p.UserName
+               p.UserName,
+               p.Images
            })
            .ToListAsync(cancellationToken);
                 _logger.LogInformation("prelovedList:" + prelovedList.Count().ToString());
@@ -312,15 +220,17 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                                     AdId = preloved.Id,
                                     OrderId = payment.PaymentId,
                                      AdTitle = preloved.Title,
-                                      AdType= preloved.AdType.ToString(),
+                                      AdType = Enum.GetName(typeof(AdTypeEnum), preloved.AdType).ToString(),
                                      Brand= preloved.Brand,
                                       Category= preloved.Category,
                                        CreatedDate=preloved.CreatedAt,
                                      ExpiryDate=preloved.ExpiryDate?? new DateTime(1000, 1, 1),
                                       PublishedDate= preloved.PublishedDate ?? new DateTime(1000, 1, 1),
-                                   
+                                    ImageUrl = !string.IsNullOrWhiteSpace(preloved.Images?.FirstOrDefault()?.Url)
+                               ? preloved.Images.First().Url
+                               : string.Empty,
                                     UserName = company.CompanyName,
-                                    Status = Enum.GetName(typeof(Status), preloved.Status).ToString()
+                                    Status = Enum.GetName(typeof(AdStatus), preloved.Status).ToString()
                                 })
                 .Where(x =>
                     (
@@ -372,8 +282,35 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
             }
         }
 
+        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                _logger.LogInformation("P2P edit functionality initiated.");
+                foreach (var id in dto.AdIds)
+                {
+                    var preLove = await _context.Preloved.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+                    if (preLove == null)
+                    {
+                        continue;
+                    }
+                    preLove.Status = (AdStatus)dto.AdStatus;
+                    _context.Preloved.Update(preLove);
+                    await _context.SaveChangesAsync(cancellationToken);
+                }
+                
+                _logger.LogInformation("Preloved P2P edit functionality completed.");
+                return "Preloved P2P status updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to bulk edit functionality in P2P status.");
+                throw;
+            }
+        }
+
         #endregion
 
-       
+
     }
 }

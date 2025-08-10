@@ -3,19 +3,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.ClassifiedsBo;
-
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.IService.IClassifiedBoService;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
 {
     public static class ClassifiedBOPreLovedEndpoint
     {
+        const string ModuleName = "Preloved";
         public static RouteGroupBuilder MapClassifiedBOPreLovedEndpoints(this RouteGroupBuilder group)
         {
 
@@ -97,6 +100,114 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedBOEndPoints
                 .WithDescription("Fetches p2p subscriptions of users on preloved")
                 .Produces<ClassifiedBOPageResponse<StoresSubscriptionDto>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/preloved-bulk-edit-subscriptions", async Task<Results<
+          Ok<string>,
+          ForbidHttpResult,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedPreLovedBOService service,
+          HttpContext httpContext,
+          BulkEditPreLovedP2PDto dto,
+          AuditLogger auditLogger,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        return TypedResults.Forbid();
+                    }
+
+                    if(dto==null)
+                        return TypedResults.BadRequest(new ProblemDetails() { Detail="Bulk PreLoved edit object cannot be null."});
+                    else if(dto.AdIds == null || dto.AdStatus==0)
+                        return TypedResults.BadRequest(new ProblemDetails() { Detail = "AdIs cannot be null or Status not be '0'." });
+
+                    var result = await service.BulkEditP2PSubscriptions(dto, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/v2/classifiedbo/preloved-bulk-edit-subscriptions",
+                        message: "P2P status update successfully",
+                        createdBy: userId,
+                        payload: dto,
+                        cancellationToken: cancellationToken
+                    );
+
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+                .WithName("BulEditP2PSubscriptions")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Edit subscriptions on preloved.")
+                .WithDescription("Edit the status information of preloved subscriptions.")
+                .Produces<BulkEditPreLovedP2PDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            
+            group.MapPut("/preloved-bulk-edits-subscriptions", async Task<Results<
+          Ok<string>,
+          ForbidHttpResult,
+          BadRequest<ProblemDetails>,
+          ProblemHttpResult>>
+          (
+          [FromServices] IClassifiedPreLovedBOService service,
+          HttpContext httpContext,
+          BulkEditPreLovedP2PDto dto,
+          AuditLogger auditLogger,
+          CancellationToken cancellationToken
+          ) =>
+            {
+                try
+                {
+                    
+
+                    var result = await service.BulkEditP2PSubscriptions(dto, cancellationToken);
+                    
+                    return TypedResults.Ok(result);
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: httpContext.Request.Path
+                    );
+                }
+            })
+                .ExcludeFromDescription()
+                .WithName("BulEditsP2PSubscriptions")
+                .WithTags("ClassifiedBo")
+                .WithSummary("Edit subscriptions on preloved.")
+                .WithDescription("Edit the status information of preloved subscriptions.")
+                .Produces<BulkEditPreLovedP2PDto>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;

@@ -43,7 +43,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public DateTime PublishedDate { get; set; }
         public DateTime ExpiryDate { get; set; }
         public string? Status { get; set; } = null;
-
+        public string? ImageUrl { get; set; } = null;
         public DateTime CreatedDateForApi =>
         CreatedDate == default ? new DateTime(1000, 1, 1) : CreatedDate;
         public DateTime PublishedDateForApi =>
@@ -60,10 +60,11 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string UserId { get; set; } = string.Empty;
         public Guid CompanyId { get; set; }
         public int PaymentId { get; set; }
-        public string Vertical { get; set; } = string.Empty; 
+        public string Vertical { get; set; } = string.Empty;
+        public string SubVertical { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string Status { get; set; } = string.Empty;  
+        public int Status { get; set; }  
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string MetaData { get; set; } = "{}";
@@ -92,6 +93,12 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 
             return matchedKey != null ? _descriptions[matchedKey] : "Unknown subscription code";
         }
+    }
+
+    public class BulkEditPreLovedP2PDto
+    {
+        public List<long> AdIds { get; set; }
+        public int AdStatus { get; set; }
     }
 
 }

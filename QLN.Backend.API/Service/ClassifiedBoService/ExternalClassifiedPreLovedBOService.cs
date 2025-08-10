@@ -82,5 +82,44 @@ namespace QLN.Backend.API.Service.ClassifiedBoService
                 throw new InvalidOperationException("Error fetching preloved p2p subscriptions.", ex);
             }
         }
+
+        public async Task<string> BulkEditP2PSubscriptions(BulkEditPreLovedP2PDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var url = "/api/v2/classifiedbo/preloved-bulk-edits-subscriptions";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Put, SERVICE_APP_ID, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(dto), Encoding.UTF8, "application/json");
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    string errorMessage;
+                    try
+                    {
+                        var problem = JsonSerializer.Deserialize<ProblemDetails>(errorJson);
+                        errorMessage = problem?.Detail ?? "Unknown validation error.";
+                    }
+                    catch
+                    {
+                        errorMessage = errorJson;
+                    }
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        throw new ConflictException(errorMessage);
+                    }
+                    throw new InvalidDataException(errorMessage);
+                }
+                return "Preloved status updated successfully.";
+            }
+            catch (Exception ex)
+            {
+
+                _logger.LogError(ex, "Error in editing preloved status information.");
+                throw;
+            }
+        }
+
     }
 }
