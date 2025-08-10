@@ -268,11 +268,11 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
             {
-                var query = $"?page={page ?? 1}&perPage={perPage ?? 10}";
+                var query = $"?userId={userId}&page={page ?? 1}&perPage={perPage ?? 10}";
                 var url = $"/api/v2/community/getCommentsByPostId/{postId}{query}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
