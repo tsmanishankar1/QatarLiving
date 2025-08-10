@@ -1,4 +1,5 @@
 ﻿using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,22 +10,19 @@ namespace QLN.Common.Infrastructure.IService.IService
 {
     public interface IServices
     {
-        Task<string> CreateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
-        Task<string> UpdateCategory(ServicesCategory dto, CancellationToken cancellationToken = default);
-        Task<List<ServicesCategory>> GetAllCategories(CancellationToken cancellationToken = default);
-        Task<ServicesCategory?> GetCategoryById(Guid id, CancellationToken cancellationToken = default);
+        Task<string> CreateCategory(CategoryDto dto, CancellationToken cancellationToken);
+        Task<string> UpdateCategory(CategoryDto dto, CancellationToken cancellationToken = default);
+        Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default);
+        Task<CategoryDto?> GetCategoryById(long id, CancellationToken cancellationToken = default);
         Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default);
-        Task<string> UpdateServiceAd(string userId, ServicesModel dto, CancellationToken cancellationToken = default);
-        Task<List<ServicesModel>> GetAllServiceAds(CancellationToken cancellationToken = default);
-        Task<ServicesModel?> GetServiceAdById(Guid id, CancellationToken cancellationToken = default);
-        Task<string> DeleteServiceAdById(string userId, Guid id, CancellationToken cancellationToken = default);
-        Task<ServicesPagedResponse<ServicesModel>> GetServicesByStatusWithPagination(ServiceStatusQuery dto, CancellationToken cancellationToken = default);        
-        Task<ServicesModel> PromoteService(PromoteServiceRequest request, CancellationToken ct);
-        Task<ServicesModel> FeatureService(FeatureServiceRequest request, CancellationToken ct);
-        Task<ServicesModel> RefreshService(RefreshServiceRequest request, CancellationToken ct);
-        Task<ServicesModel> PublishService(Guid id, CancellationToken ct);
-        Task<List<ServicesModel>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
-       
-
+        Task<string> UpdateServiceAd(string userId, Services dto, CancellationToken cancellationToken = default);
+        Task<Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default);
+        Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default);
+        Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default);
+        Task<Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct);
+        Task<Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct);
+        Task<Services> RefreshService(RefreshServiceRequest request, string? uid,  CancellationToken ct);
+        Task<Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct);
+        Task<List<Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
     }
 }

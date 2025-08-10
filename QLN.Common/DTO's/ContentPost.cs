@@ -50,5 +50,10 @@ namespace QLN.Common.Infrastructure.DTO_s
         [JsonPropertyName("comments")]
         public List<ContentComment> Comments { get; set; }
 
+        [JsonPropertyName("writer_tag")]
+        public string WriterTag { get; set; }
+
+        [JsonPropertyName("comments_count")]
+        public int CommentsCounts { get; set; }
     }
 }

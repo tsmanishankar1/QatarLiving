@@ -153,7 +153,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 }
 
                 var slugBase = GenerateNewsSlug(dto.Title);
-                var articleId = Guid.NewGuid();
+                var articleId = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                                // and only generate a new one if this is GUID.Empty.
 
                 var articleCategories = dto.Categories.Select(cat => new V2ArticleCategory
                 {
@@ -207,6 +208,24 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 {
                     currentIndex.Add(articleIdStr);
                     await _dapr.SaveStateAsync(storeName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                }
+
+                var upsertRequest = await IndexNewsToAzureSearch(article, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentNewsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
                 }
 
                 return "News article created successfully";
@@ -550,6 +569,24 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 _logger.LogInformation("Removed article ID {NewsId} from index after soft delete", id);
             }
 
+            var upsertRequest = await IndexNewsToAzureSearch(existing, cancellationToken);
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ContentNewsIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
+
             return "News Soft Deleted Successfully";
         }
         public async Task<List<V2NewsArticleDTO>> GetArticlesByCategoryIdAsync(int categoryId, CancellationToken cancellationToken)
@@ -748,6 +785,24 @@ CancellationToken cancellationToken = default)
                 await _dapr.SaveStateAsync(store, key, dto, cancellationToken: cancellationToken);
 
                 _logger.LogInformation("News article {ArticleId} updated successfully.", dto.Id);
+
+                var upsertRequest = await IndexNewsToAzureSearch(dto, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentNewsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 return "News article updated successfully.";
             }
@@ -1507,6 +1562,42 @@ CancellationToken cancellationToken = default)
                     Message = "Error occurred while editing comment"
                 };
             }
+        }
+
+        private async Task<CommonIndexRequest> IndexNewsToAzureSearch(QLN.Common.DTO_s.V2NewsArticleDTO dto, CancellationToken cancellationToken)
+        {
+
+            var indexDoc = new ContentNewsIndex
+            {
+                Id = dto.Id.ToString(),
+                Title = dto.Title,
+                Content = dto.Content,
+                authorName = dto.authorName,
+                CoverImageUrl = dto.CoverImageUrl,
+                Slug = dto.Slug,
+                UserId = dto.UserId,
+                WriterTag = dto.WriterTag,
+                PublishedDate = dto.PublishedDate,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                Categories = dto.Categories.Select(i => new ArticleCategory
+                {
+                    CategoryId = i.CategoryId,
+                    SubcategoryId = i.SubcategoryId,
+                    SlotId = i.SlotId
+                }).ToList()
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentNewsIndex,
+                ContentNewsItem = indexDoc
+            };
+            return indexRequest;
+
         }
     }
 }

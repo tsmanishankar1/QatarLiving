@@ -31,6 +31,9 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ClassifiedsCollectiblesIndex = "classifiedscollectibles";
             public const string ClassifiedsDealsIndex = "classifiedsdeals";
             public const string ServicesIndex = "services";
+            public const string ContentNewsIndex = "contentnews";
+            public const string ContentEventsIndex = "contentevents";
+            public const string ContentCommunityIndex = "contentcommunity";
             public const string LandingBackOfficeIndex = "landingbackoffice";
             public const string AnalyticsIndex = "analytics";
         }
@@ -77,6 +80,7 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ClassifiedServiceApp = "qln-classified-ms";
             public const string SearchServiceApp = "qln-search-ms";
+            public const string SubscriptionApp = "qln-subscription-actor";
         }
         public static class StateStoreNames
         {
