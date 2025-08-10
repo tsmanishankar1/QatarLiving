@@ -1,4 +1,6 @@
-﻿using QLN.Backend.API.Service.SubscriptionService;
+﻿using QLN.Backend.API.Service.ProductService;
+using QLN.Backend.API.Service.SubscriptionService;
+using QLN.Common.Infrastructure.IService.IProductService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 
 namespace QLN.Backend.API.ServiceConfiguration
@@ -9,6 +11,7 @@ namespace QLN.Backend.API.ServiceConfiguration
         {
             services.AddTransient<IExternalSubscriptionService, ExternalSubscriptionService>();
             services.AddScoped<IUserQuotaService, UserQuotaService>();
+            services.AddScoped<IV2SubscriptionService, V2SubscriptionService>();
             return services;
         }
     }

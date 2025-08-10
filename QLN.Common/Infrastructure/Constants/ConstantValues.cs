@@ -31,8 +31,12 @@ namespace QLN.Common.Infrastructure.Constants
             public const string ClassifiedsCollectiblesIndex = "classifiedscollectibles";
             public const string ClassifiedsDealsIndex = "classifiedsdeals";
             public const string ServicesIndex = "services";
+            public const string ContentNewsIndex = "contentnews";
+            public const string ContentEventsIndex = "contentevents";
+            public const string ContentCommunityIndex = "contentcommunity";
             public const string LandingBackOfficeIndex = "landingbackoffice";
             public const string AnalyticsIndex = "analytics";
+            public const string ClassifiedStoresIndex = "classifiedstores";
         }
 
         public const string PubSubName = "pubsub";
@@ -77,6 +81,7 @@ namespace QLN.Common.Infrastructure.Constants
         {
             public const string ClassifiedServiceApp = "qln-classified-ms";
             public const string SearchServiceApp = "qln-search-ms";
+            public const string SubscriptionApp = "qln-subscription-actor";
         }
         public static class StateStoreNames
         {
@@ -149,11 +154,6 @@ namespace QLN.Common.Infrastructure.Constants
             public const string CompanyStoreName = "companystatestore";
             public const string CompanyIndexKey = "company-index";
             public const string CompanyServiceAppId = "qln-company-ms";
-        }
-        public static class Audit
-        {
-            public const string StoreName = "servicestatestore";
-            public const string AuditIndexKey = "audit_index";
         }
     }
 }

@@ -17,6 +17,8 @@ using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,7 +63,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
 
-                    var result = await service.CreateFeaturedCategory(userId, userName, dto, cancellationToken);
+                    var result = await service.CreateFeaturedCategory(userId, userName!, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
@@ -78,14 +80,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                        .WithName("CreateFeaturedCategory")
-                        .WithTags("ClassifiedBo")
-                        .WithSummary("Create Featured Category Slot (auth required)")
-                        .WithDescription("Create a featured category slot using authenticated user info.")
-                        .Produces<string>(StatusCodes.Status200OK)
-                        .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                        .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                        .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("CreateFeaturedCategory")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Create Featured Category Slot (auth required)")
+            .WithDescription("Create a featured category slot using authenticated user info.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/create-category", async Task<IResult> (
                          FeaturedCategoryDto dto,
@@ -100,16 +102,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     {
                         Title = "Validation Error",
                         Detail = "Category name must not be empty.",
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-
-                if (string.IsNullOrWhiteSpace(dto.Vertical))
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Validation Error",
-                        Detail = "Vertical must be specified (e.g., items, preloved, collectibles, deals).",
                         Status = StatusCodes.Status400BadRequest
                     });
                 }
@@ -156,21 +148,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-                         .ExcludeFromDescription()
-                         .WithName("create-category")
-                         .WithTags("ClassifiedBo")
-                         .WithSummary("Create a new category with optional fields  (internal)")
-                         .WithDescription("Creates a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields  (internal use)")
-                         .Produces<Guid>(StatusCodes.Status200OK)
-                         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                         .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-                         .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
-                         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .ExcludeFromDescription()
+            .WithName("create-category")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Create a new category with optional fields  (internal)")
+            .WithDescription("Creates a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields  (internal use)")
+            .Produces<Guid>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("getfeaturedcategoriesbyvertical/{vertical}", async Task<IResult> (
-                string vertical,
-                [FromServices] IClassifiedBoLandingService service,
-                CancellationToken token) =>
+            group.MapGet("getfeaturedcategoriesbyvertical", async Task<IResult> (
+               [FromQuery] Vertical vertical,
+               [FromServices] IClassifiedBoLandingService service,
+               CancellationToken token) =>
             {
                 try
                 {
@@ -195,14 +187,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-                .WithName("GetFeaturedCategoriesByVertical")
-                .AllowAnonymous()
-                .WithTags("ClassifiedBo")
-                .WithSummary("Get L1 categories for a given vertical")
-                .WithDescription("Returns a list of L1 categories from the category tree for a vertical. If none found, returns 200 with empty list.")
-                .Produces<List<FeaturedCategory>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+           .WithName("GetFeaturedCategoriesByVertical")
+           .AllowAnonymous()
+           .WithTags("ClassifiedBo")
+           .WithSummary("Get L1 categories for a given vertical")
+           .WithDescription("Returns a list of L1 categories from the category tree for a vertical. If none found, returns 200 with empty list.")
+           .Produces<List<FeaturedCategory>>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/featured-category/reorder-slots", async Task<Results<
                 Ok<string>,
@@ -225,10 +217,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
 
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName)) return TypedResults.Forbid();
+
                     if (string.IsNullOrWhiteSpace(userId))
                         throw new ArgumentException("UserId is required...");
 
-                    var result = await service.ReorderFeaturedCategorySlots(userId, request, cancellationToken);
+                    var result = await service.ReorderFeaturedCategorySlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -236,13 +231,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("ReorderFeaturedCategorySlots")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Reorder slots for featured category (auth required)")
-                .WithDescription("Drag-and-drop reordering of featured category, requires authenticated user.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("ReorderFeaturedCategorySlots")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Reorder slots for featured category (auth required)")
+            .WithDescription("Drag-and-drop reordering of featured category, requires authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/reorderfeaturedcategoryslots", async Task<Results<
                Ok<string>,
@@ -250,7 +245,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                ProblemHttpResult>>
                (
                 [FromQuery] string userId,
-                [FromBody]LandingBoSlotReorderRequest request,
+                [FromQuery] string userName,
+                [FromBody] LandingBoSlotReorderRequest request,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                ) =>
@@ -268,7 +264,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReorderFeaturedCategorySlots(userId, request, cancellationToken);
+                    var result = await service.ReorderFeaturedCategorySlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -277,14 +273,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-               .ExcludeFromDescription()
-               .WithName("ReorderSlot")
-               .WithTags("ClassifiedBo")
-               .WithSummary("Reorder slots by userId (internal)")
-               .WithDescription("Allows slot reordering by explicitly passing userId. Used for Dapr/internal tools.")
-               .Produces<string>(StatusCodes.Status200OK)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .ExcludeFromDescription()
+            .WithName("ReorderSlot")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Reorder slots by userId (internal)")
+            .WithDescription("Allows slot reordering by explicitly passing userId. Used for Dapr/internal tools.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             group.MapPut("/replacefeaturedcategoryslots", async Task<Results<
@@ -307,20 +303,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
 
 
-                    var result = await service.ReplaceFeaturedCategorySlots(userId, dto, cancellationToken);
+                    var result = await service.ReplaceFeaturedCategorySlots(userId, userName!, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
                 {
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
-            })            
+            })
             .WithName("ReplaceFeaturedCategorySlots")
             .WithTags("ClassifiedBo")
             .WithSummary("Replace Featured Category Slot (auth required)")
@@ -336,7 +333,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
             (
                 [FromQuery] string userId,
-                [FromBody]LandingBoSlotReplaceRequest dto,
+                [FromQuery] string userName,
+                [FromBody] LandingBoSlotReplaceRequest dto,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
             ) =>
@@ -353,7 +351,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReplaceFeaturedCategorySlots(userId, dto, cancellationToken);
+                    var result = await service.ReplaceFeaturedCategorySlots(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
@@ -387,7 +385,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string categoryId,
-                string Vertical,
+                [FromQuery] Vertical vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -401,6 +399,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName)) return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(categoryId))
                     {
@@ -412,7 +412,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, vertical, userId, userName, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -420,13 +420,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("SoftDeleteFeaturedCategory")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Soft delete a featured category (auth required)")
-                .WithDescription("Marks the featured category as inactive, preserving history. Requires authenticated user.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .WithName("SoftDeleteFeaturedCategory")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Soft delete a featured category (auth required)")
+            .WithDescription("Marks the featured category as inactive, preserving history. Requires authenticated user.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapDelete("/deletefeaturedcategory", async Task<Results<
                 Ok<string>,
@@ -434,8 +434,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string categoryId,
-                [FromQuery] string? userId,
-                [FromQuery] string Vertical,
+                [FromQuery] Vertical vertical,
+                [FromQuery] string userId,
+                [FromQuery] string userName,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -454,7 +455,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.DeleteFeaturedCategory(categoryId, userId, Vertical, cancellationToken);
+                    var result = await service.DeleteFeaturedCategory(categoryId, vertical, userId, userName, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -463,14 +464,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .ExcludeFromDescription()
-                .WithName("SoftDeleteFeaturedCategoryInternal")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Soft delete featured category by PickId + UserId (internal)")
-                .WithDescription("Internal tool support for featured category soft delete. Requires explicit FeaturedCategoryId and UserId.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .ExcludeFromDescription()
+            .WithName("SoftDeleteFeaturedCategoryInternal")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Soft delete featured category by PickId + UserId (internal)")
+            .WithDescription("Internal tool support for featured category soft delete. Requires explicit FeaturedCategoryId and UserId.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             group.MapGet("/getslottedfeaturedcategory", async Task<Results<
@@ -479,7 +480,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                string vertical,
+                [FromQuery] Vertical vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
             ) =>
@@ -510,6 +511,187 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithDescription("Get slotted featured category (internal use).")
             .Produces<List<FeaturedCategory>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getfeaturedcategory", async Task<IResult> (
+    [FromQuery] string id,
+    [FromServices] IClassifiedBoLandingService service,
+    CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetFeaturedCategoryById(id, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+    .WithName("GetFeaturedCategoryById")
+    .AllowAnonymous()
+    .WithTags("ClassifiedBo")
+    .WithSummary("Get featured category for a given id")
+    .WithDescription("Returns a list of featured category from the category tree for a vertical. If none found, returns 404 status code with message.")
+    .Produces<FeaturedCategory>(StatusCodes.Status200OK)
+    .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+    .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/editfeaturedcategory", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            Conflict<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+                EditFeaturedCategoryDto dto,
+                IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await service.EditFeaturedCategory(userId, userName!, dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("EditFeaturedCategory")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Edit Featured Category (auth required)")
+            .WithDescription("Edit a featured category using authenticated user info")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/edit-featured-category", async Task<IResult> (
+            EditFeaturedCategoryDto dto,
+            [FromQuery] string userId,
+            [FromQuery] string userName,
+            IClassifiedBoLandingService service,
+            CancellationToken token) =>
+            {
+                try
+                {
+                    var id = await service.EditFeaturedCategory(userId, userName, dto, token);
+                    return TypedResults.Ok(id);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    Console.WriteLine("KeyNotFoundException inside /editFeaturedCateoryById");
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    Console.WriteLine("ConflictException inside /editFeaturedCateoryById");
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "One or more required resources were not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("editfeaturedcategory")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Edit a category with optional fields  (internal)")
+            .WithDescription("Edit a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields  (internal use)")
+            .Produces<Guid>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -639,15 +821,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
             group.MapGet("/getseasonalpicks", async Task<Results<
-                Ok<List<SeasonalPicks>>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                IClassifiedBoLandingService service,
-                HttpContext context,
-                string vertical,
-                CancellationToken cancellationToken
-                ) =>
+              Ok<List<SeasonalPicks>>,
+              BadRequest<ProblemDetails>,
+              ProblemHttpResult>>
+              (
+              IClassifiedBoLandingService service,
+              HttpContext context,
+              [FromQuery] Vertical vertical,
+              CancellationToken cancellationToken
+              ) =>
             {
                 try
                 {
@@ -665,21 +847,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-                .WithName("GetSeasonalPicks")
-                .WithTags("ClassifiedBo")
-                .AllowAnonymous()
-                .WithSummary("Get all active seasonal picks")
-                .WithDescription("Fetches all active seasonal picks sorted by latest updated date.")
-                .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+              .WithName("GetSeasonalPicks")
+              .WithTags("ClassifiedBo")
+              .AllowAnonymous()
+              .WithSummary("Get all active seasonal picks")
+              .WithDescription("Fetches all active seasonal picks sorted by latest updated date.")
+              .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/seasonal-picks/slotted", async Task<Results<
                 Ok<List<SeasonalPicks>>,
                 ProblemHttpResult>>
                 (
                 IClassifiedBoLandingService service,
-                string vertical,
+                [FromQuery] Vertical vertical,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -701,19 +883,17 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<List<SeasonalPicks>>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-
-
             group.MapPut("/seasonal-picks/replace-slot", async Task<Results<
-                Ok<string>,
-                ForbidHttpResult,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                [FromBody] ReplaceSeasonalPickSlotRequest dto,
-                IClassifiedBoLandingService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken
-                ) =>
+                            Ok<string>,
+                            ForbidHttpResult,
+                            BadRequest<ProblemDetails>,
+                            ProblemHttpResult>>
+                            (
+                            [FromBody] ReplaceSeasonalPickSlotRequest dto,
+                            IClassifiedBoLandingService service,
+                            HttpContext httpContext,
+                            CancellationToken cancellationToken
+                            ) =>
             {
                 try
                 {
@@ -723,11 +903,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
-
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(userId, dto, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -735,13 +917,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("ReplaceSeasonalPickSlot")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Add seasonal pick into slot and Replace a seasonal pick into a slot (auth required)")
-                .WithDescription("Replaces a seasonal pick into a slot using authenticated user info. Clears any previous slot content.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                            .WithName("ReplaceSeasonalPickSlot")
+                            .WithTags("ClassifiedBo")
+                            .WithSummary("Add seasonal pick into slot and Replace a seasonal pick into a slot (auth required)")
+                            .WithDescription("Replaces a seasonal pick into a slot using authenticated user info. Clears any previous slot content.")
+                            .Produces<string>(StatusCodes.Status200OK)
+                            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+                            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/replace-seasonalpickslot", async Task<Results<
                 Ok<string>,
@@ -749,6 +931,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string userId,
+                [FromQuery] string userName,
                 [FromBody] ReplaceSeasonalPickSlotRequest dto,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
@@ -767,7 +950,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReplaceSlotWithSeasonalPick(userId, dto, cancellationToken);
+                    var result = await service.ReplaceSlotWithSeasonalPick(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -805,13 +988,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
-
-                    
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(userId))
                         throw new ArgumentException("UserId is required...");
 
-                    var result = await service.ReorderSeasonalPickSlots(userId, request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -828,15 +1012,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPut("/reorder-seasonalpickslots", async Task<Results<
-                Ok<string>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                [FromQuery] string userId,
-                [FromBody]SeasonalPickSlotReorderRequest request,                
-                IClassifiedBoLandingService service,
-                CancellationToken cancellationToken
-                ) =>
+               Ok<string>,
+               BadRequest<ProblemDetails>,
+               ProblemHttpResult>>
+               (
+               [FromQuery] string userId,
+               [FromQuery] string userName,
+               [FromBody] SeasonalPickSlotReorderRequest request,
+               IClassifiedBoLandingService service,
+               CancellationToken cancellationToken
+               ) =>
             {
                 Console.WriteLine("Hit endpoint: /reorderSeasonalPickSlots");
                 try
@@ -851,7 +1036,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReorderSeasonalPickSlots(userId, request, cancellationToken);
+                    var result = await service.ReorderSeasonalPickSlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -860,14 +1045,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .ExcludeFromDescription()
-                .WithName("ReorderSlotWithUserId")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Reorder slots by userId (internal)")
-                .WithDescription("Allows slot reordering by explicitly passing userId. Used for Dapr/internal tools.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+               .ExcludeFromDescription()
+               .WithName("ReorderSlotWithUserId")
+               .WithTags("ClassifiedBo")
+               .WithSummary("Reorder slots by userId (internal)")
+               .WithDescription("Allows slot reordering by explicitly passing userId. Used for Dapr/internal tools.")
+               .Produces<string>(StatusCodes.Status200OK)
+               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapDelete("/seasonal-picks/soft-delete", async Task<Results<
                 Ok<string>,
@@ -875,8 +1060,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
                 (
-                [FromQuery] string pickId,  
-                string Vertical,
+                [FromQuery] string pickId,
+                [FromQuery] Vertical Vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -890,6 +1075,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(pickId))
                     {
@@ -901,7 +1089,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, Vertical, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, userName, Vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -917,7 +1105,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-             
+
             group.MapDelete("/softdelete-seasonalpick", async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
@@ -925,7 +1113,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string pickId,
                 [FromQuery] string userId,
-                [FromQuery] string vertical,
+                [FromQuery] string userName,
+                [FromQuery] Vertical vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -944,7 +1133,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, vertical, cancellationToken);
+                    var result = await service.SoftDeleteSeasonalPick(pickId, userId, userName, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -961,6 +1150,188 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getseasonalpick", async Task<IResult> (
+   string id,
+   [FromServices] IClassifiedBoLandingService service,
+   CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetSeasonalPickById(id, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+   .WithName("GetSeasonalPickById")
+   .AllowAnonymous()
+   .WithTags("ClassifiedBo")
+   .WithSummary("Get seasonal picks for a given id")
+   .WithDescription("Returns a list of seasonal picks for a vertical. If none found, returns 404 status code with message.")
+   .Produces<FeaturedCategory>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/editseasonalpick", async Task<Results<
+           Ok<string>,
+           ForbidHttpResult,
+           BadRequest<ProblemDetails>,
+           NotFound<ProblemDetails>,
+           Conflict<ProblemDetails>,
+           ProblemHttpResult>>
+           (
+               EditSeasonalPickDto dto,
+               IClassifiedBoLandingService service,
+               HttpContext httpContext,
+               CancellationToken cancellationToken
+           ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await service.EditSeasonalPick(userId, userName!, dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+           .WithName("EditSeasonalPick")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Edit seasonal pick (auth required)")
+           .WithDescription("Edit a seasonal pick using authenticated user info")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/edit-seasonal-pick", async Task<IResult> (
+            EditSeasonalPickDto dto,
+            [FromQuery] string userId,
+            [FromQuery] string userName,
+            IClassifiedBoLandingService service,
+            CancellationToken token) =>
+            {
+                try
+                {
+                    var id = await service.EditSeasonalPick(userId, userName, dto, token);
+                    return TypedResults.Ok(id);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    Console.WriteLine("KeyNotFoundException inside /editSeasonalPickById");
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    Console.WriteLine("ConflictException inside /editSeasonalPickById");
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "One or more required resources were not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("editseasonalpick")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Edit a seasonal pick with optional fields  (internal)")
+            .WithDescription("Edit a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields  (internal use)")
+            .Produces<Guid>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
 
             group.MapPost("/featured-store", async Task<Results<
                             Ok<string>,
@@ -1092,7 +1463,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 IClassifiedBoLandingService service,
                 HttpContext context,
-                string vertical,
+                [FromQuery] Vertical vertical,
                 CancellationToken cancellationToken
                 ) =>
             {
@@ -1123,13 +1494,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
 
             group.MapGet("/featured-stores/slotted", async Task<Results<
-                Ok<List<FeaturedStore>>,
-                ProblemHttpResult>>
-                (
-                IClassifiedBoLandingService service,
-                string vertical,
-                CancellationToken cancellationToken
-                ) =>
+                 Ok<List<FeaturedStore>>,
+                 ProblemHttpResult>>
+                 (
+                 IClassifiedBoLandingService service,
+                 [FromQuery] Vertical vertical,
+                 CancellationToken cancellationToken
+                 ) =>
             {
                 try
                 {
@@ -1141,13 +1512,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-                .WithName("GetSlottedFeaturedStores")
-                .AllowAnonymous()
-                .WithTags("ClassifiedBo")
-                .WithSummary("Get all slotted featured stores")
-                .WithDescription("Returns only featured stores that are assigned to slot positions (1–6).")
-                .Produces<List<FeaturedStore>>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                 .WithName("GetSlottedFeaturedStores")
+                 .AllowAnonymous()
+                 .WithTags("ClassifiedBo")
+                 .WithSummary("Get all slotted featured stores")
+                 .WithDescription("Returns only featured stores that are assigned to slot positions (1–6).")
+                 .Produces<List<FeaturedStore>>(StatusCodes.Status200OK)
+                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             group.MapPut("/featured-stores/replace-slot", async Task<Results<
@@ -1170,11 +1541,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(userId))
                         return TypedResults.Forbid();
 
-                    var result = await service.ReplaceSlotWithFeaturedStore(userId, dto, cancellationToken);
+                    var result = await service.ReplaceSlotWithFeaturedStore(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1196,7 +1570,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string userId,
-                [FromBody]ReplaceFeaturedStoresSlotRequest dto,
+                [FromQuery] string userName,
+                [FromBody] ReplaceFeaturedStoresSlotRequest dto,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -1215,7 +1590,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReplaceSlotWithFeaturedStore(userId, dto, cancellationToken);
+                    var result = await service.ReplaceSlotWithFeaturedStore(userId, userName, dto, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1253,9 +1628,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
-
-                    var result = await service.ReorderFeaturedStoreSlots(userId, request, cancellationToken);
+                    var result = await service.ReorderFeaturedStoreSlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1276,8 +1653,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
                 (
-                [FromQuery]string userId,
-                [FromBody]FeaturedStoreSlotReorderRequest request,
+                [FromQuery] string userId,
+                [FromQuery] string userName,
+                [FromBody] FeaturedStoreSlotReorderRequest request,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -1296,7 +1674,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.ReorderFeaturedStoreSlots(userId, request, cancellationToken);
+                    var result = await service.ReorderFeaturedStoreSlots(userId, userName, request, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1321,7 +1699,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 ProblemHttpResult>>
                 (
                 [FromQuery] string storeId,
-                string vertical,
+                [FromQuery] Vertical vertical,
                 IClassifiedBoLandingService service,
                 HttpContext httpContext,
                 CancellationToken cancellationToken
@@ -1335,6 +1713,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
                     var userId = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrWhiteSpace(userId)) return TypedResults.Forbid();
+                    var userName = userData.GetProperty("name").GetString();
+                    if (string.IsNullOrWhiteSpace(userName))
+                        return TypedResults.Forbid();
 
                     if (string.IsNullOrWhiteSpace(storeId))
                     {
@@ -1346,7 +1727,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteFeaturedStore(storeId, userId, vertical, cancellationToken);
+                    var result = await service.SoftDeleteFeaturedStore(storeId, userId, userName, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1369,7 +1750,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 (
                 [FromQuery] string storeId,
                 [FromQuery] string userId,
-                [FromQuery] string vertical,
+                [FromQuery] string userName,
+                [FromQuery] Vertical vertical,
                 IClassifiedBoLandingService service,
                 CancellationToken cancellationToken
                 ) =>
@@ -1388,7 +1770,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                         });
                     }
 
-                    var result = await service.SoftDeleteFeaturedStore(storeId, userId, vertical, cancellationToken);
+                    var result = await service.SoftDeleteFeaturedStore(storeId, userId, userName, vertical, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -1405,6 +1787,187 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<string>(StatusCodes.Status200OK)
                 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getfeaturedstore", async Task<IResult> (
+   [FromQuery] string id,
+   [FromServices] IClassifiedBoLandingService service,
+   CancellationToken token) =>
+            {
+                try
+                {
+                    var result = await service.GetFeaturedStoreById(id, token);
+                    return TypedResults.Ok(result);
+                }
+                catch (ArgumentException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+   .WithName("GetFeaturedStoreById")
+   .AllowAnonymous()
+   .WithTags("ClassifiedBo")
+   .WithSummary("Get featured store for a given id")
+   .WithDescription("Returns a list of featured store from the category tree for a vertical. If none found, returns 404 status code with message.")
+   .Produces<FeaturedCategory>(StatusCodes.Status200OK)
+   .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+   .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+   .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/editfeaturedstore", async Task<Results<
+            Ok<string>,
+            ForbidHttpResult,
+            BadRequest<ProblemDetails>,
+            NotFound<ProblemDetails>,
+            Conflict<ProblemDetails>,
+            ProblemHttpResult>>
+            (
+                EditFeaturedStoreDto dto,
+                IClassifiedBoLandingService service,
+                HttpContext httpContext,
+                CancellationToken cancellationToken
+            ) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                        return TypedResults.Forbid();
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var userId = userData.GetProperty("uid").GetString();
+                    var userName = userData.GetProperty("name").GetString();
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                        return TypedResults.Forbid();
+
+                    var result = await service.EditFeaturedStore(userId, userName!, dto, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem("Internal Server Error", ex.Message);
+                }
+            })
+            .WithName("EditFeaturedStore")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Edit Featured Store (auth required)")
+            .WithDescription("Edit a featured store using authenticated user info")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPut("/edit-featured-store", async Task<IResult> (
+            EditFeaturedStoreDto dto,
+            [FromQuery] string userId,
+            [FromQuery] string userName,
+            IClassifiedBoLandingService service,
+            CancellationToken token) =>
+            {
+                try
+                {
+                    var id = await service.EditFeaturedStore(userId, userName, dto, token);
+                    return TypedResults.Ok(id);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    Console.WriteLine("KeyNotFoundException inside /editFeaturedStoreById");
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (ConflictException ex)
+                {
+                    Console.WriteLine("ConflictException inside /editFeaturedStoreById");
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.Contains("404") || (ex.InnerException?.Message.Contains("404") ?? false))
+                    {
+                        return TypedResults.NotFound(new ProblemDetails
+                        {
+                            Title = "Not Found",
+                            Detail = "One or more required resources were not found.",
+                            Status = StatusCodes.Status404NotFound
+                        });
+                    }
+                    else if (ex.Message.Contains("400") || (ex.InnerException?.Message.Contains("400") ?? false))
+                    {
+                        return TypedResults.BadRequest(new ProblemDetails
+                        {
+                            Title = "Bad Request",
+                            Detail = ex.Message,
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("editfeaturedstore")
+            .WithTags("ClassifiedBo")
+            .WithSummary("Edit a featured store with optional fields  (internal)")
+            .WithDescription("Edit a new parent or child category in the specified vertical (items, preloved, collectibles, deals) with optional dynamic fields  (internal use)")
+            .Produces<Guid>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/getall-items", static async Task<Results<Ok<ClassifiedsBoItemsResponseDto>, ProblemHttpResult>>
             (
@@ -1428,7 +1991,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds ads, including their details.")
-            .Produces<List<ClassifiedItems>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsItems>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -1456,7 +2019,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
             .WithSummary("Get all classifieds collectibles ads")
             .WithDescription("Retrieves all service ads from the system. " +
             "This endpoint returns a list of all available classifieds collectibles ads, including their details.")
-            .Produces<List<ClassifiedCollectibles>>(StatusCodes.Status200OK)
+            .Produces<List<ClassifiedsCollectibles>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("/bulk-items-action", async Task<Results<
@@ -2213,194 +2776,11 @@ CancellationToken ct
            .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
          
-            group.MapGet("/getstoresubscriptions", async Task<Results<
-           Ok<List<StoresSubscriptionDto>>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-           HttpContext context,
-           string? subscriptionType,
-           string? filterDate,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.getStoreSubscriptions(subscriptionType, filterDate,cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetStoresSubscriptions")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Get all subscriptions on stores.")
-           .WithDescription("Fetches all subscriptions of users on stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPost("/create-stores-subscriptions", async Task<Results<
-                Ok<string>,
-                ForbidHttpResult,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                StoresSubscriptionDto dto,
-                IClassifiedBoLandingService service,
-                HttpContext httpContext,
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-
-                    if (string.IsNullOrWhiteSpace(userId))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .WithName("CreateStoresSubscription")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Create Stores Subscriptions")
-                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-            
-            group.MapPost("/create-store-subscriptions", async Task<Results<
-                Ok<string>,
-                BadRequest<ProblemDetails>,
-                ProblemHttpResult>>
-                (
-                StoresSubscriptionDto dto,
-                IClassifiedBoLandingService service,         
-                CancellationToken cancellationToken
-                ) =>
-            {
-                try
-                {
-                    Console.WriteLine("hits internal bo");
-                    var result = await service.CreateStoreSubscriptions(dto, cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (InvalidDataException ex)
-                {
-                    return TypedResults.BadRequest(new ProblemDetails
-                    {
-                        Title = "Invalid Data",
-                        Detail = ex.Message,
-                        Status = StatusCodes.Status400BadRequest
-                    });
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem("Internal Server Error", ex.Message);
-                }
-            })
-                .ExcludeFromDescription()
-                .WithName("CreateStoreSubscription")
-                .WithTags("ClassifiedBo")
-                .WithSummary("Create Stores Subscriptions")
-                .WithDescription("Creates a stores subscriptions using authenticated user info and returns success message.")
-                .Produces<string>(StatusCodes.Status200OK)
-                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapPut("/edit-stores-subscriptions", async Task<Results<
-          Ok<string>,
-          ForbidHttpResult,
-          BadRequest<ProblemDetails>,
-          ProblemHttpResult>>
-          (
-          IClassifiedBoLandingService service,
-          HttpContext httpContext,
-          int OrderID,
-          string Status,
-          CancellationToken cancellationToken
-          ) =>
-            {
-                try
-                {
-                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                    if (string.IsNullOrEmpty(userClaim))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var userId = userData.GetProperty("uid").GetString();
-                    var userName = userData.GetProperty("name").GetString();
-
-                    if (string.IsNullOrWhiteSpace(userId))
-                    {
-                        return TypedResults.Forbid();
-                    }
-
-
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
-
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-           .WithName("EditStoresSubscriptions")
-          .WithTags("ClassifiedBo")
-          .WithSummary("Edit subscriptions on stores.")
-          .WithDescription("Edit the status information of stores subscriptions.")
-          .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-          .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-          .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+           
 
 
             group.MapPost("items/admin/post-by-id", async Task<IResult> (
-              ClassifiedsItems dto,
+              Items dto,
               IClassifiedService service,
               CancellationToken token) =>
             {
@@ -2465,26 +2845,12 @@ CancellationToken ct
               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapPut("/edit-store-subscriptions", async Task<Results<
-         Ok<string>,
-         BadRequest<ProblemDetails>,
-         ProblemHttpResult>>
-         (
-         IClassifiedBoLandingService service,
-         HttpContext httpContext,
-         int OrderID,
-         string Status,
-         CancellationToken cancellationToken
-         ) =>
-            {
-                try
-                {
-                    
+      
 
             group.MapPost("preloved/admin/post-by-id", async Task<IResult> (
-               ClassifiedsPreloved dto,
-               IClassifiedService service,
-               CancellationToken token) =>
+              Preloveds dto,
+              IClassifiedService service,
+              CancellationToken token) =>
             {
                 try
                 {
@@ -2547,39 +2913,18 @@ CancellationToken ct
                     );
                 }
             })
-               .WithName("AdminPostPrelovedAdById")
-               .WithTags("ClassifiedBo")
-               .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
-               .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
-               .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
-               .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-               .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
-               .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-                    var result = await service.EditStoreSubscriptions(OrderID, Status, cancellationToken);
+              .WithName("AdminPostPrelovedAdById")
+              .WithTags("ClassifiedBo")
+              .WithSummary("Post classified preloved ad using provided UserId, UserName and Email")
+              .WithDescription("For admin/service scenarios where the UserId, UserName and Email is passed.")
+              .Produces<AdCreatedResponseDto>(StatusCodes.Status201Created)
+              .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+              .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+              .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: httpContext.Request.Path
-                    );
-                }
-            })
-         .ExcludeFromDescription()
-         .WithName("EditStoreSubscriptions")
-         .WithTags("ClassifiedBo")
-         .WithSummary("Edit subscriptions on stores.")
-         .WithDescription("Edit the status information of stores subscriptions.")
-         .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-         .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-         .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
+           
             group.MapPost("collectibles/admin/post-by-id", async Task<IResult> (
-                ClassifiedsCollectibles dto,
+                Collectibles dto,
                 IClassifiedService service,
                 CancellationToken token) =>
             {
@@ -2635,7 +2980,7 @@ CancellationToken ct
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapPost("deals/post-by-id", async Task<IResult> (
-               ClassifiedsDeals dto,
+               Deals dto,
                IClassifiedService service,
                CancellationToken token) =>
             {
@@ -2769,203 +3114,192 @@ CancellationToken ct
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/get-subscription-types", async Task<Results<
-           Ok<List<SubscriptionTypes>>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-            HttpContext context,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.GetSubscriptionTypes(cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetSubscriptionTypes")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Get all subscription types on stores.")
-           .WithDescription("Fetches all subscription types of stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/get-subscription-id", async Task<Results<
-           Ok<SubscriptionTypes>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-            HttpContext context,
-            int Id,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.GetSubscriptionById(Id,cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetSubscriptionTypeById")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Get subscription type on stores.")
-           .WithDescription("Fetches specific subscription type of stores")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/get-test-xml-validation", async Task<Results<
-           Ok<string>,
-           BadRequest<ProblemDetails>,
-           ProblemHttpResult>>
-           (
-           IClassifiedBoLandingService service,
-            HttpContext context,
-           CancellationToken cancellationToken
-           ) =>
-            {
-                try
-                {
-                    var result = await service.GetTestXMLValidation(cancellationToken);
-                    return TypedResults.Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError,
-                        instance: context.Request.Path
-                    );
-                }
-            })
-           .WithName("GetTestXMLValidation")
-           .AllowAnonymous()
-           .WithTags("ClassifiedBo")
-           .WithSummary("Test XML Validation.")
-           .WithDescription("Testing validation from XSD")
-           .Produces<List<StoresSubscriptionDto>>(StatusCodes.Status200OK)
-           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-
-
-            group.MapGet("/get-process-stores-xml",
-    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
-        string Url,
-        string CompanyId,
-        int SubscriptionId,
-        IClassifiedBoLandingService service,
-        HttpContext context,
-        CancellationToken cancellationToken
-    ) =>
-    {
-        try
-        {
-            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-            if (string.IsNullOrEmpty(userClaim))
-                return TypedResults.Forbid();
-
-            var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-            var userId = userData.GetProperty("uid").GetString();
-            var UserName = userData.GetProperty("name").GetString();
-
-            if (string.IsNullOrWhiteSpace(userId))
-                return TypedResults.Forbid();
-
-            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName?.ToString(), cancellationToken);
-
-            if (result?.ToString() == "created")
-            {
-                return TypedResults.Ok("Products have been successfully created at the specified store(s).");
-            }
-
-            return TypedResults.BadRequest(new ProblemDetails
-            {
-                Title = "Store Processing Failed",
-                Detail = result?.ToString() ?? "Unknown error occurred.",
-                Status = StatusCodes.Status400BadRequest
-            });
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(
-                title: "Internal Server Error",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status500InternalServerError,
-                instance: context.Request.Path
-            );
-        }
-    })
-.WithName("GetProcessStoresXML")
-.WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            group.MapGet("/get-process-store-xml",
-    async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ForbidHttpResult, ProblemHttpResult>> (
-        string Url,
-        string CompanyId,
-        int SubscriptionId,
-        string UserName,
-        IClassifiedBoLandingService service,
-        HttpContext context,
-        CancellationToken cancellationToken
-    ) =>
-    {
-        try
-        {
-            var result = await service.GetProcessStoresXML(Url, CompanyId, SubscriptionId, UserName, cancellationToken);
-            return TypedResults.Ok(result);
             
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(
-                title: "Internal Server Error",
-                detail: ex.Message,
-                statusCode: StatusCodes.Status500InternalServerError,
-                instance: context.Request.Path
-            );
-        }
-    })
-.ExcludeFromDescription()
-.WithName("GetProcessStoreXML")
-.WithTags("ClassifiedBo")
-.WithSummary("Test XML process.")
-.WithDescription("Testing processing from XSD")
-.Produces<string>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.Status403Forbidden) // Adjusted: 403 returns no body
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
+            group.MapPost("/bulk-deals-action", async Task<Results<
+               Ok<string>,
+               BadRequest<ProblemDetails>,
+               NotFound<ProblemDetails>,
+               Conflict<ProblemDetails>,
+               ProblemHttpResult
+>> (
+               BulkActionRequest deleteRequest,
+               HttpContext httpContext,
+               IClassifiedBoLandingService service,
+               CancellationToken cancellationToken
+           ) =>
+            {
+                var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                if (string.IsNullOrEmpty(userClaim))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User information is missing or invalid in the token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                var userId = userData.GetProperty("uid").GetString();
+                var userName = userData.GetProperty("name").GetString();
+
+                if (string.IsNullOrWhiteSpace(userId) && string.IsNullOrWhiteSpace(userName))
+                {
+                    return TypedResults.Problem(new ProblemDetails
+                    {
+                        Title = "Unauthorized Access",
+                        Detail = "User ID or username could not be extracted from token.",
+                        Status = StatusCodes.Status403Forbidden
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId!, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+           .WithName("BulkDealsAction")
+           .WithTags("ClassifiedBo")
+           .WithSummary("Bulk deals action classifieds")
+           .WithDescription("Performs bulk deals actions (approve, publish, unpublish, promote, feature, remove) on selected classified ads. " +
+                            "Requires a list of ad IDs and the action to perform. " +
+                            "If removing, a reason must be provided.")
+           .Produces<string>(StatusCodes.Status200OK)
+           .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+           .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
+           .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+           .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+           .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/bulk-deals-action-userid", async Task<Results<
+     Ok<string>,
+     BadRequest<ProblemDetails>,
+     Conflict<ProblemDetails>,
+     NotFound<ProblemDetails>,
+     ProblemHttpResult
+ >> (
+     BulkActionRequest deleteRequest,
+     string userId,
+     IClassifiedBoLandingService service,
+     CancellationToken cancellationToken
+ ) =>
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = "UserId cannot be null or empty.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest?.AdIds == null || !deleteRequest.AdIds.Any())
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Error",
+                        Detail = "At least one Ad ID must be provided.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                if (deleteRequest.Action == BulkActionEnum.Remove && string.IsNullOrWhiteSpace(deleteRequest.Reason))
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Reason required for removal.",
+                        Detail = "You must provide a reason when removing ads.",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                try
+                {
+                    var result = await service.BulkDealsAction(deleteRequest, userId, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    return TypedResults.Conflict(new ProblemDetails
+                    {
+                        Title = "Conflict Exception",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status409Conflict
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(ex.Message);
+                }
+            })
+ .ExcludeFromDescription()
+ .WithName("BulkDealsActionByUserId")
+ .WithTags("ClassifiedBo")
+ .WithSummary("Internal bulk deals action")
+ .WithDescription("Performs bulk actions on deals (approve, publish, unpublish, promote, feature, remove) using provided User ID. " +
+                  "Intended for internal services. 'Remove' action requires a reason.")
+ .Produces<string>(StatusCodes.Status200OK)
+ .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+ .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+ .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+ .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+
 
             return group;
         }

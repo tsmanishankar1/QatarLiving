@@ -18,6 +18,8 @@
         public DateTime CreationDate { get; set; }
         public DateTime PublishedDate { get; set; }
         public DateTime ExpiryDate { get; set; }
+        public int WhatsAppCount { get; set; }
+        public int PhoneCount {  get; set; }
     }
     public class PrelovedSubscriptionResponse
     {
@@ -40,6 +42,8 @@
         public string Status { get; set; }
         public string StartDate { get; set; }
         public string EndDate { get; set; }
+        public int WhatsAppCount { get; set; }
+        public int PhoneCount { get; set; }
     }
 
 }

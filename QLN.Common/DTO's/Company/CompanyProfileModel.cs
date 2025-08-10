@@ -5,9 +5,8 @@ using System.Text.Json.Serialization;
 
 namespace QLN.Common.DTO_s.Company
 {
-    public class CompanyProfileModel
+    public class CompanyProfile
     {
-        public Guid? Id { get; set; }
         [Required]
         public string CompanyName { get; set; } = string.Empty;
         [Required]
@@ -42,13 +41,11 @@ namespace QLN.Common.DTO_s.Company
         [JsonConverter(typeof(CustomTimeSpanConverter))]
         public TimeSpan? EndHour { get; set; }
         public string? UserDesignation { get; set; }
-        public string? AuthorisedContactPersonName { get; set; }
-        public string? UserName { get; set; } 
-        public DateOnly? CRExpiryDate { get; set; } 
-        public string? CoverImage1 { get; set; } 
-        public string? CoverImage2 { get; set; } 
-        public bool? IsTherapeuticService { get; set; } 
+        public string? CoverImage1 { get; set; }
+        public string? CoverImage2 { get; set; }
+        public bool? IsTherapeuticService { get; set; }
         public string? TherapeuticCertificate { get; set; }
+        public string? LicenseNumber { get; set; }
         [Required]
         public CompanyType CompanyType { get; set; }
         [Required]
@@ -65,19 +62,21 @@ namespace QLN.Common.DTO_s.Company
         [Required]
         public VerticalType Vertical { get; set; }
         public SubVertical? SubVertical { get; set; }
-        public string? UserId { get; set; }
-        public bool? IsBasicProfile { get; set; }
-        public bool IsActive { get; set; }
+    }
+    public class CompanyRequest : CompanyProfile
+    {
+        public string UserName { get; set; }
         public string CreatedBy { get; set; }
-        public DateTime CreatedUtc { get; set; }
-        public string? UpdatedBy { get; set; }
-        public DateTime? UpdatedUtc { get; set; }
     }
     public class CompanyProfileApproveDto
     {
         public Guid? CompanyId { get; set; }
         public VerifiedStatus? Status { get; set; }
-        public string? RejectionReason { get; set; }
+    }
+    public class DeleteCompanyRequest
+    {
+        public Guid Id { get; set; }
+        public string? UpdatedBy { get; set; }
     }
     public class VerificationCompanyProfileStatus
     {
@@ -91,5 +90,23 @@ namespace QLN.Common.DTO_s.Company
         public VerticalType Vertical { get; set; }
         public SubVertical SubVertical { get; set; }
         public bool IsActive { get; set; }
+    }
+    public class CompanyProfileFilterRequest
+    {
+        public bool? IsBasicProfile { get; set; }
+        public VerifiedStatus? Status { get; set; }
+        public VerticalType? Vertical { get; set; }
+        public SubVertical? SubVertical { get; set; }
+        public string? Search { get; set; }
+        public string? SortBy { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 12;
+    }
+    public class CompanyPaginatedResponse<T>
+    {
+        public int TotalCount { get; set; }
+        public int PageNumber { get; set; }
+        public int PageSize { get; set; }
+        public IEnumerable<T> Items { get; set; } = new List<T>();
     }
 }

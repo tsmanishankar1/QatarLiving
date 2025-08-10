@@ -1,62 +1,55 @@
-﻿using Dapr.Client;
+﻿using Microsoft.EntityFrameworkCore;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
-using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
-using System.Linq;
-using System.Text.Json;
+using QLN.Common.Infrastructure.QLDbContext;
 using System.Text.RegularExpressions;
 
 namespace QLN.Company.MS.Service
 {
     public class InternalCompanyProfileService : ICompanyProfileService
     {
-        private readonly DaprClient _dapr;
         private readonly ILogger<InternalCompanyProfileService> _logger;
-        public InternalCompanyProfileService(
-            DaprClient dapr,
-            ILogger<InternalCompanyProfileService> logger)
+        private readonly QLCompanyContext _context;
+        private readonly QLSubscriptionContext _dbContext;
+        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext)
         {
-            _dapr = dapr;
             _logger = logger;
+            _context = context;
+            _dbContext = dbContext;
         }
 
         public async Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await GetIndex();
-                foreach (var key in keys)
-                {
-                    var existing = await _dapr.GetStateAsync<CompanyProfile>(ConstantValues.Company.CompanyStoreName, key, cancellationToken: cancellationToken);
-                    if (existing != null)
-                    {
-                        if (uid == uid &&
-                            existing.Vertical == dto.Vertical &&
-                            existing.SubVertical == dto.SubVertical)
-                        {
-                            throw new ConflictException("A company profile already exists for this user under the same subvertical.");
-                        }
+                bool duplicateByUserAndVertical = await _context.Companies.AnyAsync(
+                    c => c.UserId == uid &&
+                         c.Vertical == dto.Vertical &&
+                         c.SubVertical == dto.SubVertical,
+                    cancellationToken);
 
-                        if (uid != uid &&
-                            (existing.PhoneNumber == dto.PhoneNumber || existing.Email == dto.Email))
-                        {
-                            throw new ConflictException("Phone number or email is already used by another user.");
-                        }
-                    }
+                if (duplicateByUserAndVertical)
+                {
+                    throw new ConflictException("A company profile already exists for this user under the same subvertical.");
                 }
-                var id = Guid.NewGuid();
-                var entity = EntityForCreate(dto, id, uid, userName);
+                bool duplicateContactInfo = await _context.Companies.AnyAsync(
+                    c => c.UserId != uid &&
+                         (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
+                    cancellationToken);
+
+                if (duplicateContactInfo)
+                {
+                    throw new ConflictException("Phone number or email is already used by another user.");
+                }
+                var newCompanyId = Guid.NewGuid();
+                var entity = EntityForCreate(dto, newCompanyId, uid, userName);
                 Validate(entity);
-                await _dapr.SaveStateAsync(ConstantValues.Company.CompanyStoreName, id.ToString(), entity);
 
-                if (!keys.Contains(id.ToString()))
-                {
-                    keys.Add(id.ToString());
-                    await _dapr.SaveStateAsync(ConstantValues.Company.CompanyStoreName, ConstantValues.Company.CompanyIndexKey, keys);
-                }
+                _context.Companies.Add(entity);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return "Company Created successfully";
             }
@@ -75,7 +68,7 @@ namespace QLN.Company.MS.Service
             return !string.IsNullOrWhiteSpace(email) &&
                    Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.IgnoreCase);
         }
-        public static void Validate(CompanyProfileModel dto)
+        public static void Validate(QLN.Common.Infrastructure.Model.Company dto)
         {
             if (string.IsNullOrWhiteSpace(dto.CompanyName))
                 throw new ArgumentException("Company name is required.", nameof(dto.CompanyName));
@@ -135,21 +128,27 @@ namespace QLN.Company.MS.Service
 
             if (dto.Vertical == VerticalType.Services)
             {
-                if (!dto.IsTherapeuticService.Value)
+                if (dto.IsTherapeuticService == null)
                     throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
 
                 if (dto.IsTherapeuticService == true)
                 {
                     if (string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
                         throw new ArgumentException("Therapeutic certificate is required when therapeutic service is selected.");
+
+                    if (string.IsNullOrWhiteSpace(dto.LicenseNumber))
+                        throw new ArgumentException("License number is required when therapeutic service is selected.");
+
+                    if (dto.LicenseNumber.Length > 50)
+                        throw new ArgumentException("License number cannot exceed 50 characters.");
                 }
             }
             if (dto.CRNumber < 100000 || dto.CRNumber > 99999999)
                 throw new ArgumentException("CR Number must be between 6 to 8 digits.", nameof(dto.CRNumber));
         }
-        private CompanyProfileModel EntityForCreate(CompanyProfile dto, Guid id, string uid, string userName)
+        private QLN.Common.Infrastructure.Model.Company EntityForCreate(CompanyProfile dto, Guid id, string uid, string userName)
         {
-            return new CompanyProfileModel
+            return new QLN.Common.Infrastructure.Model.Company
             {
                 Id = id,
                 Vertical = dto.Vertical,
@@ -178,6 +177,7 @@ namespace QLN.Company.MS.Service
                 NatureOfBusiness = dto.NatureOfBusiness,
                 IsTherapeuticService = dto.IsTherapeuticService,
                 TherapeuticCertificate = dto.TherapeuticCertificate,
+                LicenseNumber = dto.LicenseNumber,
                 CompanySize = dto.CompanySize,
                 CompanyType = dto.CompanyType,
                 BusinessDescription = dto.BusinessDescription,
@@ -191,15 +191,17 @@ namespace QLN.Company.MS.Service
                 IsActive = true
             };
         }
-        public async Task<CompanyProfileModel?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
+        public async Task<QLN.Common.Infrastructure.Model.Company?> GetCompanyById(Guid id, CancellationToken cancellationToken = default)
         {
             try
             {
-                var result = await _dapr.GetStateAsync<CompanyProfileModel>(ConstantValues.Company.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
+                var result = await _context.Companies
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == id && c.IsActive, cancellationToken);
+
                 if (result == null)
-                    throw new KeyNotFoundException($"Company with id '{id}' was not found.");
-                if (!result.IsActive)
-                    return null;
+                    throw new KeyNotFoundException($"Company with id '{id}' was not found or is inactive.");
+
                 return result;
             }
             catch (Exception ex)
@@ -208,81 +210,52 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileModel>> GetAllCompanies(CancellationToken cancellationToken = default)
+        public async Task<string> UpdateCompany(QLN.Common.Infrastructure.Model.Company dto, CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await GetIndex();
-                if (!keys.Any()) return new List<CompanyProfileModel>();
-
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.Company.CompanyStoreName, keys, parallelism: 10);
-
-                return items
-                    .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<CompanyProfileModel>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-                    .Where(e => e.Id != Guid.Empty && e.IsActive)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving all company profiles.");
-                throw;
-            }
-        }
-        public async Task<string> UpdateCompany(CompanyProfileModel dto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                Validate(dto);
-
-                var existing = await _dapr.GetStateAsync<CompanyProfileModel>(
-                    ConstantValues.Company.CompanyStoreName,
-                    dto.Id.ToString(),
-                    cancellationToken: cancellationToken);
+                var existing = await _context.Companies
+                .FirstOrDefaultAsync(c => c.Id == dto.Id && c.IsActive, cancellationToken);
 
                 if (existing == null)
                     throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
 
                 if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
-                    throw new InvalidDataException("Editing companies in the 'Stores' category is not allowed.");
+                    throw new ArgumentException("Editing companies in the 'Stores' category is not allowed.");
 
-                var keys = await GetIndex();
-                foreach (var key in keys)
+                bool duplicateCompany = await _context.Companies
+                    .AnyAsync(c => c.Id != dto.Id &&
+                                   c.UserId == dto.UserId &&
+                                   c.Vertical == dto.Vertical &&
+                                   c.SubVertical == dto.SubVertical,
+                              cancellationToken);
+
+                if (duplicateCompany)
+                    throw new ConflictException("A company profile already exists for this user under the same subvertical.");
+
+                bool phoneEmailUsed = await _context.Companies
+                    .AnyAsync(c => c.Id != dto.Id &&
+                                   c.UserId != dto.UserId &&
+                                   (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
+                              cancellationToken);
+
+                if (phoneEmailUsed)
+                    throw new ConflictException("Phone number or email is already used by another user.");
+
+                if (dto.IsBasicProfile == false)
                 {
-                    if (key == dto.Id.ToString()) continue;
+                    if (string.IsNullOrWhiteSpace(dto.AuthorisedContactPersonName))
+                        throw new ArgumentException("Authorised Contact Person Name is required");
 
-                    var other = await _dapr.GetStateAsync<CompanyProfileModel>(
-                        ConstantValues.Company.CompanyStoreName,
-                        key,
-                        cancellationToken: cancellationToken);
-
-                    if (other == null) continue;
-
-                    if (other.UserId == dto.UserId &&
-                        other.Vertical == dto.Vertical &&
-                        other.SubVertical == dto.SubVertical)
-                    {
-                        throw new ConflictException("A company profile already exists for this user under the same subvertical.");
-                    }
-
-                    if (other.UserId != dto.UserId &&
-                        (other.PhoneNumber == dto.PhoneNumber || other.Email == dto.Email))
-                    {
-                        throw new ConflictException("Phone number or email is already used by another user.");
-                    }
+                    if (!dto.CRExpiryDate.HasValue)
+                        throw new ArgumentException("CR Expiry Date is required");
                 }
 
-                var entity = EntityForUpdate(dto, existing);
-                await _dapr.SaveStateAsync(
-                    ConstantValues.Company.CompanyStoreName,
-                    dto.Id.ToString(),
-                    entity);
+                var updated = EntityForUpdate(dto, existing);
 
-                if (!keys.Contains(dto.Id.ToString()))
-                {
-                    keys.Add(dto.Id.ToString());
-                    await _dapr.SaveStateAsync(ConstantValues.Company.CompanyStoreName, ConstantValues.Company.CompanyIndexKey, keys);
-                }
+                _context.Entry(existing).CurrentValues.SetValues(updated);
+
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return "Company Profile Updated Successfully";
             }
@@ -296,9 +269,9 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        private CompanyProfileModel EntityForUpdate(CompanyProfileModel dto, CompanyProfileModel existing)
+        private QLN.Common.Infrastructure.Model.Company EntityForUpdate(QLN.Common.Infrastructure.Model.Company dto, QLN.Common.Infrastructure.Model.Company existing)
         {
-            return new CompanyProfileModel
+            return new QLN.Common.Infrastructure.Model.Company
             {
                 Id = dto.Id,
                 Vertical = dto.Vertical,
@@ -331,6 +304,7 @@ namespace QLN.Company.MS.Service
                 CoverImage2 = dto.CoverImage2 ?? existing.CoverImage2,
                 IsTherapeuticService = dto.IsTherapeuticService,
                 TherapeuticCertificate = dto.TherapeuticCertificate,
+                LicenseNumber = dto.LicenseNumber,
                 BusinessDescription = dto.BusinessDescription,
                 CRNumber = dto.CRNumber,
                 CompanyLogo = !string.IsNullOrWhiteSpace(dto.CompanyLogo)
@@ -345,42 +319,28 @@ namespace QLN.Company.MS.Service
                 UpdatedBy = dto.UserId,
                 UpdatedUtc = DateTime.UtcNow,
                 IsActive = true,
-                IsBasicProfile = true
+                IsBasicProfile = dto.IsBasicProfile
             };
         }
-        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var entity = await _dapr.GetStateAsync<CompanyProfileModel>(ConstantValues.Company.CompanyStoreName, id.ToString(), cancellationToken: cancellationToken);
-                if (entity == null)
-                {
-                    throw new KeyNotFoundException($"Company with ID {id} not found.");
-                }
-                if (!entity.IsActive)
-                {
-                    throw new InvalidDataException("Company already soft deleted.");
-                }
-                entity.IsActive = false;
+                var entity = await _context.Companies
+                .FirstOrDefaultAsync(c => c.Id == request.Id && c.IsActive, cancellationToken);
 
-                await _dapr.SaveStateAsync(ConstantValues.Company.CompanyStoreName, id.ToString(), entity, cancellationToken: cancellationToken);
+                if (entity == null)
+                    throw new KeyNotFoundException($"Company with ID {request.Id} not found or already deleted.");
+
+                entity.IsActive = false;
+                entity.UpdatedUtc = DateTime.UtcNow;
+                entity.UpdatedBy = request.UpdatedBy;
+
+                await _context.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while soft deleting company profile with ID: {Id}", id);
-                throw;
-            }
-        }
-        private async Task<List<string>> GetIndex()
-        {
-            try
-            {
-                var result = await _dapr.GetStateAsync<List<string>>(ConstantValues.Company.CompanyStoreName, ConstantValues.Company.CompanyIndexKey);
-                return result ?? new List<string>();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while retrieving index.");
+                _logger.LogError(ex, "Error while soft deleting company profile with ID: {Id}", request.Id);
                 throw;
             }
         }
@@ -388,32 +348,31 @@ namespace QLN.Company.MS.Service
         {
             try
             {
-                var company = await _dapr.GetStateAsync<CompanyProfileModel>(
-                            ConstantValues.Company.CompanyStoreName,
-                            dto.CompanyId.ToString(),
-                            cancellationToken: cancellationToken
-                        );
+                var company = await _context.Companies
+                    .FirstOrDefaultAsync(c => c.Id == dto.CompanyId, cancellationToken);
+
                 if (company == null)
                     throw new KeyNotFoundException($"Company with ID {dto.CompanyId} not found.");
-                if (!company.IsActive)
+
+                if (!company.IsActive && dto.Status != VerifiedStatus.Removed)
                     throw new InvalidOperationException("Cannot approve an inactive company profile.");
 
                 company.Status = dto.Status;
+
+                if (dto.Status == VerifiedStatus.Removed)
+                {
+                    company.IsActive = false;
+                }
+
                 company.UpdatedUtc = DateTime.UtcNow;
                 company.UpdatedBy = userId;
 
-                await _dapr.SaveStateAsync(
-                    ConstantValues.Company.CompanyStoreName,
-                    company.Id.ToString(),
-                    company,
-                    cancellationToken: cancellationToken
-                );
-
-                return "Company Profile Approved Successfully";
+                await _context.SaveChangesAsync(cancellationToken);
+                return "Company Status Changed Successfully";
             }
-            catch (KeyNotFoundException ex)
+            catch (KeyNotFoundException)
             {
-                throw new InvalidDataException(ex.Message);
+                throw;
             }
             catch (InvalidOperationException ex)
             {
@@ -425,283 +384,163 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanyProfileModel>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<QLN.Common.Infrastructure.Model.Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var all = await GetAllCompanies(cancellationToken);
-                return all
-                    .Where(c => c.UserId == userId && c.IsActive)
-                    .ToList();
+                return await _context.Companies
+                .Where(c => c.UserId == userId && c.IsActive)
+                .ToListAsync(cancellationToken);
             }
             catch (Exception)
             {
                 throw;
             }
         }
-        public async Task<List<VerificationCompanyProfileStatus>> GetAllVerificationProfiles(VerticalType vertical, SubVertical? subVertical, CancellationToken cancellationToken = default)
+        public async Task<CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>> GetAllVerifiedCompanies(CompanyProfileFilterRequest filter, CancellationToken cancellationToken = default)
         {
             try
             {
-                var keys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.Company.CompanyStoreName,
-                    ConstantValues.Company.CompanyIndexKey,
-                    cancellationToken: cancellationToken
-                ) ?? new();
+                if (filter.PageNumber <= 0 || filter.PageSize <= 0)
+                    throw new InvalidDataException("PageNumber and PageSize must be greater than 0.");
 
-                var items = await _dapr.GetBulkStateAsync(
-                    ConstantValues.Company.CompanyStoreName,
-                    keys,
-                    null,
-                    cancellationToken: cancellationToken
-                );
+                var query = _context.Companies.AsQueryable();
 
-                var companies = items
-                    .Select(i => JsonSerializer.Deserialize<CompanyProfileModel>(i.Value, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    }))
-                    .Where(c => c != null && c.Vertical == vertical && (!subVertical.HasValue || c.SubVertical == subVertical.Value))
-                    .Select(c => new VerificationCompanyProfileStatus
-                    {
-                        CompanyId = c.Id,
-                        UserId = c.UserId,
-                        CRFile = c.CRDocument,
-                        CRLicense = c.CRNumber,
-                        Enddate = c.CRExpiryDate,
-                        Username = c.UserName,
-                        BusinessName = c.CompanyName,
-                        Vertical = c.Vertical,
-                        SubVertical = c.SubVertical ?? SubVertical.Items,
-                        IsActive = c.IsActive
-                    })
-                    .ToList();
+                query = query.Where(c => c.Id != Guid.Empty && c.IsActive);
 
-                return companies.Any() ? companies : null;
+                if (filter.IsBasicProfile != null)
+                    query = query.Where(c => c.IsBasicProfile == filter.IsBasicProfile.Value);
+
+                if (filter.Status != null)
+                    query = query.Where(c => c.Status == filter.Status);
+
+                if (filter.Vertical != null)
+                    query = query.Where(c => c.Vertical == filter.Vertical);
+
+                if (filter.SubVertical != null)
+                    query = query.Where(c => c.SubVertical == filter.SubVertical);
+
+                if (!string.IsNullOrWhiteSpace(filter.Search))
+                    query = query.Where(c => c.CompanyName.Contains(filter.Search));
+
+                query = (filter.SortBy?.ToLower()) switch
+                {
+                    "name asc" => query.OrderBy(c => c.CompanyName),
+                    "name desc" => query.OrderByDescending(c => c.CompanyName),
+                    "date asc" => query.OrderBy(c => c.CreatedUtc),
+                    "date desc" => query.OrderByDescending(c => c.CreatedUtc),
+                    _ => query.OrderByDescending(c => c.CreatedUtc)
+                };
+
+                var totalCount = await query.CountAsync(cancellationToken);
+
+                var items = await query
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToListAsync(cancellationToken);
+
+                return new CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>
+                {
+                    TotalCount = totalCount,
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize,
+                    Items = items
+                };
+            }
+            catch (InvalidDataException ex)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch company summaries by vertical and subvertical");
+                _logger.LogError(ex, "Error while retrieving verified company profiles.");
                 throw;
             }
         }
-        public async Task<string> UpdateVerifiedCompany(CompanyProfileModel dto, CancellationToken cancellationToken = default)
+        public async Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var existing = await _dapr.GetStateAsync<CompanyProfileModel>(
-                    ConstantValues.Company.CompanyStoreName,
-                    dto.Id.ToString(),
-                    cancellationToken: cancellationToken);
+                int pageNumber = request.PageNumber ?? 1;
+                int pageSize = request.PageSize ?? 12;
+                if (pageNumber <= 0)
+                    throw new InvalidDataException("PageNumber must be greater than 0.");
 
-                if (existing == null)
-                    throw new KeyNotFoundException($"Company with ID {dto.Id} was not found.");
+                if (pageSize <= 0)
+                    throw new InvalidDataException("PageSize must be greater than 0.");
+                _logger.LogInformation("Starting GetCompanySubscriptionsAsync with request: {@Request}", request);
 
-                if ((int)(existing.SubVertical ?? 0) == (int)SubVertical.Stores)
-                    throw new InvalidDataException("Editing companies in the 'Stores' category is not allowed.");
+                var companies = await _context.Companies.ToListAsync(cancellationToken);
+                var subscriptions = await _dbContext.Subscriptions.ToListAsync(cancellationToken);
 
-                var keys = await GetIndex();
-                foreach (var key in keys)
+                var joined = (from c in companies
+                              join s in subscriptions on c.Id equals s.CompanyId
+                              select new CompanySubscriptionDto
+                              {
+                                  CompanyName = c.CompanyName,
+                                  Email = c.Email,
+                                  Mobile = c.PhoneNumber,
+                                  WhatsApp = c.WhatsAppNumber,
+                                  WebUrl = c.WebsiteUrl,
+                                  Status = s.Status,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate,
+                                  SubscriptionType = s.ProductName
+                              }).AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(request.SubscriptionType))
                 {
-                    if (key == dto.Id.ToString()) continue;
+                    joined = joined.Where(j =>
+                        j.SubscriptionType.Equals(request.SubscriptionType, StringComparison.OrdinalIgnoreCase));
+                    _logger.LogInformation("Filtered by product name: {ProductName}", request.SubscriptionType);
+                }
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    var searchTermLower = request.SearchTerm.Trim().ToLower();
 
-                    var other = await _dapr.GetStateAsync<CompanyProfileModel>(
-                        ConstantValues.Company.CompanyStoreName,
-                        key,
-                        cancellationToken: cancellationToken);
+                    joined = joined.Where(j =>
+                        (!string.IsNullOrEmpty(j.CompanyName) && j.CompanyName.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.Email) && j.Email.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.Mobile) && j.Mobile.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.WhatsApp) && j.WhatsApp.ToLower().Contains(searchTermLower))
+                    );
 
-                    if (other == null) continue;
-
-                    if (other.UserId == dto.UserId &&
-                        other.Vertical == dto.Vertical &&
-                        other.SubVertical == dto.SubVertical)
-                    {
-                        throw new ConflictException("A company profile already exists for this user under the same subvertical.");
-                    }
-
-                    if (other.UserId != dto.UserId &&
-                        (other.PhoneNumber == dto.PhoneNumber || other.Email == dto.Email))
-                    {
-                        throw new ConflictException("Phone number or email is already used by another user.");
-                    }
+                    _logger.LogInformation("Filtered by search term: {SearchTerm}", request.SearchTerm);
                 }
 
-                var entity = UpdateVerified(dto, existing);
-                ValidateVerified(entity);
-                await _dapr.SaveStateAsync(
-                    ConstantValues.Company.CompanyStoreName,
-                    dto.Id.ToString(),
-                    entity);
-
-                if (!keys.Contains(dto.Id.ToString()))
+                if (request.StartDate.HasValue && request.EndDate.HasValue)
                 {
-                    keys.Add(dto.Id.ToString());
-                    await _dapr.SaveStateAsync(ConstantValues.Company.CompanyStoreName, ConstantValues.Company.CompanyIndexKey, keys);
+                    joined = joined.Where(j =>
+                        j.StartDate >= request.StartDate.Value &&
+                        j.EndDate <= request.EndDate.Value);
+                    _logger.LogInformation("Filtered by date range: {Start} - {End}", request.StartDate, request.EndDate);
                 }
 
-                return "Company Profile Updated Successfully";
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while updating company profile with ID: {Id}", dto.Id);
-                throw;
-            }
-        }
-        private CompanyProfileModel UpdateVerified(CompanyProfileModel dto, CompanyProfileModel existing)
-        {
-            return new CompanyProfileModel
-            {
-                Id = dto.Id,
-                Vertical = dto.Vertical,
-                SubVertical = dto.SubVertical,
-                UserId = dto.UserId,
-                CompanyName = dto.CompanyName,
-                Country = dto.Country,
-                City = dto.City,
-                BranchLocations = dto.BranchLocations,
-                PhoneNumber = dto.PhoneNumber,
-                PhoneNumberCountryCode = dto.PhoneNumberCountryCode,
-                WhatsAppCountryCode = dto.WhatsAppCountryCode,
-                WhatsAppNumber = dto.WhatsAppNumber,
-                Email = dto.Email,
-                WebsiteUrl = dto.WebsiteUrl,
-                FacebookUrl = dto.FacebookUrl,
-                InstagramUrl = dto.InstagramUrl,
-                StartDay = dto.StartDay,
-                EndDay = dto.EndDay,
-                StartHour = dto.StartHour,
-                EndHour = dto.EndHour,
-                NatureOfBusiness = dto.NatureOfBusiness,
-                CompanySize = dto.CompanySize,
-                CompanyType = dto.CompanyType,
-                UserDesignation = dto.UserDesignation,
-                AuthorisedContactPersonName = dto.AuthorisedContactPersonName,
-                UserName = dto.UserName,
-                CRExpiryDate = dto.CRExpiryDate,
-                CoverImage1 = dto.CoverImage1 ?? existing.CoverImage1,
-                CoverImage2 = dto.CoverImage2 ?? existing.CoverImage2,
-                IsTherapeuticService = dto.IsTherapeuticService,
-                TherapeuticCertificate = dto.TherapeuticCertificate,
-                BusinessDescription = dto.BusinessDescription,
-                CRNumber = dto.CRNumber,
-                CompanyLogo = !string.IsNullOrWhiteSpace(dto.CompanyLogo)
-                        ? dto.CompanyLogo
-                        : existing.CompanyLogo,
-                CRDocument = !string.IsNullOrWhiteSpace(dto.CRDocument)
-                        ? dto.CRDocument
-                        : existing.CRDocument,
-                Status = dto.Status,
-                CreatedBy = existing.CreatedBy,
-                CreatedUtc = existing.CreatedUtc,
-                UpdatedBy = dto.UserId,
-                UpdatedUtc = DateTime.UtcNow,
-                IsActive = true,
-                IsBasicProfile = false
-            };
-        }
-        public static void ValidateVerified(CompanyProfileModel dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.AuthorisedContactPersonName))
-                throw new ArgumentException("Authorised person name is required for verified companies.");
+                if (request.SortBy?.ToLower() == "desc")
+                    joined = joined.OrderByDescending(j => j.EndDate);
+                else
+                    joined = joined.OrderBy(j => j.EndDate);
 
-            if (!dto.CRExpiryDate.HasValue)
-                throw new ArgumentException("CR expiry date is required for verified companies.");
+                int totalRecords = joined.Count();
+                int totalPages = (int)Math.Ceiling((decimal)totalRecords / pageSize);
 
-            if (string.IsNullOrWhiteSpace(dto.CompanyName))
-                throw new ArgumentException("Company name is required.", nameof(dto.CompanyName));
-
-            if (!Enum.IsDefined(typeof(CompanyType), dto.CompanyType))
-                throw new ArgumentException($"Invalid CompanyType: {dto.CompanyType}");
-
-            if (!Enum.IsDefined(typeof(CompanySize), dto.CompanySize))
-                throw new ArgumentException($"Invalid CompanySize: {dto.CompanySize}");
-
-            if (!Enum.IsDefined(typeof(VerticalType), dto.Vertical))
-                throw new ArgumentException($"Invalid VerticalType: {dto.Vertical}");
-
-            if (dto.Status.HasValue && !Enum.IsDefined(typeof(VerifiedStatus), dto.Status.Value))
-                throw new ArgumentException($"Invalid VerifiedStatus: {dto.Status.Value}");
-
-            if (dto.SubVertical.HasValue && !Enum.IsDefined(typeof(SubVertical), dto.SubVertical.Value))
-                throw new ArgumentException($"Invalid CompanyCategory: {dto.SubVertical.Value}");
-
-            if (dto.NatureOfBusiness == null || dto.NatureOfBusiness.Count == 0)
-                throw new ArgumentException("NatureOfBusiness list is required and cannot be empty.");
-            foreach (var val in dto.NatureOfBusiness)
-            {
-                if (!Enum.IsDefined(typeof(NatureOfBusiness), val))
-                    throw new ArgumentException($"Invalid NatureOfBusiness: {val}");
-            }
-            if (!string.IsNullOrWhiteSpace(dto.BusinessDescription))
-            {
-                var wordCount = Regex.Matches(dto.BusinessDescription, @"\b\w+\b").Count;
-
-                if (wordCount > 300)
-                    throw new ArgumentException("Business description should not exceed 300 words.");
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
-                throw new ArgumentException("Phone number is required.");
-
-            var phoneRegex = new Regex(@"^\d{6,15}$");
-
-            if (!phoneRegex.IsMatch(dto.PhoneNumber))
-                throw new ArgumentException("Invalid phone number format.");
-
-            if (!string.IsNullOrWhiteSpace(dto.WhatsAppNumber) &&
-                !phoneRegex.IsMatch(dto.WhatsAppNumber))
-                throw new ArgumentException("Invalid WhatsApp number format.");
-
-            if (!IsValidEmail(dto.Email))
-                throw new ArgumentException("Invalid email format.");
-            if (dto.Vertical == VerticalType.Classifieds)
-            {
-                if (dto.SubVertical.HasValue && new[] { 1, 2, 3, 4, 5 }.Contains((int)dto.SubVertical.Value))
-                {
-                    if (string.IsNullOrWhiteSpace(dto.UserDesignation))
-                        throw new ArgumentException("User designation is required for this vertical and subvertical.");
-                }
-            }
-            if (dto.Vertical == VerticalType.Services)
-            {
-                if (!dto.IsTherapeuticService.Value)
-                    throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
-
-                if (dto.IsTherapeuticService == true)
-                {
-                    if (string.IsNullOrWhiteSpace(dto.TherapeuticCertificate))
-                        throw new ArgumentException("Therapeutic certificate is required when therapeutic service is selected.");
-                }
-            }
-        }
-        public async Task<List<CompanyProfileModel>> GetAllVerifiedCompanies(bool? isBasicProfile, VerifiedStatus? status, VerticalType? vertical, SubVertical? subVertical, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var keys = await GetIndex();
-                if (!keys.Any()) return new List<CompanyProfileModel>();
-
-                var items = await _dapr.GetBulkStateAsync(ConstantValues.Company.CompanyStoreName, keys, parallelism: 10);
-
-                return items
-                    .Where(i => !string.IsNullOrWhiteSpace(i.Value))
-                    .Select(i => JsonSerializer.Deserialize<CompanyProfileModel>(i.Value!, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!)
-                    .Where(e =>
-                        e.Id != Guid.Empty &&
-                        e.IsActive &&
-                        (isBasicProfile == null || e.IsBasicProfile == isBasicProfile.Value) &&
-                        (status == null || e.Status == status) &&
-                        (vertical == null || e.Vertical == vertical) &&
-                        (subVertical == null || e.SubVertical == subVertical))
+                var paged = joined
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToList();
+
+                return new CompanySubscriptionListResponseDto
+                {
+                    Records = paged,
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while retrieving all verified company profiles.");
+                _logger.LogError(ex, "Error in GetCompanySubscriptionsAsync");
                 throw;
             }
         }

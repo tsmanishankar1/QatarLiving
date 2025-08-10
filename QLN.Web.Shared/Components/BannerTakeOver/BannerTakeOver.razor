@@ -78,6 +78,13 @@
 
     private void ScheduleNextSlide()
     {
+        if (BannerItems.Count <= 1)
+        {
+            // Do not schedule rotation if there's only one banner
+            _isPaused = false;
+            return;
+        }
+
         var currentBanner = BannersToRender[CurrentIndex];
         if (!int.TryParse(currentBanner.Duration, out int seconds) || seconds <= 0)
         {
@@ -124,7 +131,7 @@
                 : (int)AnalyticType.BANNER_CLICK,
             Url = new Uri(NavigationManager.Uri).AbsolutePath,
             Lead = AnalyticsLead.SMS_REVEAL,
-            VerticalTag = (int)VerticalTag.CONTENT,
+            VerticalTag = (int)VerticalTag.VEHICLES, // Hot Fix You need to send vertical = 1 always so that it should store into vehicles stats server for now
             AdditionalTag = new Dictionary<string, string>
             {
                 { "BannerCode", bannerCode },

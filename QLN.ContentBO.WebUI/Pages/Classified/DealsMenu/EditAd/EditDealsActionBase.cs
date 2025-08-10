@@ -2,22 +2,21 @@ using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
 {
-    public class EditDealsActionBase : ComponentBase
+    public class EditDealsActionBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
-        [Parameter] public EditAdPost AdModel { get; set; } = new();
-        [Parameter] public string UserName { get; set; } = "Rashid";
-        [Parameter] public string Category { get; set; } = "Electronics";
+        [Parameter] public DealsModal AdModel { get; set; } = new();
         [Parameter] public int AdId { get; set; } = 21660;
         [Parameter] public int OrderId { get; set; } = 24578;
         protected async Task OpenPreviewDialog()
         {
             var parameters = new DialogParameters
             {
-                { "AdModel", AdModel } 
+                { "AdModel", AdModel }
             };
 
             var options = new DialogOptions
@@ -27,7 +26,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
                 MaxWidth = MaxWidth.ExtraLarge,
             };
 
-            var dialog = DialogService.Show<PreviewDeals>("Ad Preview", parameters, options);
+            var dialog = await DialogService.ShowAsync<PreviewDeals>("Ad Preview", parameters, options);
             await dialog.Result;
         }
 
@@ -51,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             await dialog.Result;
         }
     }

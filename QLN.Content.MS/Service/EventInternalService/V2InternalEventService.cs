@@ -5,9 +5,9 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.Utilities;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
 namespace QLN.Content.MS.Service.EventInternalService
@@ -38,6 +38,28 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+
+                var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                ConstantValues.V2Content.ContentStoreName,
+                ConstantValues.V2Content.EventIndexKey,
+                cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in allEventKeys)
+                {
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }
                 string categoryName = string.Empty;
 
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
@@ -59,8 +81,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                 }
 
                 ValidateEventSchedule(dto.EventSchedule);
-                var id = Guid.NewGuid();
-                var slug = GenerateSlug(dto.EventTitle);
+                var id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
+                                                                         // and only generate a new one if this is GUID.Empty.
+
+                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
                 var entity = new V2Events
                 {
                     Id = id,
@@ -111,6 +135,25 @@ namespace QLN.Content.MS.Service.EventInternalService
                         cancellationToken: cancellationToken
                     );
                 }
+
+                var upsertRequest = await IndexEventToAzureSearch(entity, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
                 return "Event created successfully.";
             }
             catch (ArgumentException ex)
@@ -165,16 +208,6 @@ namespace QLN.Content.MS.Service.EventInternalService
                         throw new ArgumentException("Each TimeSlot.TextTime must not exceed 50 characters.");
                 }
             }
-        }
-        private string GenerateSlug(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-            var slug = title.ToLowerInvariant().Trim();
-            slug = Regex.Replace(slug, @"[\s_]+", "-");
-            slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-            slug = Regex.Replace(slug, @"-+", "-");
-            slug = slug.Trim('-');
-            return slug;
         }
         public async Task<List<V2Events>> GetAllEvents(CancellationToken cancellationToken)
         {
@@ -263,7 +296,30 @@ namespace QLN.Content.MS.Service.EventInternalService
                     if (dto.Price != null)
                         throw new ArgumentException("Price must not be entered for 'Free Access' or 'Open Registration' events.");
                 }
+                var allEventKeys = await _dapr.GetStateAsync<List<string>>(
+                   ConstantValues.V2Content.ContentStoreName,
+                   ConstantValues.V2Content.EventIndexKey,
+                   cancellationToken: cancellationToken
+                ) ?? new List<string>();
 
+                foreach (var key in allEventKeys)
+                {
+                    if (key.Equals(dto.Id.ToString(), StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    var existingEvent = await _dapr.GetStateAsync<V2Events>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+
+                    if (existingEvent != null
+                        && existingEvent.IsActive
+                        && existingEvent.EventTitle.Equals(dto.EventTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException($"An active event with the title '{dto.EventTitle}' already exists.");
+                    }
+                }
                 string categoryName = string.Empty;
                 var categoryKeys = await _dapr.GetStateAsync<List<string>>(
                     ConstantValues.V2Content.ContentStoreName,
@@ -360,12 +416,12 @@ namespace QLN.Content.MS.Service.EventInternalService
                     }
                 }
 
-                var slug = GenerateSlug(dto.EventTitle);
+                var slug = ProcessingHelpers.GenerateSlug(dto.EventTitle);
 
                 var updated = new V2Events
                 {
                     Id = dto.Id,
-                    Slug = dto.Slug,
+                    Slug = slug,
                     CategoryId = dto.CategoryId,
                     CategoryName = categoryName,
                     EventTitle = dto.EventTitle,
@@ -400,6 +456,24 @@ namespace QLN.Content.MS.Service.EventInternalService
                     dto.Id.ToString(),
                     updated,
                     cancellationToken: cancellationToken);
+
+                var upsertRequest = await IndexEventToAzureSearch(updated, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 _log.LogInformation("Event {EventId} updated successfully by user {UserId}", dto.Id, userId);
 
@@ -527,6 +601,24 @@ namespace QLN.Content.MS.Service.EventInternalService
                 existing,
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
+
+            var upsertRequest = await IndexEventToAzureSearch(existing, cancellationToken);
+            if (upsertRequest != null)
+            {
+                var message = new IndexMessage
+                {
+                    Action = "Upsert",
+                    Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                    UpsertRequest = upsertRequest
+                };
+
+                await _dapr.PublishEventAsync(
+                    pubsubName: ConstantValues.PubSubName,
+                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                    data: message,
+                    cancellationToken: cancellationToken
+                );
+            }
 
             return "Event Soft Deleted Successfully";
         }
@@ -747,28 +839,42 @@ namespace QLN.Content.MS.Service.EventInternalService
                 if (!allEvents.Any())
                     return EmptyResponse(request.Page, request.PerPage);
 
-                request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
-                if (request.FeaturedFirst == true)
+                if (!string.IsNullOrWhiteSpace(request.PriceSortOrder))
                 {
-                    allEvents = request.SortOrder switch
+                    request.PriceSortOrder = request.PriceSortOrder.ToLowerInvariant();
+
+                    allEvents = request.PriceSortOrder switch
                     {
-                        "desc" => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenByDescending(e => e.CreatedAt)
-                            .ToList(),
-                        _ => allEvents
-                            .OrderByDescending(e => e.IsFeatured)
-                            .ThenBy(e => e.CreatedAt)
-                            .ToList(),
+                        "desc" => allEvents.OrderByDescending(e => e.Price ?? 0).ToList(),
+                        _ => allEvents.OrderBy(e => e.Price ?? 0).ToList(),
                     };
                 }
                 else
                 {
-                    allEvents = request.SortOrder switch
+                    request.SortOrder = string.IsNullOrWhiteSpace(request.SortOrder) ? "asc" : request.SortOrder.ToLowerInvariant();
+
+                    if (request.FeaturedFirst == true)
                     {
-                        "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
-                        _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
-                    };
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenByDescending(e => e.CreatedAt)
+                                .ToList(),
+                            _ => allEvents
+                                .OrderByDescending(e => e.IsFeatured)
+                                .ThenBy(e => e.CreatedAt)
+                                .ToList(),
+                        };
+                    }
+                    else
+                    {
+                        allEvents = request.SortOrder switch
+                        {
+                            "desc" => allEvents.OrderByDescending(e => e.CreatedAt).ToList(),
+                            _ => allEvents.OrderBy(e => e.CreatedAt).ToList(),
+                        };
+                    }
                 }
                 int currentPage = Math.Max(1, request.Page ?? 1);
                 int itemsPerPage = Math.Max(1, Math.Min(100, request.PerPage ?? 12));
@@ -1210,6 +1316,60 @@ namespace QLN.Content.MS.Service.EventInternalService
                 new StateOptions { Consistency = ConsistencyMode.Strong },
                 cancellationToken: cancellationToken);
             return "Event unfeatured and removed from slot successfully";
+        }
+
+        private async Task<CommonIndexRequest> IndexEventToAzureSearch(QLN.Common.DTO_s.V2Events dto, CancellationToken cancellationToken)
+        {
+
+            var indexDoc = new ContentEventsIndex
+            {
+                Id = dto.Id.ToString(),
+                EventTitle = dto.EventTitle,
+                EventType = dto.EventType.ToString(),
+                EventDescription = dto.EventDescription,
+                CategoryId = dto.CategoryId,
+                CategoryName = dto.CategoryName,
+                CoverImage = dto.CoverImage,
+                FeaturedSlot = new SlotIndex { 
+                    Id = dto.FeaturedSlot.Id, 
+                    Name = dto.FeaturedSlot.Name 
+                },
+                IsFeatured = dto.IsFeatured,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                Location = dto.Location,
+                LocationId = dto.LocationId,
+                Price = dto.Price,
+                RedirectionLink = dto.RedirectionLink,
+                Status = dto.Status.ToString(),
+                Slug = dto.Slug,
+                PublishedDate = dto.PublishedDate,
+                IsActive = dto.IsActive,
+                CreatedBy = dto.CreatedBy,
+                CreatedAt = dto.CreatedAt,
+                UpdatedAt = dto.UpdatedAt,
+                UpdatedBy = dto.UpdatedBy,
+                EventSchedule = new EventScheduleIndex
+                {
+                    StartDate = dto.EventSchedule.StartDate.FromDateOnly(),
+                    EndDate = dto.EventSchedule.EndDate.FromDateOnly(),
+                    GeneralTextTime = dto.EventSchedule.GeneralTextTime,
+                    TimeSlotType = dto.EventSchedule.TimeSlotType.ToString(),
+                    TimeSlots = dto.EventSchedule.TimeSlots?.Select(i => new TimeSlotIndex
+                    {
+                        DayOfWeek = i.DayOfWeek.ToString(),
+                        TextTime = i.TextTime
+                    }).ToList()
+                }
+            };
+
+            var indexRequest = new CommonIndexRequest
+            {
+                IndexName = ConstantValues.IndexNames.ContentEventsIndex,
+                ContentEventsItem = indexDoc
+            };
+            return indexRequest;
+
         }
     }
 }

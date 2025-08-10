@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class ClassifiedsDeals
     {
-        public Guid Id { get; set; } = Guid.Empty;
+        public long Id { get; set; }
         public string Subvertical { get; set; } = string.Empty;
         public string? SubscriptionId { get; set; }
         public string UserId { get; set; } = string.Empty;
@@ -40,7 +40,8 @@ namespace QLN.Common.DTO_s
         public DateTime? FeaturedExpiryDate { get; set; } = null;
         public DateTime? PromotedExpiryDate { get; set; } = null;
         public bool IsFeatured { get; set; }
-        public bool IsPromoted { get; set; }        
+        public bool IsPromoted { get; set; }    
+        public AdStatus Status { get; set; }
     }
 
 }

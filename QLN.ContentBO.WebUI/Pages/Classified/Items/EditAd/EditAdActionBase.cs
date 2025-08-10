@@ -6,10 +6,11 @@ using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
 using QLN.ContentBO.WebUI.Enums;
 using System.Text.Json;
 using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Items.EditAd
 {
-    public class EditAdActionBase : ComponentBase
+    public class EditAdActionBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
         [Inject] public NavigationManager NavigationManager { get; set; }

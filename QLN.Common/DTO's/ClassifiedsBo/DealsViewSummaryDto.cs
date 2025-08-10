@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 {
     public class DealsViewSummaryDto
     {
-        public Guid AdId { get; set; }
+        public long AdId { get; set; }
         public string Dealtitle { get; set; }
         public string subscriptiontype { get; set; }
         public DateTime DateCreated { get; set; }
@@ -24,5 +24,6 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public List<string> Location { get; set; } = new List<string>();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
+        public string Status { get; set; }
     }
 }

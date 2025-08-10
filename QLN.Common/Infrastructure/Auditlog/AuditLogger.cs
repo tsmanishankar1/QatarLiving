@@ -1,17 +1,16 @@
-﻿using Dapr.Client;
-using QLN.Common.Infrastructure.Constants;
+﻿using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using System.Text.Json;
-using QLN.Common.DTO_s.AuditLog;
 
 namespace QLN.Common.Infrastructure.Auditlog
 {
     public class AuditLogger
     {
-        private readonly DaprClient _dapr;
+        private readonly QLLogContext _dbContext;
 
-        public AuditLogger(DaprClient dapr)
+        public AuditLogger(QLLogContext dbContext)
         {
-            _dapr = dapr;
+            _dbContext = dbContext;
         }
 
         public async Task CreateAuditLog(
@@ -32,37 +31,55 @@ namespace QLN.Common.Infrastructure.Auditlog
                 ApiEndpoint = apiEndpoint,
                 SuccessMessage = successMessage,
                 CreatedBy = createdBy,
-                Payload = payload != null ? JsonSerializer.Serialize(payload) : null,
+                CreatedUtc = DateTime.UtcNow,
+                Payload = payload != null ? JsonSerializer.Serialize(payload) : null
+            };
+
+            await _dbContext.AuditLogs.AddAsync(log, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task LogAuditAsync(
+            string module,
+            string httpMethod,
+            string apiEndpoint,
+            string message,
+            string createdBy,
+            object? payload,
+            CancellationToken cancellationToken)
+        {
+            await CreateAuditLog(
+                id: Guid.NewGuid(),
+                module: module,
+                httpMethod: httpMethod,
+                apiEndpoint: apiEndpoint,
+                successMessage: message,
+                createdBy: createdBy,
+                payload: payload,
+                cancellationToken: cancellationToken
+            );
+        }
+
+        public async Task LogExceptionAsync(
+            string module,
+            string apiEndpoint,
+            Exception exception,
+            string createdBy,
+            CancellationToken cancellationToken)
+        {
+            var log = new ErrorLog
+            {
+                Id = Guid.NewGuid(),
+                Module = module,
+                ApiEndpoint = apiEndpoint,
+                ExceptionMessage = exception.Message,
+                StackTrace = exception.StackTrace,
+                CreatedBy = createdBy,
                 CreatedUtc = DateTime.UtcNow
             };
 
-            var key = $"auditlog-{module}-{id}";
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, log, cancellationToken: cancellationToken);
-        }
-        public async Task UpdateAuditLog(
-           Guid id,
-           string module,
-           string httpMethod,
-           string apiEndpoint,
-           string successMessage,
-           string updatedBy,
-           object? payload,
-           CancellationToken cancellationToken)
-        {
-            var log = new UpdateAuditLog
-            {
-                Id = id,
-                Module = module,
-                HttpMethod = httpMethod,
-                ApiEndpoint = apiEndpoint,
-                SuccessMessage = successMessage,
-                UpdatedBy = updatedBy,
-                Payload = payload != null ? JsonSerializer.Serialize(payload) : null,
-                UpdatedUtc = DateTime.UtcNow
-            };
-
-            var key = $"auditlog-{module}-{id}";
-            await _dapr.SaveStateAsync(ConstantValues.Services.StoreName, key, log, cancellationToken: cancellationToken);
+            await _dbContext.ErrorLogs.AddAsync(log, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

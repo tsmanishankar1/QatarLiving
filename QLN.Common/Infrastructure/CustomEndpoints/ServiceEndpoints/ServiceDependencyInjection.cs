@@ -23,14 +23,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                  .MapServiceGetAllEndpoints()
                  .MapServiceGetByIdEndpoint()
                  .MapServiceAdDeleteEndpoint()
-                 .MapGetServicesByStatusEndpoint()
+                 .MapGetAllWithPagination()
                  .MapPromoteEndpoint()
                  .MapFeatureEndpoint()
                  .MapRefreshEndpoint()
                  .MapPublishEndpoint()
                  .MapDetailedGetByIdEndpoint()
-                 .MapBulkActionsEndpoint();
-                
+                 .MapBulkActionsEndpoint()
+                 .MapServicesFeaturedItemEndpoint();
             return group;
         }
     }

@@ -125,6 +125,10 @@ namespace QLN.Backend.API.Service.V2ContentService
                 return JsonSerializer.Deserialize<string>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                        ?? throw new Exception("Empty or invalid response from content service.");
             }
+            catch(InvalidDataException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating news article via external service");

@@ -138,6 +138,11 @@ namespace QLN.Common.DTO_s
         public int Order { get; set; }
     }
 
+    public class AttributeData
+    {
+        public Dictionary<string, string> Values { get; set; } = new();
+    }
+
     public enum AdTypeEnum
     {
         P2P,

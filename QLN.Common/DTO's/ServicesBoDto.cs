@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s
 {
     public class ServiceAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
@@ -18,7 +18,7 @@ namespace QLN.Common.DTO_s
         public string Certificate { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateExpiry { get; set; }
         public List<ImageDto>? ImageUpload { get; set; }
@@ -42,29 +42,30 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceAdPaymentSummaryDto
     {
-        public Guid AddId { get; set; }
+        public long AddId { get; set; }
         public string? AddTitle { get; set; }
         public string? UserName { get; set; }
         public string? EmailAddress { get; set; }
         public string? Mobile{ get;set; }
         public string? SubscriptionPlan { get; set; }
         public string? WhatsappNumber { get; set; }
-        public string? StartDate { get; set; }
-        public string? EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public ServiceStatus? Status { get; set; }
         public string? OrderId { get; set; }
         public decimal? Amount { get; set; }
-      
+        public DateTime CreatedAt { get; set; }
+
     }
     public class ServiceP2PAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
        public string ProductType { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Mobile { get; set; } = string.Empty;
         public string Whatsapp { get; set; } = string.Empty;
-        public string Amount { get; set; } = string.Empty;
+        public decimal Amount { get; set; } 
         public string StartDate { get; set; } = string.Empty;
         public string EndDate { get; set; } = string.Empty;
         public string Views { get; set; } = string.Empty;
@@ -72,7 +73,7 @@ namespace QLN.Common.DTO_s
        
         public ServiceStatus? Status { get; set; }
        
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt{ get; set; }
         public DateTime? DatePublished { get; set; }
      
         public string? OrderId { get; set; }
@@ -84,7 +85,7 @@ namespace QLN.Common.DTO_s
     }
     public class ServiceSubscriptionAdSummaryDto
     {
-        public Guid Id { get; set; }
+        public long Id { get; set; }
         public string UserId { get; set; } = string.Empty;
         public string AdTitle { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
@@ -93,7 +94,7 @@ namespace QLN.Common.DTO_s
         public ServiceStatus? Status { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }
-        public DateTime CreationDate { get; set; }
+        public DateTime CreatedAt { get; set; }
         public DateTime? DatePublished { get; set; }
         public DateTime? DateExpiry { get; set; }
         public string? Favorites { get; set; }

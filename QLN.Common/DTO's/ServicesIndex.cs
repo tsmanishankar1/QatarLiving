@@ -108,7 +108,7 @@ namespace QLN.Common.DTO_s
         public bool IsRefreshed { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
-        public DateTime? RefreshExpiryDate { get; set; }
+        public DateTime? LastRefreshedOn { get; set; }
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public bool IsPriceOnRequest { get; set; }
@@ -130,6 +130,15 @@ namespace QLN.Common.DTO_s
 
         [SearchableField(IsFilterable = true)]
         public string? Comments { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Availability { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Duration { get; set; }
+
+        [SearchableField(IsFilterable = true)]
+        public string? Reservation { get; set; }
     }
 
     public class ServiceImageInfo

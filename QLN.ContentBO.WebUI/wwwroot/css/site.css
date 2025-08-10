@@ -252,7 +252,17 @@ a, .btn-link {
         height: 40px;
         cursor: pointer;
     }
-
+.custom-edit-button {
+    background-color: white;
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+}
 
     /* Event razor styles */
 
@@ -761,7 +771,7 @@ a, .btn-link {
 }
 
 .classified-table {
-    width: 500px;
+    width: 600px;
     border-collapse: separate;
     border-spacing: 0;
     border-radius: 8px;
@@ -2280,7 +2290,7 @@ a, .btn-link {
     padding: 3px 12px;
     background-color: #fff;
     min-height: 48px;
-    min-width: 230px;
+    width: 230px;
     cursor: pointer;
     transition: border-color 0.3s;
 }
@@ -2511,8 +2521,37 @@ a, .btn-link {
     color: #646464;
 }
 
-/*mud data grid header */
+ .no-underline .mud-input-underline::before,
+    .no-underline .mud-input-underline::after {
+        border-bottom: none !important;
+    }
 
-.mud-data-grid .mud-table-cell .column-header {
+    .classified-field .mud-input-label {
+        color: #A1A1A1 !important;
+    }
+    .classified-text-field {
+    width: 330px;
+    height: 60px;
+    border-radius: 6px;
+    border: 1px solid #D0D5DD !important;
+    padding: 10px !important;
+}
+ .classified-datepicker-field {
+    height: 60px;
+}
+
+
+      .sticky-search-bar {
+        position: sticky;
+        top: 0; 
+        z-index: 10; 
+        background-color: #FAFAFA; 
+        padding: 10px 0;
+    }
+
+     .preloved-select.mud-input-label {
+        color: #A1A1A1 !important;
+    }
+    .mud-data-grid .mud-table-cell .column-header {
     white-space: nowrap !important;
 }
