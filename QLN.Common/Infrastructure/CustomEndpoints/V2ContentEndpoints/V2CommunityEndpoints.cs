@@ -531,7 +531,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
  .Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
  .Produces(StatusCodes.Status500InternalServerError);
 
-            group.MapGet("/getCommentsByPostId", async Task<IResult> (
+            group.MapGet("/getCommentsByPost/{postId:guid}", async Task<IResult> (
 Guid postId,
 string? userId,
 int? page,
@@ -543,7 +543,7 @@ CancellationToken ct) =>
                 return Results.Ok(comments);
             })
                 .ExcludeFromDescription()
-.WithName("GetCommunityPostByComments")
+.WithName("GetCommunityPostBy")
 .WithTags("V2Community")
 .WithSummary("Get all comments for a community post")
 .WithDescription("Retrieves a paginated list of comments (with replies) by community post ID.")
