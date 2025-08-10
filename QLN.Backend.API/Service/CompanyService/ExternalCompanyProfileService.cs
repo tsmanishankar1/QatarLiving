@@ -292,13 +292,11 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task<List<CompanySubscriptionDto>> GetCompanySubscriptions(
-            CompanySubscriptionFilter filter,
-            CancellationToken cancellationToken = default)
+        public async Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter filter, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = "/api/companyprofile/companysubscriptions";
+                var url = "/api/companyprofile/viewstores";
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Company.CompanyServiceAppId, url);
                 request.Content = new StringContent(JsonSerializer.Serialize(filter), Encoding.UTF8, "application/json");
 
@@ -313,7 +311,23 @@ namespace QLN.Backend.API.Service.CompanyService
                 response.EnsureSuccessStatusCode();
 
                 var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-                return JsonSerializer.Deserialize<List<CompanySubscriptionDto>>(rawJson) ?? new List<CompanySubscriptionDto>();
+                _logger.LogInformation("Raw JSON from internal API: {RawJson}", rawJson);
+
+                return JsonSerializer.Deserialize<CompanySubscriptionListResponseDto>(
+                    rawJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true } 
+                ) ?? new CompanySubscriptionListResponseDto
+                {
+                    Records = new List<CompanySubscriptionDto>(),
+                    TotalRecords = 0,
+                    PageNumber = filter.PageNumber ?? 1,
+                    PageSize = filter.PageSize ?? 12,
+                    TotalPages = 0
+                };
+            }
+            catch(InvalidDataException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

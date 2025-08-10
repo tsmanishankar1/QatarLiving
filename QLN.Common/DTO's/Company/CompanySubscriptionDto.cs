@@ -1,7 +1,9 @@
-﻿using System;
+﻿using QLN.Common.Infrastructure.Subscriptions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace QLN.Common.DTO_s.Company
@@ -13,14 +15,28 @@ namespace QLN.Common.DTO_s.Company
         public string Mobile { get; set; }
         public string WhatsApp { get; set; }
         public string WebUrl { get; set; }
-        public string SubscriptionStatus { get; set; }
-        public DateTime SubscriptionStartDate { get; set; }
-        public DateTime SubscriptionEndDate { get; set; }
+        public SubscriptionStatus Status { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        [JsonIgnore]
+        public string? SubscriptionType { get; set; }
     }
     public class CompanySubscriptionFilter
     {
-        public string ProductName { get; set; }
+        public string? SubscriptionType { get; set; }
         public DateTime? StartDate { get; set; } 
-        public DateTime? EndDate { get; set; }  
+        public DateTime? EndDate { get; set; }
+        public string? SearchTerm { get; set; } 
+        public string? SortBy { get; set; }
+        public int? PageNumber { get; set; }
+        public int? PageSize { get; set; }
+    }
+    public class CompanySubscriptionListResponseDto
+    {
+        public List<CompanySubscriptionDto> Records { get; set; }
+        public int TotalRecords { get; set; }
+        public int? PageNumber { get; set; }
+        public int? PageSize { get; set; }
+        public int TotalPages { get; set; }
     }
 }

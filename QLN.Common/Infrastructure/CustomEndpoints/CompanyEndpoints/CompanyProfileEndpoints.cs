@@ -772,10 +772,10 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 
             return group;
         }
-        public static RouteGroupBuilder MapCompanySubscriptionExternal(this RouteGroupBuilder group)
+        public static RouteGroupBuilder MapCompanySubscription(this RouteGroupBuilder group)
         {
-            group.MapPost("/companysubscriptions", async Task<Results<
-                Ok<List<CompanySubscriptionDto>>,
+            group.MapPost("/viewstores", async Task<Results<
+                Ok<CompanySubscriptionListResponseDto>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
@@ -807,14 +807,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
             })
             .WithName("GetCompanySubscriptions")
-            .WithTags("Company Subscriptions")
+            .WithTags("Company")
             .WithSummary("Fetch companies with subscriptions")
             .WithDescription("Returns companies joined with their subscriptions based on product and date filters")
-            .Produces<List<CompanySubscriptionDto>>(StatusCodes.Status200OK)
+            .Produces<CompanySubscriptionListResponseDto>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
-
     }
 }

@@ -13,10 +13,12 @@ namespace QLN.Company.MS.Service
     {
         private readonly ILogger<InternalCompanyProfileService> _logger;
         private readonly QLCompanyContext _context;
-        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context)
+        private readonly QLSubscriptionContext _dbContext;
+        public InternalCompanyProfileService(ILogger<InternalCompanyProfileService> logger, QLCompanyContext context, QLSubscriptionContext dbContext)
         {
             _logger = logger;
             _context = context;
+            _dbContext = dbContext;
         }
 
         public async Task<string> CreateCompany(string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
@@ -126,8 +128,8 @@ namespace QLN.Company.MS.Service
 
             if (dto.Vertical == VerticalType.Services)
             {
-                if(dto.IsTherapeuticService == null)
-                throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
+                if (dto.IsTherapeuticService == null)
+                    throw new ArgumentException("IsTherapeuticService must be specified for Vertical 4.");
 
                 if (dto.IsTherapeuticService == true)
                 {
@@ -366,7 +368,7 @@ namespace QLN.Company.MS.Service
                 company.UpdatedBy = userId;
 
                 await _context.SaveChangesAsync(cancellationToken);
-                return "Company Profile Approved Successfully";
+                return "Company Status Changed Successfully";
             }
             catch (KeyNotFoundException)
             {
@@ -445,7 +447,7 @@ namespace QLN.Company.MS.Service
                     Items = items
                 };
             }
-            catch(InvalidDataException ex)
+            catch (InvalidDataException ex)
             {
                 throw;
             }
@@ -455,34 +457,90 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
-        public async Task<List<CompanySubscriptionDto>> GetCompanySubscriptions(
-            CompanySubscriptionFilter filter,
-            CancellationToken cancellationToken = default)
+        public async Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var query = from c in _context.Companies
-                            //join s in _context.Subscriptions on c.CompanyId equals s.CompanyId
-                            //where (string.IsNullOrEmpty(filter.ProductName) || s.ProductName == filter.ProductName)
-                               //&& (!filter.StartDate.HasValue || s.StartDate >= filter.StartDate.Value)
-                               //&& (!filter.EndDate.HasValue || s.EndDate <= filter.EndDate.Value)
-                            select new CompanySubscriptionDto
-                            {
-                                CompanyName = c.CompanyName,
-                                //Email = c.Email,
-                                //Mobile = c.Mobile,
-                                //WhatsApp = c.WhatsApp,
-                                ////WebUrl = c.WebUrl,
-                                //SubscriptionStatus = s.Status,
-                                //SubscriptionStartDate = s.StartDate,
-                                //SubscriptionEndDate = s.EndDate
-                            };
+                int pageNumber = request.PageNumber ?? 1;
+                int pageSize = request.PageSize ?? 12;
+                if (pageNumber <= 0)
+                    throw new InvalidDataException("PageNumber must be greater than 0.");
 
-                return await query.ToListAsync(cancellationToken);
+                if (pageSize <= 0)
+                    throw new InvalidDataException("PageSize must be greater than 0.");
+                _logger.LogInformation("Starting GetCompanySubscriptionsAsync with request: {@Request}", request);
+
+                var companies = await _context.Companies.ToListAsync(cancellationToken);
+                var subscriptions = await _dbContext.Subscriptions.ToListAsync(cancellationToken);
+
+                var joined = (from c in companies
+                              join s in subscriptions on c.Id equals s.CompanyId
+                              select new CompanySubscriptionDto
+                              {
+                                  CompanyName = c.CompanyName,
+                                  Email = c.Email,
+                                  Mobile = c.PhoneNumber,
+                                  WhatsApp = c.WhatsAppNumber,
+                                  WebUrl = c.WebsiteUrl,
+                                  Status = s.Status,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate,
+                                  SubscriptionType = s.ProductName
+                              }).AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(request.SubscriptionType))
+                {
+                    joined = joined.Where(j =>
+                        j.SubscriptionType.Equals(request.SubscriptionType, StringComparison.OrdinalIgnoreCase));
+                    _logger.LogInformation("Filtered by product name: {ProductName}", request.SubscriptionType);
+                }
+                if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+                {
+                    var searchTermLower = request.SearchTerm.Trim().ToLower();
+
+                    joined = joined.Where(j =>
+                        (!string.IsNullOrEmpty(j.CompanyName) && j.CompanyName.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.Email) && j.Email.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.Mobile) && j.Mobile.ToLower().Contains(searchTermLower)) ||
+                        (!string.IsNullOrEmpty(j.WhatsApp) && j.WhatsApp.ToLower().Contains(searchTermLower))
+                    );
+
+                    _logger.LogInformation("Filtered by search term: {SearchTerm}", request.SearchTerm);
+                }
+
+                if (request.StartDate.HasValue && request.EndDate.HasValue)
+                {
+                    joined = joined.Where(j =>
+                        j.StartDate >= request.StartDate.Value &&
+                        j.EndDate <= request.EndDate.Value);
+                    _logger.LogInformation("Filtered by date range: {Start} - {End}", request.StartDate, request.EndDate);
+                }
+
+                if (request.SortBy?.ToLower() == "desc")
+                    joined = joined.OrderByDescending(j => j.EndDate);
+                else
+                    joined = joined.OrderBy(j => j.EndDate);
+
+                int totalRecords = joined.Count();
+                int totalPages = (int)Math.Ceiling((decimal)totalRecords / pageSize);
+
+                var paged = joined
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                return new CompanySubscriptionListResponseDto
+                {
+                    Records = paged,
+                    TotalRecords = totalRecords,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = totalPages
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching company subscriptions");
+                _logger.LogError(ex, "Error in GetCompanySubscriptionsAsync");
                 throw;
             }
         }

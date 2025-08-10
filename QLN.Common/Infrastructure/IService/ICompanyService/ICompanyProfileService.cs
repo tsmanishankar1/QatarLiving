@@ -12,6 +12,6 @@ namespace QLN.Common.Infrastructure.IService.ICompanyService
         Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default);
         Task<string> ApproveCompany(string userId, CompanyProfileApproveDto dto, CancellationToken cancellationToken = default);
         Task<List<Company>> GetCompaniesByTokenUser(string userId, CancellationToken cancellationToken = default);
-        Task<List<CompanySubscriptionDto>> GetCompanySubscriptions(CompanySubscriptionFilter filter, CancellationToken cancellationToken = default);
+        Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter filter, CancellationToken cancellationToken = default);
     }
 }

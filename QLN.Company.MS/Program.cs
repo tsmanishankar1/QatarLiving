@@ -24,6 +24,8 @@ builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
 #endregion
 var app = builder.Build();
 
