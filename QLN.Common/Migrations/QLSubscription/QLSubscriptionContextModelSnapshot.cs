@@ -25,32 +25,32 @@ namespace QLN.Common.Migrations.QLSubscription
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Product", b =>
                 {
                     b.Property<string>("ProductCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Currency")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
-
-                    b.Property<int?>("ParentVertical")
-                        .HasColumnType("integer");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ProductName")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("ProductType")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -89,13 +89,21 @@ namespace QLN.Common.Migrations.QLSubscription
 
                     b.Property<string>("ProductCode")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SubVertical")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -142,8 +150,13 @@ namespace QLN.Common.Migrations.QLSubscription
 
                     b.Property<string>("ProductCode")
                         .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
@@ -151,7 +164,10 @@ namespace QLN.Common.Migrations.QLSubscription
                     b.Property<int>("Status")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("SubscriptionId")
+                    b.Property<int?>("SubVertical")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SubscriptionId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -181,10 +197,46 @@ namespace QLN.Common.Migrations.QLSubscription
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Product", b =>
                 {
-                    b.OwnsOne("QLN.Common.Infrastructure.Model.Product.Constraints#Dictionary", "Constraints", b1 =>
+                    b.OwnsOne("QLN.Common.DTO_s.Subscription.ProductConstraints", "Constraints", b1 =>
                         {
                             b1.Property<string>("ProductCode")
-                                .HasColumnType("character varying(30)");
+                                .HasColumnType("character varying(50)");
+
+                            b1.Property<int?>("AdsBudget")
+                                .HasColumnType("integer");
+
+                            b1.Property<TimeSpan?>("Duration")
+                                .HasColumnType("interval");
+
+                            b1.Property<int?>("FeaturedBudget")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool?>("IsAddOn")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool?>("PayToFeature")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool?>("PayToPromote")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool?>("PayToPublish")
+                                .HasColumnType("boolean");
+
+                            b1.Property<int?>("PromotedBudget")
+                                .HasColumnType("integer");
+
+                            b1.Property<int?>("RefreshBudgetPerAd")
+                                .HasColumnType("integer");
+
+                            b1.Property<int?>("RefreshBudgetPerDay")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Remarks")
+                                .HasColumnType("text");
+
+                            b1.Property<string>("Scope")
+                                .HasColumnType("text");
 
                             b1.HasKey("ProductCode");
 
@@ -196,16 +248,93 @@ namespace QLN.Common.Migrations.QLSubscription
                                 .HasForeignKey("ProductCode");
                         });
 
-                    b.Navigation("Constraints")
-                        .IsRequired();
+                    b.Navigation("Constraints");
                 });
 
             modelBuilder.Entity("QLN.Common.Infrastructure.Model.Subscription", b =>
                 {
-                    b.OwnsOne("System.Collections.Generic.Dictionary<string, string>", "Quota", b1 =>
+                    b.OwnsOne("QLN.Common.DTO_s.Subscription.SubscriptionQuota", "Quota", b1 =>
                         {
                             b1.Property<Guid>("SubscriptionId")
                                 .HasColumnType("uuid");
+
+                            b1.Property<int>("AdsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool>("CanFeatureAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPostSocialMedia")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPromoteAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPublishAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanRefreshAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<int>("DailyRefreshesAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyRefreshesUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("FeaturesUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<DateTime>("LastDailyReset")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime>("LastRefreshUsed")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime>("LastUsageUpdate")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<int?>("ListingsPerL2Category")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("PromotionsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("RefreshInterval")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<int>("RefreshIntervalHours")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("RefreshesPerAdAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("RefreshesPerAdUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Scope")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<int>("SocialMediaPostsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("SocialMediaPostsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalAdsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalFeaturesAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalPromotionsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Vertical")
+                                .IsRequired()
+                                .HasColumnType("text");
 
                             b1.HasKey("SubscriptionId");
 
@@ -215,6 +344,151 @@ namespace QLN.Common.Migrations.QLSubscription
 
                             b1.WithOwner()
                                 .HasForeignKey("SubscriptionId");
+
+                            b1.OwnsOne("QLN.Common.DTO_s.Subscription.SocialMediaQuota", "SocialMedia", b2 =>
+                                {
+                                    b2.Property<Guid>("SubscriptionQuotaSubscriptionId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("PostsAllowed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("PostsUsed")
+                                        .HasColumnType("integer");
+
+                                    b2.HasKey("SubscriptionQuotaSubscriptionId");
+
+                                    b2.ToTable("Subscriptions");
+
+                                    b2.ToJson("SocialMedia");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("SubscriptionQuotaSubscriptionId");
+                                });
+
+                            b1.Navigation("SocialMedia");
+                        });
+
+                    b.Navigation("Quota")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("QLN.Common.Infrastructure.Model.UserAddOn", b =>
+                {
+                    b.OwnsOne("QLN.Common.DTO_s.Subscription.SubscriptionQuota", "Quota", b1 =>
+                        {
+                            b1.Property<Guid>("UserAddOnId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("AdsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<bool>("CanFeatureAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPostSocialMedia")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPromoteAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanPublishAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<bool>("CanRefreshAds")
+                                .HasColumnType("boolean");
+
+                            b1.Property<int>("DailyRefreshesAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("DailyRefreshesUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("FeaturesUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<DateTime>("LastDailyReset")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime>("LastRefreshUsed")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime>("LastUsageUpdate")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<int?>("ListingsPerL2Category")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("PromotionsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("RefreshInterval")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<int>("RefreshIntervalHours")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("RefreshesPerAdAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("RefreshesPerAdUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Scope")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<int>("SocialMediaPostsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("SocialMediaPostsUsed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalAdsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalFeaturesAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<int>("TotalPromotionsAllowed")
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Vertical")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.HasKey("UserAddOnId");
+
+                            b1.ToTable("UserAddOns");
+
+                            b1.ToJson("Quota");
+
+                            b1.WithOwner()
+                                .HasForeignKey("UserAddOnId");
+
+                            b1.OwnsOne("QLN.Common.DTO_s.Subscription.SocialMediaQuota", "SocialMedia", b2 =>
+                                {
+                                    b2.Property<Guid>("SubscriptionQuotaUserAddOnId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("PostsAllowed")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("PostsUsed")
+                                        .HasColumnType("integer");
+
+                                    b2.HasKey("SubscriptionQuotaUserAddOnId");
+
+                                    b2.ToTable("UserAddOns");
+
+                                    b2.ToJson("SocialMedia");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("SubscriptionQuotaUserAddOnId");
+                                });
+
+                            b1.Navigation("SocialMedia");
                         });
 
                     b.Navigation("Quota")

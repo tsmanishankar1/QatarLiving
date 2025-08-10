@@ -29,9 +29,29 @@ namespace QLN.Classified.MS.Service.Services
             _dbContext = dbContext;
             _qLSubscriptionContext = qLSubscriptionContext;
         }
-        public async Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
-            var allCategories = await _dbContext.Categories
+            var query = _dbContext.Categories.AsQueryable();
+
+            if (!string.IsNullOrEmpty(vertical))
+            {
+                if (!Enum.TryParse<Vertical>(vertical, ignoreCase: true, out var verticalEnum))
+                {
+                    return new List<CategoryDto>();
+                }
+                query = query.Where(c => c.Vertical == verticalEnum);
+            }
+
+            if (!string.IsNullOrEmpty(subVertical))
+            {
+                if (!Enum.TryParse<SubVertical>(subVertical, ignoreCase: true, out var subVerticalEnum))
+                {
+                    return new List<CategoryDto>();
+                }
+                query = query.Where(c => c.SubVertical == subVerticalEnum);
+            }
+
+            var allCategories = await query
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
@@ -206,7 +226,6 @@ namespace QLN.Classified.MS.Service.Services
                 }
             }
         }
-
         private Category MapField(FieldDto dto, Category parent, Vertical verticalEnum, SubVertical? subVerticalEnum)
         {
             var category = new Category
@@ -607,36 +626,44 @@ namespace QLN.Classified.MS.Service.Services
         }
         public async Task<string> DeleteServiceAdById(string userId, long id, CancellationToken cancellationToken = default)
         {
-            var ad = await _dbContext.Services
-                .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
-
-            if (ad == null)
-                throw new InvalidDataException("Active Service Ad not found.");
-            ad.IsActive = false;
-            ad.UpdatedAt = DateTime.UtcNow;
-            ad.UpdatedBy = userId;
-
-            await _dbContext.SaveChangesAsync(cancellationToken);
-
-            var upsertRequest = await IndexServiceToAzureSearch(ad, cancellationToken);
-            if (upsertRequest != null)
+            try
             {
-                var message = new IndexMessage
+                var ad = await _dbContext.Services
+                    .FirstOrDefaultAsync(s => s.Id == id && s.IsActive, cancellationToken);
+
+                if (ad == null)
+                    throw new InvalidDataException("Active Service Ad not found.");
+
+                ad.IsActive = false;
+                ad.UpdatedAt = DateTime.UtcNow;
+                ad.UpdatedBy = userId;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+
+                var upsertRequest = await IndexServiceToAzureSearch(ad, cancellationToken);
+                if (upsertRequest != null)
                 {
-                    Action = "Upsert",
-                    Vertical = ConstantValues.IndexNames.ServicesIndex,
-                    UpsertRequest = upsertRequest
-                };
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ServicesIndex,
+                        UpsertRequest = upsertRequest
+                    };
 
-                await _dapr.PublishEventAsync(
-                    pubsubName: ConstantValues.PubSubName,
-                    topicName: ConstantValues.PubSubTopics.IndexUpdates,
-                    data: message,
-                    cancellationToken: cancellationToken
-                );
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "Service Ad soft-deleted successfully.";
             }
-
-            return "Service Ad soft-deleted successfully.";
+            catch (Exception ex)
+            {
+                throw; 
+            }
         }
         public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
@@ -655,68 +682,92 @@ namespace QLN.Classified.MS.Service.Services
                     foreach (var filter in dto.Filters)
                     {
                         string key = filter.Key.ToLower();
-                        string value = filter.Value.Trim();
+                        var valueElement = filter.Value;
 
-                        if (key == "categoryName")
+                        if (key == "categoryname")
                         {
-                            query = query.Where(s => s.CategoryName == value);
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.CategoryName == valueElement.GetString());
                         }
-                        else if (key == "l1categoryName")
+                        else if (key == "l1categoryname")
                         {
-                            query = query.Where(s => s.L1CategoryName == value);
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.L1CategoryName == valueElement.GetString());
                         }
-                        else if (key == "l2categoryName")
+                        else if (key == "l2categoryname")
                         {
-                            query = query.Where(s => s.L2CategoryName == value);
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                                query = query.Where(s => s.L2CategoryName == valueElement.GetString());
                         }
-                        else if (key == "price")
+                        else if (key == "minprice")
                         {
-                            var parts = value.Split('-', StringSplitOptions.RemoveEmptyEntries);
-
-                            if (parts.Length == 2)
+                            if (valueElement.TryGetDecimal(out var minPrice))
                             {
-                                bool minParsed = decimal.TryParse(parts[0], out var minPrice);
-                                bool maxParsed = decimal.TryParse(parts[1], out var maxPrice);
-
-                                if (minParsed && maxParsed)
-                                {
-                                    query = query.Where(s => s.Price >= minPrice && s.Price <= maxPrice);
-                                }
-                                else if (minParsed)
-                                {
-                                    query = query.Where(s => s.Price >= minPrice);
-                                }
-                                else if (maxParsed)
-                                {
-                                    query = query.Where(s => s.Price <= maxPrice);
-                                }
-                            }
-                            else if (parts.Length == 1 && decimal.TryParse(parts[0], out var exactPrice))
-                            {
-                                query = query.Where(s => s.Price == exactPrice);
+                                query = query.Where(s => s.Price >= minPrice);
                             }
                         }
-                        else if (key == "adType")
+                        else if (key == "maxprice")
                         {
-                            if (Enum.TryParse<ServiceAdType>(value, true, out var adType))
+                            if (valueElement.TryGetDecimal(out var maxPrice))
+                            {
+                                query = query.Where(s => s.Price <= maxPrice);
+                            }
+                        }
+                        else if (key == "isfeatured")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isFeatured = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsFeatured == isFeatured);
+                            }
+                        }
+                        else if (key == "ispromoted")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isPromoted = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsPromoted == isPromoted);
+                            }
+                        }
+                        else if (key == "isrefreshed")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.True || valueElement.ValueKind == JsonValueKind.False)
+                            {
+                                bool isRefreshed = valueElement.GetBoolean();
+                                query = query.Where(s => s.IsRefreshed == isRefreshed);
+                            }
+                        }
+                        else if (key == "adtype")
+                        {
+                            if (valueElement.ValueKind == JsonValueKind.String &&
+                                Enum.TryParse<ServiceAdType>(valueElement.GetString(), true, out var adType))
                             {
                                 query = query.Where(s => s.AdType == adType);
                             }
                         }
                         else if (key == "status")
                         {
-                            if (Enum.TryParse<ServiceStatus>(value, true, out var status))
+                            if (valueElement.ValueKind == JsonValueKind.String &&
+                                Enum.TryParse<ServiceStatus>(valueElement.GetString(), true, out var status))
                             {
                                 query = query.Where(s => s.Status == status);
                             }
                         }
                         else if (key == "location")
                         {
-                            query = query.Where(s => s.Location.ToLower().Contains(value.ToLower()));
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                            {
+                                string location = valueElement.GetString().ToLower();
+                                query = query.Where(s => s.Location.ToLower().Contains(location));
+                            }
                         }
                         else if (key == "createdby")
                         {
-                            query = query.Where(s => s.CreatedBy == value);
+                            if (valueElement.ValueKind == JsonValueKind.String)
+                            {
+                                string createdBy = valueElement.GetString();
+                                query = query.Where(s => s.CreatedBy == createdBy);
+                            }
                         }
                     }
                 }
@@ -756,7 +807,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new Exception("An error occurred while fetching all services.", ex);
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -766,6 +817,7 @@ namespace QLN.Classified.MS.Service.Services
 
             serviceAd.IsPromoted = request.IsPromoted;
             serviceAd.PromotedExpiryDate = request.IsPromoted ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(ct);
@@ -790,7 +842,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -800,6 +852,7 @@ namespace QLN.Classified.MS.Service.Services
 
             serviceAd.IsFeatured = request.IsFeature;
             serviceAd.FeaturedExpiryDate = request.IsFeature ? DateTime.UtcNow.AddDays(7) : null;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             _dbContext.Services.Update(serviceAd);
@@ -826,7 +879,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             var serviceAd = await _dbContext.Services
                 .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
@@ -835,6 +888,7 @@ namespace QLN.Classified.MS.Service.Services
                 throw new KeyNotFoundException("Service Ad not found.");
             serviceAd.LastRefreshedOn = request.IsRefreshed ? DateTime.UtcNow.AddDays(7) : null;
             serviceAd.IsRefreshed = serviceAd.LastRefreshedOn.HasValue && serviceAd.LastRefreshedOn.Value > DateTime.UtcNow;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             _dbContext.Services.Update(serviceAd);
@@ -861,32 +915,50 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(long id, CancellationToken ct)
+        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
-            var serviceAd = await _dbContext.Services.FirstOrDefaultAsync(s => s.Id == id && s.IsActive, ct);
+            var serviceAd = await _dbContext.Services
+                .FirstOrDefaultAsync(s => s.Id == request.ServiceId && s.IsActive, ct);
+
             if (serviceAd == null)
                 throw new KeyNotFoundException("Service Ad not found.");
 
-            var conflictExists = await _dbContext.Services.AnyAsync(s =>
-                s.Id != id &&
-                s.CreatedBy == serviceAd.CreatedBy &&
-                s.L2CategoryId == serviceAd.L2CategoryId &&
-                s.IsActive &&
-                s.Status == ServiceStatus.Published, ct);
-
-            if (conflictExists)
+            if (request.Status == ServiceStatus.Published)
             {
-                throw new ConflictException("You already have an active ad in this category. Please unpublish or remove it before posting another.");
+                var conflictExists = await _dbContext.Services.AnyAsync(s =>
+                    s.Id != request.ServiceId &&
+                    s.CreatedBy == serviceAd.CreatedBy &&
+                    s.L2CategoryId == serviceAd.L2CategoryId &&
+                    s.IsActive &&
+                    s.Status == ServiceStatus.Published, ct);
+
+                if (conflictExists)
+                {
+                    throw new ConflictException(
+                        "You already have an active ad in this category. Please unpublish or remove it before posting another."
+                    );
+                }
+
+                if (serviceAd.Status == ServiceStatus.Published)
+                    throw new InvalidDataException("Service is already published.");
+
+                serviceAd.Status = ServiceStatus.Published;
+                serviceAd.PublishedDate = DateTime.UtcNow;
+            }
+            else if (request.Status == ServiceStatus.Unpublished)
+            {
+                if (serviceAd.Status == ServiceStatus.Unpublished)
+                    throw new InvalidDataException("Service is already unpublished.");
+
+                serviceAd.Status = ServiceStatus.Unpublished;
+                serviceAd.PublishedDate = null; 
+            }
+            else
+            {
+                throw new InvalidDataException("Invalid status. Only Published (3) or Unpublished (4) are allowed.");
             }
 
-            if (serviceAd.Status == ServiceStatus.Published)
-                throw new InvalidDataException("Service is already published.");
-
-            if (serviceAd.Status != ServiceStatus.Unpublished)
-                throw new InvalidDataException("Only unpublished services can be published.");
-
-            serviceAd.Status = ServiceStatus.Published;
-            serviceAd.PublishedDate = DateTime.UtcNow;
+            serviceAd.UpdatedBy = uid;
             serviceAd.UpdatedAt = DateTime.UtcNow;
 
             await _dbContext.SaveChangesAsync(ct);

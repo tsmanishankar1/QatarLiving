@@ -13,7 +13,7 @@ namespace QLN.Common.DTO_s.Subscription
         public int? PromotedBudget { get; set; } // Promoted ads count
         public int? RefreshBudgetPerDay { get; set; } // Refreshes per day (if applicable)
         public int? RefreshBudgetPerAd { get; set; } // Refresh budget per ad (optional)
-        public string? Duration { get; set; } // "1 Month", "6 Months", "12 Months", etc.
+        public TimeSpan? Duration { get; set; } // "1 Month", "6 Months", "12 Months", etc.
         public string? Scope { get; set; } // e.g., "All", "Per L2-category", or specific category
         public bool? IsAddOn { get; set; } // True if it's an addon
         public bool? PayToPublish { get; set; } // Used for pay2publish
