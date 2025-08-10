@@ -16,6 +16,7 @@ namespace QLN.Common.DTO_s
         public List<ClassifiedsCollectiblesIndex>? ClassifiedsCollectiblesItem { get; set; }
         public List<ClassifiedsDealsIndex>? ClassifiedsDealsItem { get; set; }
         public List<ServicesIndex>? ServicesItems { get; set; }
+        public List<ClassifiedStoresIndex>? ClassifiedStores { get; set; }
     }
 
     /// <summary>
@@ -35,5 +36,7 @@ namespace QLN.Common.DTO_s
         public ClassifiedsDealsIndex? ClassifiedsDealsItem { get; set; }
         [JsonPropertyName("servicesItem")]
         public ServicesIndex? ServicesItem { get; set; }
+        [JsonPropertyName("classifiedStores")]
+        public ClassifiedStoresIndex? ClassifiedStores { get; set; }
     }
 }

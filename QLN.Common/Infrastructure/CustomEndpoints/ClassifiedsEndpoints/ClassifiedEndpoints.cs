@@ -1,27 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Classifieds;
-using System.Security.Claims;
-using QLN.Common.Infrastructure.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
+using QLN.Common.DTO_s.ClassifiedsBo;
+using QLN.Common.Infrastructure.Constants;
+using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
-using QLN.Common.Infrastructure.Utilities;
-using QLN.Common.Infrastructure.CustomException;
-using System.ComponentModel.DataAnnotations;
 using QLN.Common.Infrastructure.IService.ISearchService;
-using QLN.Common.Infrastructure.Constants;
-using Microsoft.AspNetCore.Authorization;
-using Azure;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Utilities;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
+using System.Security.Claims;
 using System.Text.Json;
 using static QLN.Common.DTO_s.ClassifiedsIndex;
-using System.Net.Http;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
 {
@@ -29,6 +30,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
     {
         public static RouteGroupBuilder MapClassifiedEndpoints(this RouteGroupBuilder group)
         {
+
+
             group.MapPost("/classifieds/search", async (
                 [FromBody] ClassifiedsSearchRequest req,
                 [FromServices] ISearchService svc,
@@ -58,6 +61,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                     "items" => ConstantValues.IndexNames.ClassifiedsItemsIndex,
                     "preloved" => ConstantValues.IndexNames.ClassifiedsPrelovedIndex,
                     "collectibles" => ConstantValues.IndexNames.ClassifiedsCollectiblesIndex,
+                    "stores" => ConstantValues.IndexNames.ClassifiedStoresIndex,
                     _ => null
                 };
                 var request = new CommonSearchRequest
@@ -3695,8 +3699,144 @@ CancellationToken token) =>
             .WithDescription("Fetches every ClassifiedsIndex document where IsFeatured = true.")
             .Produces<IEnumerable<ClassifiedsIndex>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);        
+            return group;
+        }
 
+        public static RouteGroupBuilder MapClassifiedFOStoresEndpoints(this RouteGroupBuilder group)
+        {
+            group.MapPost("/stores-search", async (
+                [FromBody] ClassifiedsSearchRequest req,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac
+            ) =>
+            {
+                var logger = logFac.CreateLogger("ClassifiedStoresEndpoints");
+
+                var validationContext = new ValidationContext(req);
+                var validationResults = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(req, validationContext, validationResults, validateAllProperties: true))
+                {
+                    var errorMessages = string.Join("; ", validationResults.Select(v => v.ErrorMessage));
+                    logger.LogWarning("Validation failed: {Errors}", errorMessages);
+
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Validation Failed",
+                        Detail = errorMessages,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+
+                string indexName = ConstantValues.IndexNames.ClassifiedStoresIndex;
+
+                var request = new CommonSearchRequest
+                {
+                    Text = req.Text,
+                    Filters = req.Filters,
+                    OrderBy = req.OrderBy,
+                    PageNumber = req.PageNumber,
+                    PageSize = req.PageSize
+                };
+                if (indexName == null)
+                {
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid SubVertical",
+                        Detail = $"Unsupported subVertical value: '{req.SubVertical}'",
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+
+                try
+                {
+                    var results = await svc.GetAllAsync(indexName, request);
+                    if (results == null)
+                        return Results.NoContent();
+                    if (results.ClassifiedStores != null)
+                    {
+                        var response = new ClassifiedStoreResponse
+                        {
+                             Stores = results.ClassifiedStores
+        .GroupBy(store => new {
+            store.CompanyId,
+            store.SubscriptionId,
+            store.CompanyName,
+            store.ContactNumber,
+            store.Email,
+            store.ImageUrl,
+            store.BannerUrl,
+            store.WebsiteUrl,
+            store.Locations
+        })
+        .Select(group => new StoresGroup
+        {
+            CompanyId = Guid.Parse(group.Key.CompanyId),
+            SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
+            CompanyName = group.Key.CompanyName,
+            ContactNumber = group.Key.ContactNumber,
+            Email = group.Key.Email,
+            ImageUrl = group.Key.ImageUrl,
+            BannerUrl = group.Key.BannerUrl,
+            WebsiteUrl = group.Key.WebsiteUrl,
+            Locations = group.Key.Locations,
+            ProductCount = group.Count(),
+            Products = group.Select(g => new ProductInfo
+            {
+                ProductId = Guid.Parse(g.ProductId),
+                ProductName = g.ProductName,
+                ProductLogo = g.ProductLogo,
+                ProductPrice = g.ProductPrice,
+                Currency = g.Currency,
+                ProductSummary = g.ProductSummary,
+                ProductDescription = g.ProductDescription,
+                Features = g.Features,
+                Images = g.Images
+            }).ToList()
+        })
+        .ToList()
+                        };
+
+                        return Results.Ok(response);
+                    }
+                    else
+                    {
+                        return Results.NotFound();
+                    }
+                   
+                }
+                catch (ArgumentException ex)
+                {
+                    logger.LogWarning(ex, "Invalid search request");
+                    return Results.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Request",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = $"/api/v2/classifiedfo/stores-search"
+                    });
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unhandled exception during search");
+                    return Results.Problem(
+                        title: "Search Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        instance: $"/api/classifieds/search"
+                    );
+                }
+            })
+            .WithName("SearchClassifiedsStores")
+            .WithTags("Classified")
+            .WithSummary("Classified stores search and products")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
             return group;
         }
 
