@@ -203,10 +203,13 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateArticles(string sourceCategory, int destinationCategory, int destinationSubCategory, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateArticles(bool importImages, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
+            string sourceCategory= "20000040"; // News
+            int destinationCategory = 101; // News
+            int destinationSubCategory = 1001; // News
 
             _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
 
@@ -263,14 +266,14 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateEvents(string sourceCategory, int destinationCategory, bool importImages, CancellationToken cancellationToken)
+        public async Task<IResult> MigrateEvents(bool importImages, CancellationToken cancellationToken)
         {
             int pageSize = 30;
             int page = 1;
 
             _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
 
-            var drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+            var drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
 
             if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
             {
@@ -290,7 +293,7 @@ namespace QLN.DataMigration.Services
                 totalCount += 1;
             }
 
-            await _dataOutputService.SaveContentEventsAsync(migrationItems, destinationCategory, cancellationToken);
+            await _dataOutputService.SaveContentEventsAsync(migrationItems, cancellationToken);
 
             //int.TryParse(drupalItems.Total, out var totalItemCount);
             int totalItemCount = drupalItems.Total;
@@ -301,7 +304,7 @@ namespace QLN.DataMigration.Services
             {
                 page += 1;
                 _logger.LogInformation($"Fetching data for page {page}");
-                drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+                drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
                 migrationItems = new List<ContentEvent>();
                 foreach (var drupalItem in drupalItems.Items)
                 {
@@ -311,7 +314,7 @@ namespace QLN.DataMigration.Services
                     totalCount += 1;
                 }
 
-                await _dataOutputService.SaveContentEventsAsync(migrationItems, destinationCategory, cancellationToken);
+                await _dataOutputService.SaveContentEventsAsync(migrationItems, cancellationToken);
 
                 _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
             }
