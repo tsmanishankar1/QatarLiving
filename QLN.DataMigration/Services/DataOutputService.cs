@@ -71,7 +71,7 @@
 
         public async Task SaveContentNewsAsync(List<ArticleItem> items, int categoryId, int subcategoryId, CancellationToken cancellationToken)
         {
-            var articles = new List<V2NewsArticleDTO>();
+            //var articles = new List<V2NewsArticleDTO>();
 
             foreach (var dto in items)
             {
@@ -100,17 +100,19 @@
                     CoverImageUrl = dto.ImageUrl,
                     UserId = dto.UserName
                 };
-                articles.Add(article);
-            }
+
                 try
                 {
-                    await _newsService.BulkMigrateNewsArticleAsync(articles, cancellationToken);
+                    await _newsService.MigrateNewsArticleAsync(article, cancellationToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError($"Failed to create articles - {ex.Message}");
                     throw new Exception("Unexpected error during article creation", ex);
                 }
+                //articles.Add(article);
+            }
+                
         }
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)

@@ -748,5 +748,10 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

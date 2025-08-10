@@ -307,6 +307,53 @@ namespace QLN.Content.MS.Service.NewsInternalService
             }
         }
 
+        public async Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                string storeName = V2Content.ContentStoreName;
+                string indexKey = V2Content.NewsIndexKey;
+
+                var articleIdStr = article.Id.ToString();
+
+                await _dapr.SaveStateAsync(storeName, articleIdStr, article, cancellationToken: cancellationToken);
+
+                var currentIndex = await _dapr.GetStateAsync<List<string>>(V2Content.ContentStoreName, indexKey, cancellationToken: cancellationToken)
+                                    ?? new List<string>();
+
+                if (!currentIndex.Contains(articleIdStr))
+                {
+                    currentIndex.Add(articleIdStr);
+                    await _dapr.SaveStateAsync(V2Content.ContentStoreName, indexKey, currentIndex, cancellationToken: cancellationToken);
+                }
+
+                var upsertRequest = await IndexNewsToAzureSearch(article, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentNewsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                return "News articles created successfully";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create article");
+                throw new Exception("Unexpected error during article creation", ex);
+            }
+        }
+
         private async Task<string> HandleSlotShiftAsync(int categoryId, int subCategoryId, int desiredSlot, V2NewsArticleDTO newArticle, CancellationToken cancellationToken)
         {
             const int MaxSlotToShift = 50;
@@ -795,7 +842,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                             a.Title.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase))
                         .ToList();
                 }
-               
+
                 int currentPage = page.GetValueOrDefault(1);
                 int currentPageSize = pageSize.GetValueOrDefault(50);
 
@@ -833,7 +880,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 if (existing == null)
                     throw new KeyNotFoundException("News article not found");
 
-                var existingArticles = await _dapr.GetStateAsync<List<string>>(storeName, V2Content.NewsIndexKey, cancellationToken : cancellationToken)
+                var existingArticles = await _dapr.GetStateAsync<List<string>>(storeName, V2Content.NewsIndexKey, cancellationToken: cancellationToken)
                                         ?? new List<string>();
 
                 foreach (var existingId in existingArticles)
@@ -1481,7 +1528,7 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var page = 1;
                 var pageSize = 50;
                 string? search = "";
-                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId,status, search, page, pageSize, cancellationToken);
+                var dtos = await GetArticlesBySubCategoryIdAsync(categoryId, subCategoryId, status, search, page, pageSize, cancellationToken);
                 _logger.LogInformation("Fetched {Count} articles for CategoryId={CategoryId} and SubCategoryId={SubCategoryId}", dtos.Count, categoryId, subCategoryId);
 
                 var articlesInSlot1to4 = dtos
