@@ -77,7 +77,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
 
         protected async Task NavigateToAddItem()
         {
-            var title = $"Add {GetCurrentTabAddButtonText()}";
+            var title = $"Edit {GetCurrentTabAddButtonText()}";
             var options = new DialogOptions
             {
                 CloseOnEscapeKey = true
