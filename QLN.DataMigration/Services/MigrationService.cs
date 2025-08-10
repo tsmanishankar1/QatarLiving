@@ -1,9 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
+using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IFileStorage;
+using QLN.Common.Infrastructure.Utilities;
 using QLN.DataMigration.Models;
 using System;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace QLN.DataMigration.Services
 {
@@ -16,7 +21,7 @@ namespace QLN.DataMigration.Services
 
         public MigrationService(
             ILogger<MigrationService> logger,
-            IDataOutputService dataOutputService, 
+            IDataOutputService dataOutputService,
             IDrupalSourceService drupalSourceService,
             IFileStorageBlobService fileStorageBlobService
             )
@@ -27,13 +32,13 @@ namespace QLN.DataMigration.Services
             _fileStorageBlobService = fileStorageBlobService;
         }
 
-        public async Task<IResult> MigrateCategories(string environment)
+        public async Task<IResult> MigrateCategories(string environment, CancellationToken cancellationToken)
         {
             _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
 
             // first fetch all results from source
 
-            var categories = await _drupalSourceService.GetCategoriesAsync(environment);
+            var categories = await _drupalSourceService.GetCategoriesAsync(environment, cancellationToken);
 
             if (categories == null || categories.Makes == null || !categories.Makes.Any())
             {
@@ -50,7 +55,7 @@ namespace QLN.DataMigration.Services
 
             // then we write the data away to a permanent store (in this case DAPR state)
 
-            await _dataOutputService.SaveCategoriesAsync(itemsCategories);
+            await _dataOutputService.SaveCategoriesAsync(itemsCategories, cancellationToken);
 
             // return that this was successful
 
@@ -60,7 +65,7 @@ namespace QLN.DataMigration.Services
             });
         }
 
-        public async Task<IResult> MigrateItems(string environment, int categoryId)
+        public async Task<IResult> MigrateItems(string environment, int categoryId, CancellationToken cancellationToken)
         {
 
             string sortField = "price";
@@ -71,7 +76,7 @@ namespace QLN.DataMigration.Services
 
             _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
 
-            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, categoryId, sortField, sortOrder, keywords, pageSize, page);
+            var drupalItems = await _drupalSourceService.GetItemsAsync(environment, categoryId, sortField, sortOrder, keywords, pageSize, page, cancellationToken);
 
             if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
             {
@@ -183,7 +188,7 @@ namespace QLN.DataMigration.Services
             // this more closely represents what a columner structure would look
             // like with entity
 
-            await _dataOutputService.SaveMigrationItemsAsync(migrationItems);
+            await _dataOutputService.SaveMigrationItemsAsync(migrationItems, cancellationToken);
 
             _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
 
@@ -195,6 +200,377 @@ namespace QLN.DataMigration.Services
                 Locations = locations,
                 Zones = zones,
                 Offers = offers
+            });
+        }
+
+        public async Task<IResult> MigrateArticles(string sourceCategory, int destinationCategory, int destinationSubCategory, bool importImages, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+
+            _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
+
+            var drupalItems = await _drupalSourceService.GetNewsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<ArticleItem>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationArticle(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentNewsAsync(migrationItems, destinationCategory, destinationSubCategory, cancellationToken);
+
+            int.TryParse(drupalItems.Total, out var totalItemCount);
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetNewsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<ArticleItem>();
+                foreach (var drupalItem in drupalItems.Items)
+                {
+                    await ProcessMigrationArticle(drupalItem, importImages: importImages);
+
+                    migrationItems.Add(drupalItem);
+                    totalCount += 1;
+                }
+
+                await _dataOutputService.SaveContentNewsAsync(migrationItems, destinationCategory, destinationSubCategory, cancellationToken);
+
+                _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateEvents(string sourceCategory, int destinationCategory, bool importImages, CancellationToken cancellationToken)
+        {
+            int pageSize = 30;
+            int page = 1;
+
+            _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
+
+            var drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<ContentEvent>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationEvent(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentEventsAsync(migrationItems, destinationCategory, cancellationToken);
+
+            //int.TryParse(drupalItems.Total, out var totalItemCount);
+            int totalItemCount = drupalItems.Total;
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetEventsFromDrupalAsync(sourceCategory, cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<ContentEvent>();
+                foreach (var drupalItem in drupalItems.Items)
+                {
+                    await ProcessMigrationEvent(drupalItem, importImages: importImages);
+
+                    migrationItems.Add(drupalItem);
+                    totalCount += 1;
+                }
+
+                await _dataOutputService.SaveContentEventsAsync(migrationItems, destinationCategory, cancellationToken);
+
+                _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateCommunityPosts(
+            //string sourceCategory, 
+            //int destinationCategory, 
+            bool importImages, 
+            CancellationToken cancellationToken
+            )
+        {
+            int pageSize = 30;
+            int page = 1;
+
+            _logger.LogInformation($"Starting Items Migration @ {DateTime.UtcNow}");
+
+            var drupalItems = await _drupalSourceService.GetCommunitiesFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+
+            if (drupalItems == null || drupalItems.Items == null || !drupalItems.Items.Any())
+            {
+                return Results.Problem("No items found or deserialized data is invalid.");
+            }
+
+            var migrationItems = new List<CommunityPost>();
+            int totalCount = 0;
+
+            // iterate over each drupal item and fetch its data from current storage
+            // and upload it into Azure Blob
+            foreach (var drupalItem in drupalItems.Items)
+            {
+                await ProcessMigrationCommunity(drupalItem, importImages: importImages);
+
+                migrationItems.Add(drupalItem);
+                totalCount += 1;
+            }
+
+            await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
+
+            int.TryParse(drupalItems.Total, out var totalItemCount);
+            //int totalItemCount = drupalItems.Total;
+
+            _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+
+            while (totalItemCount > totalCount)
+            {
+                page += 1;
+                _logger.LogInformation($"Fetching data for page {page}");
+                drupalItems = await _drupalSourceService.GetCommunitiesFromDrupalAsync(cancellationToken, page: page, page_size: pageSize);
+                migrationItems = new List<CommunityPost>();
+                foreach (var drupalItem in drupalItems.Items)
+                {
+                    await ProcessMigrationCommunity(drupalItem, importImages: importImages);
+
+                    migrationItems.Add(drupalItem);
+                    totalCount += 1;
+                }
+
+                await _dataOutputService.SaveContentCommunityPostsAsync(migrationItems, cancellationToken);
+
+                _logger.LogInformation($"Migrated {totalCount} out of {totalItemCount} Items");
+            }
+
+            _logger.LogInformation($"Completed Items Migration @ {DateTime.UtcNow}");
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {totalCount} out of {totalItemCount} Items - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        private async Task ProcessMigrationArticle(ArticleItem drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+        }
+
+        private async Task ProcessMigrationEvent(ContentEvent drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+        }
+
+        private async Task ProcessMigrationCommunity(CommunityPost drupalItem, bool importImages)
+        {
+            // Check if the item is a valid URL
+            if (importImages && Uri.TryCreate(drupalItem.ImageUrl, UriKind.Absolute, out var uriResult) &&
+                    (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps))
+            {
+                try
+                {
+                    using var httpClient = new HttpClient();
+                    var fileBytes = await httpClient.GetByteArrayAsync(drupalItem.ImageUrl);
+
+                    _logger.LogInformation($"Downloaded {Path.GetFileName(uriResult.LocalPath)} @ {DateTime.UtcNow}");
+
+                    // Generate a custom file name from the URL
+                    var customName = uriResult.AbsolutePath;
+
+                    // Upload to blob storage
+                    var url = await _fileStorageBlobService.SaveFile(fileBytes, customName, "migration-images");
+                    //var url = $"https://replacement.url{customName}";
+
+                    _logger.LogInformation($"Uploaded {customName} @ {DateTime.UtcNow}");
+
+                    drupalItem.ImageUrl = url;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogInformation($"Failed to process image URL '{drupalItem.ImageUrl}': {ex.Message}");
+                }
+            }
+            else
+            {
+                _logger.LogInformation($"Skipped migrating: {drupalItem.ImageUrl}");
+            }
+
+            drupalItem.Slug = ProcessingHelpers.GenerateSlug(drupalItem.Title);
+
+            _logger.LogInformation($"Processed Image for {drupalItem.Slug}");
+        }
+
+        public async Task<IResult> MigrateEventCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            // first fetch all results from source
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.EventCategories == null || !categories.EventCategories.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveEventCategoriesAsync(categories.EventCategories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.EventCategories.Count} Categories - Completed @ {DateTime.UtcNow}.",
+            });
+        }
+
+        public async Task<IResult> MigrateNewsCategories(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+            List<NewsCategory> categories = Constants.NewsCategories();
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveNewsCategoriesAsync(categories, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Count} Primary Categories & {categories.SelectMany(x => x.SubCategories).ToList().Count} Subcategories - Completed @ {DateTime.UtcNow}."
+            });
+        }
+
+        public async Task<IResult> MigrateLocations(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation($"Starting Migrations @ {DateTime.UtcNow}");
+
+            var categories = await _drupalSourceService.GetCategoriesFromDrupalAsync(cancellationToken);
+
+            if (categories == null || categories.Locations == null || !categories.Locations.Any())
+            {
+                // if we have no results return an error
+                return Results.Problem("No categories found or deserialized data is invalid.");
+            }
+
+            _logger.LogInformation($"Completed Data Denormalization @ {DateTime.UtcNow}");
+
+            await _dataOutputService.SaveLocationsAsync(categories.Locations, cancellationToken);
+
+            // return that this was successful
+
+            return Results.Ok(new
+            {
+                Message = $"Migrated {categories.Locations.Count} Locations & {categories.Locations.SelectMany(x => x.Areas ?? new List<Area>()).ToList().Count} Areas - Completed @ {DateTime.UtcNow}."
             });
         }
     }

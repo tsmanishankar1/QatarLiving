@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.IService.ICompanyService;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Company.MS.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +12,15 @@ builder.Services.AddDaprClient();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<ICompanyProfileService, InternalCompanyProfileService>();
+
+var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
+dataSourceBuilder.EnableDynamicJson();
+var dataSource = dataSourceBuilder.Build();
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(dataSource));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -34,7 +34,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(ServiceSubscriptionAdSummaryDto item)
         {
-            Navigation.NavigateTo($"/manage/services/editform/{item.Id}");
+            Navigation.NavigateTo($"/manage/services/editform/{item.Id}/subscriptionads");
         }
         public void OnPreview(ServiceAdSummaryDto item)
         {

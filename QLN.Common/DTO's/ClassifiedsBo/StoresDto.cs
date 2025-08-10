@@ -17,12 +17,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int TotalCount { get; set; }
         public int? Page { get; set; }
         public int? PerPage { get; set; }
-       
     }
-    public class XMLFileUploadDto
-    {
-        public string FileUrl { get; set; }
-    }
+    
     public class StoresSubscriptionDto
     {
         [Key]
@@ -42,6 +38,41 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public int WhatsappLeads { get; set; } = 0;
         public int PhoneLeads { get; set; } = 0;
 
+    }
+
+
+    public class ClassifiedStoreResponse
+    {
+        public List<StoresGroup> Stores { get; set; } = new();
+    }
+
+    public class StoresGroup
+    {
+        public Guid CompanyId { get; set; }
+        public Guid SubscriptionId { get; set; }
+        public string CompanyName { get; set; } = string.Empty;
+        public string? ContactNumber { get; set; }
+        public string? Email { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string BannerUrl { get; set; } = string.Empty;
+        public string WebsiteUrl { get; set; } = string.Empty;
+        public List<string> Locations { get; set; } = new();
+        public int ProductCount { get; set; }
+        public List<ProductInfo> Products { get; set; } = new();
+    }
+
+    public class ProductInfo
+    {
+        public Guid ProductId { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductLogo { get; set; } = string.Empty;
+        public double ProductPrice { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public string ProductSummary { get; set; } = string.Empty;
+        public string ProductDescription { get; set; } = string.Empty;
+        public List<string> Features { get; set; } = new();
+        public List<string> Images { get; set; } = new();
+       
     }
 
 }

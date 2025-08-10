@@ -49,9 +49,23 @@
     {
         @foreach (var group in FilteredGroups)
         {
-            <MudText Typo="Typo.body1" Class="mt-2 mb-1" Color="Color.Primary">
-                @group.BannerPageName
+           <div style="display: flex; align-items: center; gap: 8px;">
+            @if (group.VerticalId.HasValue)
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Filled">
+                    @((Vertical)group.VerticalId.Value)
+                </MudChip>
+            }
+             @if (group.SubVerticalId.HasValue)
+            {
+                <MudChip T="string" Color="Color.Primary" Variant="Variant.Text">
+                @((SubVertical)group.SubVerticalId.Value)
+                </MudChip>
+            }
+            <MudText Typo="Typo.body1" Color="Color.Primary">
+            @group.BannerPageName
             </MudText>
+            </div>
 
             @foreach (var item in group.bannertypes)
             {

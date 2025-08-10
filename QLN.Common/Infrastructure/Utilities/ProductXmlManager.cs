@@ -14,19 +14,7 @@ namespace QLN.Classified.MS.Utilities
             _xsdPath = xsdPath;
         }
 
-        public void Serialize(Products products, string outputPath)
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(Products));
-            using StreamWriter writer = new StreamWriter(outputPath);
-            serializer.Serialize(writer, products);
-        }
-
-        public Products Deserialize(string xmlPath)
-        {
-            XmlSerializer serializer = new XmlSerializer(typeof(Products));
-            using FileStream stream = new FileStream(xmlPath, FileMode.Open);
-            return (Products)serializer.Deserialize(stream);
-        }
+        
 
         public string ValidateXml(string xmlPath)
         {

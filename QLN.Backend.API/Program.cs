@@ -37,6 +37,9 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -137,10 +140,15 @@ builder.Services.Configure<IdentityOptions>(options =>
 #region Database context
 builder.Services.AddDbContext<QLApplicationContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLLogContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
@@ -320,7 +328,8 @@ builder.Services.DrupalAuthConfiguration(builder.Configuration);
 builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
-
+builder.Services.ProductsConfiguration(builder.Configuration);
+builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
 var app = builder.Build();
@@ -359,7 +368,6 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
-
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -383,6 +391,9 @@ var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
+app.MapGroup("/api/v2/subscriptions")
+    .MapV2SubscriptionEndpoints()
+    .RequireAuthorization();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
@@ -407,7 +418,8 @@ var locationGroup = app.MapGroup("/api/v2/location");
 locationGroup.MapLocationsEndpoints();
 var communityPostGroup = app.MapGroup("/api/v2/community");
 communityPostGroup.MapCommunityPostEndpoints();
-
+ var bannerGroup = app.MapGroup("/api/banner");
+bannerGroup.MapBannerEndpoints();
 var bannerPostGroup  = app.MapGroup("/api/v2/banner");
 bannerPostGroup.MapBannerPostEndpoints();
 var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
@@ -416,6 +428,10 @@ ClassifiedBo.MapClassifiedboEndpoints()
 
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+
+var Product = app.MapGroup("/api/products");
+Product.MapProductEndpoints()
+    .RequireAuthorization();
 
 app.MapGet("/testauth", (HttpContext context) =>
 {
