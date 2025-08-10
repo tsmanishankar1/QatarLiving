@@ -5,9 +5,11 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Migrations.QLSubscription;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace QLN.Backend.API.Service.Services
 {
@@ -522,6 +524,38 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+    //    public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+    //Guid subscriptionId,
+    //CancellationToken cancellationToken = default)
+    //    {
+    //        try
+    //        {
+    //            // Hardcode the subscriptionId for testing
+    //            subscriptionId = Guid.Parse("48887e22-782a-4825-a0b6-bd27259ef554");
+
+    //            var request = new SubscriptionIdRequest
+    //            {
+    //                SubscriptionId = subscriptionId
+    //            };
+
+    //            // Call POST endpoint to get budgets by subscriptionId
+    //            var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
+    //                HttpMethod.Post,
+    //                ConstantValues.Services.ServiceAppId,
+    //                "/api/service/getbudgets",
+    //                request,
+    //                cancellationToken
+    //            );
+
+    //            return response ?? new SubscriptionBudgetDto();
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
+    //            throw;
+    //        }
+    //    }
+
         public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
      Guid subscriptionId,
      CancellationToken cancellationToken = default)
@@ -547,17 +581,17 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncbysubvertical(
-    Guid subscriptionId,
-    int verticalId,
-    CancellationToken cancellationToken = default)
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncBySubVertical(
+      Guid subscriptionIdFromToken,
+      int subverticalId,
+      CancellationToken cancellationToken = default)
         {
             try
             {
                 var request = new
                 {
-                    SubscriptionId = subscriptionId,
-                    VerticalId = verticalId
+                    SubscriptionId = subscriptionIdFromToken,
+                    SubVerticalId = subverticalId
                 };
 
                 // Call POST endpoint to get budgets by subscriptionId and verticalId
@@ -573,7 +607,7 @@ namespace QLN.Backend.API.Service.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching subscription budgets for {subscriptionId}: {ex}");
+                Console.WriteLine($"Error fetching subscription budgets for : {ex}");
                 throw;
             }
         }

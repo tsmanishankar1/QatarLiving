@@ -1739,13 +1739,64 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 
             return group;
         }
+
+        //public static RouteGroupBuilder MapServiceCountEndpoints(this RouteGroupBuilder group)
+        //{
+        //    group.MapGet("/getcounts", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
+        //        [FromServices] IServices service,
+        //        CancellationToken cancellationToken
+        //    ) =>
+        //    {
+        //        try
+        //        {
+        //            // Hardcoded subscriptionId for testing
+        //            var subscriptionId = new Guid("48887e22-782a-4825-a0b6-bd27259ef554");
+
+        //            var counts = await service.GetSubscriptionBudgetsAsync(subscriptionId, cancellationToken);
+        //            return TypedResults.Ok(counts);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            return TypedResults.Problem("Internal Server Error", ex.Message);
+        //        }
+        //    })
+        //    .WithName("GetServiceStatusCountsbysubscription")
+        //    .WithTags("Service")
+        //    .WithSummary("Get subscription budget details")
+        //    .WithDescription("Returns budget details for the hardcoded subscription ID (testing).")
+        //    .Produces<SubscriptionBudgetDto>(StatusCodes.Status200OK)
+        //    .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+        //    group.MapPost("/getbudgets", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
+        //        [FromBody] SubscriptionIdRequest dto,
+        //        [FromServices] IServices service,
+        //        CancellationToken cancellationToken
+        //    ) =>
+        //    {
+        //        try
+        //        {
+        //            var counts = await service.GetSubscriptionBudgetsAsync(dto.SubscriptionId, cancellationToken);
+        //            return TypedResults.Ok(counts);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            return TypedResults.Problem("Internal Server Error", ex.Message);
+        //        }
+        //    })
+        //    .ExcludeFromDescription()
+        //    .WithName("GetServiceStatusCounts")
+        //    .WithTags("Service");
+
+        //    return group;
+        //}
+
         public static RouteGroupBuilder MapServiceCountbySubverticalEndpoints(this RouteGroupBuilder group)
         {
-            // GET endpoint - verticalId from query, subscriptionId from token
+           
             group.MapGet("/getcountsbyvertical", async Task<Results<Ok<SubscriptionBudgetDto>, ProblemHttpResult>> (
                 HttpContext httpContext,
                 [FromServices] IServices service,
-                [FromQuery] int verticalId,
+                [FromQuery] int subverticalId,
                 CancellationToken cancellationToken)
             =>
             {
@@ -1785,7 +1836,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var counts = await service.GetSubscriptionBudgetsAsyncbysubvertical(subscriptionId, verticalId, cancellationToken);
+                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(subscriptionId, subverticalId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)
@@ -1810,7 +1861,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             {
                 try
                 {
-                    var counts = await service.GetSubscriptionBudgetsAsyncbysubvertical(dto.SubscriptionId, dto.SubVerticalId, cancellationToken);
+                    var counts = await service.GetSubscriptionBudgetsAsyncBySubVertical(dto.SubscriptionId, dto.SubVerticalId, cancellationToken);
                     return TypedResults.Ok(counts);
                 }
                 catch (Exception ex)

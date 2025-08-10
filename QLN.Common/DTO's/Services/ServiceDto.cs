@@ -150,15 +150,24 @@ namespace QLN.Common.DTO_s
     }
     public class SubscriptionBudgetDto
     {
-        public int FeaturedBudget { get; set; }
-        public int UsedFeatureBudget { get; set; }
-        public int PromotedBudget { get; set; }
-        public int UsedPromotedBudget { get; set; }
-        public int RefreshBudgetPerAd { get; set; }
-        public int UsedRefreshBudget { get; set; }
-        public int RefreshBudgetPerDay { get; set; }
+        // Totals
+        public int TotalAdsAllowed { get; set; }
+        public int TotalPromotionsAllowed { get; set; }
+        public int TotalFeaturesAllowed { get; set; }
+        public int DailyRefreshesAllowed { get; set; }
+        public int RefreshesPerAdAllowed { get; set; }
+        public int SocialMediaPostsAllowed { get; set; }
+
+        // Used
+        public int AdsUsed { get; set; }
+        public int PromotionsUsed { get; set; }
+        public int FeaturesUsed { get; set; }
+        public int DailyRefreshesUsed { get; set; }
+        public int RefreshesPerAdUsed { get; set; }
+        public int SocialMediaPostsUsed { get; set; }
     }
-   public class SubscriptionIdRequest
+
+    public class SubscriptionIdRequest
     {
         public Guid SubscriptionId { get; set; }
     }
