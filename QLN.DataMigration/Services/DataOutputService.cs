@@ -114,7 +114,7 @@
             }
         }
 
-        public async Task SaveContentEventsAsync(List<ContentEvent> items, int destinationCategoryId, CancellationToken cancellationToken)
+        public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
         {
             foreach (var dto in items)
             {
@@ -132,7 +132,7 @@
                     {
                         Id = id,
                         Slug = dto.Slug,
-                        CategoryId = destinationCategoryId,
+                        CategoryId = int.TryParse(dto.CategroryId, out var categoryId) ? categoryId : 0,
                         CategoryName = dto.EventCategory,
                         EventTitle = dto.Title,
                         EventType = V2EventType.FreeAcess,

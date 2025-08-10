@@ -4,12 +4,12 @@ common:
   - ./Components
 
 apps:
-   # - appID: qln-backend-api
-   #   appDirPath: QLN.Backend.API
-   #   appPort: 5200
-   #   command:
-   #     - dotnet
-   #     - run
+  - appID: qln-backend-api
+    appDirPath: QLN.Backend.API
+    appPort: 5200
+    command:
+      - dotnet
+      - run
 # - appDirPath: QLN.BusinessProfile.MS
 #   appID: qln-businessprofile-ms
 #   appPort: 5027

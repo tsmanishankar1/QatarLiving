@@ -51,6 +51,7 @@ namespace QLN.Classified.MS.Service.Services
 
             var allCategories = await query
                 .AsNoTracking()
+                .OrderBy(c => c.Id)
                 .ToListAsync(cancellationToken);
 
             var rootCategories = allCategories
@@ -981,13 +982,13 @@ namespace QLN.Classified.MS.Service.Services
 
             return serviceAd;
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
+        public async Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken ct)
         {
             var ads = await _dbContext.Services
                 .Where(s => request.AdIds.Contains(s.Id))
                 .ToListAsync(ct);
 
-            var updatedAds = new List<QLN.Common.Infrastructure.Model.Services>();
+            var updatedAds = new List<Common.Infrastructure.Model.Services>();
 
             foreach (var ad in ads)
             {
@@ -1041,6 +1042,7 @@ namespace QLN.Classified.MS.Service.Services
 
                     case BulkModerationAction.Remove:
                         ad.Status = ServiceStatus.Rejected;
+                        ad.IsActive = false;
                         ad.UpdatedBy = request.UpdatedBy;
                         shouldUpdate = true;
                         break;

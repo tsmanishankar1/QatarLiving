@@ -29,11 +29,11 @@ env=dev
 #########
 
 ### Migrate News
-GET https://www.qatarliving.com/qlnapi/articles?page=1&page_size=10&forum_id=20000040
+GET https://www.qatarliving.com/qlnapi/articles?page=1&page_size=30&forum_id=20000040
 Content-Type: application/json
 
 ### Migrate Events
-GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=30&category_id=126205
+GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=30
 Content-Type: application/json
 
 ### Migrate community

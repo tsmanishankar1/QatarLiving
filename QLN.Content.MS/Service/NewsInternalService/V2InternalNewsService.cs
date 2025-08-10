@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.IContentService;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -139,7 +140,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
         {
             try
-            {             
+            {
+                string storeName = V2Content.ContentStoreName;
                 var duplicateCheck = dto.Categories
                     .GroupBy(c => new { c.CategoryId, c.SubcategoryId })
                     .Where(g => g.Count() > 1)
@@ -150,6 +152,18 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 {
                     var duplicates = string.Join(", ", duplicateCheck.Select(h => $"CategoryId:{h.CategoryId}, SubCategoryId:{h.SubcategoryId}"));
                     throw new InvalidDataException($"Duplicate category and subcategory combinations are not allowed in the same request. Duplicates: {duplicates}");
+                }
+                var existingArticles = await _dapr.GetStateAsync<List<string>>(storeName, V2Content.NewsIndexKey, cancellationToken : cancellationToken)
+                                        ?? new List<string>();
+
+                foreach (var existingId in existingArticles)
+                {
+                    var existingArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(storeName, existingId, cancellationToken : cancellationToken);
+                    if (existingArticle != null &&
+                        string.Equals(existingArticle.Title.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidDataException($"A news article with the title '{dto.Title}' already exists.");
+                    }
                 }
 
                 var slugBase = GenerateNewsSlug(dto.Title);
@@ -182,7 +196,6 @@ namespace QLN.Content.MS.Service.NewsInternalService
                     UserId = dto.UserId
                 };
 
-                string storeName = V2Content.ContentStoreName;
                 string articleIdStr = article.Id.ToString();
 
                 await _dapr.SaveStateAsync(storeName, articleIdStr, article, cancellationToken: cancellationToken);
@@ -413,12 +426,24 @@ namespace QLN.Content.MS.Service.NewsInternalService
                 var items = await _dapr.GetBulkStateAsync(V2Content.ContentStoreName, keys, null, cancellationToken: cancellationToken);
 
                 var articles = items
-                    .Select(i => JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                .Where(i => !string.IsNullOrWhiteSpace(i.Value))
+                .Select(i =>
+                {
+                    try
                     {
-                        PropertyNameCaseInsensitive = true
-                    }))
-                    .Where(dto => dto != null)
-                    .ToList();
+                        return JsonSerializer.Deserialize<V2NewsArticleDTO>(i.Value, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        _logger.LogWarning(jsonEx, "Skipping key {Key} due to invalid JSON", i.Key);
+                        return null;
+                    }
+                })
+                .Where(dto => dto != null)
+                .ToList();
 
                 _logger.LogInformation("Deserialized {Count} articles", articles.Count);
 
@@ -733,8 +758,8 @@ namespace QLN.Content.MS.Service.NewsInternalService
 
 
         public async Task<string> UpdateNewsArticleAsync(
-V2NewsArticleDTO dto,
-CancellationToken cancellationToken = default)
+        V2NewsArticleDTO dto,
+        CancellationToken cancellationToken = default)
         {
             const int MaxLiveSlot = 13;
             var store = V2Content.ContentStoreName;
@@ -742,6 +767,7 @@ CancellationToken cancellationToken = default)
 
             try
             {
+                string storeName = V2Content.ContentStoreName;
                 if (dto.Id == Guid.Empty)
                     throw new InvalidDataException("Id is required for update");
 
@@ -751,6 +777,24 @@ CancellationToken cancellationToken = default)
 
                 if (existing == null)
                     throw new KeyNotFoundException("News article not found");
+
+                var existingArticles = await _dapr.GetStateAsync<List<string>>(storeName, V2Content.NewsIndexKey, cancellationToken : cancellationToken)
+                                        ?? new List<string>();
+
+                foreach (var existingId in existingArticles)
+                {
+                    if (existingId == dto.Id.ToString())
+                        continue;
+
+                    var existingArticle = await _dapr.GetStateAsync<V2NewsArticleDTO>(
+                        storeName, existingId, cancellationToken: cancellationToken);
+
+                    if (existingArticle != null &&
+                        string.Equals(existingArticle.Title.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidDataException($"A news article with the title '{dto.Title}' already exists.");
+                    }
+                }
 
                 var oldCat = existing.Categories.First();
                 var oldSlot = oldCat.SlotId;
@@ -1428,6 +1472,7 @@ CancellationToken cancellationToken = default)
                                 ImageUrl = dto.CoverImageUrl,
                                 UserName = dto.authorName,
                                 Title = dto.Title,
+                                WriterTag = dto.WriterTag,
                                 Description = dto.Content,
                                 Category = categoryDto.CategoryName,
                                 NodeType = "post",
