@@ -155,11 +155,6 @@ namespace QLN.Common.Infrastructure.Constants
             public const string CompanyIndexKey = "company-index";
             public const string CompanyServiceAppId = "qln-company-ms";
         }
-        public static class Audit
-        {
-            public const string StoreName = "servicestatestore";
-            public const string AuditIndexKey = "audit_index";
-        }
     }
 }
 

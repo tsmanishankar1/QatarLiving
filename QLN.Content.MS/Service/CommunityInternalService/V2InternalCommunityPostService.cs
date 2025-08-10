@@ -34,6 +34,16 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             if (string.IsNullOrWhiteSpace(dto.Title)) throw new ArgumentException("Title is required.");
             if (string.IsNullOrWhiteSpace(dto.Description)) throw new ArgumentException("Description is required.");
 
+            var existingKeys = await _dapr.GetStateAsync<List<string>>(StoreName, IndexKey, cancellationToken: ct) ?? new();
+            foreach (var existingKey in existingKeys)
+            {
+                var existingPost = await _dapr.GetStateAsync<V2CommunityPostDto>(StoreName, existingKey, cancellationToken: ct);
+                if (existingPost != null &&
+                    string.Equals(existingPost.Title?.Trim(), dto.Title.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ArgumentException($"A community post with the title '{dto.Title}' already exists.");
+                }
+            }
             dto.Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id; // check if the DTO already has a GUID assigned
                                                                      // and only generate a new one if this is GUID.Empty.
             dto.UpdatedBy = userId;
@@ -243,16 +253,6 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 throw new InvalidOperationException($"Error retrieving post with ID: {id}", ex);
             }
         }
-        //private string GenerateSlug(string title)
-        //{
-        //    if (string.IsNullOrWhiteSpace(title)) return string.Empty;
-        //    var slug = title.ToLowerInvariant().Trim();
-        //    slug = Regex.Replace(slug, @"[\s_]+", "-");
-        //    slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-        //    slug = Regex.Replace(slug, @"-+", "-");
-        //    slug = slug.Trim('-');
-        //    return slug;
-        //}
         public Task<ForumCategoryListDto> GetAllForumCategoriesAsync(CancellationToken cancellationToken = default)
         {
             var categories = new List<ForumCategoryDto>
