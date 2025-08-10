@@ -85,7 +85,7 @@ namespace QLN.SearchService.Service
 
                     ConstantValues.IndexNames.ClassifiedStoresIndex => await HandleSearchWithJsonFilters<ClassifiedStoresIndex>(
                        indexName, req,
-                       new List<string> { "IsActive eq true", "Status eq 'Active'" },
+                       new List<string> { "IsActive eq true" },
                        regularFilters, jsonFilters,
                        (response, items) => response.ClassifiedStores = items),
 
@@ -674,6 +674,7 @@ namespace QLN.SearchService.Service
                 ConstantValues.IndexNames.ClassifiedsPrelovedIndex => typeof(ClassifiedsPrelovedIndex),
                 ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => typeof(ClassifiedsCollectiblesIndex),
                 ConstantValues.IndexNames.ClassifiedsDealsIndex => typeof(ClassifiedsDealsIndex),
+                ConstantValues.IndexNames.ClassifiedStoresIndex => typeof(ClassifiedStoresIndex),
                 ConstantValues.IndexNames.ServicesIndex => typeof(ServicesIndex),
                 ConstantValues.IndexNames.ContentNewsIndex => typeof(ContentNewsIndex),
                 ConstantValues.IndexNames.ContentEventsIndex => typeof(ContentEventsIndex),
@@ -707,6 +708,8 @@ namespace QLN.SearchService.Service
                         await _repo.SearchAsync<ClassifiedsCollectiblesIndex>(indexName, opts, "*"),
                     ConstantValues.IndexNames.ClassifiedsDealsIndex =>
                         await _repo.SearchAsync<ClassifiedsDealsIndex>(indexName, opts, "*"),
+                    ConstantValues.IndexNames.ClassifiedStoresIndex =>
+                   await _repo.SearchAsync<ClassifiedStoresIndex>(indexName, opts, "*"),
                     ConstantValues.IndexNames.ServicesIndex =>
                         await _repo.SearchAsync<ServicesIndex>(indexName, opts, "*"),
                     _ => null
