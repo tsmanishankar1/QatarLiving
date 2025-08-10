@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.OpenApi.Models;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.IService.IContentService;
 using QLN.Common.Infrastructure.IService.IFileStorage;
@@ -37,7 +38,18 @@ if (Uri.TryCreate(drupalUrl, UriKind.Absolute, out var drupalBaseUrl))
 builder.Services.AddSingleton<IMigrationService, MigrationService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1.1.1", new OpenApiInfo
+    {
+        Title = "Qatar Migration API",
+        Version = "v1.1.1",
+        Description = "API documentation for Qatar Migration."
+    });
+});
 
 
 var app = builder.Build();
@@ -45,17 +57,20 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    //app.MapOpenApi();
 
+    app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/openapi/v1.json", "v1");
+        options.SwaggerEndpoint("/swagger/v1.1.1/swagger.json", "v1.1.1");
+        options.RoutePrefix = "Swagger";
+        options.DocumentTitle = "Qatar Migrations API";
     });
 }
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+//app.UseAuthorization();
 
 // migrate categories
 
