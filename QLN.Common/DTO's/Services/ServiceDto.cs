@@ -134,4 +134,24 @@ namespace QLN.Common.DTO_s
         public int? PerPage { get; set; }
         public Dictionary<string, string>? Filters { get; set; }
     }
+    public class SubscriptionBudgetDto
+    {
+        public int FeaturedBudget { get; set; }
+        public int UsedFeatureBudget { get; set; }
+        public int PromotedBudget { get; set; }
+        public int UsedPromotedBudget { get; set; }
+        public int RefreshBudgetPerAd { get; set; }
+        public int UsedRefreshBudget { get; set; }
+        public int RefreshBudgetPerDay { get; set; }
+    }
+   public class SubscriptionIdRequest
+    {
+        public Guid SubscriptionId { get; set; }
+    }
+
+    public class SubscriptionRequest
+    {
+        public Guid SubscriptionId { get; set; }
+        public int SubVerticalId { get; set; }
+    }
 }

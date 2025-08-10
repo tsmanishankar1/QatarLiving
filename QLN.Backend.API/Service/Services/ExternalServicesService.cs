@@ -510,5 +510,63 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(
+     Guid subscriptionId,
+     CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new SubscriptionIdRequest { SubscriptionId = subscriptionId };
+
+                // Call POST endpoint to get budgets by subscriptionId
+                var response = await _dapr.InvokeMethodAsync<SubscriptionIdRequest, SubscriptionBudgetDto>(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getbudgets",
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionBudgetDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching subscription budgets for {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncbysubvertical(
+    Guid subscriptionId,
+    int verticalId,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var request = new
+                {
+                    SubscriptionId = subscriptionId,
+                    VerticalId = verticalId
+                };
+
+                // Call POST endpoint to get budgets by subscriptionId and verticalId
+                var response = await _dapr.InvokeMethodAsync<object, SubscriptionBudgetDto>(
+                    HttpMethod.Post,
+                    ConstantValues.Services.ServiceAppId,
+                    "/api/service/getbudgetsbysubvertical",
+                    request,
+                    cancellationToken
+                );
+
+                return response ?? new SubscriptionBudgetDto();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching subscription budgets for {subscriptionId}: {ex}");
+                throw;
+            }
+        }
+
+
+
     }
 }

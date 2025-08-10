@@ -24,5 +24,10 @@ namespace QLN.Common.Infrastructure.IService.IService
         Task<Services> RefreshService(RefreshServiceRequest request, CancellationToken ct);
         Task<Services> PublishService(long id, CancellationToken ct);
         Task<List<Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default);
+        Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync(Guid subscriptionId,CancellationToken cancellationToken = default);
+        Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncbysubvertical(
+    Guid subscriptionId,
+    int verticalId,
+    CancellationToken cancellationToken = default);
     }
 }

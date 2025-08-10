@@ -9,6 +9,7 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 using QLN.Common.Infrastructure.Utilities;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using static QLN.Common.DTO_s.NotificationDto;
 
@@ -20,11 +21,13 @@ namespace QLN.Classified.MS.Service.Services
         public readonly QLClassifiedContext _dbContext;
         public readonly DaprClient _dapr;
         public readonly AuditLogger _auditLogger;
-        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext)
+        public readonly QLSubscriptionContext _qLSubscriptionContext;
+        public InternalServicesService(DaprClient dapr, AuditLogger auditLogger, QLClassifiedContext dbContext, QLSubscriptionContext qLSubscriptionContext)
         {
             _dapr = dapr;
             _auditLogger = auditLogger;
             _dbContext = dbContext;
+            _qLSubscriptionContext = qLSubscriptionContext;
         }
         public async Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
         {
@@ -163,7 +166,7 @@ namespace QLN.Classified.MS.Service.Services
                     _dbContext.Categories.Add(mainCategory);
                     await _dbContext.SaveChangesAsync(cancellationToken);
                 }
-                
+
                 if (dto.Fields != null && dto.Fields.Any())
                 {
                     foreach (var fieldDto in dto.Fields)
@@ -227,7 +230,7 @@ namespace QLN.Classified.MS.Service.Services
 
             return category;
         }
-        
+
         public async Task<string> CreateServiceAd(string uid, string userName, ServiceDto dto, CancellationToken cancellationToken = default)
         {
             try
@@ -693,7 +696,7 @@ namespace QLN.Classified.MS.Service.Services
                                 query = query.Where(s => s.Price == exactPrice);
                             }
                         }
-                        else if(key == "adType")
+                        else if (key == "adType")
                         {
                             if (Enum.TryParse<ServiceAdType>(value, true, out var adType))
                             {
@@ -1021,5 +1024,150 @@ namespace QLN.Classified.MS.Service.Services
                 throw new ConflictException($"Ad '{currentAd.Title}' cannot be published. An active ad already exists in the same category by this user.");
             }
         }
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsync( Guid subscriptionId, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId
+                                           && (int)s.Vertical == 4, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new ArgumentException(
+                        $"No subscription found with Id {subscriptionId} for vertical 4.");
+                }
+
+                if (subscription.Quota == null || subscription.Quota.Count == 0)
+                {
+                    throw new InvalidDataException("Subscription quota is empty.");
+                }
+
+
+                string[] requiredKeys =
+                {
+            "FeaturedBudget", "UsedFeatureBudget",
+            "PromotedBudget", "UsedPromotedBudget",
+            "RefreshBudgetPerAd", "UsedRefreshBudget",
+            "RefreshBudgetPerDay"
+        };
+
+                foreach (var key in requiredKeys)
+                {
+                    if (!subscription.Quota.ContainsKey(key))
+                    {
+                        throw new KeyNotFoundException(
+                            $"Quota key '{key}' is missing in subscription {subscriptionId}.");
+                    }
+                }
+
+
+                var dto = new SubscriptionBudgetDto
+                {
+                    FeaturedBudget = int.Parse(subscription.Quota["FeaturedBudget"]),
+                    UsedFeatureBudget = int.Parse(subscription.Quota["UsedFeatureBudget"]),
+                    PromotedBudget = int.Parse(subscription.Quota["PromotedBudget"]),
+                    UsedPromotedBudget = int.Parse(subscription.Quota["UsedPromotedBudget"]),
+                    RefreshBudgetPerAd = int.Parse(subscription.Quota["RefreshBudgetPerAd"]),
+                    UsedRefreshBudget = int.Parse(subscription.Quota["UsedRefreshBudget"]),
+                    RefreshBudgetPerDay = int.Parse(subscription.Quota["RefreshBudgetPerDay"])
+                };
+
+                return dto;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidDataException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching subscription budgets", ex);
+            }
+        }
+
+
+        public async Task<SubscriptionBudgetDto> GetSubscriptionBudgetsAsyncbysubvertical(
+    Guid subscriptionId,
+    int verticalId,
+    CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var subscription = await _qLSubscriptionContext.Subscriptions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.SubscriptionId == subscriptionId
+                                           && (int)s.Vertical == verticalId, cancellationToken);
+
+                if (subscription == null)
+                {
+                    throw new ArgumentException(
+                        $"No subscription found with Id {subscriptionId} for vertical {verticalId}.");
+                }
+
+                if (subscription.Quota == null || subscription.Quota.Count == 0)
+                {
+                    throw new InvalidDataException("Subscription quota is empty.");
+                }
+
+                string[] requiredKeys =
+                {
+            "FeaturedBudget", "UsedFeatureBudget",
+            "PromotedBudget", "UsedPromotedBudget",
+            "RefreshBudgetPerAd", "UsedRefreshBudget",
+            "RefreshBudgetPerDay"
+        };
+
+                foreach (var key in requiredKeys)
+                {
+                    if (!subscription.Quota.ContainsKey(key))
+                    {
+                        throw new KeyNotFoundException(
+                            $"Quota key '{key}' is missing in subscription {subscriptionId}.");
+                    }
+                }
+
+                var dto = new SubscriptionBudgetDto
+                {
+                    FeaturedBudget = int.Parse(subscription.Quota["FeaturedBudget"]),
+                    UsedFeatureBudget = int.Parse(subscription.Quota["UsedFeatureBudget"]),
+                    PromotedBudget = int.Parse(subscription.Quota["PromotedBudget"]),
+                    UsedPromotedBudget = int.Parse(subscription.Quota["UsedPromotedBudget"]),
+                    RefreshBudgetPerAd = int.Parse(subscription.Quota["RefreshBudgetPerAd"]),
+                    UsedRefreshBudget = int.Parse(subscription.Quota["UsedRefreshBudget"]),
+                    RefreshBudgetPerDay = int.Parse(subscription.Quota["RefreshBudgetPerDay"])
+                };
+
+                return dto;
+            }
+            catch (ArgumentException)
+            {
+                throw;
+            }
+            catch (InvalidDataException)
+            {
+                throw;
+            }
+            catch (KeyNotFoundException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching subscription budgets", ex);
+            }
+        }
+
+
+
     }
 }
