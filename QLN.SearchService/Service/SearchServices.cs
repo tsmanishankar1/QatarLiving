@@ -83,6 +83,12 @@ namespace QLN.SearchService.Service
                         regularFilters, jsonFilters,
                         (response, items) => response.ServicesItems = items),
 
+                    ConstantValues.IndexNames.ClassifiedStoresIndex => await HandleSearchWithJsonFilters<ClassifiedStoresIndex>(
+                   indexName, req,
+                   new List<string> { "IsActive eq true", "Status eq 'Active'" },
+                   regularFilters, jsonFilters,
+                   (response, items) => response.ClassifiedStores = items),
+
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
             }
@@ -210,6 +216,13 @@ namespace QLN.SearchService.Service
                         regularFilters, jsonFilters,
                         (response, items) => response.ServicesItems = items,
                         true),
+
+                    ConstantValues.IndexNames.ClassifiedStoresIndex => await HandleSearchWithJsonFilters<ClassifiedStoresIndex>(
+                   indexName, modifiedRequest,
+                   new List<string> { "IsActive eq true" },
+                   regularFilters, jsonFilters,
+                   (response, items) => response.ClassifiedStores = items,
+                   true),
 
                     _ => throw new NotSupportedException($"Unknown indexName '{indexName}'")
                 };
@@ -889,6 +902,11 @@ namespace QLN.SearchService.Service
                         var svc = request.ServicesItem
                                ?? throw new ArgumentException("ServicesItem is required for services.", nameof(request.ServicesItem));
                         return await _repo.UploadAsync<ServicesIndex>(index, svc);
+
+                    case ConstantValues.IndexNames.ClassifiedStoresIndex:
+                        var stores = request.ClassifiedStores
+                               ?? throw new ArgumentException("StoresItem is required for services.", nameof(request.ClassifiedStores));
+                        return await _repo.UploadAsync<ClassifiedStoresIndex>(index, stores);
 
                     default:
                         throw new ArgumentException($"Unsupported Index: '{index}'", nameof(request.IndexName));

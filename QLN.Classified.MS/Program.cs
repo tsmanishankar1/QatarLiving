@@ -85,4 +85,5 @@ ClassifiedBo.MapClassifiedboEndpoints();
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
 
+
 app.Run();
