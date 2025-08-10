@@ -129,4 +129,12 @@ app.MapGet("/migrate_news_categories", async (
     return await migrationService.MigrateNewsCategories(cancellationToken);
 });
 
+app.MapGet("/migrate_locations", async (
+    [FromServices] IMigrationService migrationService,
+    CancellationToken cancellationToken = default
+    ) =>
+{
+    return await migrationService.MigrateLocations(cancellationToken);
+});
+
 app.Run();

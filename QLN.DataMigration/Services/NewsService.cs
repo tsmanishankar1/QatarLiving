@@ -23,9 +23,14 @@ namespace QLN.DataMigration.Services
             _logger = logger;
         }
 
-        public Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
+        public async Task AddCategoryAsync(V2NewsCategory category, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var url = "/api/v2/news/category/createById";
+            var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+            request.Content = new StringContent(JsonSerializer.Serialize(category), Encoding.UTF8, "application/json");
+
+            var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
         }
 
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
