@@ -162,6 +162,114 @@ public static class CommonIndexingEndpoints
         .WithSummary("Search documents in any index")
         .WithDescription("Search for documents using ?index=classifiedsitems. Supports both regular property filters, JSON attribute filters, and date filtering.");
 
+        group.MapPost("/raw", async (
+                [FromQuery] string index,
+                [FromBody] RawSearchRequest req,
+                [FromServices] ISearchService svc,
+                [FromServices] ILoggerFactory logFac,
+                HttpContext http
+            ) =>
+        {
+            var logger = logFac.CreateLogger("CommonIndexing.Raw");
+
+            if (string.IsNullOrWhiteSpace(index))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "index is required",
+                    Status = 400,
+                    Instance = "/api/indexes/raw"
+                });
+
+            if (req is null || string.IsNullOrWhiteSpace(req.Filter))
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Bad Request",
+                    Detail = "Request payload with a non-empty 'filter' is required",
+                    Status = 400,
+                    Instance = "/api/indexes/raw"
+                });
+
+            try
+            {
+                object results = index.ToLowerInvariant() switch
+                {
+                    // classifieds & Services
+                    ConstantValues.IndexNames.ClassifiedsItemsIndex =>
+                        await svc.SearchRawAsync<ClassifiedsItemsIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ClassifiedsPrelovedIndex =>
+                        await svc.SearchRawAsync<ClassifiedsPrelovedIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ClassifiedsCollectiblesIndex =>
+                        await svc.SearchRawAsync<ClassifiedsCollectiblesIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ClassifiedsDealsIndex =>
+                        await svc.SearchRawAsync<ClassifiedsDealsIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ServicesIndex =>
+                        await svc.SearchRawAsync<ServicesIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ClassifiedStoresIndex =>
+                        await svc.SearchRawAsync<ClassifiedStoresIndex>(index, req, http.RequestAborted),
+
+                    // content
+                    ConstantValues.IndexNames.ContentNewsIndex =>
+                        await svc.SearchRawAsync<ContentNewsIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ContentEventsIndex =>
+                        await svc.SearchRawAsync<ContentEventsIndex>(index, req, http.RequestAborted),
+                    ConstantValues.IndexNames.ContentCommunityIndex =>
+                        await svc.SearchRawAsync<ContentCommunityIndex>(index, req, http.RequestAborted),
+
+                    _ => throw new NotSupportedException($"Unknown index '{index}'")
+                };
+
+                return Results.Ok(results);
+            }
+            catch (ArgumentException ex)
+            {
+                logger.LogWarning(ex, "Invalid RAW search args for index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Invalid Argument",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Instance = $"/api/indexes/raw?index={index}"
+                });
+            }
+            catch (NotSupportedException ex)
+            {
+                logger.LogWarning(ex, "Unsupported index '{Index}'", index);
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "Unsupported Index",
+                    Detail = ex.Message,
+                    Status = 400,
+                    Instance = $"/api/indexes/raw?index={index}"
+                });
+            }
+            catch (RequestFailedException ex)
+            {
+                logger.LogError(ex, "Azure Search RAW error for index '{Index}'", index);
+                var status = ex.Status >= 400 && ex.Status < 600 ? ex.Status : StatusCodes.Status502BadGateway;
+                return Results.Problem(
+                    title: "Search Service Error",
+                    detail: $"Azure Search service encountered an error: {ex.Message}",
+                    statusCode: status,
+                    instance: $"/api/indexes/raw?index={index}"
+                );
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Unexpected RAW search error for index '{Index}'", index);
+                return Results.Problem(
+                    title: "Internal Server Error",
+                    detail: "An unexpected error occurred while processing your raw search request.",
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    instance: $"/api/indexes/raw?index={index}"
+                );
+            }
+        })
+        .WithName("RawSearch")
+        .WithTags("Indexes")
+        .WithSummary("Raw Azure Search (POST)")
+        .WithDescription("Executes a raw search using an OData filter, orderBy, top/skip and text.");
+
         group.MapPost("/getAll", async (
             [FromQuery] string index,
             [FromBody] CommonSearchRequest req,
@@ -520,6 +628,14 @@ public static class CommonIndexingEndpoints
                         await svc.GetByIdAsync<ClassifiedsDealsIndex>(index, id),
                     ConstantValues.IndexNames.ServicesIndex =>
                         await svc.GetByIdAsync<ServicesIndex>(index, id),
+                    ConstantValues.IndexNames.ClassifiedStoresIndex =>
+                        await svc.GetByIdAsync<ClassifiedStoresIndex>(index, id),
+                    ConstantValues.IndexNames.ContentNewsIndex =>
+                        await svc.GetByIdAsync<ContentNewsIndex>(index, id),
+                    ConstantValues.IndexNames.ContentEventsIndex =>
+                        await svc.GetByIdAsync<ContentEventsIndex>(index, id),
+                    ConstantValues.IndexNames.ContentCommunityIndex =>
+                        await svc.GetByIdAsync<ContentCommunityIndex>(index, id),
                     _ => throw new NotSupportedException($"Unknown index '{index}'")
                 };
 
@@ -967,6 +1083,7 @@ public static class CommonIndexRequestExtensions
             ?? request.ClassifiedsCollectiblesItem?.Id
             ?? request.ClassifiedsDealsItem?.Id
             ?? request.ServicesItem?.Id
+
             ?? "unknown";
     }
 }

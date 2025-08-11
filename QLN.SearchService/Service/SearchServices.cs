@@ -212,21 +212,21 @@ namespace QLN.SearchService.Service
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsPrelovedItem = items,
-                        true), 
+                        true),
 
                     ConstantValues.IndexNames.ClassifiedsCollectiblesIndex => await HandleSearchWithJsonFilters<ClassifiedsCollectiblesIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsCollectiblesItem = items,
-                        true), 
+                        true),
 
                     ConstantValues.IndexNames.ClassifiedsDealsIndex => await HandleSearchWithJsonFilters<ClassifiedsDealsIndex>(
                         indexName, modifiedRequest,
                         new List<string> { "IsActive eq true" },
                         regularFilters, jsonFilters,
                         (response, items) => response.ClassifiedsDealsItem = items,
-                        true), 
+                        true),
 
                     ConstantValues.IndexNames.ServicesIndex => await HandleSearchWithJsonFilters<ServicesIndex>(
                         indexName, modifiedRequest,
@@ -318,7 +318,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.AdId,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
@@ -328,7 +328,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.Email,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
@@ -348,7 +348,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.PhoneNumber,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
@@ -368,7 +368,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'" 
+                    Filter = $"UserId eq '{searchTerm.Replace("'", "''")}'"
                 };
             }
 
@@ -378,7 +378,7 @@ namespace QLN.SearchService.Service
                 {
                     Type = SearchType.Username,
                     SearchTerm = searchTerm,
-                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')" 
+                    Filter = $"search.ismatch('{searchTerm.Replace("'", "''")}')"
                 };
             }
 
@@ -487,7 +487,7 @@ namespace QLN.SearchService.Service
                    !IsEmail(input) &&
                    !IsPhoneNumber(input) &&
                    !IsAdId(input) &&
-                   !IsUserId(input) && 
+                   !IsUserId(input) &&
                    !IsPartialEmail(input) &&
                    !IsPartialPhoneNumber(input) &&
                    !IsPartialAdId(input);
@@ -822,7 +822,7 @@ namespace QLN.SearchService.Service
                     },
 
                 "ClassifiedsDealsIndex" => new List<string> { "CreatedAt desc" },
-                "ContentNewsIndex" => new List<string> { "PublishedDate desc", "DateCreated desc" },
+                "ContentNewsIndex" => new List<string> { "PublishedDate desc", "CreatedAt desc" },
                 "ContentEventsIndex" => new List<string> { "PublishedDate desc", "CreatedAt desc" },
                 "ContentCommunityIndex" => new List<string> { "DateCreated desc" },
 
@@ -1428,6 +1428,54 @@ namespace QLN.SearchService.Service
             {
                 _logger.LogError(ex, "Unexpected error during GetByIdWithSimilar for index '{IndexName}', key '{Key}'", indexName, key);
                 throw new InvalidOperationException($"GetByIdWithSimilar operation failed for index '{indexName}', key '{key}'. Please try again.", ex);
+            }
+        }
+        public async Task<AzureSearchResults<T>> SearchRawAsync<T>(
+            string indexName,
+            RawSearchRequest request,
+            CancellationToken ct = default
+        ) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(indexName))
+                throw new ArgumentException("IndexName is required.", nameof(indexName));
+            if (request is null)
+                throw new ArgumentNullException(nameof(request));
+            if (string.IsNullOrWhiteSpace(request.Filter))
+                throw new ArgumentException("Filter is required.", nameof(request.Filter));
+            if (request.Top <= 0 || request.Top > 1000)
+                throw new ArgumentException("Top must be between 1 and 1000.", nameof(request.Top));
+            if (request.Skip < 0)
+                throw new ArgumentException("Skip must be >= 0.", nameof(request.Skip));
+
+            try
+            {
+                var options = new SearchOptions
+                {
+                    SearchMode = SearchMode.All,
+                    IncludeTotalCount = request.IncludeTotalCount,
+                    Filter = request.Filter,
+                    Size = request.Top,
+                    Skip = request.Skip
+                };
+
+                if (!string.IsNullOrWhiteSpace(request.OrderBy))
+                {
+                    foreach (var piece in request.OrderBy.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        options.OrderBy.Add(piece.Trim());
+                }
+
+                var text = string.IsNullOrWhiteSpace(request.Text) ? "*" : request.Text!;
+                var result = await _repo.SearchAsync<T>(indexName, options, text);
+                return result ?? new AzureSearchResults<T> { Items = new List<T>(), TotalCount = 0 };
+            }
+            catch (RequestFailedException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "RAW search failed for index '{IndexName}'", indexName);
+                throw new InvalidOperationException($"RAW search failed for index '{indexName}'.", ex);
             }
         }
     }
