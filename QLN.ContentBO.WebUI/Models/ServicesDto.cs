@@ -59,8 +59,8 @@ namespace QLN.ContentBO.WebUI.Models
         public string Location { get; set; } = string.Empty;
  
         public int? LocationId { get; set; }
-        [MaxLength(50)]
-        public string? SubscriptionId { get; set; }
+        [MaxLength(100)]
+        public Guid SubscriptionId { get; set; }
         [Required]
         [MaxLength(50)]
         public string ZoneId { get; set; } = string.Empty;

@@ -22,6 +22,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Parameter]
         public string Title { get; set; } = "Edit Seasonal Pick";
         [Parameter]
+        public EventCallback ReloadData { get; set; }
+        [Parameter]
         public string CategoryId { get; set; }
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
         protected List<L1Category> _selectedL1Categories = new();
@@ -30,13 +32,23 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         protected SeasonalPicksDto selectedSeasonalPick { get; set; } = new();
         protected DateRange? dateRange
         {
-            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            get => (selectedSeasonalPick.StartDate != DateOnly.MinValue && selectedSeasonalPick.EndDate != DateOnly.MinValue)
+                ? new DateRange(
+                    selectedSeasonalPick.StartDate.ToDateTime(TimeOnly.MinValue),
+                    selectedSeasonalPick.EndDate.ToDateTime(TimeOnly.MinValue)
+                  )
+                : null;
+
             set
             {
-                StartDate = value?.Start;
-                EndDate = value?.End;
+                if (value?.Start != null)
+                    selectedSeasonalPick.StartDate = DateOnly.FromDateTime(value.Start.Value);
+
+                if (value?.End != null)
+                    selectedSeasonalPick.EndDate = DateOnly.FromDateTime(value.End.Value);
             }
         }
+
         protected string? featuredCategoryTitle;
         protected long? SelectedCategoryId;
         protected long? SelectedSubcategoryId;
@@ -75,6 +87,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     _selectedL1Categories = selectedCategory?.Fields ?? new();
                     var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedSeasonalPick?.L1CategoryId);
                     _selectedL2Categories = selectedL1?.Fields ?? new();
+                     dateRange = new DateRange(
+                        selectedSeasonalPick.StartDate.ToDateTime(TimeOnly.MinValue),
+                        selectedSeasonalPick.EndDate.ToDateTime(TimeOnly.MinValue)
+                    );
                 }
                 StateHasChanged();
             }
@@ -195,8 +211,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 l1categoryName = SelectedSubcategory,
                 l2categoryId = SelectedSectionId,
                 l2categoryName = SelectedSection,
-                startDate = StartDate?.ToString("yyyy-MM-dd"),
-                endDate = EndDate?.ToString("yyyy-MM-dd"),
+                startDate = selectedSeasonalPick?.StartDate.ToString("yyyy-MM-dd"),
+                endDate = selectedSeasonalPick?.EndDate.ToString("yyyy-MM-dd"),
                 slotOrder = selectedSeasonalPick.SlotOrder,
                 imageUrl = imageUrl
             };
@@ -206,6 +222,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 if (response?.IsSuccessStatusCode == true)
                 {
                     Snackbar.Add("Seasonal pick Edited successfully!", Severity.Success);
+                    await ReloadData.InvokeAsync();
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

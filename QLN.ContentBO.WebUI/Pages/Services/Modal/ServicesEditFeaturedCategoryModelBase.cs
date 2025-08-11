@@ -22,20 +22,28 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Parameter]
         public string Title { get; set; } = "Edit Seasonal Pick";
         [Parameter]
+        public EventCallback ReloadData { get; set; }
+        [Parameter]
         public string CategoryId { get; set; }
-        private DateRange? _dateRange;
         protected DateRange? dateRange
         {
-            get => _dateRange;
+            get => (selectedFeaturedCategory.StartDate != DateOnly.MinValue && selectedFeaturedCategory.EndDate != DateOnly.MinValue)
+                ? new DateRange(
+                    selectedFeaturedCategory.StartDate.ToDateTime(TimeOnly.MinValue),
+                    selectedFeaturedCategory.EndDate.ToDateTime(TimeOnly.MinValue)
+                  )
+                : null;
+
             set
             {
-                if (_dateRange != value)
-                {
-                    _dateRange = value;
-                    StateHasChanged();
-                }
+                if (value?.Start != null)
+                    selectedFeaturedCategory.StartDate = DateOnly.FromDateTime(value.Start.Value);
+
+                if (value?.End != null)
+                    selectedFeaturedCategory.EndDate = DateOnly.FromDateTime(value.End.Value);
             }
         }
+        
         private bool IsBase64String(string? base64)
         {
             if (string.IsNullOrWhiteSpace(base64))
@@ -81,20 +89,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 SelectedCategory = selectedFeaturedCategory.CategoryName;
                 SelectedSubcategoryId = selectedFeaturedCategory.L1CategoryId;
                 SelectedSubcategory = selectedFeaturedCategory.L1categoryName;
-                var startDate = selectedFeaturedCategory.StartDate;
-                var endDate = selectedFeaturedCategory.EndDate;
-                if (startDate != DateOnly.MinValue && endDate != DateOnly.MinValue)
-                {
                     dateRange = new DateRange(
-                        startDate.ToDateTime(TimeOnly.MinValue),
-                        endDate.ToDateTime(TimeOnly.MinValue)
+                        selectedFeaturedCategory.StartDate.ToDateTime(TimeOnly.MinValue),
+                        selectedFeaturedCategory.EndDate.ToDateTime(TimeOnly.MinValue)
                     );
-                }
-                else
-                {
-                    dateRange = null;
-                }
-
                 var category = CategoryTrees.FirstOrDefault(c => c.Id == selectedFeaturedCategory.CategoryId);
                 if (category != null)
                 {
@@ -214,8 +212,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 categoryName = SelectedCategory,
                 l1categoryName = SelectedSubcategory,
                 l1CategoryId = SelectedSubcategoryId,
-                startDate = StartDate?.ToString("yyyy-MM-dd"),
-                endDate = EndDate?.ToString("yyyy-MM-dd"),
+                startDate = selectedFeaturedCategory.StartDate.ToString("yyyy-MM-dd"),
+                endDate = selectedFeaturedCategory.EndDate.ToString("yyyy-MM-dd"),
                 imageUrl = imageUrl,
                 slotOrder = selectedFeaturedCategory.SlotOrder,
             };
@@ -225,6 +223,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 if (response?.IsSuccessStatusCode == true)
                 {
                     Snackbar.Add("Featured Category Edited successfully!", Severity.Success);
+                    await ReloadData.InvokeAsync();
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else

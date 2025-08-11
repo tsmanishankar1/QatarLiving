@@ -23,6 +23,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         public IDialogService DialogService { get; set; } = default!;
         [Parameter]
         public EventCallback<LandingPageItem> ReplaceItem { get; set; }
+         [Parameter]
+        public EventCallback ReloadData { get; set; }
          [Inject]
         public IClassifiedService ClassifiedService { get; set; }
         [Parameter]
@@ -91,6 +93,8 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                 {
                     { nameof(ServicesEditFeaturedCategoryModalBase.Title), title },
                     { nameof(ServicesEditFeaturedCategoryModalBase.CategoryId), Id },
+                    { nameof(ServicesEditFeaturedCategoryModalBase.ReloadData), ReloadData },
+
                 };
                 dialog = await DialogService.ShowAsync<ServicesEditFeaturedCategoryModel>("", parameters, options);
             }
@@ -100,6 +104,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                 {
                     { nameof(ServicesEditSeasonPickModalBase.Title), title },
                     { nameof(ServicesEditSeasonPickModalBase.CategoryId), Id },
+                    { nameof(ServicesEditFeaturedCategoryModalBase.ReloadData), ReloadData },
                 };
                 dialog = await DialogService.ShowAsync<ServicesEditSeasonalPickModel>("", parameters, options);
             }
