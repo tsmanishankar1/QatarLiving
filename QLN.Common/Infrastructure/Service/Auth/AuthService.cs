@@ -21,8 +21,11 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace QLN.Common.Infrastructure.Service.AuthService
@@ -1212,6 +1215,48 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             var random = new Random();
             return new string(Enumerable.Repeat(chars, 12)
                 .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+
+        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string environment, CancellationToken cancellationToken)
+        {
+
+            var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("env", environment)
+            };
+            var content = new FormUrlEncodedContent(formData);
+
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+            using var _httpClient = new HttpClient();
+
+            var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.LogError($"Failed to migrate categories. Status: {response.StatusCode}");
+                return null;
+            }
+
+            _log.LogTrace($"Got Response from migration endpoint {ConstantValues.Subscriptions.SubscriptionsEndpoint}");
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                var categories = JsonSerializer.Deserialize<LegacySubscriptionDto>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                _log.LogTrace("Completed Deserialization");
+                return categories;
+            }
+            catch (Exception ex)
+            {
+                _log.LogError($"Deserialization error: {ex.Message}");
+                return null;
+            }
         }
     }
 }

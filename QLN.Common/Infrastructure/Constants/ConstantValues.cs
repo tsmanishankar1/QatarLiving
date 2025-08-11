@@ -158,6 +158,11 @@ namespace QLN.Common.Infrastructure.Constants
             public const string CompanyIndexKey = "company-index";
             public const string CompanyServiceAppId = "qln-company-ms";
         }
+
+        public static class Subscriptions
+        {
+            public const string SubscriptionsEndpoint = "http://ql-migrate.westeurope.cloudapp.azure.com/subscriptions.php";
+        }
     }
 }
 

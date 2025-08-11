@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +11,7 @@ using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
@@ -17,9 +19,12 @@ using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
@@ -33,13 +38,13 @@ using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using QLN.Common.Migrations.QLLog;
+using System;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -477,5 +482,68 @@ app.MapPost("/drupallogin", async (
     .WithName("TestDrupalLogin")
     .WithTags("AAAAuthentication")
     .WithDescription("Test login to Drupal");
+
+app.MapGet("/legacysubscription", async (
+    HttpContext context,
+    [FromQuery] string environment,
+    [FromQuery] string uid,
+    CancellationToken cancellationToken
+    ) =>
+{
+    var formData = new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("env", environment),
+                new KeyValuePair<string, string>("uid", uid),
+                new KeyValuePair<string, string>("type", "item")
+            };
+    var content = new FormUrlEncodedContent(formData);
+
+    content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
+
+    using var _httpClient = new HttpClient();
+    _httpClient.DefaultRequestHeaders.Add("x-api-key", builder.Configuration["LegacySubscriptions:ApiKey"]);
+
+    var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
+
+    if (!response.IsSuccessStatusCode)
+    {
+        if(response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            return Results.Unauthorized();
+        }
+        return Results.InternalServerError("Something went wrong");
+    }
+
+    var json = await response.Content.ReadAsStringAsync();
+
+    try
+    {
+        var jsonDeserialized = JsonSerializer.Deserialize<Dictionary<string, object>>(json, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        if (jsonDeserialized == null)
+        {
+            return Results.NotFound("No legacy subscription found for this user.");
+        }
+
+        var levelDown = JsonSerializer.Serialize(jsonDeserialized.GetValueOrDefault(key: uid)); // serialize it to a string
+
+        var subscription = JsonSerializer.Deserialize<LegacySubscriptionDto>(levelDown, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        }); // deserialize into the object we want
+
+        return Results.Ok(subscription);
+    }
+    catch (Exception ex)
+    {
+    }
+
+    return Results.InternalServerError("Something went wrong");
+}).WithName("TestLegacySubscription")
+    .WithTags("AAAAuthentication")
+    .WithDescription("Test fetching legacy subscription");
 
 app.Run();
