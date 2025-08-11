@@ -75,6 +75,18 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
                 new("user", JsonSerializer.Serialize(drupalUser)) // use this one if we want to store the entire DrupalUser object as a string claim
             };
 
+            if(user.Subscriptions != null && user.Subscriptions.Count > 0)
+            {
+                var subscriptionsJson = JsonSerializer.Serialize(user.Subscriptions);
+                authClaims.Add(new Claim("subscriptions", subscriptionsJson, JsonClaimValueTypes.JsonArray));
+            }
+
+            if(user.Companies != null && user.Companies.Count > 0)
+            {
+                var companiesJson = JsonSerializer.Serialize(user.Companies);
+                authClaims.Add(new Claim("companies", companiesJson, JsonClaimValueTypes.JsonArray));
+            }
+
             if (roles != null)
             {
                 foreach (var role in roles)
