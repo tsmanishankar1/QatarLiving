@@ -102,10 +102,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
-        protected void OnEdit()
+        protected void OnEdit(PrelovedP2PTransactionItem item)
         {
-            var name = "Rashid";
-            NavManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            NavManager.NavigateTo($"/manage/classified/deals/createform/{item.UserName}");
         }
 
         protected void OnPreview(PrelovedP2PTransactionItem item)
@@ -123,7 +122,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task Approve(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
         protected Task Publish(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
         protected Task Unpublish(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task OnRemove(PrelovedP2PTransactionItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
        
         private void HandleRejection(string reason)
         {
