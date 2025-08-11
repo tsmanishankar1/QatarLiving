@@ -97,36 +97,74 @@ namespace QLN.Backend.API.Service.V2ContentService
             return result ?? new List<DailyTopSectionSlot>();
 
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
+        public async Task<List<V2NewsArticleDTO>> GetUnusedDailyTopSectionArticlesAsync(
+                    int? page = null, int? pageSize = null, CancellationToken ct = default)
         {
-            var queryParams = new Dictionary<string, string>();
+            var p = Math.Max(1, page ?? 1);
+            var ps = Math.Clamp(pageSize ?? 12, 1, 100);
 
-            if (page.HasValue)
-                queryParams.Add("page", page.Value.ToString());
+            // Read current top-section slots from internal state (no Search in internal)
+            var slots = await GetAllSlotsAsync(ct);
+            var usedArticleIds = slots
+                .Where(s => s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
+                .Select(s => s.RelatedContentId.ToString())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            if (pageSize.HasValue)
-                queryParams.Add("pageSize", pageSize.Value.ToString());
+            // Build filter: active + any slotId < 15 (published/live lanes)
+            var filter = "IsActive eq true and Categories/any(c: c/SlotId lt 15)";
+            if (usedArticleIds.Count > 0)
+                filter += $" and not search.in(Id, '{string.Join(",", usedArticleIds)}', ',')";
 
-            var queryString = queryParams.Count > 0
-                ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                : string.Empty;
+            var res = await _search.SearchRawAsync<ContentNewsIndex>(
+                IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = filter,
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = ps,
+                    Skip = (p - 1) * ps,
+                    Text = "*",
+                    IncludeTotalCount = false
+                },
+                ct);
 
-            var path = $"/api/v2/dailyliving/topsection/unusedarticles{queryString}";
+            return res.Items.Select(MapNewsIndexToDto).ToList();
+        }
 
-            try
-            {
-                return await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
-                    HttpMethod.Get,
-                    AppId,
-                    path,
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                throw new DaprServiceException(
-                    statusCode: StatusCodes.Status502BadGateway,
-                    responseBody: ex.Message);
-            }
+        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(
+            Guid topicId, int? page = null, int? pageSize = null, CancellationToken ct = default)
+        {
+            if (topicId == Guid.Empty) throw new ArgumentOutOfRangeException(nameof(topicId));
+
+            var p = Math.Max(1, page ?? 1);
+            var ps = Math.Clamp(pageSize ?? 12, 1, 100);
+
+            // Get slots for topic from internal
+            var topicSlots = await GetSlotsByTopicAsync(topicId, ct);
+            var usedArticleIds = topicSlots
+                .Where(s => s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
+                .Select(s => s.RelatedContentId.ToString())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // Active & not “unpublished” (SlotId != 15)
+            var filter = "IsActive eq true and Categories/any(c: c/SlotId ne 15)";
+            if (usedArticleIds.Count > 0)
+                filter += $" and not search.in(Id, '{string.Join(",", usedArticleIds)}', ',')";
+
+            var res = await _search.SearchRawAsync<ContentNewsIndex>(
+                IndexNames.ContentNewsIndex,
+                new RawSearchRequest
+                {
+                    Filter = filter,
+                    OrderBy = "PublishedDate desc, CreatedAt desc",
+                    Top = ps,
+                    Skip = (p - 1) * ps,
+                    Text = "*",
+                    IncludeTotalCount = false
+                },
+                ct);
+
+            return res.Items.Select(MapNewsIndexToDto).ToList();
         }
         public async Task<List<DailyTopic>> GetAllDailyTopicsAsync(CancellationToken cancellationToken = default)
         {
@@ -337,106 +375,66 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<List<V2NewsArticleDTO>> GetUnusedNewsArticlesForTopicAsync(Guid topicId, int? page = null, int? pageSize = null, CancellationToken cancellationToken = default)
-        {
-            if (topicId == Guid.Empty)
-                throw new ArgumentOutOfRangeException(nameof(topicId), "TopicId cannot be empty.");
-
-            var queryParams = new Dictionary<string, string>();
-
-            if (page.HasValue)
-                queryParams.Add("page", page.Value.ToString());
-
-            if (pageSize.HasValue)
-                queryParams.Add("pageSize", pageSize.Value.ToString());
-
-            var queryString = queryParams.Count > 0
-                ? "?" + string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={kvp.Value}"))
-                : string.Empty;
-
-
-            var path = $"/api/v2/dailyliving/topic/{topicId}/unusedarticles{queryString}";
-
-            try
-            {
-                return await _dapr.InvokeMethodAsync<List<V2NewsArticleDTO>>(
-                    HttpMethod.Get,
-                    AppId,
-                    path,
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                throw new DaprServiceException(
-                    statusCode: StatusCodes.Status502BadGateway,
-                    responseBody: ex.Message);
-            }
-        }
         public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
         {
-            // 1) read state only
+            // Pull layout state from internal…
             var slots = await GetAllSlotsAsync(ct) ?? new();
             var topics = (await GetAllDailyTopicsAsync(ct) ?? new()).Where(t => t.IsPublished).ToList();
 
-            // 2) build top section (no filters, just GetById)
-            var topStoryItems = new List<ContentPost>();
-            var topStoriesItems = new List<ContentPost>();
-            var highlightedEventItem = new List<ContentEvent>();
-            var moreArticlesItems = new List<ContentEvent>();
+            var topStory = new List<ContentPost>();
+            var topStories = new List<ContentPost>();
+            var highlighted = new List<ContentEvent>();
+            var moreArticles = new List<ContentEvent>();
 
-            // slot 1 → top story (article)
+            // S1 → Top Story
             var s1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
-            if (s1?.RelatedContentId != Guid.Empty)
-                if (await LoadNewsAsync(s1.RelatedContentId, ct) is { } n1)
-                    topStoryItems.Add(MapNewsToPost(n1, "Top Story"));
+            if (s1?.RelatedContentId != Guid.Empty && await LoadNewsAsync(s1.RelatedContentId, ct) is { } n1)
+                topStory.Add(MapNewsToPost(n1, "Top Story"));
 
-            // slot 2 → highlighted event
+            // S2 → Highlighted Event
             var s2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
-            if (s2?.RelatedContentId != Guid.Empty)
-                if (await LoadEventAsync(s2.RelatedContentId, ct) is { } e2)
-                    highlightedEventItem.Add(MapEventToEvent(e2, "Highlighted Event"));
+            if (s2?.RelatedContentId != Guid.Empty && await LoadEventAsync(s2.RelatedContentId, ct) is { } e2)
+                highlighted.Add(MapEventToEvent(e2, "Highlighted Event"));
 
-            // slots 3..5 → Top Stories (articles)
-            foreach (var s in slots.Where(x => x.SlotNumber is >= 3 and <= 5 && x.ContentType == DailyContentType.Article)
-                                   .OrderBy(x => x.SlotNumber))
+            // S3..5 → Top Stories
+            foreach (var s in slots.Where(x => x.SlotNumber is >= 3 and <= 5 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    topStoriesItems.Add(MapNewsToPost(n, "Top Stories"));
+                    topStories.Add(MapNewsToPost(n, "Top Stories"));
 
-            // slots 6..9 → More Articles (articles)
-            foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article)
-                                   .OrderBy(x => x.SlotNumber))
+            // S6..9 → More Articles
+            foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article).OrderBy(x => x.SlotNumber))
                 if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                    moreArticlesItems.Add(MapNewsToEvent(n, "More Articles"));
+                    moreArticles.Add(MapNewsToEvent(n, "More Articles"));
 
-            // 3) dynamic topics → hydrate each slot by ID (article/event/video)
+            // Dynamic topics
             var topicQueues = new List<BaseQueueResponse<ContentEvent>>();
-            foreach (var topic in topics)
+            foreach (var t in topics)
             {
-                var topicItems = new List<ContentEvent>();
-                var topicSlots = await GetSlotsByTopicAsync(topic.Id, ct) ?? new();
+                var items = new List<ContentEvent>();
+                var tSlots = await GetSlotsByTopicAsync(t.Id, ct) ?? new();
 
-                foreach (var s in topicSlots.OrderBy(x => x.SlotNumber))
+                foreach (var s in tSlots.OrderBy(x => x.SlotNumber))
                 {
                     if (s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
                     {
                         if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
-                            topicItems.Add(MapNewsToEvent(n, topic.TopicName));
+                            items.Add(MapNewsToEvent(n, t.TopicName));
                     }
                     else if (s.ContentType == DailyContentType.Event && s.RelatedContentId != Guid.Empty)
                     {
                         if (await LoadEventAsync(s.RelatedContentId, ct) is { } e)
-                            topicItems.Add(MapEventToEvent(e, topic.TopicName));
+                            items.Add(MapEventToEvent(e, t.TopicName));
                     }
                     else if (s.ContentType == DailyContentType.Video)
                     {
-                        topicItems.Add(new ContentEvent
+                        items.Add(new ContentEvent
                         {
                             Id = s.Id,
                             IsActive = true,
                             CreatedAt = s.CreatedAt,
                             UpdatedAt = s.UpdatedAt,
                             PageName = DrupalContentConstants.QlnContentsDaily,
-                            QueueLabel = topic.TopicName,
+                            QueueLabel = t.TopicName,
                             NodeType = "video",
                             Nid = s.RelatedContentId.ToString(),
                             Title = s.Title,
@@ -448,24 +446,18 @@ namespace QLN.Backend.API.Service.V2ContentService
                     }
                 }
 
-                topicQueues.Add(new BaseQueueResponse<ContentEvent>
-                {
-                    QueueLabel = topic.TopicName,
-                    Items = topicItems
-                });
+                topicQueues.Add(new BaseQueueResponse<ContentEvent> { QueueLabel = t.TopicName, Items = items });
             }
 
-            // 4) assemble (keep it simple; no extra lookups)
             return new ContentsDailyPageResponse
             {
                 ContentsDaily = new ContentsDaily
                 {
-                    DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = topStoryItems },
-                    DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = topStoriesItems },
-                    DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = highlightedEventItem },
-                    DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = moreArticlesItems },
-                    // leave Featured empty here to keep it minimal; add later if needed
-                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = new() },
+                    DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = topStory },
+                    DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = topStories },
+                    DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = highlighted },
+                    DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = moreArticles },
+                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = new() }, // keep simple
                     DailyTopics1 = topicQueues.ElementAtOrDefault(0) ?? new() { QueueLabel = string.Empty, Items = new() },
                     DailyTopics2 = topicQueues.ElementAtOrDefault(1) ?? new() { QueueLabel = string.Empty, Items = new() },
                     DailyTopics3 = topicQueues.ElementAtOrDefault(2) ?? new() { QueueLabel = string.Empty, Items = new() },
@@ -475,7 +467,6 @@ namespace QLN.Backend.API.Service.V2ContentService
             };
         }
 
-        // ────────────────── helpers: 1 call each, swallow 400s/404s ──────────────────
         private async Task<ContentNewsIndex?> LoadNewsAsync(Guid id, CancellationToken ct)
         {
             if (id == Guid.Empty) return null;
@@ -490,7 +481,34 @@ namespace QLN.Backend.API.Service.V2ContentService
             catch (Exception ex) { _logger.LogWarning(ex, "Event lookup failed for {Id}", id); return null; }
         }
 
-        // ────────────────────────── tiny mappers (no extras) ─────────────────────────
+        private static V2NewsArticleDTO MapNewsIndexToDto(ContentNewsIndex i)
+        {
+            Guid.TryParse(i.Id, out var gid);
+            return new V2NewsArticleDTO
+            {
+                Id = gid,
+                Title = i.Title,
+                Content = i.Content,
+                authorName = i.authorName,
+                CoverImageUrl = i.CoverImageUrl,
+                Slug = i.Slug,
+                UserId = i.UserId,
+                WriterTag = i.WriterTag,
+                PublishedDate = i.PublishedDate,
+                IsActive = i.IsActive,
+                CreatedBy = i.CreatedBy,
+                CreatedAt = i.CreatedAt,
+                UpdatedAt = i.UpdatedAt,
+                UpdatedBy = i.UpdatedBy,
+                Categories = i.Categories?.Select(c => new V2ArticleCategory
+                {
+                    CategoryId = c.CategoryId,
+                    SubcategoryId = c.SubcategoryId,
+                    SlotId = c.SlotId
+                }).ToList() ?? new()
+            };
+        }
+
         private static ContentPost MapNewsToPost(ContentNewsIndex i, string label) => new()
         {
             Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
