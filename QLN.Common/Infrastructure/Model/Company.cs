@@ -73,7 +73,7 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(100)]
         public string? UserName { get; set; }
 
-        public DateOnly? CRExpiryDate { get; set; } 
+        public DateTime? CRExpiryDate { get; set; } 
 
         [MaxLength(70)]
         public string? CoverImage1 { get; set; }
