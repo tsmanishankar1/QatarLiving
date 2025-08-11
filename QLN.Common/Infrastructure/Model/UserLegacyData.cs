@@ -28,7 +28,6 @@ namespace QLN.Common.Infrastructure.Model
         public List<string>? Permissions { get; set; }
         public List<string>? Roles { get; set; }
         //public List<object> ShowroomInfo { get; set; }
-        public LegacySubscription? Subscription { get; set; }
     }
 
     public class LegacySubscription

@@ -1002,7 +1002,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.ValidationProblem(errors, title: "Parsing Drupal ID Error");
                 }
 
-                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
+                //var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == drupalUser.Email);
+                var user = await _userManager.FindByEmailAsync(drupalUser.Email);
 
                 if (user == null)
                 {
@@ -1026,10 +1027,10 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                         LanguagePreferences = !string.IsNullOrEmpty(drupalUser.Language) ? drupalUser.Language : "en", // Default language,
                         LegacyData = new UserLegacyData()
                         {
-                            Access = drupalUser.Access,
-                            Created = drupalUser.Created,
-                            Init = drupalUser.Init,
-                            Status = drupalUser.Status,
+                            Access = drupalUser.Access ?? string.Empty,
+                            Created = drupalUser.Created ?? string.Empty,
+                            Init = drupalUser.Init ?? string.Empty,
+                            Status = drupalUser.Status ?? string.Empty,
                             Uid = userId,
                             Alias = drupalUser.Alias,
                             Email = drupalUser.Email,
@@ -1042,22 +1043,21 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                             Phone = drupalUser.Phone,
                             QlnextUserId = drupalUser.QlnextUserId,
                             Roles = drupalUser.Roles,
-                            Subscription = drupalUser.Subscription != null ? new LegacySubscription()
-                            { 
-                                ExpireDate = drupalUser.Subscription.ExpireDate,
-                                ProductClass = drupalUser.Subscription.ProductClass,
-                                AccessDashboard = drupalUser.Subscription.AccessDashboard,
-                                ProductType = drupalUser.Subscription.ProductType,
-                                ReferenceId = drupalUser.Subscription.ReferenceId,
-                                Snid = drupalUser.Subscription.Snid,
-                                StartDate = drupalUser.Subscription.StartDate,
-                                Status = drupalUser.Subscription.Status,
-                                Uid = userId,
-                                //Uid = long.TryParse(drupalUser.Subscription.Uid, out var subscriptionUid) ? subscriptionUid : 0,
-                                SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
-                                Categories = drupalUser.Subscription.Categories
-                            } : null
-                        }
+                        },
+                        LegacySubscription = drupalUser.Subscription != null ? new LegacySubscription
+                        {
+                            Uid = userId,
+                            ReferenceId = drupalUser.Subscription.ReferenceId ?? string.Empty,
+                            StartDate = drupalUser.Subscription.StartDate ?? string.Empty,
+                            ExpireDate = drupalUser.Subscription.ExpireDate ?? string.Empty,
+                            ProductType = drupalUser.Subscription.ProductType ?? string.Empty,
+                            AccessDashboard = drupalUser.Subscription.AccessDashboard,
+                            ProductClass = drupalUser.Subscription.ProductClass ?? string.Empty,
+                            Categories = drupalUser.Subscription.Categories,
+                            SubscriptionCategories = drupalUser.Subscription.SubscriptionCategories,
+                            Snid = drupalUser.Subscription.Snid ?? string.Empty,
+                            Status = drupalUser.Subscription.Status ?? string.Empty
+                        } : null
                     };
 
                     var createResult = await _userManager.CreateAsync(user, randomPassword);
