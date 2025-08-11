@@ -122,7 +122,7 @@ public class ReplaceDialogModalBase : ComponentBase
             result = events
                 .Where(e => e.CategoryName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
         }
-        Console.WriteLine("result", result);
+
 
         return Task.FromResult(result);
     }

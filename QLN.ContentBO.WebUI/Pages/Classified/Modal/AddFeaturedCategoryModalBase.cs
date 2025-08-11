@@ -15,6 +15,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
         public IMudDialogInstance MudDialog { get; set; }
         [Inject]
         public IClassifiedService ClassifiedService { get; set; }
+        [Inject] private ILogger<AddFeaturedCategoryModalBase> Logger { get; set; } = default!;
         [Inject]
         public ISnackbar Snackbar { get; set; }
 
@@ -54,18 +55,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                     {
                         PropertyNameCaseInsensitive = true
                     }) ?? new();
-
-                    foreach (var cat in _categoryTree)
-                        Console.WriteLine($"- {cat.Name} ({cat.Id}) → {cat.Children?.Count ?? 0} subcategories");
-                }
-                else
-                {
-                    Console.WriteLine(" Failed to fetch category tree. Status: " + response?.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(" Exception while loading category tree: " + ex.Message);
+                Logger.LogError(ex, "OnInitializedAsync");
             }
             finally
             {

@@ -550,7 +550,7 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"GetAddressByDetailsAsync Error: {ex}");
+                _logger.LogError("GetAddressByDetailsAsync: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -574,24 +574,22 @@ namespace QLN.ContentBO.WebUI.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
-
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                 _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in PostClassifiedItemAsync: {ex}");
+                 _logger.LogError("PostAdAsync " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -616,24 +614,23 @@ namespace QLN.ContentBO.WebUI.Services
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
 
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                 _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                 _logger.LogError("UpdateAdAsyn " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -673,10 +670,6 @@ namespace QLN.ContentBO.WebUI.Services
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
                 };
-
-                Console.WriteLine("PostAdAsync Request Payload:");
-                Console.WriteLine(json);
-
                 return await _httpClient.SendAsync(request);
             }
             catch (Exception ex)
@@ -690,7 +683,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var url = $"/api/classified/items/refresh/{adId}?subVertical={subVertical}";
-                //  _logger.LogInformation("Calling RefreshAd API at URL: {Url}", url);
                 var response = await _httpClient.PostAsync(url, null); // No body required
                 return response;
             }
@@ -841,7 +833,6 @@ namespace QLN.ContentBO.WebUI.Services
             try
             {
                 var endpoint = $"/api/classified/deals/update";
-
                 using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
                 {
                     Content = JsonContent.Create(payload, options: new JsonSerializerOptions
@@ -850,32 +841,26 @@ namespace QLN.ContentBO.WebUI.Services
                         WriteIndented = false
                     })
                 };
-
                 var response = await _httpClient.SendAsync(request);
-
-                Console.WriteLine($"Update response status: {response.StatusCode}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
-                    Console.WriteLine($"Error body: {errorBody}");
                 }
-
                 return response;
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HttpRequestException: {ex.Message}");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.BadGateway);
             }
             catch (TaskCanceledException ex) when (!ex.CancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("HTTP request timed out.");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.RequestTimeout);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled error in UpdateAdAsync: {ex}");
+                _logger.LogError("UpdateDealsAsync " + ex.Message);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }

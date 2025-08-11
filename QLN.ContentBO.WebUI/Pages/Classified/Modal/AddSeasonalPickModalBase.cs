@@ -58,7 +58,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Exception while loading category tree: " + ex.Message);
+                Logger.LogError(ex, "OnInitializedAsync");
             }
             finally
             {
@@ -74,13 +74,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId.ToString());
             SelectedCategory = category?.Name ?? string.Empty;
-
             _subcategories = category?.Children ?? new();
-
-            Console.WriteLine($"Subcategories Count: {_subcategories.Count}");
-            foreach (var sub in _subcategories)
-                Console.WriteLine($" - {sub.Name} ({sub.Id})");
-
             _sections = new();
         }
 
@@ -95,9 +89,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             _sections = sub?.Children ?? new();
 
-            Console.WriteLine($"Sections Count: {_sections.Count}");
-            foreach (var sec in _sections)
-                Console.WriteLine($" - {sec.Name} ({sec.Id})");
         }
         protected void OnSectionChanged(long? sectionId)
         {
