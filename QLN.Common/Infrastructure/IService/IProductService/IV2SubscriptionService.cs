@@ -24,7 +24,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Grouped subscription response</returns>
         Task<V2SubscriptionGroupResponseDto> GetSubscriptionsByVerticalAsync(
-            int verticalTypeId,
+            int verticalTypeId,string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>New subscription ID</returns>
         Task<Guid> PurchaseSubscriptionAsync(
-            V2SubscriptionPurchaseRequestDto request,
+            V2SubscriptionPurchaseRequestDto request,string userId,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// </summary>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of all active subscriptions</returns>
-        Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(
+        Task<List<V2SubscriptionResponseDto>> GetAllActiveSubscriptionsAsync(string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -63,6 +63,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <returns>True if successful</returns>
         Task<bool> CancelSubscriptionAsync(
             Guid subscriptionId,
+            string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -75,8 +76,9 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <returns>True if quota is available</returns>
         Task<bool> ValidateSubscriptionUsageAsync(
             Guid subscriptionId,
+            
             string quotaType,
-            decimal requestedAmount,
+            int requestedAmount,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -89,8 +91,9 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <returns>True if successful</returns>
         Task<bool> RecordSubscriptionUsageAsync(
             Guid subscriptionId,
+            
             string quotaType,
-            decimal amount,
+            int amount,
             CancellationToken cancellationToken = default);
 
         #endregion
@@ -104,7 +107,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>New addon ID</returns>
         Task<Guid> PurchaseAddonAsync(
-            V2UserAddonPurchaseRequestDto request,
+            V2UserAddonPurchaseRequestDto request,string userid,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -118,7 +121,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> ValidateAddonUsageAsync(
             Guid addonId,
             string quotaType,
-            decimal requestedAmount,
+            int requestedAmount,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -132,7 +135,7 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         Task<bool> RecordAddonUsageAsync(
             Guid addonId,
             string quotaType,
-            decimal amount,
+            int amount,
             CancellationToken cancellationToken = default);
 
         /// <summary>
