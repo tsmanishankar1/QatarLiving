@@ -129,7 +129,6 @@ namespace QLN.ContentBO.WebUI.Services
                     vertical = vertical
                 };
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Console.Write("the reorder payload sent here is " + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -202,7 +201,6 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
-                Console.Write("the edit payload is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editfeaturedcategory")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -227,7 +225,6 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
-                Console.Write("the edit payload is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editseasonalpick")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -300,7 +297,6 @@ namespace QLN.ContentBO.WebUI.Services
                     vertical = vertical
                 };
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-                Console.Write("the reorder playlaod is " + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/featured-category/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -350,7 +346,6 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"SearchClassifiedsViewTransactionAsync Error for " + ex);
                 responses.Add(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
                 return responses;
             }
@@ -543,7 +538,6 @@ namespace QLN.ContentBO.WebUI.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetAllZonesAsync Error: " + ex);
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
@@ -576,11 +570,7 @@ namespace QLN.ContentBO.WebUI.Services
                     })
                 };
 
-                // Send request
                 var response = await _httpClient.SendAsync(request);
-
-                Console.WriteLine($"Post response status: {response.StatusCode}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Content.ReadAsStringAsync();
@@ -622,7 +612,6 @@ namespace QLN.ContentBO.WebUI.Services
 
                 var response = await _httpClient.SendAsync(request);
 
-                Console.WriteLine($"Update response status: {response.StatusCode}");
 
                 if (!response.IsSuccessStatusCode)
                 {
