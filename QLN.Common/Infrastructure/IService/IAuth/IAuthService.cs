@@ -3,12 +3,13 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.DTO_s;
+using QLN.Common.Infrastructure.Model;
 
 namespace QLN.Common.Infrastructure.IService.IAuthService
 {
     public interface IAuthService
     {
-        Task<string> Register(RegisterRequest request, HttpContext context);
+        Task<string> Register(RegisterRequest request);
         Task<Results<Ok<string>, ProblemHttpResult, Conflict<ProblemDetails>>> SendEmailOtp(string email);
         Task<Results<Ok<string>, ProblemHttpResult, NotFound<string>, BadRequest<string>>> VerifyEmailOtp(string email, string otp);
         Task<Results<Ok<string>, ProblemHttpResult, Conflict<ProblemDetails>>> SendPhoneOtp(string phoneNumber);
@@ -24,5 +25,7 @@ namespace QLN.Common.Infrastructure.IService.IAuthService
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, NotFound<ProblemDetails>, ProblemHttpResult>> UpdateProfile(Guid id, UpdateProfileRequest request);
         Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> Logout(Guid id);
         Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> SendTwoFactorOtp(Send2FARequest request);
+
+        Task<Results<Ok<LoginResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UserSync(DrupalUser drupalUser, DateTime expiry);
     }
 }

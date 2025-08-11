@@ -6,7 +6,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.User
     {
         public static RouteGroupBuilder MapAuthEndpoints(this RouteGroupBuilder group)
         {
-            group.MapRegisterEndpoints()
+            group.MapGetUserSyncEndpoint()
+                .MapRegisterEndpoints()
                 .MapForgotPasswordEndpoint()
                 .MapResetPasswordEndpoint()
                 .MapLoginEndpoint()
