@@ -8,7 +8,7 @@ namespace QLN.ContentBO.WebUI.Models
     public string Email { get; set; } = string.Empty;
     public string Mobile { get; set; } = string.Empty;
     public string Whatsapp { get; set; } = string.Empty;
-    public string Amount { get; set; } = string.Empty;
+    public decimal Amount { get; set; } = 0;
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
     public string Views { get; set; } = string.Empty;
