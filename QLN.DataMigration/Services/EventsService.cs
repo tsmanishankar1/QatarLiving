@@ -194,6 +194,26 @@ namespace QLN.DataMigration.Services
             throw new NotImplementedException();
         }
 
+        public async Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.EventsMigration,
+                            data: dto,
+                            cancellationToken: cancellationToken
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing article {dto.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                throw;
+            }
+
+            return $"Published article {dto.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic";
+        }
+
         public Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest dto, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

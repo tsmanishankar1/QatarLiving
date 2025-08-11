@@ -128,13 +128,15 @@ app.MapPost("/api/v2/news/bulkMigrate",
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
+app.MapPost("/api/v2/events/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.EventsMigration)] 
+            async Task<Results<
             Ok<string>,
             ForbidHttpResult,
             BadRequest<ProblemDetails>,
             ProblemHttpResult>>
             (
-            List<V2Events> events,
+            V2Events dto,
             IV2EventService service,
             HttpContext httpContext,
             CancellationToken cancellationToken
@@ -142,7 +144,7 @@ app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
  {
      try
      {
-         var result = await service.BulkMigrateEvents(events, cancellationToken);
+         var result = await service.MigrateEvent(dto, cancellationToken);
          return TypedResults.Ok(result);
      }
      catch (Exception ex)
@@ -158,12 +160,14 @@ app.MapPost("/api/v2/events/bulkMigrate", async Task<Results<
 .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-app.MapPost("/api/v2/community/bulkMigrate", async Task<Results<
+app.MapPost("/api/v2/community/bulkMigrate",
+    [Topic(PubSubName, PubSubTopics.PostsMigration)] 
+                async Task<Results<
                 Ok<string>,
                 BadRequest<ProblemDetails>,
                 ProblemHttpResult>>
             (
-                List<V2CommunityPostDto> posts,
+                V2CommunityPostDto post,
                 IV2CommunityPostService service,
                 CancellationToken ct
             ) =>
@@ -171,7 +175,7 @@ app.MapPost("/api/v2/community/bulkMigrate", async Task<Results<
      try
      {
 
-         var result = await service.BulkMigrateCommunityPostsAsync(posts, ct);
+         var result = await service.MigrateCommunityPostAsync(post, ct);
          return TypedResults.Ok(result);
      }
      catch (Exception ex)

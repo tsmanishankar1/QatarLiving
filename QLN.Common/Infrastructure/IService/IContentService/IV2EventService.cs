@@ -22,5 +22,6 @@ namespace QLN.Common.Infrastructure.IService.IContentService
         Task UpdateFeaturedEvent(UpdateFeaturedEvent dto, CancellationToken cancellationToken = default);
         Task<string> UnfeatureEvent(Guid id, CancellationToken cancellationToken = default);
         Task<string> BulkMigrateEvents(List<V2Events> events, CancellationToken cancellationToken = default);
+        Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default);
     }
 }
