@@ -70,6 +70,7 @@ namespace QLN.Common.Infrastructure.Service.JwtTokenService
                 new(JwtRegisteredClaimNames.Name, drupalUser.Name ?? string.Empty),
                 new(JwtRegisteredClaimNames.Picture, drupalUser.Image ?? string.Empty),
                 new(JwtRegisteredClaimNames.Nickname, drupalUser.Alias ?? string.Empty),
+                new("legacy_uid", user.LegacyUid.ToString() ?? string.Empty),
                 new("is_admin", drupalUser.IsAdmin.ToString() ?? "false"),
                 //new("user", JsonSerializer.Serialize(drupalUser), JsonClaimValueTypes.Json) // use this one if we want to store the entire DrupalUser object as a JSON claim
                 new("user", JsonSerializer.Serialize(drupalUser)) // use this one if we want to store the entire DrupalUser object as a string claim
