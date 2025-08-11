@@ -30,10 +30,8 @@ namespace QLN.Common.Infrastructure.QLDbContext
                       v => string.IsNullOrEmpty(v) ? null : TimeSpan.Parse(v)
                   );
             entity.Property(c => c.CRExpiryDate)
-                  .HasConversion(
-                      v => v.HasValue ? v.Value.ToDateTime(TimeOnly.MinValue) : (DateTime?)null,
-                      v => v.HasValue ? DateOnly.FromDateTime(v.Value) : (DateOnly?)null
-                  );
+           .HasColumnType("timestamp with time zone"); 
+
             entity.Property(c => c.IsActive)
                   .HasDefaultValue(true);
 
