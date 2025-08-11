@@ -389,7 +389,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-                QLN.Common.Infrastructure.Model.Services dto,
+                Services dto,
                 HttpContext httpContext,
                 AuditLogger auditLogger,
                 IServices service,
@@ -609,12 +609,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyserviceid/{id:guid}", async Task<Results<
+            group.MapGet("/getbyserviceid/{id:long}", async Task<Results<
                 Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
-                Guid id,
+                long id,
                 [FromServices] ISearchService service,
                 CancellationToken cancellationToken) =>
             {

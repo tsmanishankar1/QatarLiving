@@ -15,10 +15,7 @@ namespace QLN.Common.Infrastructure.IService.ISearchService
         Task<string> UploadAsync(CommonIndexRequest request);
         Task<T?> GetByIdAsync<T>(string indexName, string key);
         Task DeleteAsync(string indexName, string key);
-        Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(
-           string indexName,
-           string key,
-           int similarPageSize = 10
-       ) where T : class;
+        Task<GetWithSimilarResponse<T>> GetByIdWithSimilarAsync<T>(string indexName, string key, int similarPageSize = 10) where T : class;
+        Task<AzureSearchResults<T>> SearchRawAsync<T>(string indexName, RawSearchRequest request, CancellationToken ct = default) where T : class;
     }
 }

@@ -11,6 +11,8 @@ namespace QLN.Common.DTO_s.Company
         Pending = 1,
         Approved = 2,
         NeedChanges = 3,
-        Rejected = 4
+        Rejected = 4,
+        Removed = 5,
+        OnHold = 6
     }
 }
