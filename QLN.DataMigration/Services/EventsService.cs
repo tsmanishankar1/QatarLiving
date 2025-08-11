@@ -207,7 +207,7 @@ namespace QLN.DataMigration.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error publishing event {dto.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                _logger.LogError(ex, $"Error publishing event {dto.Id} to {ConstantValues.PubSubTopics.EventsMigration} topic");
                 throw;
             }
 
