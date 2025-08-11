@@ -10,6 +10,8 @@ using QLN.Common.DTO_s.Subscription;
 using System;
 using System.Linq;
 using QLN.Common.DTO_s.Payments;
+using QLN.Common.DTO_s;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace QLN.Backend.API.Service.ProductService
 {
@@ -178,13 +180,28 @@ namespace QLN.Backend.API.Service.ProductService
             }
         }
 
-        public async Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(string userId, CancellationToken cancellationToken = default)
+        public async Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
+            Vertical? vertical,
+            SubVertical? subVertical,
+            string userId,
+            CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting V2 subscriptions for user: {UserId}", userId);
 
-            var dbSubscriptions = await _context.Subscriptions
-                .Where(s => s.UserId == userId && s.Status != SubscriptionStatus.Expired)
-                .ToListAsync(cancellationToken);
+            var query = _context.Subscriptions
+                .Where(s => s.UserId == userId && s.Status != SubscriptionStatus.Expired);
+
+            if (vertical.HasValue)
+            {
+                query = query.Where(s => s.Vertical == vertical.Value);
+            }
+
+            if (subVertical.HasValue)
+            {
+                query = query.Where(s => s.SubVertical == subVertical.Value);
+            }
+
+            var dbSubscriptions = await query.ToListAsync(cancellationToken);
 
             var subscriptions = new List<V2SubscriptionResponseDto>();
 

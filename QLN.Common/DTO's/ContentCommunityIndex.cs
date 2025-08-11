@@ -51,10 +51,8 @@ namespace QLN.Common.DTO_s
         [SimpleField(IsFilterable = true)]
         public int CommentCount { get; set; }
 
-        [SimpleField(IsFilterable = true)]
         public IList<string>? LikedUserIds { get; set; }
 
-        [SimpleField(IsFilterable = true)]
         public IList<string>? CommentedUserIds { get; set; }
 
     }

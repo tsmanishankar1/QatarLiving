@@ -107,25 +107,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.Subscription
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = data?.Items.Select(item => new SubscriptionListingModal
-                    {
-                        OrderId = item.OrderId,
-                        SubscriptionType = item.SubscriptionType,
-                        UserName = item.UserName ?? "-",
-                        Email = item.EmailAddress ?? "-",
-                        Mobile = item.Mobile ?? "-",
-                        Whatsapp = item.WhatsappNumber ?? "-",
-                        Amount = item.Amount,
-                        Status = item.Status,
-                        CreationDate = ParseDate(item.StartDate),
-                        PublishedDate = ParseDate(item.StartDate),
-                        ExpiryDate = ParseDate(item.EndDate),
-                        AdTitle = item.OrderId,
-                        UserId = 0,
-                        SubscriptionId = 0,
-                        WhatsAppCount = item.WhatsAppCount,
-                        PhoneCount = item.PhoneCount,
-                    }).ToList() ?? new List<SubscriptionListingModal>();
+                    Listings = [];
 
                     TotalCount = data?.TotalCount ?? 0;
                 }

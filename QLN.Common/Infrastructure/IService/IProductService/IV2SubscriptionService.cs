@@ -1,4 +1,5 @@
 ﻿using Dapr.Actors;
+using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Subscriptions;
@@ -44,6 +45,8 @@ namespace QLN.Common.Infrastructure.IService.IProductService
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of user subscriptions</returns>
         Task<List<V2SubscriptionResponseDto>> GetUserSubscriptionsAsync(
+            Vertical? vertical,
+            SubVertical? subvertical,
             string userId,
             CancellationToken cancellationToken = default);
 

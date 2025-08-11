@@ -4,24 +4,24 @@ common:
   - ./Components
 
 apps:
-   # - appID: qln-backend-api
-   #   appDirPath: QLN.Backend.API
-   #   appPort: 5200
-   #   command:
-   #     - dotnet
-   #     - run
+  - appID: qln-backend-api
+    appDirPath: QLN.Backend.API
+    appPort: 5200
+    command:
+      - dotnet
+      - run
 # - appDirPath: QLN.BusinessProfile.MS
 #   appID: qln-businessprofile-ms
 #   appPort: 5027
 #   command:
 #   - dotnet
 #   - run
-  # - appID: qln-subscriptions-actor
-  #   appDirPath: QLN.Subscriptions.Actor
-  #   appPort: 5056
-  #   command:
-  #     - dotnet
-  #     - run
+  - appID: qln-subscriptions-actor
+    appDirPath: QLN.Subscriptions.Actor
+    appPort: 5056
+    command:
+      - dotnet
+      - run
 
    # - appID: qln-classified-ms
    #   appDirPath: QLN.Classified.MS
@@ -47,23 +47,21 @@ apps:
   # - appID: qln-company-ms
   #   appDirPath: QLN.Company.MS
   #   appPort: 5139
-  #   daprHTTPPort: 3504
-  #   daprGRPCPort: 50005
   #   command:
   #     - dotnet
   #     - run
-  - appID: qln-content-ms
-    appDirPath: QLN.Content.MS
-    appPort: 5112
-    command:
-      - dotnet
-      - run
-  - appID: qln-datamigration
-    appDirPath: QLN.DataMigration
-    appPort: 5084
-    command:
-      - dotnet
-      - run
+  # - appID: qln-content-ms
+  #   appDirPath: QLN.Content.MS
+  #   appPort: 5112
+  #   command:
+  #     - dotnet
+  #     - run
+  # - appID: qln-datamigration
+  #   appDirPath: QLN.DataMigration
+  #   appPort: 5084
+  #   command:
+  #     - dotnet
+  #     - run
   # - appID: qln-search-ms
   #   appDirPath: QLN.SearchService
   #   appPort: 5244

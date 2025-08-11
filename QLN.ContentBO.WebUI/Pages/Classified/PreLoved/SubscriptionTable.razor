@@ -1,6 +1,5 @@
 @inherits PrelovedSubscriptionTableBase
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
-@using MudBlazor
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 @using QLN.ContentBO.WebUI.Extensions
 @using QLN.ContentBO.WebUI.Models
@@ -23,8 +22,7 @@
     else
     {
 
-        <MudDataGrid T="SubscriptionListingModal"
-                     Items="@Listings"
+        <MudDataGrid Items="@Listings"
                      Hover="true"
                      Dense="true"
                      Filterable="true"
@@ -40,13 +38,13 @@
 
                 <TemplateColumn Title="Ad ID">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.AdId) ? "-" : context.Item.AdId)
+                        @(context.Item.AdId)
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Order Id">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.OrderId) ? "-" : context.Item.OrderId)
+                        @(context.Item.OrderId)
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -89,18 +87,18 @@
 
                 <TemplateColumn Title="Status">
                     <CellTemplate>
-                        @(string.IsNullOrWhiteSpace(context.Item.Status) ? "-" : context.Item.Status)
+                        @(context.Item.Status)
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Start Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.StartDate != default ? context.Item.StartDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="End Date">
                     <CellTemplate>
-                        @(context.Item.CreationDate != default ? context.Item.CreationDate.ToString("dd-MM-yyyy hh:mmtt") : "-")
+                        @(context.Item.EndDate != default ? context.Item.EndDate.ToQatarTime("dd-MM-yyyy hh:mmtt") : "-")
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="Actions">
@@ -130,5 +128,5 @@
                           OnPageChange="@HandlePageChange" OnPageSizeChange="@HandlePageSizeChange" />
     }
 
- 
+
 </MudPaper>

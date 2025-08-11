@@ -12,18 +12,20 @@ namespace QLN.ContentBO.WebUI.Interfaces
         /// <param name="vertical">Classifieds CategoryTrees</param>
         /// <returns>HttpResponseMessage</returns>
         Task<HttpResponseMessage?> GetAllCategoryTreesAsync(string vertical);
-        Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(string vertical);
-        Task<HttpResponseMessage?> GetAllSeasonalPicks(string vertical);
+        Task<HttpResponseMessage?> GetFeaturedSeasonalPicks(Vertical vertical);
+        Task<HttpResponseMessage?> GetAllSeasonalPicks(Vertical vertical);
         Task<HttpResponseMessage?> CreateSeasonalPicksAsync(object payload);
-        Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, string vertical);
-        Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, string vertical);
-        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, string vertical);
-        Task<HttpResponseMessage?> GetFeaturedCategory(string vertical);
-        Task<HttpResponseMessage?> GetAllFeatureCategory(string vertical);
+        Task<HttpResponseMessage?> ReplaceSeasonalPickAsync(string pickId, int slot, Vertical vertical);
+        Task<HttpResponseMessage?> DeleteSeasonalPicks(string pickId, Vertical vertical);
+        Task<HttpResponseMessage?> ReorderSeasonalPicksAsync(IEnumerable<object> slotAssignments, Vertical vertical);
+        Task<HttpResponseMessage?> GetFeaturedCategory(Vertical vertical);
+        Task<HttpResponseMessage?> GetAllFeatureCategory(Vertical vertical);
         Task<HttpResponseMessage?> CreateFeaturedCategoryAsync(object payload);
-        Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, string vertical);
-        Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, string vertical);
-        Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, string vertical);
+        Task<HttpResponseMessage?> UpdateFeaturedCategoryAsync(object payload);
+        Task<HttpResponseMessage?> UpdateSeasonalPicksAsync(object payload);
+        Task<HttpResponseMessage?> ReplaceFeaturedCategoryAsync(string pickId, int slot, Vertical vertical);
+        Task<HttpResponseMessage?> DeleteFeaturedCategory(string pickId, Vertical vertical);
+        Task<HttpResponseMessage?> ReorderFeaturedCategoryAsync(IEnumerable<object> slotAssignments, Vertical vertical);
         Task<HttpResponseMessage?> GetPrelovedListingsAsync(FilterRequest request);
         Task<List<HttpResponseMessage>> SearchClassifiedsViewListingAsync(string vertical, object searchPayload);
         Task<HttpResponseMessage?> PerformBulkActionAsync(object payload);
@@ -55,6 +57,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         Task<HttpResponseMessage?> PerformDealsBulkActionAsync(object payload);
         Task<HttpResponseMessage?> GetDealsByIdAsync(string vertical, string adId);
         Task<HttpResponseMessage?> UpdateDealsAsync(object payload);
-
+        Task<HttpResponseMessage> GetFeaturedCategoryById(string id);
+        Task<HttpResponseMessage> GetSeasonalPicksById(string id);
     }
 }

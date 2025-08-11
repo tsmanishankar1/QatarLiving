@@ -9,6 +9,5 @@ namespace QLN.Common.DTO_s
     public class DeleteAdResponseDto
     {
         public string Message { get; set; }         
-        public List<string> DeletedImages { get; set; } = new();
     }
 }

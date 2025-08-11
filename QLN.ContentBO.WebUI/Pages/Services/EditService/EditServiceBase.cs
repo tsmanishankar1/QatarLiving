@@ -18,7 +18,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         private BulkModerationAction _selectedAction;
         protected AdPost adPostModel { get; set; } = new();
         [Parameter]
-        public Guid? Id { get; set; }
+        public long? Id { get; set; }
         [Parameter]
         public string? Source { get; set; }
         public ServicesDto selectedService { get; set; } = new ServicesDto();
@@ -57,7 +57,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                     break;
             }
         }
-        private async Task<ServicesDto> GetServiceById(Guid Id)
+        private async Task<ServicesDto> GetServiceById(long Id)
         {
             try
             {
@@ -101,7 +101,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
         {
             var request = new BulkModerationRequest
             {
-                AdIds = new List<Guid> { selectedService.Id },
+                AdIds = new List<long> { selectedService.Id },
                 Action = _selectedAction,
                 Reason = null,
             };

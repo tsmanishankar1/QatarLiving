@@ -3,6 +3,7 @@ using Dapr.Client;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -10,14 +11,20 @@ using Microsoft.OpenApi.Models;
 using QLN.Backend.API.ServiceConfiguration;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Auditlog;
+using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.AddonEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints;
@@ -26,17 +33,18 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
+using QLN.Common.Migrations.QLLog;
+using System;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
-using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -179,7 +187,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
@@ -194,7 +202,78 @@ builder.Services.AddAuthentication(options =>
 
 #endregion
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireActiveBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Check if roles array contains "business_account"
+                if (!root.TryGetProperty("roles", out var rolesProp) ||
+                    !rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+
+                // Once Subscription info is in we can verify completely against it
+                //// Check if subscription exists and is not expired
+                //if (!root.TryGetProperty("subscription", out var subscriptionProp))
+                //    return false;
+
+                //if (!subscriptionProp.TryGetProperty("expire_date", out var expireDateProp))
+                //    return false;
+
+                //if (!long.TryParse(expireDateProp.GetString(), out var expireUnix))
+                //    return false;
+
+                //var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                //if (expireUnix <= nowUnix)
+                //    return false;
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+
+    options.AddPolicy("RequireNoBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Fail if roles array contains "business_account"
+                if (root.TryGetProperty("roles", out var rolesProp) &&
+                    rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+});
+
+
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
@@ -372,7 +451,7 @@ app.MapGet("/testauth", (HttpContext context) =>
     .WithName("TestAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireActiveBusinessAccount");
 
 app.MapPost("/testauth", (HttpContext context) =>
 {
@@ -387,7 +466,7 @@ app.MapPost("/testauth", (HttpContext context) =>
     .WithName("TestPostAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireNoBusinessAccount");
 
 app.MapPost("/drupallogin", async (
     HttpContext context,

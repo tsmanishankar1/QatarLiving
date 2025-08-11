@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Subscription;
 using QLN.Common.Infrastructure.IService.IProductService;
+using QLN.Common.Infrastructure.Subscriptions;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -185,14 +186,16 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
 
         public static RouteGroupBuilder MapV2GetUserSubscriptions(this RouteGroupBuilder group)
         {
-            group.MapGet("/v2/user/{userId?}", async Task<IResult> (
-    HttpContext httpContext,
-    
-    [FromServices] IV2SubscriptionService service,
-    CancellationToken cancellationToken) =>
+            group.MapGet("/v2/user/{userId}", async Task<IResult> (
+                Vertical? vertical,
+                SubVertical? subvertical,
+                string userId,
+                [FromServices] IV2SubscriptionService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
+                    var subscriptions = await service.GetUserSubscriptionsAsync(vertical, subvertical, userId, cancellationToken);
                     
                     
                         var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;

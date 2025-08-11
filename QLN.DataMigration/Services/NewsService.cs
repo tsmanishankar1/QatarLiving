@@ -1,4 +1,5 @@
 ﻿using Dapr.Client;
+using FirebaseAdmin.Messaging;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.DTO_s;
@@ -31,6 +32,48 @@ namespace QLN.DataMigration.Services
 
             var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/v2/news/bulkMigrate";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.V2Content.ContentServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(articles), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<string>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                       ?? throw new Exception("Empty or invalid response from content service.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating news article via external service");
+                throw;
+            }
+        }
+
+        public async Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.ArticlesMigration,
+                            data: article,
+                            cancellationToken: cancellationToken
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing article {article.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                throw;
+            }
+
+            return $"Published article {article.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic";
         }
 
         public async Task<string> CreateNewsArticleAsync(string userId, V2NewsArticleDTO dto, CancellationToken cancellationToken = default)
