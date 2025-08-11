@@ -706,5 +706,10 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

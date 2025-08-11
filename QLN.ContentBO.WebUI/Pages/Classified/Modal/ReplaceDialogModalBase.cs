@@ -78,13 +78,13 @@ public class ReplaceDialogModalBase : ComponentBase
         switch (ActiveIndex)
         {
             case 0:
-                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, "classifieds");
+                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, Vertical.Classifieds);
                 break;
             case 1:
-                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "classifieds");
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, Vertical.Classifieds);
                 break;
             case 2:
-                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "classifieds");
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, Vertical.Classifieds);
                 break;
             default:
                 Snackbar.Add("Unknown item type.", Severity.Error);
@@ -122,7 +122,7 @@ public class ReplaceDialogModalBase : ComponentBase
             result = events
                 .Where(e => e.CategoryName.Contains(value, StringComparison.InvariantCultureIgnoreCase));
         }
-        Console.WriteLine("result", result);
+
 
         return Task.FromResult(result);
     }

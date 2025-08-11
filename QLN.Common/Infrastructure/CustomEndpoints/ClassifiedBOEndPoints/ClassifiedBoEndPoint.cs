@@ -2455,22 +2455,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/getdealsSummary", async Task<Results<
-    Ok<PaginatedResult<DealsAdSummaryDto>>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    IClassifiedBoLandingService service,
-    HttpContext context,
-    int? pageNumber,
-    int? pageSize,
-    string? search,
-    string? sortBy,
-    CancellationToken cancellationToken
-) =>
+                Ok<PaginatedResult<DealsAdSummaryDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                IClassifiedBoLandingService service,
+                HttpContext context,
+                int? pageNumber,
+                int? pageSize,
+                string? subscriptionType = null,
+                DateOnly? startDate = null,
+                DateOnly? endDate = null,
+                string? search = null,
+                string? sortBy = null,
+                CancellationToken cancellationToken = default
+                ) =>
             {
                 try
                 {
-                    var result = await service.GetAllDeals(pageNumber, pageSize, search, sortBy, cancellationToken);
+                    var result = await service.GetAllDeals(pageNumber, pageSize, subscriptionType, startDate, endDate, search, sortBy, cancellationToken);
                     return TypedResults.Ok(result);
                 }
                 catch (Exception ex)
@@ -2483,36 +2486,38 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-.WithName("GetDeals")
-.WithTags("ClassifiedBo")
-.AllowAnonymous()
-.WithSummary("Get all deals")
-.WithDescription("Fetches all deals with optional search, pagination, and sorting.")
-.Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .WithName("GetDeals")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Get all deals")
+                .WithDescription("Fetches all deals with optional search, pagination, and sorting.")
+                .Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             group.MapGet("/DealsViewSummary", async Task<Results<
-    Ok<PaginatedResult<DealsViewSummaryDto>>,
-    BadRequest<ProblemDetails>,
-    ProblemHttpResult>>
-(
-    IClassifiedBoLandingService service,
-    HttpContext context,
-    int? pageNumber,
-    int? pageSize,
-    string? search,
-    string? sortBy,
-    string? status,
-    bool? isPromoted,
-    bool? isFeatured,
-    CancellationToken cancellationToken
-) =>
+                Ok<PaginatedResult<DealsViewSummaryDto>>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+                (
+                IClassifiedBoLandingService service,
+                HttpContext context,
+                int? pageNumber,
+                int? pageSize,
+                DateOnly? startDate,
+                DateOnly? endDate,
+                string? search,
+                string? sortBy,
+                string? status,
+                bool? isPromoted,
+                bool? isFeatured,
+                CancellationToken cancellationToken
+                ) =>
             {
                 try
                 {
                     var result = await service.DealsViewSummary(
-                        pageNumber, pageSize, search, sortBy, status, isPromoted, isFeatured, cancellationToken);
+                        pageNumber, pageSize, startDate, endDate, search, sortBy, status, isPromoted, isFeatured, cancellationToken);
 
                     return TypedResults.Ok(result);
                 }
@@ -2526,14 +2531,14 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints
                     );
                 }
             })
-.WithName("DealsViewSummary")
-.WithTags("ClassifiedBo")
-.AllowAnonymous()
-.WithSummary("Get all deals")
-.WithDescription("Fetches all deals with optional search, pagination, sorting, and filters like status, isPromoted, isFeatured.")
-.Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
-.Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-.Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+                .WithName("DealsViewSummary")
+                .WithTags("ClassifiedBo")
+                .AllowAnonymous()
+                .WithSummary("Get all deals")
+                .WithDescription("Fetches all deals with optional search, pagination, sorting, and filters like status, isPromoted, isFeatured.")
+                .Produces<PaginatedResult<DealsAdSummaryDto>>(StatusCodes.Status200OK)
+                .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+                .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
             group.MapDelete("/dealsdelete", async Task<Results<
@@ -3123,7 +3128,7 @@ CancellationToken ct
                NotFound<ProblemDetails>,
                Conflict<ProblemDetails>,
                ProblemHttpResult
->> (
+               >> (
                BulkActionRequest deleteRequest,
                HttpContext httpContext,
                IClassifiedBoLandingService service,

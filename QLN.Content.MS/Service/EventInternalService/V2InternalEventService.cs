@@ -17,6 +17,8 @@ namespace QLN.Content.MS.Service.EventInternalService
         private readonly DaprClient _dapr;
         private const string DailyStore = ConstantValues.V2Content.ContentStoreName;
         private readonly ILogger<IV2EventService> _log;
+
+        private readonly List<EventsCategory> _categoryLookup = new List<EventsCategory>();
         public V2InternalEventService(DaprClient dapr, ILogger<IV2EventService> log)
         {
             _dapr = dapr;
@@ -179,33 +181,6 @@ namespace QLN.Content.MS.Service.EventInternalService
 
                     ValidateEventSchedule(dto.EventSchedule);
 
-                    //var entity = new V2Events
-                    //{
-                    //    Id = id,
-                    //    Slug = dto.Slug,
-                    //    CategoryId = dto.CategoryId,
-                    //    CategoryName = categoryName,
-                    //    EventTitle = dto.EventTitle,
-                    //    EventType = dto.EventType,
-                    //    Price = dto.Price,
-                    //    EventSchedule = dto.EventSchedule,
-                    //    LocationId = dto.LocationId,
-                    //    Location = dto.Location,
-                    //    Venue = dto.Venue,
-                    //    Longitude = dto.Longitude,
-                    //    Latitude = dto.Latitude,
-                    //    RedirectionLink = dto.RedirectionLink,
-                    //    EventDescription = dto.EventDescription,
-                    //    CoverImage = dto.CoverImage,
-                    //    IsFeatured = false,
-                    //    FeaturedSlot = dto.FeaturedSlot,
-                    //    Status = dto.Status,
-                    //    PublishedDate = DateTime.UtcNow,
-                    //    IsActive = true,
-                    //    CreatedBy = dto.CreatedBy,
-                    //    CreatedAt = DateTime.UtcNow
-                    //};
-
                     await _dapr.SaveStateAsync(
                         ConstantValues.V2Content.ContentStoreName,
                         dto.Id.ToString(),
@@ -238,13 +213,104 @@ namespace QLN.Content.MS.Service.EventInternalService
                 {
                     throw new Exception("Error creating event", ex);
                 }
-                
+
 
             }
 
             return "Events created successfully.";
 
         }
+
+        public async Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default)
+        {
+            if (_categoryLookup.Count == 0)
+            {
+                var categoryKeysLookup = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventCategoryIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                foreach (var key in categoryKeysLookup)
+                {
+                    var category = await _dapr.GetStateAsync<EventsCategory>(
+                        ConstantValues.V2Content.ContentStoreName,
+                        key,
+                        cancellationToken: cancellationToken
+                    );
+                    if (category != null)
+                    {
+                        _categoryLookup.Add(category);
+                    }
+                }
+            }
+
+            try
+            {
+                Guid id = dto.Id;
+
+                var selectedCategory = _categoryLookup.FirstOrDefault(x => x.Id == dto.CategoryId);
+
+                if (selectedCategory != null)
+                {
+                    dto.CategoryName = selectedCategory.CategoryName;
+                }
+
+                ValidateEventSchedule(dto.EventSchedule);
+
+                await _dapr.SaveStateAsync(
+                    ConstantValues.V2Content.ContentStoreName,
+                    dto.Id.ToString(),
+                    dto,
+                    cancellationToken: cancellationToken
+                );
+
+                var keys = await _dapr.GetStateAsync<List<string>>(
+                    ConstantValues.V2Content.ContentStoreName,
+                    ConstantValues.V2Content.EventIndexKey,
+                    cancellationToken: cancellationToken
+                ) ?? new List<string>();
+
+                if (!keys.Contains(id.ToString()))
+                {
+                    keys.Add(id.ToString());
+                    await _dapr.SaveStateAsync(
+                        ConstantValues.V2Content.ContentStoreName,
+                        ConstantValues.V2Content.EventIndexKey,
+                        keys,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                var upsertRequest = await IndexEventToAzureSearch(dto, cancellationToken);
+                if (upsertRequest != null)
+                {
+                    var message = new IndexMessage
+                    {
+                        Action = "Upsert",
+                        Vertical = ConstantValues.IndexNames.ContentEventsIndex,
+                        UpsertRequest = upsertRequest
+                    };
+
+                    await _dapr.PublishEventAsync(
+                        pubsubName: ConstantValues.PubSubName,
+                        topicName: ConstantValues.PubSubTopics.IndexUpdates,
+                        data: message,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error creating event", ex);
+            }
+
+            return "Event created successfully.";
+
+        }
+
         private async Task<string> HandleEventSlotShift(int desiredSlot, V2Events newEvent, CancellationToken cancellationToken)
         {
             const int MaxSlot = 6;
@@ -653,7 +719,7 @@ namespace QLN.Content.MS.Service.EventInternalService
             {
                 if (category == null || string.IsNullOrWhiteSpace(category.CategoryName))
                 {
-                    throw new InvalidDataException("Category name is required."); 
+                    throw new InvalidDataException("Category name is required.");
                 }
                 await _dapr.SaveStateAsync(
                     ConstantValues.V2Content.ContentStoreName,
@@ -679,7 +745,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                     );
                 }
 
-                return "Category created successfully."; 
+                return "Category created successfully.";
             }
             catch (Exception ex)
             {
@@ -712,7 +778,7 @@ namespace QLN.Content.MS.Service.EventInternalService
                 .Where(e => e != null)
                 .ToList();
 
-            return categories ?? new List<EventsCategory>(); 
+            return categories ?? new List<EventsCategory>();
         }
         public async Task<string> ReorderEventSlotsAsync(EventSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
@@ -896,9 +962,10 @@ namespace QLN.Content.MS.Service.EventInternalService
                 CategoryId = dto.CategoryId,
                 CategoryName = dto.CategoryName,
                 CoverImage = dto.CoverImage,
-                FeaturedSlot = new SlotIndex { 
-                    Id = dto.FeaturedSlot.Id, 
-                    Name = dto.FeaturedSlot.Name 
+                FeaturedSlot = new SlotIndex
+                {
+                    Id = dto.FeaturedSlot.Id,
+                    Name = dto.FeaturedSlot.Name
                 },
                 IsFeatured = dto.IsFeatured,
                 Latitude = dto.Latitude,

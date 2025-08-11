@@ -74,10 +74,10 @@ public class ServicesReplaceDialogModalBase : ComponentBase
         switch (ActiveIndex)
         {
             case 0:
-                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, "services");
+                response = await ClassifiedService.ReplaceFeaturedCategoryAsync(selected.Id, slot, Vertical.Services);
                 break;
             case 1:
-                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, "services");
+                response = await ClassifiedService.ReplaceSeasonalPickAsync(selected.Id, slot, Vertical.Services);
                 break;
             default:
                 Snackbar.Add("Unknown item type.", Severity.Error);
