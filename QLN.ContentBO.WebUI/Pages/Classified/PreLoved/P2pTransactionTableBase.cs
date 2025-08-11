@@ -1,34 +1,41 @@
 using Microsoft.AspNetCore.Components;
-using System;
 using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
+using QLN.ContentBO.WebUI.Components;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
 {
-    public partial class P2pTransactionTableBase : ComponentBase
+    public partial class P2pTransactionTableBase : QLComponentBase
     {
         [Inject] public IDialogService DialogService { get; set; }
 
-        [Parameter]
-        public List<PreLovedTransactionModal> Listings { get; set; } = new();
+        [Parameter] public List<PrelovedP2PTransactionItem> Listings { get; set; } = [];
 
-        [Parameter]
-        public bool IsLoading { get; set; }
-        [Parameter]
-        public bool IsEmpty { get; set; }
-        protected HashSet<PreLovedTransactionModal> SelectedListings { get; set; } = new();
+        [Parameter] public bool IsLoading { get; set; }
+        [Parameter] public bool IsEmpty { get; set; }
+
+        [Parameter] public int TotalCount { get; set; }
+        [Parameter] public EventCallback<int> OnPageChanged { get; set; }
+
+        [Parameter] public EventCallback<int> OnPageSizeChanged { get; set; }
+
+        protected string selectedTab = "pendingApproval";
+
+        protected List<ToggleTabs.TabOption> tabOptions = new()
+        {
+            new() { Label = "Pending Approval", Value = "pendingApproval" },
+            new() { Label = "Published", Value = "published" },
+            new() { Label = "Unpublished", Value = "unpublished" },
+            new() { Label = "P2P", Value = "p2p" },
+            new() { Label = "Promoted", Value = "promoted" },
+            new() { Label = "Featured", Value = "featured" }
+        };
+        protected HashSet<PrelovedP2PTransactionItem> SelectedListings { get; set; } = new();
         protected int currentPage = 1;
         protected int pageSize = 12;
-        [Parameter]
-        public int TotalCount { get; set; }
-        [Parameter]
-        public EventCallback<int> OnPageChanged { get; set; }
-
-        [Parameter]
-        public EventCallback<int> OnPageSizeChanged { get; set; }
 
         protected async Task HandlePageChange(int newPage)
         {
@@ -43,19 +50,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
             await OnPageSizeChanged.InvokeAsync(newSize);
         }
 
-
-
-        protected string selectedTab = "pendingApproval";
-
-        protected List<ToggleTabs.TabOption> tabOptions = new()
-        {
-            new() { Label = "Pending Approval", Value = "pendingApproval" },
-            new() { Label = "Published", Value = "published" },
-            new() { Label = "Unpublished", Value = "unpublished" },
-            new() { Label = "P2P", Value = "p2p" },
-            new() { Label = "Promoted", Value = "promoted" },
-            new() { Label = "Featured", Value = "featured" }
-        };
         protected async Task OnTabChanged(string newTab)
         {
             selectedTab = newTab;
@@ -86,11 +80,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 FullWidth = true
             };
 
-            var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
 
         }
-        private void OpenRejectDialog()
+        private async void OpenRejectDialog()
         {
             var parameters = new DialogParameters
             {
@@ -105,23 +99,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true
             };
-            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+            var dialog = await DialogService.ShowAsync<RejectVerificationDialog>("", parameters, options);
         }
 
-
-
-        [Inject]
-        public NavigationManager NavigationManager { get; set; } = default!;
-
-        protected void OnEdit()
+        protected void OnEdit(PrelovedP2PTransactionItem item)
         {
-            var name = "Rashid";
-            NavigationManager.NavigateTo($"/manage/classified/deals/createform/{name}");
+            NavManager.NavigateTo($"/manage/classified/deals/createform/{item.UserName}");
         }
 
-        protected void OnPreview(PreLovedTransactionModal item)
+        protected void OnPreview(PrelovedP2PTransactionItem item)
         {
-            Console.WriteLine($"Preview clicked: {item.Id}"); 
+            Console.WriteLine($"Preview clicked: {item.AdId}"); 
         }
 
         protected Task ApproveSelected() => Task.Run(() => Console.WriteLine("Approved Selected"));
@@ -130,15 +118,17 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved
         protected Task RemoveSelected() => Task.Run(() => Console.WriteLine("Removed Selected"));
         protected Task UnpromoteSelected() => Task.Run(() => Console.WriteLine("Unpromoted Selected"));
         protected Task UnfeatureSelected() => Task.Run(() => Console.WriteLine("Unfeatured Selected"));
-
+       
         protected Task Approve(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Approved: {item.Id}"));
         protected Task Publish(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Published: {item.Id}"));
         protected Task Unpublish(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Unpublished: {item.Id}"));
-        protected Task OnRemove(PreLovedTransactionModal item) => Task.Run(() => Console.WriteLine($"Removed: {item.Id}"));
+        protected Task OnRemove(PrelovedP2PTransactionItem item) => Task.Run(() => Console.WriteLine($"Removed: {item.AdId}"));
+       
         private void HandleRejection(string reason)
         {
             Console.WriteLine("Rejection Reason: " + reason);
         }
+        
         protected Task RequestChanges(PreLovedTransactionModal item)
         {
             Console.WriteLine($"Requested changes for: {item.Id}");

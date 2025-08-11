@@ -1,27 +1,41 @@
+using Markdig.Parsers;
 using Microsoft.AspNetCore.Components;
-using System;
-using System.Collections.Generic;
-using QLN.ContentBO.WebUI.Models;
 using MudBlazor;
+using QLN.ContentBO.WebUI.Interfaces;
+using QLN.ContentBO.WebUI.Models;
 
 namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
 {
     public partial class ViewSubscriptionListingBase : ComponentBase
     {
-      
-        protected List<ViewSubscriptionListingDto> Listings { get; set; } = new();
+        [Inject] public IStoresService StoresService { get; set; } = default!;
         [Inject] public IDialogService DialogService { get; set; }
+        [Inject] public ILogger<ViewSubscriptionListingBase> Logger { get; set; }
+        protected List<StoreSubscriptionItem> Listings { get; set; } = new();
+
         protected int currentPage = 1;
         protected int pageSize = 12;
-        protected int TotalCount => Listings.Count;
+        protected int TotalCount { get; set; }
         protected string SearchTerm { get; set; } = string.Empty;
         protected bool Ascending = true;
 
         protected async Task HandleSearch(string searchTerm)
         {
+            currentPage = 1;
+            pageSize = 12;
             SearchTerm = searchTerm;
-            Console.WriteLine($"Search triggered: {SearchTerm}");
-            // Add logic to filter your listing data based on SearchTerm
+            var query = new StoreSubscriptionQuery
+            {
+                SubscriptionType = "",
+                FilterDate = "",
+                Page = currentPage,
+                PageSize = pageSize,
+                Search = searchTerm
+            };
+
+            var storesSubscriptionResponse = await GetStoreSubscriptionsAsync(query);
+            Listings = storesSubscriptionResponse?.Items ?? [];
+            TotalCount = storesSubscriptionResponse?.TotalCount ?? 0;
         }
 
         protected async Task HandleSort(bool sortOption)
@@ -30,104 +44,51 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
             Console.WriteLine($"Sort triggered: {sortOption}");
             // Add logic to sort your listing data based on SortOption
         }
-        protected void HandlePageChange(int newPage)
+        protected async Task HandlePageChange(int newPage)
         {
             currentPage = newPage;
-            StateHasChanged();
+            var query = new StoreSubscriptionQuery
+            {
+                SubscriptionType = "",
+                FilterDate = "",
+                Page = currentPage,
+                PageSize = pageSize,
+                Search = ""
+            };
+
+            var storesSubscriptionResponse = await GetStoreSubscriptionsAsync(query);
+            Listings = storesSubscriptionResponse?.Items ?? [];
+            TotalCount = storesSubscriptionResponse?.TotalCount ?? 0;
         }
 
-        protected void HandlePageSizeChange(int newPageSize)
+        protected async Task HandlePageSizeChange(int newPageSize)
         {
             pageSize = newPageSize;
             currentPage = 1; // reset to first page
-            StateHasChanged();
-        }
-        protected override void OnInitialized()
-        {
-            Listings = GetSampleData();
-        }
-        private List<ViewSubscriptionListingDto> GetSampleData()
-        {
-            DateTime commonDate = DateTime.Parse("2025-04-12");
-            return new List<ViewSubscriptionListingDto>
+            var query = new StoreSubscriptionQuery
             {
-                new ViewSubscriptionListingDto
-                {
-                    OrderId = 21435,
-                    SubscriptionType = "12 Months Plus",
-                    UserName = "Rashid",
-                    Email = "Rashid.r@gmail.com",
-                    Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Amount = 250,
-            Status = "Active",
-            StartDate = commonDate,
-            EndDate = commonDate,
-            WebLeads = 1,
-            EmailLeads = 1,
-            WhatsappLeads = 1,
-            PhoneLeads = 2
-        },
-        new ViewSubscriptionListingDto
-        {
-            OrderId = 21435,
-            SubscriptionType = "12 Months Super",
-            UserName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Amount = 250,
-            Status = "On Hold",
-            StartDate = commonDate,
-            EndDate = commonDate,
-            WebLeads = 2,
-            EmailLeads = 2,
-            WhatsappLeads = 12,
-            PhoneLeads = 2
-        },
-        new ViewSubscriptionListingDto
-        {
-            OrderId = 21342,
-            SubscriptionType = "12 Months Super",
-            UserName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Amount = 250,
-            Status = "Active",
-            StartDate = commonDate,
-            EndDate = commonDate,
-            WebLeads = 3,
-            EmailLeads = 3,
-            WhatsappLeads = 12,
-            PhoneLeads = 1
-        },
-        new ViewSubscriptionListingDto
-        {
-            OrderId = 23415,
-            SubscriptionType = "12 Months Super",
-            UserName = "Rashid",
-            Email = "Rashid.r@gmail.com",
-            Mobile = "+974 5030537",
-            Whatsapp = "+974 5030537",
-            WebUrl = "Rashidr.com",
-            Amount = 250,
-            Status = "Cancelled",
-            StartDate = commonDate,
-            EndDate = commonDate,
-            WebLeads = 4,
-            EmailLeads = 4,
-            WhatsappLeads = 2,
-            PhoneLeads = 3
+                SubscriptionType = "",
+                FilterDate = "",
+                Page = currentPage,
+                PageSize = pageSize,
+                Search = ""
+            };
+
+            var storesSubscriptionResponse = await GetStoreSubscriptionsAsync(query);
+            Listings = storesSubscriptionResponse?.Items ?? [];
+            TotalCount = storesSubscriptionResponse?.TotalCount ?? 0;
         }
-    };
+
+        protected async override Task OnInitializedAsync()
+        {
+            var storesSubscriptionResponse = await LoadStoresSubscriptions();
+            Listings = storesSubscriptionResponse?.Items ?? [];
+            TotalCount = storesSubscriptionResponse?.TotalCount ?? 0;
         }
+
         protected void EditOrder(ViewSubscriptionListingDto order)
         {
-    
+
             // You can open a dialog or set a flag to show a UI panel
             Console.WriteLine($"Editing Order ID: {order.OrderId}");
         }
@@ -135,6 +96,48 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores.ViewSubscriptionListing
         {
             order.Status = "Cancelled";
             Console.WriteLine($"Cancelled Order ID: {order.OrderId}");
+        }
+
+        private async Task<StoreSubscriptionResponse> LoadStoresSubscriptions()
+        {
+            try
+            {
+                var query = new StoreSubscriptionQuery
+                {
+                    SubscriptionType = "",
+                    FilterDate = "",
+                    Page = currentPage,
+                    PageSize = 12,
+                    Search = ""
+                };
+                return await GetStoreSubscriptionsAsync(query);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "LoadStoresSubscriptions");
+                return new();
+            }
+        }
+
+        private async Task<StoreSubscriptionResponse> GetStoreSubscriptionsAsync(StoreSubscriptionQuery storeSubscriptionQuery)
+        {
+            try
+            {
+                var apiResponse = await StoresService.GetAllStoresSubscription(storeSubscriptionQuery);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var storeSubscriptionResponse = await apiResponse.Content.ReadFromJsonAsync<StoreSubscriptionResponse>();
+
+                    return storeSubscriptionResponse ?? new();
+                }
+
+                return new();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetStoreSubscriptionsAsync");
+                return new();
+            }
         }
     }
 }

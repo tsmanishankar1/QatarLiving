@@ -1,6 +1,4 @@
-﻿using DocumentFormat.OpenXml.Wordprocessing;
-using Markdig.Parsers;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
 using QLN.ContentBO.WebUI.Components;
@@ -12,6 +10,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 {
     public class SubscriptionListingBase : QLComponentBase
     {
+        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+
+        [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
 
         [Inject] protected ILogger<SubscriptionListingBase> _logger { get; set; } = default!;
 
@@ -52,15 +53,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected bool IsLoading { get; set; } = true;
         protected bool IsEmpty => !IsLoading && Listings.Count == 0;
         protected int TotalCount { get; set; }
-        protected int currentPage { get; set; } = 1;
-        protected int pageSize { get; set; } = 12;
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 12;
 
-        protected readonly List<string> Categories = new()
-        {
+        protected readonly List<string> Categories =
+        [
             "12 Months Basic",
-    "12 Months Plus",
-    "12 Months Super"
-        };
+            "12 Months Plus",
+            "12 Months Super"
+        ];
 
         public class DayTimeEntry
         {
@@ -70,21 +71,39 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             public TimeSpan? StartTime { get; set; }
             public TimeSpan? EndTime { get; set; }
         }
-        protected List<DayTimeEntry> DayTimeList = new();
-        public double EventLat { get; set; } = 48.8584;
-        public double EventLong { get; set; } = 2.2945;
+
+        protected List<DayTimeEntry> DayTimeList = [];
+
         public bool _isDateRangeSelected = false;
 
         protected ElementReference _popoverDiv;
 
-        [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
+        protected List<PrelovedSubscriptionItem> Listings { get; set; } = [];
 
-        [Inject] protected IClassifiedService ClassifiedService { get; set; } = default!;
-        protected List<SubscriptionListingModal> Listings { get; set; } = new();
+        public bool IsSorted { get; set; } = false;
+        protected List<string> SubscriptionTypes = new()
+        {
+            "Free",
+            "Basic",
+            "Pro",
+            "Enterprise"
+        };
+        protected string SelectedSubscriptionType { get; set; } = null;
+        // Date range logic
+        protected DateRange _dateRange = new();
+        protected DateRange _tempDateRange = new();
+        protected bool showDatePopover = false;
 
         protected override async Task OnInitializedAsync()
         {
-            await LoadPrelovedListingsAsync();
+            try
+            {
+                await LoadPrelovedListingsAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "OnInitializedAsync");
+            }
         }
 
         private async Task LoadPrelovedListingsAsync()
@@ -93,16 +112,20 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             {
                 IsLoading = true;
 
-                var request = new FilterRequest
+                var request = new PrelovedSubscriptionQuery
                 {
-
-                    PageNumber = currentPage,
-                    PageSize = pageSize
+                    SubscriptionType = "",
+                    FilterDate = "",
+                    Page = CurrentPage,
+                    PageSize = PageSize,
+                    Search = SearchText,
+                    SortBy = "startDate",
+                    SortOrder = IsSorted is true ? "asc" : "desc"
                 };
 
-                var response = await ClassifiedService.GetPrelovedSubscription(request);
+                var response = await PrelovedService.GetPrelovedSubscription(request) ?? new();
 
-                if (response?.IsSuccessStatusCode == true)
+                if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
@@ -110,25 +133,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
                         PropertyNameCaseInsensitive = true
                     });
 
-                    Listings = data?.Items.Select(item => new SubscriptionListingModal
-                    {
-                        AdId = item.AdId,
-                        OrderId=item.OrderId,
-                        SubscriptionType = item.SubscriptionType,
-                        UserName = item.UserName ?? "-",
-                        Email = item.EmailAddress ?? "-",
-                        Mobile = item.Mobile ?? "-",
-                        Whatsapp = item.WhatsappNumber ?? "-",
-                        Amount = item.Amount,
-                        Status = item.Status,
-                        CreationDate = ParseDate(item.StartDate),
-                        PublishedDate = ParseDate(item.StartDate),
-                        ExpiryDate = ParseDate(item.EndDate),
-                        AdTitle = item.OrderId,
-                        UserId = 0,
-                        SubscriptionId = 0
-                    }).ToList() ?? new List<SubscriptionListingModal>();
-
+                    Listings = data?.Items ?? [];
                     TotalCount = data?.TotalCount ?? 0;
                 }
             }
@@ -149,34 +154,25 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 
         protected async Task HandlePageSizeChanged(int newSize)
         {
-            pageSize = newSize;
-            currentPage = 1;
+            PageSize = newSize;
+            CurrentPage = 1;
             await LoadPrelovedListingsAsync();
         }
+
         protected async Task OnSearchChanged(ChangeEventArgs e)
         {
             SearchText = e.Value?.ToString() ?? string.Empty;
-            currentPage = 1;
+            CurrentPage = 1;
             await LoadPrelovedListingsAsync();
         }
 
-
-        private DateTime ParseDate(string date)
+        protected async Task ToggleSort()
         {
-            return DateTime.TryParse(date, out var result) ? result : DateTime.MinValue;
-        }
-
-
-
-      
-        protected void ToggleSort()
-        {
-            // Example: toggle sort direction and update SortIcon
             SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
                 ? Icons.Material.Filled.ArrowUpward
                 : Icons.Material.Filled.ArrowDownward;
-
-            // TODO: Perform actual sort operation
+            IsSorted = !IsSorted;
+            await LoadPrelovedListingsAsync();
         }
 
         protected void ToggleCreatedPopover()
@@ -221,6 +217,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             _dateRange = new();
             _tempDateRange = new();
         }
+
         protected async void CancelDatePicker()
         {
             _showDatePicker = false;
@@ -232,6 +229,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             }
             StateHasChanged();
         }
+
         protected async Task ApplyDatePicker()
         {
             if (_dateRange?.Start != null)
@@ -303,28 +301,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
                 });
             }
         }
-        protected List<string> SubscriptionTypes = new()
-        {
-            "Free",
-            "Basic",
-            "Pro",
-            "Enterprise"
-        };
-
-        protected string SelectedSubscriptionType { get; set; } = null;
 
         protected Task OnSubscriptionChanged(string selected)
         {
             SelectedSubscriptionType = selected;
             return Task.CompletedTask;
         }
-        // Date range logic
-        protected DateRange _dateRange = new();
-        protected DateRange _tempDateRange = new();
-
-
-
-        protected bool showDatePopover = false;
 
         protected void ToggleDatePopover()
         {
@@ -343,6 +325,5 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             showDatePopover = false;
             StateHasChanged();
         }
-
     }
 }
