@@ -148,5 +148,25 @@ namespace QLN.DataMigration.Services
                 throw;
             }
         }
+
+        public async Task<string> MigrateCommunityPostAsync(V2CommunityPostDto post, CancellationToken ct = default)
+        {
+            try
+            {
+                await _dapr.PublishEventAsync(
+                            pubsubName: ConstantValues.PubSubName,
+                            topicName: ConstantValues.PubSubTopics.PostsMigration,
+                            data: post,
+                            cancellationToken: ct
+                        );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error publishing article {post.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic");
+                throw;
+            }
+
+            return $"Published article {post.Id} to {ConstantValues.PubSubTopics.ArticlesMigration} topic";
+        }
     }
 }

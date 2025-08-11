@@ -442,5 +442,10 @@ namespace QLN.Backend.API.Service.V2ContentService
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> MigrateCommunityPostAsync(V2CommunityPostDto post, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
