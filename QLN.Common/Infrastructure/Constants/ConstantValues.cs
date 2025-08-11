@@ -110,6 +110,9 @@ namespace QLN.Common.Infrastructure.Constants
         public static class PubSubTopics
         {
             public const string IndexUpdates = "index-updates";
+            public const string ArticlesMigration = "articles-migration";
+            public const string EventsMigration = "events-migration";
+            public const string PostsMigration = "posts-migration";
         }
         public static class Verticals
         {

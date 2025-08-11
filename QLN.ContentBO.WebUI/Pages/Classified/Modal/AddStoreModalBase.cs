@@ -53,19 +53,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
                     {
                         PropertyNameCaseInsensitive = true
                     }) ?? new();
-
-                    Console.WriteLine("✅ Category Tree Loaded:");
-                    foreach (var cat in _categoryTree)
-                        Console.WriteLine($"- {cat.Name} ({cat.Id}) → {cat.Children?.Count ?? 0} subcategories");
-                }
-                else
-                {
-                    Console.WriteLine("❌ Failed to fetch category tree. Status: " + response?.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("❌ Exception while loading category tree: " + ex.Message);
+                Logger.LogError(ex, "OnInitializedAsync");
             }
             finally
             {
@@ -75,27 +67,18 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
         protected void OnCategoryChanged(string? categoryId)
         {
-            Console.WriteLine($"➡️ Category Selected: {categoryId}");
             SelectedCategoryId = categoryId;
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
-
             var category = _categoryTree.FirstOrDefault(c => c.Id == categoryId);
             SelectedCategory = category?.Name ?? string.Empty;
-
             _subcategories = category?.Children ?? new();
-
-            Console.WriteLine($"Subcategories Count: {_subcategories.Count}");
-            foreach (var sub in _subcategories)
-                Console.WriteLine($" - {sub.Name} ({sub.Id})");
-
             _sections = new();
         }
 
 
         protected void OnSubcategoryChanged(string? subcategoryId)
         {
-            Console.WriteLine($"➡️ Subcategory Selected: {subcategoryId}");
             SelectedSubcategoryId = subcategoryId;
             SelectedSectionId = null;
 
@@ -104,15 +87,10 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Modal
 
             _sections = sub?.Children ?? new();
 
-            Console.WriteLine($"Sections Count: {_sections.Count}");
-            foreach (var sec in _sections)
-                Console.WriteLine($" - {sec.Name} ({sec.Id})");
         }
         protected void OnSectionChanged(string? sectionId)
         {
-            Console.WriteLine($"➡️ Section Selected: {sectionId}");
             SelectedSectionId = sectionId;
-
             var section = _sections.FirstOrDefault(c => c.Id == sectionId);
             SelectedSection = section?.Name ?? string.Empty;
         }

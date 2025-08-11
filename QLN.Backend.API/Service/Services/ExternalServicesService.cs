@@ -182,7 +182,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> UpdateServiceAd(string userId, QLN.Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateServiceAd(string userId, Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -217,7 +217,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -279,7 +279,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -305,7 +305,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
@@ -344,7 +344,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
@@ -383,7 +383,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
@@ -422,7 +422,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
@@ -481,7 +481,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        public async Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
         {
             try
             {

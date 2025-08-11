@@ -30,7 +30,7 @@
     </div>
             <!-- Category -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Category"
+                <MudSelect T="long?" Label="Category"
                            Value="SelectedCategoryId"
                            Class="classified-field no-underline"
                            Required="true"
@@ -38,18 +38,18 @@
                            ValueChanged="OnCategoryChanged">
                     @if (IsLoadingCategories)
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">
+                        <MudSelectItem T="long?" Value=null Disabled="true">
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
                             Loading categories...
                         </MudSelectItem>
                     }
                     else
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                        @* <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                         @foreach (var category in _categoryTree)
                         {
-                            <MudSelectItem T="string" Value="@category.Id">@category.Name</MudSelectItem>
-                        }
+                            <MudSelectItem T="long?" Value="@category.Id">@category.Name</MudSelectItem>
+                        } *@
                     }
                 </MudSelect>
 
@@ -57,7 +57,7 @@
             </div>
 
             <!-- Subcategory -->
-            <div class="mx-auto">
+            @* <div class="mx-auto">
                 <MudSelect T="string" Label="Subcategory"
                            Value="SelectedSubcategoryId"
                            Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
@@ -72,7 +72,7 @@
                     }
                 </MudSelect>
 
-            </div>
+            </div> *@
 
             <!-- Section -->
            @*  <div class="mx-auto">

@@ -22,24 +22,37 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         [Parameter]
         public string Title { get; set; } = "Edit Seasonal Pick";
         [Parameter]
-        public Guid CategoryId { get; set; }
+        public EventCallback ReloadData { get; set; }
+        [Parameter]
+        public string CategoryId { get; set; }
         [Parameter] public List<ServiceCategory> CategoryTrees { get; set; } = new();
         protected List<L1Category> _selectedL1Categories = new();
         protected List<L2Category> _selectedL2Categories = new();
         protected bool IsLoadingCategories { get; set; } = true;
+        protected SeasonalPicksDto selectedSeasonalPick { get; set; } = new();
         protected DateRange? dateRange
         {
-            get => StartDate.HasValue && EndDate.HasValue ? new DateRange(StartDate, EndDate) : null;
+            get => (selectedSeasonalPick.StartDate != DateOnly.MinValue && selectedSeasonalPick.EndDate != DateOnly.MinValue)
+                ? new DateRange(
+                    selectedSeasonalPick.StartDate.ToDateTime(TimeOnly.MinValue),
+                    selectedSeasonalPick.EndDate.ToDateTime(TimeOnly.MinValue)
+                  )
+                : null;
+
             set
             {
-                StartDate = value?.Start;
-                EndDate = value?.End;
+                if (value?.Start != null)
+                    selectedSeasonalPick.StartDate = DateOnly.FromDateTime(value.Start.Value);
+
+                if (value?.End != null)
+                    selectedSeasonalPick.EndDate = DateOnly.FromDateTime(value.End.Value);
             }
         }
+
         protected string? featuredCategoryTitle;
-        protected string? SelectedCategoryId;
-        protected string? SelectedSubcategoryId;
-        protected string? SelectedSectionId;
+        protected long? SelectedCategoryId;
+        protected long? SelectedSubcategoryId;
+        protected long? SelectedSectionId;
         protected string SelectedCategory { get; set; } = string.Empty;
         protected string SelectedSubcategory { get; set; } = string.Empty;
         protected string SelectedSection { get; set; } = string.Empty;
@@ -56,27 +69,30 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 if (CategoryTrees == null || !CategoryTrees.Any())
                     await LoadCategoryTreesAsync();
 
-                if (!string.IsNullOrEmpty(SelectedCategoryId))
+                selectedSeasonalPick = await GetSeasonalPicksById();
+                var json = JsonSerializer.Serialize(selectedSeasonalPick, new JsonSerializerOptions
                 {
-                    var selectedCategory = CategoryTrees?.FirstOrDefault(c => c.Id.ToString() == SelectedCategoryId);
-                    _selectedL1Categories = selectedCategory?.L1Categories ?? new List<L1Category>();
-                    var selectedSubcategory = _selectedL1Categories
-                        .FirstOrDefault(sc => sc.Id.ToString() == SelectedSubcategoryId);
-                    if (selectedSubcategory == null)
-                    {
-                        SelectedSubcategoryId = null;
-                        SelectedSectionId = null;
-                        _selectedL2Categories = new List<L2Category>(); 
-                    }
-                    else
-                    {
-                        _selectedL2Categories = selectedSubcategory.L2Categories ?? new List<L2Category>();
-                        if (!_selectedL2Categories.Any(sec => sec.Id.ToString() == SelectedSectionId))
-                        {
-                            SelectedSectionId = null;
-                        }
-                    }
+                    WriteIndented = true
+                });
+                if (selectedSeasonalPick != null)
+                {
+                    featuredCategoryTitle = selectedSeasonalPick.Title;
+                    ImagePreviewUrl = selectedSeasonalPick.ImageUrl;
+                    SelectedCategory = selectedSeasonalPick.CategoryName;
+                    SelectedSubcategory = selectedSeasonalPick.L1categoryName;
+                    SelectedSection = selectedSeasonalPick.L2categoryName;
+                    SelectedSubcategoryId = selectedSeasonalPick.L1CategoryId;
+                    SelectedSectionId = selectedSeasonalPick.L2categoryId;
+                    var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedSeasonalPick?.CategoryId);
+                    _selectedL1Categories = selectedCategory?.Fields ?? new();
+                    var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedSeasonalPick?.L1CategoryId);
+                    _selectedL2Categories = selectedL1?.Fields ?? new();
+                     dateRange = new DateRange(
+                        selectedSeasonalPick.StartDate.ToDateTime(TimeOnly.MinValue),
+                        selectedSeasonalPick.EndDate.ToDateTime(TimeOnly.MinValue)
+                    );
                 }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -105,7 +121,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             }
             catch (Exception ex)
             {
-                 Logger.LogError(ex, "LoadCategoryTreesAsync");
+                Logger.LogError(ex, "LoadCategoryTreesAsync");
             }
             finally
             {
@@ -113,39 +129,40 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 StateHasChanged();
             }
         }
-        protected void OnCategoryChanged(string? categoryId)
+        protected void OnCategoryChanged(long? categoryId)
         {
-            SelectedCategoryId = categoryId.ToString();
+            SelectedCategoryId = categoryId;
             SelectedSubcategoryId = null;
             SelectedSectionId = null;
             _selectedL2Categories.Clear();
-            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
-            var selected = CategoryTrees.FirstOrDefault(c => c.Id.ToString() == categoryId);
-            SelectedCategory = selected?.Category;
+            var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            _selectedL1Categories = selectedCategory?.Fields ?? new();
+            var selected = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
+            SelectedCategory = selected?.CategoryName;
         }
-        protected void OnSubcategoryChanged(string? subcategoryId)
+        protected void OnSubcategoryChanged(long? subcategoryId)
         {
-           SelectedSubcategoryId = subcategoryId.ToString();
+            SelectedSubcategoryId = subcategoryId;
             SelectedSectionId = null;
-            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id.ToString() == subcategoryId);
-            _selectedL2Categories = selectedL1?.L2Categories ?? new();
+            var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
+            _selectedL2Categories = selectedL1?.Fields ?? new();
+            SelectedSubcategory = selectedL1?.CategoryName ?? string.Empty;
         }
-        protected void OnSectionChanged(string? sectionId)
+        protected void OnSectionChanged(long? sectionId)
         {
             SelectedSectionId = sectionId;
-            var section = _selectedL2Categories.FirstOrDefault(c => c.Id.ToString() == sectionId);
-            SelectedSection = section?.Name ?? string.Empty;
+            var section = _selectedL2Categories.FirstOrDefault(c => c.Id == sectionId);
+            SelectedSection = section?.CategoryName ?? string.Empty;
         }
         protected bool IsFormValid()
         {
-            return !string.IsNullOrEmpty(SelectedCategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSubcategoryId) &&
-                   !string.IsNullOrEmpty(SelectedSectionId)
-                    && !string.IsNullOrWhiteSpace(featuredCategoryTitle)
-                    && StartDate.HasValue
-                    && EndDate.HasValue
-                    && !string.IsNullOrEmpty(ImagePreviewUrl);;
+            return selectedSeasonalPick?.CategoryId.HasValue == true &&
+                   SelectedSubcategoryId.HasValue &&
+                   SelectedSectionId.HasValue &&
+                   !string.IsNullOrWhiteSpace(featuredCategoryTitle) &&
+                   StartDate.HasValue &&
+                   EndDate.HasValue &&
+                   !string.IsNullOrEmpty(ImagePreviewUrl);
         }
         protected void Close() => MudDialog.Cancel();
         protected void Save()
@@ -161,6 +178,14 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             };
             MudDialog.Close(DialogResult.Ok(newItem));
         }
+        private bool IsBase64String(string? base64)
+        {
+            if (string.IsNullOrWhiteSpace(base64))
+                return false;
+
+            Span<byte> buffer = new Span<byte>(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out _);
+        }
 
         protected async Task SaveAsync()
         {
@@ -170,32 +195,35 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 return;
             }
             IsSubmitting = true;
-            var imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
+            var imageUrl = ImagePreviewUrl;
+            if (IsBase64String(ImagePreviewWithoutBase64))
+            {
+                imageUrl = await UploadImageAsync(ImagePreviewWithoutBase64);
+            }
             var payload = new
             {
-                vertical = "services",
-                categoryId = SelectedCategoryId,
+                id = selectedSeasonalPick.Id,
+                vertical = Vertical.Services,
+                title = selectedSeasonalPick.Title,
+                categoryId = selectedSeasonalPick?.CategoryId,
                 categoryName = SelectedCategory,
                 l1CategoryId = SelectedSubcategoryId,
                 l1categoryName = SelectedSubcategory,
                 l2categoryId = SelectedSectionId,
                 l2categoryName = SelectedSection,
-                startDate = StartDate?.ToUniversalTime().ToString("o"),
-                endDate = EndDate?.ToUniversalTime().ToString("o"),
-                slotOrder = 0,
+                startDate = selectedSeasonalPick?.StartDate.ToString("yyyy-MM-dd"),
+                endDate = selectedSeasonalPick?.EndDate.ToString("yyyy-MM-dd"),
+                slotOrder = selectedSeasonalPick.SlotOrder,
                 imageUrl = imageUrl
             };
             try
             {
-                var response = await ClassifiedService.CreateSeasonalPicksAsync(payload);
+                var response = await ClassifiedService.UpdateSeasonalPicksAsync(payload);
                 if (response?.IsSuccessStatusCode == true)
                 {
-                    Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
+                    Snackbar.Add("Seasonal pick Edited successfully!", Severity.Success);
+                    await ReloadData.InvokeAsync();
                     MudDialog.Close(DialogResult.Ok(true));
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
                 else
                 {
@@ -264,6 +292,24 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             ImagePreviewUrl = $"data:{file.ContentType};base64,{base64}";
             ImagePreviewWithoutBase64 = base64;
         }
+        private async Task<SeasonalPicksDto> GetSeasonalPicksById()
+        {
+            try
+            {
+                var apiResponse = await ClassifiedService.GetSeasonalPicksById(CategoryId);
+                if (apiResponse.IsSuccessStatusCode)
+                {
+                    var response = await apiResponse.Content.ReadFromJsonAsync<SeasonalPicksDto>();
+                    return response ?? new SeasonalPicksDto();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetFeaturedCategoryById");
+            }
+            return new SeasonalPicksDto();
+        }
+
 
     }
 }
