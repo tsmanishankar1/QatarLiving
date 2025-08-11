@@ -216,5 +216,10 @@ namespace QLN.DataMigration.Services
         {
             throw new NotImplementedException();
         }
+
+        public Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(SubVertical subVertical, long adId, string userId, Guid subscriptionId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
