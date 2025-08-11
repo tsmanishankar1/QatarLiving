@@ -279,9 +279,7 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
 
                     if (!seasonalPicksMap.TryGetValue(pickId, out var seasonalPicks))
                         throw new InvalidDataException($"Seasonal Pick with ID '{assignment.PickId}' not found or inactive.");
-
-                    if (seasonalPicks.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this Seasonal Pick.");
+                 
 
                     seasonalPicks.SlotOrder = assignment.SlotOrder;
                     seasonalPicks.UpdatedBy = userId;
@@ -327,12 +325,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("Pick not found for delete. PickId: {PickId}", pickId);
                     throw new KeyNotFoundException($"Pick with ID '{pickId}' not found.");
-                }
-
-                if (pick.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized attempt to delete pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this pick.");
                 }
 
                 pick.IsActive = false;
@@ -661,9 +653,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     if (!storeDict.TryGetValue(storeGuid.ToString(), out var store))
                         throw new KeyNotFoundException($"Store with ID '{assignment.StoreId}' not found or not active in vertical '{request.Vertical}'.");
 
-                    if (store.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this store.");
-
                     store.SlotOrder = assignment.SlotOrder;
                     store.UpdatedBy = userId;
                     store.UpdatedAt = DateTime.UtcNow;
@@ -705,12 +694,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("Featured store not found. StoreId: {StoreId}", storeId);
                     throw new KeyNotFoundException($"Featured store with ID '{storeId}' not found.");
-                }
-
-                if (store.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized attempt to delete store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this featured store.");
                 }
 
                 store.IsActive = false;
@@ -893,12 +876,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 {
                     _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", id);
                     throw new KeyNotFoundException($"FeaturedCategory with ID '{id}' not found.");
-                }
-
-                if (featuredCategory.CreatedBy != userId)
-                {
-                    _logger.LogWarning("Unauthorized delete attempt. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
-                    throw new UnauthorizedAccessException("You are not authorized to delete this FeaturedCategory.");
                 }
 
                 featuredCategory.IsActive = false;
@@ -1102,9 +1079,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                     if (!featuredCategoryMap.TryGetValue(categoryId, out var featuredCategory))
                         throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found or inactive.");
 
-                    if (featuredCategory.CreatedBy != userId)
-                        throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
-
                     featuredCategory.SlotOrder = assignment.SlotOrder;
                     featuredCategory.UpdatedBy = userId;
                     featuredCategory.UpdatedAt = DateTime.UtcNow;
@@ -1143,9 +1117,6 @@ namespace QLN.Classified.MS.Service.ClassifiedBoService
                 var newItem = relevantCategories.FirstOrDefault(p => p.Id == categoryGuid);
                 if (newItem == null)
                     throw new InvalidOperationException("Selected featured category not found.");
-
-                if (newItem.CreatedBy != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
 
                 foreach (var item in relevantCategories)
                 {
