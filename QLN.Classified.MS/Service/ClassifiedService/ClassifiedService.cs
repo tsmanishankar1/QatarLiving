@@ -225,6 +225,7 @@ namespace QLN.Classified.MS.Service
      SubVertical subVertical,
      long adId,
      string userId,
+     Guid subscriptionId,
      CancellationToken cancellationToken)
         {
             _logger.LogInformation(
@@ -234,6 +235,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 string? adTitle;
+
                 object? adItem = subVertical switch
                 {
                     SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == adId && i.IsActive, cancellationToken),

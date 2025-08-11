@@ -18,10 +18,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<List<SavedSearchResponseDto>> GetSearches(string userId, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-     SubVertical subVertical,
-     long adId,
-     string userId,
-     CancellationToken cancellationToken);
+      SubVertical subVertical,
+      long adId,
+      string userId,
+      Guid subscriptionId,
+      CancellationToken cancellationToken);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedDealsAd(Deals dto, CancellationToken cancellationToken = default);
