@@ -2,7 +2,7 @@ namespace QLN.ContentBO.WebUI.Models
 {
   public class ServiceP2PAdSummaryDto
   {
-    public Guid Id { get; set; }
+    public long Id { get; set; }
     public string ProductType { get; set; } = string.Empty;
     public string AdTitle { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

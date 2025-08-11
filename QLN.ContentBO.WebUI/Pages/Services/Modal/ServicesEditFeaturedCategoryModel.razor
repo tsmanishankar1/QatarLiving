@@ -22,7 +22,7 @@
             </div>
             <!-- Category -->
             <div class="mx-auto">
-                <MudSelect T="string" Label="Category"
+                <MudSelect T="long?" Label="Category"
                            Value="SelectedCategoryId"
                            Class="classified-field no-underline"
                            Required="true"
@@ -30,32 +30,32 @@
                            ValueChanged="OnCategoryChanged">
                     @if (IsLoadingCategories)
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">
+                        <MudSelectItem T="long?" Value=null Disabled="true">
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
                             Loading categories...
                         </MudSelectItem>
                     }
                     else
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                        <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                         @foreach (var category in CategoryTrees )
                         {
-                            <MudSelectItem T="string" Value="@category.Id.ToString()">@category.Category</MudSelectItem>
+                            <MudSelectItem T="long?" Value="@category.Id">@category.CategoryName</MudSelectItem>
                         }
                     }
                 </MudSelect>
             </div>
             <div class="mx-auto">
-                <MudSelect T="string" Label="Subcategory"
+                <MudSelect T="long?" Label="Subcategory"
                            @bind-Value="SelectedSubcategoryId"
-                           Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
+                           Disabled="@(!SelectedCategoryId.HasValue)"
                            Class="classified-field no-underline"
                            Required="true"
                            RequiredError="Subcategory is required">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                    <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                     @foreach (var sub in _selectedL1Categories)
                     {
-                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@sub.Id">@sub.CategoryName</MudSelectItem>
                     }
                 </MudSelect>
             </div>
@@ -91,7 +91,7 @@
             <!-- Footer Buttons -->
             <div class=" classified-button-wrapper mx-auto mt-2">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync" Disabled="@(!IsFormValid())" Class="classified-button">
-                    Add
+                    Edit
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Inherit" OnClick="Close" Class="classified-button mt-2">
                     Close

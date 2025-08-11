@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor;
+using System.Text.Json;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Components;
 using QLN.ContentBO.WebUI.Pages.Services.Modal;
 using static QLN.ContentBO.WebUI.Models.ClassifiedLanding;
+using QLN.Common.Infrastructure.Subscriptions;
 
 namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
 {
@@ -75,7 +77,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
         };
     }
 
-        protected async Task NavigateToAddItem()
+        protected async Task NavigateToAddItem(string Id)
         {
             var title = $"Edit {GetCurrentTabAddButtonText()}";
             var options = new DialogOptions
@@ -88,7 +90,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                  var parameters = new DialogParameters
                 {
                     { nameof(ServicesEditFeaturedCategoryModalBase.Title), title },
-                    // { nameof(ServicesEditFeaturedCategoryModalBase.CategoryId), title },
+                    { nameof(ServicesEditFeaturedCategoryModalBase.CategoryId), Id },
                 };
                 dialog = await DialogService.ShowAsync<ServicesEditFeaturedCategoryModel>("", parameters, options);
             }
@@ -97,7 +99,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                   var parameters = new DialogParameters
                 {
                     { nameof(ServicesEditSeasonPickModalBase.Title), title },
-                    // { nameof(ServicesEditSeasonPickModalBase.CategoryId), title },
+                    { nameof(ServicesEditSeasonPickModalBase.CategoryId), Id },
                 };
                 dialog = await DialogService.ShowAsync<ServicesEditSeasonalPickModel>("", parameters, options);
             }
@@ -124,7 +126,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                 var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
                 var dialog = await DialogService.ShowAsync<ReOrderConfirmDialog>("", options);
                 var result = await dialog.Result;
-
                 if (result is not null)
                 {
                     if (result.Canceled)
@@ -164,11 +165,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services.LandingPage
                     switch (ItemType)
                     {
                         case ServiceLandingPageItemType.FeaturedCategory:
-                            response = await ClassifiedService.ReorderFeaturedCategoryAsync(slotAssignments, "services");
+                            response = await ClassifiedService.ReorderFeaturedCategoryAsync(slotAssignments, Models.Vertical.Services);
                             break;
 
                         case ServiceLandingPageItemType.SeasonalPick:
-                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, "services");
+                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, Models.Vertical.Services);
                             break;
                         default:
                             Snackbar.Add("Unknown item type for reordering.", Severity.Warning);

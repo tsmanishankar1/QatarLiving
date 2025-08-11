@@ -14,59 +14,59 @@
             </div>
              <div class="mx-auto">
             <MudTextField  Class="classified-text-field no-underline" T="string" Placeholder="Seasonal Pick Title*"
-                      @bind-Value="featuredCategoryTitle"   />
+                      @bind-Value="selectedSeasonalPick.Title"   />
             </div>
             <div class="mx-auto">
-                <MudSelect T="string" Label="Category"
-                           Value="SelectedCategoryId"
+                <MudSelect T="long?" Label="Category"
+                           Value="selectedSeasonalPick?.CategoryId"
                            Class="classified-field no-underline"
                            Required="true"
                            RequiredError="Category is required"
                            ValueChanged="OnCategoryChanged">
                     @if (IsLoadingCategories)
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">
+                        <MudSelectItem T="long?" Value=null Disabled="true">
                             <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" Class="mr-2" />
                             Loading categories...
                         </MudSelectItem>
                     }
                     else
                     {
-                        <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                        <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                         @foreach (var category in CategoryTrees)
                         {
-                            <MudSelectItem T="string" Value="@category.Id.ToString()">@category.Category</MudSelectItem>
+                            <MudSelectItem T="long?" Value="@category.Id">@category.CategoryName</MudSelectItem>
                         }
                     }
                 </MudSelect>
             </div>
             <div class="mx-auto">
-                <MudSelect T="string" Label="Subcategory"
+                <MudSelect T="long?" Label="Subcategory"
                            Value="SelectedSubcategoryId"
-                           Disabled="@string.IsNullOrEmpty(SelectedCategoryId)"
+                           Disabled="!(selectedSeasonalPick?.CategoryId.HasValue ?? false)"
                            Class="classified-field no-underline"
                            Required="true"
                            RequiredError="Subcategory is required"
                            ValueChanged="OnSubcategoryChanged">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                    <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                     @foreach (var sub in _selectedL1Categories)
                     {
-                        <MudSelectItem T="string" Value="@sub.Id.ToString()">@sub.Name</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@sub.Id">@sub.CategoryName</MudSelectItem>
                     }
                 </MudSelect>
             </div>
             <div class="mx-auto">
-                <MudSelect T="string" Label="Section"
+                <MudSelect T="long?" Label="Section"
                            Value="SelectedSectionId"
                            ValueChanged="OnSectionChanged"
-                           Disabled="@string.IsNullOrEmpty(SelectedSubcategoryId)"
+                           Disabled="@(!SelectedSubcategoryId.HasValue)"
                            Class="classified-field no-underline"
                            Required="true"
                            RequiredError="Section is required">
-                    <MudSelectItem T="string" Value=null Disabled="true">Choose</MudSelectItem>
+                    <MudSelectItem T="long?" Value=null Disabled="true">Choose</MudSelectItem>
                     @foreach (var sec in _selectedL2Categories)
                     {
-                        <MudSelectItem T="string" Value="@sec.Id.ToString()">@sec.Name</MudSelectItem>
+                        <MudSelectItem T="long?" Value="@sec.Id">@sec.CategoryName</MudSelectItem>
                     }
                 </MudSelect>
             </div>

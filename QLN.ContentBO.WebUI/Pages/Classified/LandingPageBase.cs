@@ -109,7 +109,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadFeaturedCategories()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedCategory("classifieds");
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedCategory(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -156,7 +156,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadSeasonalPicks()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -204,7 +204,7 @@ public class LandingPageBase : QLComponentBase
     private async Task<List<LandingPageItem>> LoadFeaturedStores()
     {
         var picks = new List<LandingPageItem>();
-        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks("classifieds");
+        HttpResponseMessage? response = await ClassifiedService.GetFeaturedSeasonalPicks(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -250,7 +250,7 @@ public class LandingPageBase : QLComponentBase
 
     private async Task LoadAllSeasonalPicks()
     {
-        var response = await ClassifiedService.GetAllSeasonalPicks("classifieds");
+        var response = await ClassifiedService.GetAllSeasonalPicks(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -268,7 +268,7 @@ public class LandingPageBase : QLComponentBase
 
     private async Task LoadAllFeaturedCategory()
     {
-        var response = await ClassifiedService.GetAllFeatureCategory("classifieds");
+        var response = await ClassifiedService.GetAllFeatureCategory(Vertical.Classifieds);
 
         if (response?.IsSuccessStatusCode == true)
         {
@@ -450,15 +450,15 @@ public class LandingPageBase : QLComponentBase
             switch (currentItemType)
             {
                 case LandingPageItemType.FeaturedCategory:
-                    response = await ClassifiedService.DeleteFeaturedCategory(id, "classifieds");
+                    response = await ClassifiedService.DeleteFeaturedCategory(id, Vertical.Classifieds);
                     break;
 
                 case LandingPageItemType.SeasonalPick:
-                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, Vertical.Classifieds);
                     break;
 
                 case LandingPageItemType.FeaturedStore:
-                    response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                    response = await ClassifiedService.DeleteSeasonalPicks(id, Vertical.Classifieds);
                     break;
 
                 default:
