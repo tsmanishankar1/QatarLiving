@@ -1,9 +1,11 @@
 ﻿using Dapr.Client;
+using Microsoft.Extensions.Caching.Memory;
 using QLN.Common.DTO_s;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.IContentService;
+using QLN.Common.Infrastructure.IService.ISearchService;
 using System.Text;
 using System.Text.Json;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
@@ -19,18 +21,20 @@ namespace QLN.Backend.API.Service.V2ContentService
         private readonly DaprClient _dapr;
 
         private readonly ILogger<V2ExternalDailyService> _logger;
+        private readonly ISearchService _search;
 
         private const string AppId = V2Content.ContentServiceAppId;
 
         private const string BaseUrl = "/api/v2/dailyliving/topsection";
 
-        public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger)
+        public V2ExternalDailyService(DaprClient dapr, ILogger<V2ExternalDailyService> logger, ISearchService search)
 
         {
 
             _dapr = dapr;
 
             _logger = logger;
+            _search = search;
 
         }
         public async Task<string> UpsertSlotAsync(string userId, DailyTopSectionSlot dto, CancellationToken cancellationToken = default)
@@ -370,15 +374,184 @@ namespace QLN.Backend.API.Service.V2ContentService
         }
         public async Task<ContentsDailyPageResponse> GetDailyLivingLandingAsync(CancellationToken ct)
         {
-            var path = "/api/v2/dailyliving/landing";
-            var appId = V2Content.ContentServiceAppId;
-            return await _dapr.InvokeMethodAsync<ContentsDailyPageResponse>(
-                HttpMethod.Get,
-                appId,
-                path,
-                cancellationToken: ct
-            );
+            // 1) read state only
+            var slots = await GetAllSlotsAsync(ct) ?? new();
+            var topics = (await GetAllDailyTopicsAsync(ct) ?? new()).Where(t => t.IsPublished).ToList();
+
+            // 2) build top section (no filters, just GetById)
+            var topStoryItems = new List<ContentPost>();
+            var topStoriesItems = new List<ContentPost>();
+            var highlightedEventItem = new List<ContentEvent>();
+            var moreArticlesItems = new List<ContentEvent>();
+
+            // slot 1 → top story (article)
+            var s1 = slots.FirstOrDefault(s => s.SlotNumber == 1 && s.ContentType == DailyContentType.Article);
+            if (s1?.RelatedContentId != Guid.Empty)
+                if (await LoadNewsAsync(s1.RelatedContentId, ct) is { } n1)
+                    topStoryItems.Add(MapNewsToPost(n1, "Top Story"));
+
+            // slot 2 → highlighted event
+            var s2 = slots.FirstOrDefault(s => s.SlotNumber == 2 && s.ContentType == DailyContentType.Event);
+            if (s2?.RelatedContentId != Guid.Empty)
+                if (await LoadEventAsync(s2.RelatedContentId, ct) is { } e2)
+                    highlightedEventItem.Add(MapEventToEvent(e2, "Highlighted Event"));
+
+            // slots 3..5 → Top Stories (articles)
+            foreach (var s in slots.Where(x => x.SlotNumber is >= 3 and <= 5 && x.ContentType == DailyContentType.Article)
+                                   .OrderBy(x => x.SlotNumber))
+                if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
+                    topStoriesItems.Add(MapNewsToPost(n, "Top Stories"));
+
+            // slots 6..9 → More Articles (articles)
+            foreach (var s in slots.Where(x => x.SlotNumber is >= 6 and <= 9 && x.ContentType == DailyContentType.Article)
+                                   .OrderBy(x => x.SlotNumber))
+                if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
+                    moreArticlesItems.Add(MapNewsToEvent(n, "More Articles"));
+
+            // 3) dynamic topics → hydrate each slot by ID (article/event/video)
+            var topicQueues = new List<BaseQueueResponse<ContentEvent>>();
+            foreach (var topic in topics)
+            {
+                var topicItems = new List<ContentEvent>();
+                var topicSlots = await GetSlotsByTopicAsync(topic.Id, ct) ?? new();
+
+                foreach (var s in topicSlots.OrderBy(x => x.SlotNumber))
+                {
+                    if (s.ContentType == DailyContentType.Article && s.RelatedContentId != Guid.Empty)
+                    {
+                        if (await LoadNewsAsync(s.RelatedContentId, ct) is { } n)
+                            topicItems.Add(MapNewsToEvent(n, topic.TopicName));
+                    }
+                    else if (s.ContentType == DailyContentType.Event && s.RelatedContentId != Guid.Empty)
+                    {
+                        if (await LoadEventAsync(s.RelatedContentId, ct) is { } e)
+                            topicItems.Add(MapEventToEvent(e, topic.TopicName));
+                    }
+                    else if (s.ContentType == DailyContentType.Video)
+                    {
+                        topicItems.Add(new ContentEvent
+                        {
+                            Id = s.Id,
+                            IsActive = true,
+                            CreatedAt = s.CreatedAt,
+                            UpdatedAt = s.UpdatedAt,
+                            PageName = DrupalContentConstants.QlnContentsDaily,
+                            QueueLabel = topic.TopicName,
+                            NodeType = "video",
+                            Nid = s.RelatedContentId.ToString(),
+                            Title = s.Title,
+                            Category = s.Category,
+                            DateCreated = s.PublishedDate.ToString("o"),
+                            ImageUrl = s.ContentUrl,
+                            Slug = s.ContentUrl
+                        });
+                    }
+                }
+
+                topicQueues.Add(new BaseQueueResponse<ContentEvent>
+                {
+                    QueueLabel = topic.TopicName,
+                    Items = topicItems
+                });
+            }
+
+            // 4) assemble (keep it simple; no extra lookups)
+            return new ContentsDailyPageResponse
+            {
+                ContentsDaily = new ContentsDaily
+                {
+                    DailyTopStory = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Story", Items = topStoryItems },
+                    DailyTopStories = new BaseQueueResponse<ContentPost> { QueueLabel = "Top Stories", Items = topStoriesItems },
+                    DailyEvent = new BaseQueueResponse<ContentEvent> { QueueLabel = "Highlighted Event", Items = highlightedEventItem },
+                    DailyMoreArticles = new BaseQueueResponse<ContentEvent> { QueueLabel = "More Articles", Items = moreArticlesItems },
+                    // leave Featured empty here to keep it minimal; add later if needed
+                    DailyFeaturedEvents = new BaseQueueResponse<ContentEvent> { QueueLabel = "Featured Events", Items = new() },
+                    DailyTopics1 = topicQueues.ElementAtOrDefault(0) ?? new() { QueueLabel = string.Empty, Items = new() },
+                    DailyTopics2 = topicQueues.ElementAtOrDefault(1) ?? new() { QueueLabel = string.Empty, Items = new() },
+                    DailyTopics3 = topicQueues.ElementAtOrDefault(2) ?? new() { QueueLabel = string.Empty, Items = new() },
+                    DailyTopics4 = topicQueues.ElementAtOrDefault(3) ?? new() { QueueLabel = string.Empty, Items = new() },
+                    DailyTopics5 = topicQueues.ElementAtOrDefault(4) ?? new() { QueueLabel = string.Empty, Items = new() },
+                }
+            };
         }
+
+        // ────────────────── helpers: 1 call each, swallow 400s/404s ──────────────────
+        private async Task<ContentNewsIndex?> LoadNewsAsync(Guid id, CancellationToken ct)
+        {
+            if (id == Guid.Empty) return null;
+            try { return await _search.GetByIdAsync<ContentNewsIndex>(IndexNames.ContentNewsIndex, id.ToString()); }
+            catch (Exception ex) { _logger.LogWarning(ex, "News lookup failed for {Id}", id); return null; }
+        }
+
+        private async Task<ContentEventsIndex?> LoadEventAsync(Guid id, CancellationToken ct)
+        {
+            if (id == Guid.Empty) return null;
+            try { return await _search.GetByIdAsync<ContentEventsIndex>(IndexNames.ContentEventsIndex, id.ToString()); }
+            catch (Exception ex) { _logger.LogWarning(ex, "Event lookup failed for {Id}", id); return null; }
+        }
+
+        // ────────────────────────── tiny mappers (no extras) ─────────────────────────
+        private static ContentPost MapNewsToPost(ContentNewsIndex i, string label) => new()
+        {
+            Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
+            Nid = i.Id,
+            PageName = DrupalContentConstants.QlnContentsDaily,
+            QueueLabel = label,
+            NodeType = "post",
+            Title = i.Title,
+            Description = i.Content,
+            ImageUrl = i.CoverImageUrl,
+            Slug = i.Slug,
+            UserName = i.authorName,
+            WriterTag = i.WriterTag,
+            IsActive = i.IsActive,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt,
+            DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o")
+        };
+
+        private static ContentEvent MapNewsToEvent(ContentNewsIndex i, string label) => new()
+        {
+            Id = Guid.TryParse(i.Id, out var gid) ? gid : Guid.Empty,
+            Nid = i.Id,
+            PageName = DrupalContentConstants.QlnContentsDaily,
+            QueueLabel = label,
+            NodeType = "post",
+            Title = i.Title,
+            Description = i.Content,
+            ImageUrl = i.CoverImageUrl,
+            Slug = i.Slug,
+            UserName = i.authorName,
+            IsActive = i.IsActive,
+            CreatedAt = i.CreatedAt,
+            UpdatedAt = i.UpdatedAt,
+            DateCreated = (i.CreatedAt == default ? DateTime.UtcNow : i.CreatedAt).ToString("o")
+        };
+
+        private static ContentEvent MapEventToEvent(ContentEventsIndex e, string label) => new()
+        {
+            Id = Guid.TryParse(e.Id, out var gid) ? gid : Guid.Empty,
+            Nid = e.Id,
+            PageName = DrupalContentConstants.QlnContentsDaily,
+            QueueLabel = label,
+            NodeType = "event",
+            Title = e.EventTitle,
+            Description = e.EventDescription,
+            ImageUrl = e.CoverImage,
+            Slug = e.Slug,
+            UserName = e.CreatedBy,
+            EventCategory = e.CategoryName,
+            EventVenue = e.Venue,
+            EventStart = e.EventSchedule?.StartDate.ToString("o") ?? "",
+            EventEnd = e.EventSchedule?.EndDate.ToString("o") ?? "",
+            EventLat = e.Latitude,
+            EventLong = e.Longitude,
+            EventLocation = e.Location,
+            IsActive = e.IsActive,
+            CreatedAt = e.CreatedAt,
+            UpdatedAt = e.UpdatedAt,
+            DateCreated = (e.CreatedAt == default ? DateTime.UtcNow : e.CreatedAt).ToString("o")
+        };
     }
 
 }
