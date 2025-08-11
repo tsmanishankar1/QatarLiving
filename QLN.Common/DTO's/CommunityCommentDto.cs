@@ -18,7 +18,7 @@ namespace QLN.Common.DTO_s
         public bool IsActive { get; set; } = true;
         public DateTime UpdatedAt { get; set; }
         public int CommentsLikeCount { get; set; }
-        public List<string>? LikedUserIds { get; set; } 
+        public List<string>? LikedUserIds { get; set; }
     }
     public class CommunityCommentItem
     {

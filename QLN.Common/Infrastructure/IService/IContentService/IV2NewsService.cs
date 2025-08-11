@@ -49,6 +49,8 @@ namespace QLN.Common.Infrastructure.IService.IContentService
        int subCategoryId,
        CancellationToken cancellationToken = default
    );
+        Task<string> BulkMigrateNewsArticleAsync(List<V2NewsArticleDTO> articles, CancellationToken cancellationToken = default);
+        Task<string> MigrateNewsArticleAsync(V2NewsArticleDTO article, CancellationToken cancellationToken = default);
     }
 
 }

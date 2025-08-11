@@ -23,7 +23,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
          [Parameter] public EventCallback OnListReload { get; set; }
         public string? rejectReason { get; set; } = string.Empty;
-        public Guid selectedAdId { get; set; }
+        public long selectedAdId { get; set; }
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }
         protected HashSet<ServiceAdSummaryDto> SelectedListings { get; set; } = new();
@@ -223,7 +223,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 Snackbar.Add("Failed to update ad status", Severity.Error);
             }
         }
-        protected void OpenRejectDialog(Guid guid)
+        protected void OpenRejectDialog(long guid)
         {
             selectedAdId = guid;
             var parameters = new DialogParameters
@@ -250,7 +250,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var statusRequest = new BulkModerationRequest
             {
-                AdIds = new List<Guid> { selectedAdId },
+                AdIds = new List<long> { selectedAdId },
                 Action = BulkModerationAction.Remove,
                 Reason = rejectReason,
             };

@@ -138,15 +138,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                     switch (ItemType)
                     {
                         case LandingPageItemType.FeaturedCategory:
-                            response = await ClassifiedService.ReorderFeaturedCategoryAsync(slotAssignments, "classifieds");
+                            response = await ClassifiedService.ReorderFeaturedCategoryAsync(slotAssignments, Models.Vertical.Classifieds);
                             break;
 
                         case LandingPageItemType.SeasonalPick:
-                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, "classifieds");
+                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, Models.Vertical.Classifieds);
                             break;
 
                         case LandingPageItemType.FeaturedStore:
-                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, "classifieds");
+                            response = await ClassifiedService.ReorderSeasonalPicksAsync(slotAssignments, Models.Vertical.Classifieds);
                             break;
 
                         default:
@@ -217,15 +217,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Landing
                 switch (ItemType)
                 {
                     case LandingPageItemType.SeasonalPick:
-                        response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                        response = await ClassifiedService.DeleteSeasonalPicks(id, Models.Vertical.Classifieds);
                         break;
 
                     case LandingPageItemType.FeaturedCategory:
-                        response = await ClassifiedService.DeleteFeaturedCategory(id, "classifieds");
+                        response = await ClassifiedService.DeleteFeaturedCategory(id, Models.Vertical.Classifieds);
                         break;
 
                     case LandingPageItemType.FeaturedStore:
-                        response = await ClassifiedService.DeleteSeasonalPicks(id, "classifieds");
+                        response = await ClassifiedService.DeleteSeasonalPicks(id, Models.Vertical.Classifieds);
                         break;
 
                     default:

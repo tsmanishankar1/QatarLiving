@@ -1346,6 +1346,9 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         public async Task<PaginatedResult<DealsAdSummaryDto>> GetAllDeals(
             int? pageNumber = 1,
             int? pageSize = 12,
+            string? subscriptionType = null,
+            DateOnly? startDate = null,
+            DateOnly? endDate = null,
             string? search = null,
             string? sortBy = null,
             CancellationToken cancellationToken = default)
@@ -1410,7 +1413,11 @@ namespace QLN.Backend.API.Service.V2ClassifiedBoService
         }
 
 
-        public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(int? pageNumber = 1, int? pageSize = 12,
+        public async Task<PaginatedResult<DealsViewSummaryDto>> DealsViewSummary(
+            int? pageNumber = 1,
+            int? pageSize = 12,
+            DateOnly? startDate = null,
+            DateOnly? endDate = null,
             string? search = null,
             string? sortBy = null,
             string? status = null,
