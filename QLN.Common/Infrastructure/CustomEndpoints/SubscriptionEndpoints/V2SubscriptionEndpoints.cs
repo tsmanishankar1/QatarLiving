@@ -194,32 +194,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.SubscriptionEndpoints
                 CancellationToken cancellationToken) =>
             {
                 try
-                {
+                {                    
                     var subscriptions = await service.GetUserSubscriptionsAsync(vertical, subvertical, userId, cancellationToken);
-                    
-                    
-                        var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-                        if (string.IsNullOrEmpty(userClaim))
-                        {
-                            return TypedResults.Unauthorized();
-                        }
-
-                        var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                        var uidFromToken = userData.GetProperty("uid").GetString();
-
-                        if (string.IsNullOrWhiteSpace(uidFromToken))
-                        {
-                            return TypedResults.BadRequest(new ProblemDetails
-                            {
-                                Title = "Validation Error",
-                                Detail = "Authenticated user ID is missing or invalid.",
-                                Status = StatusCodes.Status400BadRequest
-                            });
-                        }
-
-                    var userId = uidFromToken;
-
-                    var subscriptions = await service.GetUserSubscriptionsAsync(userId, cancellationToken);
                     return TypedResults.Ok(subscriptions);
                 }
                 catch (Exception ex)
