@@ -33,7 +33,7 @@ namespace QLN.ContentBO.WebUI.Interfaces
         DateTime? toDate = null,
         int? pageNumber = null,
         int? pageSize = null);
-        Task<HttpResponseMessage> GetServiceById(Guid id);
+        Task<HttpResponseMessage> GetServiceById(long id);
         Task<HttpResponseMessage?> GetAllZonesAsync();
         Task<HttpResponseMessage> UpdateService(ServicesDto service);
         Task<HttpResponseMessage> ModerateBulkAction(object payload);

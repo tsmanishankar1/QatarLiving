@@ -7,33 +7,33 @@
     <DataAnnotationsValidator />
     <div class="create-form-list">
         <h3 class="form-heading">Ad Category</h3>
-            <MudSelect T="Guid" Label="Category" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+            <MudSelect T="long" Label="Category" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
            Value="selectedService.CategoryId"
            ValueChanged="@OnCategoryChanged">
    
         @foreach (var cat in CategoryTrees)
         {
-            <MudSelectItem T="Guid" Value="@cat.Id">@cat.Category</MudSelectItem>
+            <MudSelectItem T="long" Value="@cat.Id">@cat.CategoryName</MudSelectItem>
         }
     
 </MudSelect>
 
-<MudSelect T="Guid" Label="Subcategory" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+<MudSelect T="long" Label="Subcategory" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
            Value="selectedService.L1CategoryId"
            ValueChanged="@OnL1CategoryChanged"
            Disabled="@(_selectedL1Categories.Count == 0)">
     @foreach (var l1 in _selectedL1Categories)
     {
-        <MudSelectItem T="Guid" Value="@l1.Id">@l1.Name</MudSelectItem>
+        <MudSelectItem T="long" Value="@l1.Id">@l1.CategoryName</MudSelectItem>
     }
 </MudSelect>
 
-<MudSelect T="Guid" Label="Section" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
+<MudSelect T="long" Label="Section" Variant="Variant.Outlined" Class="white-bg" FullWidth="true"
            @bind-Value="selectedService.L2CategoryId"
            Disabled="@(_selectedL2Categories.Count == 0)">
     @foreach (var l2 in _selectedL2Categories)
     {
-        <MudSelectItem T="Guid" Value="@l2.Id">@l2.Name</MudSelectItem>
+        <MudSelectItem T="long" Value="@l2.Id">@l2.CategoryName</MudSelectItem>
     }
 </MudSelect>
         <h3 class="form-heading">Price</h3>
