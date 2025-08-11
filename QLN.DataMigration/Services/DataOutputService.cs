@@ -117,7 +117,7 @@
 
         public async Task SaveContentEventsAsync(List<ContentEvent> items, CancellationToken cancellationToken)
         {
-            var events = new List<V2Events>();
+            //var events = new List<V2Events>();
 
             foreach (var dto in items)
             {
@@ -204,28 +204,28 @@
                     entity.EventSchedule.TimeSlots = timeSlots;
                 }
 
-                events.Add(entity);
+                //events.Add(entity);
+                try
+                {
+
+                    await _eventService.MigrateEvent(entity, cancellationToken);
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create events - {ex.Message}");
+                    throw new Exception("Unexpected error during events creation", ex);
+                }
 
                 
 
             }
 
-            try
-            {
-
-                await _eventService.BulkMigrateEvents(events, cancellationToken);
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to create events - {ex.Message}");
-                throw new Exception("Unexpected error during events creation", ex);
-            }
         }
 
         public async Task SaveContentCommunityPostsAsync(List<CommunityPost> items, CancellationToken cancellationToken)
         {
-            var posts = new List<V2CommunityPostDto>();
+            //var posts = new List<V2CommunityPostDto>();
 
             foreach (var dto in items)
             {
@@ -247,20 +247,20 @@
                     DateCreated = DateTime.TryParse(dto.DateCreated, out var dateCreated) ? dateCreated : DateTime.UtcNow,
                     LikedUserIds = new List<string>() // creating an empty list so this will be processed into the index
                 };
-                posts.Add(entity);
+                //posts.Add(entity);
+                try
+                {
+
+                    await _communityPostService.MigrateCommunityPostAsync(entity, cancellationToken);
+
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Failed to create community posts - {ex.Message}");
+                    throw new Exception("Unexpected error during article creation", ex);
+                }
             }
 
-            try
-            {
-
-                await _communityPostService.BulkMigrateCommunityPostsAsync(posts, cancellationToken);
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Failed to create community posts - {ex.Message}");
-                throw new Exception("Unexpected error during article creation", ex);
-            }
         }
 
         public async Task SaveEventCategoriesAsync(List<Common.Infrastructure.DTO_s.EventCategory> items, CancellationToken cancellationToken)
