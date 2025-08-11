@@ -106,6 +106,10 @@ namespace QLN.Common.Infrastructure.Model
 
         [Required, MaxLength(150)]
         public string CRDocument { get; set; } = string.Empty;
+        [MaxLength(150)]
+        public string UploadFeed { get; set; } = string.Empty;
+        [MaxLength(150)]
+        public string XMLFeed { get; set; } = string.Empty;
 
         public VerifiedStatus? Status { get; set; }
 

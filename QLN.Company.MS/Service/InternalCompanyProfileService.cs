@@ -184,6 +184,8 @@ namespace QLN.Company.MS.Service
                 CRNumber = dto.CRNumber,
                 CompanyLogo = dto.CompanyLogo,
                 CRDocument = dto.CRDocument,
+                UploadFeed=dto.UploadFeed,
+                XMLFeed=dto.XMLFeed,
                 Status = dto.Status,
                 CreatedBy = uid,
                 CreatedUtc = DateTime.UtcNow,
@@ -313,6 +315,8 @@ namespace QLN.Company.MS.Service
                 CRDocument = !string.IsNullOrWhiteSpace(dto.CRDocument)
                         ? dto.CRDocument
                         : existing.CRDocument,
+                UploadFeed = dto.UploadFeed,
+                XMLFeed = dto.XMLFeed,
                 Status = dto.Status,
                 CreatedBy = existing.CreatedBy,
                 CreatedUtc = existing.CreatedUtc,
