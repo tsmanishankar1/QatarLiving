@@ -73,7 +73,7 @@ namespace QLN.Common.Infrastructure.Model
         [MaxLength(100)]
         public string? UserName { get; set; }
 
-        public DateOnly? CRExpiryDate { get; set; } 
+        public DateTime? CRExpiryDate { get; set; } 
 
         [MaxLength(150)]
         public string? CoverImage1 { get; set; }
@@ -106,6 +106,10 @@ namespace QLN.Common.Infrastructure.Model
 
         [Required, MaxLength(150)]
         public string CRDocument { get; set; } = string.Empty;
+        [MaxLength(150)]
+        public string UploadFeed { get; set; } = string.Empty;
+        [MaxLength(150)]
+        public string XMLFeed { get; set; } = string.Empty;
 
         public VerifiedStatus? Status { get; set; }
 

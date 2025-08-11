@@ -2054,7 +2054,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .ExcludeFromDescription();
            
 
-            group.MapDelete("/classifieds/{subVertical}/{adId:long}", async Task<Results<
+            group.MapDelete("/classified/{subVertical}/{adId:long}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,
@@ -2157,7 +2157,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError)
                 .RequireAuthorization();
 
-            group.MapDelete("/classifieds/{subVertical}/delete-by-id/{adId:long}/{userId}", async Task<Results<
+            group.MapDelete("/{subVertical}/delete-by-id/{adId:long}/{userId}", async Task<Results<
                 Ok<DeleteAdResponseDto>,
                 BadRequest<ProblemDetails>,
                 NotFound<ProblemDetails>,

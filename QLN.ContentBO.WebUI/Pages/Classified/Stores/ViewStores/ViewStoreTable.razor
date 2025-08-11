@@ -1,72 +1,72 @@
 @inherits ViewStoreTableBase
-@using MudBlazor
+@using QLN.ContentBO.WebUI.Components.EmptyCard
 @using QLN.ContentBO.WebUI.Components.PaginationFooter
 @using QLN.ContentBO.WebUI.Components.ToggleTabs
 @using QLN.ContentBO.WebUI.Components.TableSkeleton
 
 <MudPaper Class="pa-4">
-        <ToggleTabs Options="@tabOptions"
+    <ToggleTabs Options="@tabOptions"
                 ActiveValue="@selectedTab"
                 OnChange="@OnTabChanged" />
 
-@if (IsLoading)
-{
-    <TableSkeleton Rows="10" />
-}
+    @if (IsLoading)
+    {
+        <TableSkeleton Rows="10" />
+    }
 
-        else if (Listings == null || !Listings.Any())
-        {
-            <div class="empty-card-wrapper">
-             <EmptyCard Title="No Stores found" Subtitle="Please check back later or explore other categories." />
-            </div>
-        }
-        else
-        {
-            <MudTable Items="@Listings" Hover="true" Bordered="true" Elevation="1"
-                      Class="mud-table event-custom-table"
-                      Style="border-radius: 12px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #E0E0E0;">
-                <HeaderContent>
-                    <MudTh class="header-cell">Company name</MudTh>
-                    <MudTh class="header-cell">Email</MudTh>
-                    <MudTh class="header-cell">Mobile</MudTh>
-                    <MudTh class="header-cell">Whatsapp</MudTh>
-                    <MudTh class="header-cell">Web Url</MudTh>
-                    <MudTh class="header-cell">Status</MudTh>
-                    <MudTh class="header-cell">Start Date</MudTh>
-                    <MudTh class="header-cell">End Date</MudTh>
-                    <MudTh class="header-cell">Actions</MudTh>
-                </HeaderContent>
+    else if (Listings == null || !Listings.Any())
+    {
+        <div class="empty-card-wrapper">
+            <EmptyCard Title="No Stores found" Subtitle="Please check back later or explore other categories." />
+        </div>
+    }
+    else
+    {
+        <MudTable Items="@Listings" Hover="true" Bordered="true" Elevation="1"
+                  Class="mud-table event-custom-table"
+                  Style="border-radius: 12px; box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05); border: 1px solid #E0E0E0;">
+            <HeaderContent>
+                <MudTh class="header-cell">Company name</MudTh>
+                <MudTh class="header-cell">Email</MudTh>
+                <MudTh class="header-cell">Mobile</MudTh>
+                <MudTh class="header-cell">Whatsapp</MudTh>
+                <MudTh class="header-cell">Web Url</MudTh>
+                <MudTh class="header-cell">Status</MudTh>
+                <MudTh class="header-cell">Start Date</MudTh>
+                <MudTh class="header-cell">End Date</MudTh>
+                <MudTh class="header-cell">Actions</MudTh>
+            </HeaderContent>
 
-                <RowTemplate>
-                    <MudTd>@context.CompanyName</MudTd>
-                    <MudTd>@context.Email</MudTd>
-                    <MudTd>@context.Mobile</MudTd>
-                    <MudTd>@context.Whatsapp</MudTd>
-                    <MudTd>@context.WebUrl</MudTd>
-                    <MudTd>@context.Status</MudTd>
-                    <MudTd>@context.StartDate.ToString("dd-MM-yyyy")</MudTd>
-                    <MudTd>@context.EndDate.ToString("dd-MM-yyyy")</MudTd>
-                    <MudTd>
-                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true"
-                                 AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight"
-                                 Class="menu-icon-dark">
-                                <MudMenuItem OnClick="@(() => EditStore(context))">
-                                        <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" /> 
-                                         <span class="menu-text">Edit</span>
-                                </MudMenuItem>
-                            <MudMenuItem OnClick="@(() => OnViewClicked.InvokeAsync(context))">
-                                <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="eye" />
-                                <span class="menu-text">View</span>
-                            </MudMenuItem>
-                        </MudMenu>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+            <RowTemplate>
+                <MudTd>@context.CompanyName</MudTd>
+                <MudTd>@context.Email</MudTd>
+                <MudTd>@context.PhoneNumber</MudTd>
+                <MudTd>@context.WhatsAppNumber</MudTd>
+                <MudTd>@context.WebsiteUrl</MudTd>
+                <MudTd>@context.Status</MudTd>
+                <MudTd>@context.StartDay</MudTd>
+                <MudTd>@context.EndDay</MudTd>
+                <MudTd>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true"
+                             AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopRight"
+                             Class="menu-icon-dark">
+                        <MudMenuItem OnClick="@(() => EditStore(context))">
+                            <img src="/qln-images/edit_dark_icon.svg" alt="edit" style=" filter: invert(13%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(96%) contrast(85%);" />
+                            <span class="menu-text">Edit</span>
+                        </MudMenuItem>
+                        <MudMenuItem OnClick="@(() => OnViewClicked.InvokeAsync(context))">
+                            <img src="/qln-images/eye_icon.svg" class="menu-icon-style" alt="eye" />
+                            <span class="menu-text">View</span>
+                        </MudMenuItem>
+                    </MudMenu>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
-            <PaginationFooter TotalItems="@TotalCount"
-                              CurrentPage="@CurrentPage"
-                              PageSize="@PageSize"
-                              OnPageChange="@OnPageChange"
-                              OnPageSizeChange="@OnPageSizeChange" />
-        }
-    </MudPaper>
+        <PaginationFooter TotalItems="@TotalCount"
+                          CurrentPage="@CurrentPage"
+                          PageSize="@PageSize"
+                          OnPageChange="@OnPageChange"
+                          OnPageSizeChange="@OnPageSizeChange" />
+    }
+</MudPaper>

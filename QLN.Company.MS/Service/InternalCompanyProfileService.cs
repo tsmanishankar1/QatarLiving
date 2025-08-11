@@ -63,6 +63,52 @@ namespace QLN.Company.MS.Service
                 throw;
             }
         }
+
+        public async Task<string> MigrateCompany(string guid, string uid, string userName, CompanyProfile dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                //bool duplicateByUserAndVertical = await _context.Companies.AnyAsync(
+                //    c => c.UserId == uid &&
+                //         c.Vertical == dto.Vertical &&
+                //         c.SubVertical == dto.SubVertical,
+                //    cancellationToken);
+
+                //if (duplicateByUserAndVertical)
+                //{
+                //    throw new ConflictException("A company profile already exists for this user under the same subvertical.");
+                //}
+                //bool duplicateContactInfo = await _context.Companies.AnyAsync(
+                //    c => c.UserId != uid &&
+                //         (c.PhoneNumber == dto.PhoneNumber || c.Email == dto.Email),
+                //    cancellationToken);
+
+                //if (duplicateContactInfo)
+                //{
+                //    throw new ConflictException("Phone number or email is already used by another user.");
+                //}
+                if(!Guid.TryParse(guid, out var newCompanyId))
+                {
+                    throw new InvalidDataException("Not a GUID");
+                }
+                var entity = EntityForCreate(dto, newCompanyId, uid, userName);
+                //Validate(entity);
+
+                _context.Companies.Add(entity);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Company Migrated successfully";
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException(ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while creating company profile for user ID: {UserId}", uid);
+                throw;
+            }
+        }
         private static bool IsValidEmail(string email)
         {
             return !string.IsNullOrWhiteSpace(email) &&
@@ -184,6 +230,8 @@ namespace QLN.Company.MS.Service
                 CRNumber = dto.CRNumber,
                 CompanyLogo = dto.CompanyLogo,
                 CRDocument = dto.CRDocument,
+                UploadFeed=dto.UploadFeed,
+                XMLFeed=dto.XMLFeed,
                 Status = dto.Status,
                 CreatedBy = uid,
                 CreatedUtc = DateTime.UtcNow,
@@ -313,6 +361,8 @@ namespace QLN.Company.MS.Service
                 CRDocument = !string.IsNullOrWhiteSpace(dto.CRDocument)
                         ? dto.CRDocument
                         : existing.CRDocument,
+                UploadFeed = dto.UploadFeed,
+                XMLFeed = dto.XMLFeed,
                 Status = dto.Status,
                 CreatedBy = existing.CreatedBy,
                 CreatedUtc = existing.CreatedUtc,

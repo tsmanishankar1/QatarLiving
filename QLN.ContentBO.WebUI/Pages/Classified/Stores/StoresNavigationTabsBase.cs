@@ -8,11 +8,11 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.Stores
 
         protected int ActiveIndex { get; set; }
 
-        protected readonly List<TabItem> Tabs = new()
-        {
+        protected readonly List<TabItem> Tabs =
+        [
             new TabItem("View  Subscription  Listing", "/manage/classified/stores/view/subscription/listing"),
             new TabItem("View Stores", "/manage/classified/stores/view/stores"),
-        };
+        ];
 
         protected class TabItem
         {
