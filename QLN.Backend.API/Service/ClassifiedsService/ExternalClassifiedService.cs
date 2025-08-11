@@ -1094,7 +1094,15 @@ namespace QLN.Backend.API.Service.ClassifiedService
             }
         }
 
+        public Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 

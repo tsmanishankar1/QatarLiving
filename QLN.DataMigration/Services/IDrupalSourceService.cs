@@ -9,10 +9,10 @@ namespace QLN.DataMigration.Services
         Task<DrupalItemsCategories?> GetCategoriesAsync(string environment, CancellationToken cancellationToken);
         Task<DrupalItems?> GetItemsAsync(
             string environment,
-            int categoryId,
-            string sortField,
-            string sortOrder,
-            string? keywords,
+            //int categoryId,
+            //string sortField,
+            //string sortOrder,
+            //string? keywords,
             int? page,
             int? pageSize,
             CancellationToken cancellationToken);
