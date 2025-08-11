@@ -21,9 +21,11 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string createdby { get; set; }
         public string ContactNumber { get; set; }
         public string WhatsappNumber { get; set; }
-        public List<string> Location { get; set; } = new List<string>();
+        public LocationsDtos Locations { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string Status { get; set; }
+        public bool IsFeatured { get; set; }
+        public bool IsPromoted { get; set; }
     }
 }
