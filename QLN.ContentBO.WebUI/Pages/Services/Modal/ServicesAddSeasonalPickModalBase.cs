@@ -188,10 +188,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     Snackbar.Add("Seasonal pick added successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
                 }
-                else if (response?.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
-                }
                 else
                 {
                     Snackbar.Add("Failed to add seasonal pick.", Severity.Error);

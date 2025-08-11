@@ -58,14 +58,17 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     await LoadCategoryTreesAsync();
 
                 selectedSeasonalPick = await GetSeasonalPicksById();
-                 var json = JsonSerializer.Serialize(selectedSeasonalPick, new JsonSerializerOptions
+                var json = JsonSerializer.Serialize(selectedSeasonalPick, new JsonSerializerOptions
                 {
-                    WriteIndented = true 
+                    WriteIndented = true
                 });
                 if (selectedSeasonalPick != null)
                 {
                     featuredCategoryTitle = selectedSeasonalPick.Title;
                     ImagePreviewUrl = selectedSeasonalPick.ImageUrl;
+                    SelectedCategory = selectedSeasonalPick.CategoryName;
+                    SelectedSubcategory = selectedSeasonalPick.L1categoryName;
+                    SelectedSection = selectedSeasonalPick.L2categoryName;
                     SelectedSubcategoryId = selectedSeasonalPick.L1CategoryId;
                     SelectedSectionId = selectedSeasonalPick.L2categoryId;
                     var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedSeasonalPick?.CategoryId);
@@ -73,28 +76,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedSeasonalPick?.L1CategoryId);
                     _selectedL2Categories = selectedL1?.Fields ?? new();
                 }
-
-                if (SelectedCategoryId.HasValue)
-                    {
-                        var selectedCategory = CategoryTrees?.FirstOrDefault(c => c.Id == SelectedCategoryId);
-                        _selectedL1Categories = selectedCategory?.Fields ?? new List<L1Category>();
-                        var selectedSubcategory = _selectedL1Categories
-                            .FirstOrDefault(sc => sc.Id == SelectedSubcategoryId);
-                        if (selectedSubcategory == null)
-                        {
-                            SelectedSubcategoryId = null;
-                            SelectedSectionId = null;
-                            _selectedL2Categories = new List<L2Category>();
-                        }
-                        else
-                        {
-                            _selectedL2Categories = selectedSubcategory.Fields ?? new List<L2Category>();
-                            if (!_selectedL2Categories.Any(sec => sec.Id == SelectedSectionId))
-                            {
-                                SelectedSectionId = null;
-                            }
-                        }
-                    }
+                StateHasChanged();
             }
             catch (Exception ex)
             {
@@ -148,6 +130,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
             SelectedSectionId = null;
             var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
             _selectedL2Categories = selectedL1?.Fields ?? new();
+            SelectedSubcategory = selectedL1?.CategoryName ?? string.Empty;
         }
         protected void OnSectionChanged(long? sectionId)
         {
@@ -157,7 +140,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
         }
         protected bool IsFormValid()
         {
-            return SelectedCategoryId.HasValue &&
+            return selectedSeasonalPick?.CategoryId.HasValue == true &&
                    SelectedSubcategoryId.HasValue &&
                    SelectedSectionId.HasValue &&
                    !string.IsNullOrWhiteSpace(featuredCategoryTitle) &&
@@ -165,7 +148,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                    EndDate.HasValue &&
                    !string.IsNullOrEmpty(ImagePreviewUrl);
         }
-
         protected void Close() => MudDialog.Cancel();
         protected void Save()
         {
@@ -207,7 +189,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 id = selectedSeasonalPick.Id,
                 vertical = Vertical.Services,
                 title = selectedSeasonalPick.Title,
-                categoryId = SelectedCategoryId,
+                categoryId = selectedSeasonalPick?.CategoryId,
                 categoryName = SelectedCategory,
                 l1CategoryId = SelectedSubcategoryId,
                 l1categoryName = SelectedSubcategory,
@@ -225,10 +207,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                 {
                     Snackbar.Add("Seasonal pick Edited successfully!", Severity.Success);
                     MudDialog.Close(DialogResult.Ok(true));
-                }
-                else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
-                {
-                    Snackbar.Add($"A seasonal pick with the category '{SelectedCategory}' already exists for vertical '{payload.vertical}'", Severity.Warning);
                 }
                 else
                 {

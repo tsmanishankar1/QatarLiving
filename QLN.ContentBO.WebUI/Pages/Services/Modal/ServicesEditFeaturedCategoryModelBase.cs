@@ -95,7 +95,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                     dateRange = null;
                 }
 
-                 var category = CategoryTrees.FirstOrDefault(c => c.Id == selectedFeaturedCategory.CategoryId);
+                var category = CategoryTrees.FirstOrDefault(c => c.Id == selectedFeaturedCategory.CategoryId);
                 if (category != null)
                 {
                     _selectedL1Categories = category.Fields;
@@ -109,6 +109,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.Modal
                         _selectedL1Categories.Add(sub);
                     }
                 }
+                StateHasChanged();
              
             }
             catch (Exception ex)

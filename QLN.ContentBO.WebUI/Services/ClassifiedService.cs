@@ -227,6 +227,7 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, options);
+                Console.Write("the edit payload is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/editseasonalpick")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
