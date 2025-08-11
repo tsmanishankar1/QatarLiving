@@ -84,9 +84,9 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
                 }
                 selectedFileName = GetFileNameFromUrl(selectedService.LicenseCertificate);
                 var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == selectedService?.CategoryId);
-                _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+                _selectedL1Categories = selectedCategory?.Fields ?? new();
                 var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == selectedService?.L1CategoryId);
-                _selectedL2Categories = selectedL1?.L2Categories ?? new();
+                _selectedL2Categories = selectedL1?.Fields ?? new();
             }
             catch (Exception ex)
             {
@@ -94,7 +94,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             }
         }
 
-        protected void OnCategoryChanged(Guid categoryId)
+        protected void OnCategoryChanged(long categoryId)
         {
             selectedService.CategoryId = categoryId;
             _selectedL1CategoryId = null;
@@ -102,17 +102,17 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             _selectedL2Categories.Clear();
 
             var selectedCategory = CategoryTrees.FirstOrDefault(c => c.Id == categoryId);
-            _selectedL1Categories = selectedCategory?.L1Categories ?? new();
+            _selectedL1Categories = selectedCategory?.Fields ?? new();
         }
 
 
-        protected void OnL1CategoryChanged(Guid subcategoryId)
+        protected void OnL1CategoryChanged(long subcategoryId)
         {
             selectedService.L1CategoryId = subcategoryId;
             _selectedL2CategoryId = null;
 
             var selectedL1 = _selectedL1Categories.FirstOrDefault(l1 => l1.Id == subcategoryId);
-            _selectedL2Categories = selectedL1?.L2Categories ?? new();
+            _selectedL2Categories = selectedL1?.Fields ?? new();
         }
 
 
@@ -186,7 +186,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.EditService
             selectedService.WhatsappNumber = phone;
             return Task.CompletedTask;
         }
-        protected void OnSubCategoryChanged(Guid subcategoryId)
+        protected void OnSubCategoryChanged(long subcategoryId)
         {
             selectedService.L2CategoryId = subcategoryId;
             Ad.SelectedSubSubcategoryId = null;
