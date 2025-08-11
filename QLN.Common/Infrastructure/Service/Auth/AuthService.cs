@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
 using QLN.Common.DTO_s.Company;
+using QLN.Common.DTOs;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
@@ -21,6 +22,7 @@ using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
+using System.Data;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography.X509Certificates;
@@ -43,6 +45,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         private readonly IWebHostEnvironment _env;
         private readonly IExternalSubscriptionService _subscriptionService;
         private readonly ICompanyProfileService _companyProfile;
+        private readonly HttpClient _httpClient;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -55,7 +58,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             IHttpContextAccessor httpContextAccessor,
             IWebHostEnvironment env,
             IExternalSubscriptionService subscriptionService,
-            ICompanyProfileService companyProfile
+            ICompanyProfileService companyProfile,
+            IHttpClientFactory httpClientFactory
             )
         {
             _userManager = userManager;
@@ -69,6 +73,7 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             _env = env;
             _subscriptionService = subscriptionService;
             _companyProfile = companyProfile;
+            _httpClient = httpClientFactory.CreateClient();
         }
 
 
@@ -1172,7 +1177,72 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     if(hasSubscription)
                     {
                         // go off and create a subscription with the same information in it then save the subscription GUID to the user
+                        var environment = _config["LegacySubscriptions:Environment"];
+                        var type = drupalUser.Subscription?.ProductClass;
+                        var uid = drupalUser.Subscription?.Uid;
 
+                        if(environment != null && type != null && uid != null)
+                        {
+                            var subscriptioninfo = await GetLegacySubscription(type, uid, environment);
+
+                            if(subscriptioninfo != null && subscriptioninfo.Drupal.Item.Status == "success")
+                            {
+                                DateTime.TryParse(subscriptioninfo.Drupal.Item.StartDate, out var startDate);
+                                DateTime.TryParse(subscriptioninfo.Drupal.Item.EndDate, out var endDate);
+                                TimeSpan duration = endDate - startDate;
+                                if (duration.TotalDays < 0)
+                                {
+                                    duration = TimeSpan.FromDays(30); // Default to 30 days if the duration is negative
+                                }
+
+                                var migratedSubscription = new SubscriptionRequestDto
+                                {
+                                    adsbudget = subscriptioninfo.Drupal.Item.AdsLimitDaily,
+                                    CategoryId = Subscriptions.SubscriptionCategory.Items,
+                                    Currency = "QAR",
+                                    Description = subscriptioninfo.Drupal.Item.Product,
+                                    Duration = duration,
+                                    featurebudget = 0,
+                                    Price = 0,
+                                    promotebudget = 0,
+                                    refreshbudget = int.TryParse(subscriptioninfo.Drupal.Item.RefreshLimitDaily, out var refreshLimitDaily) ? refreshLimitDaily : 0,
+                                    StatusId = Subscriptions.Status.Active,
+                                    SubscriptionName = subscriptioninfo.Drupal.Item.Product,
+                                    VerticalTypeId = subscriptioninfo.Drupal.Item.ProductClass == "item" ? Subscriptions.Vertical.Classifieds : Subscriptions.Vertical.Services // who knows if this is correct ?
+                                };
+
+                                // this will work but wont have any idea what the subscription ID is
+                                await _subscriptionService.CreateSubscriptionAsync(migratedSubscription);
+
+                                //user.Subscriptions = new List<UserSubscription>
+                                //{
+                                //    new UserSubscription
+                                //    {
+                                //        DisplayName = subscriptioninfo.Drupal.Item.Product,
+                                //        Id = subscriptionGuid
+                                //    }
+                                //};
+
+                                //var updateSubResult = await _userManager.UpdateAsync(user);
+
+                                //if (!updateSubResult.Succeeded)
+                                //{
+                                //    var errors = updateSubResult.Errors
+                                //        .GroupBy(e => e.Code)
+                                //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                                //    throw new RegistrationValidationException(errors);
+                                //}
+
+                                var subscriptionRole = "Subscriber";
+
+                                if (!await _roleManager.RoleExistsAsync(subscriptionRole))
+                                    await _roleManager.CreateAsync(new IdentityRole<Guid>(subscriptionRole));
+
+                                // add the user to the Subscriber role
+                                await _userManager.AddToRoleAsync(user, subscriptionRole);
+                            }
+
+                        }
 
                     }
                 }
@@ -1217,18 +1287,20 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                 .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string environment, CancellationToken cancellationToken)
+        private async Task<LegacySubscriptionDto?> GetLegacySubscription(string type, string uid, string environment, CancellationToken cancellationToken = default)
         {
 
             var formData = new List<KeyValuePair<string, string>>
             {
-                new KeyValuePair<string, string>("env", environment)
+                new KeyValuePair<string, string>("env", environment),
+                new KeyValuePair<string, string>("uid", uid),
+                new KeyValuePair<string, string>("type", type)
             };
             var content = new FormUrlEncodedContent(formData);
 
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
-            using var _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.Add("x-api-key", _config["LegacySubscriptions:ApiKey"]);
 
             var response = await _httpClient.PostAsync(ConstantValues.Subscriptions.SubscriptionsEndpoint, content);
 
@@ -1244,13 +1316,24 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
             try
             {
-                var categories = JsonSerializer.Deserialize<LegacySubscriptionDto>(json, new JsonSerializerOptions
+                var jsonDeserialized = JsonSerializer.Deserialize<Dictionary<string, object>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
-                _log.LogTrace("Completed Deserialization");
-                return categories;
+                if (jsonDeserialized == null)
+                {
+                    return null;
+                }
+
+                var levelDown = JsonSerializer.Serialize(jsonDeserialized.GetValueOrDefault(key: uid)); // serialize it to a string
+
+                var subscription = JsonSerializer.Deserialize<LegacySubscriptionDto>(levelDown, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }); // deserialize into the object we want
+
+                return subscription;
             }
             catch (Exception ex)
             {
