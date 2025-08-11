@@ -1,4 +1,5 @@
-﻿using Azure;
+﻿using Amazon.S3.Model;
+using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -4213,7 +4214,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
                              Stores = results.ClassifiedStores
         .GroupBy(store => new {
             store.CompanyId,
-            store.SubscriptionId,
+            //store.SubscriptionId,
             store.CompanyName,
             store.ContactNumber,
             store.Email,
@@ -4225,7 +4226,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         .Select(group => new StoresGroup
         {
             CompanyId = Guid.Parse(group.Key.CompanyId),
-            SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
+            //SubscriptionId = Guid.Parse(group.Key.SubscriptionId),
             CompanyName = group.Key.CompanyName,
             ContactNumber = group.Key.ContactNumber,
             Email = group.Key.Email,
@@ -4250,7 +4251,28 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints
         .ToList()
                         };
 
-                        return Results.Ok(response);
+
+                        int currentPage = Math.Max(1, req.PageNumber);
+                        int itemsPerPage = Math.Max(1, Math.Min(100, req.PageSize));
+                        int totalCount = response.Stores.Count;
+                        int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
+
+                        if (currentPage > totalPages && totalPages > 0)
+                            currentPage = totalPages;
+
+                        var paginated = response.Stores
+                            .Skip((currentPage - 1) * itemsPerPage)
+                            .Take(itemsPerPage)
+                            .ToList();
+
+
+                        return Results.Ok(new ClassifiedBOPageResponse<StoresGroup>
+                        {
+                            Page = currentPage,
+                            PerPage = itemsPerPage,
+                            TotalCount = totalCount,
+                            Items = paginated
+                        });
                     }
                     else
                     {

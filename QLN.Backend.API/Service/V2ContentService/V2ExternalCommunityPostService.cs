@@ -268,12 +268,12 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, int? page = null, int? perPage = null, CancellationToken ct = default)
+        public async Task<CommunityCommentListResponse> GetAllCommentsByPostIdAsync(Guid postId, string? userId, int? page = null, int? perPage = null, CancellationToken ct = default)
         {
             try
             {
-                var query = $"?page={page ?? 1}&perPage={perPage ?? 10}";
-                var url = $"/api/v2/community/getCommentsByPostId/{postId}{query}";
+                var query = $"?userId={userId}&page={page ?? 1}&perPage={perPage ?? 10}";
+                var url = $"/api/v2/community/getCommentsByPost/{postId}{query}";
 
                 var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Get, InternalAppId, url);
                 var response = await _dapr.InvokeMethodWithResponseAsync(request, ct);
@@ -294,7 +294,7 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
-        public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
+         public async Task<bool> LikeCommentAsync(LikeCommentsDto likeCommentsDto, string userId, CancellationToken ct = default)
         {
             HttpStatusCode? failedStatusCode = null;
             string failedErrorMessage = null;
@@ -436,6 +436,16 @@ namespace QLN.Backend.API.Service.V2ContentService
                     Message = "Edit request failed"
                 };
             }
+        }
+
+        public Task<string> BulkMigrateCommunityPostsAsync(List<V2CommunityPostDto> posts, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> MigrateCommunityPostAsync(V2CommunityPostDto post, CancellationToken ct = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

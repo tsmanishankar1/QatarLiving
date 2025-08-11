@@ -7,6 +7,7 @@ using QLN.Common.Infrastructure.IService.V2IContent;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using static QLN.Common.DTO_s.CommunityBo;
+using System.Security.Claims;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
 {
@@ -152,7 +153,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                  Ok<PaginatedCommunityPostResponseDto>,
                 ProblemHttpResult
             >>
-            (                
+            (
 
                 [FromQuery] string? categoryId,
                 [FromQuery] string? search,
@@ -300,7 +301,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                 ProblemHttpResult>>
                 (
                 CommunityPostLikeDto dto,
-                IV2CommunityPostService service,HttpContext httpContext,
+                IV2CommunityPostService service, HttpContext httpContext,
                 CancellationToken ct
                 ) =>
             {
@@ -388,7 +389,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-.               WithName("LikeCommunityPostInternal")
+.WithName("LikeCommunityPostInternal")
                 .WithTags("V2Community")
                 .ExcludeFromDescription();
 
@@ -456,7 +457,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
     .WithDescription("Adds a new comment to a community post based on user token and CommunityPostId.")
     .Produces<object>(StatusCodes.Status200OK)
     .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized) 
+    .Produces<ProblemDetails>(StatusCodes.Status401Unauthorized)
     .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
 
@@ -508,9 +509,40 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
      int? page,
      int? perPage,
      IV2CommunityPostService service,
+     HttpContext httpContext,
      CancellationToken ct) =>
             {
-                var comments = await service.GetAllCommentsByPostIdAsync(postId, page, perPage, ct);
+                string? userId = null;
+                if (httpContext.User?.Identity?.IsAuthenticated == true)
+                {
+                    userId = httpContext.User.FindFirst("uid")?.Value
+                             ?? httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                    if (string.IsNullOrWhiteSpace(userId))
+                    {
+                        var userClaim = httpContext.User.FindFirst("user")?.Value;
+                        if (!string.IsNullOrWhiteSpace(userClaim))
+                        {
+                            try
+                            {
+                                using var doc = JsonDocument.Parse(userClaim);
+                                if (doc.RootElement.TryGetProperty("uid", out var uidProp) &&
+                                    uidProp.ValueKind == JsonValueKind.String)
+                                {
+                                    var uid = uidProp.GetString();
+                                    if (!string.IsNullOrWhiteSpace(uid))
+                                        userId = uid;
+                                }
+                            }
+                            catch (JsonException)
+                            {
+                                return TypedResults.Problem("Jao");
+                            }
+                        }
+                    }
+                }
+
+                var comments = await service.GetAllCommentsByPostIdAsync(postId, userId, page, perPage, ct);
                 return Results.Ok(comments);
             })
  .WithName("GetCommunityPostComments")
@@ -519,6 +551,25 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
  .WithDescription("Retrieves a paginated list of comments (with replies) by community post ID.")
  .Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
  .Produces(StatusCodes.Status500InternalServerError);
+
+            group.MapGet("/getCommentsByPost/{postId:guid}", async Task<IResult> (
+Guid postId,
+string? userId,
+int? page,
+int? perPage,
+IV2CommunityPostService service,
+CancellationToken ct) =>
+            {
+                var comments = await service.GetAllCommentsByPostIdAsync(postId, userId, page, perPage, ct);
+                return Results.Ok(comments);
+            })
+                .ExcludeFromDescription()
+.WithName("GetCommunityPostBy")
+.WithTags("V2Community")
+.WithSummary("Get all comments for a community post")
+.WithDescription("Retrieves a paginated list of comments (with replies) by community post ID.")
+.Produces<CommunityCommentListResponse>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status500InternalServerError);
 
 
             group.MapPost("/likeCommentByUserId", async Task<Results<
@@ -650,7 +701,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
-        
+
             .WithName("GetAllCommunityCategories")
             .WithTags("V2Community")
             .WithSummary("Get all community catrgory value with id for dropdown")
@@ -777,6 +828,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints
             .Produces<CommunityCommentApiResponse>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/comments/edit/byid/{postId}/{commentId}", async Task<Results<
                 Ok<CommunityCommentApiResponse>,
                 BadRequest<ProblemDetails>,
