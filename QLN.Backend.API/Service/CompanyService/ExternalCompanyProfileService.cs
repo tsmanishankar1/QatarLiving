@@ -182,25 +182,26 @@ namespace QLN.Backend.API.Service.CompanyService
                 throw;
             }
         }
-        public async Task DeleteCompany(Guid id, CancellationToken cancellationToken = default)
+        public async Task DeleteCompany(DeleteCompanyRequest request, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = $"/api/companyprofile/deletecompanyprofile?id={id}";
+                var url = "/api/companyprofile/deletecompanyprofilebyuserid";
                 await _dapr.InvokeMethodAsync(
-                    HttpMethod.Delete,
+                    HttpMethod.Post,
                     ConstantValues.Company.CompanyServiceAppId,
                     url,
+                    request,
                     cancellationToken);
             }
             catch (InvocationException ex) when (ex.Response?.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                _logger.LogWarning(ex, "Company with ID {id} not found.", id);
+                _logger.LogWarning(ex, "Company with ID {id} not found.", request.Id);
                 return;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", id);
+                _logger.LogError(ex, "Error deleting company profile with ID: {Id}", request.Id);
                 throw;
             }
         }
@@ -288,6 +289,49 @@ namespace QLN.Backend.API.Service.CompanyService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving companies for token user");
+                throw;
+            }
+        }
+        public async Task<CompanySubscriptionListResponseDto> GetCompanySubscriptions(CompanySubscriptionFilter filter, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = "/api/companyprofile/viewstores";
+                var request = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Company.CompanyServiceAppId, url);
+                request.Content = new StringContent(JsonSerializer.Serialize(filter), Encoding.UTF8, "application/json");
+
+                var response = await _dapr.InvokeMethodWithResponseAsync(request, cancellationToken);
+
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                    throw new InvalidDataException(errorJson);
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogInformation("Raw JSON from internal API: {RawJson}", rawJson);
+
+                return JsonSerializer.Deserialize<CompanySubscriptionListResponseDto>(
+                    rawJson,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true } 
+                ) ?? new CompanySubscriptionListResponseDto
+                {
+                    Records = new List<CompanySubscriptionDto>(),
+                    TotalRecords = 0,
+                    PageNumber = filter.PageNumber ?? 1,
+                    PageSize = filter.PageSize ?? 12,
+                    TotalPages = 0
+                };
+            }
+            catch(InvalidDataException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching company subscriptions from external service");
                 throw;
             }
         }

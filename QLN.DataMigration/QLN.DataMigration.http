@@ -26,3 +26,20 @@ env=dev
 &page_size=30
 &page=1
 
+#########
+
+### Migrate News
+GET https://www.qatarliving.com/qlnapi/articles?page=1&page_size=100&forum_id=20000040
+Content-Type: application/json
+
+### Migrate Events
+GET https://www.qatarliving.com/qlnapi/events?page=1&page_size=100
+Content-Type: application/json
+
+### Migrate community
+GET https://www.qatarliving.com/qlnapi/community?page=1&page_size=100
+Content-Type: application/json
+
+### Migrate categrories
+GET https://test.qatarliving.com/qlnapi/categories
+Content-Type: application/json

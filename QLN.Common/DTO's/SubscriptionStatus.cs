@@ -7,12 +7,13 @@ namespace QLN.Common.Infrastructure.Subscriptions
     {
         Active = 1,
         Failed = 0,
-        Pending = 2,
+        PaymentPending = 2,
         Expired = 3,
         Cancelled = 4,
         OnHold = 5,
         Ready = 6,
         PendingActivation = 7,
-        Deleted = 8
+        Deleted = 8,
+        Suspended = 9
     }
 }

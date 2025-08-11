@@ -91,16 +91,27 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<CategoryDto>> GetAllCategories(CancellationToken cancellationToken = default)
+        public async Task<List<CategoryDto>> GetAllCategories(string? vertical, string? subVertical, CancellationToken cancellationToken = default)
         {
             try
             {
+                var query = new QueryString(string.Empty);
+
+                if (!string.IsNullOrWhiteSpace(vertical))
+                    query = query.Add("vertical", vertical);
+
+                if (!string.IsNullOrWhiteSpace(subVertical))
+                    query = query.Add("subVertical", subVertical);
+
+                var uri = $"/api/service/getallcategories{query}";
+
                 var response = await _dapr.InvokeMethodAsync<List<CategoryDto>>(
                     HttpMethod.Get,
                     ConstantValues.Services.ServiceAppId,
-                    "/api/service/getallcategories",
+                    uri,
                     cancellationToken
                 );
+
                 return response ?? new List<CategoryDto>();
             }
             catch (Exception ex)
@@ -171,7 +182,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<string> UpdateServiceAd(string userId, QLN.Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateServiceAd(string userId, Common.Infrastructure.Model.Services dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -206,7 +217,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
+        public async Task<Common.Infrastructure.Model.Services?> GetServiceAdById(long id, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -268,7 +279,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<ServicesPagedResponse<QLN.Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
+        public async Task<ServicesPagedResponse<Common.Infrastructure.Model.Services>> GetAllServicesWithPagination(BasePaginationQuery? dto, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -294,11 +305,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PromoteService(PromoteServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/promote";
+                var url = $"/api/service/promotebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -333,11 +344,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> FeatureService(FeatureServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/feature";
+                var url = $"/api/service/featurebyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -372,11 +383,11 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> RefreshService(RefreshServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = "/api/service/refresh";
+                var url = $"/api/service/refreshbyuserid?uid={uid}";
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(HttpMethod.Post, ConstantValues.Services.ServiceAppId, url);
                 serviceRequest.Content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -411,16 +422,17 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<QLN.Common.Infrastructure.Model.Services> PublishService(long id, CancellationToken ct)
+        public async Task<Common.Infrastructure.Model.Services> PublishService(PublishServiceRequest request, string? uid, CancellationToken ct)
         {
             try
             {
-                var url = $"/api/service/publish?id={id}";
+                var url = $"/api/service/publishbyuserid?uid={uid}";
 
                 var serviceRequest = _dapr.CreateInvokeMethodRequest(
                     HttpMethod.Post,
                     ConstantValues.Services.ServiceAppId,
-                    url
+                    url,
+                    request
                 );
 
                 var response = await _dapr.InvokeMethodWithResponseAsync(serviceRequest, ct);
@@ -469,7 +481,7 @@ namespace QLN.Backend.API.Service.Services
                 throw;
             }
         }
-        public async Task<List<QLN.Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
+        public async Task<List<Common.Infrastructure.Model.Services>> ModerateBulkService(BulkModerationRequest request, CancellationToken cancellationToken = default)
         {
             try
             {

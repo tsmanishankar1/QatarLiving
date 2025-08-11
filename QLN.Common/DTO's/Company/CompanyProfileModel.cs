@@ -72,7 +72,11 @@ namespace QLN.Common.DTO_s.Company
     {
         public Guid? CompanyId { get; set; }
         public VerifiedStatus? Status { get; set; }
-        public string? RejectionReason { get; set; }
+    }
+    public class DeleteCompanyRequest
+    {
+        public Guid Id { get; set; }
+        public string? UpdatedBy { get; set; }
     }
     public class VerificationCompanyProfileStatus
     {

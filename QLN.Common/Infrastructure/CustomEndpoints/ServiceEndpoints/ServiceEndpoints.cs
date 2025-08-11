@@ -1,23 +1,25 @@
-﻿using Dapr.Client;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using QLN.Common.DTO_s;
+using QLN.Common.Infrastructure.Auditlog;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.IService.ISearchService;
 using QLN.Common.Infrastructure.IService.IService;
 using QLN.Common.Infrastructure.Model;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
 using System.Text.Json;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
 {
     public static class ServiceEndpoints
     {
+        const string ModuleName = "Services";
         public static RouteGroupBuilder MapServiceSearch(this RouteGroupBuilder group)
         {
             group.MapPost("/search", async (
@@ -90,7 +92,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             (
                 CategoryDto dto,
                 IServices service,
-                HttpContext httpContext,
                 CancellationToken cancellationToken
             ) =>
             {
@@ -171,13 +172,15 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceCategoryGetAllEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/getallcategories", async (
+                string? vertical,
+                string? subVertical,
                 IServices service,
                 CancellationToken cancellationToken
             ) =>
             {
                 try
                 {
-                    var result = await service.GetAllCategories(cancellationToken);
+                    var result = await service.GetAllCategories(vertical, subVertical, cancellationToken);
                     return Results.Ok(result);
                 }
                 catch (Exception ex)
@@ -255,9 +258,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/create", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 ServiceDto dto,
                 IServices service,
+                AuditLogger auditLogger,
                 HttpContext httpContext,
                 CancellationToken cancellationToken) =>
             {
+                string? uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -271,7 +276,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
                     var userName = userData.GetProperty("name").GetString();
                     if (uid == null && userName == null)
                     {
@@ -284,10 +289,21 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
 
                     var result = await service.CreateServiceAd(uid, userName, dto, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                       module: ModuleName,
+                       httpMethod: "POST",
+                       apiEndpoint: "/api/service/create",
+                       message: "Service ad created successfully",
+                       createdBy: uid,
+                       payload: dto,
+                       cancellationToken: cancellationToken
+                   );
+
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/create", ex, uid, cancellationToken);
                     return TypedResults.Problem(new ProblemDetails
                     {
                         Title = "Conflict",
@@ -297,6 +313,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/create", ex, uid, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -305,6 +322,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/create", ex, uid, cancellationToken);
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -371,8 +389,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapServiceAdUpdateEndpoints(this RouteGroupBuilder group)
         {
             group.MapPut("/update", async Task<Results<Ok<string>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
-                QLN.Common.Infrastructure.Model.Services dto,
+                Services dto,
                 HttpContext httpContext,
+                AuditLogger auditLogger,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -404,10 +423,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     dto.UpdatedAt = DateTime.UtcNow;
                     dto.UserName = userName;
                     var result = await service.UpdateServiceAd(uid, dto, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "PUT",
+                        apiEndpoint: "/api/service/update",
+                        message: "Service ad updated successfully",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: cancellationToken
+                    );
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/update", ex, dto.UpdatedBy, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -416,6 +445,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (ConflictException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/update", ex, dto.UpdatedBy, cancellationToken);
                     return TypedResults.Problem(new ProblemDetails
                     {
                         Title = "Conflict",
@@ -425,6 +455,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/update", ex, dto.UpdatedBy, cancellationToken);
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -578,12 +609,12 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         }
         public static RouteGroupBuilder MapDetailedGetByIdEndpoint(this RouteGroupBuilder group)
         {
-            group.MapGet("/getbyserviceid/{id:guid}", async Task<Results<
+            group.MapGet("/getbyserviceid/{id:long}", async Task<Results<
                 Ok<GetWithSimilarResponse<ServicesIndex>>,
                 NotFound<ProblemDetails>,
                 ProblemHttpResult>> (
 
-                Guid id,
+                long id,
                 [FromServices] ISearchService service,
                 CancellationToken cancellationToken) =>
             {
@@ -642,9 +673,11 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             group.MapPost("/delete", async Task<Results<Ok<string>, NotFound<ProblemDetails>, ProblemHttpResult>> (
                 long id,
                 HttpContext httpContext,
+                AuditLogger auditLogger,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
+                string? uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
@@ -659,8 +692,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                     }
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
-
+                    uid = userData.GetProperty("uid").GetString();
                     if (string.IsNullOrEmpty(uid))
                     {
                         return TypedResults.Problem(new ProblemDetails
@@ -671,10 +703,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
                     var result = await service.DeleteServiceAdById(uid, id, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/delete",
+                        message: "Service ad deleted successfully",
+                        createdBy: uid,
+                        payload: new { Id = id },
+                        cancellationToken: cancellationToken
+                    );
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/delete", ex, uid, cancellationToken);
                     var details = new ProblemDetails
                     {
                         Title = "Service Ad Not Found",
@@ -685,6 +727,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/delete", ex, uid, cancellationToken);
                     return TypedResults.Problem("Internal Server Error", ex.Message);
                 }
             })
@@ -776,6 +819,102 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         {
             group.MapPost("/promote", async Task<IResult> (
                 PromoteServiceRequest request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    request.UpdatedBy = uid;
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+
+                    var resultMessage = await service.PromoteService(request, uid, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/promote",
+                        message: "Service ad promoted successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/promote", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("PromoteService")
+            .WithTags("Service")
+            .WithSummary("Promote a service ad")
+            .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/promotebyuserid", async Task<IResult> (
+                PromoteServiceRequest request,
+                [FromQuery] string? uid,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -791,7 +930,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var resultMessage = await service.PromoteService(request, cancellationToken);
+                    var resultMessage = await service.PromoteService(request, uid, cancellationToken);
 
                     if (resultMessage == null)
                     {
@@ -824,8 +963,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         title: "Internal Server Error");
                 }
             })
-            .AllowAnonymous()
-            .WithName("PromoteService")
+            .ExcludeFromDescription()
+            .WithName("PromoteServiceByUserId")
             .WithTags("Service")
             .WithSummary("Promote a service ad")
             .WithDescription("Promotes a service ad by paying a fee. Requires valid service ID.")
@@ -840,11 +979,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         {
             group.MapPost("/feature", async Task<IResult> (
                 FeatureServiceRequest request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    request.UpdatedBy = uid;
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
                     if (request == null || request.ServiceId <= 0)
                     {
                         return Results.BadRequest(new ProblemDetails
@@ -855,7 +1018,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         });
                     }
 
-                    var resultMessage = await service.FeatureService(request, cancellationToken);
+                    var resultMessage = await service.FeatureService(request, uid, cancellationToken);
 
                     if (resultMessage == null)
                     {
@@ -864,11 +1027,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             statusCode: StatusCodes.Status404NotFound,
                             title: "Service Not Found");
                     }
-
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/feature",
+                        message: "Service ad featured successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
                     return Results.Ok(resultMessage);
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status404NotFound,
@@ -876,6 +1048,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status400BadRequest,
@@ -883,13 +1056,13 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/feature", ex, request.UpdatedBy, cancellationToken);
                     return Results.Problem(
                         detail: ex.Message,
                         statusCode: StatusCodes.Status500InternalServerError,
                         title: "Internal Server Error");
                 }
             })
-            .AllowAnonymous()
             .WithName("FeatureService")
             .WithTags("Service")
             .WithSummary("Feature a service ad")
@@ -899,12 +1072,9 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
-            return group;
-        }
-        public static RouteGroupBuilder MapRefreshEndpoint(this RouteGroupBuilder group)
-        {
-            group.MapPost("/refresh", async Task<IResult> (
-                RefreshServiceRequest request,
+            group.MapPost("/featurebyuserid", async Task<IResult> (
+                FeatureServiceRequest request,
+                [FromQuery] string? uid,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
@@ -919,7 +1089,165 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                             Status = StatusCodes.Status400BadRequest
                         });
                     }
-                    var resultMessage = await service.RefreshService(request, cancellationToken);
+
+                    var resultMessage = await service.FeatureService(request, uid, cancellationToken);
+
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .ExcludeFromDescription()
+            .WithName("FeatureServiceByUserId")
+            .WithTags("Service")
+            .WithSummary("Feature a service ad")
+            .WithDescription("Features a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+            return group;
+        }
+        public static RouteGroupBuilder MapRefreshEndpoint(this RouteGroupBuilder group)
+        {
+            group.MapPost("/refresh", async Task<IResult> (
+                RefreshServiceRequest request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    request.UpdatedBy = uid;
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var resultMessage = await service.RefreshService(request, uid, cancellationToken);
+                    if (resultMessage == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/refresh",
+                        message: "Service ad refreshed successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+                    return Results.Ok(resultMessage);
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/refresh", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("RefreshService")
+            .WithTags("Service")
+            .WithSummary("Refresh a service ad")
+            .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/refreshbyuserid", async Task<IResult> (
+                RefreshServiceRequest request,
+                [FromQuery] string? uid,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    if (request == null || request.ServiceId <= 0)
+                    {
+                        return Results.BadRequest(new ProblemDetails
+                        {
+                            Title = "Invalid Request",
+                            Detail = "Invalid request data. ServiceId must be a positive number.",
+                            Status = StatusCodes.Status400BadRequest
+                        });
+                    }
+                    var resultMessage = await service.RefreshService(request, uid, cancellationToken);
                     if (resultMessage == null)
                     {
                         return Results.Problem(
@@ -951,8 +1279,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         title: "Internal Server Error");
                 }
             })
-            .AllowAnonymous()
-            .WithName("RefreshService")
+            .ExcludeFromDescription()
+            .WithName("RefreshServiceByUserId")
             .WithTags("Service")
             .WithSummary("Refresh a service ad")
             .WithDescription("Refreshes a service ad by paying a fee. Requires valid service ID.")
@@ -965,13 +1293,107 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
         public static RouteGroupBuilder MapPublishEndpoint(this RouteGroupBuilder group)
         {
             group.MapPost("/publish", async Task<IResult> (
-                [FromQuery] long id,
+                PublishServiceRequest request,
+                HttpContext httpContext,
+                AuditLogger auditLogger,
                 IServices service,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.PublishService(id, cancellationToken);
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    var uid = userData.GetProperty("uid").GetString();
+                    if (uid == null)
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+                    request.UpdatedBy = uid;
+                    var result = await service.PublishService(request, uid, cancellationToken);
+                    if (result == null)
+                    {
+                        return Results.Problem(
+                            detail: "Service not found.",
+                            statusCode: StatusCodes.Status404NotFound,
+                            title: "Service Not Found");
+                    }
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/publish",
+                        message: "Service ad published successfully",
+                        createdBy: uid,
+                        payload: request,
+                        cancellationToken: cancellationToken
+                    );
+                    return Results.Ok(result);
+                }
+                catch (ConflictException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status409Conflict,
+                        title: "Conflict");
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status404NotFound,
+                        title: "Invalid Request");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status400BadRequest,
+                        title: "Invalid Request");
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/publish", ex, request.UpdatedBy, cancellationToken);
+                    return Results.Problem(
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError,
+                        title: "Internal Server Error");
+                }
+            })
+            .WithName("PublishService")
+            .WithTags("Service")
+            .WithSummary("Publish a service ad")
+            .WithDescription("Publishes a service ad if it's not already published and follows category rules.")
+            .Produces<Services>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/publishbyuserid", async Task<IResult> (
+                PublishServiceRequest request,
+                [FromQuery] string? uid,
+                IServices service,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    var result = await service.PublishService(request, uid, cancellationToken);
                     if (result == null)
                     {
                         return Results.Problem(
@@ -1011,8 +1433,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                         title: "Internal Server Error");
                 }
             })
-            .AllowAnonymous()
-            .WithName("PublishService")
+            .ExcludeFromDescription()
+            .WithName("PublishServiceByUserId")
             .WithTags("Service")
             .WithSummary("Publish a service ad")
             .WithDescription("Publishes a service ad if it's not already published and follows category rules.")
@@ -1021,7 +1443,6 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
             return group;
         }
         public static RouteGroupBuilder MapBulkActionsEndpoint(this RouteGroupBuilder group)
@@ -1033,6 +1454,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 >> (
                     BulkModerationRequest req,
                     HttpContext httpContext,
+                    AuditLogger auditLogger,
                     IServices service,
                     CancellationToken ct
                 ) =>
@@ -1068,10 +1490,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 try
                 {
                     var result = await service.ModerateBulkService(req, ct);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/service/moderatebulk",
+                        message: "Bulk moderation action performed successfully",
+                        createdBy: uid,
+                        payload: req,
+                        cancellationToken: ct
+                    );
                     return TypedResults.Ok(result);
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -1081,6 +1513,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (ConflictException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
                     return TypedResults.Problem(new ProblemDetails
                     {
                         Title = "Conflict",
@@ -1090,6 +1523,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/service/moderatebulk", ex, uid, ct);
                     return TypedResults.Problem(ex.Message);
                 }
             })
@@ -1104,6 +1538,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.ServiceEndpoints
                 .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
                 .Produces<ProblemDetails>(StatusCodes.Status409Conflict)
                 .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             group.MapPost("/moderatebulkbyuserid", async Task<Results<
                Ok<List<Services>>,
                BadRequest<ProblemDetails>,

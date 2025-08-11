@@ -845,7 +845,19 @@ namespace QLN.Content.MS.Service.DailyInternalService
             var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
             var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
             var can = new CancellationToken();
-            var AllCommentCount = _news.GetCommentsByArticleIdAsync((string)article.Id, null, null, can).Result.TotalComments;
+            string articleId = article.Id.ToString();
+            int? page = null;
+            int? perPage = null;
+            int allCommentCount = 0;
+            try
+            {
+                var commentsResult = _news.GetCommentsByArticleIdAsync(article.Id.ToString(), null, null, can).Result;
+                allCommentCount = commentsResult.TotalComments;
+            }
+            catch (Exception)
+            {
+                allCommentCount = 0;
+            }
 
 
             return new ContentPost
@@ -865,7 +877,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 Title = (string)article.Title,
                 Slug = (string)article.Slug,
                 WriterTag = article.WriterTag,
-                CommentsCounts = AllCommentCount,
+                CommentsCounts = allCommentCount,
                 Category = categoryLookup.ContainsKey(catId) ? categoryLookup[catId] : string.Empty
             };
         }
@@ -883,6 +895,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 NodeType = "event",
                 Nid = eventItem.Id.ToString(),
                 DateCreated = eventItem.CreatedAt.ToString("o"),
+                Description = eventItem.EventDescription,
                 ImageUrl = eventItem.CoverImage,
                 UserName = eventItem.CreatedBy,
                 Title = eventItem.EventTitle,
@@ -894,18 +907,28 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 EventLat = eventItem.Latitude,
                 EventLong = eventItem.Longitude,
                 EventLocation = eventItem.Location,
-                Description = eventItem.EventDescription
+                //Description = eventItem.EventDescription
             };
         }
 
         private ContentEvent CreateContentEventFromArticle(dynamic article, Dictionary<int, string> categoryLookup, string queueLabel)
         {
-            // Handle Categories collection properly with explicit casting
             var categories = (IEnumerable<dynamic>)article.Categories ?? Enumerable.Empty<dynamic>();
             var catId = categories.FirstOrDefault()?.CategoryId ?? default(int);
             var can = new CancellationToken();
-            var AllCommentCount = _news.GetCommentsByArticleIdAsync((string)article.Id, null, null, can).Result.TotalComments;
-
+            string articleId = article.Id.ToString(); 
+            int? page = null;
+            int? perPage = null;
+            int allCommentCount = 0;
+            try
+            {
+                var commentsResult = _news.GetCommentsByArticleIdAsync(article.Id.ToString(), null, null, can).Result;
+                allCommentCount = commentsResult.TotalComments;
+            }
+            catch (Exception)
+            {
+                allCommentCount = 0;
+            }
             return new ContentEvent
             {
                 Id = (Guid)article.Id,
@@ -923,7 +946,7 @@ namespace QLN.Content.MS.Service.DailyInternalService
                 ImageUrl = (string)article.CoverImageUrl,
                 Slug = (string)article.Slug,
                 NodeType = "post",
-                CommentsCounts = AllCommentCount
+                CommentsCounts = allCommentCount
             };
         }
 

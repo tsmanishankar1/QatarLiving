@@ -48,11 +48,21 @@ dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
-
-#endregion
-
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLApplicationContext>(options =>
+    options.UseNpgsql(dataSource));
 builder.Services.AddDbContext<QLPaymentsContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(dataSource));
+#endregion
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -74,5 +84,6 @@ var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+
 
 app.Run();
