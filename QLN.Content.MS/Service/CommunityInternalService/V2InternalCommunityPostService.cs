@@ -53,6 +53,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             dto.UpdatedDate = DateTime.UtcNow;
             dto.DateCreated = DateTime.UtcNow;
             dto.Slug = ProcessingHelpers.GenerateSlug(dto.Title);
+            NormalizeCommunityDto(dto);
             var key = GetKey(dto.Id);
 
             try
@@ -117,6 +118,7 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             {
                 try
                 {
+                    NormalizeCommunityDto(dto);
                     var key = dto.Id.ToString();
 
                     await _dapr.SaveStateAsync(ConstantValues.V2Content.ContentStoreName, key, dto, cancellationToken: ct);
@@ -1008,9 +1010,12 @@ namespace QLN.Content.MS.Service.CommunityInternalService
                 Description = dto.Description,
                 Category = dto.Category,
                 CategoryId = dto.CategoryId,
-                CommentedUserIds = dto.CommentedUserIds,
+                CommentedUserIds = (dto.CommentedUserIds ?? new List<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string").Distinct().ToList(),
                 CommentCount = dto.CommentCount,
-                LikedUserIds = dto.LikedUserIds,
+
+                LikedUserIds = (dto.LikedUserIds ?? new List<string>())
+            .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string").Distinct().ToList(),
                 LikeCount = dto.LikeCount,
                 ImageUrl = dto.ImageUrl,
                 UserId = dto.UserId,
@@ -1027,6 +1032,28 @@ namespace QLN.Content.MS.Service.CommunityInternalService
             };
             return indexRequest;
 
+        }
+        private static void NormalizeCommunityDto(V2CommunityPostDto dto)
+        {
+            dto.Title = dto.Title?.Trim() ?? string.Empty;
+            dto.Description ??= string.Empty;
+
+            dto.LikedUserIds = (dto.LikedUserIds ?? new List<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string")
+                .Distinct()
+                .ToList();
+
+            dto.CommentedUserIds = (dto.CommentedUserIds ?? new List<string>())
+                .Where(s => !string.IsNullOrWhiteSpace(s) && s != "string")
+                .Distinct()
+                .ToList();
+
+            dto.LikeCount = dto.LikedUserIds.Count;
+            dto.CommentCount = dto.CommentCount < 0 ? 0 : dto.CommentCount;
+
+            if (dto.DateCreated == default) dto.DateCreated = DateTime.UtcNow;
+            if (string.IsNullOrWhiteSpace(dto.Slug) && !string.IsNullOrWhiteSpace(dto.Title))
+                dto.Slug = ProcessingHelpers.GenerateSlug(dto.Title);
         }
     }
 }
