@@ -99,13 +99,18 @@ try
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
-   builder.Services.AddHttpClient<IDrupalUserService, DrupalUserService>(client =>
+    builder.Services.AddHttpClient<IDrupalUserService, DrupalUserService>(client =>
+     {
+         client.BaseAddress = new Uri(contentBOAPIURL);
+     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
+
+
+    builder.Services.AddHttpClient<IStoresService, StoresService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();
 
-
-    builder.Services.AddHttpClient<IStoresService, StoresService>(client =>
+    builder.Services.AddHttpClient<IPrelovedService, PrelovedService>(client =>
     {
         client.BaseAddress = new Uri(contentBOAPIURL);
     }).AddHttpMessageHandler<JwtTokenHeaderHandler>();

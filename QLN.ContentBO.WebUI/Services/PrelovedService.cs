@@ -1,6 +1,7 @@
 ﻿using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Services.Base;
+using System.Net;
 
 namespace QLN.ContentBO.WebUI.Services
 {
@@ -25,9 +26,11 @@ namespace QLN.ContentBO.WebUI.Services
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseMessage?> GetPrelovedSubscription(PrelovedSubscriptionQuery query)
+        public async Task<HttpResponseMessage?> GetPrelovedSubscription(PrelovedSubscriptionQuery query)
         {
-            var queryParams = new Dictionary<string, string?>
+            try
+            {
+                var queryParams = new Dictionary<string, string?>
                 {
                     { "subscriptionType", query.SubscriptionType },
                     { "filterDate", query.FilterDate },
@@ -36,15 +39,21 @@ namespace QLN.ContentBO.WebUI.Services
                     { "Search", query.Search }
                 };
 
-            var queryString = string.Join("&", queryParams
-                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
-                .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
+                var queryString = string.Join("&", queryParams
+                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
+                    .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
 
-            var requestUrl = $"/api/v2/classifiedbo/preloved-view-subscriptions?{queryString}";
+                var requestUrl = $"/api/v2/classifiedbo/preloved-view-subscriptions?{queryString}";
 
-            var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
 
-            return await _httpClient.SendAsync(request);
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetPrelovedSubscription");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public Task<HttpResponseMessage?> GetPrelovedUserListing(FilterRequest request)
