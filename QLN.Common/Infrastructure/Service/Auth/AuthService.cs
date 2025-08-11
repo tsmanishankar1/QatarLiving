@@ -11,11 +11,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using QLN.Common.DTO_s;
+using QLN.Common.DTO_s.Company;
 using QLN.Common.Infrastructure.Constants;
 using QLN.Common.Infrastructure.CustomException;
 using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.EventLogger;
 using QLN.Common.Infrastructure.IService.IAuthService;
+using QLN.Common.Infrastructure.IService.ICompanyService;
 using QLN.Common.Infrastructure.IService.IEmailService;
 using QLN.Common.Infrastructure.IService.ITokenService;
 using QLN.Common.Infrastructure.Model;
@@ -36,7 +38,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
         private readonly IConfiguration _config;
         private readonly IEventlogger _log;
         private readonly IWebHostEnvironment _env;
-
+        private readonly IExternalSubscriptionService _subscriptionService;
+        private readonly ICompanyProfileService _companyProfile;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -47,7 +50,9 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             IConfiguration configuration,
             IEventlogger logger,
             IHttpContextAccessor httpContextAccessor,
-            IWebHostEnvironment env
+            IWebHostEnvironment env,
+            IExternalSubscriptionService subscriptionService,
+            ICompanyProfileService companyProfile
             )
         {
             _userManager = userManager;
@@ -59,6 +64,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
             _config = configuration;
             _log = logger;
             _env = env;
+            _subscriptionService = subscriptionService;
+            _companyProfile = companyProfile;
         }
 
 
@@ -1002,8 +1009,8 @@ namespace QLN.Common.Infrastructure.Service.AuthService
                     return TypedResults.ValidationProblem(errors, title: "Parsing Drupal ID Error");
                 }
 
-                //var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Email == drupalUser.Email);
-                var user = await _userManager.FindByEmailAsync(drupalUser.Email);
+                var user = await _userManager.Users.FirstOrDefaultAsync(u => u.LegacyUid == userId);
+                //var user = await _userManager.FindByEmailAsync(drupalUser.Email);
 
                 if (user == null)
                 {
@@ -1109,12 +1116,61 @@ namespace QLN.Common.Infrastructure.Service.AuthService
 
                     if (isCompany)
                     {
+                        var company = new CompanyProfile
+                        {
+                            CompanyName = drupalUser.Name,
+                            Email = drupalUser.Email,
+                            CompanyType = CompanyType.SME,
+                            BusinessDescription = "Migrated Company - please upate your description",
+                            PhoneNumber = drupalUser.Phone,
+                            WhatsAppNumber = drupalUser.Phone,
+                            PhoneNumberCountryCode = "+974",
+                            WhatsAppCountryCode = "+974",
+                            Status = VerifiedStatus.NeedChanges,
+                            Vertical = VerticalType.Classifieds,
+                        };
                         // go off and create a company then save the company GUID to the user
+                        var companyGuid = Guid.NewGuid();
+                        try
+                        {
+                            // NOTE not working
+                            //await _companyProfile.MigrateCompany(companyGuid.ToString(), user.Id.ToString(), user.UserName, company);
+
+                            //user.Companies = new List<UserCompany>
+                            //{
+                            //    new UserCompany
+                            //    {
+                            //        DisplayName = drupalUser.Name,
+                            //        Id = companyGuid
+                            //    }
+                            //};
+
+                            //var updateResult = await _userManager.UpdateAsync(user);
+
+                            //if (!updateResult.Succeeded)
+                            //{
+                            //    var errors = updateResult.Errors
+                            //        .GroupBy(e => e.Code)
+                            //        .ToDictionary(g => g.Key, g => g.Select(e => e.Description).ToArray());
+                            //    throw new RegistrationValidationException(errors);
+                            //}
+
+                            _log.LogTrace($"Company created for userId {user.Id} with companyGuid {companyGuid}");
+
+                        }
+                        catch (Exception)
+                        {
+                            _log.LogError($"Issue creating a company for userId {user.Id}");
+                            throw;
+                        }
+                        
                     }
 
                     if(hasSubscription)
                     {
                         // go off and create a subscription with the same information in it then save the subscription GUID to the user
+
+
                     }
                 }
 
