@@ -254,10 +254,11 @@ namespace QLN.Classified.MS.Service
 
 
         public async Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-            SubVertical subVertical,
-            long adId,
-            string userId,
-            CancellationToken cancellationToken)
+     SubVertical subVertical,
+     long adId,
+     string userId,
+     Guid subscriptionId,
+     CancellationToken cancellationToken)
         {
             _logger.LogInformation(
                 "RefreshClassifiedItemsAd called. SubVertical: {SubVertical}, AdId: {AdId}, UserId: {UserId}",
@@ -266,6 +267,7 @@ namespace QLN.Classified.MS.Service
             try
             {
                 string? adTitle;
+
                 object? adItem = subVertical switch
                 {
                     SubVertical.Items => await _context.Item.FirstOrDefaultAsync(i => i.Id == adId && i.IsActive, cancellationToken),

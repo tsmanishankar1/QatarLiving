@@ -19,10 +19,11 @@ namespace QLN.Common.Infrastructure.IService
         Task<AdCreatedResponseDto> CreateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedItemsAd(Items dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> RefreshClassifiedItemsAd(
-     SubVertical subVertical,
-     long adId,
-     string userId,
-     CancellationToken cancellationToken);
+      SubVertical subVertical,
+      long adId,
+      string userId,
+      Guid subscriptionId,
+      CancellationToken cancellationToken);
         Task<AdCreatedResponseDto> CreateClassifiedPrelovedAd(Preloveds dto, CancellationToken cancellationToken = default);
         Task<AdCreatedResponseDto> CreateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
         Task<string> MigrateClassifiedCollectiblesAd(Collectibles dto, CancellationToken cancellationToken = default);
