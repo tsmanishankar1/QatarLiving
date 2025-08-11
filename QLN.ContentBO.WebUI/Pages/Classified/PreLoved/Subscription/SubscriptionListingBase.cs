@@ -10,7 +10,6 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 {
     public class SubscriptionListingBase : QLComponentBase
     {
-
         [Parameter] public EventCallback<(string from, string to)> OnDateChanged { get; set; }
 
         [Inject] protected IPrelovedService PrelovedService { get; set; } = default!;
@@ -60,8 +59,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
         protected readonly List<string> Categories =
         [
             "12 Months Basic",
-    "12 Months Plus",
-    "12 Months Super"
+            "12 Months Plus",
+            "12 Months Super"
         ];
 
         public class DayTimeEntry
@@ -81,7 +80,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
 
         protected List<PrelovedSubscriptionItem> Listings { get; set; } = [];
 
-        public bool Sort { get; set; } = false;
+        public bool IsSorted { get; set; } = false;
         protected List<string> SubscriptionTypes = new()
         {
             "Free",
@@ -121,12 +120,12 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
                     PageSize = PageSize,
                     Search = SearchText,
                     SortBy = "startDate",
-                    SortOrder = Sort is true ? "asc" : "desc"
+                    SortOrder = IsSorted is true ? "asc" : "desc"
                 };
 
-                var response = await PrelovedService.GetPrelovedSubscription(request);
+                var response = await PrelovedService.GetPrelovedSubscription(request) ?? new();
 
-                if (response?.IsSuccessStatusCode == true)
+                if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     var data = JsonSerializer.Deserialize<PrelovedSubscriptionResponse>(content, new JsonSerializerOptions
@@ -172,7 +171,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.PreLoved.Subscription
             SortIcon = SortIcon == Icons.Material.Filled.ArrowDownward
                 ? Icons.Material.Filled.ArrowUpward
                 : Icons.Material.Filled.ArrowDownward;
-            Sort = !Sort;
+            IsSorted = !IsSorted;
             await LoadPrelovedListingsAsync();
         }
 

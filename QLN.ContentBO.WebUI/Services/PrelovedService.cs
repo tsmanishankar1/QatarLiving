@@ -21,9 +21,37 @@ namespace QLN.ContentBO.WebUI.Services
             throw new NotImplementedException();
         }
 
-        public Task<HttpResponseMessage?> GetPrelovedP2pTransaction(FilterRequest request)
+        public async Task<HttpResponseMessage?> GetPrelovedP2PTransaction(PrelovedP2PTransactionQuery query)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var queryParams = new Dictionary<string, string?>
+                {
+                    { "createdDate", query.CreatedDate },
+                    { "publishedDate", query.PublishedDate },
+                    { "Page", query.Page.ToString() },
+                    { "PageSize", query.PageSize.ToString() },
+                    { "Search", query.Search },
+                    { "SortBy", query.SortBy },
+                    { "SortOrder", query.SortOrder }
+                };
+
+                var queryString = string.Join("&",
+                    queryParams
+                    .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
+                    .Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value!)}"));
+
+                var requestUrl = $"/api/v2/classifiedbo/preloved-p2p-transactions?{queryString}";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+
+                return await _httpClient.SendAsync(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetPrelovedP2PTransaction");
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
         }
 
         public async Task<HttpResponseMessage?> GetPrelovedSubscription(PrelovedSubscriptionQuery query)
