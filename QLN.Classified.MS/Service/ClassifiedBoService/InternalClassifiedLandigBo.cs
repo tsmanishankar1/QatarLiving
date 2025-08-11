@@ -14,18 +14,20 @@ using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService;
 using QLN.Common.Infrastructure.IService.ISubscriptionService;
 using QLN.Common.Infrastructure.IService.V2IClassifiedBoService;
+using QLN.Common.Infrastructure.Model;
 using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.Subscriptions;
 
 using System;
 using System.ComponentModel.Design;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text.Json;
 using System.Xml.Serialization;
 using static QLN.Common.Infrastructure.Constants.ConstantValues;
 
-namespace QLN.Content.MS.Service.ClassifiedBoService
+namespace QLN.Classified.MS.Service.ClassifiedBoService
 {
     public class InternalClassifiedLandigBo : IClassifiedBoLandingService
     {
@@ -44,16 +46,22 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         private const string FeaturedCategoryServiceIndex = ConstantValues.StateStoreNames.FeaturedCategoryServiceIndex;
         // private const string SubscriptionStoreName = ConstantValues.StateStoreNames.SubscriptionStores;
         private const string SubscriptionStoresIndexKey = ConstantValues.StateStoreNames.SubscriptionStoresIndexKey;
+        private readonly QLSubscriptionContext _subscriptioncontext;
+        private readonly QLPaymentsContext _Paymentcontext;
+        private readonly QLApplicationContext _usercontext;
 
 
-        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context)
+        public InternalClassifiedLandigBo(IClassifiedService classified, DaprClient dapr, ILogger<IClassifiedBoLandingService> logger, QLClassifiedContext context, QLSubscriptionContext subscriptioncontext, QLPaymentsContext Paymentcontext , QLApplicationContext usercontext)
         {
             _classified = classified;
             _dapr = dapr;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _mockTransactions = GenerateMockTransactions();
+            
             _mockPrelovedTransactions = GenerateMockPrelovedTransactions();            
             _context = context;
+            _subscriptioncontext = subscriptioncontext;
+            _Paymentcontext = Paymentcontext;
+            _usercontext = usercontext;
         }
 
 
@@ -62,9 +70,27 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var duplicateExists = await _context.SeasonalPicks
+                    .AnyAsync(p =>
+                        p.IsActive == true &&
+                        p.Title == dto.Title &&
+                        p.CategoryId == dto.CategoryId &&
+                        p.Vertical == dto.Vertical &&
+                        p.EndDate >= today,
+                        cancellationToken);
+
+                if (duplicateExists)
+                {
+                    var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new ConflictException(message);
+                }
+
                 var newPick = new SeasonalPicks
                 {
                     Id = Guid.NewGuid(),
+                    Title = dto.Title,
                     Vertical = dto.Vertical,
                     CategoryId = dto.CategoryId,
                     CategoryName = dto.CategoryName,
@@ -76,57 +102,15 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     SlotOrder = 0,
                     EndDate = dto.EndDate,
                     ImageUrl = dto.ImageUrl,
+                    CreatedBy = userId,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    IsActive = true,
-                    UserId = userId,
-                    UserName = userName
+                    IsActive = true
                 };
 
-                _logger.LogInformation("Creating new seasonal pick. Category: {CategoryName}, User: {UserId}, ID: {Id}", dto.CategoryName, newPick.UserId, newPick.Id);
+                _logger.LogInformation("Creating new seasonal pick. Category: {CategoryName}, User: {UserId}, ID: {Id}", dto.CategoryName, newPick.CreatedBy, newPick.Id);
 
-                // Resolve index key based on vertical
-                string indexKey = dto.Vertical?.ToLower() switch
-                {
-                    Verticals.Classifieds => ItemsIndexKey,
-                    Verticals.Services => ItemsServiceIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                // Get existing seasonal pick IDs from index
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                // Load existing seasonal pick objects to check for duplicate category name
-                var existingPickTasks = index.Select(id => _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
-                var existingPicks = await Task.WhenAll(existingPickTasks);
-
-                var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                bool duplicateExists = existingPicks.Any(p =>
-                    p != null &&
-                    p.IsActive == true &&
-                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null || p.EndDate >= today));
-
-                if (duplicateExists)
-                {
-                    var message = $"A seasonal pick with the category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
-                    _logger.LogWarning(message);
-                    throw new ConflictException(message);
-                }
-
-                // Save new seasonal pick
-                await _dapr.SaveStateAsync(StoreName, newPick.Id.ToString(), newPick);
-                _logger.LogInformation("Saved seasonal pick state successfully. ID: {Id}", newPick.Id);
-
-                // Update index if not already present
-                if (!index.Contains(newPick.Id.ToString()))
-                {
-                    index.Add(newPick.Id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index);
-                    _logger.LogInformation("Updated seasonal pick index with new ID: {Id}", newPick.Id);
-                }
+                _context.SeasonalPicks.Add(newPick);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 var result = $"Seasonal pick '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed seasonal pick creation: {Message}", result);
@@ -135,241 +119,217 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
             catch (ConflictException ex)
             {
-                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                _logger.LogError(ex.Message, "Failed to post seasonal pick. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
                 throw new ConflictException(ex.Message);
-
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to post seasonal pick. Category: {CategoryName}", dto.CategoryName);
-                throw;
+                throw new Exception(ex.Message);
             }
         }
-        public async Task<List<SeasonalPicks>> GetSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+
+        public async Task<List<SeasonalPicks>> GetSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve seasonal picks.", nameof(vertical));
+                _logger.LogInformation("Fetching seasonal picks from PostgreSQL for vertical: {Vertical}", vertical);
 
-                _logger.LogInformation("Fetching seasonal picks from state store...");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ItemsIndexKey,
-                    Verticals.Services => ItemsServiceIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No seasonal picks found in the index.");
-                    return new List<SeasonalPicks>();
-                }
-
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
-
-                var seasonalPicks = await Task.WhenAll(stateTasks);
-
-                var activePicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
-                    (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
-                    .OrderByDescending(p => p.UpdatedAt)
-                    .ToList();
-
-                _logger.LogInformation("Retrieved {Count} active seasonal picks for vertical: {Vertical}", activePicks.Count, vertical);
+                var activePicks = await _context.SeasonalPicks
+                    .Where(p =>
+                        p.IsActive == true &&
+                        p.Vertical == vertical &&
+                        p.SlotOrder == 0 &&
+                        p.EndDate >= today)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync(cancellationToken);                
 
                 return activePicks;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch seasonal picks.");
-                throw;
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<SeasonalPicks>> GetSlottedSeasonalPicks(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve slotted seasonal picks.", nameof(vertical));
+                _logger.LogInformation("Fetching slotted seasonal picks from PostgreSQL for vertical: {Vertical}", vertical);
 
-                _logger.LogInformation("Fetching slotted seasonal picks from state store...");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ItemsIndexKey,
-                    Verticals.Services => ItemsServiceIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey)
-                            ?? new List<string>();
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No seasonal picks found in the index.");
-                    return new List<SeasonalPicks>();
-                }
-
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<SeasonalPicks>(StoreName, id)).ToList();
-
-                var seasonalPicks = await Task.WhenAll(stateTasks);
-
-                var slottedPicks = seasonalPicks
-                    .Where(p => p != null && p.IsActive == true && (p.SlotOrder >= 1 && p.SlotOrder <= 6) &&
-                    (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
+                var slottedPicks = await _context.SeasonalPicks
+                    .Where(p =>
+                        p.IsActive == true &&
+                        p.Vertical == vertical &&
+                        p.SlotOrder >= 1 &&
+                        p.SlotOrder <= 6 &&
+                        p.EndDate >= today)
                     .OrderBy(p => p.SlotOrder)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Fetched {Count} slotted seasonal picks.", slottedPicks.Count);
 
                 return slottedPicks;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch slotted seasonal picks.");
-                throw new InvalidOperationException("Error fetching slotted seasonal picks.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithSeasonalPick(string userId, string userName, ReplaceSeasonalPickSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
-            if (string.IsNullOrWhiteSpace(dto.Vertical))
-                throw new ArgumentException("Vertical is required.", nameof(dto.Vertical));
+            if (!Guid.TryParse(dto.PickId, out var pickGuid))
+                throw new ArgumentException("Invalid PickId format. Must be a valid GUID.", nameof(dto.PickId));
 
             try
             {
-                string indexKey = dto.Vertical.ToLower() switch
+                _logger.LogInformation("Replacing slot {SlotId} for pick {PickId} under vertical {Vertical}", dto.TargetSlotId, dto.PickId, dto.Vertical);
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                var seasonalPicks = await _context.SeasonalPicks
+                    .Where(p =>
+                        p.Vertical == dto.Vertical &&
+                        p.IsActive &&
+                        p.EndDate >= today)
+                    .ToListAsync(cancellationToken);
+
+                if (!seasonalPicks.Any())
+                    throw new KeyNotFoundException("No seasonal picks found for the given vertical.");
+
+                var newPick = seasonalPicks.FirstOrDefault(p => p.Id == pickGuid);
+
+                if (newPick == null)
+                    throw new KeyNotFoundException("The selected seasonal pick does not exist.");
+
+                foreach (var pick in seasonalPicks)
                 {
-                    Verticals.Classifieds => ItemsIndexKey,
-                    Verticals.Services => ItemsServiceIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                if (!Guid.TryParse(dto.PickId, out var pickGuid))
-                    throw new ArgumentException("Invalid PickId format. Must be a valid GUID.", nameof(dto.PickId));
-
-                if (!index.Contains(pickGuid.ToString()))
-                    throw new InvalidOperationException("Selected pick ID not found.");
-
-                SeasonalPicks? newPick = null;
-
-                foreach (var id in index)
-                {
-                    var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, id);
-                    if (pick == null) continue;
-
-                    // Case 1: Slot is currently occupied by someone else — clear it
                     if (pick.SlotOrder == dto.TargetSlotId && pick.Id != pickGuid)
                     {
                         pick.SlotOrder = 0;
+                        pick.UpdatedBy = userId;
                         pick.UpdatedAt = DateTime.UtcNow;
-                        await _dapr.SaveStateAsync(StoreName, id, pick);
+                        _context.SeasonalPicks.Update(pick);
                     }
 
-                    // Case 2: The new pick is already slotted somewhere else — clear it before reassign
                     if (pick.Id == pickGuid)
                     {
-                        newPick = pick;
+                        pick.SlotOrder = dto.TargetSlotId;
+                        pick.UpdatedBy = userId;
+                        pick.UpdatedAt = DateTime.UtcNow;
+                        _context.SeasonalPicks.Update(pick);
                     }
                 }
 
-                if (newPick == null)
-                    throw new InvalidOperationException("New pick data not found in state.");
-
-                // Update the selected pick with new slot
-                newPick.SlotOrder = dto.TargetSlotId;
-                newPick.UpdatedAt = DateTime.UtcNow;
-
-                await _dapr.SaveStateAsync(StoreName, newPick.Id.ToString(), newPick);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return $"Successfully replaced slot {dto.TargetSlotId} with seasonal pick '{newPick.CategoryName}' under vertical '{dto.Vertical}'.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogError(ex, "Seasonal pick not found for replacement. PickId: {PickId}, Vertical: {Vertical}", dto.PickId, dto.Vertical);
+                throw new KeyNotFoundException(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error replacing slot {Slot} with pick {PickId} in vertical: {Vertical}", dto.TargetSlotId, dto.PickId, dto.Vertical);
-                throw new InvalidOperationException("Failed to replace slot with selected seasonal pick.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<string> ReorderSeasonalPickSlots(string userId, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderSeasonalPickSlots(string userId, string userName, SeasonalPickSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
-            const int MaxSlot = 6;
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
-
-            if (string.IsNullOrWhiteSpace(request.Vertical))
-                throw new ArgumentException("Vertical is required.");
-
-            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
-                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
-
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
-            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
-                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
-
-            string indexKey = request.Vertical.ToLower() switch
+            try
             {
-                Verticals.Classifieds => ItemsIndexKey,
-                Verticals.Services => ItemsServiceIndexKey,
-                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
-            };
+                const int MaxSlot = 6;
 
-            var seasonalIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedPicks = new Dictionary<string, SeasonalPicks>();
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                if (string.IsNullOrWhiteSpace(assignment.PickId))
-                    continue;
+                if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                    throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-                if (!seasonalIndex.Contains(assignment.PickId))
-                    continue;
+                var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
+                if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                    throw new InvalidDataException("Slot numbers must be unique and between 1 and 6.");
 
-                var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, assignment.PickId);
-                if (pick == null)
-                    throw new InvalidDataException($"Pick with ID '{assignment.PickId}' not found.");
+                var pickIds = request.SlotAssignments
+                    .Where(sa => !string.IsNullOrWhiteSpace(sa.PickId))
+                    .Select(sa => Guid.Parse(sa.PickId))
+                    .ToList();
 
-                if (pick.UserId != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this pick.");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                loadedPicks[assignment.PickId] = pick;
-            }
+                var seasonalPicks = await _context.SeasonalPicks
+                    .Where(p => pickIds.Contains(p.Id) &&
+                                p.Vertical == request.Vertical &&
+                                p.IsActive &&
+                                p.EndDate >= today)
+                    .ToListAsync(cancellationToken);
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                var slotKey = $"seasonal-pick-slot-{assignment.SlotOrder}";
-
-                if (string.IsNullOrWhiteSpace(assignment.PickId))
+                foreach (var pick in seasonalPicks)
                 {
-                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
-                    continue;
+                    if (pick.CreatedBy != userId)
+                        throw new UnauthorizedAccessException($"You are not authorized to update pick ID {pick.Id}.");
                 }
 
-                var pick = loadedPicks[assignment.PickId];
-                pick.SlotOrder = assignment.SlotOrder;
-                pick.UpdatedAt = DateTime.UtcNow;
+                var currentSlottedPicks = await _context.SeasonalPicks
+                    .Where(p => p.Vertical == request.Vertical &&
+                                p.IsActive &&
+                                p.SlotOrder >= 1 &&
+                                p.SlotOrder <= MaxSlot &&
+                                p.EndDate >= today)
+                    .ToListAsync(cancellationToken);
 
-                await _dapr.SaveStateAsync(StoreName, slotKey, pick);
-                await _dapr.SaveStateAsync(StoreName, pick.Id.ToString(), pick);
+                foreach (var pick in currentSlottedPicks)
+                {
+                    pick.SlotOrder = 0;
+                    pick.UpdatedBy = userId;
+                    pick.UpdatedAt = DateTime.UtcNow;
+                    _context.SeasonalPicks.Update(pick);
+                }
+
+                foreach (var assignment in request.SlotAssignments)
+                {
+                    if (string.IsNullOrWhiteSpace(assignment.PickId)) continue;
+
+                    var pickId = Guid.Parse(assignment.PickId);
+                    var pick = seasonalPicks.FirstOrDefault(p => p.Id == pickId);
+
+                    if (pick == null)
+                        throw new KeyNotFoundException($"Pick with ID '{assignment.PickId}' not found.");
+
+                    pick.SlotOrder = assignment.SlotOrder;
+                    pick.UpdatedBy = userId;
+                    pick.UpdatedAt = DateTime.UtcNow;
+                    _context.SeasonalPicks.Update(pick);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Slots updated successfully.";
             }
-
-            return "Slots updated successfully.";
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
-        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> SoftDeleteSeasonalPick(string pickId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(pickId))
                 throw new ArgumentException("Pick ID must be provided.", nameof(pickId));
@@ -377,53 +337,137 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID must be provided.", nameof(userId));
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
             try
             {
                 _logger.LogInformation("Attempting delete for seasonal pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ItemsIndexKey,
-                    Verticals.Services => ItemsServiceIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
+                if (!Guid.TryParse(pickId, out var pickGuid))
+                    throw new ArgumentException("Invalid PickId format. Must be a valid GUID.", nameof(pickId));
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+                var pick = await _context.SeasonalPicks
+                    .FirstOrDefaultAsync(p => p.Id == pickGuid && p.Vertical == vertical && p.IsActive, cancellationToken);
 
-                if (!index.Contains(pickId))
-                {
-                    _logger.LogWarning("PickId {PickId} not found in vertical index: {Vertical}", pickId, vertical);
-                    throw new UnauthorizedAccessException($"PickId '{pickId}' does not belong to vertical '{vertical}'.");
-                }
-
-                var pick = await _dapr.GetStateAsync<SeasonalPicks>(StoreName, pickId);
                 if (pick == null)
                 {
                     _logger.LogWarning("Pick not found for delete. PickId: {PickId}", pickId);
                     throw new KeyNotFoundException($"Pick with ID '{pickId}' not found.");
                 }
 
-                if (pick.UserId != userId)
+                if (pick.CreatedBy != userId)
                 {
                     _logger.LogWarning("Unauthorized attempt to delete pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
                     throw new UnauthorizedAccessException("You are not authorized to delete this pick.");
                 }
 
                 pick.IsActive = false;
+                pick.UpdatedBy = userId;
                 pick.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.SaveStateAsync(StoreName, pickId, pick);
+                _context.SeasonalPicks.Update(pick);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 _logger.LogInformation("Successfully deleted pick. PickId: {PickId}", pickId);
 
                 return $"Pick '{pick.CategoryName}' has been deleted.";
             }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing soft delete on pick. PickId: {PickId}, UserId: {UserId}", pickId, userId);
-                throw;
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<SeasonalPicks> GetSeasonalPickById(string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(id));
+                var featuredCategoryId = await _context.SeasonalPicks.FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive);
+                if (featuredCategoryId == null) throw new KeyNotFoundException("Seasonal pick not found.");
+                return featuredCategoryId;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> EditSeasonalPick(string userId, string userName, EditSeasonalPickDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(dto.Id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(dto.Id));
+
+                var seasonalPick = await _context.SeasonalPicks
+                    .FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive, cancellationToken);
+
+                if (seasonalPick == null)
+                    throw new KeyNotFoundException("Seasonal pick not found.");
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                bool duplicateExists = await _context.SeasonalPicks.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Id != parsedId &&
+                    p.Vertical == dto.Vertical &&
+                    p.CategoryId == dto.CategoryId &&
+                    p.EndDate >= today,
+                    cancellationToken);
+
+                if (duplicateExists)
+                {
+                    var message = $"A seasonal pick '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new ConflictException(message);
+                }
+
+                seasonalPick.Title = dto.Title;
+                seasonalPick.Vertical = dto.Vertical;
+                seasonalPick.CategoryName = dto.CategoryName;
+                seasonalPick.CategoryId = dto.CategoryId;
+                seasonalPick.L1categoryName = dto.L1categoryName;
+                seasonalPick.L1CategoryId = dto.L1CategoryId;
+                seasonalPick.L2categoryId = dto.L2categoryId;
+                seasonalPick.L2categoryName = dto.L2categoryName;
+                seasonalPick.StartDate = dto.StartDate;
+                seasonalPick.EndDate = dto.EndDate;
+                seasonalPick.ImageUrl = dto.ImageUrl;
+                seasonalPick.SlotOrder = dto.SlotOrder;
+                seasonalPick.UpdatedAt = DateTime.UtcNow;
+                seasonalPick.UpdatedBy = userId;
+
+                _context.SeasonalPicks.Update(seasonalPick);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var messageSuccess = $"Landing BO category '{dto.CategoryName}' updated successfully.";
+                _logger.LogInformation("Successfully edited seasonal picks. ID: {Id}, User: {UserId}", parsedId, userId);
+
+                return messageSuccess;
+            }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex, "Conflict while editing seasonal picks. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new ConflictException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Seasonal picks not found for editing. ID: {Id}", dto.Id);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during seasonal picks edit. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new Exception("An error occurred while editing the seasonal picks.", ex);
             }
         }
 
@@ -431,47 +475,15 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
-                var stores = new FeaturedStore
-                {
-                    Id = Guid.NewGuid(),
-                    Vertical = dto.Vertical,
-                    StoreId = dto.StoreId,
-                    StoreName = dto.StoreName,
-                    ImageUrl = dto.ImageUrl,
-                    StartDate = dto.StartDate,
-                    SlotOrder = 0,
-                    EndDate = dto.EndDate,
-                    IsActive = true,
-                    UserId = userId,
-                    UserName = userName,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, userId, stores.Id);
-
-
-                string indexKey = dto.Vertical?.ToLower() switch
-                {
-                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                    Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                // Get existing store index
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                var existingStoreTasks = index.Select(id => _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
-                var existingStores = await Task.WhenAll(existingStoreTasks);
-
                 var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                bool duplicateExists = existingStores.Any(p =>
-                    p != null &&
-                    p.IsActive == true &&
-                    p.StoreId.Equals(dto.StoreId, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null && p.EndDate >= today));
+                bool duplicateExists = await _context.FeaturedStores
+                    .AnyAsync(p =>
+                        p.IsActive &&
+                        p.Title == dto.Title &&
+                        p.StoreId.ToLower() == dto.StoreId.ToLower() &&
+                        p.Vertical == dto.Vertical &&
+                        p.EndDate >= today,
+                        cancellationToken);
 
                 if (duplicateExists)
                 {
@@ -480,72 +492,60 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
-
-                await _dapr.SaveStateAsync(StoreName, stores.Id.ToString(), stores);
-                _logger.LogInformation("Saved featured store state successfully. ID: {Id}", stores.Id);
-
-                if (!index.Contains(stores.Id.ToString()))
+                var store = new FeaturedStore
                 {
-                    index.Add(stores.Id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index);
-                    _logger.LogInformation("Updated featured store index with new ID: {Id}", stores.Id);
-                }
+                    Id = Guid.NewGuid(),
+                    Title = dto.Title,
+                    Vertical = dto.Vertical,
+                    StoreId = dto.StoreId,
+                    StoreName = dto.StoreName,
+                    ImageUrl = dto.ImageUrl,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    SlotOrder = 0,
+                    IsActive = true,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _logger.LogInformation("Creating new featured store. Store: {StoreName}, User: {UserId}, ID: {Id}", dto.StoreName, userId, store.Id);
+
+                _context.FeaturedStores.Add(store);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 var result = $"Featured store '{dto.StoreName}' created successfully.";
-                _logger.LogInformation("Successfully completed featured store creation: {Message}", result);
+                _logger.LogInformation("Successfully created featured store: {Message}", result);
 
                 return result;
             }
             catch (ConflictException ex)
             {
-                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.StoreName, userId);
+                _logger.LogError(ex.Message, "Conflict while creating store: {StoreName}, User: {UserId}", dto.StoreName, userId);
                 throw new ConflictException(ex.Message);
-
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, userId);
-                throw;
+                _logger.LogError(ex, "Failed to create featured store. Store: {StoreName}, User: {UserId}", dto.StoreName, userId);
+                throw new Exception(ex.Message);
             }
         }
-        public async Task<List<FeaturedStore>> GetFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+
+        public async Task<List<FeaturedStore>> GetFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve featured stores.", nameof(vertical));
+                _logger.LogInformation("Fetching featured stores from database...");
 
-                _logger.LogInformation("Fetching featured stores from state store...");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                    Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No featured stores found in the index.");
-                    return new List<FeaturedStore>();
-                }
-
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
-
-                var featuredStores = await Task.WhenAll(stateTasks);
-
-                var activeStores = featuredStores
+                var activeStores = await _context.FeaturedStores
                     .Where(p =>
-                        p != null &&
-                        p.IsActive == true &&
-                        (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
-                        (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow))
-                    )
-                    .OrderByDescending(p => p.UpdatedAt)
-                    .ToList();
+                        p.Vertical == vertical &&
+                        p.IsActive &&
+                        p.SlotOrder == 0 &&
+                        p.EndDate >= today)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync(cancellationToken);
 
                 _logger.LogInformation("Retrieved {Count} active featured stores for vertical: {Vertical}", activeStores.Count, vertical);
 
@@ -554,48 +554,26 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch featured stores.");
-                throw;
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedStore>> GetSlottedFeaturedStores(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve slotted featured stores.", nameof(vertical));
+                _logger.LogInformation("Fetching slotted featured stores from database...");
 
-                _logger.LogInformation("Fetching slotted featured stores from state store...");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                    Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No featured stores found in the index.");
-                    return new List<FeaturedStore>();
-                }
-
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedStore>(StoreName, id)).ToList();
-
-                var featuredStores = await Task.WhenAll(stateTasks);
-
-                var slottedStores = featuredStores
+                var slottedStores = await _context.FeaturedStores
                     .Where(p =>
-                        p != null &&
-                        p.IsActive == true &&
+                        p.Vertical == vertical &&
+                        p.IsActive &&
                         p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
-                        (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow))
-                    )
+                        p.EndDate >= today)
                     .OrderBy(p => p.SlotOrder)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
                 _logger.LogInformation("Fetched {Count} slotted featured stores.", slottedStores.Count);
 
@@ -604,136 +582,132 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to fetch slotted featured stores.");
-                throw new InvalidOperationException("Error fetching slotted featured stores.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<string> ReplaceSlotWithFeaturedStore(string userId, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
+        public async Task<string> ReplaceSlotWithFeaturedStore(string userId, string userName, ReplaceFeaturedStoresSlotRequest dto, CancellationToken cancellationToken = default)
         {
             if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
-            if (string.IsNullOrWhiteSpace(dto.Vertical))
-                throw new ArgumentException("Vertical is required.", nameof(dto.Vertical));
-
             try
             {
-                string indexKey = dto.Vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                    Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                if (!index.Contains(dto.StoreId.ToString()))
-                    throw new InvalidOperationException("Selected featured store ID not found.");
-
-                FeaturedStore? newStore = null;
-
-                foreach (var id in index)
-                {
-                    var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, id);
-                    if (store == null) continue;
-
-                    if (store.SlotOrder == dto.TargetSlotId && store.Id.ToString() != dto.StoreId.ToString())
-                    {
-                        store.SlotOrder = 0;
-                        store.UpdatedAt = DateTime.UtcNow;
-                        await _dapr.SaveStateAsync(StoreName, id, store);
-                    }
-
-                    if (store.Id.ToString() == dto.StoreId.ToString())
-                    {
-                        newStore = store;
-                    }
-                }
+                _logger.LogInformation("Replacing slot {Slot} with store {StoreId} for vertical: {Vertical}", dto.TargetSlotId, dto.StoreId, dto.Vertical);
+                if (!Guid.TryParse(dto.StoreId, out Guid storeGuid))
+                    throw new ArgumentException("Invalid StoreId format.", nameof(dto.StoreId));
+                var newStore = await _context.FeaturedStores
+                    .FirstOrDefaultAsync(s =>
+                        s.Id == storeGuid &&
+                        s.Vertical == dto.Vertical &&
+                        s.IsActive,
+                        cancellationToken);
 
                 if (newStore == null)
-                    throw new InvalidOperationException("New featured store data not found in state.");
+                    throw new KeyNotFoundException("Selected featured store ID not found or is inactive.");
+
+                var storesInSlot = await _context.FeaturedStores
+                    .Where(s =>
+                        s.Vertical == dto.Vertical &&
+                        s.SlotOrder == dto.TargetSlotId &&
+                        s.Id != storeGuid)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var store in storesInSlot)
+                {
+                    store.SlotOrder = 0;
+                    store.UpdatedBy = userId;
+                    store.UpdatedAt = DateTime.UtcNow;
+                }
+
+                _context.FeaturedStores.UpdateRange(storesInSlot);
 
                 newStore.SlotOrder = dto.TargetSlotId;
+                newStore.UpdatedBy = userId;
                 newStore.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.SaveStateAsync(StoreName, newStore.Id.ToString(), newStore);
+                _context.FeaturedStores.Update(newStore);
 
-                return $"Successfully replaced slot {dto.TargetSlotId} with featured store '{newStore.StoreName}' under vertical '{dto.Vertical}'.";
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var message = $"Successfully replaced slot {dto.TargetSlotId} with featured store '{newStore.StoreName}' under vertical '{dto.Vertical}'.";
+                _logger.LogInformation(message);
+
+                return message;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error replacing slot {Slot} with featured store {StoreId} in vertical: {Vertical}", dto.TargetSlotId, dto.StoreId, dto.Vertical);
-                throw new InvalidOperationException("Failed to replace slot with selected featured store.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<string> ReorderFeaturedStoreSlots(string userId, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
+        public async Task<string> ReorderFeaturedStoreSlots(string userId, string userName, FeaturedStoreSlotReorderRequest request, CancellationToken cancellationToken = default)
         {
-            const int MaxSlot = 6;
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
-
-            if (string.IsNullOrWhiteSpace(request.Vertical))
-                throw new ArgumentException("Vertical is required.");
-
-            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
-                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
-
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
-            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
-                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
-
-            string indexKey = request.Vertical.ToLower() switch
+            try
             {
-                Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                Verticals.Services => ServicesFeaturedStoresIndexKey,
-                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
-            };
+                const int MaxSlot = 6;
 
-            var storeIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedStores = new Dictionary<string, FeaturedStore>();
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                if (string.IsNullOrWhiteSpace(assignment.StoreId))
-                    continue;
+                if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                    throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
 
-                if (!storeIndex.Contains(assignment.StoreId))
-                    continue;
+                var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
+                if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                    throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
 
-                var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, assignment.StoreId);
-                if (store == null)
-                    throw new InvalidDataException($"Store with ID '{assignment.StoreId}' not found.");
+                var storeIds = request.SlotAssignments
+                    .Where(a => !string.IsNullOrWhiteSpace(a.StoreId))
+                    .Select(a => Guid.TryParse(a.StoreId, out var guid) ? guid : Guid.Empty)
+                    .Where(guid => guid != Guid.Empty)
+                    .ToList();
 
-                if (store.UserId != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this store.");
+                var stores = await _context.FeaturedStores
+                    .Where(fs => storeIds.Contains(fs.Id) && fs.Vertical == request.Vertical && fs.IsActive)
+                    .ToListAsync(cancellationToken);
 
-                loadedStores[assignment.StoreId] = store;
-            }
+                var storeDict = stores.ToDictionary(s => s.Id.ToString(), s => s);
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                var slotKey = $"featured-store-slot-{assignment.SlotOrder}";
-
-                if (string.IsNullOrWhiteSpace(assignment.StoreId))
+                foreach (var assignment in request.SlotAssignments)
                 {
-                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
-                    continue;
+                    if (string.IsNullOrWhiteSpace(assignment.StoreId))
+                        continue;
+
+                    if (!Guid.TryParse(assignment.StoreId, out var storeGuid))
+                        throw new InvalidDataException($"Invalid StoreId format: '{assignment.StoreId}'");
+
+                    if (!storeDict.TryGetValue(storeGuid.ToString(), out var store))
+                        throw new KeyNotFoundException($"Store with ID '{assignment.StoreId}' not found or not active in vertical '{request.Vertical}'.");
+
+                    if (store.CreatedBy != userId)
+                        throw new UnauthorizedAccessException("You are not authorized to update this store.");
+
+                    store.SlotOrder = assignment.SlotOrder;
+                    store.UpdatedBy = userId;
+                    store.UpdatedAt = DateTime.UtcNow;
                 }
 
-                var store = loadedStores[assignment.StoreId];
-                store.SlotOrder = assignment.SlotOrder;
-                store.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
 
-                await _dapr.SaveStateAsync(StoreName, slotKey, store);
-                await _dapr.SaveStateAsync(StoreName, store.Id.ToString(), store);
+                return "Slots updated successfully.";
             }
-
-            return "Slots updated successfully.";
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
 
-        public async Task<string> SoftDeleteFeaturedStore(string storeId, string userId, string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> SoftDeleteFeaturedStore(string storeId, string userId, string userName, Vertical vertical, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(storeId))
                 throw new ArgumentException("Store ID must be provided.", nameof(storeId));
@@ -741,54 +715,128 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID must be provided.", nameof(userId));
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
-
             try
             {
-                _logger.LogInformation("Attempting delete for featured store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
+                _logger.LogInformation("Attempting soft delete for featured store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => ClassifiedsFeaturedStoresIndexKey,
-                    Verticals.Services => ServicesFeaturedStoresIndexKey,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
+                if (!Guid.TryParse(storeId, out var storeGuid))
+                    throw new ArgumentException("Invalid Store ID format.", nameof(storeId));
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
+                var store = await _context.FeaturedStores
+                    .FirstOrDefaultAsync(s => s.Id == storeGuid && s.Vertical == vertical, cancellationToken);
 
-                if (!index.Contains(storeId))
-                {
-                    _logger.LogWarning("StoreId {StoreId} not found in vertical index: {Vertical}", storeId, vertical);
-                    throw new UnauthorizedAccessException($"StoreId '{storeId}' does not belong to vertical '{vertical}'.");
-                }
-
-                var store = await _dapr.GetStateAsync<FeaturedStore>(StoreName, storeId);
                 if (store == null)
                 {
-                    _logger.LogWarning("Featured store not found for delete. StoreId: {StoreId}", storeId);
+                    _logger.LogWarning("Featured store not found. StoreId: {StoreId}", storeId);
                     throw new KeyNotFoundException($"Featured store with ID '{storeId}' not found.");
                 }
 
-                if (store.UserId != userId)
+                if (store.CreatedBy != userId)
                 {
                     _logger.LogWarning("Unauthorized attempt to delete store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
                     throw new UnauthorizedAccessException("You are not authorized to delete this featured store.");
                 }
 
                 store.IsActive = false;
+                store.UpdatedBy = userId;
                 store.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.SaveStateAsync(StoreName, storeId, store);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation("Successfully deleted featured store. StoreId: {StoreId}", storeId);
+                _logger.LogInformation("Successfully soft deleted featured store. StoreId: {StoreId}", storeId);
 
                 return $"Featured store '{store.StoreName}' has been deleted.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error performing soft delete on featured store. StoreId: {StoreId}, UserId: {UserId}", storeId, userId);
-                throw;
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<FeaturedStore> GetFeaturedStoreById(string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(id));
+                var featuredCategoryId = await _context.FeaturedStores.FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive);
+                if (featuredCategoryId == null) throw new KeyNotFoundException("Featured store not found.");
+                return featuredCategoryId;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> EditFeaturedStore(string userId, string userName, EditFeaturedStoreDto dto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(dto.Id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(dto.Id));
+
+                var featuredStore = await _context.FeaturedStores
+                    .FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive, cancellationToken);
+
+                if (featuredStore == null)
+                    throw new KeyNotFoundException("Featured store not found.");
+
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                bool duplicateExists = await _context.FeaturedStores.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Id != parsedId &&
+                    p.Vertical == dto.Vertical &&
+                    p.StoreId == dto.StoreId &&
+                    p.EndDate >= today,
+                    cancellationToken);
+
+                if (duplicateExists)
+                {
+                    var message = $"A featured store '{dto.StoreName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new ConflictException(message);
+                }
+
+                featuredStore.Title = dto.Title;
+                featuredStore.Vertical = dto.Vertical;
+                featuredStore.StoreName = dto.StoreName;
+                featuredStore.StoreId = dto.StoreId;
+                featuredStore.StartDate = dto.StartDate;
+                featuredStore.EndDate = dto.EndDate;
+                featuredStore.ImageUrl = dto.ImageUrl;
+                featuredStore.SlotOrder = dto.SlotOrder;
+                featuredStore.UpdatedAt = DateTime.UtcNow;
+                featuredStore.UpdatedBy = userId;
+
+                _context.FeaturedStores.Update(featuredStore);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var messageSuccess = $"Landing BO featured store '{dto.StoreName}' updated successfully.";
+                _logger.LogInformation("Successfully edited featured category. ID: {Id}, User: {UserId}", parsedId, userId);
+
+                return messageSuccess;
+            }
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex, "Conflict while editing featured store. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new ConflictException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Featured store not found for editing. ID: {Id}", dto.Id);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during featured store edit. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new Exception("An error occurred while editing the featured store.", ex);
             }
         }
 
@@ -796,45 +844,14 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
         {
             try
             {
-                var categories = new FeaturedCategory
-                {
-                    Id = Guid.NewGuid(),
-                    Vertical = dto.Vertical,
-                    CategoryName = dto.CategoryName,
-                    CategoryId = dto.CategoryId,
-                    StartDate = dto.StartDate,
-                    EndDate = dto.EndDate,
-                    ImageUrl = dto.ImageUrl,
-                    SlotOrder = 0,
-                    IsActive = true,
-                    UserId = userId,
-                    UserName = userName,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                _logger.LogInformation("Creating new landing bo. Category: {Category}, User: {UserId}, ID: {Id}", dto.CategoryName, userId, categories.Id);
-
-                // Determine index key by vertical
-                string indexKey = dto.Vertical?.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: cancellationToken) ?? new List<string>();
-                var existingTasks = index.Select(id => _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
-                var existingItems = await Task.WhenAll(existingTasks);
-
                 var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-                bool duplicateExists = existingItems.Any(p =>
-                    p != null &&
-                    p.IsActive == true &&
-                    p.CategoryId.Equals(dto.CategoryId, StringComparison.OrdinalIgnoreCase) &&
-                    p.Vertical?.Equals(dto.Vertical, StringComparison.OrdinalIgnoreCase) == true &&
-                    (p.EndDate == null || p.EndDate >= today));
+                bool duplicateExists = await _context.FeaturedCategories.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Title == dto.Title &&
+                    p.Vertical == dto.Vertical &&
+                    p.CategoryId == dto.CategoryId &&
+                    p.EndDate >= today,
+                    cancellationToken);
 
                 if (duplicateExists)
                 {
@@ -843,334 +860,360 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     throw new ConflictException(message);
                 }
 
-                await _dapr.SaveStateAsync(StoreName, categories.Id.ToString(), categories, cancellationToken: cancellationToken);
-                _logger.LogInformation("Saved featured category state successfully. ID: {Id}", categories.Id);
-
-                if (!index.Contains(categories.Id.ToString()))
+                var newCategory = new FeaturedCategory
                 {
-                    index.Add(categories.Id.ToString());
-                    await _dapr.SaveStateAsync(StoreName, indexKey, index, cancellationToken: cancellationToken);
-                    _logger.LogInformation("Updated index {IndexKey} with new ID: {Id}", indexKey, categories.Id);
-                }
+                    Id = Guid.NewGuid(),
+                    Title = dto.Title,
+                    Vertical = dto.Vertical,
+                    CategoryName = dto.CategoryName,
+                    CategoryId = dto.CategoryId,
+                    L1categoryName = dto.L1categoryName,
+                    L1CategoryId = dto.L1CategoryId,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
+                    ImageUrl = dto.ImageUrl,
+                    SlotOrder = 0,
+                    IsActive = true,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-                var result = $"Landing bo '{dto.CategoryName}' created successfully.";
+                await _context.FeaturedCategories.AddAsync(newCategory, cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation("Created featured category. Category: {Category}, User: {UserId}, ID: {Id}",
+                    dto.CategoryName, userId, newCategory.Id);
+
+                var result = $"Landing bo Category '{dto.CategoryName}' created successfully.";
                 _logger.LogInformation("Successfully completed landing bo creation: {Message}", result);
 
                 return result;
             }
             catch (ConflictException ex)
             {
-                _logger.LogError(ex.Message, "Failed to post landing bo. Category: {Category}, User: {UserId} (409)", dto.CategoryName, userId);
+                _logger.LogError(ex, "Conflict while creating landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
                 throw new ConflictException(ex.Message);
-
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to post landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
-                throw;
+                _logger.LogError(ex, "Failed to create landing bo. Category: {Category}, User: {UserId}", dto.CategoryName, userId);
+                throw new Exception(ex.Message);
             }
         }
-        public async Task<string> DeleteFeaturedCategory(string categoryId, string userId, string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> DeleteFeaturedCategory(string id, Vertical vertical, string userId, string userName, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(categoryId))
-                throw new ArgumentException("Category ID must be provided.", nameof(categoryId));
-
             if (string.IsNullOrWhiteSpace(userId))
                 throw new ArgumentException("User ID must be provided.", nameof(userId));
 
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical must be provided.", nameof(vertical));
             try
             {
-                _logger.LogInformation($"Attempting delete for landing bo. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
+                if (!Guid.TryParse(id, out var guidId))
+                    throw new ArgumentException("Invalid featured category ID format.", nameof(id));
 
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
+                var featuredCategory = await _context.FeaturedCategories
+                    .FirstOrDefaultAsync(f => f.Id == guidId && f.Vertical == vertical && f.IsActive, cancellationToken);
 
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-
-                if (!index.Contains(categoryId))
-                {
-                    _logger.LogWarning($"FeaturedCategoryId {categoryId} not found in vertical index: {vertical}", categoryId, vertical);
-                    throw new UnauthorizedAccessException($"FeaturedCategoryId '{categoryId}' does not belong to vertical '{vertical}'.");
-                }
-
-                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, categoryId);
                 if (featuredCategory == null)
                 {
-                    _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", categoryId);
-                    throw new KeyNotFoundException($"FeaturedCategory with ID '{categoryId}' not found.");
+                    _logger.LogWarning("FeaturedCategory not found for delete. FeaturedCategoryId: {FeaturedCategoryId}", id);
+                    throw new KeyNotFoundException($"FeaturedCategory with ID '{id}' not found.");
                 }
 
-                if (featuredCategory.UserId != userId)
+                if (featuredCategory.CreatedBy != userId)
                 {
-                    _logger.LogWarning($"Unauthorized attempt to delete FeaturedCategory. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
+                    _logger.LogWarning("Unauthorized delete attempt. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
                     throw new UnauthorizedAccessException("You are not authorized to delete this FeaturedCategory.");
                 }
 
                 featuredCategory.IsActive = false;
+                featuredCategory.UpdatedBy = userId;
                 featuredCategory.UpdatedAt = DateTime.UtcNow;
 
-                await _dapr.SaveStateAsync(StoreName, categoryId, featuredCategory);
+                _context.FeaturedCategories.Update(featuredCategory);
+                await _context.SaveChangesAsync(cancellationToken);
 
-                _logger.LogInformation($"Successfully deleted FeaturedCategory. FeaturedCategoryId: {categoryId}", categoryId);
+                _logger.LogInformation("Successfully soft-deleted FeaturedCategory. FeaturedCategoryId: {FeaturedCategoryId}", id);
 
-                return $"FeaturedCategory '{featuredCategory.CategoryName}' has been deleted.";
+                return "FeaturedCategory has been deleted.";
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex.Message);
+                throw new UnauthorizedAccessException(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error performing soft delete on FeaturedCategory. FeaturedCategoryId: {categoryId}, UserId: {userId}", categoryId, userId);
-                throw;
+                _logger.LogError(ex, "Error performing soft delete on FeaturedCategory. FeaturedCategoryId: {FeaturedCategoryId}, UserId: {UserId}", id, userId);
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(string vertical, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetSlottedFeaturedCategory(Vertical vertical, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(vertical))
-                    throw new ArgumentException("Vertical is required to retrieve slotted featured category.", nameof(vertical));
-
-                _logger.LogInformation("Fetching slotted featured category from state store...");
-
-                // Determine index key
-                string indexKey = vertical.ToLower() switch
-                {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-                };
-
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey, cancellationToken: cancellationToken)
-                            ?? new List<string>();
-
-                _logger.LogInformation("Index key '{IndexKey}' contains {Count} IDs", indexKey, index.Count);
-
-                if (!index.Any())
-                {
-                    _logger.LogInformation("No featured category found in the index.");
-                    return new List<FeaturedCategory>();
-                }
-
-                // Load all DTOs from index
-                var stateTasks = index.Select(id =>
-                    _dapr.GetStateAsync<FeaturedCategory>(StoreName, id, cancellationToken: cancellationToken)).ToList();
-
-                var featuredCategories = await Task.WhenAll(stateTasks);
-
-                var slottedFeaturedCategories = featuredCategories
-                    .Where(p => p != null &&
-                                p.IsActive == true &&
-                                p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
-                                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var slottedFeaturedCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == vertical &&
+                        p.IsActive &&
+                        p.SlotOrder >= 1 && p.SlotOrder <= 6 &&
+                        p.EndDate >= today)
                     .OrderBy(p => p.SlotOrder)
-                    .ToList();
+                    .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Retrieved {Count} active featured category for vertical: {Vertical}", slottedFeaturedCategories.Count, vertical);
+                _logger.LogInformation("Retrieved {Count} slotted featured categories for vertical: {Vertical}", slottedFeaturedCategories.Count, vertical);
+
                 return slottedFeaturedCategories;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch slotted featured category.");
-                throw new InvalidOperationException("Error fetching slotted featured category.", ex);
+                _logger.LogError(ex, "Failed to fetch slotted featured categories for vertical: {Vertical}", vertical);
+                throw new Exception(ex.Message);
+            }
+        }
+        
+
+        public async Task<FeaturedCategory> GetFeaturedCategoryById(string id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!Guid.TryParse(id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(id));
+                var featuredCategoryId = await _context.FeaturedCategories.FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive);
+                if (featuredCategoryId == null) throw new KeyNotFoundException("Featured category not found.");
+                return featuredCategoryId;
+            }
+            catch (KeyNotFoundException ex)
+            {
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
         }
 
-        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(string vertical, CancellationToken cancellationToken = default)
+        public async Task<string> EditFeaturedCategory(string userId, string userName, EditFeaturedCategoryDto dto, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(vertical))
-                throw new ArgumentException("Vertical is required to retrieve featured categories.", nameof(vertical));
-
-            _logger.LogInformation("Fetching featured categories from state store...");
-
-            string indexKey = vertical.ToLower() switch
+            try
             {
-                Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                Verticals.Services => FeaturedCategoryServiceIndex,
-                _ => throw new ArgumentOutOfRangeException(nameof(vertical), $"Unsupported vertical: {vertical}")
-            };
+                if (!Guid.TryParse(dto.Id, out Guid parsedId))
+                    throw new ArgumentException("Invalid GUID format.", nameof(dto.Id));
 
-            var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey)
-                        ?? new List<string>();
+                var featuredCategory = await _context.FeaturedCategories
+                    .FirstOrDefaultAsync(f => f.Id == parsedId && f.IsActive, cancellationToken);
 
-            if (!index.Any())
-            {
-                _logger.LogInformation("No featured categories found in the index.");
-                return new List<FeaturedCategory>();
-            }
-
-            var stateTasks = index.Select(id =>
-                _dapr.GetStateAsync<FeaturedCategory>(StoreName, id)).ToList();
-
-            var featuredCategories = await Task.WhenAll(stateTasks);
-
-            var activeFeaturedCategories = featuredCategories
-                .Where(p => p != null && p.IsActive == true && (p.SlotOrder == null || p.SlotOrder < 1 || p.SlotOrder > 6) &&
-                (p.EndDate == null || p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow)))
-                .OrderByDescending(p => p.UpdatedAt)
-                .ToList();
-
-            _logger.LogInformation("Retrieved {Count} active featured categories for vertical: {Vertical}", activeFeaturedCategories.Count, vertical);
-
-            return activeFeaturedCategories;
-        }
-        public async Task<string> ReorderFeaturedCategorySlots(string userId, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
-        {
-            const int MaxSlot = 6;
-
-            if (string.IsNullOrWhiteSpace(userId))
-                throw new ArgumentException("UserId is required.");
-
-            if (string.IsNullOrWhiteSpace(request.Vertical))
-                throw new ArgumentException("Vertical is required.");
-
-            if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
-                throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
-
-            var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
-            if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
-                throw new InvalidDataException("SlotNumber must be unique and between 1 and 6.");
-
-            string indexKey = request.Vertical.ToLower() switch
-            {
-                Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                Verticals.Services => FeaturedCategoryServiceIndex,
-                _ => throw new ArgumentOutOfRangeException(nameof(request.Vertical), $"Unsupported vertical: {request.Vertical}")
-            };
-
-            var featuredCategoryIndex = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new();
-            var loadedFeaturedCategories = new Dictionary<string, FeaturedCategory>();
-
-            foreach (var assignment in request.SlotAssignments)
-            {
-                if (string.IsNullOrWhiteSpace(assignment.CategoryId))
-                    continue;
-
-                if (!featuredCategoryIndex.Contains(assignment.CategoryId))
-                    continue;
-
-                var featuredCategory = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, assignment.CategoryId);
                 if (featuredCategory == null)
-                    throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found.");
+                    throw new KeyNotFoundException("Featured category not found.");
 
-                if (featuredCategory.UserId != userId)
-                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-                loadedFeaturedCategories[assignment.CategoryId] = featuredCategory;
-            }
+                bool duplicateExists = await _context.FeaturedCategories.AnyAsync(p =>
+                    p.IsActive &&
+                    p.Id != parsedId &&
+                    p.Vertical == dto.Vertical &&
+                    p.CategoryId == dto.CategoryId &&
+                    p.EndDate >= today,
+                    cancellationToken);
 
-            foreach (var assignment in request.SlotAssignments)
-            {
-                var slotKey = $"classified-slot-{assignment.SlotOrder}";
-
-                if (string.IsNullOrWhiteSpace(assignment.CategoryId))
+                if (duplicateExists)
                 {
-                    await _dapr.DeleteStateAsync(StoreName, slotKey, cancellationToken: cancellationToken);
-                    continue;
+                    var message = $"A featured category '{dto.CategoryName}' already exists for vertical '{dto.Vertical}'.";
+                    _logger.LogWarning(message);
+                    throw new ConflictException(message);
                 }
 
-                var featuredCategory = loadedFeaturedCategories[assignment.CategoryId];
-                featuredCategory.SlotOrder = assignment.SlotOrder;
+                featuredCategory.Title = dto.Title;
+                featuredCategory.Vertical = dto.Vertical;
+                featuredCategory.CategoryName = dto.CategoryName;
+                featuredCategory.CategoryId = dto.CategoryId;
+                featuredCategory.L1categoryName = dto.L1categoryName;
+                featuredCategory.L1CategoryId = dto.L1CategoryId;
+                featuredCategory.StartDate = dto.StartDate;
+                featuredCategory.EndDate = dto.EndDate;
+                featuredCategory.ImageUrl = dto.ImageUrl;
+                featuredCategory.SlotOrder = dto.SlotOrder;
                 featuredCategory.UpdatedAt = DateTime.UtcNow;
+                featuredCategory.UpdatedBy = userId;
 
-                await _dapr.SaveStateAsync(StoreName, slotKey, featuredCategory);
-                await _dapr.SaveStateAsync(StoreName, featuredCategory.Id.ToString(), featuredCategory);
+                _context.FeaturedCategories.Update(featuredCategory);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                var messageSuccess = $"Landing BO category '{dto.CategoryName}' updated successfully.";
+                _logger.LogInformation("Successfully edited featured category. ID: {Id}, User: {UserId}", parsedId, userId);
+
+                return messageSuccess;
             }
-
-            return "Slots updated successfully.";
+            catch (ConflictException ex)
+            {
+                _logger.LogError(ex, "Conflict while editing featured category. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new ConflictException(ex.Message);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Featured category not found for editing. ID: {Id}", dto.Id);
+                throw new KeyNotFoundException(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during featured category edit. ID: {Id}, User: {UserId}", dto.Id, userId);
+                throw new Exception("An error occurred while editing the featured category.", ex);
+            }
         }
 
-        public async Task<string> ReplaceFeaturedCategorySlots(string userId, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
+        public async Task<List<FeaturedCategory>> GetFeaturedCategoriesByVertical(Vertical vertical, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                var activeFeaturedCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == vertical &&
+                        p.IsActive &&
+                        p.SlotOrder == 0 &&
+                        p.EndDate >= today)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync(cancellationToken);
+
+                _logger.LogInformation("Retrieved {Count} active featured categories for vertical: {Vertical}",
+                    activeFeaturedCategories.Count, vertical);
+
+                return activeFeaturedCategories;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch featured categories for vertical: {Vertical}", vertical);
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> ReorderFeaturedCategorySlots(string userId, string userName, LandingBoSlotReorderRequest request, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                const int MaxSlot = 6;
+
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new ArgumentException("UserId is required.");
+
+                if (request.SlotAssignments == null || request.SlotAssignments.Count != MaxSlot)
+                    throw new InvalidDataException($"Exactly {MaxSlot} slot assignments must be provided.");
+
+                var slotNumbers = request.SlotAssignments.Select(sa => sa.SlotOrder).ToList();
+                if (slotNumbers.Distinct().Count() != MaxSlot || slotNumbers.Any(s => s < 1 || s > MaxSlot))
+                    throw new InvalidDataException("Slot numbers must be unique and between 1 and 6.");
+
+                var featuredCategoryList = await _context.FeaturedCategories
+                    .Where(p => p.Vertical == request.Vertical && p.IsActive)
+                    .ToListAsync(cancellationToken);
+
+                var featuredCategoryMap = featuredCategoryList.ToDictionary(fc => fc.Id, fc => fc);
+
+                foreach (var assignment in request.SlotAssignments)
+                {
+                    if (string.IsNullOrWhiteSpace(assignment.CategoryId))
+                        continue;
+
+                    if (!Guid.TryParse(assignment.CategoryId, out var categoryId))
+                        continue;
+
+                    if (!featuredCategoryMap.TryGetValue(categoryId, out var featuredCategory))
+                        throw new InvalidDataException($"Featured Category with ID '{assignment.CategoryId}' not found or inactive.");
+
+                    if (featuredCategory.CreatedBy != userId)
+                        throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+
+                    featuredCategory.SlotOrder = assignment.SlotOrder;
+                    featuredCategory.UpdatedBy = userId;
+                    featuredCategory.UpdatedAt = DateTime.UtcNow;
+
+                    _context.FeaturedCategories.Update(featuredCategory);
+                }
+
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return "Slots updated successfully.";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<string> ReplaceFeaturedCategorySlots(string userId, string userName, LandingBoSlotReplaceRequest dto, CancellationToken cancellationToken = default)
         {
             if (dto.TargetSlotId < 1 || dto.TargetSlotId > 6)
                 throw new ArgumentOutOfRangeException(nameof(dto.TargetSlotId), "Slot must be between 1 and 6.");
 
             try
             {
-                string indexKey = dto.Vertical.ToLower() switch
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                if (!Guid.TryParse(dto.CategoryId, out var categoryGuid))
+                    throw new ArgumentException("Invalid CategoryId", nameof(dto.CategoryId));
+                var relevantCategories = await _context.FeaturedCategories
+                    .Where(p =>
+                        p.Vertical == dto.Vertical &&
+                        p.IsActive &&
+                        ((p.SlotOrder >= 1 && p.SlotOrder <= 6) || p.Id == categoryGuid) &&
+                        p.EndDate >= today)
+                    .ToListAsync(cancellationToken);
+
+                var newItem = relevantCategories.FirstOrDefault(p => p.Id == categoryGuid);
+                if (newItem == null)
+                    throw new InvalidOperationException("Selected featured category not found.");
+
+                if (newItem.CreatedBy != userId)
+                    throw new UnauthorizedAccessException("You are not authorized to update this Featured Category.");
+
+                foreach (var item in relevantCategories)
                 {
-                    Verticals.Classifieds => FeaturedCategoryClassifiedIndex,
-                    Verticals.Services => FeaturedCategoryServiceIndex,
-                    _ => throw new ArgumentOutOfRangeException(nameof(dto.Vertical), $"Unsupported vertical: {dto.Vertical}")
-                };
-                var index = await _dapr.GetStateAsync<List<string>>(StoreName, indexKey) ?? new List<string>();
-
-                if (!index.Contains(dto.CategoryId.ToString()))
-                    throw new InvalidOperationException("Selected featured category ID not found.");
-
-                FeaturedCategory? newItem = null;
-
-                foreach (var id in index)
-                {
-                    var item = await _dapr.GetStateAsync<FeaturedCategory>(StoreName, id);
-                    if (item == null) continue;
-
-                    // Case 1: Slot is currently occupied by someone else — clear it
-                    if (item.SlotOrder == dto.TargetSlotId && item.Id.ToString() != dto.CategoryId)
+                    if (item.Id != newItem.Id && item.SlotOrder == dto.TargetSlotId)
                     {
                         item.SlotOrder = 0;
+                        item.UpdatedBy = userId;
                         item.UpdatedAt = DateTime.UtcNow;
-                        await _dapr.SaveStateAsync(StoreName, id, item);
-                    }
-
-                    // Case 2: The new pick is already slotted somewhere else — clear it before reassign
-                    if (item.Id.ToString() == dto.CategoryId)
-                    {
-                        newItem = item;
+                        _context.FeaturedCategories.Update(item);
                     }
                 }
 
-                if (newItem == null)
-                    throw new InvalidOperationException("New featured category data not found in state.");
-
-                // Update the selected pick with new slot
                 newItem.SlotOrder = dto.TargetSlotId;
+                newItem.UpdatedBy = userId;
                 newItem.UpdatedAt = DateTime.UtcNow;
+                _context.FeaturedCategories.Update(newItem);
 
-                await _dapr.SaveStateAsync(StoreName, newItem.Id.ToString(), newItem);
+                await _context.SaveChangesAsync(cancellationToken);
 
                 return $"Successfully replaced slot {dto.TargetSlotId} with category '{newItem.CategoryName}'.";
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error replacing slot {Slot} with category {CategoryId}", dto.TargetSlotId, dto.CategoryId);
-                throw new InvalidOperationException("Failed to replace slot with selected category.", ex);
+                throw new Exception(ex.Message);
             }
         }
 
         public async Task<string> BulkItemsAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.StateStoreNames.UnifiedStore,
-                ConstantValues.StateStoreNames.ItemsIndexKey,
-                cancellationToken: ct
-            ) ?? new();
-            Console.WriteLine(indexKeys);
-            var updated = new List<ClassifiedsItems>();
+            // Fetch all ads in one query instead of looping and hitting DB individually
+            var ads = await _context.Item
+                .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(ct);
 
-            foreach (var id in request.AdIds)
+            if (!ads.Any())
             {
-                var adKey = GetAdKey(id);
-                if (!indexKeys.Contains(adKey.ToString()))
-                {
-                    continue;
-                }
+                throw new InvalidOperationException("No ads found for the given IDs.");
+            }
 
-                var ad = await _dapr.GetStateAsync<ClassifiedsItems>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    adKey.ToString(),
-                    cancellationToken: ct
-                );
+            var updatedAds = new List<Items>();
 
-                if (ad is null)
-                {
-                    continue;
-                }
-
+            foreach (var ad in ads)
+            {
                 bool shouldUpdate = false;
 
                 switch (request.Action)
@@ -1255,7 +1298,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                            throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
                         }
                         break;
 
@@ -1267,7 +1310,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
+                            throw new InvalidOperationException("Cannot feature an ad that is already featured.");
                         }
                         break;
 
@@ -1284,43 +1327,41 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
-                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updatedAds.Add(ad);
+                }
+            }
+
+            if (updatedAds.Any())
+            {
+                await _context.SaveChangesAsync(ct);
+
+                // Assuming IndexItemsToAzureSearch works with DB entities
+                foreach (var ad in updatedAds)
+                {
                     await IndexItemsToAzureSearch(ad, cancellationToken: ct);
-                    updated.Add(ad);
                 }
             }
 
             return "Action completed successfully";
         }
+
 
         public async Task<string> BulkCollectiblesAction(BulkActionRequest request, string userId, CancellationToken ct)
         {
-            var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                ConstantValues.StateStoreNames.UnifiedStore,
-                ConstantValues.StateStoreNames.CollectiblesIndexKey,
-                cancellationToken: ct
-            ) ?? new();
-            var updated = new List<ClassifiedsCollectibles>();
+            // Fetch all collectibles in one query
+            var ads = await _context.Collectible
+                .Where(ad => request.AdIds.Contains(ad.Id) && ad.IsActive == true)
+                .ToListAsync(ct);
 
-            foreach (var id in request.AdIds)
+            if (!ads.Any())
             {
-                var adKey = GetAdKey(id);
-                if (!indexKeys.Contains(adKey.ToString()))
-                {
-                    continue;
-                }
+                throw new InvalidOperationException("No collectibles found for the given IDs.");
+            }
 
-                var ad = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    adKey.ToString(),
-                    cancellationToken: ct
-                );
+            var updatedAds = new List<Collectibles>();
 
-                if (ad is null)
-                {
-                    continue;
-                }
-
+            foreach (var ad in ads)
+            {
                 bool shouldUpdate = false;
 
                 switch (request.Action)
@@ -1405,7 +1446,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot promote an ad that is not unpromoted.");
+                            throw new InvalidOperationException("Cannot promote an ad that is already promoted.");
                         }
                         break;
 
@@ -1417,7 +1458,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         }
                         else
                         {
-                            throw new InvalidOperationException("Cannot feature an ad that is not unfeatured.");
+                            throw new InvalidOperationException("Cannot feature an ad that is already featured.");
                         }
                         break;
 
@@ -1434,95 +1475,172 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 {
                     ad.UpdatedAt = DateTime.UtcNow;
                     ad.UpdatedBy = userId;
-                    await _dapr.SaveStateAsync(ConstantValues.StateStoreNames.UnifiedStore, adKey.ToString(), ad, cancellationToken: ct);
+                    updatedAds.Add(ad);
+                }
+            }
+
+            if (updatedAds.Any())
+            {
+                await _context.SaveChangesAsync(ct);
+
+                // Index updated collectibles
+                foreach (var ad in updatedAds)
+                {
                     await IndexCollectiblesToAzureSearch(ad, cancellationToken: ct);
-                    updated.Add(ad);                }
+                }
             }
 
             return "Action completed successfully";
         }
-        private string GetAdKey(Guid id) => $"ad-{id}";
+
+        private string GetAdKey(long id) => $"ad-{id}";
         public async Task<TransactionListResponseDto> GetTransactionsAsync(
-            TransactionFilterRequestDto request,
-            CancellationToken cancellationToken = default)
+     TransactionFilterRequestDto request,
+     CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation("Getting transactions. Page: {PageNumber}, Size: {PageSize}", request.PageNumber, request.PageSize);
+                _logger.LogInformation("Starting GetTransactionsAsync with request: {@Request}", request);
 
-                await Task.Delay(50, cancellationToken);
+                IQueryable<TransactionDto> joined; 
 
-                var allTransactions = _mockTransactions.AsQueryable();
+                if ((int)request.SubVertical == 1)
+                {
+                    // ITEMS / PRELOVED / DEALS logic
+                    var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} payments", payments.Count);
 
-                if (!string.IsNullOrWhiteSpace(request.TransactionType))
-                    allTransactions = allTransactions.Where(t => t.TransactionType.Equals(request.TransactionType, StringComparison.OrdinalIgnoreCase));
+                    var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} subscriptions", subscriptions.Count);
 
+                    var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} users", users.Count);
+
+                    var publisheddate = await _context.Item.ToListAsync(cancellationToken);
+                    _logger.LogInformation("Loaded {Count} items (for published date)", publisheddate.Count);
+
+                    joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              from i in itemJoin.DefaultIfEmpty()
+                              select new TransactionDto
+                              {
+                                  AdId = p.AdId,
+                                  OrderId = p.PaymentId,
+                                  Username = u?.UserName,
+                                  UserId = s.UserId,
+                                  Status = p.Status.ToString(),
+                                  Email = u?.Email,
+                                  Mobile = u?.PhoneNumber,
+                                  Whatsapp = u?.PhoneNumber,
+                                  Amount = p.Fee,
+                                  CreationDate = s.CreatedAt,
+                                  PublishedDate = i?.PublishedDate,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate
+                              }).AsQueryable();
+                }
+                else if ((int)request.SubVertical == 3)
+                {
+                    // COLLECTIBLES logic — adjust context & joins accordingly
+                    var payments = await _Paymentcontext.Payments.ToListAsync(cancellationToken);
+                    var subscriptions = await _subscriptioncontext.Subscriptions.ToListAsync(cancellationToken);
+                    var users = await _usercontext.Users.ToListAsync(cancellationToken);
+                    var publisheddate = await _context.Collectible.ToListAsync(cancellationToken);
+
+                    joined = (from p in payments
+                              join s in subscriptions on p.PaymentId equals s.PaymentId
+                              join u in users on s.UserId equals u.Id.ToString() into userJoin
+                              from u in userJoin.DefaultIfEmpty()
+                              join i in publisheddate on p.AdId equals i.Id.ToString() into itemJoin
+                              from i in itemJoin.DefaultIfEmpty()
+                              select new TransactionDto
+                              {
+                                  AdId = p.AdId,
+                                  OrderId = p.PaymentId,
+                                  Username = u?.UserName,
+                                 // ProductType = p.ProductType,
+                                  UserId = s.UserId,
+                                  Status = p.Status.ToString(),
+                                  Email = u?.Email,
+                                  Mobile = u?.PhoneNumber,
+                                  Whatsapp = u?.PhoneNumber,
+                                  Amount = p.Fee,
+                                  CreationDate = s.CreatedAt,
+                                  PublishedDate = i?.PublishedDate,
+                                  StartDate = s.StartDate,
+                                  EndDate = s.EndDate
+                              }).AsQueryable();
+                }
+                else
+                {
+                    _logger.LogWarning("Invalid SubVertical: {SubVertical}", request.SubVertical);
+                    return new TransactionListResponseDto
+                    {
+                        Records = new List<TransactionDto>(),
+                        TotalRecords = 0,
+                        CurrentPage = request.PageNumber,
+                        PageSize = request.PageSize,
+                        TotalPages = 0
+                    };
+                }
+
+                // FILTERS 
                 if (!string.IsNullOrWhiteSpace(request.Status))
-                    allTransactions = allTransactions.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.PaymentMethod))
-                    allTransactions = allTransactions.Where(t => t.PaymentMethod.Equals(request.PaymentMethod, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateCreated))
-                    allTransactions = allTransactions.Where(t => t.CreationDate.Equals(request.DateCreated, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DatePublished))
-                    allTransactions = allTransactions.Where(t => t.PublishedDate.Equals(request.DatePublished, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateStart))
-                    allTransactions = allTransactions.Where(t => t.StartDate.Equals(request.DateStart, StringComparison.OrdinalIgnoreCase));
-
-                if (!string.IsNullOrWhiteSpace(request.DateEnd))
-                    allTransactions = allTransactions.Where(t => t.EndDate.Equals(request.DateEnd, StringComparison.OrdinalIgnoreCase));
+                {
+                    joined = joined.Where(t => t.Status.Equals(request.Status, StringComparison.OrdinalIgnoreCase));
+                    _logger.LogInformation("Filtered by status: {Status}", request.Status);
+                }
 
                 if (!string.IsNullOrWhiteSpace(request.SearchText))
                 {
                     var search = request.SearchText.ToLower();
-                    allTransactions = allTransactions.Where(t =>
-                        t.AdId.ToLower().Contains(search) ||
-                        t.OrderId.ToLower().Contains(search) ||
+                    joined = joined.Where(t =>
+                        t.UserId.ToLower().Contains(search) ||
                         t.Username.ToLower().Contains(search) ||
-                        t.UserEmail.ToLower().Contains(search) ||
-                        t.TransactionType.ToLower().Contains(search) ||
-                        t.ProductType.ToLower().Contains(search) ||
-                        t.Category.ToLower().Contains(search) ||
+                        t.Email.ToLower().Contains(search) ||
+                        t.Mobile.ToLower().Contains(search) ||
+                        t.Whatsapp.ToLower().Contains(search) ||
                         t.Status.ToLower().Contains(search) ||
-                        t.Mobile.Contains(search) ||
-                        t.PaymentMethod.ToLower().Contains(search) ||
-                        t.Description.ToLower().Contains(search)
+                        t.AdId.ToLower().Contains(search) ||
+                        t.OrderId.ToString().Contains(search)
                     );
+                    _logger.LogInformation("Filtered by search text: {SearchText}", request.SearchText);
                 }
 
-                allTransactions = request.SortBy.ToLower() switch
+                //  SORTING 
+                joined = request.SortBy?.ToLower() switch
                 {
                     "amount" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.Amount)
-                        : allTransactions.OrderBy(t => t.Amount),
+                        ? joined.OrderByDescending(t => t.Amount)
+                        : joined.OrderBy(t => t.Amount),
 
                     "status" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.Status)
-                        : allTransactions.OrderBy(t => t.Status),
+                        ? joined.OrderByDescending(t => t.Status)
+                        : joined.OrderBy(t => t.Status),
 
-                    "transactiontype" => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => t.TransactionType)
-                        : allTransactions.OrderBy(t => t.TransactionType),
+                    "paymentmethod" => request.SortOrder == "desc"
+                        ? joined.OrderByDescending(t => t.PaymentMethod)
+                        : joined.OrderBy(t => t.PaymentMethod),
 
                     _ => request.SortOrder == "desc"
-                        ? allTransactions.OrderByDescending(t => ParseDate(t.CreationDate))
-                        : allTransactions.OrderBy(t => ParseDate(t.CreationDate))
+                        ? joined.OrderByDescending(t => t.CreationDate)
+                        : joined.OrderBy(t => t.CreationDate),
                 };
 
-                var totalRecords = allTransactions.Count();
+                var totalRecords = joined.Count();
                 var totalPages = (int)Math.Ceiling((double)totalRecords / request.PageSize);
 
-                var paginated = allTransactions
+                var paged = joined
                     .Skip((request.PageNumber - 1) * request.PageSize)
                     .Take(request.PageSize)
                     .ToList();
 
                 return new TransactionListResponseDto
                 {
-                    Records = paginated,
+                    Records = paged,
                     TotalRecords = totalRecords,
                     CurrentPage = request.PageNumber,
                     PageSize = request.PageSize,
@@ -1531,10 +1649,13 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to get transactions");
+                _logger.LogError(ex, "Error fetching joined data in GetTransactionsAsync");
                 throw;
             }
         }
+
+
+
 
         private DateTime ParseDate(string dateString)
         {
@@ -1548,60 +1669,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        private List<TransactionDto> GenerateMockTransactions()
-        {
-            var random = new Random();
-            var users = new[] { "john_doe", "jane_smith", "bob_wilson", "alice_brown", "charlie_davis" };
-            var emails = new[] { "john@example.com", "jane@example.com", "bob@example.com", "alice@example.com", "charlie@example.com" };
-            var categories = new[] { "Electronics", "Vehicles", "Real Estate", "Jobs", "Services", "Fashion" };
-            var productTypes = new[] { "Phone", "Car", "Apartment", "Furniture", "Laptop", "Clothing" };
-            var transactionTypes = new[] { "Pay To Publish", "Pay To Promote", "Pay To Feature", "Bulk Refresh" };
-            var statuses = new[] { "Active", "Pending Approval", "Expired", "Unpublished", "Awaits" };
-            var paymentMethods = new[] { "Credit Card", "PayPal", "Bank Transfer", "Digital Wallet" };
-
-            var transactions = new List<TransactionDto>();
-
-            for (int i = 1; i <= 100; i++)
-            {
-                var userIndex = random.Next(users.Length);
-                var transactionType = transactionTypes[random.Next(transactionTypes.Length)];
-                var createdDate = DateTime.UtcNow.AddDays(-random.Next(90));
-                var startDate = createdDate.AddDays(random.Next(0, 5));
-                var endDate = startDate.AddDays(random.Next(30, 90));
-
-                // Some transactions may not have published/start/end dates
-                var hasPublishedDate = random.Next(100) > 20; // 80% have published date
-                var hasStartDate = random.Next(100) > 30; // 70% have start date
-                var hasEndDate = random.Next(100) > 40; // 60% have end date
-
-                transactions.Add(new TransactionDto
-                {
-                    Id = $"txn_{i:D6}",
-                    AdId = $"{random.Next(21430, 21440)}",
-                    OrderId = $"{random.Next(21400, 21500)}",
-                    UserId = $"usr_{userIndex + 1}",
-                    Username = users[userIndex],
-                    UserEmail = emails[userIndex],
-                    TransactionType = transactionType,
-                    ProductType = productTypes[random.Next(productTypes.Length)],
-                    Category = categories[random.Next(categories.Length)],
-                    Status = statuses[random.Next(statuses.Length)],
-                    Email = emails[userIndex],
-                    Mobile = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
-                    Whatsapp = $"+974 {random.Next(1000, 9999)} {random.Next(1000, 9999)}",
-                    Account = "User-account@gmail.com",
-                    CreationDate = createdDate.ToString("dd-MM-yyyy"),
-                    PublishedDate = hasPublishedDate ? createdDate.AddHours(random.Next(1, 24)).ToString("dd-MM-yyyy") : "",
-                    StartDate = hasStartDate ? startDate.ToString("dd-MM-yyyy") : "",
-                    EndDate = hasEndDate ? endDate.ToString("dd-MM-yyyy") : "",
-                    Amount = GetAmountByType(transactionType, random),
-                    PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
-                    Description = GetDescriptionByType(transactionType)
-                });
-            }
-
-            return transactions.OrderByDescending(t => ParseDate(t.CreationDate)).ToList();
-        }
+     
 
         private static decimal GetAmountByType(string type, Random random) => type switch
         {
@@ -2409,277 +2477,65 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
 
 
 
-        public async Task<ClassifiedBOPageResponse<StoresSubscriptionDto>> getStoreSubscriptions(string? subscriptionType, string? filterDate, int? Page, int? PageSize, string? Search, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                DateTime filterDateParsed;
-                try
-                {
-                    if (string.IsNullOrEmpty(filterDate))
-                    {
-                        filterDateParsed = DateTime.UtcNow;
-                    }
-                    else if (!DateTime.TryParse(filterDate, out filterDateParsed))
-                    {
-                        _logger.LogWarning("Invalid filterDate format provided: {FilterDate}. Using current UTC date instead.", filterDate);
-                        filterDateParsed = DateTime.UtcNow;
-                    }
-                }
-                catch (FormatException formatEx)
-                {
-                    _logger.LogError(formatEx, "Failed to parse filterDate. Value: {FilterDate}", filterDate);
-                    throw;
-                }
-                var dateThreshold = filterDateParsed.AddDays(-90);
-                string searchLower = Search?.ToLower();
-                var filtered = await _context.StoresSubscriptions
-     .AsNoTracking()
-     .Where(x =>
-         (string.IsNullOrEmpty(subscriptionType) || x.SubscriptionType == subscriptionType) &&
-         x.StartDate >= dateThreshold &&
-         x.StartDate <= filterDateParsed &&
-            (
-                string.IsNullOrEmpty(searchLower) ||
-                x.OrderId.ToString().Contains(searchLower) ||
-                (x.UserName != null && x.UserName.ToLower().Contains(searchLower)) ||
-                (x.Email != null && x.Email.ToLower().Contains(searchLower)) ||
-                (x.Mobile != null && x.Mobile.ToLower().Contains(searchLower)) ||
-                (x.Status != null && x.Status.ToLower().Contains(searchLower))
-            )
-         )
-     .ToListAsync(cancellationToken);
-
-
-                int currentPage = Math.Max(1, Page ?? 1);
-                int itemsPerPage = Math.Max(1, Math.Min(100, PageSize ?? 12));
-                int totalCount = filtered.Count;
-                int totalPages = (int)Math.Ceiling((double)totalCount / itemsPerPage);
-
-                if (currentPage > totalPages && totalPages > 0)
-                    currentPage = totalPages;
-
-                var paginated = filtered
-                    .Skip((currentPage - 1) * itemsPerPage)
-                    .Take(itemsPerPage)
-                    .ToList();
-
-                return new ClassifiedBOPageResponse<StoresSubscriptionDto>
-                {
-                    Page = currentPage,
-                    PerPage = itemsPerPage,
-                    TotalCount = totalCount,
-                    Items = paginated
-                };
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch stores subscriptions.");
-                throw;
-            }
-        }
-        public async Task<string> CreateStoreSubscriptions(StoresSubscriptionDto dto, CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("create store subscriptions");
-            try
-            {
-
-                _context.StoresSubscriptions.Add(dto);
-                await _context.SaveChangesAsync();
-
-                return "Store Subscription Created successfully";
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidDataException(ex.Message, ex);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating stores subscriptions.");
-                throw;
-            }
-        }
-        public async Task<string> EditStoreSubscriptions(int OrderID, string Status, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var subscription = await _context.StoresSubscriptions
-             .FirstOrDefaultAsync(x => x.OrderId == OrderID, cancellationToken);
-
-                if (subscription == null)
-                {
-                    return "Subscription not found.";
-                }
-
-                subscription.Status = Status;
-                _context.StoresSubscriptions.Update(subscription);
-                await _context.SaveChangesAsync(cancellationToken);
-
-                return "Subscription status updated successfully.";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to edit stores subscriptions.");
-                throw;
-            }
-        }
+   
         public async Task<ClassifiedsBoItemsResponseDto> GetAllItems(GetAllSearch request, CancellationToken ct)
         {
             try
             {
-                _logger.LogInformation("Starting GetAllItems processing for request: {Request}",
+                _logger.LogInformation("Starting GetAllItems (DB version) with request: {Request}",
                     System.Text.Json.JsonSerializer.Serialize(request));
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.ItemsIndexKey,
-                    cancellationToken: ct
-                ) ?? new List<string>();
+                // Filter IsActive = true at the beginning
+                var query = _context.Item
+                    .Where(item => item.IsActive)
+                    .AsQueryable();
 
-                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
-
-                if (!indexKeys.Any())
+                // Text search on Title or UserId
+                if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    return new ClassifiedsBoItemsResponseDto
-                    {
-                        TotalCount = 0,
-                        ClassifiedsItems = new List<ClassifiedsItems>()
-                    };
-                }
+                    var text = request.Text.Trim().ToLower();
+                    query = query.Where(item =>
+                        item.Title.ToLower().Contains(text) ||
+                        item.UserId.ToLower().Contains(text));
 
-                var items = new List<ClassifiedsItems>();
-                var failedKeys = new List<string>();
-
-                foreach (var key in indexKeys)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        var dto = await _dapr.GetStateAsync<ClassifiedsItems>(
-                            ConstantValues.StateStoreNames.UnifiedStore,
-                            key,
-                            cancellationToken: ct);
-
-                        if (dto != null)
-                        {
-                            items.Add(dto);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Item with key {Key} returned null", key);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
-                        failedKeys.Add(key);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
-                {
-                    items = items.Where(item =>
-                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
-                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
-                    ).ToList();
-
-                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                   
                 }
 
                 if (request.IsFeatured.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsFeatured;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
-                        request.IsFeatured, originalCount, items.Count);
+                    query = query.Where(item => item.IsFeatured == request.IsFeatured.Value);
                 }
 
                 if (request.IsPromoted.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsPromoted;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
-                        request.IsPromoted, originalCount, items.Count);
+                    query = query.Where(item => item.IsPromoted == request.IsPromoted.Value);
                 }
 
                 if (request.Status.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as AdStatus?;
-                            return value == request.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying Status filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
-                        request.Status, originalCount, items.Count);
+                    query = query.Where(item => item.Status == request.Status.Value);
                 }
 
                 if (request.CreatedAt.HasValue)
                 {
-                    var createdDate = request.CreatedAt.Value.Date;
-                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
-                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                    var date = request.CreatedAt.Value.Date;
+                    query = query.Where(item => item.CreatedAt.Date == date);
                 }
 
                 if (request.PublishedDate.HasValue)
                 {
-                    var publishedDate = request.PublishedDate.Value.Date;
-                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
-                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                    var date = request.PublishedDate.Value.Date;
+                    query = query.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == date);
                 }
 
                 if (request.AdType.HasValue)
                 {
-                    items = items.Where(item => item.AdType == request.AdType).ToList();
-                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
+                    query = query.Where(item => item.AdType == request.AdType.Value);
                 }
 
+                _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
+
+                
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2688,198 +2544,178 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         var propertyName = parts[0];
                         var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
 
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var param = Expression.Parameter(typeof(Items), "x");
+                        var property = Expression.PropertyOrField(param, propertyName);
+                        var lambda = Expression.Lambda(property, param);
 
-                        if (orderProp != null)
-                        {
-                            items = direction == "desc"
-                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
-                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
-                        }
+                        var method = direction == "desc" ? "OrderByDescending" : "OrderBy";
+
+                        var orderByCall = Expression.Call(
+                            typeof(Queryable),
+                            method,
+                            new Type[] { typeof(Items), property.Type },
+                            query.Expression,
+                            Expression.Quote(lambda)
+                        );
+
+                        query = query.Provider.CreateQuery<Items>(orderByCall);
+
+                        _logger.LogInformation("Applied dynamic sorting: {OrderBy}", request.OrderBy);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                        _logger.LogError(ex, "Error applying sorting using OrderBy: {OrderBy}", request.OrderBy);
                     }
                 }
 
+                // Pagination
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
 
-                var totalCount = items.Count;
-                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                _logger.LogInformation("Pagination - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
-                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+                var totalCount = await query.CountAsync(ct);
+
+                var pagedEntities = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
+
+                _logger.LogInformation("Retrieved {Count} items from DB", pagedEntities.Count);
+
+                // Map Items  ClassifiedsItems
+                var result = pagedEntities.Select(item => new Items
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    UserId = item.UserId,
+                    IsFeatured = item.IsFeatured,
+                    IsPromoted = item.IsPromoted,
+                    Status = item.Status,
+                    CreatedAt = item.CreatedAt,
+                    PublishedDate = item.PublishedDate,
+                    AdType = item.AdType,
+                    IsActive = item.IsActive,
+                    FeaturedExpiryDate = item.FeaturedExpiryDate,
+                    PromotedExpiryDate = item.PromotedExpiryDate,
+                    LastRefreshedOn = item.LastRefreshedOn,
+                    IsRefreshed=item.IsRefreshed,
+                    SubVertical = item.SubVertical,
+                    Description = item.Description,
+                    Price= item.Price,
+                    PriceType = item.PriceType,
+                    Category = item.Category,
+                    CategoryId = item.CategoryId,
+                    L1Category = item.L1Category,
+                    L1CategoryId = item.L1CategoryId,
+                    L2CategoryId = item.L2CategoryId,
+                    L2Category = item.L2Category,
+                    Location= item.Location,
+                    Brand=item.Brand,
+                    Model = item.Model,
+                    Condition= item.Condition,
+                    Color = item.Color,
+                    ExpiryDate = item.ExpiryDate,
+                    //status=item.Status
+                    UserName = item.UserName,
+                    //userId
+                    Latitude = item.Latitude,
+                    Longitude = item.Longitude,
+                    ContactNumberCountryCode = item.ContactNumberCountryCode,
+                    ContactNumber = item.ContactNumber,
+                    ContactEmail = item.ContactEmail,
+                    WhatsAppNumber = item.WhatsAppNumber,
+                    WhatsappNumberCountryCode = item.WhatsappNumberCountryCode,
+                    //StreetNumber = street
+                    BuildingNumber = item.BuildingNumber,
+                    zone = item.zone,
+                    Images= item.Images,
+                    Attributes = item.Attributes,
+                    CreatedBy = item.CreatedBy,
+                    UpdatedAt = item.UpdatedAt,
+                    UpdatedBy = item.UpdatedBy,
+                    SubscriptionId = item.SubscriptionId
+                }).ToList();
+
+                _logger.LogInformation("Returning {ResultCount} items out of {TotalCount}", result.Count, totalCount);
 
                 return new ClassifiedsBoItemsResponseDto
                 {
                     TotalCount = totalCount,
-                    ClassifiedsItems = pagedItems
+                    ClassifiedsItems = result
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetAllItems");
+                _logger.LogError(ex,
+                    "[GetAllItems] Unexpected error occurred. Request: {RequestJson}, Message: {ErrorMessage}, StackTrace: {StackTrace}, InnerException: {InnerException}",
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    ex.Message,
+                    ex.StackTrace,
+                    ex.InnerException?.ToString()
+                );
+
                 throw new Exception($"GetAllItems failed: {ex.Message}", ex);
             }
         }
+
 
         public async Task<ClassifiedsBoCollectiblesResponseDto> GetAllCollectibles(GetAllSearch request, CancellationToken ct)
         {
             try
             {
-                _logger.LogInformation("Starting GetAllCollectibles processing for request: {Request}",
+                _logger.LogInformation("Starting GetAllCollectibles (DB version) with request: {Request}",
                     System.Text.Json.JsonSerializer.Serialize(request));
 
-                var indexKeys = await _dapr.GetStateAsync<List<string>>(
-                    ConstantValues.StateStoreNames.UnifiedStore,
-                    ConstantValues.StateStoreNames.CollectiblesIndexKey,
-                    cancellationToken: ct
-                ) ?? new List<string>();
+                
+                var query = _context.Collectible
+                    .Where(c => c.IsActive)
+                    .AsQueryable();
 
-                _logger.LogInformation("Found {Count} index keys", indexKeys.Count);
-
-                if (!indexKeys.Any())
+                // Text search on Title or UserId
+                if (!string.IsNullOrWhiteSpace(request.Text) && request.Text.Trim() != "*")
                 {
-                    return new ClassifiedsBoCollectiblesResponseDto
-                    {
-                        TotalCount = 0,
-                        ClassifiedsCollectibles = new List<ClassifiedsCollectibles>()
-                    };
-                }
-
-                var items = new List<ClassifiedsCollectibles>();
-                var failedKeys = new List<string>();
-
-                foreach (var key in indexKeys)
-                {
-                    try
-                    {
-                        ct.ThrowIfCancellationRequested();
-
-                        var dto = await _dapr.GetStateAsync<ClassifiedsCollectibles>(
-                            ConstantValues.StateStoreNames.UnifiedStore,
-                            key,
-                            cancellationToken: ct);
-
-                        if (dto != null)
-                        {
-                            items.Add(dto);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("Collectible with key {Key} returned null", key);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Failed to retrieve item with key {Key}", key);
-                        failedKeys.Add(key);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(request.Text) && request.Text.Trim() != "*")
-                {
-                    items = items.Where(item =>
-                        (item.Title?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true) ||
-                        (item.UserId?.Contains(request.Text, StringComparison.OrdinalIgnoreCase) == true)
-                    ).ToList();
-
-                    _logger.LogInformation("Applied text filter '{Text}', resulting count: {Count}", request.Text, items.Count);
+                    var text = request.Text.Trim().ToLower();
+                    query = query.Where(c =>
+                        c.Title.ToLower().Contains(text) ||
+                        c.UserId.ToLower().Contains(text));
                 }
 
                 if (request.IsFeatured.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsFeatured), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsFeatured;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsFeatured filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsFeatured={IsFeatured}' reduced items from {Original} to {Filtered}",
-                        request.IsFeatured, originalCount, items.Count);
+                    query = query.Where(c => c.IsFeatured == request.IsFeatured.Value);
                 }
 
                 if (request.IsPromoted.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.IsPromoted), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as bool?;
-                            return value == request.IsPromoted;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying IsPromoted filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'IsPromoted={IsPromoted}' reduced items from {Original} to {Filtered}",
-                        request.IsPromoted, originalCount, items.Count);
+                    query = query.Where(c => c.IsPromoted == request.IsPromoted.Value);
                 }
 
                 if (request.Status.HasValue)
                 {
-                    var originalCount = items.Count;
-                    items = items.Where(item =>
-                    {
-                        try
-                        {
-                            var prop = item.GetType().GetProperty(nameof(request.Status), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (prop == null) return false;
-
-                            var value = prop.GetValue(item) as AdStatus?;
-                            return value == request.Status;
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, "Error applying Status filter to item");
-                            return false;
-                        }
-                    }).ToList();
-
-                    _logger.LogInformation("Filter 'Status={Status}' reduced items from {Original} to {Filtered}",
-                        request.Status, originalCount, items.Count);
+                    query = query.Where(c => c.Status == request.Status.Value);
                 }
 
                 if (request.CreatedAt.HasValue)
                 {
-                    var createdDate = request.CreatedAt.Value.Date;
-                    items = items.Where(item => item.CreatedAt.Date == createdDate).ToList();
-                    _logger.LogInformation("Filter 'CreatedAt={CreatedAt}' reduced items to {Filtered}", createdDate, items.Count);
+                    var date = request.CreatedAt.Value.Date;
+                    query = query.Where(c => c.CreatedAt.Date == date);
                 }
 
                 if (request.PublishedDate.HasValue)
                 {
-                    var publishedDate = request.PublishedDate.Value.Date;
-                    items = items.Where(item => item.PublishedDate.HasValue && item.PublishedDate.Value.Date == publishedDate).ToList();
-                    _logger.LogInformation("Filter 'PublishedDate={PublishedDate}' reduced items to {Filtered}", publishedDate, items.Count);
+                    var date = request.PublishedDate.Value.Date;
+                    query = query.Where(c => c.PublishedDate.HasValue && c.PublishedDate.Value.Date == date);
                 }
 
                 if (request.AdType.HasValue)
                 {
-                    items = items.Where(item => item.AdType == request.AdType).ToList();
-                    _logger.LogInformation("Filter 'AdType={AdType}' reduced items to {Filtered}", request.AdType, items.Count);
+                    query = query.Where(c => c.AdType == request.AdType.Value);
                 }
 
+                _logger.LogInformation("Applied filters. Intermediate count: {Count}", await query.CountAsync(ct));
+
+                // Dynamic sorting
                 if (!string.IsNullOrWhiteSpace(request.OrderBy))
                 {
                     try
@@ -2888,48 +2724,115 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                         var propertyName = parts[0];
                         var direction = parts.Length > 1 ? parts[1].ToLower() : "asc";
 
-                        var orderProp = typeof(ClassifiedsItems).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var param = Expression.Parameter(typeof(Collectibles), "x");
+                        var property = Expression.PropertyOrField(param, propertyName);
+                        var lambda = Expression.Lambda(property, param);
 
-                        if (orderProp != null)
-                        {
-                            items = direction == "desc"
-                                ? items.OrderByDescending(i => orderProp.GetValue(i)).ToList()
-                                : items.OrderBy(i => orderProp.GetValue(i)).ToList();
-                        }
+                        var method = direction == "desc" ? "OrderByDescending" : "OrderBy";
+
+                        var orderByCall = Expression.Call(
+                            typeof(Queryable),
+                            method,
+                            new Type[] { typeof(Collectibles), property.Type },
+                            query.Expression,
+                            Expression.Quote(lambda)
+                        );
+
+                        query = query.Provider.CreateQuery<Collectibles>(orderByCall);
+
+                        _logger.LogInformation("Applied dynamic sorting: {OrderBy}", request.OrderBy);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error applying sorting by {OrderBy}", request.OrderBy);
+                        _logger.LogError(ex, "Error applying sorting using OrderBy: {OrderBy}", request.OrderBy);
                     }
                 }
 
+                // Pagination
                 int page = Math.Max(1, request.PageNumber);
                 int pageSize = Math.Max(1, Math.Min(1000, request.PageSize));
 
-                var totalCount = items.Count;
-                var pagedItems = items.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                _logger.LogInformation("Pagination - Page: {Page}, PageSize: {PageSize}", page, pageSize);
 
-                _logger.LogInformation("Returning {Count} items out of {Total}", pagedItems.Count, totalCount);
+                var totalCount = await query.CountAsync(ct);
+
+                var pagedEntities = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync(ct);
+
+                _logger.LogInformation("Retrieved {Count} collectibles from DB", pagedEntities.Count);
+
+                
+                var result = pagedEntities.Select(c => new ClassifiedsCollectibles
+                {
+                    Id = c.Id,
+                    Title = c.Title,
+                    UserId = c.UserId,
+                    IsFeatured = c.IsFeatured,
+                    IsPromoted = c.IsPromoted,
+                    Status = c.Status,
+                    CreatedAt = c.CreatedAt,
+                    PublishedDate = c.PublishedDate,
+                    AdType = c.AdType,
+                    IsActive = c.IsActive,
+                    Description = c.Description,
+                    HasAuthenticityCertificate = c.HasAuthenticityCertificate,
+                    AuthenticityCertificateUrl = c.AuthenticityCertificateUrl,
+                    HasWarranty = c.HasWarranty,
+                    IsHandmade = c.IsHandmade,
+                    YearOrEra = c.YearOrEra,
+                    SubVertical = c.SubVertical,
+                    Price = c.Price,
+                    PriceType = c.PriceType,
+                    Category = c.Category,
+                    L1Category = c.L1Category,
+                    Location = c.Location,
+                    Brand = c.Brand,
+                    Model = c.Model,
+                    Condition = c.Condition,
+                    Color = c.Color,
+                    ExpiryDate = c.ExpiryDate,
+                    //Status =c.Status,
+                    UserName = c.UserName,
+                    FeaturedExpiryDate = c.FeaturedExpiryDate,
+                    PromotedExpiryDate = c.PromotedExpiryDate
+                    
+
+
+
+
+                }).ToList();
+
+                _logger.LogInformation("Returning {ResultCount} collectibles out of {TotalCount}", result.Count, totalCount);
 
                 return new ClassifiedsBoCollectiblesResponseDto
                 {
                     TotalCount = totalCount,
-                    ClassifiedsCollectibles = pagedItems
+                    ClassifiedsCollectibles = result
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetAllCollectibles");
+                _logger.LogError(ex,
+                    "[GetAllCollectibles] Unexpected error occurred. Request: {RequestJson}, Message: {ErrorMessage}, StackTrace: {StackTrace}, InnerException: {InnerException}",
+                    System.Text.Json.JsonSerializer.Serialize(request),
+                    ex.Message,
+                    ex.StackTrace,
+                    ex.InnerException?.ToString()
+                );
+
                 throw new Exception($"GetAllCollectibles failed: {ex.Message}", ex);
             }
         }
 
-        private async Task IndexItemsToAzureSearch(ClassifiedsItems dto, CancellationToken cancellationToken)
+
+        private async Task IndexItemsToAzureSearch(Items dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsItemsIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
+                SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -2943,7 +2846,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 Model = dto.Model,
                 Color = dto.Color,
                 Condition = dto.Condition,
-                SubscriptionId = dto.SubscriptionId,
+                //SubscriptionId = dto.SubscriptionId,
                 Price = (double)dto.Price,
                 PriceType = dto.PriceType,
                 Location = dto.Location,
@@ -3008,7 +2911,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             {
                 Id = dto.Id.ToString(),
                 SubscriptionId = dto.SubscriptionId,
-                SubVertical = dto.SubVertical,
+                SubVertical = dto.SubVertical.ToString(),
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
@@ -3084,23 +2987,23 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 );
             }
         }
-        private async Task IndexCollectiblesToAzureSearch(ClassifiedsCollectibles dto, CancellationToken cancellationToken)
+        private async Task IndexCollectiblesToAzureSearch(Collectibles dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsCollectiblesIndex
             {
                 Id = dto.Id.ToString(),
-                SubVertical = dto.SubVertical,
-                SubscriptionId = dto.SubscriptionId,
+                SubVertical = dto.SubVertical.ToString(),
+                //SubscriptionId = dto.SubscriptionId,
                 AdType = dto.AdType.ToString(),
                 Title = dto.Title,
                 Description = dto.Description,
                 Price = dto.Price,
                 PriceType = dto.PriceType,
-                CategoryId = dto.CategoryId,
+                //CategoryId = dto.CategoryId,
                 Category = dto.Category,
-                L1CategoryId = dto.L1CategoryId,
+               // L1CategoryId = dto.L1CategoryId,
                 L1Category = dto.L1Category,
-                L2CategoryId = dto.L2CategoryId,
+               // L2CategoryId = dto.L2CategoryId,
                 L2Category = dto.L2Category,
                 Location = dto.Location,
                 CreatedAt = dto.CreatedAt,
@@ -3170,17 +3073,16 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
             }
         }
 
-        private async Task IndexDealsToAzureSearch(ClassifiedsDeals dto, CancellationToken cancellationToken)
+        private async Task IndexDealsToAzureSearch(Deals dto, CancellationToken cancellationToken)
         {
             var indexDoc = new ClassifiedsDealsIndex
             {
                 Id = dto.Id.ToString(),
-                Subvertical = dto.Subvertical,
                 UserId = dto.UserId,
                 BusinessName = dto.BusinessName,
                 BranchNames = dto.BranchNames,
                 BusinessType = dto.BusinessType,
-                Title = dto.Title,
+                offertitle = dto.Offertitle,
                 Description = dto.Description,
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
@@ -3194,14 +3096,11 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 CreatedBy = dto.CreatedBy,
                 CreatedAt = dto.CreatedAt,
                 XMLlink = dto.XMLlink,
-                ContactNumberCountryCode = dto.ContactNumberCountryCode,
                 SubscriptionId = dto.SubscriptionId,
-                WhatsappNumberCountryCode = dto.WhatsappNumberCountryCode,
                 UpdatedAt = dto.UpdatedAt,
                 UpdatedBy = dto.UpdatedBy,
-                offertitle = dto.offertitle,
                 ExpiryDate = dto.ExpiryDate,
-                ImageUrl = dto.ImageUrl,
+                Images = dto.Images,
                 PromotedExpiryDate = dto.PromotedExpiryDate,
                 IsPromoted = dto.IsPromoted,
                 FeaturedExpiryDate = dto.FeaturedExpiryDate,
@@ -3241,7 +3140,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     cancellationToken: ct
                 ) ?? new();
 
-                var updated = new List<ClassifiedsDeals>();
+                var updated = new List<Deals>();
 
                 foreach (var id in request.AdIds)
                 {
@@ -3249,7 +3148,7 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                     if (!indexKeys.Contains(adKey.ToString()))
                         continue;
 
-                    var ad = await _dapr.GetStateAsync<ClassifiedsDeals>(
+                    var ad = await _dapr.GetStateAsync<Deals>(
                         ConstantValues.StateStoreNames.UnifiedStore,
                         adKey.ToString(),
                         cancellationToken: ct
@@ -3413,198 +3312,34 @@ namespace QLN.Content.MS.Service.ClassifiedBoService
                 throw;
             }
         }
-
-
       
 
-        public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
-                return getSubscriptionTypes;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new List<SubscriptionTypes>();
-            }
-        }
-        public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
-                return getSubscriptionType ?? new SubscriptionTypes();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return new SubscriptionTypes();
-            }
-        }
+        //public async Task<List<SubscriptionTypes>> GetSubscriptionTypes(CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionTypes = await _context.SubscriptionType.AsNoTracking().ToListAsync();
+        //        return getSubscriptionTypes;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new List<SubscriptionTypes>();
+        //    }
+        //}
+        //public async Task<SubscriptionTypes> GetSubscriptionById(int Id, CancellationToken cancellationToken = default)
+        //{
+        //    try
+        //    {
+        //        var getSubscriptionType = await _context.SubscriptionType.AsNoTracking().Where(x => x.SubscriptionId == Id).FirstOrDefaultAsync();
+        //        return getSubscriptionType ?? new SubscriptionTypes();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error while getting subscription types.");
+        //        return new SubscriptionTypes();
+        //    }
+        //}
 
-        public async Task<string> GetTestXMLValidation(CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                string result = string.Empty;
-                string errors = string.Empty;
-                string basePath = AppDomain.CurrentDomain.BaseDirectory;
-                string xmlPath = Path.Combine(basePath, "Data", "Products.xml");
-                string xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
-                var manager = new ProductXmlManager(xsdPath);
-                errors = manager.ValidateXml(xmlPath);
-                if (string.IsNullOrEmpty(errors))
-                {
-                    result = "Valid XML";
-                    return result;
-                }
-                else
-                {
-                    return errors;
-                }
-
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while getting subscription types.");
-                return ex.Message;
-            }
-        }
-
-       
-        public async Task<string> GetProcessStoresXML(string Url, string? CompanyId, string? SubscriptionId, string UserName, CancellationToken cancellationToken = default)
-        {
-            try
-            { 
-                var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                var xsdPath = Path.Combine(basePath, "Data", "Products.XSD");
-                var manager = new ProductXmlManager(xsdPath);
-
-                var validationErrors = manager.ValidateXml(Url);
-                if (!string.IsNullOrEmpty(validationErrors))
-                    return validationErrors;
-
-                using var httpClient = new HttpClient();
-                var xmlContent = await httpClient.GetStringAsync(Url);
-
-                var serializer = new XmlSerializer(typeof(StoreFlyer));
-                using var reader = new StringReader(xmlContent);
-                if (serializer.Deserialize(reader) is not StoreFlyer xmlProducts ||
-                    xmlProducts.Products == null ||
-                    xmlProducts.Products.Count == 0)
-                {
-                    return "No products found in the XML.";
-                }
-
-                _logger.LogInformation("Flyer: {FlyerId}", xmlProducts.FlyerId);
-                _logger.LogInformation("Subscription: {SubscriptionId}", xmlProducts.SubscriptionId);
-                _logger.LogInformation("Company: {CompanyId}", xmlProducts.CompanyId);
-
-                var storeFlyer = new StoreFlyers
-                {
-                    Products = new List<StoreProducts>()
-                };
-                if (!string.IsNullOrEmpty(xmlProducts.FlyerId) && Guid.TryParse(xmlProducts.FlyerId, out var flyerId))
-                {
-                    storeFlyer.FlyerId = flyerId;
-                }
-                else
-                {
-                    throw new Exception("No valid flyer ID found in the XML.");
-                }
-
-                if (Guid.TryParse(xmlProducts.SubscriptionId, out var parsedSubscriptionId))
-                {
-                    storeFlyer.SubscriptionId = parsedSubscriptionId;
-                }
-                else if (Guid.TryParse(SubscriptionId, out var fallbackSubscriptionId))
-                {
-                    storeFlyer.SubscriptionId = fallbackSubscriptionId;
-                }
-                else
-                {
-                    throw new Exception("No valid subscription ID found in the XML or parameter.");
-                }
-
-                if (Guid.TryParse(xmlProducts.CompanyId, out var parsedCompanyId))
-                {
-                    storeFlyer.CompanyId = parsedCompanyId;
-                }
-                else if (Guid.TryParse(CompanyId, out var fallbackCompanyId))
-                {
-                    storeFlyer.CompanyId = fallbackCompanyId;
-                }
-                else
-                {
-                    throw new Exception("No valid company ID found in the XML or parameter.");
-                }
-
-                foreach (var xmlProduct in xmlProducts.Products)
-                {
-                    var storeProductId = Guid.NewGuid();
-
-                    var storeProduct = new StoreProducts
-                    {
-                        StoreProductId = storeProductId,
-                        ProductName = xmlProduct.ProductName,
-                        ProductLogo = xmlProduct.ProductLogo,
-                        ProductPrice = xmlProduct.ProductPrice,
-                        Currency = xmlProduct.Currency,
-                        ProductSummary = xmlProduct.ProductSummary,
-                        ProductDescription = xmlProduct.ProductDescription,
-                        PageNumber = xmlProduct.PageNumber,
-                        PageCoordinates = xmlProduct.PageCoordinates,
-                        Features = xmlProduct.Features?.Select(f => new ProductFeatures
-                        {
-                            ProductFeaturesId = Guid.NewGuid(),
-                            Features = f,
-                            StoreProductId = storeProductId
-                        }).ToList(),
-                        Images = xmlProduct.Images?.Select(img => new ProductImages
-                        {
-                            ProductImagesId = Guid.NewGuid(),
-                            Images = img,
-                            StoreProductId = storeProductId
-                        }).ToList()
-                    };
-
-                    storeFlyer.Products.Add(storeProduct);
-                }
-
-                _logger.LogInformation("ML bind done");
-
-                await DeleteStoreFlyer(storeFlyer.FlyerId);
-                _context.StoreFlyer.Add(storeFlyer);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Products added successfully.");
-                return "created";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while processing store flyer XML.");
-                return ex.Message;
-            }
-
-
-        }
-       
-        
-        public async Task DeleteStoreFlyer(Guid FlyerId)
-        {
-            var flyers = await _context.StoreFlyer
-                                .Where(p => p.FlyerId == FlyerId)
-                                .Include(p => p.Products)
-                                .ToListAsync();
-            if (flyers.Any())
-            {
-                _context.StoreFlyer.RemoveRange(flyers);
-                await _context.SaveChangesAsync();
-            }
-
-        }
     }
 }

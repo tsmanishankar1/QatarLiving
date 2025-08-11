@@ -11,13 +11,13 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
 {
     public class CreateDealsFormListBase : ComponentBase
     {
-        [Inject] public IClassifiedService _classifiedsService { get; set; } 
+        [Inject] public IClassifiedService _classifiedsService { get; set; }
         protected bool IsLoadingCategories { get; set; } = true;
         protected string? ErrorMessage { get; set; }
         protected List<CategoryTreeDto> CategoryTrees { get; set; } = new();
         protected string selectedCategory = "deals";
-      
-      
+
+
         [Inject] ISnackbar Snackbar { get; set; }
         [Parameter]
         public DealsModal Ad { get; set; }
@@ -43,8 +43,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
 
-             Ad.FlyerFileName = file.Name;
-             Ad.FlyerFileUrl = Convert.ToBase64String(ms.ToArray());
+            Ad.FlyerFileName = file.Name;
+            Ad.FlyerFileUrl = Convert.ToBase64String(ms.ToArray());
         }
         protected void ClearFile()
         {
@@ -65,7 +65,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
             Ad.WhatsappNumber = model.Code;
             return Task.CompletedTask;
         }
-         protected Task OnPhoneChanged(string phone)
+        protected Task OnPhoneChanged(string phone)
         {
             Ad.ContactNumber = phone;
             return Task.CompletedTask;
@@ -83,8 +83,9 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
             set => Ad.Locations = value?.Split(',')
                                     .Select(x => x.Trim())
                                     .Where(x => !string.IsNullOrWhiteSpace(x))
-                                    .ToList() ?? new List<string>();
+                                    .ToList() ?? [];
         }
+
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -95,7 +96,7 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
                 await JS.InvokeVoidAsync("initializeMap", _dotNetRef);
             }
         }
-         [JSInvokable]
+        [JSInvokable]
         public Task SetCoordinates(double lat, double lng)
         {
             Logger.LogInformation("Map marker moved to Lat: {Lat}, Lng: {Lng}", lat, lng);
@@ -106,8 +107,8 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
         }
 
 
-     
-       protected override async Task OnInitializedAsync()
+
+        protected override async Task OnInitializedAsync()
         {
             Console.WriteLine($"Initial Ad value: {JsonSerializer.Serialize(Ad)}");
 
@@ -122,15 +123,15 @@ namespace QLN.ContentBO.WebUI.Pages.Classified.DealsMenu.EditAd
             };
 
         }
-       
 
-         protected void SubmitForm()
+
+        protected void SubmitForm()
         {
             messageStore.Clear();
-        
+
             var isValid = editContext.Validate();
 
-            
+
 
             // Show the errors
             editContext.NotifyValidationStateChanged();

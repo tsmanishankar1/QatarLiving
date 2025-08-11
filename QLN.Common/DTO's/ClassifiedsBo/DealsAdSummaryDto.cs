@@ -8,7 +8,7 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 {
     public class DealsAdSummaryDto
     {
-        public Guid AdId { get; set; }
+        public long AdId { get; set; }
         public string orderid { get; set; }
         public string subscriptiontype { get; set; }
         public string status { get; set; }

@@ -10,10 +10,6 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.QLDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration
-    .SetBasePath(Path.Combine(Directory.GetCurrentDirectory(), "../QLN.Backend.API"))
-    .AddJsonFile("appsettings.json", optional: true)
-    .AddJsonFile("appsettings.Development.json", optional: false);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -46,14 +42,27 @@ builder.Services.AddDaprClient();
 builder.Services.ClassifiedInternalServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 
-var basePath = Path.Combine(Directory.GetCurrentDirectory());
-
+#region DbContext
 var dataSourceBuilder = new NpgsqlDataSourceBuilder(builder.Configuration.GetConnectionString("DefaultConnection"));
 dataSourceBuilder.EnableDynamicJson();
 var dataSource = dataSourceBuilder.Build();
-
 builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLApplicationContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLCompanyContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLPaymentsContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(dataSource));
+builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(dataSource));
+#endregion
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -75,5 +84,6 @@ var ClassifiedBo = app.MapGroup("/api/v2/classifiedbo");
 ClassifiedBo.MapClassifiedboEndpoints();
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
+
 
 app.Run();

@@ -16,6 +16,8 @@ using QLN.Common.Infrastructure.CustomEndpoints.BannerEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ClassifiedEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.ContentEndpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.FileUploadService;
 using QLN.Common.Infrastructure.CustomEndpoints.PayToPublishEndpoint;
 using QLN.Common.Infrastructure.CustomEndpoints.ServiceBOEndpoint;
@@ -26,16 +28,18 @@ using QLN.Common.Infrastructure.CustomEndpoints.V2ClassifiedBOEndPoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.V2ContentEventEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.Wishlist;
-using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.IService.IAuth;
 using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.QLDbContext;
 using QLN.Common.Infrastructure.ServiceConfiguration;
 using QLN.Common.Infrastructure.TokenProvider;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using QLN.Common.Infrastructure.CustomEndpoints.FatoraEndpoints;
 using QLN.Common.Infrastructure.CustomEndpoints.D365Endpoints;
+using QLN.Common.Infrastructure.CustomEndpoints.ProductEndpoints;
 var builder = WebApplication.CreateBuilder(args);
 
 #region Kestrel For Dev Testing via dapr.yaml
@@ -142,6 +146,10 @@ builder.Services.AddDbContext<QLClassifiedContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddDbContext<QLCompanyContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLSubscriptionContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<QLLogContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 #endregion
 
 #region Identity configuration
@@ -174,7 +182,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateAudience = false,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
@@ -189,7 +197,78 @@ builder.Services.AddAuthentication(options =>
 
 #endregion
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireActiveBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Check if roles array contains "business_account"
+                if (!root.TryGetProperty("roles", out var rolesProp) ||
+                    !rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+
+                // Once Subscription info is in we can verify completely against it
+                //// Check if subscription exists and is not expired
+                //if (!root.TryGetProperty("subscription", out var subscriptionProp))
+                //    return false;
+
+                //if (!subscriptionProp.TryGetProperty("expire_date", out var expireDateProp))
+                //    return false;
+
+                //if (!long.TryParse(expireDateProp.GetString(), out var expireUnix))
+                //    return false;
+
+                //var nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                //if (expireUnix <= nowUnix)
+                //    return false;
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+
+    options.AddPolicy("RequireNoBusinessAccount", policy =>
+        policy.RequireAssertion(context =>
+        {
+            var userClaim = context.User.Claims.FirstOrDefault(c => c.Type == "user");
+            if (userClaim == null) return false;
+
+            try
+            {
+                var userJson = JsonDocument.Parse(userClaim.Value);
+                var root = userJson.RootElement;
+
+                // Fail if roles array contains "business_account"
+                if (root.TryGetProperty("roles", out var rolesProp) &&
+                    rolesProp.EnumerateArray().Any(role => role.GetString() == "business_account"))
+                {
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }));
+});
+
+
 
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 
@@ -249,7 +328,8 @@ builder.Services.DrupalAuthConfiguration(builder.Configuration);
 builder.Services.DrupalUserServicesConfiguration(builder.Configuration);
 builder.Services.AddScoped<AuditLogger>();
 builder.Services.PaymentsConfiguration(builder.Configuration);
-
+builder.Services.ProductsConfiguration(builder.Configuration);
+builder.Services.ClassifiedBoStoresConfiguration(builder.Configuration);
 builder.Services.ServicesBo(builder.Configuration);
 
 var app = builder.Build();
@@ -288,7 +368,6 @@ var filesGroup = app.MapGroup("/files");
 filesGroup.MapFileUploadEndpoint();
 var paymentGroup = app.MapGroup("/api/pay");
 paymentGroup.MapFaturaEndpoints().MapD365Endpoints();
-
 var wishlistgroup = app.MapGroup("/api/wishlist");
 wishlistgroup.MapWishlist();
 var companyProfileGroup = app.MapGroup("/api/companyprofile");
@@ -312,6 +391,9 @@ var analyticGroup = app.MapGroup("/api/analytics");
 analyticGroup.MapAnalyticsEndpoints();
 app.MapGroup("/api/subscriptions")
    .MapSubscriptionEndpoints();
+app.MapGroup("/api/v2/subscriptions")
+    .MapV2SubscriptionEndpoints()
+    .RequireAuthorization();
 
 app.MapGroup("/api/payments")
  .MapPaymentEndpoints();
@@ -347,6 +429,10 @@ ClassifiedBo.MapClassifiedboEndpoints()
 var ServicesBo = app.MapGroup("/api/servicebo");
 ServicesBo.MapAllServiceBoConfiguration();
 
+var Product = app.MapGroup("/api/products");
+Product.MapProductEndpoints()
+    .RequireAuthorization();
+
 app.MapGet("/testauth", (HttpContext context) =>
 {
     var user = context.User;
@@ -360,7 +446,7 @@ app.MapGet("/testauth", (HttpContext context) =>
     .WithName("TestAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireActiveBusinessAccount");
 
 app.MapPost("/testauth", (HttpContext context) =>
 {
@@ -375,7 +461,7 @@ app.MapPost("/testauth", (HttpContext context) =>
     .WithName("TestPostAuth")
     .WithTags("AAAAuthentication")
     .WithDescription("Test authentication endpoint to verify JWT token claims.")
-    .RequireAuthorization();
+    .RequireAuthorization("RequireNoBusinessAccount");
 
 app.MapPost("/drupallogin", async (
     HttpContext context,

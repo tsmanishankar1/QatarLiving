@@ -37,19 +37,19 @@ namespace QLN.Common.Infrastructure.Model
         [Required, MaxLength(10)]
         public string WhatsAppCountryCode { get; set; } = string.Empty;
 
-        [Required, EmailAddress, MaxLength(100)]
+        [Required, EmailAddress, MaxLength(150)]
         public string Email { get; set; } = string.Empty;
 
-        [Url, MaxLength(100)]
+        [Url, MaxLength(150)]
         public string? WebsiteUrl { get; set; }
 
-        [Url, MaxLength(100)]
+        [Url, MaxLength(150)]
         public string? FacebookUrl { get; set; }
 
-        [Url, MaxLength(100)]
+        [Url, MaxLength(150)]
         public string? InstagramUrl { get; set; }
 
-        [Required, MaxLength(70)]
+        [Required, MaxLength(150)]
         public string CompanyLogo { get; set; } = string.Empty;
 
         [MaxLength(20)]
@@ -75,15 +75,15 @@ namespace QLN.Common.Infrastructure.Model
 
         public DateTime? CRExpiryDate { get; set; } 
 
-        [MaxLength(70)]
+        [MaxLength(150)]
         public string? CoverImage1 { get; set; }
 
-        [MaxLength(70)]
+        [MaxLength(150)]
         public string? CoverImage2 { get; set; }
 
         public bool? IsTherapeuticService { get; set; }
 
-        [MaxLength(70)]
+        [MaxLength(150)]
         public string? TherapeuticCertificate { get; set; }
 
         [MaxLength(50)]
@@ -104,7 +104,7 @@ namespace QLN.Common.Infrastructure.Model
         [Required]
         public int CRNumber { get; set; }
 
-        [Required, MaxLength(70)]
+        [Required, MaxLength(150)]
         public string CRDocument { get; set; } = string.Empty;
 
         public VerifiedStatus? Status { get; set; }
