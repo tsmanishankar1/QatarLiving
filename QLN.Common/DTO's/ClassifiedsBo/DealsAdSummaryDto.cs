@@ -8,8 +8,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
 {
     public class DealsAdSummaryDto
     {
-        public Guid AdId { get; set; }
-        public string orderid { get; set; }
+        public long AdId { get; set; }
+        public int orderid { get; set; }
         public string subscriptiontype { get; set; }
         public string status { get; set; }
         public string price { get; set; }
@@ -19,8 +19,8 @@ namespace QLN.Common.DTO_s.ClassifiedsBo
         public string WhatsappNumber { get; set; }
         public string WhatsAppLeads { get; set; }
         public string  PhoneLeads { get; set; }
-        public string StartDate { get; set; }
-        public string EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public string UserName { get; set; }
     }
 }

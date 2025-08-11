@@ -3,6 +3,8 @@ using QLN.ContentBO.WebUI.Components.ToggleTabs;
 using QLN.ContentBO.WebUI.Interfaces;
 using QLN.ContentBO.WebUI.Pages.Services.PreviewServiceAd;
 using MudBlazor;
+using System.Text.Json;
+using System.Net;
 using QLN.ContentBO.WebUI.Models;
 using QLN.ContentBO.WebUI.Components.ConfirmationDialog;
 using QLN.ContentBO.WebUI.Components.RejectVerificationDialog;
@@ -17,9 +19,11 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         [Inject] public NavigationManager Navigation { get; set; }
         [Parameter] public EventCallback<int> OnPageChange { get; set; }
         [Inject] ISnackbar Snackbar { get; set; }
-         [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
+        [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         [Parameter] public EventCallback<int> OnPageSizeChange { get; set; }
+         [Parameter] public EventCallback OnListReload { get; set; }
         public string? rejectReason { get; set; } = string.Empty;
+        public Guid selectedAdId { get; set; }
         [Parameter]
         public EventCallback<int?> OnStatusChanged { get; set; }
         protected HashSet<ServiceAdSummaryDto> SelectedListings { get; set; } = new();
@@ -46,7 +50,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 "pendingApproval" => 2,
                 "published" => 3,
                 "unpublished" => 4,
-                "Promoted" => 7,
+                "promoted" => 7,
                 "featured" => 9,
                 _ => null
             };
@@ -66,7 +70,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var parameters = new DialogParameters
             {
-                { "Title", "Reject Verification" },
+                { "Title", "Remove Verification" },
                 { "Description", "Please enter a reason before rejecting" },
                 { "ButtonTitle", "Reject" },
                 { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRejection) }
@@ -108,7 +112,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         }
         public void OnEdit(ServiceAdSummaryDto item)
         {
-            Navigation.NavigateTo($"/manage/services/editform/{item.Id}");
+            Navigation.NavigateTo($"/manage/services/editform/{item.Id}/p2plistings");
         }
         protected async Task ShowConfirmation(string title, string description, string buttonTitle, Func<Task> onConfirmedAction)
         {
@@ -143,32 +147,34 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             var dialog = DialogService.Show<PreviewAd>("Ad Preview", parameters, options);
             await dialog.Result;
         }
-    public ItemEditAdPost MapToItemEditAdPost(ServiceAdSummaryDto source)
-    {
-      var item = new ItemEditAdPost
-      {
-        Id = source.Id.ToString(),
-        UserId = source.UserId,
-        UserName = source.UserName,
-        Title = source.AdTitle,
-        Status = (int?)source.Status,
-        IsPromoted = source.IsPromoted ?? false,
-        IsFeatured = source.IsFeatured ?? false,
-        CreatedAt = source.CreationDate,
-        RefreshExpiryDate = source.DateExpiry, 
-        Images = source.ImageUpload != null
-              ? source.ImageUpload.Select(img => new AdImage
-              {
-                Id = img.Id ?? Guid.NewGuid(),
-                Url = img.Url ?? string.Empty,
-                AdImageFileName = System.IO.Path.GetFileName(img.Url ?? string.Empty),
-                Order = img.Order
-              }).ToList()
-              : new List<AdImage>()
-      };
+        public ItemEditAdPost MapToItemEditAdPost(ServiceAdSummaryDto source)
+        {
+            var item = new ItemEditAdPost
+            {
+                Id = source.Id.ToString(),
+                UserId = source.UserId,
+                UserName = source.UserName,
+                Title = source.AdTitle,
+                Status = (int?)source.Status,
+                IsPromoted = source.IsPromoted ?? false,
+                IsFeatured = source.IsFeatured ?? false,
+                CreatedBy = source.UserName,
+                CreatedAt = source.CreationDate,
+                RefreshExpiryDate = source.DateExpiry,
+                Images = source.ImageUpload != null
+                    ? source.ImageUpload.Select(img => new AdImage
+                    {
+                        Id = img.Id ?? Guid.NewGuid(),
+                        Url = img.Url ?? string.Empty,
+                        AdImageFileName = System.IO.Path.GetFileName(img.Url ?? string.Empty),
+                        Order = img.Order
+                    }).ToList()
+                    : new List<AdImage>()
+            };
 
-      return item;
-    }
+            return item;
+        }
+
 
         protected async Task UpdateStatus(BulkModerationRequest statusRequest)
         {
@@ -206,6 +212,53 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 };
                 await OnStatusChanged.InvokeAsync(statusResult);
                 SelectedListings.Clear();
+                StateHasChanged();
+            }
+            else if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                Snackbar.Add("You already have an active ad in this category. Please unpublish or remove it before posting another.", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("Failed to update ad status", Severity.Error);
+            }
+        }
+        protected void OpenRejectDialog(Guid guid)
+        {
+            selectedAdId = guid;
+            var parameters = new DialogParameters
+            {
+                { "Title", "Remove Subscription" },
+                { "Description", "Please enter a reason before removing" },
+                { "ButtonTitle", "Remove" },
+                { "OnRejected", EventCallback.Factory.Create<string>(this, HandleRemove) }
+            };
+            var options = new DialogOptions
+            {
+                CloseButton = false,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true
+            };
+            var dialog = DialogService.Show<RejectVerificationDialog>("", parameters, options);
+        }
+        private async Task HandleRemove(string reason)
+        {
+            rejectReason = string.IsNullOrWhiteSpace(reason) ? null : reason;
+            await RemoveSubscription();
+        }
+        protected async Task RemoveSubscription()
+        {
+            var statusRequest = new BulkModerationRequest
+            {
+                AdIds = new List<Guid> { selectedAdId },
+                Action = BulkModerationAction.Remove,
+                Reason = rejectReason,
+            };
+            var response = await _serviceBOService.UpdateServiceStatus(statusRequest);
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Removed Subscription Successfully", Severity.Success);
+                await OnListReload.InvokeAsync();
                 StateHasChanged();
             }
             else

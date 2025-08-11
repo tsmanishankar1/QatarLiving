@@ -2,18 +2,19 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using QLN.Common.DTO_s;
-using QLN.Common.Infrastructure.DTO_s;
 using QLN.Common.Infrastructure.IService.ICompanyService;
 using Microsoft.AspNetCore.Builder;
 using QLN.Common.DTO_s.Company;
 using System.Text.Json;
 using QLN.Common.Infrastructure.CustomException;
+using QLN.Common.Infrastructure.Model;
+using QLN.Common.Infrastructure.Auditlog;
 
 namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
 {
     public static class CompanyProfileEndpoints
     {
+        const string ModuleName = "Company";
         public static RouteGroupBuilder MapCreateProfile(this RouteGroupBuilder group)
         {
             group.MapPost("/createcompany", async Task<Results<
@@ -25,23 +26,35 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             (
                 CompanyProfile dto,
                 ICompanyProfileService service,
+                AuditLogger auditLogger,
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
+                string? uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
                     var userName = userData.GetProperty("name").GetString();
                     var isSubcriber = userData.GetProperty("roles").EnumerateArray()
                         .Any(r => r.GetString() == "subscription");
                     var result = await service.CreateCompany(uid, userName, dto, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                    module: ModuleName,
+                    httpMethod: "POST",
+                    apiEndpoint: "/api/companyprofile/createcompany",
+                    message: "Company Profile created successfully",
+                    createdBy: uid,
+                    payload: dto,
+                    cancellationToken: cancellationToken
+                    ); 
                     return TypedResults.Ok(result);
                 }
                 catch (ConflictException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/createcompany", ex, uid, cancellationToken);
                     return TypedResults.Problem(
                         title: "Conflict",
                         detail: ex.Message,
@@ -50,6 +63,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/createcompany", ex, uid, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -59,6 +73,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/createcompany", ex, uid, cancellationToken);
                     return TypedResults.Problem(
                            title: "Internal Server Error",
                            detail: ex.Message,
@@ -190,22 +205,23 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 Conflict<string>,
                 ProblemHttpResult>>
             (
-                CompanyProfileModel dto,
+                Company dto,
                 ICompanyProfileService service,
+                AuditLogger auditLogger,
                 HttpContext httpContext,
                 CancellationToken cancellationToken = default) =>
             {
+                string? uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
-
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
                     var username = userData.GetProperty("name").GetString();
                     var isSubcriber = userData.GetProperty("roles").EnumerateArray()
                         .Any(r => r.GetString() == "subscription");
 
-                    var existingCompany = await service.GetCompanyById(dto.Id.Value, cancellationToken);
+                    var existingCompany = await service.GetCompanyById(dto.Id, cancellationToken);
                     if (existingCompany == null)
                     {
                         return TypedResults.NotFound(new ProblemDetails
@@ -222,10 +238,20 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     dto.UserId = uid;
                     dto.UserName = username;
                     var updated = await service.UpdateCompany(dto, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                       module: ModuleName,
+                       httpMethod: "PUT",
+                       apiEndpoint: "/api/companyprofile/updatecompanyprofile",
+                       message: "Company Profile updated successfully",
+                       createdBy: uid,
+                       payload: dto,
+                       cancellationToken: cancellationToken
+                   );
                     return TypedResults.Ok(updated);
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/updatecompanyprofile", ex, uid, cancellationToken);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -235,6 +261,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (ConflictException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/updatecompanyprofile", ex, uid, cancellationToken);
                     return TypedResults.Problem(
                         title: "Conflict",
                         detail: ex.Message,
@@ -243,6 +270,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/updatecompanyprofile", ex, uid, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -252,6 +280,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/updatecompanyprofile", ex, uid, cancellationToken);
                     return TypedResults.Problem("Internal Server Error", ex.Message, 500);
                 }
             })
@@ -272,7 +301,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 Conflict<string>,
                 ProblemHttpResult>>
             (
-                CompanyProfileModel dto,
+                Company dto,
                 ICompanyProfileService service,
                 CancellationToken cancellationToken = default) =>
             {
@@ -331,19 +360,108 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
         }
         public static RouteGroupBuilder MapDeleteCompanyProfile(this RouteGroupBuilder group)
         {
-            group.MapDelete("/deletecompanyprofile", async Task<Results<
-                    Ok<string>,
-                    NotFound<ProblemDetails>, BadRequest<ProblemDetails>,
-                    ProblemHttpResult>> (
+            group.MapPost("/deletecompanyprofile", async Task<Results<Ok<string>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
                 [FromQuery] Guid id,
-                [FromServices] ICompanyProfileService service) =>
+                [FromServices] ICompanyProfileService service,
+                CancellationToken cancellationToken,
+                HttpContext httpContext,
+                AuditLogger auditLogger) =>
+            {
+                string uid = "unknown";
+                try
+                {
+                    var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
+                    if (string.IsNullOrEmpty(userClaim))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User information is missing or invalid in the token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
+                    uid = userData.GetProperty("uid").GetString();
+                    if (string.IsNullOrEmpty(uid))
+                    {
+                        return TypedResults.Problem(new ProblemDetails
+                        {
+                            Title = "Unauthorized Access",
+                            Detail = "User ID could not be extracted from token.",
+                            Status = StatusCodes.Status403Forbidden
+                        });
+                    }
+
+                    var result = await service.GetCompanyById(id, cancellationToken);
+                    if (result == null)
+                        throw new KeyNotFoundException($"Company with ID '{id}' not found.");
+
+                    await service.DeleteCompany(new DeleteCompanyRequest { Id = id, UpdatedBy = uid }, cancellationToken);
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "DELETE",
+                        apiEndpoint: "/api/companyprofile/deletecompanyprofile",
+                        message: "Company Profile deleted successfully",
+                        createdBy: uid,
+                        payload: new { Id = id },
+                        cancellationToken: cancellationToken
+                    );
+
+                    return TypedResults.Ok("Company Profile deleted successfully");
+                }
+                catch (InvalidDataException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/deletecompanyprofile", ex, uid, cancellationToken);
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (KeyNotFoundException ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/deletecompanyprofile", ex, uid, cancellationToken);
+                    return TypedResults.NotFound(new ProblemDetails
+                    {
+                        Title = "Not Found",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status404NotFound
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/deletecompanyprofile", ex, uid, cancellationToken);
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: "An unexpected error occurred.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("DeleteCompanyProfile")
+            .WithTags("Company")
+            .WithSummary("Delete a company profile")
+            .WithDescription("Deletes the specified company profile.")
+            .Produces<string>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
+            group.MapPost("/deletecompanyprofilebyuserid", async Task<Results<Ok<string>, NotFound<ProblemDetails>, BadRequest<ProblemDetails>, ProblemHttpResult>> (
+                [FromBody] DeleteCompanyRequest request,
+                ICompanyProfileService service,
+                CancellationToken cancellationToken) =>
             {
                 try
                 {
-                    var result = await service.GetCompanyById(id);
-                    await service.DeleteCompany(id);
+                    var result = await service.GetCompanyById(request.Id, cancellationToken);
                     if (result == null)
-                        throw new KeyNotFoundException($"Company with ID '{id}' not found.");
+                        throw new KeyNotFoundException($"Company with ID '{request.Id}' not found.");
+
+                    await service.DeleteCompany(request, cancellationToken);
+
                     return TypedResults.Ok("Company Profile deleted successfully");
                 }
                 catch (InvalidDataException ex)
@@ -364,7 +482,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                         Status = StatusCodes.Status404NotFound
                     });
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return TypedResults.Problem(
                         title: "Internal Server Error",
@@ -373,38 +491,52 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                     );
                 }
             })
-            .WithName("DeleteCompanyProfile")
+            .ExcludeFromDescription()
+            .WithName("DeleteCompanyProfileByUserId")
             .WithTags("Company")
-            .WithSummary("Delete a company profile")
-            .WithDescription("Deletes the specified company profile.")
+            .WithSummary("Delete a company profile by user ID")
+            .WithDescription("Deletes the specified company profile using the user ID.")
             .Produces<string>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
+
             return group;
         }
         public static RouteGroupBuilder MapCompanyApproval(this RouteGroupBuilder group)
         {
-            group.MapPut("/approvecompany", async Task<IResult> (
+            group.MapPut("/action", async Task<IResult> (
             [FromBody] CompanyProfileApproveDto dto,
             [FromServices] ICompanyProfileService service,
             HttpContext httpContext,
+            AuditLogger auditLogger,
             CancellationToken cancellationToken = default) =>
             {
+                string? uid = "unknown";
                 try
                 {
                     var userClaim = httpContext.User.Claims.FirstOrDefault(c => c.Type == "user")?.Value;
 
                     var userData = JsonSerializer.Deserialize<JsonElement>(userClaim);
-                    var uid = userData.GetProperty("uid").GetString();
+                    uid = userData.GetProperty("uid").GetString();
                     if (dto == null)
                         throw new KeyNotFoundException($"Company with ID '{dto.CompanyId}' not found.");
 
                     await service.ApproveCompany(uid, dto, cancellationToken);
-                    return Results.Ok(new { message = "Company approved successfully." });
+                    await auditLogger.LogAuditAsync(
+                        module: ModuleName,
+                        httpMethod: "POST",
+                        apiEndpoint: "/api/companyprofile/action",
+                        message: "Company Status Updated successfully",
+                        createdBy: uid,
+                        payload: dto,
+                        cancellationToken: cancellationToken
+                    );
+                    return Results.Ok(new { message = "Company Status Updated successfully." });
                 }
                 catch (KeyNotFoundException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/action", ex, uid, cancellationToken);
                     return TypedResults.NotFound(new ProblemDetails
                     {
                         Title = "Not Found",
@@ -414,6 +546,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (InvalidDataException ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/action", ex, uid, cancellationToken);
                     return TypedResults.BadRequest(new ProblemDetails
                     {
                         Title = "Invalid Data",
@@ -423,6 +556,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
                 }
                 catch (Exception ex)
                 {
+                    await auditLogger.LogExceptionAsync(ModuleName, "/api/companyprofile/action", ex, uid, cancellationToken);
                     return TypedResults.Problem(
                         title: "Internal Server Error",
                         detail: ex.Message,
@@ -432,7 +566,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             })
             .WithName("ApproveCompanyInternal")
             .WithTags("Company")
-            .WithSummary("Approve a company profile")
+            .WithSummary("Action for company profile")
             .Produces(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
@@ -546,7 +680,7 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get company profiles for logged-in user")
             .WithDescription("Fetches all companies owned by the current token user")
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status403Forbidden)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
@@ -593,52 +727,8 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithSummary("Get companies by user ID")
             .WithDescription("Used internally by Dapr or system components.")
             .ExcludeFromDescription()
-            .Produces<List<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<List<Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
-            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
-
-            return group;
-        }
-        public static RouteGroupBuilder MapGetVerificationCompanyStatus(this RouteGroupBuilder group)
-        {
-            group.MapGet("/profileStatusbyverified", async Task<IResult> (
-                [FromQuery] VerticalType vertical,
-                [FromQuery] SubVertical? subVertical,
-                [FromServices] ICompanyProfileService service,
-                CancellationToken cancellationToken = default) =>
-            {
-                try
-                {
-                    var filtered = await service.GetAllVerificationProfiles(vertical, subVertical, cancellationToken);
-
-                    if (filtered == null || filtered.Count == 0)
-                    {
-                        return TypedResults.NotFound(new ProblemDetails
-                        {
-                            Title = "Not Found",
-                            Detail = "No company profiles matched the given vertical and subvertical.",
-                            Status = StatusCodes.Status404NotFound
-                        });
-                    }
-
-                    return TypedResults.Ok(filtered);
-                }
-                catch (Exception ex)
-                {
-                    return TypedResults.Problem(
-                        title: "Internal Server Error",
-                        detail: ex.Message,
-                        statusCode: StatusCodes.Status500InternalServerError
-                    );
-                }
-            })
-            .WithName("GetVerifedCompanyStatus")
-            .WithTags("Company")
-            .AllowAnonymous()
-            .WithSummary("Get filtered company profiles")
-            .WithDescription("Returns company profiles matching vertical and optional subvertical.")
-            .Produces<List<VerificationCompanyProfileStatus>>(StatusCodes.Status200OK)
-            .Produces<ProblemDetails>(StatusCodes.Status404NotFound)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
             return group;
@@ -676,10 +766,53 @@ namespace QLN.Common.Infrastructure.CustomEndpoints.CompanyEndpoints
             .WithTags("Company")
             .WithSummary("Get all verified company profiles with filters")
             .WithDescription("Fetches verified companies using a filter object with search, pagination, and sorting.")
-            .Produces<CompanyPaginatedResponse<CompanyProfileModel>>(StatusCodes.Status200OK)
+            .Produces<CompanyPaginatedResponse<QLN.Common.Infrastructure.Model.Company>>(StatusCodes.Status200OK)
             .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
             .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
 
+            return group;
+        }
+        public static RouteGroupBuilder MapCompanySubscription(this RouteGroupBuilder group)
+        {
+            group.MapPost("/viewstores", async Task<Results<
+                Ok<CompanySubscriptionListResponseDto>,
+                BadRequest<ProblemDetails>,
+                ProblemHttpResult>>
+            (
+                CompanySubscriptionFilter filter,
+                ICompanyProfileService service,
+                CancellationToken cancellationToken = default) =>
+            {
+                try
+                {
+                    var result = await service.GetCompanySubscriptions(filter, cancellationToken);
+                    return TypedResults.Ok(result);
+                }
+                catch (InvalidDataException ex)
+                {
+                    return TypedResults.BadRequest(new ProblemDetails
+                    {
+                        Title = "Invalid Data",
+                        Detail = ex.Message,
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    return TypedResults.Problem(
+                        title: "Internal Server Error",
+                        detail: ex.Message,
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
+            })
+            .WithName("GetCompanySubscriptions")
+            .WithTags("Company")
+            .WithSummary("Fetch companies with subscriptions")
+            .WithDescription("Returns companies joined with their subscriptions based on product and date filters")
+            .Produces<CompanySubscriptionListResponseDto>(StatusCodes.Status200OK)
+            .Produces<ProblemDetails>(StatusCodes.Status400BadRequest)
+            .Produces<ProblemDetails>(StatusCodes.Status500InternalServerError);
             return group;
         }
     }

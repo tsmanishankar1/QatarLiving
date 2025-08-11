@@ -21,10 +21,7 @@ namespace QLN.Common.DTO_s
         public string? BranchNames { get; set; }
 
         [SearchableField(IsFilterable = true)]
-        public string? BusinessType { get; set; }
-
-        [SearchableField]
-        public string? Title { get; set; }
+        public string? BusinessType { get; set; }        
 
         [SearchableField]
         public string? Description { get; set; }
@@ -39,16 +36,10 @@ namespace QLN.Common.DTO_s
         public string? FlyerFileUrl { get; set; }
 
         [SearchableField(IsFilterable = false)]
-        public string? DataFeedUrl { get; set; }
+        public string? DataFeedUrl { get; set; }      
 
         [SearchableField]
-        public string ContactNumberCountryCode { get; set; }
-
-        [SearchableField]
-        public string? ContactNumber { get; set; }
-
-        [SearchableField]
-        public string WhatsappNumberCountryCode { get; set; }
+        public string? ContactNumber { get; set; }       
 
         [SearchableField]
         public string? WhatsappNumber { get; set; }
@@ -81,7 +72,7 @@ namespace QLN.Common.DTO_s
         public string? offertitle { get; set; }
 
         [SearchableField]
-        public string ImageUrl { get; set; }
+        public List<ImageInfo> Images { get; set; } = new List<ImageInfo>();
 
         [SimpleField(IsFilterable = true, IsSortable = true)]
         public DateTime? ExpiryDate { get; set; }

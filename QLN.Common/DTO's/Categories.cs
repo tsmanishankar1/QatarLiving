@@ -17,8 +17,8 @@ namespace QLN.Common.DTO_s
     public class CategoryField
     {
         public string Name { get; set; } = default!;
-        public string Type { get; set; } = "text"; // "text", "number", "dropdown"
-        public List<string>? Options { get; set; } // only for dropdown
+        public string Type { get; set; } = "text"; 
+        public List<string>? Options { get; set; } 
     }
 
     public class CategoryDtos

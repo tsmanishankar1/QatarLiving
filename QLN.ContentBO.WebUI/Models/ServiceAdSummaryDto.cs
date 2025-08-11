@@ -8,6 +8,7 @@ namespace QLN.ContentBO.WebUI.Models
         public string UserName { get; set; } = string.Empty;
         public string? Category { get; set; }
         public string? SubCategory { get; set; }
+        public string Certificate { get; set; }
         public ServiceStatus? Status { get; set; }
         public bool? IsPromoted { get; set; }
         public bool? IsFeatured { get; set; }

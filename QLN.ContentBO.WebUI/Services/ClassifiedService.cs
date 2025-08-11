@@ -130,6 +130,7 @@ namespace QLN.ContentBO.WebUI.Services
                 };
 
                 var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                Console.Write("the payload sent here is" + json);
                 var request = new HttpRequestMessage(HttpMethod.Put, "/api/v2/classifiedbo/seasonal-picks/reorder-slots")
                 {
                     Content = new StringContent(json, Encoding.UTF8, "application/json")
@@ -800,11 +801,11 @@ namespace QLN.ContentBO.WebUI.Services
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
         }
-        public async Task<HttpResponseMessage?> UpdateDealsAsync(string vertical, object payload)
+        public async Task<HttpResponseMessage?> UpdateDealsAsync(object payload)
         {
             try
             {
-                var endpoint = $"/api/classified/{vertical}/update";
+                var endpoint = $"/api/classified/deals/update";
 
                 using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
                 {

@@ -10,6 +10,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
     [Inject] ILogger<ViewSubscriptionListingBase> Logger { get; set; }
     protected PaginatedPaymentSummaryResponse PaginatedData { get; set; } = new();
     public List<ServiceAdPaymentSummaryDto> Listings => PaginatedData.items;
+    [Inject] IServiceBOService serviceBOService { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     protected int currentPage = 1;
@@ -61,10 +62,10 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
     }
     protected async Task HandlePageSizeChange(int newPageSize)
     {
-            pageSize = newPageSize;
-            currentPage = 1;
-            PaginatedData = await LoadSubscriptionListingsAsync();
-            StateHasChanged();
+      pageSize = newPageSize;
+      currentPage = 1;
+      PaginatedData = await LoadSubscriptionListingsAsync();
+      StateHasChanged();
     }
     protected async Task HandleClearFilters()
     {
@@ -78,7 +79,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       StateHasChanged();
     }
 
-    private async Task<PaginatedPaymentSummaryResponse> LoadSubscriptionListingsAsync()
+    protected async Task<PaginatedPaymentSummaryResponse> LoadSubscriptionListingsAsync()
     {
       try
       {
@@ -91,7 +92,6 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
             pageSize: pageSize,
             subscriptionType: SelectedSubscriptionType
         );
-
         if (response.IsSuccessStatusCode)
         {
           var result = await response.Content.ReadFromJsonAsync<PaginatedPaymentSummaryResponse>();
@@ -104,6 +104,32 @@ namespace QLN.ContentBO.WebUI.Pages.Services.ViewSubscriptionListing
       }
       return new PaginatedPaymentSummaryResponse();
     }
+    protected async Task ReloadLoadSubscriptionListingsAsync()
+    {
+      try
+      {
+        var response = await _serviceBOService.GetPaginatedSubscriptionListing(
+            sortBy: SortBy,
+            search: Search,
+            fromDate: FromDate,
+            toDate: ToDate,
+            pageNumber: currentPage,
+            pageSize: pageSize,
+            subscriptionType: SelectedSubscriptionType
+        );
+        if (response.IsSuccessStatusCode)
+        {
+          var result = await response.Content.ReadFromJsonAsync<PaginatedPaymentSummaryResponse>();
+          PaginatedData = result ?? new PaginatedPaymentSummaryResponse();
+          PaginatedData.items = result.items;
+        }
+      }
+      catch (Exception ex)
+      {
+        Logger.LogError(ex, "LoadSubscriptionListingsAsync");
+      }
+    }
+       
 
 
     }

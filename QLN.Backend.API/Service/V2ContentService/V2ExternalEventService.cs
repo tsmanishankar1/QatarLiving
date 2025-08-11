@@ -555,5 +555,15 @@ namespace QLN.Backend.API.Service.V2ContentService
                 throw;
             }
         }
+
+        public Task<string> BulkMigrateEvents(List<V2Events> events, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> MigrateEvent(V2Events dto, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
