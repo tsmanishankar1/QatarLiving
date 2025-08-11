@@ -24,7 +24,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         [Parameter] public ItemEditAdPost AdModel { get; set; } = new();
         public ServicesDto selectedService { get; set; } = new ServicesDto();
         public string? rejectReason { get; set; } = string.Empty;
-        public Guid selectedAdId { get; set; }
+        public long selectedAdId { get; set; }
         protected int currentPage = 1;
         protected int pageSize = 12;
         protected int TotalCount => Listings.Count;
@@ -45,7 +45,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             Navigation.NavigateTo($"/manage/services/editform/{item.AddId}/subscription");
         }
-        public async Task OnPreview(Guid Id)
+        public async Task OnPreview(long Id)
         {
             selectedService = await GetServiceById(Id);
             await OpenPreviewDialog(selectedService);
@@ -70,7 +70,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
             var dialog = DialogService.Show<ConfirmationDialog>("", parameters, options);
             var result = await dialog.Result;
         }
-        protected void OpenRejectDialog(Guid guid)
+        protected void OpenRejectDialog(long guid)
         {
             selectedAdId = guid;
             var parameters = new DialogParameters
@@ -114,7 +114,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 IsFeatured = source.IsFeatured,
                 CreatedBy = source.CreatedBy,
                 CreatedAt = source.CreatedAt,
-                RefreshExpiryDate = source.RefreshExpiryDate,
+                RefreshExpiryDate = source.ExpiryDate,
                 Images = source.PhotoUpload != null
                     ? source.PhotoUpload.Select(img => new AdImage
                     {
@@ -137,7 +137,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
         {
             var statusRequest = new BulkModerationRequest
             {
-                AdIds = new List<Guid> { selectedAdId },
+                AdIds = new List<long> { selectedAdId },
                 Action = BulkModerationAction.Remove,
                 Reason = rejectReason,
             };
@@ -153,7 +153,7 @@ namespace QLN.ContentBO.WebUI.Pages.Services
                 Snackbar.Add("Failed to update ad status", Severity.Error);
             }
         }
-        protected async Task<ServicesDto> GetServiceById(Guid Id)
+        protected async Task<ServicesDto> GetServiceById(long Id)
         {
             try
             {

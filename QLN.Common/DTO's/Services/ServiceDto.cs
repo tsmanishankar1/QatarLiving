@@ -148,4 +148,33 @@ namespace QLN.Common.DTO_s
         public int? PerPage { get; set; }
         public Dictionary<string, JsonElement>? Filters { get; set; }
     }
+    public class SubscriptionBudgetDto
+    {
+        // Totals
+        public int TotalAdsAllowed { get; set; }
+        public int TotalPromotionsAllowed { get; set; }
+        public int TotalFeaturesAllowed { get; set; }
+        public int DailyRefreshesAllowed { get; set; }
+        public int RefreshesPerAdAllowed { get; set; }
+        public int SocialMediaPostsAllowed { get; set; }
+
+        // Used
+        public int AdsUsed { get; set; }
+        public int PromotionsUsed { get; set; }
+        public int FeaturesUsed { get; set; }
+        public int DailyRefreshesUsed { get; set; }
+        public int RefreshesPerAdUsed { get; set; }
+        public int SocialMediaPostsUsed { get; set; }
+    }
+
+    public class SubscriptionIdRequest
+    {
+        public Guid SubscriptionId { get; set; }
+    }
+
+    public class SubscriptionRequest
+    {
+        public Guid SubscriptionId { get; set; }
+        public int SubVerticalId { get; set; }
+    }
 }
